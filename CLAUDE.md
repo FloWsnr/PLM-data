@@ -88,6 +88,10 @@ class MyPDEPreset(ScalarPDEPreset):
         ...
 ```
 
+Always add corresponding tests to validate behavior. At least one test should run an actual simulation and check the result.
+The result should be finite and not NaN or Inf.
+
+
 ## Configuration Format
 
 YAML configs include: `preset`, `parameters`, `init` (initial conditions), `solver` (euler/rk4), `timesteps`, `dt`, `resolution`, `bc` (boundary conditions), `output` settings.
