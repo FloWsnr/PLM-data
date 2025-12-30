@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pde import FieldCollection, ScalarField
 
+from pde_sim.descriptions import get_description
+
 
 class OutputManager:
     """Manages simulation output (frames and metadata).
@@ -195,17 +197,21 @@ def create_metadata(
     Returns:
         Complete metadata dictionary.
     """
+    # Load detailed description from markdown file
+    description = get_description(preset_name)
+
     return {
         "id": sim_id,
         "preset": preset_name,
+        "description": description,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "generatorVersion": "1.0.0",
-        "equations": {
-            "reaction": list(preset_metadata.equations.values()),
-            "diffusion": [f"D_{name}" for name in preset_metadata.field_names],
-            "boundaryConditions": [config.bc.x] * preset_metadata.num_fields,
-            "initialConditions": [config.init.type] * preset_metadata.num_fields,
+        "equations": preset_metadata.equations,
+        "boundaryConditions": {
+            "x": config.bc.x,
+            "y": config.bc.y,
         },
+        "initialConditions": config.init.type,
         "parameters": {
             "kinetic": config.parameters,
             "dt": config.dt,
