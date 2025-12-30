@@ -1,0 +1,33 @@
+# Gray-Scott pattern formation - spots
+preset: gray-scott
+
+parameters:
+  F: 0.04    # Feed rate
+  k: 0.06    # Kill rate
+  Du: 0.16   # Diffusion of u
+  Dv: 0.08   # Diffusion of v
+
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 10
+    width: 0.03
+    noise: 0.01
+
+solver: euler
+timesteps: 10000
+dt: 1.0
+resolution: 128
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 100
+  colormap: turbo
+  field_to_plot: v
+
+seed: 123
+domain_size: 2.5

@@ -1,0 +1,135 @@
+"""Step function initial condition generators."""
+
+import numpy as np
+from pde import CartesianGrid, ScalarField
+
+from .base import InitialConditionGenerator
+
+
+class StepFunction(InitialConditionGenerator):
+    """Step function (Heaviside) initial condition.
+
+    Creates a field with a sharp transition at a specified position.
+    """
+
+    def generate(
+        self,
+        grid: CartesianGrid,
+        direction: str = "x",
+        position: float = 0.5,
+        value_low: float = 0.0,
+        value_high: float = 1.0,
+        smooth_width: float = 0.0,
+        **kwargs,
+    ) -> ScalarField:
+        """Generate step function initial condition.
+
+        Args:
+            grid: The computational grid.
+            direction: Direction of the step ("x" or "y").
+            position: Position of the step (0-1 normalized).
+            value_low: Value below/left of the step.
+            value_high: Value above/right of the step.
+            smooth_width: If > 0, use a smooth tanh transition.
+            **kwargs: Additional arguments (ignored).
+
+        Returns:
+            ScalarField with step function.
+        """
+        # Get domain bounds
+        x_bounds = grid.axes_bounds[0]
+        y_bounds = grid.axes_bounds[1]
+        Lx = x_bounds[1] - x_bounds[0]
+        Ly = y_bounds[1] - y_bounds[0]
+
+        # Create coordinate arrays
+        x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+        y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
+        X, Y = np.meshgrid(x, y, indexing="ij")
+
+        if direction.lower() == "x":
+            step_pos = x_bounds[0] + position * Lx
+            coord = X
+            L = Lx
+        else:
+            step_pos = y_bounds[0] + position * Ly
+            coord = Y
+            L = Ly
+
+        if smooth_width > 0:
+            # Smooth transition using tanh
+            width = smooth_width * L
+            transition = 0.5 * (1 + np.tanh((coord - step_pos) / width))
+            data = value_low + (value_high - value_low) * transition
+        else:
+            # Sharp step
+            data = np.where(coord < step_pos, value_low, value_high)
+
+        return ScalarField(grid, data.astype(float))
+
+
+class DoubleStep(InitialConditionGenerator):
+    """Double step function creating a band/stripe.
+
+    Creates a field with a band of one value surrounded by another.
+    """
+
+    def generate(
+        self,
+        grid: CartesianGrid,
+        direction: str = "x",
+        position1: float = 0.25,
+        position2: float = 0.75,
+        value_inside: float = 1.0,
+        value_outside: float = 0.0,
+        smooth_width: float = 0.0,
+        **kwargs,
+    ) -> ScalarField:
+        """Generate double step function (band) initial condition.
+
+        Args:
+            grid: The computational grid.
+            direction: Direction of the bands ("x" or "y").
+            position1: Position of first step (0-1 normalized).
+            position2: Position of second step (0-1 normalized).
+            value_inside: Value inside the band.
+            value_outside: Value outside the band.
+            smooth_width: If > 0, use smooth tanh transitions.
+            **kwargs: Additional arguments (ignored).
+
+        Returns:
+            ScalarField with double step function.
+        """
+        # Get domain bounds
+        x_bounds = grid.axes_bounds[0]
+        y_bounds = grid.axes_bounds[1]
+        Lx = x_bounds[1] - x_bounds[0]
+        Ly = y_bounds[1] - y_bounds[0]
+
+        # Create coordinate arrays
+        x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+        y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
+        X, Y = np.meshgrid(x, y, indexing="ij")
+
+        if direction.lower() == "x":
+            pos1 = x_bounds[0] + position1 * Lx
+            pos2 = x_bounds[0] + position2 * Lx
+            coord = X
+            L = Lx
+        else:
+            pos1 = y_bounds[0] + position1 * Ly
+            pos2 = y_bounds[0] + position2 * Ly
+            coord = Y
+            L = Ly
+
+        if smooth_width > 0:
+            width = smooth_width * L
+            trans1 = 0.5 * (1 + np.tanh((coord - pos1) / width))
+            trans2 = 0.5 * (1 + np.tanh((pos2 - coord) / width))
+            inside = trans1 * trans2
+            data = value_outside + (value_inside - value_outside) * inside
+        else:
+            inside = (coord >= pos1) & (coord <= pos2)
+            data = np.where(inside, value_inside, value_outside)
+
+        return ScalarField(grid, data.astype(float))

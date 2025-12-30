@@ -1,7 +1,7 @@
 [project]
-name = "plm-data"
+name = "pde-sim"
 version = "0.1.0"
-description = "Add your description here"
+description = "2D PDE Simulation Dataset Generator for Vision-Language Models"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -16,4 +16,12 @@ dependencies = [
     "scipy>=1.16.3",
     "sympy>=1.14.0",
     "tqdm>=4.67.1",
+    "pyyaml>=6.0",
 ]
+
+[project.scripts]
+pde-sim = "pde_sim.__main__:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
