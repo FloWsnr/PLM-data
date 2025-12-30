@@ -7,7 +7,7 @@ from pde import PDE, CartesianGrid, FieldCollection, ScalarField
 
 from pde_sim.initial_conditions import create_initial_condition
 
-from ..base import MultiFieldPDEPreset, ScalarPDEPreset, PDEMetadata, PDEParameter, SolverType
+from ..base import MultiFieldPDEPreset, ScalarPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
 
 
@@ -17,12 +17,12 @@ class LorenzPDE(MultiFieldPDEPreset):
 
     The Lorenz equations with spatial diffusion coupling:
 
-        dx/dt = Dx * laplace(x) + sigma * (y - x)
-        dy/dt = Dy * laplace(y) + x * (rho - z) - y
-        dz/dt = Dz * laplace(z) + x * y - beta * z
+        dX/dt = Dx * laplace(X) + sigma * (Y - X)
+        dY/dt = Dy * laplace(Y) + X * (rho - Z) - Y
+        dZ/dt = Dz * laplace(Z) + X * Y - beta * Z
 
     where:
-        - x, y, z are the Lorenz variables
+        - X, Y, Z are the Lorenz variables (capitalized to avoid collision with grid coordinates)
         - sigma, rho, beta are the classic Lorenz parameters
         - Dx, Dy, Dz are diffusion coefficients
 
@@ -36,9 +36,9 @@ class LorenzPDE(MultiFieldPDEPreset):
             category="physics",
             description="Diffusively coupled Lorenz system",
             equations={
-                "x": "Dx * laplace(x) + sigma * (y - x)",
-                "y": "Dy * laplace(y) + x * (rho - z) - y",
-                "z": "Dz * laplace(z) + x * y - beta * z",
+                "X": "Dx * laplace(X) + sigma * (Y - X)",
+                "Y": "Dy * laplace(Y) + X * (rho - Z) - Y",
+                "Z": "Dz * laplace(Z) + X * Y - beta * Z",
             },
             parameters=[
                 PDEParameter(
@@ -85,7 +85,7 @@ class LorenzPDE(MultiFieldPDEPreset):
                 ),
             ],
             num_fields=3,
-            field_names=["x", "y", "z"],
+            field_names=["X", "Y", "Z"],
             reference="Lorenz (1963) attractor with diffusion",
         )
 
@@ -104,9 +104,9 @@ class LorenzPDE(MultiFieldPDEPreset):
 
         return PDE(
             rhs={
-                "x": f"{Dx} * laplace(x) + {sigma} * (y - x)",
-                "y": f"{Dy} * laplace(y) + x * ({rho} - z) - y",
-                "z": f"{Dz} * laplace(z) + x * y - {beta} * z",
+                "X": f"{Dx} * laplace(X) + {sigma} * (Y - X)",
+                "Y": f"{Dy} * laplace(Y) + X * ({rho} - Z) - Y",
+                "Z": f"{Dz} * laplace(Z) + X * Y - {beta} * Z",
             },
             bc="periodic" if bc.get("x") == "periodic" else "no-flux",
         )
@@ -126,14 +126,14 @@ class LorenzPDE(MultiFieldPDEPreset):
         y_data = 1.0 + noise * np.random.randn(*grid.shape)
         z_data = 1.0 + noise * np.random.randn(*grid.shape)
 
-        x = ScalarField(grid, x_data)
-        x.label = "x"
-        y = ScalarField(grid, y_data)
-        y.label = "y"
-        z = ScalarField(grid, z_data)
-        z.label = "z"
+        X_field = ScalarField(grid, x_data)
+        X_field.label = "X"
+        Y_field = ScalarField(grid, y_data)
+        Y_field.label = "Y"
+        Z_field = ScalarField(grid, z_data)
+        Z_field.label = "Z"
 
-        return FieldCollection([x, y, z])
+        return FieldCollection([X_field, Y_field, Z_field])
 
 
 @register_pde("superlattice")
@@ -146,11 +146,6 @@ class SuperlatticePDE(ScalarPDEPreset):
 
     With additional modulation to promote superlattice structures.
     """
-
-    @property
-    def default_solver(self) -> SolverType:
-        """Superlattice is stiff due to 4th order derivatives."""
-        return "implicit"
 
     @property
     def metadata(self) -> PDEMetadata:
@@ -233,12 +228,12 @@ class OscillatorsPDE(MultiFieldPDEPreset):
 
     Spatially extended Van der Pol oscillator:
 
-        dx/dt = Dx * laplace(x) + y
-        dy/dt = Dy * laplace(y) + mu * (1 - x^2) * y - omega^2 * x
+        du/dt = Du * laplace(u) + v
+        dv/dt = Dv * laplace(v) + mu * (1 - u^2) * v - omega^2 * u
 
     where:
-        - x is the position variable
-        - y is the velocity variable
+        - u is the position variable (renamed from x to avoid grid coordinate collision)
+        - v is the velocity variable (renamed from y to avoid grid coordinate collision)
         - mu controls nonlinearity strength
         - omega is the natural frequency
     """
@@ -250,8 +245,8 @@ class OscillatorsPDE(MultiFieldPDEPreset):
             category="physics",
             description="Coupled Van der Pol oscillators",
             equations={
-                "x": "Dx * laplace(x) + y",
-                "y": "Dy * laplace(y) + mu * (1 - x^2) * y - omega^2 * x",
+                "u": "Du * laplace(u) + v",
+                "v": "Dv * laplace(v) + mu * (1 - u^2) * v - omega^2 * u",
             },
             parameters=[
                 PDEParameter(
@@ -269,22 +264,22 @@ class OscillatorsPDE(MultiFieldPDEPreset):
                     max_value=10.0,
                 ),
                 PDEParameter(
-                    name="Dx",
+                    name="Du",
                     default=0.1,
-                    description="Diffusion of x",
+                    description="Diffusion of u",
                     min_value=0.0,
                     max_value=10.0,
                 ),
                 PDEParameter(
-                    name="Dy",
+                    name="Dv",
                     default=0.1,
-                    description="Diffusion of y",
+                    description="Diffusion of v",
                     min_value=0.0,
                     max_value=10.0,
                 ),
             ],
             num_fields=2,
-            field_names=["x", "y"],
+            field_names=["u", "v"],
             reference="Van der Pol oscillator field",
         )
 
@@ -296,14 +291,14 @@ class OscillatorsPDE(MultiFieldPDEPreset):
     ) -> PDE:
         mu = parameters.get("mu", 1.0)
         omega = parameters.get("omega", 1.0)
-        Dx = parameters.get("Dx", 0.1)
-        Dy = parameters.get("Dy", 0.1)
+        Du = parameters.get("Du", 0.1)
+        Dv = parameters.get("Dv", 0.1)
         omega_sq = omega**2
 
         return PDE(
             rhs={
-                "x": f"{Dx} * laplace(x) + y",
-                "y": f"{Dy} * laplace(y) + {mu} * (1 - x**2) * y - {omega_sq} * x",
+                "u": f"{Du} * laplace(u) + v",
+                "v": f"{Dv} * laplace(v) + {mu} * (1 - u**2) * v - {omega_sq} * u",
             },
             bc="periodic" if bc.get("x") == "periodic" else "no-flux",
         )
@@ -318,15 +313,15 @@ class OscillatorsPDE(MultiFieldPDEPreset):
         np.random.seed(ic_params.get("seed"))
         noise = ic_params.get("noise", 0.5)
 
-        x_data = noise * np.random.randn(*grid.shape)
-        y_data = noise * np.random.randn(*grid.shape)
+        u_data = noise * np.random.randn(*grid.shape)
+        v_data = noise * np.random.randn(*grid.shape)
 
-        x = ScalarField(grid, x_data)
-        x.label = "x"
-        y = ScalarField(grid, y_data)
-        y.label = "y"
+        u_field = ScalarField(grid, u_data)
+        u_field.label = "u"
+        v_field = ScalarField(grid, v_data)
+        v_field.label = "v"
 
-        return FieldCollection([x, y])
+        return FieldCollection([u_field, v_field])
 
 
 @register_pde("perona-malik")
@@ -428,11 +423,6 @@ class NonlinearBeamsPDE(MultiFieldPDEPreset):
         du/dt = v
         dv/dt = -D * laplace(laplace(u)) + alpha * laplace(gradient_squared(u))
     """
-
-    @property
-    def default_solver(self) -> SolverType:
-        """Nonlinear beams is stiff due to 4th order derivatives."""
-        return "implicit"
 
     @property
     def metadata(self) -> PDEMetadata:

@@ -95,6 +95,8 @@ class SimulationRunner:
             "rk4": "runge-kutta",
             "rk": "runge-kutta",
             "runge-kutta": "runge-kutta",
+            "implicit": "implicit",
+            "implicit-euler": "implicit",
         }
         return solver_map.get(self.config.solver.lower(), "euler")
 

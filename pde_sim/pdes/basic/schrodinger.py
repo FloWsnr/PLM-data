@@ -7,7 +7,7 @@ from pde import PDE, CartesianGrid, ScalarField
 
 from pde_sim.initial_conditions import create_initial_condition
 
-from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset, SolverType
+from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset
 from .. import register_pde
 
 
@@ -136,11 +136,6 @@ class PlatePDE(ScalarPDEPreset):
     This implementation uses the first-order (diffusive) form for simplicity.
     The bilaplacian creates smoothing patterns with fourth-order spatial derivatives.
     """
-
-    @property
-    def default_solver(self) -> SolverType:
-        """Plate equation is stiff due to 4th order derivatives."""
-        return "implicit"
 
     @property
     def metadata(self) -> PDEMetadata:

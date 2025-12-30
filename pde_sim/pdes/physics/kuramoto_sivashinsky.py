@@ -7,7 +7,7 @@ from pde import PDE, CartesianGrid, ScalarField
 
 from pde_sim.initial_conditions import create_initial_condition
 
-from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset, SolverType
+from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset
 from .. import register_pde
 
 
@@ -34,11 +34,6 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
 
     Reference: Kuramoto (1978), Sivashinsky (1977)
     """
-
-    @property
-    def default_solver(self) -> SolverType:
-        """Kuramoto-Sivashinsky is stiff due to 4th order derivatives."""
-        return "implicit"
 
     @property
     def metadata(self) -> PDEMetadata:
@@ -128,11 +123,6 @@ class KdVPDE(ScalarPDEPreset):
     Note: This is a 1D equation extended to 2D. For pure 1D behavior,
     use initial conditions that vary only in x.
     """
-
-    @property
-    def default_solver(self) -> SolverType:
-        """KdV is stiff due to 3rd order dispersive term."""
-        return "implicit"
 
     @property
     def metadata(self) -> PDEMetadata:

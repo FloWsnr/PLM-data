@@ -2,10 +2,9 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any
 
 from pde import CartesianGrid, FieldCollection, PDE, ScalarField
-from pde.solvers import ExplicitSolver, ImplicitSolver
 
 from pde_sim.initial_conditions import create_initial_condition
 
@@ -54,9 +53,6 @@ class PDEMetadata:
     reference: str | None = None
 
 
-SolverType = Literal["explicit", "implicit"]
-
-
 class PDEPreset(ABC):
     """Abstract base class for all PDE presets.
 
@@ -65,19 +61,6 @@ class PDEPreset(ABC):
         - create_pde method
         - create_initial_state method
     """
-
-    @property
-    def default_solver(self) -> SolverType:
-        """Return the default solver type for this PDE.
-
-        Override this in subclasses for stiff PDEs that require implicit solvers.
-        Default is 'explicit' (explicit Euler method).
-
-        Returns:
-            'explicit' for ExplicitSolver (default)
-            'implicit' for ImplicitSolver (for stiff PDEs)
-        """
-        return "explicit"
 
     @property
     @abstractmethod
@@ -162,20 +145,6 @@ class PDEPreset(ABC):
         # Default implementation just returns the template equations
         # Subclasses can override to provide filled-in versions
         return self.metadata.equations.copy()
-
-    def create_solver(self, pde: PDE):
-        """Create the appropriate solver for this PDE.
-
-        Args:
-            pde: The PDE instance to solve.
-
-        Returns:
-            Configured solver instance.
-        """
-        if self.default_solver == "implicit":
-            return ImplicitSolver(pde)
-        else:
-            return ExplicitSolver(pde, scheme="euler")
 
 
 class ScalarPDEPreset(PDEPreset):
