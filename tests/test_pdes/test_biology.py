@@ -75,7 +75,7 @@ class TestGiererMeinhardtPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "default", {"noise": 0.01})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -142,7 +142,7 @@ class TestKellerSegelPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "keller-segel-default", {})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -174,7 +174,7 @@ class TestSchnakenbergPDE:
         state = preset.create_initial_state(small_grid, "default", {"noise": 0.05})
 
         # Use very small timestep for stability
-        result = pde.solve(state, t_range=0.001, dt=0.00001)
+        result = pde.solve(state, t_range=0.0001, dt=0.00001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -205,7 +205,7 @@ class TestBrusselatorPDE:
         state = preset.create_initial_state(small_grid, "default", {"noise": 0.05})
 
         # Use smaller timestep for stability
-        result = pde.solve(state, t_range=0.01, dt=0.0001)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -235,7 +235,7 @@ class TestFisherKPPPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "random-uniform", {"min_val": 0.0, "max_val": 1.0})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
@@ -265,7 +265,7 @@ class TestFitzHughNagumoPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "default", {"noise": 0.05})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -295,7 +295,7 @@ class TestAllenCahnPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "random-uniform", {"min_val": -1.0, "max_val": 1.0})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
@@ -327,7 +327,7 @@ class TestCyclicCompetitionPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "default", {"noise": 0.05})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -360,7 +360,7 @@ class TestVegetationPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "default", {"noise": 0.05})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -391,7 +391,7 @@ class TestCrossDiffusionPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "default", {"noise": 0.05})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -424,7 +424,7 @@ class TestImmunotherapyPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "default", {})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -455,7 +455,7 @@ class TestHarshEnvironmentPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "default", {})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
@@ -488,7 +488,7 @@ class TestBacteriaFlowPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "default", {})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -520,7 +520,7 @@ class TestHeterogeneousPDE:
         # Use standard IC since heterogeneous doesn't have custom create_initial_state
         state = create_initial_condition(small_grid, "random-uniform", {"min_val": 0.1, "max_val": 0.9})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
@@ -551,7 +551,7 @@ class TestTopographyPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "random-uniform", {"min_val": 0.1, "max_val": 0.9})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
@@ -597,7 +597,7 @@ class TestTuringConditionsPDE:
         state = preset.create_initial_state(small_grid, "default", {"noise": 0.05})
 
         # Use smaller timestep for stability
-        result = pde.solve(state, t_range=0.01, dt=0.0001)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 2

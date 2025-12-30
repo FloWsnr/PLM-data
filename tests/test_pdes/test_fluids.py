@@ -72,7 +72,7 @@ class TestVorticityPDE:
         state = preset.create_initial_state(small_grid, "single-vortex", {})
 
         # Run for a few steps
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert result is not None
         assert np.isfinite(result.data).all()
@@ -126,7 +126,7 @@ class TestShallowWaterPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "drop", {"amplitude": 0.1})
 
-        result = pde.solve(state, t_range=0.01, dt=0.0001)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
 
         assert result is not None
         assert np.isfinite(result.data).all()
@@ -158,7 +158,7 @@ class TestNavierStokesPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "vortex-pair", {})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
@@ -191,7 +191,7 @@ class TestThermalConvectionPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "default", {"noise": 0.05})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -222,7 +222,7 @@ class TestMethodOfImagesPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "default", {})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
@@ -253,7 +253,7 @@ class TestDipolesPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "default", {})
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()

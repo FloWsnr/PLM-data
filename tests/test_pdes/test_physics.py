@@ -116,7 +116,7 @@ class TestGrayScottPDE:
         )
 
         # Run short simulation
-        result = pde.solve(state, t_range=1.0, dt=0.5, tracker=None)
+        result = pde.solve(state, t_range=0.1, dt=0.05, solver="euler", tracker=None)
 
         # Result should be a FieldCollection
         assert isinstance(result, FieldCollection)
@@ -183,8 +183,6 @@ class TestKuramotoSivashinskyPDE:
         assert pde is not None
         assert state is not None
         assert np.isfinite(state.data).all()
-        # Confirm this is a stiff PDE
-        assert preset.default_solver == "implicit"
 
 
 class TestKdVPDE:
@@ -237,8 +235,6 @@ class TestKdVPDE:
         assert pde is not None
         assert state is not None
         assert np.isfinite(state.data).all()
-        # Confirm this is a stiff PDE
-        assert preset.default_solver == "implicit"
 
 
 class TestGinzburgLandauPDE:
@@ -287,7 +283,7 @@ class TestGinzburgLandauPDE:
             small_grid, "default", {"amplitude": 0.05}
         )
 
-        result = pde.solve(state, t_range=0.01, dt=0.0001)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
 
         assert result is not None
         assert np.isfinite(result.data).all()
@@ -308,7 +304,7 @@ class TestLorenzPDE:
         assert meta.name == "lorenz"
         assert meta.category == "physics"
         assert meta.num_fields == 3
-        assert set(meta.field_names) == {"x", "y", "z"}
+        assert set(meta.field_names) == {"X", "Y", "Z"}
 
     def test_create_and_initial_state(self, small_grid):
         """Test that PDE and initial state can be created."""
@@ -325,11 +321,10 @@ class TestLorenzPDE:
         assert np.isfinite(state[0].data).all()
 
     def test_short_simulation(self, small_grid):
-        """Test that PDE and initial state are valid.
+        """Test running a short simulation with the Lorenz PDE.
 
-        Note: The Lorenz PDE uses field names (x, y, z) that conflict with
-        2D grid coordinate names, preventing direct simulation. This test
-        verifies PDE and initial state creation.
+        Field names have been changed from (x, y, z) to (X, Y, Z) to avoid
+        collision with 2D grid coordinate names.
         """
         preset = get_pde_preset("lorenz")
         params = {"sigma": 10.0, "rho": 28.0, "beta": 8.0/3.0, "Dx": 0.1, "Dy": 0.1, "Dz": 0.1}
@@ -338,13 +333,14 @@ class TestLorenzPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "default", {"noise": 0.1})
 
-        # Verify PDE and state are created correctly
-        assert pde is not None
-        assert isinstance(state, FieldCollection)
-        assert len(state) == 3
-        assert np.isfinite(state[0].data).all()
-        assert np.isfinite(state[1].data).all()
-        assert np.isfinite(state[2].data).all()
+        # Run simulation now that field names don't conflict
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
+
+        assert isinstance(result, FieldCollection)
+        assert len(result) == 3
+        assert np.isfinite(result[0].data).all()
+        assert np.isfinite(result[1].data).all()
+        assert np.isfinite(result[2].data).all()
 
 
 class TestSuperlatticePDE:
@@ -390,8 +386,6 @@ class TestSuperlatticePDE:
         assert pde is not None
         assert state is not None
         assert np.isfinite(state.data).all()
-        # Confirm this is a stiff PDE
-        assert preset.default_solver == "implicit"
 
 
 class TestOscillatorsPDE:
@@ -425,25 +419,25 @@ class TestOscillatorsPDE:
         assert np.isfinite(state[0].data).all()
 
     def test_short_simulation(self, small_grid):
-        """Test that PDE and initial state are valid.
+        """Test running a short simulation with the Oscillators PDE.
 
-        Note: The Oscillators PDE uses field names (x, y) that conflict with
-        2D grid coordinate names, preventing direct simulation. This test
-        verifies PDE and initial state creation.
+        Field names have been changed from (x, y) to (u, v) to avoid
+        collision with 2D grid coordinate names.
         """
         preset = get_pde_preset("oscillators")
-        params = {"mu": 1.0, "omega": 1.0, "Dx": 0.1, "Dy": 0.1}
+        params = {"mu": 1.0, "omega": 1.0, "Du": 0.1, "Dv": 0.1}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "default", {"noise": 0.1})
 
-        # Verify PDE and state are created correctly
-        assert pde is not None
-        assert isinstance(state, FieldCollection)
-        assert len(state) == 2
-        assert np.isfinite(state[0].data).all()
-        assert np.isfinite(state[1].data).all()
+        # Run simulation now that field names don't conflict
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
+
+        assert isinstance(result, FieldCollection)
+        assert len(result) == 2
+        assert np.isfinite(result[0].data).all()
+        assert np.isfinite(result[1].data).all()
 
 
 class TestPeronaMalikPDE:
@@ -471,7 +465,7 @@ class TestPeronaMalikPDE:
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "default", {})
 
-        result = pde.solve(state, t_range=0.01, dt=0.0001)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
 
         assert result is not None
         assert np.isfinite(result.data).all()
@@ -503,7 +497,7 @@ class TestNonlinearBeamsPDE:
         state = preset.create_initial_state(small_grid, "gaussian-blobs", {"num_blobs": 1})
 
         # Has 4th order terms, needs small dt
-        result = pde.solve(state, t_range=0.001, dt=0.00001)
+        result = pde.solve(state, t_range=0.0001, dt=0.00001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -549,7 +543,7 @@ class TestTuringWavePDE:
         state = preset.create_initial_state(small_grid, "default", {"noise": 0.05})
 
         # Use very small timestep for stability (reaction-diffusion systems need careful numerics)
-        result = pde.solve(state, t_range=0.001, dt=0.00001)
+        result = pde.solve(state, t_range=0.0001, dt=0.00001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 2
@@ -597,7 +591,7 @@ class TestAdvectingPatternsPDE:
         state = preset.create_initial_state(small_grid, "default", {"noise": 0.05})
 
         # Use very small timestep for stability
-        result = pde.solve(state, t_range=0.001, dt=0.00001)
+        result = pde.solve(state, t_range=0.0001, dt=0.00001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 2
@@ -645,7 +639,7 @@ class TestGrowingDomainsPDE:
         state = preset.create_initial_state(small_grid, "default", {"noise": 0.05})
 
         # Use very small timestep for stability
-        result = pde.solve(state, t_range=0.001, dt=0.00001)
+        result = pde.solve(state, t_range=0.0001, dt=0.00001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 2

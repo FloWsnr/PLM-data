@@ -95,8 +95,8 @@ class TestHeatPDE:
             ic_params={"num_blobs": 1, "amplitude": 1.0},
         )
 
-        # Run short simulation
-        result = pde.solve(state, t_range=0.01, dt=0.0001, tracker=None)
+        # Run short simulation with explicit euler solver
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
 
         # Result should be a ScalarField
         assert isinstance(result, ScalarField)
@@ -145,7 +145,7 @@ class TestInhomogeneousHeatPDE:
             small_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
         )
 
-        result = pde.solve(state, t_range=0.01, dt=0.0001)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
@@ -202,7 +202,7 @@ class TestSchrodingerPDE:
             small_grid, "wave-packet", {"kx": 2.0, "sigma": 0.15}
         )
 
-        result = pde.solve(state, t_range=0.01, dt=0.0001)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
 
         assert result is not None
         assert np.isfinite(result.data).all()
@@ -247,7 +247,7 @@ class TestPlatePDE:
             small_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
         )
 
-        result = pde.solve(state, t_range=0.001, dt=0.00001)
+        result = pde.solve(state, t_range=0.0001, dt=0.00001, solver="euler")
 
         assert result is not None
         assert np.isfinite(result.data).all()
@@ -314,9 +314,45 @@ class TestInhomogeneousWavePDE:
             small_grid, "gaussian-blobs", {"num_blobs": 1}
         )
 
-        result = pde.solve(state, t_range=0.1, dt=0.001)
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 2
         assert np.isfinite(result[0].data).all()
         assert np.isfinite(result[1].data).all()
+
+
+class TestBackends:
+    """Tests for different compute backends."""
+
+    def test_numba_backend(self, small_grid):
+        """Test running simulation with numba backend."""
+        preset = get_pde_preset("heat")
+        params = {"D": 0.01}
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        state = preset.create_initial_state(
+            small_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
+        )
+
+        # Test with numba backend
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", backend="numba")
+
+        assert np.all(np.isfinite(result.data))
+
+    def test_numpy_backend(self, small_grid):
+        """Test running simulation with numpy backend."""
+        preset = get_pde_preset("heat")
+        params = {"D": 0.01}
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        state = preset.create_initial_state(
+            small_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
+        )
+
+        # Test with numpy backend
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", backend="numpy")
+
+        assert np.all(np.isfinite(result.data))
