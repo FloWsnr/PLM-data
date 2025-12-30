@@ -1,0 +1,103 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+PDE Simulation Dataset Generator - A modular Python framework for generating 2D PDE simulation trajectories using the `py-pde` library. Generates PNG frame sequences with JSON metadata for training vision-language models.
+
+## Commands
+
+```bash
+# Install dependencies
+uv sync
+
+# Run all tests
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_pdes/test_basic.py -v
+
+# Run single test
+pytest tests/test_pdes/test_basic.py::test_heat_metadata -v
+
+# List all available PDEs
+python -m pde_sim list
+python -m pde_sim list --category biology
+
+# Show PDE preset info
+python -m pde_sim info gray-scott
+
+# Run a simulation
+python -m pde_sim run configs/examples/gray_scott_spots.yaml
+python -m pde_sim run config.yaml --output-dir ./my_output --seed 42
+```
+
+## Architecture
+
+### PDE Registry Pattern
+All PDEs use the `@register_pde("name")` decorator for auto-registration. Retrieve with `pde_sim.pdes.get_pde_preset(name)`.
+
+### Base Class Hierarchy
+- **PDEPreset** (abstract): Base for all PDEs - defines `metadata`, `create_pde()`, `create_initial_state()`, `get_default_parameters()`, `validate_parameters()`
+- **ScalarPDEPreset**: Single-field systems (heat, wave, etc.)
+- **MultiFieldPDEPreset**: Multi-field systems (Gray-Scott u/v, FitzHugh-Nagumo, etc.)
+
+### Simulation Pipeline
+1. Load YAML config → `SimulationConfig` dataclass
+2. Get PDE preset from registry
+3. Create grid with boundary conditions
+4. Create PDE object with parameters
+5. Generate initial state via IC generator
+6. Run time-stepping (py-pde solver)
+7. Save frames (PNG) and metadata (JSON) via OutputManager
+
+### Key Directories
+- `pde_sim/core/` - Simulation infrastructure (config, runner, output)
+- `pde_sim/pdes/` - PDE presets organized by category (basic, biology, physics, fluids)
+- `pde_sim/initial_conditions/` - Initial condition generators
+- `pde_sim/boundaries/` - Boundary condition factory
+
+## Adding a New PDE
+
+1. Create file in appropriate category under `pde_sim/pdes/{category}/`
+2. Inherit from `ScalarPDEPreset` or `MultiFieldPDEPreset`
+3. Implement `metadata` property and `create_pde()` method
+4. Use `@register_pde("name")` decorator
+5. Import in `pde_sim/pdes/{category}/__init__.py`
+6. Add tests in `tests/test_pdes/test_{category}.py`
+
+Example:
+```python
+from pde_sim.pdes.base import ScalarPDEPreset, PDEMetadata, PDEParameter
+from pde_sim.pdes import register_pde
+
+@register_pde("my-pde")
+class MyPDEPreset(ScalarPDEPreset):
+    @property
+    def metadata(self) -> PDEMetadata:
+        return PDEMetadata(
+            name="My PDE",
+            equation="∂u/∂t = ...",
+            parameters=[PDEParameter("D", "diffusion", 0.01, 1.0, 0.1)],
+            field_names=["u"],
+        )
+
+    def create_pde(self, parameters: dict, grid):
+        # Return py-pde PDE instance
+        ...
+```
+
+## Configuration Format
+
+YAML configs include: `preset`, `parameters`, `init` (initial conditions), `solver` (euler/rk4), `timesteps`, `dt`, `resolution`, `bc` (boundary conditions), `output` settings.
+
+## Output Structure
+
+```
+output/{simulation-uuid}/
+├── frames/
+│   ├── 000000.png
+│   └── ...
+└── metadata.json
+```
