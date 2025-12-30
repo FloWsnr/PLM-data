@@ -213,6 +213,9 @@ def create_metadata(
             "domainScale": str(config.domain_size),
             "timesteppingScheme": config.solver.title(),
             "numSpecies": preset_metadata.num_fields,
+            "backend": config.backend,
+            "adaptive": config.adaptive,
+            "tolerance": config.tolerance if config.adaptive else None,
         },
         "simulation": {
             "totalFrames": len(frame_annotations),

@@ -48,6 +48,9 @@ class SimulationConfig:
     output: OutputConfig
     seed: int | None = None
     domain_size: float = 1.0  # Physical size of the domain
+    backend: str = "auto"  # Options: "auto", "numpy", "numba"
+    adaptive: bool = False  # Enable adaptive time-stepping
+    tolerance: float = 1e-4  # Error tolerance for adaptive stepping
 
 
 def load_config(path: Path | str) -> SimulationConfig:
@@ -100,6 +103,9 @@ def load_config(path: Path | str) -> SimulationConfig:
         output=output_config,
         seed=raw.get("seed"),
         domain_size=raw.get("domain_size", 1.0),
+        backend=raw.get("backend", "auto"),
+        adaptive=raw.get("adaptive", False),
+        tolerance=raw.get("tolerance", 1e-4),
     )
 
 
@@ -128,4 +134,7 @@ def config_to_dict(config: SimulationConfig) -> dict[str, Any]:
         },
         "seed": config.seed,
         "domain_size": config.domain_size,
+        "backend": config.backend,
+        "adaptive": config.adaptive,
+        "tolerance": config.tolerance,
     }

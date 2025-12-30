@@ -170,8 +170,8 @@ class TestGrayScottSimulation:
             "parameters": {"F": 0.04, "k": 0.06, "Du": 0.16, "Dv": 0.08},
             "init": {"type": "gaussian-blobs", "params": {"num_blobs": 2}},
             "solver": "euler",
-            "timesteps": 50,
-            "dt": 0.5,
+            "timesteps": 100,
+            "dt": 0.01,  # Reduced for CFL stability (was 0.5)
             "resolution": 32,
             "bc": {"x": "periodic", "y": "periodic"},
             "output": {
@@ -197,3 +197,200 @@ class TestGrayScottSimulation:
         assert metadata["preset"] == "gray-scott"
         assert metadata["parameters"]["numSpecies"] == 2
         assert metadata["visualization"]["whatToPlot"] == "v"
+
+
+class TestBackend:
+    """Tests for backend configuration."""
+
+    @pytest.mark.parametrize("backend", ["numpy", "numba", "auto"])
+    def test_backend_runs(self, tmp_path, backend):
+        """Test that different backends can be used."""
+        config_dict = {
+            "preset": "heat",
+            "parameters": {"D": 0.01},
+            "init": {"type": "random-uniform", "params": {}},
+            "solver": "euler",
+            "timesteps": 10,
+            "dt": 0.0001,
+            "resolution": 16,
+            "bc": {"x": "periodic", "y": "periodic"},
+            "output": {"path": str(tmp_path), "frames_per_save": 5},
+            "seed": 42,
+            "backend": backend,
+        }
+
+        import yaml
+        config_path = tmp_path / f"config_{backend}.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config = load_config(config_path)
+        runner = SimulationRunner(config, output_dir=tmp_path)
+
+        # Should not raise
+        metadata = runner.run(verbose=False)
+        assert metadata["parameters"]["backend"] == backend
+
+    def test_invalid_backend_raises(self, tmp_path):
+        """Test that invalid backend raises ValueError."""
+        config_dict = {
+            "preset": "heat",
+            "parameters": {"D": 0.01},
+            "init": {"type": "random-uniform", "params": {}},
+            "solver": "euler",
+            "timesteps": 10,
+            "dt": 0.0001,
+            "resolution": 16,
+            "bc": {"x": "periodic", "y": "periodic"},
+            "output": {"path": str(tmp_path), "frames_per_save": 5},
+            "seed": 42,
+            "backend": "invalid_backend",
+        }
+
+        import yaml
+        config_path = tmp_path / "config_invalid.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config = load_config(config_path)
+        with pytest.raises(ValueError, match="Invalid backend"):
+            SimulationRunner(config, output_dir=tmp_path)
+
+
+class TestAdaptiveTimeStepping:
+    """Tests for adaptive time-stepping."""
+
+    def test_adaptive_config_parsing(self, tmp_path):
+        """Test that adaptive and tolerance are parsed from config."""
+        config_dict = {
+            "preset": "heat",
+            "parameters": {"D": 0.01},
+            "init": {"type": "random-uniform", "params": {}},
+            "solver": "euler",
+            "timesteps": 10,
+            "dt": 0.0001,
+            "resolution": 16,
+            "bc": {"x": "periodic", "y": "periodic"},
+            "output": {"path": str(tmp_path), "frames_per_save": 5},
+            "seed": 42,
+            "adaptive": True,
+            "tolerance": 1e-5,
+        }
+
+        import yaml
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config = load_config(config_path)
+        assert config.adaptive is True
+        assert config.tolerance == 1e-5
+
+    def test_adaptive_simulation_runs(self, tmp_path):
+        """Test that adaptive time stepping works."""
+        config_dict = {
+            "preset": "heat",
+            "parameters": {"D": 0.01},
+            "init": {"type": "random-uniform", "params": {}},
+            "solver": "euler",
+            "timesteps": 20,
+            "dt": 0.0001,
+            "resolution": 16,
+            "bc": {"x": "periodic", "y": "periodic"},
+            "output": {"path": str(tmp_path), "frames_per_save": 10},
+            "seed": 42,
+            "adaptive": True,
+            "tolerance": 1e-4,
+        }
+
+        import yaml
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config = load_config(config_path)
+        runner = SimulationRunner(config, output_dir=tmp_path)
+
+        # Should not raise
+        metadata = runner.run(verbose=False)
+        assert metadata["parameters"]["adaptive"] is True
+        assert metadata["parameters"]["tolerance"] == 1e-4
+
+
+class TestNumericalStability:
+    """Tests for numerical stability checks."""
+
+    def test_stability_warning_for_large_dt(self, tmp_path):
+        """Test that stability warning is issued when dt exceeds CFL limit."""
+        import warnings
+
+        config_dict = {
+            "preset": "heat",
+            "parameters": {"D": 1.0},  # Large diffusion coefficient
+            "init": {"type": "random-uniform", "params": {}},
+            "solver": "euler",
+            "timesteps": 10,
+            "dt": 1.0,  # Very large dt - will violate CFL
+            "resolution": 16,
+            "domain_size": 1.0,
+            "bc": {"x": "periodic", "y": "periodic"},
+            "output": {"path": str(tmp_path), "frames_per_save": 5},
+            "seed": 42,
+        }
+
+        import yaml
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config = load_config(config_path)
+        runner = SimulationRunner(config, output_dir=tmp_path)
+
+        # Check that warning is raised during run
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            runner.run(verbose=False)
+            # Should have at least one RuntimeWarning about CFL
+            cfl_warnings = [
+                warning for warning in w
+                if issubclass(warning.category, RuntimeWarning)
+                and "CFL" in str(warning.message)
+            ]
+            assert len(cfl_warnings) > 0
+
+    def test_no_warning_for_stable_dt(self, tmp_path):
+        """Test that no stability warning is issued for stable dt."""
+        import warnings
+
+        config_dict = {
+            "preset": "heat",
+            "parameters": {"D": 0.01},  # Small diffusion coefficient
+            "init": {"type": "random-uniform", "params": {}},
+            "solver": "euler",
+            "timesteps": 10,
+            "dt": 0.0001,  # Small dt - within CFL limit
+            "resolution": 16,
+            "domain_size": 1.0,
+            "bc": {"x": "periodic", "y": "periodic"},
+            "output": {"path": str(tmp_path), "frames_per_save": 5},
+            "seed": 42,
+        }
+
+        import yaml
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config = load_config(config_path)
+        runner = SimulationRunner(config, output_dir=tmp_path)
+
+        # Check that no CFL warning is raised
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            runner.run(verbose=False)
+            cfl_warnings = [
+                warning for warning in w
+                if issubclass(warning.category, RuntimeWarning)
+                and "CFL" in str(warning.message)
+            ]
+            assert len(cfl_warnings) == 0

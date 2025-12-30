@@ -132,3 +132,105 @@ class TestInhomogeneousHeatPDE:
         )
 
         assert isinstance(pde, PDE)
+
+
+class TestSchrodingerPDE:
+    """Tests for the Schrodinger equation preset."""
+
+    def test_metadata(self):
+        """Test that metadata is correctly defined."""
+        preset = get_pde_preset("schrodinger")
+        meta = preset.metadata
+
+        assert meta.name == "schrodinger"
+        assert meta.category == "basic"
+        assert meta.num_fields == 1
+        assert "psi" in meta.field_names
+
+    def test_create_pde(self, small_grid):
+        """Test PDE creation."""
+        preset = get_pde_preset("schrodinger")
+        params = preset.get_default_parameters()
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        assert pde is not None
+
+    def test_create_initial_state_wave_packet(self, small_grid):
+        """Test wave packet initial condition."""
+        preset = get_pde_preset("schrodinger")
+        state = preset.create_initial_state(
+            small_grid, "wave-packet", {"kx": 5.0, "sigma": 0.1}
+        )
+
+        assert isinstance(state, ScalarField)
+        # Should be complex
+        assert np.iscomplexobj(state.data)
+        # Should be normalized (approximately)
+        norm = np.sum(np.abs(state.data) ** 2)
+        assert norm > 0
+
+    def test_registered_in_registry(self):
+        """Test that PDE is registered."""
+        assert "schrodinger" in list_presets()
+
+    def test_short_simulation(self, small_grid):
+        """Test running a short simulation."""
+        preset = get_pde_preset("schrodinger")
+        params = {"D": 0.1}
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        state = preset.create_initial_state(
+            small_grid, "wave-packet", {"kx": 2.0, "sigma": 0.15}
+        )
+
+        result = pde.solve(state, t_range=0.01, dt=0.0001)
+
+        assert result is not None
+        assert np.isfinite(result.data).all()
+
+
+class TestPlatePDE:
+    """Tests for the biharmonic plate equation preset."""
+
+    def test_metadata(self):
+        """Test that metadata is correctly defined."""
+        preset = get_pde_preset("plate")
+        meta = preset.metadata
+
+        assert meta.name == "plate"
+        assert meta.category == "basic"
+        assert meta.num_fields == 1
+        assert "u" in meta.field_names
+        # Should mention biharmonic/fourth-order
+        assert "biharmonic" in meta.description.lower() or "fourth" in meta.description.lower()
+
+    def test_create_pde(self, small_grid):
+        """Test PDE creation."""
+        preset = get_pde_preset("plate")
+        params = preset.get_default_parameters()
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        assert pde is not None
+
+    def test_registered_in_registry(self):
+        """Test that PDE is registered."""
+        assert "plate" in list_presets()
+
+    def test_short_simulation(self, small_grid):
+        """Test running a short simulation."""
+        preset = get_pde_preset("plate")
+        params = {"D": 0.001}  # Small coefficient for stability
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        state = preset.create_initial_state(
+            small_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
+        )
+
+        result = pde.solve(state, t_range=0.001, dt=0.00001)
+
+        assert result is not None
+        assert np.isfinite(result.data).all()
