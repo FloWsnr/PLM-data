@@ -3,6 +3,16 @@
 from .gray_scott import GrayScottPDE
 from .cahn_hilliard import CahnHilliardPDE, SwiftHohenbergPDE, BurgersPDE
 from .kuramoto_sivashinsky import KuramotoSivashinskyPDE, KdVPDE, GinzburgLandauPDE
+from .advanced import (
+    LorenzPDE,
+    SuperlatticePDE,
+    OscillatorsPDE,
+    PeronaMalikPDE,
+    NonlinearBeamsPDE,
+    TuringWavePDE,
+    AdvectingPatternsPDE,
+    GrowingDomainsPDE,
+)
 
 __all__ = [
     "GrayScottPDE",
@@ -12,4 +22,12 @@ __all__ = [
     "KuramotoSivashinskyPDE",
     "KdVPDE",
     "GinzburgLandauPDE",
+    "LorenzPDE",
+    "SuperlatticePDE",
+    "OscillatorsPDE",
+    "PeronaMalikPDE",
+    "NonlinearBeamsPDE",
+    "TuringWavePDE",
+    "AdvectingPatternsPDE",
+    "GrowingDomainsPDE",
 ]

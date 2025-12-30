@@ -5,7 +5,9 @@ from typing import Any
 import numpy as np
 from pde import PDE, CartesianGrid, ScalarField
 
-from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset
+from pde_sim.initial_conditions import create_initial_condition
+
+from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset, SolverType
 from .. import register_pde
 
 
@@ -113,8 +115,6 @@ class SchrodingerPDE(ScalarPDEPreset):
             return ScalarField(grid, psi_data, dtype=complex)
 
         # Fall back to parent implementation for standard IC types
-        from pde_sim.initial_conditions import create_initial_condition
-
         field = create_initial_condition(grid, ic_type, ic_params)
         # Convert to complex
         return ScalarField(grid, field.data.astype(complex), dtype=complex)
@@ -136,6 +136,11 @@ class PlatePDE(ScalarPDEPreset):
     This implementation uses the first-order (diffusive) form for simplicity.
     The bilaplacian creates smoothing patterns with fourth-order spatial derivatives.
     """
+
+    @property
+    def default_solver(self) -> SolverType:
+        """Plate equation is stiff due to 4th order derivatives."""
+        return "implicit"
 
     @property
     def metadata(self) -> PDEMetadata:

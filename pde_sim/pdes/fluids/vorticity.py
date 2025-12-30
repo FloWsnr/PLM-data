@@ -5,6 +5,8 @@ from typing import Any
 import numpy as np
 from pde import PDE, CartesianGrid, ScalarField
 
+from pde_sim.initial_conditions import create_initial_condition
+
 from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset
 from .. import register_pde
 
@@ -115,8 +117,6 @@ class VorticityPDE(ScalarPDEPreset):
             data = strength * np.exp(-r_sq / (2 * radius**2))
             return ScalarField(grid, data)
 
-        from pde_sim.initial_conditions import create_initial_condition
-
         return create_initial_condition(grid, ic_type, ic_params)
 
 
@@ -201,7 +201,5 @@ class ShallowWaterPDE(ScalarPDEPreset):
             r_sq = (x - x0) ** 2 + (y - y0) ** 2
             data = background + amplitude * np.exp(-r_sq / (2 * width**2))
             return ScalarField(grid, data)
-
-        from pde_sim.initial_conditions import create_initial_condition
 
         return create_initial_condition(grid, ic_type, ic_params)

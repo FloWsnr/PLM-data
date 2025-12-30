@@ -5,6 +5,8 @@ from typing import Any
 import numpy as np
 from pde import PDE, CartesianGrid, FieldCollection, ScalarField
 
+from pde_sim.initial_conditions import create_initial_condition
+
 from ..base import MultiFieldPDEPreset, ScalarPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
 
@@ -108,8 +110,6 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
     ) -> FieldCollection:
         """Create initial state - typically a localized perturbation."""
-        from pde_sim.initial_conditions import create_initial_condition
-
         if ic_type == "spiral-seed":
             return self._spiral_seed_init(grid, ic_params)
 

@@ -2,7 +2,10 @@
 
 from typing import Any
 
+import numpy as np
 from pde import PDE, CartesianGrid, FieldCollection, ScalarField
+
+from pde_sim.initial_conditions import create_initial_condition
 
 from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
@@ -136,9 +139,6 @@ class GrayScottPDE(MultiFieldPDEPreset):
 
         This creates the "seed" for pattern formation.
         """
-        from pde_sim.initial_conditions import create_initial_condition
-        import numpy as np
-
         # Check for per-field specifications
         if "u" in ic_params and isinstance(ic_params["u"], dict):
             # Use specified per-field ICs
@@ -178,8 +178,6 @@ class GrayScottPDE(MultiFieldPDEPreset):
         params: dict[str, Any],
     ) -> FieldCollection:
         """Create default Gray-Scott initialization with center perturbation."""
-        import numpy as np
-
         # Get domain info
         x_bounds = grid.axes_bounds[0]
         y_bounds = grid.axes_bounds[1]
@@ -232,8 +230,6 @@ class GrayScottPDE(MultiFieldPDEPreset):
         params: dict[str, Any],
     ) -> FieldCollection:
         """Create Gray-Scott init with Gaussian blob seeds."""
-        import numpy as np
-
         num_blobs = params.get("num_blobs", 5)
         width = params.get("width", 0.05)
 

@@ -4,6 +4,9 @@ import argparse
 import sys
 from pathlib import Path
 
+from pde_sim.core.simulation import run_from_config
+from pde_sim.pdes import get_pde_preset, get_presets_by_category
+
 
 def main():
     """Main CLI entry point."""
@@ -70,8 +73,6 @@ def main():
 
 def run_simulation(args):
     """Run a simulation from config."""
-    from .core.simulation import run_from_config
-
     if not args.config.exists():
         print(f"Error: Config file not found: {args.config}")
         sys.exit(1)
@@ -94,8 +95,6 @@ def run_simulation(args):
 
 def list_presets(args):
     """List all available PDE presets."""
-    from .pdes import get_presets_by_category, get_pde_preset
-
     print("Available PDE Presets")
     print("=" * 60)
 
@@ -116,8 +115,6 @@ def list_presets(args):
 
 def show_preset_info(args):
     """Show detailed info about a preset."""
-    from .pdes import get_pde_preset
-
     try:
         preset = get_pde_preset(args.preset)
     except ValueError as e:

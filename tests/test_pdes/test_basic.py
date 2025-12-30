@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from pde import PDE, ScalarField
+from pde import PDE, ScalarField, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
 from pde_sim.pdes.basic.heat import HeatPDE, InhomogeneousHeatPDE
@@ -133,6 +133,23 @@ class TestInhomogeneousHeatPDE:
 
         assert isinstance(pde, PDE)
 
+    def test_short_simulation(self, small_grid):
+        """Test running a short simulation."""
+        np.random.seed(42)
+        pde_preset = InhomogeneousHeatPDE()
+        params = {"D": 0.01, "source": 0.1}
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = pde_preset.create_pde(params, bc, small_grid)
+        state = pde_preset.create_initial_state(
+            small_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
+        )
+
+        result = pde.solve(state, t_range=0.01, dt=0.0001)
+
+        assert isinstance(result, ScalarField)
+        assert np.isfinite(result.data).all()
+
 
 class TestSchrodingerPDE:
     """Tests for the Schrodinger equation preset."""
@@ -234,3 +251,72 @@ class TestPlatePDE:
 
         assert result is not None
         assert np.isfinite(result.data).all()
+
+
+class TestInhomogeneousWavePDE:
+    """Tests for the inhomogeneous wave equation with damping."""
+
+    def test_registered(self):
+        """Test that inhomogeneous-wave is registered."""
+        assert "inhomogeneous-wave" in list_presets()
+
+    def test_metadata(self):
+        """Test that metadata is correctly defined."""
+        preset = get_pde_preset("inhomogeneous-wave")
+        meta = preset.metadata
+
+        assert meta.name == "inhomogeneous-wave"
+        assert meta.category == "basic"
+        assert meta.num_fields == 2
+        assert "u" in meta.field_names  # displacement
+        assert "v" in meta.field_names  # velocity
+
+    def test_get_default_parameters(self):
+        """Test default parameters retrieval."""
+        preset = get_pde_preset("inhomogeneous-wave")
+        params = preset.get_default_parameters()
+
+        assert "c" in params  # wave speed
+        assert "gamma" in params  # damping
+        assert "source" in params  # forcing
+
+    def test_create_pde(self, small_grid):
+        """Test PDE creation."""
+        preset = get_pde_preset("inhomogeneous-wave")
+        params = preset.get_default_parameters()
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        assert pde is not None
+
+    def test_create_initial_state(self, small_grid):
+        """Test initial state creation."""
+        preset = get_pde_preset("inhomogeneous-wave")
+        state = preset.create_initial_state(
+            small_grid, "gaussian-blobs", {"num_blobs": 1}
+        )
+
+        assert isinstance(state, FieldCollection)
+        assert len(state) == 2
+        assert state[0].label == "u"
+        assert state[1].label == "v"
+        # Velocity should start at zero
+        assert np.allclose(state[1].data, 0)
+
+    def test_short_simulation(self, small_grid):
+        """Test running a short simulation."""
+        preset = get_pde_preset("inhomogeneous-wave")
+        params = {"c": 1.0, "gamma": 0.1, "source": 0.0}
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        state = preset.create_initial_state(
+            small_grid, "gaussian-blobs", {"num_blobs": 1}
+        )
+
+        result = pde.solve(state, t_range=0.1, dt=0.001)
+
+        assert isinstance(result, FieldCollection)
+        assert len(result) == 2
+        assert np.isfinite(result[0].data).all()
+        assert np.isfinite(result[1].data).all()

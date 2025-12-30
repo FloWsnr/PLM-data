@@ -174,7 +174,9 @@ class TestCreateMetadata:
         assert "generatorVersion" in metadata
 
         # Check equations
-        assert "laplace(u)" in metadata["equations"]["reaction"]
+        assert metadata["equations"]["u"] == "laplace(u)"
+        assert metadata["boundaryConditions"] == {"x": "periodic", "y": "periodic"}
+        assert metadata["initialConditions"] == "random"
 
         # Check parameters
         assert metadata["parameters"]["kinetic"]["D"] == 1.0
@@ -187,3 +189,84 @@ class TestCreateMetadata:
 
         # Check frame annotations
         assert len(metadata["frameAnnotations"]) == 2
+
+        # Check description field exists (may be None for non-existent presets)
+        assert "description" in metadata
+
+    def test_create_metadata_with_description(self):
+        """Test that description is loaded from markdown files for real presets."""
+        preset_meta = PDEMetadata(
+            name="gray-scott",
+            category="physics",
+            description="Gray-Scott model",
+            equations={"u": "D_u*laplace(u) - u*v**2 + F*(1-u)", "v": "D_v*laplace(v) + u*v**2 - (F+k)*v"},
+            parameters=[PDEParameter("D_u", 0.2, "U diffusion"), PDEParameter("D_v", 0.1, "V diffusion")],
+            num_fields=2,
+            field_names=["u", "v"],
+        )
+
+        config = SimulationConfig(
+            preset="gray-scott",
+            parameters={"D_u": 0.2, "D_v": 0.1, "F": 0.04, "k": 0.06},
+            init=InitialConditionConfig(type="random", params={}),
+            solver="euler",
+            timesteps=100,
+            dt=0.01,
+            resolution=64,
+            bc=BoundaryConfig(x="periodic", y="periodic"),
+            output=OutputConfig(path=Path("./output"), colormap="turbo"),
+            seed=42,
+            domain_size=1.0,
+        )
+
+        metadata = create_metadata(
+            sim_id="test-gray-scott",
+            preset_name="gray-scott",
+            preset_metadata=preset_meta,
+            config=config,
+            total_time=1.0,
+            frame_annotations=[],
+        )
+
+        # Description should be loaded from gray-scott.md
+        assert metadata["description"] is not None
+        assert "Gray-Scott" in metadata["description"]
+        assert "## Mathematical Formulation" in metadata["description"]
+
+    def test_create_metadata_description_not_found(self):
+        """Test that description is None for presets without markdown files."""
+        preset_meta = PDEMetadata(
+            name="nonexistent-pde",
+            category="test",
+            description="Nonexistent PDE",
+            equations={"u": "laplace(u)"},
+            parameters=[],
+            num_fields=1,
+            field_names=["u"],
+        )
+
+        config = SimulationConfig(
+            preset="nonexistent-pde",
+            parameters={},
+            init=InitialConditionConfig(type="random", params={}),
+            solver="euler",
+            timesteps=100,
+            dt=0.01,
+            resolution=64,
+            bc=BoundaryConfig(x="periodic", y="periodic"),
+            output=OutputConfig(path=Path("./output"), colormap="turbo"),
+            seed=42,
+            domain_size=1.0,
+        )
+
+        metadata = create_metadata(
+            sim_id="test-nonexistent",
+            preset_name="nonexistent-pde",
+            preset_metadata=preset_meta,
+            config=config,
+            total_time=1.0,
+            frame_annotations=[],
+        )
+
+        # Description should be None since no markdown file exists
+        assert metadata["description"] is None

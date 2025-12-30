@@ -5,6 +5,8 @@ from typing import Any
 import numpy as np
 from pde import PDE, CartesianGrid, FieldCollection, ScalarField
 
+from pde_sim.initial_conditions import create_initial_condition
+
 from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
 
@@ -72,8 +74,6 @@ class WavePDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
     ) -> FieldCollection:
         """Create initial state for wave equation."""
-        from pde_sim.initial_conditions import create_initial_condition
-
         # u gets the specified initial condition
         u = create_initial_condition(grid, ic_type, ic_params)
         u.label = "u"
@@ -166,5 +166,112 @@ class AdvectionPDE(MultiFieldPDEPreset):
         ic_type: str,
         ic_params: dict[str, Any],
     ) -> ScalarField:
-        from pde_sim.initial_conditions import create_initial_condition
         return create_initial_condition(grid, ic_type, ic_params)
+
+
+@register_pde("inhomogeneous-wave")
+class InhomogeneousWavePDE(MultiFieldPDEPreset):
+    """Inhomogeneous wave equation with damping and source.
+
+    Wave equation with additional terms:
+
+        d²u/dt² = c² * laplace(u) - gamma * du/dt + source
+
+    Converted to first-order system:
+        du/dt = v
+        dv/dt = c² * laplace(u) - gamma * v + source
+
+    where:
+        - u is displacement
+        - v is velocity
+        - c is wave speed
+        - gamma is damping coefficient
+        - source is a forcing term
+    """
+
+    @property
+    def metadata(self) -> PDEMetadata:
+        return PDEMetadata(
+            name="inhomogeneous-wave",
+            category="basic",
+            description="Wave equation with damping and source",
+            equations={
+                "u": "v",
+                "v": "c**2 * laplace(u) - gamma * v + source",
+            },
+            parameters=[
+                PDEParameter(
+                    name="c",
+                    default=1.0,
+                    description="Wave speed",
+                    min_value=0.01,
+                    max_value=10.0,
+                ),
+                PDEParameter(
+                    name="gamma",
+                    default=0.1,
+                    description="Damping coefficient",
+                    min_value=0.0,
+                    max_value=10.0,
+                ),
+                PDEParameter(
+                    name="source",
+                    default=0.0,
+                    description="Constant forcing term",
+                    min_value=-10.0,
+                    max_value=10.0,
+                ),
+            ],
+            num_fields=2,
+            field_names=["u", "v"],
+            reference="Damped wave equation",
+        )
+
+    def create_pde(
+        self,
+        parameters: dict[str, float],
+        bc: dict[str, Any],
+        grid: CartesianGrid,
+    ) -> PDE:
+        c = parameters.get("c", 1.0)
+        gamma = parameters.get("gamma", 0.1)
+        source = parameters.get("source", 0.0)
+        c_sq = c * c
+
+        # Build v equation
+        terms = [f"{c_sq} * laplace(u)"]
+        if gamma > 0:
+            terms.append(f"- {gamma} * v")
+        if source != 0:
+            if source > 0:
+                terms.append(f"+ {source}")
+            else:
+                terms.append(f"- {abs(source)}")
+
+        v_rhs = " ".join(terms)
+
+        return PDE(
+            rhs={
+                "u": "v",
+                "v": v_rhs,
+            },
+            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+        )
+
+    def create_initial_state(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> FieldCollection:
+        """Create initial state for inhomogeneous wave equation."""
+        # u gets the specified initial condition
+        u = create_initial_condition(grid, ic_type, ic_params)
+        u.label = "u"
+
+        # v (velocity) starts at zero by default
+        v_data = np.zeros(grid.shape)
+        v = ScalarField(grid, v_data)
+        v.label = "v"
+
+        return FieldCollection([u, v])

@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+import yaml
 from pde import CartesianGrid
 
 
@@ -73,8 +74,6 @@ def sample_config_dict():
 @pytest.fixture
 def sample_config_file(tmp_path, sample_config_dict):
     """Create a sample config YAML file."""
-    import yaml
-
     config_path = tmp_path / "test_config.yaml"
     with open(config_path, "w") as f:
         yaml.dump(sample_config_dict, f)

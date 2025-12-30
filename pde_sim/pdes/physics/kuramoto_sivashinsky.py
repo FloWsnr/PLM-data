@@ -5,7 +5,9 @@ from typing import Any
 import numpy as np
 from pde import PDE, CartesianGrid, ScalarField
 
-from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset
+from pde_sim.initial_conditions import create_initial_condition
+
+from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset, SolverType
 from .. import register_pde
 
 
@@ -32,6 +34,11 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
 
     Reference: Kuramoto (1978), Sivashinsky (1977)
     """
+
+    @property
+    def default_solver(self) -> SolverType:
+        """Kuramoto-Sivashinsky is stiff due to 4th order derivatives."""
+        return "implicit"
 
     @property
     def metadata(self) -> PDEMetadata:
@@ -95,8 +102,6 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
             return ScalarField(grid, data)
 
         # Fall back to parent implementation
-        from pde_sim.initial_conditions import create_initial_condition
-
         return create_initial_condition(grid, ic_type, ic_params)
 
 
@@ -123,6 +128,11 @@ class KdVPDE(ScalarPDEPreset):
     Note: This is a 1D equation extended to 2D. For pure 1D behavior,
     use initial conditions that vary only in x.
     """
+
+    @property
+    def default_solver(self) -> SolverType:
+        """KdV is stiff due to 3rd order dispersive term."""
+        return "implicit"
 
     @property
     def metadata(self) -> PDEMetadata:
@@ -212,8 +222,6 @@ class KdVPDE(ScalarPDEPreset):
 
             return ScalarField(grid, data)
 
-        from pde_sim.initial_conditions import create_initial_condition
-
         return create_initial_condition(grid, ic_type, ic_params)
 
 
@@ -297,8 +305,6 @@ class GinzburgLandauPDE(ScalarPDEPreset):
             data = real_part + 1j * imag_part
 
             return ScalarField(grid, data, dtype=complex)
-
-        from pde_sim.initial_conditions import create_initial_condition
 
         field = create_initial_condition(grid, ic_type, ic_params)
         return ScalarField(grid, field.data.astype(complex), dtype=complex)

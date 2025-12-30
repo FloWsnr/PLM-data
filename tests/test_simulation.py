@@ -1,8 +1,11 @@
 """Tests for simulation runner."""
 
 import json
+import warnings
+
 import numpy as np
 import pytest
+import yaml
 from pathlib import Path
 
 from pde_sim.core.config import load_config, SimulationConfig
@@ -54,7 +57,6 @@ class TestSimulationRunner:
             "seed": 42,
         }
 
-        import yaml
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_dict, f)
@@ -94,7 +96,6 @@ class TestSimulationRunner:
                 "seed": 42,
             }
 
-            import yaml
             config_path = tmp_path / f"config_{solver}.yaml"
             with open(config_path, "w") as f:
                 yaml.dump(config_dict, f)
@@ -125,7 +126,6 @@ class TestRunFromConfig:
             "seed": 123,
         }
 
-        import yaml
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_dict, f)
@@ -150,7 +150,6 @@ class TestRunFromConfig:
             "seed": 42,
         }
 
-        import yaml
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_dict, f)
@@ -183,7 +182,6 @@ class TestGrayScottSimulation:
             "domain_size": 2.5,
         }
 
-        import yaml
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_dict, f)
@@ -219,7 +217,6 @@ class TestBackend:
             "backend": backend,
         }
 
-        import yaml
         config_path = tmp_path / f"config_{backend}.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_dict, f)
@@ -247,7 +244,6 @@ class TestBackend:
             "backend": "invalid_backend",
         }
 
-        import yaml
         config_path = tmp_path / "config_invalid.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_dict, f)
@@ -277,7 +273,6 @@ class TestAdaptiveTimeStepping:
             "tolerance": 1e-5,
         }
 
-        import yaml
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_dict, f)
@@ -303,7 +298,6 @@ class TestAdaptiveTimeStepping:
             "tolerance": 1e-4,
         }
 
-        import yaml
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_dict, f)
@@ -322,7 +316,6 @@ class TestNumericalStability:
 
     def test_stability_warning_for_large_dt(self, tmp_path):
         """Test that stability warning is issued when dt exceeds CFL limit."""
-        import warnings
 
         config_dict = {
             "preset": "heat",
@@ -338,7 +331,6 @@ class TestNumericalStability:
             "seed": 42,
         }
 
-        import yaml
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_dict, f)
@@ -360,7 +352,6 @@ class TestNumericalStability:
 
     def test_no_warning_for_stable_dt(self, tmp_path):
         """Test that no stability warning is issued for stable dt."""
-        import warnings
 
         config_dict = {
             "preset": "heat",
@@ -376,7 +367,6 @@ class TestNumericalStability:
             "seed": 42,
         }
 
-        import yaml
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_dict, f)

@@ -8,7 +8,7 @@ from typing import Any
 import numpy as np
 from pde import CartesianGrid, MemoryStorage
 
-from .config import SimulationConfig
+from .config import SimulationConfig, load_config
 from .output import OutputManager, create_metadata
 from ..boundaries import create_grid_with_bc
 from ..pdes import get_pde_preset
@@ -223,8 +223,6 @@ def run_from_config(
     Returns:
         Simulation metadata dictionary.
     """
-    from .config import load_config
-
     config = load_config(config_path)
 
     # Override seed if provided

@@ -4,7 +4,7 @@ from typing import Any
 
 from pde import PDE, CartesianGrid, ScalarField
 
-from ..base import ScalarPDEPreset, PDEMetadata, PDEParameter
+from ..base import ScalarPDEPreset, PDEMetadata, PDEParameter, SolverType
 from .. import register_pde
 
 
@@ -23,6 +23,11 @@ class CahnHilliardPDE(ScalarPDEPreset):
 
     The equation conserves the total amount of u.
     """
+
+    @property
+    def default_solver(self) -> SolverType:
+        """Cahn-Hilliard is stiff due to 4th order derivatives."""
+        return "implicit"
 
     @property
     def metadata(self) -> PDEMetadata:
@@ -82,6 +87,11 @@ class SwiftHohenbergPDE(ScalarPDEPreset):
         - k is the critical wavenumber
         - g₂, g₃ are nonlinear coefficients
     """
+
+    @property
+    def default_solver(self) -> SolverType:
+        """Swift-Hohenberg is stiff due to 4th order derivatives."""
+        return "implicit"
 
     @property
     def metadata(self) -> PDEMetadata:
