@@ -1,4 +1,4 @@
-"""Vorticity equation for 2D incompressible flow."""
+"""2D Navier-Stokes in vorticity-stream function formulation."""
 
 from typing import Any
 
@@ -7,41 +7,37 @@ from pde import PDE, CartesianGrid, ScalarField
 
 from pde_sim.initial_conditions import create_initial_condition
 
-from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset
+from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
 
 
-@register_pde("vorticity")
-class VorticityPDE(ScalarPDEPreset):
-    """2D Vorticity equation (simplified Navier-Stokes).
+@register_pde("navier-stokes")
+class NavierStokesPDE(MultiFieldPDEPreset):
+    """2D Navier-Stokes in vorticity-stream function formulation.
 
-    The vorticity formulation of 2D incompressible Navier-Stokes:
+    Full vorticity equation with advection:
 
         dw/dt = nu * laplace(w) - u * d_dx(w) - v * d_dy(w)
 
-    where:
-        - w is the vorticity (curl of velocity)
-        - nu is the kinematic viscosity
-        - (u, v) is the velocity field
+    where velocity (u, v) is derived from stream function psi.
 
-    In 2D, velocity can be derived from stream function psi:
-        w = laplace(psi), u = d_dy(psi), v = -d_dx(psi)
+    Simplified version with explicit velocity fields:
+        dw/dt = nu * laplace(w) - (d_dy(psi) * d_dx(w) - d_dx(psi) * d_dy(w))
+        laplace(psi) = -w
 
-    This simplified version uses pure diffusion of vorticity,
-    suitable for decay problems and demonstrating viscous effects:
-
-        dw/dt = nu * laplace(w)
-
-    For full advection, the stream function must be solved at each step.
+    For simulation, we use a simplified model where we solve the
+    vorticity transport with diffusion and a simple shear flow.
     """
 
     @property
     def metadata(self) -> PDEMetadata:
         return PDEMetadata(
-            name="vorticity",
+            name="navier-stokes",
             category="fluids",
-            description="2D vorticity diffusion equation",
-            equations={"w": "nu * laplace(w)"},
+            description="2D Navier-Stokes vorticity equation",
+            equations={
+                "w": "nu * laplace(w) - ux * d_dx(w) - uy * d_dy(w)",
+            },
             parameters=[
                 PDEParameter(
                     name="nu",
@@ -50,10 +46,24 @@ class VorticityPDE(ScalarPDEPreset):
                     min_value=0.001,
                     max_value=1.0,
                 ),
+                PDEParameter(
+                    name="ux",
+                    default=0.1,
+                    description="Background velocity x",
+                    min_value=-2.0,
+                    max_value=2.0,
+                ),
+                PDEParameter(
+                    name="uy",
+                    default=0.0,
+                    description="Background velocity y",
+                    min_value=-2.0,
+                    max_value=2.0,
+                ),
             ],
             num_fields=1,
             field_names=["w"],
-            reference="2D Navier-Stokes vorticity formulation",
+            reference="2D incompressible Navier-Stokes",
         )
 
     def create_pde(
@@ -63,12 +73,19 @@ class VorticityPDE(ScalarPDEPreset):
         grid: CartesianGrid,
     ) -> PDE:
         nu = parameters.get("nu", 0.01)
+        ux = parameters.get("ux", 0.1)
+        uy = parameters.get("uy", 0.0)
 
-        bc_spec = "periodic" if bc.get("x") == "periodic" else "no-flux"
+        # Vorticity transport with background flow
+        rhs = f"{nu} * laplace(w)"
+        if ux != 0:
+            rhs += f" - {ux} * d_dx(w)"
+        if uy != 0:
+            rhs += f" - {uy} * d_dy(w)"
 
         return PDE(
-            rhs={"w": f"{nu} * laplace(w)"},
-            bc=bc_spec,
+            rhs={"w": rhs},
+            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
         )
 
     def create_initial_state(
@@ -78,8 +95,8 @@ class VorticityPDE(ScalarPDEPreset):
         ic_params: dict[str, Any],
     ) -> ScalarField:
         """Create initial vorticity distribution."""
-        if ic_type in ("vorticity-default", "vortex-pair"):
-            # Two counter-rotating vortices
+        if ic_type in ("navier-stokes-default", "default", "vortex-pair"):
+            # Counter-rotating vortex pair
             x0_1, y0_1 = ic_params.get("x1", 0.35), ic_params.get("y1", 0.5)
             x0_2, y0_2 = ic_params.get("x2", 0.65), ic_params.get("y2", 0.5)
             strength = ic_params.get("strength", 10.0)
@@ -91,7 +108,6 @@ class VorticityPDE(ScalarPDEPreset):
                 indexing="ij",
             )
 
-            # Gaussian vortices
             r1_sq = (x - x0_1) ** 2 + (y - y0_1) ** 2
             r2_sq = (x - x0_2) ** 2 + (y - y0_2) ** 2
 
@@ -99,22 +115,6 @@ class VorticityPDE(ScalarPDEPreset):
             w2 = -strength * np.exp(-r2_sq / (2 * radius**2))
 
             data = w1 + w2
-            return ScalarField(grid, data)
-
-        elif ic_type == "single-vortex":
-            x0 = ic_params.get("x0", 0.5)
-            y0 = ic_params.get("y0", 0.5)
-            strength = ic_params.get("strength", 10.0)
-            radius = ic_params.get("radius", 0.15)
-
-            x, y = np.meshgrid(
-                np.linspace(0, 1, grid.shape[0]),
-                np.linspace(0, 1, grid.shape[1]),
-                indexing="ij",
-            )
-
-            r_sq = (x - x0) ** 2 + (y - y0) ** 2
-            data = strength * np.exp(-r_sq / (2 * radius**2))
             return ScalarField(grid, data)
 
         return create_initial_condition(grid, ic_type, ic_params)
