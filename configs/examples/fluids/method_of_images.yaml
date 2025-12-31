@@ -14,6 +14,7 @@ init:
     background: 0.0
 
 solver: euler
+backend: numba
 timesteps: 10000
 dt: 0.0050
 resolution: 128

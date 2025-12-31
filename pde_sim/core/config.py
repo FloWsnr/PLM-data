@@ -103,7 +103,7 @@ def load_config(path: Path | str) -> SimulationConfig:
         output=output_config,
         seed=raw.get("seed"),
         domain_size=raw.get("domain_size", 1.0),
-        backend=raw.get("backend", "auto"),
+        backend=raw.get("backend", "numba"),
         adaptive=raw.get("adaptive", False),
         tolerance=raw.get("tolerance", 1e-4),
     )

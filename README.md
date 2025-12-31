@@ -41,7 +41,7 @@ python -m pde_sim info gray-scott
 ### Run a Simulation
 
 ```bash
-python -m pde_sim run configs/examples/gray_scott_spots.yaml
+python -m pde_sim run configs/examples/physics/gray_scott.yaml
 ```
 
 ### Run with Custom Output Directory

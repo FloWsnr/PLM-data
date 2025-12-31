@@ -12,6 +12,7 @@ init:
     std: 0.05
 
 solver: euler
+backend: numba
 timesteps: 1666
 dt: 0.03
 resolution: 128

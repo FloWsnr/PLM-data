@@ -13,6 +13,7 @@ init:
     background: 0.0
 
 solver: euler
+backend: numba
 timesteps: 20000
 dt: 0.000050
 resolution: 64
