@@ -55,8 +55,17 @@ All PDEs use the `@register_pde("name")` decorator for auto-registration. Retrie
 ### Key Directories
 - `pde_sim/core/` - Simulation infrastructure (config, runner, output)
 - `pde_sim/pdes/` - PDE presets organized by category (basic, biology, physics, fluids)
+- `pde_sim/descriptions/` - Markdown description files for each PDE (see below)
 - `pde_sim/initial_conditions/` - Initial condition generators
 - `pde_sim/boundaries/` - Boundary condition factory
+
+### PDE Descriptions
+The `pde_sim/descriptions/` folder contains detailed markdown files for each PDE preset. These files are:
+- Named to match the preset name (e.g., `gray-scott.md` for the `gray-scott` preset)
+- Automatically loaded and included in the output `metadata.json`
+- Contain mathematical formulation, physical background, parameter explanations, and references
+
+When adding a new PDE, create a corresponding `.md` file in `pde_sim/descriptions/` with the same name as the preset.
 
 ## Adding a New PDE
 
@@ -65,7 +74,8 @@ All PDEs use the `@register_pde("name")` decorator for auto-registration. Retrie
 3. Implement `metadata` property and `create_pde()` method
 4. Use `@register_pde("name")` decorator
 5. Import in `pde_sim/pdes/{category}/__init__.py`
-6. Add tests in `tests/test_pdes/test_{category}.py`
+6. Create description file in `pde_sim/descriptions/{name}.md`
+7. Add tests in `tests/test_pdes/test_{category}.py`
 
 Example:
 ```python
@@ -103,5 +113,5 @@ output/{simulation-uuid}/
 ├── frames/
 │   ├── 000000.png
 │   └── ...
-└── metadata.json
+└── metadata.json  # Contains PDE description from descriptions/*.md
 ```
