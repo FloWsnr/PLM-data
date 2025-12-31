@@ -114,7 +114,8 @@ class SimulationRunner:
             print(f"  Final time: {self.config.t_end}, dt: {self.config.dt}")
             print(f"  Solver: {self.config.solver}")
             print(f"  Backend: {self.config.backend}")
-            if self.config.adaptive:
+            # Only show adaptive info for solvers that support it
+            if self._get_solver_name() != "implicit" and self.config.adaptive:
                 print(f"  Adaptive: True (tolerance: {self.config.tolerance})")
             print(f"  Output: {self.output_manager.output_dir}")
 
@@ -129,16 +130,23 @@ class SimulationRunner:
         # interrupts parameter determines the interval for saving
         tracker = storage.tracker(interrupts=save_interval)
 
-        result = self.pde.solve(
-            self.state,
-            t_range=self.config.t_end,
-            dt=self.config.dt,
-            solver=self._get_solver_name(),
-            tracker=tracker if not verbose else ["progress", tracker],
-            backend=self.config.backend,
-            adaptive=self.config.adaptive,
-            tolerance=self.config.tolerance,
-        )
+        # Build solver kwargs - only explicit solvers support adaptive stepping
+        solver_name = self._get_solver_name()
+        solve_kwargs = {
+            "t_range": self.config.t_end,
+            "dt": self.config.dt,
+            "solver": solver_name,
+            "tracker": tracker if not verbose else ["progress", tracker],
+            "backend": self.config.backend,
+        }
+
+        # Only pass adaptive/tolerance for solvers that support it
+        # (implicit solver does not support adaptive stepping)
+        if solver_name != "implicit":
+            solve_kwargs["adaptive"] = self.config.adaptive
+            solve_kwargs["tolerance"] = self.config.tolerance
+
+        result = self.pde.solve(self.state, **solve_kwargs)
 
         # Save frames from storage
         if verbose:
