@@ -603,3 +603,181 @@ class TestTuringConditionsPDE:
         assert len(result) == 2
         assert np.isfinite(result[0].data).all()
         assert np.isfinite(result[1].data).all()
+
+
+class TestSIRModelPDE:
+    """Tests for SIR epidemiological model."""
+
+    def test_registered(self):
+        """Test that sir is registered."""
+        assert "sir" in list_presets()
+
+    def test_metadata(self):
+        """Test metadata."""
+        preset = get_pde_preset("sir")
+        meta = preset.metadata
+
+        assert meta.name == "sir"
+        assert meta.category == "biology"
+        assert meta.num_fields == 3
+        assert set(meta.field_names) == {"s", "i", "r"}
+
+    def test_get_default_parameters(self):
+        """Test default parameters."""
+        preset = get_pde_preset("sir")
+        params = preset.get_default_parameters()
+
+        assert "beta" in params
+        assert "gamma" in params
+        assert "D" in params
+        assert params["beta"] == 2.0
+        assert params["gamma"] == 0.1
+        assert params["D"] == 0.1
+
+    def test_create_pde(self, small_grid):
+        """Test PDE creation."""
+        preset = get_pde_preset("sir")
+        params = preset.get_default_parameters()
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        assert pde is not None
+
+    def test_create_initial_state_default(self, small_grid):
+        """Test creating default initial state with localized infection."""
+        preset = get_pde_preset("sir")
+        state = preset.create_initial_state(
+            small_grid, "default", {"location": "corner", "seed": 42}
+        )
+
+        assert isinstance(state, FieldCollection)
+        assert len(state) == 3
+        assert state[0].label == "s"
+        assert state[1].label == "i"
+        assert state[2].label == "r"
+        # Most of population should be susceptible
+        assert np.mean(state[0].data) > 0.9
+        # Some infected in corner
+        assert np.max(state[1].data) > 0
+
+    def test_create_initial_state_random(self, small_grid):
+        """Test creating random infection initial state."""
+        preset = get_pde_preset("sir")
+        state = preset.create_initial_state(
+            small_grid, "random", {"infection_fraction": 0.1, "seed": 42}
+        )
+
+        assert isinstance(state, FieldCollection)
+        assert len(state) == 3
+        # Should have roughly 10% infected
+        infected_fraction = np.mean(state[1].data > 0)
+        assert infected_fraction > 0.05
+
+    def test_short_simulation(self, small_grid):
+        """Test running a short simulation."""
+        preset = get_pde_preset("sir")
+        params = {"beta": 2.0, "gamma": 0.1, "D": 0.1}
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        state = preset.create_initial_state(
+            small_grid, "default", {"location": "corner", "seed": 42}
+        )
+
+        result = pde.solve(state, t_range=0.1, dt=0.01, solver="euler")
+
+        assert isinstance(result, FieldCollection)
+        assert len(result) == 3
+        assert np.isfinite(result[0].data).all()
+        assert np.isfinite(result[1].data).all()
+        assert np.isfinite(result[2].data).all()
+
+
+class TestStandardAllenCahnPDE:
+    """Tests for standard Allen-Cahn with symmetric double-well."""
+
+    def test_registered(self):
+        """Test that allen-cahn-standard is registered."""
+        assert "allen-cahn-standard" in list_presets()
+
+    def test_metadata(self):
+        """Test metadata."""
+        preset = get_pde_preset("allen-cahn-standard")
+        meta = preset.metadata
+
+        assert meta.name == "allen-cahn-standard"
+        assert meta.category == "biology"
+        assert meta.num_fields == 1
+        assert "c" in meta.field_names
+
+    def test_get_default_parameters(self):
+        """Test default parameters."""
+        preset = get_pde_preset("allen-cahn-standard")
+        params = preset.get_default_parameters()
+
+        assert "gamma" in params
+        assert "mobility" in params
+        assert params["gamma"] == 1.0
+        assert params["mobility"] == 1.0
+
+    def test_create_pde(self, small_grid):
+        """Test PDE creation."""
+        preset = get_pde_preset("allen-cahn-standard")
+        params = preset.get_default_parameters()
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        assert pde is not None
+
+    def test_create_initial_state_default(self, small_grid):
+        """Test creating default initial state (random noise)."""
+        preset = get_pde_preset("allen-cahn-standard")
+        state = preset.create_initial_state(
+            small_grid, "default", {"amplitude": 0.1, "seed": 42}
+        )
+
+        assert isinstance(state, ScalarField)
+        assert np.isfinite(state.data).all()
+        # Should be small amplitude noise around 0
+        assert np.abs(np.mean(state.data)) < 0.5
+
+    def test_create_initial_state_step(self, small_grid):
+        """Test creating step function initial state."""
+        preset = get_pde_preset("allen-cahn-standard")
+        state = preset.create_initial_state(small_grid, "step", {})
+
+        assert isinstance(state, ScalarField)
+        assert np.isfinite(state.data).all()
+        # Should have -1 on left, +1 on right
+        assert np.min(state.data) == -1.0
+        assert np.max(state.data) == 1.0
+
+    def test_create_initial_state_tanh(self, small_grid):
+        """Test creating tanh profile initial state."""
+        preset = get_pde_preset("allen-cahn-standard")
+        state = preset.create_initial_state(small_grid, "tanh", {"gamma": 1.0})
+
+        assert isinstance(state, ScalarField)
+        assert np.isfinite(state.data).all()
+        # Should have smooth transition with negative values on left, positive on right
+        # Note: on a [0,1] domain the tanh doesn't reach ±1, but should show transition
+        assert np.min(state.data) < 0
+        assert np.max(state.data) > 0
+        # Mean should be close to 0 (symmetric around center)
+        assert np.abs(np.mean(state.data)) < 0.1
+
+    def test_short_simulation(self, small_grid):
+        """Test running a short simulation."""
+        preset = get_pde_preset("allen-cahn-standard")
+        params = {"gamma": 1.0, "mobility": 1.0}
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        state = preset.create_initial_state(
+            small_grid, "default", {"amplitude": 0.1, "seed": 42}
+        )
+
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
+
+        assert isinstance(result, ScalarField)
+        assert np.isfinite(result.data).all()

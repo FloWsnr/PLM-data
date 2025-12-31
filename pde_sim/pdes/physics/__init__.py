@@ -3,6 +3,7 @@
 from .gray_scott import GrayScottPDE
 from .cahn_hilliard import CahnHilliardPDE, SwiftHohenbergPDE, BurgersPDE
 from .kuramoto_sivashinsky import KuramotoSivashinskyPDE, KdVPDE, GinzburgLandauPDE
+from .kpz import KPZInterfacePDE
 from .advanced import (
     LorenzPDE,
     SuperlatticePDE,
@@ -22,6 +23,7 @@ __all__ = [
     "KuramotoSivashinskyPDE",
     "KdVPDE",
     "GinzburgLandauPDE",
+    "KPZInterfacePDE",
     "LorenzPDE",
     "SuperlatticePDE",
     "OscillatorsPDE",
