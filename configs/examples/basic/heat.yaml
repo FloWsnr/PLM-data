@@ -1,9 +1,6 @@
-# Heat equation - thermal diffusion
 preset: heat
-
 parameters:
-  D: 1.0  # Diffusion coefficient
-
+  D: 1.0
 init:
   type: gaussian-blobs
   params:
@@ -11,22 +8,19 @@ init:
     amplitude: 1.0
     width: 0.1
     background: 0.0
-
 solver: euler
 backend: numba
-timesteps: 20000
-dt: 0.000050
+adaptive: true
+dt: 5.0e-05
 resolution: 64
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 200
   colormap: turbo
   field_to_plot: T
-
 seed: 42
 domain_size: 1.0
+t_end: 1.0

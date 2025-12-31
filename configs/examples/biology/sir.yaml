@@ -1,11 +1,8 @@
-# SIR epidemiological model - spatial disease spread
 preset: sir
-
 parameters:
-  beta: 2.0   # Infection rate
-  gamma: 0.1  # Recovery rate
-  D: 0.1      # Spatial diffusion
-
+  beta: 2.0
+  gamma: 0.1
+  D: 0.1
 init:
   type: gaussian-blobs
   params:
@@ -13,22 +10,19 @@ init:
     amplitude: 0.1
     width: 0.05
     background: 0.0
-
 solver: euler
 backend: numba
-timesteps: 5000
+adaptive: true
 dt: 0.01
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 50
   colormap: Reds
   field_to_plot: i
-
 seed: 42
 domain_size: 10.0
+t_end: 50.0

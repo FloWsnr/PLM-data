@@ -1,11 +1,8 @@
-# Advection-diffusion equation - transport with diffusion
 preset: advection
-
 parameters:
-  D: 0.01   # Diffusion coefficient
-  vx: 1.0   # Velocity in x-direction
-  vy: 0.5   # Velocity in y-direction
-
+  D: 0.01
+  vx: 1.0
+  vy: 0.5
 init:
   type: gaussian-blobs
   params:
@@ -13,22 +10,19 @@ init:
     amplitude: 1.0
     width: 0.08
     background: 0.0
-
 solver: euler
 backend: numba
-timesteps: 600
-dt: 0.0050
+adaptive: true
+dt: 0.005
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 6
   colormap: viridis
   field_to_plot: u
-
 seed: 42
 domain_size: 2.0
+t_end: 3.0

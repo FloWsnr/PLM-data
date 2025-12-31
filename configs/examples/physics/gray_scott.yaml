@@ -1,34 +1,28 @@
-# Gray-Scott reaction-diffusion - pattern formation
 preset: gray-scott
-
 parameters:
-  F: 0.04    # Feed rate
-  k: 0.06    # Kill rate
-  Du: 0.16   # Diffusion of u
-  Dv: 0.08   # Diffusion of v
-
+  F: 0.014
+  k: 0.054
+  Du: 2.0e-05
+  Dv: 1.0e-05
 init:
   type: gaussian-blobs
   params:
     num_blobs: 10
     width: 0.03
     noise: 0.01
-
 solver: euler
 backend: numba
-timesteps: 50000
-dt: 0.0005
+adaptive: true
+dt: 1
+t_end: 2500.0
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 500
   colormap: turbo
   field_to_plot: v
-
 seed: 123
-domain_size: 2.5
+domain_size: 2

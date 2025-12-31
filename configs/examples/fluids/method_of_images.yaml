@@ -1,10 +1,7 @@
-# Vortex near wall - method of images boundary
 preset: method-of-images
-
 parameters:
-  nu: 0.01           # Kinematic viscosity
-  wall_distance: 0.2 # Distance of vortex from wall
-
+  nu: 0.01
+  wall_distance: 0.2
 init:
   type: gaussian-blobs
   params:
@@ -12,22 +9,19 @@ init:
     amplitude: 1.0
     width: 0.05
     background: 0.0
-
 solver: euler
 backend: numba
-timesteps: 10000
-dt: 0.0050
+adaptive: true
+dt: 0.005
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 100
   colormap: seismic
   field_to_plot: w
-
 seed: 42
 domain_size: 2.0
+t_end: 50.0

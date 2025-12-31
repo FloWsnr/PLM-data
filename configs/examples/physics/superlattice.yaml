@@ -1,31 +1,25 @@
-# Superlattice pattern formation
 preset: superlattice
-
 parameters:
-  epsilon: 0.1  # Control parameter
-  g2: 0.5       # Quadratic nonlinearity
-
+  epsilon: 0.1
+  g2: 0.5
 init:
   type: random-gaussian
   params:
     mean: 0.0
     std: 0.01
-
 solver: euler
 backend: numba
-timesteps: 33333
+adaptive: true
 dt: 0.03
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 333
   colormap: seismic
   field_to_plot: u
-
 seed: 42
 domain_size: 50.0
+t_end: 999.99

@@ -1,11 +1,8 @@
-# Inhomogeneous wave equation - with damping and source
 preset: inhomogeneous-wave
-
 parameters:
-  c: 1.0       # Wave speed
-  gamma: 0.1   # Damping coefficient
-  source: 0.0  # Source term
-
+  c: 1.0
+  gamma: 0.1
+  source: 0.0
 init:
   type: gaussian-blobs
   params:
@@ -13,22 +10,19 @@ init:
     amplitude: 1.0
     width: 0.05
     background: 0.0
-
 solver: euler
 backend: numba
-timesteps: 6000
+adaptive: true
 dt: 0.0005
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 60
   colormap: seismic
   field_to_plot: u
-
 seed: 42
 domain_size: 2.0
+t_end: 3.0

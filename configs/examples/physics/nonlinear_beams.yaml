@@ -1,10 +1,7 @@
-# Nonlinear beam/plate vibrations
 preset: nonlinear-beams
-
 parameters:
-  D: 1.0      # Stiffness coefficient
-  alpha: 0.1  # Nonlinearity strength
-
+  D: 1.0
+  alpha: 0.1
 init:
   type: gaussian-blobs
   params:
@@ -12,22 +9,19 @@ init:
     amplitude: 0.5
     width: 0.1
     background: 0.0
-
 solver: euler
 backend: numba
-timesteps: 25000
+adaptive: true
 dt: 0.0002
 resolution: 64
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 250
   colormap: seismic
   field_to_plot: u
-
 seed: 42
 domain_size: 2.0
+t_end: 5.0

@@ -1,13 +1,10 @@
-# Population dynamics on terrain - advection on slopes
 preset: topography
-
 parameters:
-  D: 0.1     # Diffusion coefficient
-  alpha: 0.5 # Taxis strength (movement along gradient)
-  r: 1.0     # Growth rate
-  hx: 0.1    # Terrain slope in x
-  hy: 0.0    # Terrain slope in y
-
+  D: 0.1
+  alpha: 0.5
+  r: 1.0
+  hx: 0.1
+  hy: 0.0
 init:
   type: gaussian-blobs
   params:
@@ -15,22 +12,19 @@ init:
     amplitude: 0.8
     width: 0.1
     background: 0.1
-
 solver: euler
 backend: numba
-timesteps: 5000
+adaptive: true
 dt: 0.01
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 50
   colormap: viridis
   field_to_plot: u
-
 seed: 42
 domain_size: 10.0
+t_end: 50.0

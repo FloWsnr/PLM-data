@@ -1,9 +1,6 @@
-# Linearized shallow water - surface wave propagation
 preset: shallow-water
-
 parameters:
-  c: 1.0  # Wave speed (sqrt(g*H))
-
+  c: 1.0
 init:
   type: gaussian-blobs
   params:
@@ -11,22 +8,19 @@ init:
     amplitude: 0.5
     width: 0.1
     background: 0.0
-
 solver: euler
 backend: numba
-timesteps: 30000
-dt: 0.0010
+adaptive: true
+dt: 0.001
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 300
   colormap: Blues
   field_to_plot: h
-
 seed: 42
 domain_size: 10.0
+t_end: 30.0

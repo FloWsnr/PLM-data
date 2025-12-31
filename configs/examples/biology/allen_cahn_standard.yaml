@@ -1,31 +1,25 @@
-# Standard Allen-Cahn - symmetric double-well potential
 preset: allen-cahn-standard
-
 parameters:
-  gamma: 1.0     # Interface energy coefficient
-  mobility: 1.0  # Mobility parameter
-
+  gamma: 1.0
+  mobility: 1.0
 init:
   type: random-uniform
   params:
     low: -0.2
     high: 0.2
-
 solver: euler
 backend: numba
-timesteps: 50000
-dt: 0.0010
+adaptive: true
+dt: 0.001
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 500
   colormap: coolwarm
   field_to_plot: c
-
 seed: 42
 domain_size: 10.0
+t_end: 50.0

@@ -1,31 +1,25 @@
-# Burgers' equation - shock formation and viscous dissipation
 preset: burgers
-
 parameters:
-  nu: 0.01  # Kinematic viscosity
-
+  nu: 0.01
 init:
   type: sine
   params:
     kx: 1
     ky: 0
     amplitude: 1.0
-
 solver: euler
 backend: numba
-timesteps: 500
+adaptive: true
 dt: 0.05
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 5
   colormap: seismic
   field_to_plot: u
-
 seed: 42
 domain_size: 6.28
+t_end: 25.0

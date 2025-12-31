@@ -1,32 +1,26 @@
-# Rayleigh-Bénard convection - thermal plumes
 preset: thermal-convection
-
 parameters:
-  kappa: 0.01  # Thermal diffusivity
-  nu: 0.01     # Kinematic viscosity
-  Ra: 100.0    # Rayleigh number
-
+  kappa: 0.01
+  nu: 0.01
+  Ra: 100.0
 init:
   type: random-gaussian
   params:
     mean: 0.5
     std: 0.1
-
 solver: euler
 backend: numba
-timesteps: 5000
+adaptive: true
 dt: 0.02
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 50
   colormap: hot
   field_to_plot: T
-
 seed: 42
 domain_size: 4.0
+t_end: 100.0

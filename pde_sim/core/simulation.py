@@ -1,7 +1,6 @@
 """Main simulation orchestrator."""
 
 import uuid
-import warnings
 from pathlib import Path
 from typing import Any
 
@@ -100,40 +99,6 @@ class SimulationRunner:
         }
         return solver_map.get(self.config.solver.lower(), "euler")
 
-    def _check_stability(self) -> None:
-        """Check numerical stability conditions and warn if violated.
-
-        Issues a RuntimeWarning if the time step exceeds the CFL stability limit
-        for diffusion-type equations.
-        """
-        dx = self.config.domain_size / self.config.resolution
-        dt = self.config.dt
-
-        # Collect all diffusion-like coefficients from parameters
-        diffusion_coeffs = []
-        for key in ("D", "Du", "Dv", "Dw", "M", "diffusivity", "nu"):
-            if key in self.parameters:
-                val = self.parameters[key]
-                if isinstance(val, (int, float)) and val > 0:
-                    diffusion_coeffs.append(val)
-
-        if not diffusion_coeffs:
-            return
-
-        D_max = max(diffusion_coeffs)
-
-        # CFL condition for 2D diffusion: dt < dx^2 / (4 * D)
-        dt_cfl = dx**2 / (4 * D_max)
-
-        if dt > dt_cfl:
-            warnings.warn(
-                f"Time step dt={dt} exceeds CFL stability limit "
-                f"dt_max={dt_cfl:.6f} for diffusion coefficient D={D_max}. "
-                f"Consider reducing dt or using adaptive=True.",
-                RuntimeWarning,
-                stacklevel=3,
-            )
-
     def run(self, verbose: bool = True) -> dict[str, Any]:
         """Execute the simulation and return metadata.
 
@@ -143,13 +108,10 @@ class SimulationRunner:
         Returns:
             Complete simulation metadata dictionary.
         """
-        # Check numerical stability
-        self._check_stability()
-
         if verbose:
             print(f"Starting simulation: {self.config.preset}")
             print(f"  Resolution: {self.config.resolution}x{self.config.resolution}")
-            print(f"  Timesteps: {self.config.timesteps}, dt: {self.config.dt}")
+            print(f"  Final time: {self.config.t_end}, dt: {self.config.dt}")
             print(f"  Solver: {self.config.solver}")
             print(f"  Backend: {self.config.backend}")
             if self.config.adaptive:
@@ -157,7 +119,6 @@ class SimulationRunner:
             print(f"  Output: {self.output_manager.output_dir}")
 
         # Calculate time parameters
-        t_end = self.config.timesteps * self.config.dt
         frames_per_save = self.config.output.frames_per_save
         save_interval = frames_per_save * self.config.dt
 
@@ -170,7 +131,7 @@ class SimulationRunner:
 
         result = self.pde.solve(
             self.state,
-            t_range=t_end,
+            t_range=self.config.t_end,
             dt=self.config.dt,
             solver=self._get_solver_name(),
             tracker=tracker if not verbose else ["progress", tracker],
@@ -187,7 +148,7 @@ class SimulationRunner:
             self.output_manager.save_frame(field, frame_index, time)
 
         # Generate and save metadata
-        total_time = storage.times[-1] if storage.times else t_end
+        total_time = storage.times[-1] if storage.times else self.config.t_end
 
         metadata = create_metadata(
             sim_id=self.sim_id,

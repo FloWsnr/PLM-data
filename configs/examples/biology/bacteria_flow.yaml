@@ -1,15 +1,12 @@
-# Bacteria chemotaxis with flow - advected chemotaxis
 preset: bacteria-flow
-
 parameters:
-  Db: 0.1   # Bacteria diffusion
-  Dc: 1.0   # Chemoattractant diffusion
-  chi: 1.0  # Chemotactic sensitivity
-  v: 0.5    # Flow velocity
-  r: 0.1    # Bacteria growth rate
-  k: 0.1    # Chemoattractant consumption
-  s: 0.1    # Chemoattractant production
-
+  Db: 0.1
+  Dc: 1.0
+  chi: 1.0
+  v: 0.5
+  r: 0.1
+  k: 0.1
+  s: 0.1
 init:
   type: gaussian-blobs
   params:
@@ -17,22 +14,19 @@ init:
     amplitude: 1.0
     width: 0.08
     background: 0.05
-
 solver: euler
 backend: numba
-timesteps: 50000
-dt: 0.0010
+adaptive: true
+dt: 0.001
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 500
   colormap: viridis
   field_to_plot: b
-
 seed: 42
 domain_size: 10.0
+t_end: 50.0

@@ -54,7 +54,7 @@ def sample_config_dict():
             "params": {"num_blobs": 2, "amplitude": 1.0},
         },
         "solver": "euler",
-        "timesteps": 100,
+        "t_end": 0.01,  # 100 * 0.0001
         "dt": 0.0001,
         "resolution": 32,
         "bc": {"x": "periodic", "y": "periodic"},

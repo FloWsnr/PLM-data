@@ -1,13 +1,10 @@
-# FitzHugh-Nagumo - excitable media, spiral waves
 preset: fitzhugh-nagumo
-
 parameters:
-  epsilon: 0.08  # Time scale separation
-  a: 0.7         # Threshold parameter
-  b: 0.8         # Recovery rate
-  Du: 1.0        # Diffusion of activator
-  Dv: 0.0        # Diffusion of recovery (0 for local recovery)
-
+  epsilon: 0.08
+  a: 0.7
+  b: 0.8
+  Du: 1.0
+  Dv: 0.0
 init:
   type: gaussian-blobs
   params:
@@ -15,22 +12,19 @@ init:
     amplitude: 1.0
     width: 0.05
     background: -0.5
-
 solver: euler
 backend: numba
-timesteps: 50000
-dt: 0.0010
+adaptive: true
+dt: 0.001
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 500
   colormap: seismic
   field_to_plot: u
-
 seed: 42
 domain_size: 10.0
+t_end: 50.0

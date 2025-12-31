@@ -1,9 +1,6 @@
-# Wave equation - second order wave propagation
 preset: wave
-
 parameters:
-  c: 1.0  # Wave speed
-
+  c: 1.0
 init:
   type: gaussian-blobs
   params:
@@ -11,22 +8,19 @@ init:
     amplitude: 1.0
     width: 0.05
     background: 0.0
-
 solver: euler
 backend: numba
-timesteps: 40000
-dt: 0.000050
+adaptive: true
+dt: 5.0e-05
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 400
   colormap: seismic
   field_to_plot: u
-
 seed: 42
 domain_size: 2.0
+t_end: 2.0

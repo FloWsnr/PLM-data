@@ -1,10 +1,7 @@
-# Vortex dipole motion and decay
 preset: dipoles
-
 parameters:
-  nu: 0.005        # Kinematic viscosity
-  separation: 0.15 # Distance between vortex pair
-
+  nu: 0.005
+  separation: 0.15
 init:
   type: gaussian-blobs
   params:
@@ -12,22 +9,19 @@ init:
     amplitude: 1.0
     width: 0.05
     background: 0.0
-
 solver: euler
 backend: numba
-timesteps: 5000
+adaptive: true
 dt: 0.01
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 50
   colormap: seismic
   field_to_plot: w
-
 seed: 42
 domain_size: 2.0
+t_end: 50.0

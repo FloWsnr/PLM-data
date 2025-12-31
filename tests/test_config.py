@@ -25,7 +25,7 @@ class TestLoadConfig:
         assert config.parameters["D"] == 0.1
         assert config.init.type == "gaussian-blobs"
         assert config.solver == "euler"
-        assert config.timesteps == 100
+        assert config.t_end == 0.01  # 100 * 0.0001
         assert config.dt == 0.0001
         assert config.resolution == 32
         assert config.bc.x == "periodic"
@@ -37,7 +37,7 @@ class TestLoadConfig:
         minimal_config = {
             "preset": "heat",
             "init": {"type": "random-uniform"},
-            "timesteps": 100,
+            "t_end": 0.1,  # 100 * 0.001
             "dt": 0.001,
             "resolution": 64,
         }
@@ -65,7 +65,7 @@ class TestLoadConfig:
         """Test that KeyError is raised for missing required fields."""
         incomplete_config = {
             "preset": "heat",
-            # Missing init, timesteps, dt, resolution
+            # Missing init, t_end, dt, resolution
         }
 
         config_path = tmp_path / "incomplete.yaml"
@@ -89,7 +89,7 @@ class TestConfigToDict:
         assert config_dict["parameters"]["D"] == 0.1
         assert config_dict["init"]["type"] == "gaussian-blobs"
         assert config_dict["solver"] == "euler"
-        assert config_dict["timesteps"] == 100
+        assert config_dict["t_end"] == 0.01  # 100 * 0.0001
         assert config_dict["resolution"] == 32
 
 
@@ -103,7 +103,7 @@ class TestSimulationConfig:
             parameters={"D": 1.0},
             init=InitialConditionConfig(type="random-uniform", params={}),
             solver="euler",
-            timesteps=100,
+            t_end=0.1,  # 100 * 0.001
             dt=0.001,
             resolution=64,
             bc=BoundaryConfig(x="periodic", y="periodic"),

@@ -1,35 +1,29 @@
-# Diffusively coupled Lorenz system - spatiotemporal chaos
 preset: lorenz
-
 parameters:
-  sigma: 10.0            # Prandtl number
-  rho: 28.0              # Rayleigh number
-  beta: 2.6666666666667  # Geometry factor (8/3)
-  Dx: 0.1                # Diffusion of X
-  Dy: 0.1                # Diffusion of Y
-  Dz: 0.1                # Diffusion of Z
-
+  sigma: 10.0
+  rho: 28.0
+  beta: 2.6666666666667
+  Dx: 0.1
+  Dy: 0.1
+  Dz: 0.1
 init:
   type: random-gaussian
   params:
     mean: 0.5
     std: 0.2
-
 solver: euler
 backend: numba
-timesteps: 500
+adaptive: true
 dt: 0.05
 resolution: 64
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 5
   colormap: turbo
   field_to_plot: X
-
 seed: 42
 domain_size: 10.0
+t_end: 25.0

@@ -1,34 +1,28 @@
-# Turing-wave pattern interaction
 preset: turing-wave
-
 parameters:
-  Du: 0.1     # Diffusion of activator
-  Dv: 5.0     # Diffusion of inhibitor
-  a: 0.1      # Reaction parameter a
-  b: 0.9      # Reaction parameter b
-  gamma: 0.1  # Wave coupling parameter
-
+  Du: 0.1
+  Dv: 5.0
+  a: 0.1
+  b: 0.9
+  gamma: 0.1
 init:
   type: random-gaussian
   params:
     mean: 0.5
     std: 0.1
-
 solver: euler
 backend: numba
-timesteps: 50000
+adaptive: true
 dt: 0.0003
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 500
   colormap: turbo
   field_to_plot: u
-
 seed: 42
 domain_size: 10.0
+t_end: 14.999999999999998

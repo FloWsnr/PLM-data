@@ -1,11 +1,8 @@
-# Korteweg-de Vries equation - soliton dynamics
 preset: kdv
-
 parameters:
-  c: 0.0      # Linear advection speed
-  alpha: 6.0  # Nonlinear coefficient
-  beta: 1.0   # Dispersion coefficient
-
+  c: 0.0
+  alpha: 6.0
+  beta: 1.0
 init:
   type: gaussian-blobs
   params:
@@ -13,22 +10,19 @@ init:
     amplitude: 2.0
     width: 0.1
     background: 0.0
-
 solver: euler
 backend: numba
-timesteps: 1000
-dt: 0.0010
+adaptive: true
+dt: 0.001
 resolution: 256
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 10
   colormap: viridis
   field_to_plot: u
-
 seed: 42
 domain_size: 20.0
+t_end: 1.0

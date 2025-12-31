@@ -1,34 +1,28 @@
-# Advected Turing patterns - patterns in flow
 preset: advecting-patterns
-
 parameters:
-  Du: 0.1      # Diffusion of activator
-  Dv: 5.0      # Diffusion of inhibitor
-  v_flow: 0.5  # Flow velocity
-  a: 0.1       # Reaction parameter a
-  b: 0.9       # Reaction parameter b
-
+  Du: 0.1
+  Dv: 5.0
+  v_flow: 0.5
+  a: 0.1
+  b: 0.9
 init:
   type: random-gaussian
   params:
     mean: 0.5
     std: 0.1
-
 solver: euler
 backend: numba
-timesteps: 50000
+adaptive: true
 dt: 0.0003
 resolution: 128
-
 bc:
   x: periodic
   y: periodic
-
 output:
   path: ./output
   frames_per_save: 500
   colormap: turbo
   field_to_plot: u
-
 seed: 42
 domain_size: 10.0
+t_end: 14.999999999999998

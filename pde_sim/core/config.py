@@ -41,7 +41,7 @@ class SimulationConfig:
     parameters: dict[str, float]
     init: InitialConditionConfig
     solver: str
-    timesteps: int
+    t_end: float
     dt: float
     resolution: int
     bc: BoundaryConfig
@@ -49,7 +49,7 @@ class SimulationConfig:
     seed: int | None = None
     domain_size: float = 1.0  # Physical size of the domain
     backend: str = "auto"  # Options: "auto", "numpy", "numba"
-    adaptive: bool = False  # Enable adaptive time-stepping
+    adaptive: bool = True  # Enable adaptive time-stepping
     tolerance: float = 1e-4  # Error tolerance for adaptive stepping
 
 
@@ -96,7 +96,7 @@ def load_config(path: Path | str) -> SimulationConfig:
         parameters=raw.get("parameters", {}),
         init=init_config,
         solver=raw.get("solver", "euler"),
-        timesteps=raw["timesteps"],
+        t_end=raw["t_end"],
         dt=raw["dt"],
         resolution=raw["resolution"],
         bc=bc_config,
@@ -104,7 +104,7 @@ def load_config(path: Path | str) -> SimulationConfig:
         seed=raw.get("seed"),
         domain_size=raw.get("domain_size", 1.0),
         backend=raw.get("backend", "numba"),
-        adaptive=raw.get("adaptive", False),
+        adaptive=raw.get("adaptive", True),
         tolerance=raw.get("tolerance", 1e-4),
     )
 
@@ -119,7 +119,7 @@ def config_to_dict(config: SimulationConfig) -> dict[str, Any]:
             "params": config.init.params,
         },
         "solver": config.solver,
-        "timesteps": config.timesteps,
+        "t_end": config.t_end,
         "dt": config.dt,
         "resolution": config.resolution,
         "bc": {
