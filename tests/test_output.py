@@ -2,9 +2,8 @@
 
 import json
 import numpy as np
-import pytest
 from pathlib import Path
-from pde import ScalarField, FieldCollection, CartesianGrid
+from pde import ScalarField, FieldCollection
 
 from pde_sim.core.output import OutputManager, create_metadata
 from pde_sim.core.config import SimulationConfig, OutputConfig, BoundaryConfig, InitialConditionConfig

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from pde import CartesianGrid, MemoryStorage
+from pde import MemoryStorage
 
 from .config import SimulationConfig, load_config
 from .output import OutputManager, create_metadata

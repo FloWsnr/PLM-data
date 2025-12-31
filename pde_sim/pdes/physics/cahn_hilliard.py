@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from pde import PDE, CartesianGrid, ScalarField
+from pde import PDE, CartesianGrid
 
 from ..base import ScalarPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde

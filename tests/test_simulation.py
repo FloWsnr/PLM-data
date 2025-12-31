@@ -1,14 +1,12 @@
 """Tests for simulation runner."""
 
-import json
 import warnings
 
 import numpy as np
 import pytest
 import yaml
-from pathlib import Path
 
-from pde_sim.core.config import load_config, SimulationConfig
+from pde_sim.core.config import load_config
 from pde_sim.core.simulation import SimulationRunner, run_from_config
 
 
