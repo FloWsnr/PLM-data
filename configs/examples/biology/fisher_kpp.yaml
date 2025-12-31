@@ -1,0 +1,36 @@
+# Fisher-KPP equation - population dynamics with logistic growth
+preset: fisher-kpp
+
+parameters:
+  D: 1.0  # Diffusion coefficient
+  r: 1.0  # Growth rate
+  K: 1.0  # Carrying capacity
+
+init:
+  type: step
+  params:
+    x0: 0.0
+    x1: 0.3
+    y0: 0.0
+    y1: 1.0
+    value_inside: 0.9
+    value_outside: 0.1
+    noise: 0.02
+
+solver: euler
+timesteps: 10000
+dt: 0.0050
+resolution: 128
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 100
+  colormap: viridis
+  field_to_plot: u
+
+seed: 42
+domain_size: 20.0

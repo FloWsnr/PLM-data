@@ -1,0 +1,32 @@
+# Klausmeier vegetation-water dynamics - desert patterns
+preset: vegetation
+
+parameters:
+  a: 2.0    # Rainfall parameter
+  v: 1.0    # Water flow velocity
+  m: 0.45   # Plant mortality rate
+  Dn: 0.01  # Plant diffusion
+
+init:
+  type: random-gaussian
+  params:
+    mean: 0.5
+    std: 0.2
+
+solver: euler
+timesteps: 500
+dt: 10.00
+resolution: 128
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 5
+  colormap: YlGn
+  field_to_plot: n
+
+seed: 42
+domain_size: 100.0

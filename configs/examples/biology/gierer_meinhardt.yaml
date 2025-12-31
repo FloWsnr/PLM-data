@@ -1,0 +1,34 @@
+# Gierer-Meinhardt - activator-inhibitor pattern formation
+preset: gierer-meinhardt
+
+parameters:
+  Du: 0.01    # Diffusion of activator (slow)
+  Dv: 1.0     # Diffusion of inhibitor (fast)
+  rho: 1.0    # Basic production rate
+  mu_u: 0.1   # Decay rate of activator
+  mu_v: 0.1   # Decay rate of inhibitor
+  rho_u: 0.01 # Base production of activator
+
+init:
+  type: random-gaussian
+  params:
+    mean: 1.0
+    std: 0.2
+
+solver: euler
+timesteps: 50000
+dt: 0.0003
+resolution: 128
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 500
+  colormap: turbo
+  field_to_plot: u
+
+seed: 42
+domain_size: 5.0

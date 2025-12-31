@@ -1,0 +1,32 @@
+# Coupled Van der Pol oscillators - synchronization dynamics
+preset: oscillators
+
+parameters:
+  mu: 1.0     # Nonlinearity parameter
+  omega: 1.0  # Natural frequency
+  Du: 0.1     # Diffusion of u
+  Dv: 0.1     # Diffusion of v
+
+init:
+  type: random-gaussian
+  params:
+    mean: 0.5
+    std: 0.3
+
+solver: euler
+timesteps: 2000
+dt: 0.05
+resolution: 64
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 20
+  colormap: seismic
+  field_to_plot: u
+
+seed: 42
+domain_size: 10.0

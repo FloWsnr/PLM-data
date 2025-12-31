@@ -1,0 +1,35 @@
+# Perona-Malik equation - edge-preserving diffusion
+preset: perona-malik
+
+parameters:
+  D: 1.0  # Base diffusion coefficient
+  K: 1.0  # Gradient threshold
+
+init:
+  type: step
+  params:
+    x0: 0.3
+    x1: 0.7
+    y0: 0.3
+    y1: 0.7
+    value_inside: 1.0
+    value_outside: 0.0
+    noise: 0.1
+
+solver: euler
+timesteps: 50000
+dt: 0.000010
+resolution: 128
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 500
+  colormap: gray
+  field_to_plot: u
+
+seed: 42
+domain_size: 1.0

@@ -1,0 +1,32 @@
+# Turing instability demonstration - diffusion-driven instability
+preset: turing-conditions
+
+parameters:
+  Du: 0.1   # Diffusion of activator
+  Dv: 10.0  # Diffusion of inhibitor (must be >> Du)
+  a: 1.0    # Reaction parameter a
+  d: 0.5    # Reaction parameter d
+
+init:
+  type: random-gaussian
+  params:
+    mean: 0.5
+    std: 0.02
+
+solver: euler
+timesteps: 50000
+dt: 0.0001
+resolution: 128
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 500
+  colormap: turbo
+  field_to_plot: u
+
+seed: 42
+domain_size: 10.0

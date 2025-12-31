@@ -1,20 +1,20 @@
-# Simple heat equation simulation
-preset: heat
+# Biharmonic plate equation - fourth-order diffusion
+preset: plate
 
 parameters:
-  D: 1.0  # Diffusion coefficient
+  D: 0.01  # Diffusion coefficient
 
 init:
   type: gaussian-blobs
   params:
-    num_blobs: 3
+    num_blobs: 2
     amplitude: 1.0
     width: 0.1
     background: 0.0
 
 solver: euler
-timesteps: 1000
-dt: 0.0001
+timesteps: 500
+dt: 0.0050
 resolution: 64
 
 bc:
@@ -23,9 +23,9 @@ bc:
 
 output:
   path: ./output
-  frames_per_save: 50
-  colormap: turbo
-  field_to_plot: T
+  frames_per_save: 5
+  colormap: viridis
+  field_to_plot: u
 
 seed: 42
 domain_size: 1.0

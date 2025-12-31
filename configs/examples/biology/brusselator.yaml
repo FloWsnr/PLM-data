@@ -1,0 +1,32 @@
+# Brusselator - oscillating reaction-diffusion system
+preset: brusselator
+
+parameters:
+  a: 1.0   # Feed rate parameter
+  b: 3.0   # Autocatalytic rate (b > 1 + a^2 for oscillations)
+  Du: 1.0  # Diffusion of activator
+  Dv: 8.0  # Diffusion of inhibitor
+
+init:
+  type: random-gaussian
+  params:
+    mean: 1.0
+    std: 0.2
+
+solver: euler
+timesteps: 50000
+dt: 0.0015
+resolution: 128
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 500
+  colormap: turbo
+  field_to_plot: u
+
+seed: 42
+domain_size: 30.0

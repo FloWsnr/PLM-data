@@ -1,0 +1,30 @@
+# Inhomogeneous heat equation - diffusion with source term
+preset: inhomogeneous-heat
+
+parameters:
+  D: 1.0      # Diffusion coefficient
+  source: 0.5 # Source term strength
+
+init:
+  type: random-gaussian
+  params:
+    mean: 0.5
+    std: 0.1
+
+solver: euler
+timesteps: 20000
+dt: 0.000050
+resolution: 64
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 200
+  colormap: turbo
+  field_to_plot: T
+
+seed: 42
+domain_size: 1.0

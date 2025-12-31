@@ -1,0 +1,32 @@
+# Reaction-diffusion with spatial heterogeneity
+preset: heterogeneous
+
+parameters:
+  D: 0.1       # Diffusion coefficient
+  r_mean: 1.0  # Mean reaction rate
+  r_amp: 0.5   # Amplitude of spatial variation
+  freq: 2.0    # Frequency of spatial variation
+
+init:
+  type: random-gaussian
+  params:
+    mean: 0.5
+    std: 0.1
+
+solver: euler
+timesteps: 5000
+dt: 0.01
+resolution: 128
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 50
+  colormap: viridis
+  field_to_plot: u
+
+seed: 42
+domain_size: 10.0

@@ -1,0 +1,33 @@
+# 2D Navier-Stokes vorticity equation
+preset: navier-stokes
+
+parameters:
+  nu: 0.01  # Kinematic viscosity
+  ux: 0.1   # Background flow velocity x
+  uy: 0.0   # Background flow velocity y
+
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 4
+    amplitude: 1.0
+    width: 0.08
+    background: 0.0
+
+solver: euler
+timesteps: 10000
+dt: 0.0050
+resolution: 128
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 100
+  colormap: seismic
+  field_to_plot: w
+
+seed: 42
+domain_size: 2.0

@@ -1,0 +1,30 @@
+# Complex Ginzburg-Landau equation - spiral wave patterns
+preset: ginzburg-landau
+
+parameters:
+  c1: 0.5   # Linear dispersion
+  c3: -0.5  # Nonlinear dispersion
+
+init:
+  type: random-gaussian
+  params:
+    mean: 0.1
+    std: 0.05
+
+solver: euler
+timesteps: 1666
+dt: 0.03
+resolution: 128
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 16
+  colormap: twilight
+  field_to_plot: A
+
+seed: 42
+domain_size: 50.0

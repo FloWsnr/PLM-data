@@ -1,0 +1,30 @@
+# Allen-Cahn bistable equation - phase field dynamics
+preset: allen-cahn
+
+parameters:
+  D: 1.0  # Diffusion coefficient
+  a: 0.5  # Bistability parameter
+
+init:
+  type: random-uniform
+  params:
+    low: -0.5
+    high: 0.5
+
+solver: euler
+timesteps: 50000
+dt: 0.0010
+resolution: 128
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 500
+  colormap: coolwarm
+  field_to_plot: u
+
+seed: 42
+domain_size: 10.0

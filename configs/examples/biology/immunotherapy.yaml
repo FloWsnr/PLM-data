@@ -1,0 +1,39 @@
+# Tumor-immune interaction - immunotherapy dynamics
+preset: immunotherapy
+
+parameters:
+  Dt: 0.01  # Tumor diffusion
+  Di: 0.1   # Immune cell diffusion
+  rT: 1.0   # Tumor growth rate
+  K: 1.0    # Carrying capacity
+  k: 1.0    # Immune killing rate
+  s: 0.1    # Immune recruitment
+  rI: 0.5   # Immune proliferation rate
+  a: 0.1    # Tumor-stimulated proliferation
+  dI: 0.3   # Immune cell death rate
+
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 2
+    amplitude: 0.5
+    width: 0.1
+    background: 0.1
+
+solver: euler
+timesteps: 33333
+dt: 0.0030
+resolution: 128
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 333
+  colormap: Reds
+  field_to_plot: T
+
+seed: 42
+domain_size: 5.0

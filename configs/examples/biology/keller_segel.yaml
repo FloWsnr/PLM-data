@@ -1,0 +1,35 @@
+# Keller-Segel chemotaxis model - bacterial aggregation
+preset: keller-segel
+
+parameters:
+  Du: 1.0    # Diffusion of cells
+  Dc: 1.0    # Diffusion of chemoattractant
+  chi: 1.0   # Chemotactic sensitivity
+  alpha: 1.0 # Chemoattractant production rate
+  beta: 1.0  # Chemoattractant degradation rate
+
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 5
+    amplitude: 1.0
+    width: 0.08
+    background: 0.1
+
+solver: euler
+timesteps: 50000
+dt: 0.0010
+resolution: 128
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 500
+  colormap: viridis
+  field_to_plot: u
+
+seed: 42
+domain_size: 10.0

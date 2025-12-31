@@ -1,0 +1,32 @@
+# Cross-diffusion pattern formation - species interactions
+preset: cross-diffusion
+
+parameters:
+  D1: 0.1    # Self-diffusion of species 1
+  D2: 0.1    # Self-diffusion of species 2
+  alpha: 1.0 # Cross-diffusion coefficient
+  beta: 0.0  # Secondary cross-diffusion
+
+init:
+  type: random-gaussian
+  params:
+    mean: 0.5
+    std: 0.1
+
+solver: euler
+timesteps: 10000
+dt: 0.01
+resolution: 128
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 100
+  colormap: turbo
+  field_to_plot: u
+
+seed: 42
+domain_size: 10.0

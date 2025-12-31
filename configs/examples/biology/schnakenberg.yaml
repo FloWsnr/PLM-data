@@ -1,0 +1,32 @@
+# Schnakenberg Turing pattern system - activator-inhibitor
+preset: schnakenberg
+
+parameters:
+  a: 0.1     # Production rate parameter
+  b: 0.9     # Production rate parameter
+  Du: 1.0    # Diffusion of activator
+  Dv: 100.0  # Diffusion of inhibitor (>>Du for patterns)
+
+init:
+  type: random-gaussian
+  params:
+    mean: 0.5
+    std: 0.1
+
+solver: euler
+timesteps: 50000
+dt: 0.000010
+resolution: 128
+
+bc:
+  x: periodic
+  y: periodic
+
+output:
+  path: ./output
+  frames_per_save: 500
+  colormap: turbo
+  field_to_plot: u
+
+seed: 42
+domain_size: 10.0
