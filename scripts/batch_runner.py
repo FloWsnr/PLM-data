@@ -5,12 +5,9 @@ import argparse
 import csv
 import sys
 from pathlib import Path
+from typing import Any
 
 import yaml
-
-# Add project root to path
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
 
 from pde_sim.core.simulation import run_from_config
 
@@ -45,7 +42,7 @@ def load_base_config(config_path: Path) -> dict:
         return yaml.safe_load(f)
 
 
-def parse_value(value: str) -> any:
+def parse_value(value: str) -> Any:
     """Parse a string value to the appropriate type."""
     if value == "":
         return None
@@ -85,6 +82,7 @@ def set_nested_value(config: dict, path: tuple, value: any):
 def apply_csv_row(base_config: dict, headers: list, row: list) -> dict:
     """Apply CSV row values to a copy of the base config."""
     import copy
+
     config = copy.deepcopy(base_config)
 
     for header, value in zip(headers, row):
@@ -144,7 +142,11 @@ def run_batch(
 
         # Get notes for display if available
         notes_idx = headers.index("notes") if "notes" in headers else None
-        notes = row[notes_idx].strip() if notes_idx is not None and notes_idx < len(row) else ""
+        notes = (
+            row[notes_idx].strip()
+            if notes_idx is not None and notes_idx < len(row)
+            else ""
+        )
 
         print("=" * 60)
         print(f"Simulation {i}/{total_rows}")
@@ -162,7 +164,9 @@ def run_batch(
 
             # Print key parameters
             print(f"Parameters: {config.get('parameters', {})}")
-            print(f"BC: x={config.get('bc', {}).get('x', 'periodic')}, y={config.get('bc', {}).get('y', 'periodic')}")
+            print(
+                f"BC: x={config.get('bc', {}).get('x', 'periodic')}, y={config.get('bc', {}).get('y', 'periodic')}"
+            )
             print(f"Init: {config.get('init', {}).get('type', 'unknown')}")
             print(f"Time: t_end={config.get('t_end')}, dt={config.get('dt')}")
             print()
