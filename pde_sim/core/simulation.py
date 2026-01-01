@@ -39,10 +39,12 @@ class SimulationRunner:
         self.output_dir = Path(output_dir) if output_dir else config.output.path
         self.sim_id = sim_id or str(uuid.uuid4())
 
-        # Generate folder name: PDEname_datetime (e.g., gray-scott_2024-01-15_143052)
+        # Generate run name with datetime (e.g., 2024-01-15_143052)
         from datetime import datetime
         datetime_str = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-        self.folder_name = f"{config.preset}_{datetime_str}"
+        self.run_name = datetime_str
+        # Full folder path: {preset}/{datetime}
+        self.folder_name = f"{config.preset}/{datetime_str}"
 
         # Validate backend
         if config.backend not in VALID_BACKENDS:

@@ -109,9 +109,10 @@ YAML configs include: `preset`, `parameters`, `init` (initial conditions), `solv
 ## Output Structure
 
 ```
-output/{simulation-uuid}/
-├── frames/
-│   ├── 000000.png
-│   └── ...
-└── metadata.json  # Contains PDE description from descriptions/*.md
+output/{preset-name}/           # e.g., "heat", "gray-scott"
+└── {datetime}/                 # e.g., "2024-01-15_143052"
+    ├── frames/
+    │   ├── 000000.png
+    │   └── ...
+    └── metadata.json           # Contains PDE description from descriptions/*.md
 ```
