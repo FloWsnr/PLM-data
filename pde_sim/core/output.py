@@ -56,6 +56,33 @@ class OutputManager:
         # Track saved frames
         self.saved_frames: list[dict[str, Any]] = []
 
+    def compute_range(
+        self, states: list[ScalarField | FieldCollection]
+    ) -> tuple[float, float]:
+        """Pre-compute global min/max range across all states.
+
+        This should be called before saving frames to ensure consistent
+        colorscale normalization across the entire trajectory.
+
+        Args:
+            states: List of field states to compute range from.
+
+        Returns:
+            Tuple of (vmin, vmax) values.
+        """
+        global_min = float("inf")
+        global_max = float("-inf")
+
+        for state in states:
+            data = self._extract_field_data(state)
+            global_min = min(global_min, float(np.min(data)))
+            global_max = max(global_max, float(np.max(data)))
+
+        self.vmin = global_min
+        self.vmax = global_max
+
+        return (global_min, global_max)
+
     def _extract_field_data(
         self, state: ScalarField | FieldCollection
     ) -> np.ndarray:
@@ -89,7 +116,6 @@ class OutputManager:
         state: ScalarField | FieldCollection,
         frame_index: int,
         simulation_time: float,
-        update_range: bool = True,
     ) -> Path:
         """Save a single frame as PNG.
 
@@ -97,24 +123,11 @@ class OutputManager:
             state: The field state to save.
             frame_index: Index of this frame.
             simulation_time: Simulation time at this frame.
-            update_range: Whether to update global min/max range.
 
         Returns:
             Path to the saved PNG file.
         """
         data = self._extract_field_data(state)
-
-        # Update global min/max for consistent coloring
-        if update_range:
-            current_min = float(np.min(data))
-            current_max = float(np.max(data))
-
-            if self.vmin is None:
-                self.vmin = current_min
-                self.vmax = current_max
-            else:
-                self.vmin = min(self.vmin, current_min)
-                self.vmax = max(self.vmax, current_max)
 
         # Create figure
         fig, ax = plt.subplots(figsize=self.figsize, dpi=self.dpi)

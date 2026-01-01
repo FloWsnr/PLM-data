@@ -78,30 +78,62 @@ class TestOutputManager:
         frame_path = manager.save_frame(collection, frame_index=0, simulation_time=0.0)
         assert frame_path.exists()
 
-    def test_value_range_tracking(self, tmp_output, small_grid):
-        """Test that min/max values are tracked across frames."""
+    def test_compute_range(self, tmp_output, small_grid):
+        """Test that compute_range pre-computes global min/max."""
         manager = OutputManager(
             base_path=tmp_output,
-            folder_name="test-range_2024-01-15",
+            folder_name="test-compute-range_2024-01-15",
         )
 
-        # First frame with known values
+        # Create frames with different ranges
         data1 = np.zeros(small_grid.shape)
         data1[0, 0] = 0.0
         data1[1, 1] = 1.0
         field1 = ScalarField(small_grid, data1)
-        manager.save_frame(field1, 0, 0.0)
 
-        # Second frame with a wider range
         data2 = np.zeros(small_grid.shape)
         data2[0, 0] = -2.0
         data2[1, 1] = 3.0
         field2 = ScalarField(small_grid, data2)
-        manager.save_frame(field2, 1, 0.1)
 
-        # vmin should be -2, vmax should be 3
+        # Pre-compute range from all frames
+        vmin, vmax = manager.compute_range([field1, field2])
+
+        assert vmin == -2.0
+        assert vmax == 3.0
         assert manager.vmin == -2.0
         assert manager.vmax == 3.0
+
+    def test_consistent_colorscale_with_compute_range(self, tmp_output, small_grid):
+        """Test that all frames use consistent colorscale when using compute_range."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-consistent_2024-01-15",
+        )
+
+        # Create frames with different value ranges
+        data1 = np.ones(small_grid.shape) * 0.5  # range: [0.5, 0.5]
+        field1 = ScalarField(small_grid, data1)
+
+        data2 = np.zeros(small_grid.shape)
+        data2[0, 0] = -2.0
+        data2[1, 1] = 3.0  # range: [-2.0, 3.0]
+        field2 = ScalarField(small_grid, data2)
+
+        # Two-pass approach: compute range first, then save frames
+        manager.compute_range([field1, field2])
+
+        # Both frames should use the global range [-2.0, 3.0]
+        manager.save_frame(field1, 0, 0.0)
+        manager.save_frame(field2, 1, 0.1)
+
+        # Verify the range remained consistent
+        assert manager.vmin == -2.0
+        assert manager.vmax == 3.0
+
+        # Both frames were saved
+        frames = list(manager.frames_dir.glob("*.png"))
+        assert len(frames) == 2
 
     def test_save_metadata(self, tmp_output, small_grid):
         """Test saving metadata JSON."""

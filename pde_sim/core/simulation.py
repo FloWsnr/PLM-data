@@ -157,6 +157,12 @@ class SimulationRunner:
         if verbose:
             print(f"  Saving {len(storage)} frames...")
 
+        # Two-pass approach for consistent colorscale:
+        # 1. Compute global min/max across all frames
+        all_fields = [field for _, field in storage.items()]
+        self.output_manager.compute_range(all_fields)
+
+        # 2. Save frames with the pre-computed range
         for frame_index, (time, field) in enumerate(storage.items()):
             self.output_manager.save_frame(field, frame_index, time)
 
