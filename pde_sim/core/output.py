@@ -1,6 +1,7 @@
 """Output management for simulation frames and metadata."""
 
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,8 @@ class OutputManager:
         dpi: int = 128,
         figsize: tuple[int, int] = (8, 8),
         save_array: bool = False,
+        show_vectors: bool = False,
+        vector_density: int = 16,
     ):
         """Initialize the output manager.
 
@@ -35,9 +38,12 @@ class OutputManager:
             folder_name: Name for the output folder (e.g., "gray-scott_2024-01-15_143052").
             colormap: Matplotlib colormap name.
             field_to_plot: Name of field to render (for multi-field systems).
+                Can be a single field name (e.g., "u") or magnitude syntax (e.g., "mag(X,Y)").
             dpi: DPI for saved images.
             figsize: Figure size in inches.
             save_array: Whether to save trajectory as numpy array.
+            show_vectors: Whether to overlay vector arrows (only works with mag()).
+            vector_density: Number of arrows per axis (e.g., 16 = 16x16 grid).
         """
         self.base_path = Path(base_path)
         self.folder_name = folder_name
@@ -46,6 +52,11 @@ class OutputManager:
         self.dpi = dpi
         self.figsize = figsize
         self.save_array = save_array
+        self.show_vectors = show_vectors
+        self.vector_density = vector_density
+
+        # Parse field_to_plot for magnitude syntax
+        self.plot_mode, self.plot_fields = self._parse_field_to_plot(field_to_plot)
 
         # Create output directories
         self.output_dir = self.base_path / self.folder_name
@@ -58,6 +69,31 @@ class OutputManager:
 
         # Track saved frames
         self.saved_frames: list[dict[str, Any]] = []
+
+    def _parse_field_to_plot(
+        self, field_to_plot: str | None
+    ) -> tuple[str, list[str]]:
+        """Parse field_to_plot string to determine plot mode.
+
+        Args:
+            field_to_plot: Field specification string.
+
+        Returns:
+            Tuple of (plot_mode, field_names) where:
+            - plot_mode is "single" or "magnitude"
+            - field_names is list of field names to extract
+        """
+        if field_to_plot is None:
+            return ("single", [])
+
+        # Check for magnitude syntax: mag(field1, field2)
+        mag_pattern = r"^mag\((\w+),\s*(\w+)\)$"
+        match = re.match(mag_pattern, field_to_plot)
+        if match:
+            return ("magnitude", [match.group(1), match.group(2)])
+
+        # Single field mode
+        return ("single", [field_to_plot])
 
     def compute_range(
         self, states: list[ScalarField | FieldCollection]
@@ -86,6 +122,28 @@ class OutputManager:
 
         return (global_min, global_max)
 
+    def _get_field_by_name(
+        self, state: FieldCollection, field_name: str
+    ) -> np.ndarray | None:
+        """Get field data from a FieldCollection by name.
+
+        Args:
+            state: The FieldCollection to search.
+            field_name: Name (label) of the field to find.
+
+        Returns:
+            Field data array or None if not found.
+        """
+        for field in state:
+            if hasattr(field, "label") and field.label == field_name:
+                return field.data
+        # Try index
+        try:
+            idx = int(field_name)
+            return state[idx].data
+        except (ValueError, IndexError):
+            return None
+
     def _extract_field_data(
         self, state: ScalarField | FieldCollection
     ) -> np.ndarray:
@@ -98,21 +156,51 @@ class OutputManager:
             2D numpy array of field values.
         """
         if isinstance(state, FieldCollection):
-            if self.field_to_plot:
-                # Find field by label
-                for field in state:
-                    if hasattr(field, "label") and field.label == self.field_to_plot:
-                        return field.data
-                # If not found by label, try index
-                try:
-                    idx = int(self.field_to_plot)
-                    return state[idx].data
-                except (ValueError, IndexError):
-                    pass
+            if self.plot_mode == "magnitude" and len(self.plot_fields) == 2:
+                # Magnitude of two fields: sqrt(f1^2 + f2^2)
+                f1 = self._get_field_by_name(state, self.plot_fields[0])
+                f2 = self._get_field_by_name(state, self.plot_fields[1])
+                if f1 is not None and f2 is not None:
+                    return np.sqrt(f1**2 + f2**2)
+                # Fallback to first field if magnitude fields not found
+                return state[0].data
+
+            if self.plot_fields:
+                # Single field mode with explicit field name
+                data = self._get_field_by_name(state, self.plot_fields[0])
+                if data is not None:
+                    return data
             # Default to first field
             return state[0].data
         else:
             return state.data
+
+    def _extract_vector_components(
+        self, state: ScalarField | FieldCollection
+    ) -> tuple[np.ndarray, np.ndarray] | None:
+        """Extract vector components for quiver plotting.
+
+        Only works when plot_mode is "magnitude".
+
+        Args:
+            state: The field state to extract from.
+
+        Returns:
+            Tuple of (u_component, v_component) arrays or None if not applicable.
+        """
+        if self.plot_mode != "magnitude" or len(self.plot_fields) != 2:
+            return None
+
+        if not isinstance(state, FieldCollection):
+            return None
+
+        f1 = self._get_field_by_name(state, self.plot_fields[0])
+        f2 = self._get_field_by_name(state, self.plot_fields[1])
+
+        if f1 is None or f2 is None:
+            return None
+
+        return (f1, f2)
 
     def save_frame(
         self,
@@ -142,6 +230,34 @@ class OutputManager:
             vmax=self.vmax,
             aspect="equal",
         )
+
+        # Add vector arrows overlay if requested
+        if self.show_vectors and self.plot_mode == "magnitude":
+            vector_components = self._extract_vector_components(state)
+            if vector_components is not None:
+                u_data, v_data = vector_components
+                ny, nx = data.shape
+
+                # Subsample grid for arrows
+                stride = max(1, min(nx, ny) // self.vector_density)
+                x_indices = np.arange(0, nx, stride)
+                y_indices = np.arange(0, ny, stride)
+                X, Y = np.meshgrid(x_indices, y_indices)
+
+                # Subsample vector components (note: data is transposed for display)
+                U = u_data[::stride, ::stride].T
+                V = v_data[::stride, ::stride].T
+
+                # Draw quiver with white arrows and black edges for visibility
+                ax.quiver(
+                    X, Y, U, V,
+                    color="white",
+                    edgecolor="black",
+                    linewidth=0.5,
+                    scale=None,  # Auto-scale
+                    alpha=0.8,
+                )
+
         ax.axis("off")
 
         # Save

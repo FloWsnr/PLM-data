@@ -361,3 +361,168 @@ class TestCreateMetadata:
 
         # Description should be None since no markdown file exists
         assert metadata["description"] is None
+
+
+class TestMagnitudePlotting:
+    """Tests for magnitude and vector plotting functionality."""
+
+    def test_parse_magnitude_syntax(self, tmp_output):
+        """Test parsing mag(X,Y) syntax."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-mag-parse_2024-01-15",
+            field_to_plot="mag(X,Y)",
+        )
+
+        assert manager.plot_mode == "magnitude"
+        assert manager.plot_fields == ["X", "Y"]
+
+    def test_parse_magnitude_with_spaces(self, tmp_output):
+        """Test parsing mag(X, Y) with space after comma."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-mag-space_2024-01-15",
+            field_to_plot="mag(u, v)",
+        )
+
+        assert manager.plot_mode == "magnitude"
+        assert manager.plot_fields == ["u", "v"]
+
+    def test_parse_single_field(self, tmp_output):
+        """Test parsing single field name."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-single-field_2024-01-15",
+            field_to_plot="u",
+        )
+
+        assert manager.plot_mode == "single"
+        assert manager.plot_fields == ["u"]
+
+    def test_parse_no_field(self, tmp_output):
+        """Test parsing when no field is specified."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-no-field_2024-01-15",
+        )
+
+        assert manager.plot_mode == "single"
+        assert manager.plot_fields == []
+
+    def test_extract_magnitude_data(self, tmp_output, small_grid):
+        """Test extracting magnitude from two fields."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-mag-data_2024-01-15",
+            field_to_plot="mag(X,Y)",
+        )
+
+        # Create field collection with known values
+        x_data = np.ones(small_grid.shape) * 3.0
+        y_data = np.ones(small_grid.shape) * 4.0
+
+        X = ScalarField(small_grid, x_data)
+        X.label = "X"
+        Y = ScalarField(small_grid, y_data)
+        Y.label = "Y"
+        collection = FieldCollection([X, Y])
+
+        # Extract magnitude
+        data = manager._extract_field_data(collection)
+
+        # Should be sqrt(3^2 + 4^2) = 5
+        np.testing.assert_array_almost_equal(data, np.ones(small_grid.shape) * 5.0)
+
+    def test_extract_vector_components(self, tmp_output, small_grid):
+        """Test extracting vector components for quiver."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-vector-comp_2024-01-15",
+            field_to_plot="mag(u,v)",
+            show_vectors=True,
+        )
+
+        u_data = np.random.rand(*small_grid.shape)
+        v_data = np.random.rand(*small_grid.shape)
+
+        u = ScalarField(small_grid, u_data)
+        u.label = "u"
+        v = ScalarField(small_grid, v_data)
+        v.label = "v"
+        collection = FieldCollection([u, v])
+
+        components = manager._extract_vector_components(collection)
+
+        assert components is not None
+        np.testing.assert_array_equal(components[0], u_data)
+        np.testing.assert_array_equal(components[1], v_data)
+
+    def test_extract_vector_components_single_mode(self, tmp_output, small_grid):
+        """Test that vector extraction returns None for single field mode."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-vector-single_2024-01-15",
+            field_to_plot="u",
+        )
+
+        u = ScalarField.random_uniform(small_grid)
+        u.label = "u"
+        v = ScalarField.random_uniform(small_grid)
+        v.label = "v"
+        collection = FieldCollection([u, v])
+
+        components = manager._extract_vector_components(collection)
+        assert components is None
+
+    def test_save_frame_with_vectors(self, tmp_output, small_grid):
+        """Test saving frame with vector overlay."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-vectors_2024-01-15",
+            field_to_plot="mag(X,Y)",
+            show_vectors=True,
+            vector_density=8,
+        )
+
+        # Create field collection
+        X = ScalarField.random_uniform(small_grid)
+        X.label = "X"
+        Y = ScalarField.random_uniform(small_grid)
+        Y.label = "Y"
+        collection = FieldCollection([X, Y])
+
+        # Save frame
+        frame_path = manager.save_frame(collection, frame_index=0, simulation_time=0.0)
+
+        assert frame_path.exists()
+        assert frame_path.name == "000000.png"
+
+    def test_compute_range_with_magnitude(self, tmp_output, small_grid):
+        """Test computing range for magnitude mode."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-mag-range_2024-01-15",
+            field_to_plot="mag(X,Y)",
+        )
+
+        # Create field collections with known values
+        x1 = np.ones(small_grid.shape) * 3.0
+        y1 = np.ones(small_grid.shape) * 4.0  # mag = 5
+        X1 = ScalarField(small_grid, x1)
+        X1.label = "X"
+        Y1 = ScalarField(small_grid, y1)
+        Y1.label = "Y"
+        state1 = FieldCollection([X1, Y1])
+
+        x2 = np.ones(small_grid.shape) * 6.0
+        y2 = np.ones(small_grid.shape) * 8.0  # mag = 10
+        X2 = ScalarField(small_grid, x2)
+        X2.label = "X"
+        Y2 = ScalarField(small_grid, y2)
+        Y2.label = "Y"
+        state2 = FieldCollection([X2, Y2])
+
+        vmin, vmax = manager.compute_range([state1, state2])
+
+        assert vmin == 5.0
+        assert vmax == 10.0

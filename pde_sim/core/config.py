@@ -16,6 +16,8 @@ class OutputConfig:
     colormap: str = "turbo"
     field_to_plot: str | None = None
     save_array: bool = False  # Save trajectory as numpy array (.npy)
+    show_vectors: bool = False  # Overlay vector arrows when using mag()
+    vector_density: int = 16  # Number of arrows per axis (e.g., 16 = 16x16 grid)
 
 
 @dataclass
@@ -91,6 +93,8 @@ def load_config(path: Path | str) -> SimulationConfig:
         colormap=output_raw.get("colormap", "turbo"),
         field_to_plot=output_raw.get("field_to_plot"),
         save_array=output_raw.get("save_array", False),
+        show_vectors=output_raw.get("show_vectors", False),
+        vector_density=output_raw.get("vector_density", 16),
     )
 
     return SimulationConfig(
@@ -134,6 +138,8 @@ def config_to_dict(config: SimulationConfig) -> dict[str, Any]:
             "colormap": config.output.colormap,
             "field_to_plot": config.output.field_to_plot,
             "save_array": config.output.save_array,
+            "show_vectors": config.output.show_vectors,
+            "vector_density": config.output.vector_density,
         },
         "seed": config.seed,
         "domain_size": config.domain_size,

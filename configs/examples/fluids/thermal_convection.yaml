@@ -20,7 +20,9 @@ output:
   path: ./output
   frames_per_save: 50
   colormap: hot
-  field_to_plot: T
+  field_to_plot: mag(T,w)
+  show_vectors: true
+  vector_density: 12
 seed: 42
 domain_size: 4.0
 t_end: 100.0

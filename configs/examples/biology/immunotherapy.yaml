@@ -27,8 +27,10 @@ bc:
 output:
   path: ./output
   frames_per_save: 333
-  colormap: Reds
-  field_to_plot: T
+  colormap: turbo
+  field_to_plot: mag(T,I)
+  show_vectors: true
+  vector_density: 16
 seed: 42
 domain_size: 5.0
 t_end: 99.999

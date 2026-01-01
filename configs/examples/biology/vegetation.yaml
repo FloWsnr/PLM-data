@@ -21,7 +21,9 @@ output:
   path: ./output
   frames_per_save: 5
   colormap: YlGn
-  field_to_plot: n
+  field_to_plot: mag(w,n)
+  show_vectors: true
+  vector_density: 16
 seed: 42
 domain_size: 100.0
 t_end: 5000.0

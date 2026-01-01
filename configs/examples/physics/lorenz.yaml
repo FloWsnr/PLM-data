@@ -3,9 +3,9 @@ parameters:
   sigma: 10.0
   rho: 28.0
   beta: 2.6666666666667
-  Dx: 0.1
-  Dy: 0.1
-  Dz: 0.1
+  Dx: 0.001
+  Dy: 0.001
+  Dz: 0.001
 init:
   type: random-gaussian
   params:
@@ -15,7 +15,9 @@ solver: euler
 backend: numba
 adaptive: true
 dt: 0.05
-resolution: 64
+resolution: 128
+domain_size: 2.0
+t_end: 25.0
 bc:
   x: periodic
   y: periodic
@@ -23,7 +25,7 @@ output:
   path: ./output
   frames_per_save: 5
   colormap: turbo
-  field_to_plot: X
+  field_to_plot: mag(X,Y)
+  show_vectors: true
+  vector_density: 16
 seed: 42
-domain_size: 10.0
-t_end: 25.0

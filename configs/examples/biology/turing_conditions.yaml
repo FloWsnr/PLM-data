@@ -21,7 +21,9 @@ output:
   path: ./output
   frames_per_save: 500
   colormap: turbo
-  field_to_plot: u
+  field_to_plot: mag(u,v)
+  show_vectors: true
+  vector_density: 16
 seed: 42
 domain_size: 10.0
 t_end: 5.0

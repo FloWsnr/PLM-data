@@ -20,8 +20,10 @@ bc:
 output:
   path: ./output
   frames_per_save: 250
-  colormap: seismic
-  field_to_plot: u
+  colormap: turbo
+  field_to_plot: mag(u,v)
+  show_vectors: true
+  vector_density: 12
 seed: 42
 domain_size: 2.0
 t_end: 5.0

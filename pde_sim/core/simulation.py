@@ -91,6 +91,8 @@ class SimulationRunner:
             colormap=config.output.colormap,
             field_to_plot=config.output.field_to_plot,
             save_array=config.output.save_array,
+            show_vectors=config.output.show_vectors,
+            vector_density=config.output.vector_density,
         )
 
     def _get_solver_name(self) -> str:
