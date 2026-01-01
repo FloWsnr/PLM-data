@@ -86,7 +86,7 @@ def run_simulation(args):
         )
 
         if not args.quiet:
-            print(f"\nOutput saved to: {metadata['id']}")
+            print(f"\nOutput saved to: {metadata['folder_name']}")
 
     except Exception as e:
         print(f"Error running simulation: {e}")

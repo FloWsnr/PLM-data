@@ -67,8 +67,8 @@ class TestSimulationRunner:
         assert metadata["preset"] == "heat"
         assert metadata["simulation"]["totalFrames"] > 0
 
-        # Check output files exist
-        output_dir = tmp_path / metadata["id"]
+        # Check output files exist (folder is now named PDEname_date)
+        output_dir = tmp_path / metadata["folder_name"]
         assert (output_dir / "metadata.json").exists()
         assert (output_dir / "frames").exists()
 

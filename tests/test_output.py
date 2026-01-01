@@ -17,20 +17,20 @@ class TestOutputManager:
         """Test OutputManager initialization."""
         manager = OutputManager(
             base_path=tmp_output,
-            sim_id="test-sim-123",
+            folder_name="heat_2024-01-15",
             colormap="viridis",
         )
 
-        assert manager.sim_id == "test-sim-123"
+        assert manager.folder_name == "heat_2024-01-15"
         assert manager.colormap == "viridis"
-        assert manager.output_dir == tmp_output / "test-sim-123"
+        assert manager.output_dir == tmp_output / "heat_2024-01-15"
         assert manager.frames_dir.exists()
 
     def test_save_scalar_frame(self, tmp_output, small_grid):
         """Test saving a scalar field frame."""
         manager = OutputManager(
             base_path=tmp_output,
-            sim_id="test-scalar",
+            folder_name="test-scalar_2024-01-15",
         )
 
         field = ScalarField.random_uniform(small_grid)
@@ -43,7 +43,7 @@ class TestOutputManager:
         """Test saving multiple frames."""
         manager = OutputManager(
             base_path=tmp_output,
-            sim_id="test-multi",
+            folder_name="test-multi_2024-01-15",
         )
 
         field = ScalarField.random_uniform(small_grid)
@@ -65,7 +65,7 @@ class TestOutputManager:
         """Test saving a FieldCollection frame."""
         manager = OutputManager(
             base_path=tmp_output,
-            sim_id="test-collection",
+            folder_name="test-collection_2024-01-15",
             field_to_plot="u",
         )
 
@@ -82,7 +82,7 @@ class TestOutputManager:
         """Test that min/max values are tracked across frames."""
         manager = OutputManager(
             base_path=tmp_output,
-            sim_id="test-range",
+            folder_name="test-range_2024-01-15",
         )
 
         # First frame with known values
@@ -107,7 +107,7 @@ class TestOutputManager:
         """Test saving metadata JSON."""
         manager = OutputManager(
             base_path=tmp_output,
-            sim_id="test-meta",
+            folder_name="test-meta_2024-01-15",
         )
 
         field = ScalarField.random_uniform(small_grid)

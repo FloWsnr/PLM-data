@@ -21,7 +21,7 @@ class OutputManager:
     def __init__(
         self,
         base_path: Path | str,
-        sim_id: str,
+        folder_name: str,
         colormap: str = "turbo",
         field_to_plot: str | None = None,
         dpi: int = 128,
@@ -31,21 +31,21 @@ class OutputManager:
 
         Args:
             base_path: Base directory for output.
-            sim_id: Unique simulation identifier.
+            folder_name: Name for the output folder (e.g., "gray-scott_2024-01-15").
             colormap: Matplotlib colormap name.
             field_to_plot: Name of field to render (for multi-field systems).
             dpi: DPI for saved images.
             figsize: Figure size in inches.
         """
         self.base_path = Path(base_path)
-        self.sim_id = sim_id
+        self.folder_name = folder_name
         self.colormap = colormap
         self.field_to_plot = field_to_plot
         self.dpi = dpi
         self.figsize = figsize
 
         # Create output directories
-        self.output_dir = self.base_path / self.sim_id
+        self.output_dir = self.base_path / self.folder_name
         self.frames_dir = self.output_dir / "frames"
         self.frames_dir.mkdir(parents=True, exist_ok=True)
 

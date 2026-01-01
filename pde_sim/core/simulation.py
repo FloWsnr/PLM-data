@@ -39,6 +39,11 @@ class SimulationRunner:
         self.output_dir = Path(output_dir) if output_dir else config.output.path
         self.sim_id = sim_id or str(uuid.uuid4())
 
+        # Generate folder name: PDEname_date (e.g., gray-scott_2024-01-15)
+        from datetime import datetime
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        self.folder_name = f"{config.preset}_{date_str}"
+
         # Validate backend
         if config.backend not in VALID_BACKENDS:
             raise ValueError(
@@ -82,7 +87,7 @@ class SimulationRunner:
         # Output management
         self.output_manager = OutputManager(
             base_path=self.output_dir,
-            sim_id=self.sim_id,
+            folder_name=self.folder_name,
             colormap=config.output.colormap,
             field_to_plot=config.output.field_to_plot,
         )
@@ -174,6 +179,8 @@ class SimulationRunner:
             print(f"  Generated {len(storage)} frames")
             print(f"  Total simulation time: {total_time:.4f}")
 
+        # Add folder_name to returned metadata (for CLI use, not saved to file)
+        metadata["folder_name"] = self.folder_name
         return metadata
 
 
