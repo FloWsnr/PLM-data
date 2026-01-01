@@ -1,0 +1,7 @@
+D,K,BC_x,BC_y,init,solver,dt,t_end,notes
+1.0,1.0,periodic,periodic,step,rk4,1,100,edge preserving
+1.0,0.5,periodic,periodic,step,rk4,1,80,sharper edges
+0.5,1.0,periodic,periodic,gaussian-blobs,rk4,1,150,slower smoothing
+2.0,2.0,no-flux,no-flux,random-gaussian,rk4,1,60,fast smoothing
+1.0,0.2,periodic,periodic,step,rk4,1,120,very sharp edges
+0.8,1.5,periodic,periodic,sine,rk4,1,100,moderate edge

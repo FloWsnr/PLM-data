@@ -1,0 +1,7 @@
+nu,separation,BC_x,BC_y,init,solver,dt,t_end,notes
+0.005,0.15,periodic,periodic,gaussian-blobs,rk4,1,150,standard dipole
+0.01,0.15,periodic,periodic,gaussian-blobs,rk4,1,120,more viscous
+0.002,0.15,periodic,periodic,gaussian-blobs,rk4,1,200,nearly inviscid
+0.005,0.2,periodic,periodic,gaussian-blobs,rk4,1,150,wider separation
+0.005,0.1,periodic,periodic,gaussian-blobs,rk4,1,150,closer separation
+0.005,0.15,no-flux,no-flux,gaussian-blobs,rk4,1,150,bounded domain

@@ -1,0 +1,8 @@
+D,a,BC_x,BC_y,init,solver,dt,t_end,notes
+0.5,0.5,periodic,periodic,random-uniform,rk4,1,100,symmetric threshold
+0.5,0.3,periodic,periodic,random-uniform,rk4,1,120,biased threshold
+1.0,0.5,periodic,periodic,step,rk4,1,80,front motion
+0.2,0.5,no-flux,no-flux,random-uniform,rk4,1,150,slow diffusion
+0.5,0.7,periodic,periodic,gaussian-blobs,rk4,1,100,high threshold
+0.3,0.4,periodic,periodic,random-uniform,rk4,1,130,intermediate
+1.0,0.2,periodic,periodic,step,rk4,1,70,low threshold fast

@@ -1,0 +1,7 @@
+D,BC_x,BC_y,init,solver,dt,t_end,notes
+1.0,periodic,periodic,gaussian-blobs,rk4,1,50,standard quantum
+0.5,periodic,periodic,gaussian-blobs,rk4,1,80,slower dispersion
+2.0,periodic,periodic,gaussian-blobs,rk4,1,30,faster dispersion
+1.0,no-flux,no-flux,gaussian-blobs,rk4,1,50,particle in box
+1.0,periodic,periodic,sine,rk4,1,60,plane wave
+0.2,periodic,periodic,random-gaussian,rk4,1,100,weak dispersion

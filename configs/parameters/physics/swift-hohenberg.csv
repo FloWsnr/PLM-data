@@ -1,0 +1,9 @@
+r,k,g2,g3,BC_x,BC_y,init,solver,dt,t_end,notes
+0.1,1.0,0.0,-1.0,periodic,periodic,random-gaussian,implicit,1,500,stripes
+0.3,1.0,0.0,-1.0,periodic,periodic,random-gaussian,implicit,1,300,strong stripes
+0.1,1.0,0.5,-1.0,periodic,periodic,random-gaussian,implicit,1,500,hexagons
+0.2,0.8,0.3,-1.0,periodic,periodic,random-gaussian,implicit,1,400,mixed patterns
+0.05,1.0,0.0,-1.0,no-flux,no-flux,random-gaussian,implicit,1,600,weak patterns
+0.15,1.2,0.0,-1.0,periodic,periodic,random-gaussian,implicit,1,400,larger wavenumber
+0.25,1.0,0.7,-1.0,periodic,periodic,random-gaussian,implicit,1,350,strong hexagons
+0.1,0.7,0.0,-1.0,periodic,periodic,sine,implicit,1,500,smaller k stripes

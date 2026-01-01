@@ -1,0 +1,8 @@
+nu,BC_x,BC_y,init,solver,dt,t_end,notes
+1.0,periodic,periodic,random-gaussian,rk4,1,200,standard chaos
+0.5,periodic,periodic,random-gaussian,rk4,1,300,stronger chaos
+2.0,periodic,periodic,random-gaussian,rk4,1,150,weaker instability
+1.0,periodic,periodic,sine,rk4,1,250,from ordered IC
+0.8,periodic,periodic,random-gaussian,rk4,1,200,intermediate
+0.3,periodic,periodic,random-gaussian,rk4,1,400,very strong chaos
+1.5,periodic,periodic,gaussian-blobs,rk4,1,180,localized perturbation

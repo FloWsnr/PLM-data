@@ -1,0 +1,8 @@
+c,alpha,beta,BC_x,BC_y,init,solver,dt,t_end,notes
+0.0,6.0,1.0,periodic,periodic,gaussian-blobs,rk4,1,100,standard soliton
+0.5,6.0,1.0,periodic,periodic,gaussian-blobs,rk4,1,80,with background flow
+0.0,3.0,1.0,periodic,periodic,gaussian-blobs,rk4,1,120,weaker nonlinearity
+0.0,6.0,0.5,periodic,periodic,gaussian-blobs,rk4,1,100,weaker dispersion
+-0.5,6.0,1.0,periodic,periodic,sine,rk4,1,100,counter flow
+0.0,10.0,1.0,periodic,periodic,gaussian-blobs,rk4,1,80,strong nonlinearity
+0.0,6.0,2.0,periodic,periodic,gaussian-blobs,rk4,1,120,strong dispersion

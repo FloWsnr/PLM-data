@@ -1,0 +1,7 @@
+D,source,BC_x,BC_y,init,solver,dt,t_end,notes
+1.0,0.5,periodic,periodic,gaussian-blobs,implicit,1,80,heat source
+1.0,-0.5,periodic,periodic,gaussian-blobs,implicit,1,80,heat sink
+0.5,0.2,no-flux,no-flux,gaussian-blobs,implicit,1,100,insulated with source
+2.0,1.0,periodic,periodic,random-gaussian,implicit,1,50,strong source
+1.0,0.0,no-flux,no-flux,step,implicit,1,60,no source baseline
+0.3,0.3,periodic,periodic,sine,implicit,1,120,slow with weak source

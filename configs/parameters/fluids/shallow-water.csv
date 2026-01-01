@@ -1,0 +1,8 @@
+c,BC_x,BC_y,init,solver,dt,t_end,notes
+1.0,periodic,periodic,gaussian-blobs,rk4,1,50,single drop
+2.0,periodic,periodic,gaussian-blobs,rk4,1,30,faster waves
+0.5,no-flux,no-flux,gaussian-blobs,rk4,1,80,reflecting tank
+1.0,periodic,periodic,step,rk4,1,60,dam break
+1.5,periodic,no-flux,gaussian-blobs,rk4,1,40,channel
+0.3,periodic,periodic,gaussian-blobs,rk4,1,120,slow waves
+1.0,no-flux,no-flux,sine,rk4,1,50,standing wave tank

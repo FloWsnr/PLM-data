@@ -1,0 +1,7 @@
+Dt,Di,rT,K,k,s,rI,a,dI,BC_x,BC_y,init,solver,dt,t_end,notes
+0.01,0.1,1.0,1.0,1.0,0.1,0.5,0.1,0.3,periodic,periodic,gaussian-blobs,rk4,1,200,standard tumor-immune
+0.01,0.1,1.5,1.0,1.0,0.1,0.5,0.1,0.3,periodic,periodic,gaussian-blobs,rk4,1,180,faster tumor growth
+0.01,0.1,1.0,1.0,1.5,0.1,0.5,0.1,0.3,periodic,periodic,gaussian-blobs,rk4,1,200,stronger immune kill
+0.01,0.1,1.0,1.0,1.0,0.2,0.5,0.1,0.3,periodic,periodic,gaussian-blobs,rk4,1,190,more immune source
+0.01,0.2,1.0,1.0,1.0,0.1,0.8,0.1,0.3,no-flux,no-flux,gaussian-blobs,rk4,1,200,faster immune diff
+0.02,0.1,1.0,1.0,1.0,0.1,0.5,0.1,0.5,periodic,periodic,gaussian-blobs,rk4,1,180,higher immune death

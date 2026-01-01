@@ -1,0 +1,7 @@
+D,alpha,BC_x,BC_y,init,solver,dt,t_end,notes
+1.0,0.1,periodic,periodic,gaussian-blobs,rk4,1,150,weak nonlinearity
+1.0,0.5,periodic,periodic,gaussian-blobs,rk4,1,120,moderate nonlinearity
+1.0,1.0,periodic,periodic,gaussian-blobs,rk4,1,100,strong nonlinearity
+0.5,0.1,no-flux,no-flux,gaussian-blobs,rk4,1,180,clamped weak
+2.0,0.2,periodic,periodic,sine,rk4,1,100,stiffer plate
+0.5,0.5,periodic,periodic,step,rk4,1,150,flexible moderate

@@ -1,0 +1,7 @@
+Du,Dv,a,d,BC_x,BC_y,init,solver,dt,t_end,notes
+0.1,10.0,1.0,0.5,periodic,periodic,random-gaussian,implicit,1,400,standard Turing demo
+0.1,20.0,1.0,0.5,periodic,periodic,random-gaussian,implicit,1,350,larger ratio
+0.05,10.0,1.0,0.5,periodic,periodic,random-gaussian,implicit,1,450,smaller Du
+0.1,10.0,1.5,0.5,periodic,periodic,random-gaussian,implicit,1,380,higher a
+0.1,10.0,1.0,0.8,no-flux,no-flux,random-gaussian,implicit,1,400,higher d bounded
+0.15,15.0,1.2,0.6,periodic,periodic,gaussian-blobs,implicit,1,350,intermediate

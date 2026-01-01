@@ -1,0 +1,8 @@
+nu,BC_x,BC_y,init,solver,dt,t_end,notes
+0.01,periodic,periodic,sine,rk4,1,100,shock formation
+0.05,periodic,periodic,sine,rk4,1,80,viscous shock
+0.001,periodic,periodic,gaussian-blobs,rk4,1,150,near-inviscid
+0.02,periodic,periodic,step,rk4,1,100,step shock
+0.1,no-flux,no-flux,gaussian-blobs,rk4,1,60,diffusion dominated
+0.005,periodic,periodic,sine,rk4,1,120,sharp shock
+0.03,periodic,periodic,random-gaussian,rk4,1,90,chaotic IC

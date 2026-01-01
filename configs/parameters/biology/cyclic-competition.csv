@@ -1,0 +1,8 @@
+D,alpha,BC_x,BC_y,init,solver,dt,t_end,notes
+0.1,1.0,periodic,periodic,random-uniform,rk4,1,200,standard RPS
+0.05,1.0,periodic,periodic,random-uniform,rk4,1,300,slower diffusion
+0.1,2.0,periodic,periodic,random-uniform,rk4,1,150,stronger competition
+0.2,0.5,periodic,periodic,random-uniform,rk4,1,180,faster weak competition
+0.1,1.0,no-flux,no-flux,random-uniform,rk4,1,200,bounded domain
+0.05,1.5,periodic,periodic,gaussian-blobs,rk4,1,250,localized start
+0.15,1.0,periodic,periodic,random-uniform,rk4,1,180,moderate diffusion
