@@ -90,6 +90,7 @@ class SimulationRunner:
             folder_name=self.folder_name,
             colormap=config.output.colormap,
             field_to_plot=config.output.field_to_plot,
+            save_array=config.output.save_array,
         )
 
     def _get_solver_name(self) -> str:
@@ -160,11 +161,18 @@ class SimulationRunner:
         # Two-pass approach for consistent colorscale:
         # 1. Compute global min/max across all frames
         all_fields = [field for _, field in storage.items()]
+        all_times = list(storage.times)
         self.output_manager.compute_range(all_fields)
 
         # 2. Save frames with the pre-computed range
         for frame_index, (time, field) in enumerate(storage.items()):
             self.output_manager.save_frame(field, frame_index, time)
+
+        # 3. Save trajectory array if requested
+        if self.output_manager.save_array:
+            self.output_manager.save_trajectory_array(all_fields, all_times)
+            if verbose:
+                print(f"  Saved trajectory array: trajectory.npz")
 
         # Generate and save metadata
         total_time = storage.times[-1] if storage.times else self.config.t_end

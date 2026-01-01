@@ -152,7 +152,67 @@ class TestOutputManager:
         with open(meta_path) as f:
             saved = json.load(f)
         assert saved["test"] == "value"
-        assert "minValue" in saved["visualization"]
+        assert "colorbarMin" in saved["visualization"]
+        assert "colorbarMax" in saved["visualization"]
+
+    def test_save_trajectory_array_scalar(self, tmp_output, small_grid):
+        """Test saving trajectory as numpy array for scalar fields."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-trajectory_2024-01-15",
+            save_array=True,
+        )
+
+        # Create a sequence of scalar fields
+        states = [ScalarField.random_uniform(small_grid) for _ in range(5)]
+        times = [0.0, 0.1, 0.2, 0.3, 0.4]
+
+        array_path = manager.save_trajectory_array(states, times)
+
+        # Check file exists
+        assert array_path.exists()
+        assert array_path.name == "trajectory.npz"
+
+        # Load and verify contents
+        data = np.load(array_path)
+        assert "trajectory" in data
+        assert "times" in data
+
+        # Check shapes
+        assert data["trajectory"].shape == (5, 32, 32)
+        assert data["times"].shape == (5,)
+
+        # Check times values
+        np.testing.assert_array_almost_equal(data["times"], times)
+
+    def test_save_trajectory_array_field_collection(self, tmp_output, small_grid):
+        """Test saving trajectory as numpy array for multi-field systems."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-trajectory-collection_2024-01-15",
+            field_to_plot="u",
+            save_array=True,
+        )
+
+        # Create a sequence of field collections
+        states = []
+        for _ in range(3):
+            u = ScalarField.random_uniform(small_grid)
+            u.label = "u"
+            v = ScalarField.random_uniform(small_grid)
+            v.label = "v"
+            states.append(FieldCollection([u, v]))
+
+        times = [0.0, 0.5, 1.0]
+
+        array_path = manager.save_trajectory_array(states, times)
+
+        # Load and verify
+        data = np.load(array_path)
+
+        # Should only save the selected field (u)
+        assert data["trajectory"].shape == (3, 32, 32)
+        assert data["times"].shape == (3,)
 
 
 class TestCreateMetadata:

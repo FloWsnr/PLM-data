@@ -26,6 +26,7 @@ class OutputManager:
         field_to_plot: str | None = None,
         dpi: int = 128,
         figsize: tuple[int, int] = (8, 8),
+        save_array: bool = False,
     ):
         """Initialize the output manager.
 
@@ -36,6 +37,7 @@ class OutputManager:
             field_to_plot: Name of field to render (for multi-field systems).
             dpi: DPI for saved images.
             figsize: Figure size in inches.
+            save_array: Whether to save trajectory as numpy array.
         """
         self.base_path = Path(base_path)
         self.folder_name = folder_name
@@ -43,6 +45,7 @@ class OutputManager:
         self.field_to_plot = field_to_plot
         self.dpi = dpi
         self.figsize = figsize
+        self.save_array = save_array
 
         # Create output directories
         self.output_dir = self.base_path / self.folder_name
@@ -163,15 +166,15 @@ class OutputManager:
         Returns:
             Path to the saved metadata file.
         """
-        # Add visualization bounds
+        # Add colorbar bounds for interpreting the color scale
         if "visualization" not in metadata:
             metadata["visualization"] = {}
 
-        metadata["visualization"]["minValue"] = (
-            str(self.vmin) if self.vmin is not None else "0.0"
+        metadata["visualization"]["colorbarMin"] = (
+            self.vmin if self.vmin is not None else 0.0
         )
-        metadata["visualization"]["maxValue"] = (
-            str(self.vmax) if self.vmax is not None else "1.0"
+        metadata["visualization"]["colorbarMax"] = (
+            self.vmax if self.vmax is not None else 1.0
         )
 
         metadata_path = self.output_dir / "metadata.json"
@@ -187,6 +190,40 @@ class OutputManager:
             List of frame annotation dictionaries.
         """
         return self.saved_frames.copy()
+
+    def save_trajectory_array(
+        self,
+        states: list[ScalarField | FieldCollection],
+        times: list[float],
+    ) -> Path:
+        """Save the full trajectory as a numpy array.
+
+        Saves a .npy file containing the trajectory with shape:
+        - For scalar fields: (num_frames, resolution_x, resolution_y)
+        - For multi-field systems: (num_frames, resolution_x, resolution_y)
+          (only the selected field is saved)
+
+        Also saves a times array with shape (num_frames,).
+
+        Args:
+            states: List of field states from the simulation.
+            times: List of simulation times corresponding to each state.
+
+        Returns:
+            Path to the saved .npz file.
+        """
+        # Extract field data for each state
+        trajectory_data = np.stack([
+            self._extract_field_data(state) for state in states
+        ])
+
+        times_array = np.array(times)
+
+        # Save as compressed npz with both trajectory and times
+        array_path = self.output_dir / "trajectory.npz"
+        np.savez_compressed(array_path, trajectory=trajectory_data, times=times_array)
+
+        return array_path
 
 
 def create_metadata(
