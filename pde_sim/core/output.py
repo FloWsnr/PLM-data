@@ -31,7 +31,7 @@ class OutputManager:
 
         Args:
             base_path: Base directory for output.
-            folder_name: Name for the output folder (e.g., "gray-scott_2024-01-15").
+            folder_name: Name for the output folder (e.g., "gray-scott_2024-01-15_143052").
             colormap: Matplotlib colormap name.
             field_to_plot: Name of field to render (for multi-field systems).
             dpi: DPI for saved images.
