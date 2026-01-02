@@ -10,7 +10,7 @@ from typing import Any
 
 import yaml
 
-from pde_sim.core.logging import setup_logging
+from pde_sim.core.logging import restore_stdout, setup_logging
 from pde_sim.core.simulation import run_from_config
 
 
@@ -127,10 +127,11 @@ def run_batch(
         log_file: Optional path to log file. If provided, all output is logged to this file.
         quiet: If True, suppress console output (only log to file if specified).
     """
-    # Setup logging
+    # Setup logging - capture stdout to get py-pde progress output in log file
     logger = setup_logging(
         log_file=log_file,
         console=not quiet,
+        capture_stdout=log_file is not None,
     )
 
     base_config = load_base_config(base_config_path)
@@ -197,10 +198,11 @@ def run_batch(
             logger.info(f"Init: {config.get('init', {}).get('type', 'unknown')}")
             logger.info(f"Time: t_end={config.get('t_end')}, dt={config.get('dt')}")
 
-            # Run simulation (verbose=False to avoid duplicate output)
+            # Run simulation with verbose=True to capture py-pde progress
+            # Output goes to stdout which is captured to log file if specified
             metadata = run_from_config(
                 config_path=temp_config_path,
-                verbose=not quiet and log_file is None,
+                verbose=True,
             )
 
             logger.info(f"Output: {metadata['folder_name']}")
@@ -214,6 +216,9 @@ def run_batch(
     logger.info("=" * 60)
     logger.info(f"Batch complete: {successful} successful, {failed} failed")
     logger.info("=" * 60)
+
+    # Restore stdout/stderr if we were capturing
+    restore_stdout()
 
     return successful, failed
 
