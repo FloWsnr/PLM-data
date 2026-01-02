@@ -1,10 +1,10 @@
 a,b,Du,Dv,BC_x,BC_y,init,solver,dt,t_end,notes
-1.0,3.0,1.0,8.0,periodic,periodic,random-gaussian,implicit,1,300,standard Turing
-1.5,3.5,1.0,8.0,periodic,periodic,random-gaussian,implicit,1,250,stronger oscillation
-1.0,2.5,1.0,10.0,periodic,periodic,random-gaussian,implicit,1,350,larger Dv ratio
-0.8,3.0,1.0,6.0,periodic,periodic,random-gaussian,implicit,1,300,smaller patterns
-1.0,3.0,0.5,8.0,no-flux,no-flux,random-gaussian,implicit,1,350,bounded
-4.5,8.0,1.0,8.0,periodic,periodic,random-gaussian,implicit,1,200,literature values
-2.0,4.0,1.0,10.0,periodic,periodic,gaussian-blobs,implicit,1,280,higher concentrations
-1.0,3.0,1.0,8.0,periodic,periodic,rectangle-grid,implicit,1,300,patchwork init
-1.0,3.0,1.0,8.0,no-flux,no-flux,rectangle-grid,implicit,1,300,patchwork bounded
+1.0,3.0,1.0,8.0,periodic,periodic,random-gaussian,rk4,1,300,standard Turing
+1.5,3.5,1.0,8.0,periodic,periodic,random-gaussian,rk4,1,250,stronger oscillation
+1.0,2.5,1.0,10.0,periodic,periodic,random-gaussian,rk4,1,350,larger Dv ratio
+0.8,3.0,1.0,6.0,periodic,periodic,random-gaussian,rk4,1,300,smaller patterns
+1.0,3.0,0.5,8.0,no-flux,no-flux,random-gaussian,rk4,1,350,bounded
+4.5,8.0,1.0,8.0,periodic,periodic,random-gaussian,rk4,1,200,literature values
+2.0,4.0,1.0,10.0,periodic,periodic,gaussian-blobs,rk4,1,280,higher concentrations
+1.0,3.0,1.0,8.0,periodic,periodic,rectangle-grid,rk4,1,300,patchwork init
+1.0,3.0,1.0,8.0,no-flux,no-flux,rectangle-grid,rk4,1,300,patchwork bounded

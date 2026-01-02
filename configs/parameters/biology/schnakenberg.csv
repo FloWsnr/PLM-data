@@ -1,10 +1,10 @@
 a,b,Du,Dv,BC_x,BC_y,init,solver,dt,t_end,notes
-0.1,0.9,1.0,100.0,periodic,periodic,random-gaussian,implicit,1,500,spots D=100
-0.1,0.9,1.0,30.0,periodic,periodic,random-gaussian,implicit,1,600,stripes D=30
-0.15,0.85,1.0,100.0,periodic,periodic,random-gaussian,implicit,1,400,different spots
-0.1,0.9,0.5,50.0,periodic,periodic,random-gaussian,implicit,1,500,smaller Du
-0.1,0.9,1.0,100.0,no-flux,no-flux,random-gaussian,implicit,1,500,bounded domain
-0.08,0.92,1.0,150.0,periodic,periodic,random-gaussian,implicit,1,450,larger ratio
-0.12,0.88,1.0,60.0,periodic,periodic,gaussian-blobs,implicit,1,550,mixed patterns
-0.1,0.9,1.0,100.0,periodic,periodic,rectangle-grid,implicit,1,500,patchwork init
-0.1,0.9,1.0,100.0,no-flux,no-flux,rectangle-grid,implicit,1,500,patchwork bounded
+0.1,0.9,1.0,100.0,periodic,periodic,random-gaussian,rk4,1,0.5,spots D=100
+0.1,0.9,1.0,30.0,periodic,periodic,random-gaussian,rk4,1,0.8,stripes D=30
+0.15,0.85,1.0,100.0,periodic,periodic,random-gaussian,rk4,1,0.5,different spots
+0.1,0.9,0.5,50.0,periodic,periodic,random-gaussian,rk4,1,0.6,smaller Du
+0.1,0.9,1.0,100.0,no-flux,no-flux,random-gaussian,rk4,1,0.5,bounded domain
+0.08,0.92,1.0,150.0,periodic,periodic,random-gaussian,rk4,1,0.5,larger ratio
+0.12,0.88,1.0,60.0,periodic,periodic,gaussian-blobs,rk4,1,0.7,mixed patterns
+0.1,0.9,1.0,100.0,periodic,periodic,rectangle-grid,rk4,1,0.5,patchwork init
+0.1,0.9,1.0,100.0,no-flux,no-flux,rectangle-grid,rk4,1,0.5,patchwork bounded

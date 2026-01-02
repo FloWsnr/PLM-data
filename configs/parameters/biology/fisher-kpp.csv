@@ -5,6 +5,6 @@ D,r,K,BC_x,BC_y,init,solver,dt,t_end,notes
 0.5,2.0,1.0,no-flux,no-flux,gaussian-blobs,rk4,1,80,faster growth
 0.2,1.0,0.5,periodic,periodic,gaussian-blobs,rk4,1,120,lower capacity
 0.3,1.5,1.0,periodic,periodic,step,rk4,1,90,moderate invasion
-0.8,0.8,1.0,periodic,periodic,random-gaussian,rk4,1,110,balanced
+0.8,0.8,1.0,periodic,periodic,gaussian-blobs,rk4,1,80,balanced
 0.5,1.0,1.0,periodic,periodic,rectangle-grid,rk4,1,100,patchwork init
 0.5,1.0,1.0,no-flux,no-flux,rectangle-grid,rk4,1,100,patchwork bounded
