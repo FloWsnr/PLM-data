@@ -1,9 +1,9 @@
 epsilon,g2,BC_x,BC_y,init,solver,dt,t_end,notes
-0.1,0.5,periodic,periodic,random-gaussian,implicit,1,400,standard superlattice
-0.2,0.5,periodic,periodic,random-gaussian,implicit,1,300,stronger instability
-0.1,0.8,periodic,periodic,random-gaussian,implicit,1,350,stronger quadratic
-0.05,0.3,periodic,periodic,random-gaussian,implicit,1,500,weak instability
-0.15,0.6,no-flux,no-flux,random-gaussian,implicit,1,380,bounded domain
-0.1,0.5,periodic,periodic,sine,implicit,1,400,from ordered IC
-0.1,0.5,periodic,periodic,rectangle-grid,implicit,1,400,patchwork init
-0.1,0.5,no-flux,no-flux,rectangle-grid,implicit,1,400,patchwork bounded
+0.1,0.5,periodic,periodic,random-gaussian,rk4,0.01,100,standard superlattice
+0.2,0.5,periodic,periodic,random-gaussian,rk4,0.01,80,stronger instability
+0.1,0.8,periodic,periodic,random-gaussian,rk4,0.01,100,stronger quadratic
+0.05,0.3,periodic,periodic,random-gaussian,rk4,0.01,120,weak instability
+0.15,0.6,no-flux,no-flux,random-gaussian,rk4,0.01,100,bounded domain
+0.1,0.5,periodic,periodic,sine,rk4,0.01,100,from ordered IC
+0.1,0.5,periodic,periodic,rectangle-grid,rk4,0.01,100,patchwork init
+0.1,0.5,no-flux,no-flux,rectangle-grid,rk4,0.01,100,patchwork bounded

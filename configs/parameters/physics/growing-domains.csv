@@ -1,9 +1,9 @@
 Du,Dv,a,b,rho,BC_x,BC_y,init,solver,dt,t_end,notes
-0.1,5.0,0.1,0.9,0.01,periodic,periodic,random-gaussian,implicit,1,500,slow growth
-0.1,5.0,0.1,0.9,0.05,periodic,periodic,random-gaussian,implicit,1,400,moderate growth
-0.1,5.0,0.1,0.9,0.1,periodic,periodic,random-gaussian,implicit,1,300,fast growth
-0.05,8.0,0.1,0.9,0.02,periodic,periodic,random-gaussian,implicit,1,600,different ratio slow
-0.1,5.0,0.1,0.9,0.0,no-flux,no-flux,gaussian-blobs,implicit,1,400,no growth baseline
-0.15,6.0,0.12,0.88,0.03,periodic,periodic,random-gaussian,implicit,1,450,intermediate
-0.1,5.0,0.1,0.9,0.01,periodic,periodic,rectangle-grid,implicit,1,500,patchwork init
-0.1,5.0,0.1,0.9,0.01,no-flux,no-flux,rectangle-grid,implicit,1,500,patchwork bounded
+0.1,5.0,0.1,0.9,0.01,periodic,periodic,random-gaussian,rk4,0.01,100,slow growth
+0.1,5.0,0.1,0.9,0.05,periodic,periodic,random-gaussian,rk4,0.01,80,moderate growth
+0.1,5.0,0.1,0.9,0.1,periodic,periodic,random-gaussian,rk4,0.01,60,fast growth
+0.05,8.0,0.1,0.9,0.02,periodic,periodic,random-gaussian,rk4,0.01,120,different ratio slow
+0.1,5.0,0.1,0.9,0.0,no-flux,no-flux,gaussian-blobs,rk4,0.01,100,no growth baseline
+0.15,6.0,0.12,0.88,0.03,periodic,periodic,random-gaussian,rk4,0.01,100,intermediate
+0.1,5.0,0.1,0.9,0.01,periodic,periodic,rectangle-grid,rk4,0.01,100,patchwork init
+0.1,5.0,0.1,0.9,0.01,no-flux,no-flux,rectangle-grid,rk4,0.01,100,patchwork bounded

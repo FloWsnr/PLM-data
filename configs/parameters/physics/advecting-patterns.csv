@@ -1,9 +1,9 @@
 Du,Dv,v_flow,a,b,BC_x,BC_y,init,solver,dt,t_end,notes
-0.1,5.0,0.5,0.1,0.9,periodic,periodic,random-gaussian,implicit,1,400,standard advecting
-0.1,5.0,1.0,0.1,0.9,periodic,periodic,random-gaussian,implicit,1,350,faster flow
-0.1,5.0,0.2,0.1,0.9,periodic,periodic,random-gaussian,implicit,1,500,slow flow
-0.05,8.0,0.5,0.1,0.9,periodic,periodic,random-gaussian,implicit,1,450,different diffusion ratio
-0.1,5.0,0.5,0.15,0.85,periodic,periodic,random-gaussian,implicit,1,400,channel periodic Turing
-0.15,6.0,0.8,0.12,0.88,periodic,periodic,gaussian-blobs,implicit,1,350,localized start
-0.1,5.0,0.5,0.1,0.9,periodic,periodic,rectangle-grid,implicit,1,400,patchwork init
-0.1,5.0,0.5,0.1,0.9,no-flux,no-flux,rectangle-grid,implicit,1,400,patchwork bounded
+0.1,5.0,0.5,0.1,0.9,periodic,periodic,random-gaussian,rk4,0.01,10,standard advecting
+0.1,5.0,1.0,0.1,0.9,periodic,periodic,random-gaussian,rk4,0.01,10,faster flow
+0.1,5.0,0.2,0.1,0.9,periodic,periodic,random-gaussian,rk4,0.01,10,slow flow
+0.05,8.0,0.5,0.1,0.9,periodic,periodic,random-gaussian,rk4,0.01,10,different diffusion ratio
+0.1,5.0,0.5,0.15,0.85,periodic,periodic,random-gaussian,rk4,0.01,10,channel periodic Turing
+0.15,6.0,0.8,0.12,0.88,periodic,periodic,gaussian-blobs,rk4,0.01,10,localized start
+0.1,5.0,0.5,0.1,0.9,periodic,periodic,rectangle-grid,rk4,0.01,10,patchwork init
+0.1,5.0,0.5,0.1,0.9,no-flux,no-flux,rectangle-grid,rk4,0.01,10,patchwork bounded

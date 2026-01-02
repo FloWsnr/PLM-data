@@ -1,13 +1,13 @@
 F,k,Du,Dv,BC_x,BC_y,init,solver,dt,t_end,notes
-0.014,0.054,2e-05,1e-05,periodic,periodic,gaussian-blobs,implicit,1,2500,gliders
-0.098,0.057,2e-05,1e-05,periodic,periodic,gaussian-blobs,implicit,1,2000,bubbles
-0.029,0.057,2e-05,1e-05,periodic,periodic,gaussian-blobs,implicit,1,2500,maze
-0.058,0.065,2e-05,1e-05,periodic,periodic,gaussian-blobs,implicit,1,2000,worms
-0.018,0.051,2e-05,1e-05,periodic,periodic,gaussian-blobs,implicit,1,3000,spirals
-0.03,0.062,2e-05,1e-05,periodic,periodic,gaussian-blobs,implicit,1,2000,spots
-0.035,0.06,2e-05,1e-05,periodic,periodic,gaussian-blobs,implicit,1,2500,stripes
-0.032,0.059,2e-05,1e-05,no-flux,no-flux,gaussian-blobs,implicit,1,2500,nice stripes
-0.042,0.063,3e-05,1.5e-05,periodic,periodic,gaussian-blobs,implicit,1,2000,mitosis
-0.04,0.06,2e-05,1e-05,periodic,periodic,random-gaussian,implicit,1,2200,coral
-0.014,0.054,2e-05,1e-05,periodic,periodic,rectangle-grid,implicit,1,2500,patchwork init
-0.014,0.054,2e-05,1e-05,no-flux,no-flux,rectangle-grid,implicit,1,2500,patchwork bounded
+0.014,0.054,2e-05,1e-05,periodic,periodic,gaussian-blobs,rk4,0.5,500,gliders
+0.098,0.057,2e-05,1e-05,periodic,periodic,gaussian-blobs,rk4,0.5,400,bubbles
+0.029,0.057,2e-05,1e-05,periodic,periodic,gaussian-blobs,rk4,0.5,500,maze
+0.058,0.065,2e-05,1e-05,periodic,periodic,gaussian-blobs,rk4,0.5,400,worms
+0.018,0.051,2e-05,1e-05,periodic,periodic,gaussian-blobs,rk4,0.5,600,spirals
+0.03,0.062,2e-05,1e-05,periodic,periodic,gaussian-blobs,rk4,0.5,400,spots
+0.035,0.06,2e-05,1e-05,periodic,periodic,gaussian-blobs,rk4,0.5,500,stripes
+0.032,0.059,2e-05,1e-05,no-flux,no-flux,gaussian-blobs,rk4,0.5,500,nice stripes
+0.042,0.063,3e-05,1.5e-05,periodic,periodic,gaussian-blobs,rk4,0.5,400,mitosis
+0.04,0.06,2e-05,1e-05,periodic,periodic,random-gaussian,rk4,0.5,500,coral
+0.014,0.054,2e-05,1e-05,periodic,periodic,rectangle-grid,rk4,0.5,500,patchwork init
+0.014,0.054,2e-05,1e-05,no-flux,no-flux,rectangle-grid,rk4,0.5,500,patchwork bounded

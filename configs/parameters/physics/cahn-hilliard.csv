@@ -1,11 +1,11 @@
 M,gamma,BC_x,BC_y,init,solver,dt,t_end,notes
-1.0,0.01,periodic,periodic,random-uniform,implicit,1,500,spinodal decomposition
-1.0,0.005,periodic,periodic,random-uniform,implicit,1,600,sharper interfaces
-0.5,0.01,periodic,periodic,random-uniform,implicit,1,800,slow coarsening
-2.0,0.01,no-flux,no-flux,random-uniform,implicit,1,300,fast coarsening
-1.0,0.02,periodic,periodic,random-uniform,implicit,1,400,diffuse interfaces
-1.0,0.01,no-flux,no-flux,step,implicit,1,500,wetting dynamics
-0.2,0.005,periodic,periodic,random-gaussian,implicit,1,1000,very slow sharp
-3.0,0.015,periodic,periodic,random-uniform,implicit,1,250,very fast
-1.0,0.01,periodic,periodic,rectangle-grid,implicit,1,500,patchwork init
-1.0,0.01,no-flux,no-flux,rectangle-grid,implicit,1,500,patchwork bounded
+1.0,0.01,periodic,periodic,random-uniform,rk4,1e-6,0.05,spinodal decomposition
+1.0,0.005,periodic,periodic,random-uniform,rk4,1e-6,0.05,sharper interfaces
+0.5,0.01,periodic,periodic,random-uniform,rk4,1e-6,0.08,slow coarsening
+2.0,0.01,no-flux,no-flux,random-uniform,rk4,1e-6,0.03,fast coarsening
+1.0,0.02,periodic,periodic,random-uniform,rk4,1e-6,0.05,diffuse interfaces
+1.0,0.01,no-flux,no-flux,step,rk4,1e-6,0.05,wetting dynamics
+0.2,0.005,periodic,periodic,random-gaussian,rk4,1e-6,0.1,very slow sharp
+3.0,0.015,periodic,periodic,random-uniform,rk4,1e-6,0.02,very fast
+1.0,0.01,periodic,periodic,rectangle-grid,rk4,1e-6,0.05,patchwork init
+1.0,0.01,no-flux,no-flux,rectangle-grid,rk4,1e-6,0.05,patchwork bounded
