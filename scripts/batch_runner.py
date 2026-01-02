@@ -4,11 +4,13 @@
 import argparse
 import csv
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import yaml
 
+from pde_sim.core.logging import setup_logging
 from pde_sim.core.simulation import run_from_config
 
 
@@ -112,8 +114,25 @@ def run_batch(
     params_csv_path: Path,
     start_row: int = 1,
     temp_dir: Path | None = None,
+    log_file: Path | None = None,
+    quiet: bool = False,
 ):
-    """Run batch simulations from CSV parameters."""
+    """Run batch simulations from CSV parameters.
+
+    Args:
+        base_config_path: Path to base YAML config file.
+        params_csv_path: Path to parameters CSV file.
+        start_row: Start from row N (1-indexed, excluding header).
+        temp_dir: Directory for temporary config files.
+        log_file: Optional path to log file. If provided, all output is logged to this file.
+        quiet: If True, suppress console output (only log to file if specified).
+    """
+    # Setup logging
+    logger = setup_logging(
+        log_file=log_file,
+        console=not quiet,
+    )
+
     base_config = load_base_config(base_config_path)
 
     if temp_dir is None:
@@ -128,9 +147,10 @@ def run_batch(
         rows = list(reader)
 
     total_rows = len(rows)
-    print(f"Found {total_rows} simulation configurations in CSV")
-    print(f"Starting from row {start_row}")
-    print()
+    logger.info(f"Found {total_rows} simulation configurations in CSV")
+    logger.info(f"Starting from row {start_row}")
+    if log_file:
+        logger.info(f"Logging to: {log_file}")
 
     # Process rows starting from start_row (1-indexed)
     successful = 0
@@ -148,48 +168,52 @@ def run_batch(
             else ""
         )
 
-        print("=" * 60)
-        print(f"Simulation {i}/{total_rows}")
+        logger.info("=" * 60)
+        logger.info(f"Simulation {i}/{total_rows}")
         if notes:
-            print(f"Notes: {notes}")
+            logger.info(f"Notes: {notes}")
 
         try:
             # Generate modified config
             config = apply_csv_row(base_config, headers, row)
+
+            # Generate run identifier (matches folder naming in SimulationRunner)
+            preset_name = config.get("preset", "unknown")
+            run_timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+            run_id = f"{preset_name}/{run_timestamp}"
+            logger.info(f"Run ID: {run_id}")
 
             # Write temporary config file
             temp_config_path = temp_dir / f"config_{i:05d}.yaml"
             with open(temp_config_path, "w") as f:
                 yaml.dump(config, f, default_flow_style=False)
 
-            # Print key parameters
-            print(f"Parameters: {config.get('parameters', {})}")
-            print(
-                f"BC: x={config.get('bc', {}).get('x', 'periodic')}, y={config.get('bc', {}).get('y', 'periodic')}"
+            # Log key parameters
+            logger.info(f"Parameters: {config.get('parameters', {})}")
+            logger.info(
+                f"BC: x={config.get('bc', {}).get('x', 'periodic')}, "
+                f"y={config.get('bc', {}).get('y', 'periodic')}"
             )
-            print(f"Init: {config.get('init', {}).get('type', 'unknown')}")
-            print(f"Time: t_end={config.get('t_end')}, dt={config.get('dt')}")
-            print()
+            logger.info(f"Init: {config.get('init', {}).get('type', 'unknown')}")
+            logger.info(f"Time: t_end={config.get('t_end')}, dt={config.get('dt')}")
 
-            # Run simulation
+            # Run simulation (verbose=False to avoid duplicate output)
             metadata = run_from_config(
                 config_path=temp_config_path,
-                verbose=True,
+                verbose=not quiet and log_file is None,
             )
 
-            print(f"Output: {metadata['folder_name']}")
+            logger.info(f"Output: {metadata['folder_name']}")
             successful += 1
 
         except Exception as e:
-            print(f"ERROR: Simulation {i} failed: {e}")
+            logger.error(f"Simulation {i} failed: {e}")
             failed += 1
             continue
 
-        print()
-
-    print("=" * 60)
-    print(f"Batch complete: {successful} successful, {failed} failed")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info(f"Batch complete: {successful} successful, {failed} failed")
+    logger.info("=" * 60)
 
     return successful, failed
 
@@ -221,6 +245,17 @@ def main():
         type=Path,
         help="Directory for temporary config files",
     )
+    parser.add_argument(
+        "--log-file",
+        type=Path,
+        help="Path to log file. If provided, all output is logged to this file.",
+    )
+    parser.add_argument(
+        "--quiet",
+        "-q",
+        action="store_true",
+        help="Suppress console output (use with --log-file to only log to file)",
+    )
 
     args = parser.parse_args()
 
@@ -229,6 +264,8 @@ def main():
         params_csv_path=args.params_csv,
         start_row=args.start_row,
         temp_dir=args.temp_dir,
+        log_file=args.log_file,
+        quiet=args.quiet,
     )
 
     # Exit with error if any failed

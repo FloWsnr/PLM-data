@@ -8,8 +8,9 @@
 #SBATCH --error=logs/slurm-batch-%j.err
 
 # Batch PDE Simulation Job
-# Usage: sbatch batch_job.sh <base_config.yaml> <parameters.csv>
+# Usage: sbatch batch_job.sh <base_config.yaml> <parameters.csv> [log_file] [start_row]
 # Example: sbatch batch_job.sh configs/examples/physics/gray_scott.yaml configs/parameters/physics/gray-scott.csv
+# Example with log: sbatch batch_job.sh config.yaml params.csv logs/batch.log
 #
 # The parameters.csv file should have:
 #   - A header row with parameter names
@@ -26,11 +27,12 @@ set -e
 # Get arguments
 BASE_CONFIG=${1}
 PARAMS_CSV=${2}
-START_ROW=${3:-1}  # Optional: start from row N (1-indexed, excluding header)
+LOG_FILE=${3:-}      # Optional: path to log file
+START_ROW=${4:-1}    # Optional: start from row N (1-indexed, excluding header)
 
 if [ -z "$BASE_CONFIG" ] || [ -z "$PARAMS_CSV" ]; then
     echo "Error: Both base config and parameters CSV are required"
-    echo "Usage: sbatch batch_job.sh <base_config.yaml> <parameters.csv> [start_row]"
+    echo "Usage: sbatch batch_job.sh <base_config.yaml> <parameters.csv> [log_file] [start_row]"
     exit 1
 fi
 
@@ -43,10 +45,19 @@ cd /home/flwi01/coding/PLM-data
 # Activate virtual environment
 source .venv/bin/activate
 
+# Ensure pde_sim package is installed
+if ! python -c "import pde_sim" 2>/dev/null; then
+    echo "Installing pde_sim package..."
+    uv sync
+fi
+
 echo "==================================="
 echo "SLURM Job ID: ${SLURM_JOB_ID:-local}"
 echo "Base Config: ${BASE_CONFIG}"
 echo "Parameters CSV: ${PARAMS_CSV}"
+if [ -n "$LOG_FILE" ]; then
+    echo "Log file: ${LOG_FILE}"
+fi
 echo "Starting from row: ${START_ROW}"
 echo "Started: $(date)"
 echo "==================================="
@@ -66,12 +77,21 @@ fi
 TEMP_DIR=$(mktemp -d)
 trap "rm -rf $TEMP_DIR" EXIT
 
-# Run the batch processor
-python scripts/batch_runner.py \
-    --base-config "$BASE_CONFIG" \
-    --params-csv "$PARAMS_CSV" \
-    --start-row "$START_ROW" \
+# Build command arguments
+CMD_ARGS=(
+    --base-config "$BASE_CONFIG"
+    --params-csv "$PARAMS_CSV"
+    --start-row "$START_ROW"
     --temp-dir "$TEMP_DIR"
+)
+
+# Add log file if specified
+if [ -n "$LOG_FILE" ]; then
+    CMD_ARGS+=(--log-file "$LOG_FILE")
+fi
+
+# Run the batch processor
+python scripts/batch_runner.py "${CMD_ARGS[@]}"
 
 echo "==================================="
 echo "Batch completed: $(date)"
