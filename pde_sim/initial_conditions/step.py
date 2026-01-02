@@ -68,6 +68,86 @@ class StepFunction(InitialConditionGenerator):
         return ScalarField(grid, data.astype(float))
 
 
+class RectangleGrid(InitialConditionGenerator):
+    """Grid of rectangles with different values.
+
+    Divides the domain into a grid of rectangles, each assigned
+    a different value (e.g., different pressures or concentrations).
+    """
+
+    def generate(
+        self,
+        grid: CartesianGrid,
+        nx: int = 2,
+        ny: int = 2,
+        values: list[list[float]] | None = None,
+        value_range: tuple[float, float] = (0.0, 1.0),
+        seed: int | None = None,
+        **kwargs,
+    ) -> ScalarField:
+        """Generate a grid of rectangles with different values.
+
+        Args:
+            grid: The computational grid.
+            nx: Number of rectangles in x direction.
+            ny: Number of rectangles in y direction.
+            values: Optional 2D list of values for each rectangle.
+                    Shape should be (nx, ny). If None, random values
+                    are generated from value_range.
+            value_range: (min, max) range for random value generation.
+            seed: Random seed for reproducibility.
+            **kwargs: Additional arguments (ignored).
+
+        Returns:
+            ScalarField with rectangle grid pattern.
+        """
+        # Get domain bounds
+        x_bounds = grid.axes_bounds[0]
+        y_bounds = grid.axes_bounds[1]
+
+        # Create coordinate arrays
+        x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+        y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
+        X, Y = np.meshgrid(x, y, indexing="ij")
+
+        # Generate or validate values
+        if values is None:
+            rng = np.random.default_rng(seed)
+            values = rng.uniform(value_range[0], value_range[1], size=(nx, ny))
+        else:
+            values = np.array(values)
+            if values.shape != (nx, ny):
+                raise ValueError(
+                    f"values shape {values.shape} doesn't match grid ({nx}, {ny})"
+                )
+
+        # Calculate rectangle boundaries
+        x_edges = np.linspace(x_bounds[0], x_bounds[1], nx + 1)
+        y_edges = np.linspace(y_bounds[0], y_bounds[1], ny + 1)
+
+        # Assign values to each grid cell
+        data = np.zeros(grid.shape)
+        for i in range(nx):
+            for j in range(ny):
+                mask = (
+                    (X >= x_edges[i])
+                    & (X < x_edges[i + 1])
+                    & (Y >= y_edges[j])
+                    & (Y < y_edges[j + 1])
+                )
+                data[mask] = values[i, j]
+
+        # Handle edge case: rightmost/topmost cells (X == x_max or Y == y_max)
+        data[X == x_bounds[1]] = values[-1, :][
+            np.searchsorted(y_edges[:-1], Y[X == x_bounds[1]], side="right") - 1
+        ]
+        data[Y == y_bounds[1]] = values[:, -1][
+            np.searchsorted(x_edges[:-1], X[Y == y_bounds[1]], side="right") - 1
+        ]
+
+        return ScalarField(grid, data.astype(float))
+
+
 class DoubleStep(InitialConditionGenerator):
     """Double step function creating a band/stripe.
 

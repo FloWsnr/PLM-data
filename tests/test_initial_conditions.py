@@ -12,6 +12,7 @@ from pde_sim.initial_conditions import (
     GaussianBlobs,
     SinePattern,
     StepFunction,
+    RectangleGrid,
 )
 
 
@@ -27,6 +28,7 @@ class TestInitialConditionRegistry:
         assert "gaussian-blobs" in ic_types
         assert "sine" in ic_types
         assert "step" in ic_types
+        assert "rectangle-grid" in ic_types
 
     def test_create_unknown_ic(self, small_grid):
         """Test that unknown IC type raises ValueError."""
@@ -215,3 +217,80 @@ class TestStepFunction:
         # Should have smooth transition, not just 0s and 1s
         unique_values = np.unique(field.data)
         assert len(unique_values) > 2
+
+
+class TestRectangleGrid:
+    """Tests for RectangleGrid IC generator."""
+
+    def test_generate_default(self, small_grid):
+        """Test generating with default parameters."""
+        ic = RectangleGrid()
+        field = ic.generate(small_grid, seed=42)
+
+        assert isinstance(field, ScalarField)
+        assert field.data.shape == (32, 32)
+        # Should have variation (different rectangles)
+        assert np.std(field.data) > 0
+
+    def test_generate_2x2_explicit_values(self, small_grid):
+        """Test generating a 2x2 grid with explicit values."""
+        ic = RectangleGrid()
+        values = [[0.0, 0.25], [0.5, 1.0]]
+        field = ic.generate(small_grid, nx=2, ny=2, values=values)
+
+        # Check that quadrants have the correct values
+        # Bottom-left (i=0, j=0) should be 0.0
+        assert np.allclose(field.data[:16, :16], 0.0)
+        # Bottom-right (i=0, j=1) should be 0.25
+        assert np.allclose(field.data[:16, 16:], 0.25)
+        # Top-left (i=1, j=0) should be 0.5
+        assert np.allclose(field.data[16:, :16], 0.5)
+        # Top-right (i=1, j=1) should be 1.0
+        assert np.allclose(field.data[16:, 16:], 1.0)
+
+    def test_generate_3x2_grid(self, small_grid):
+        """Test generating a 3x2 grid."""
+        ic = RectangleGrid()
+        values = [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]
+        field = ic.generate(small_grid, nx=3, ny=2, values=values)
+
+        assert isinstance(field, ScalarField)
+        # Should have 6 distinct values
+        unique_values = set(np.unique(field.data))
+        assert unique_values == {1.0, 2.0, 3.0, 4.0, 5.0, 6.0}
+
+    def test_generate_with_random_values(self, small_grid):
+        """Test generating with random values in specified range."""
+        ic = RectangleGrid()
+        field = ic.generate(
+            small_grid, nx=3, ny=3, value_range=(10.0, 20.0), seed=42
+        )
+
+        assert np.all(field.data >= 10.0)
+        assert np.all(field.data <= 20.0)
+
+    def test_seed_reproducibility(self, small_grid):
+        """Test that seed produces reproducible results."""
+        ic = RectangleGrid()
+        field1 = ic.generate(small_grid, nx=3, ny=3, seed=123)
+        field2 = ic.generate(small_grid, nx=3, ny=3, seed=123)
+
+        np.testing.assert_array_equal(field1.data, field2.data)
+
+    def test_via_factory(self, small_grid):
+        """Test creating via factory function."""
+        field = create_initial_condition(
+            small_grid,
+            "rectangle-grid",
+            {"nx": 2, "ny": 2, "values": [[0.0, 1.0], [2.0, 3.0]]},
+        )
+
+        assert isinstance(field, ScalarField)
+        unique_values = set(np.unique(field.data))
+        assert unique_values == {0.0, 1.0, 2.0, 3.0}
+
+    def test_values_shape_mismatch_raises(self, small_grid):
+        """Test that mismatched values shape raises ValueError."""
+        ic = RectangleGrid()
+        with pytest.raises(ValueError, match="doesn't match grid"):
+            ic.generate(small_grid, nx=2, ny=2, values=[[1.0, 2.0, 3.0]])
