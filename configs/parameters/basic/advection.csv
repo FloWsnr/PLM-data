@@ -1,10 +1,10 @@
 D,vx,vy,BC_x,BC_y,init,solver,dt,t_end,notes
-0.01,0.5,0.0,periodic,periodic,gaussian-blobs,rk4,1,50,pure advection x
-0.01,0.3,0.3,periodic,periodic,gaussian-blobs,rk4,1,50,diagonal advection
-0.1,0.5,0.0,periodic,periodic,gaussian-blobs,rk4,1,50,advection-diffusion
+0.01,0.5,0.0,periodic,periodic,gaussian-blobs,rk4,0.1,5,pure advection x
+0.01,0.3,0.3,periodic,periodic,gaussian-blobs,rk4,0.1,5,diagonal advection
+0.1,0.5,0.0,periodic,periodic,gaussian-blobs,rk4,0.1,5,advection-diffusion
 0.01,-0.5,0.2,periodic,periodic,step,rk4,1,60,angled flow
-0.05,1.0,0.0,periodic,no-flux,gaussian-blobs,rk4,1,30,channel flow
-0.0,0.4,0.4,periodic,periodic,gaussian-blobs,rk4,1,40,pure diagonal no diffusion
-0.02,0.0,0.8,periodic,periodic,sine,rk4,1,45,vertical advection
-0.01,0.5,0.0,periodic,periodic,rectangle-grid,rk4,1,50,patchwork init
-0.01,0.5,0.0,no-flux,no-flux,rectangle-grid,rk4,1,50,patchwork bounded
+0.05,1.0,0.0,periodic,no-flux,gaussian-blobs,rk4,0.1,5,channel flow
+0.0,0.4,0.4,periodic,periodic,gaussian-blobs,rk4,0.1,5,pure diagonal no diffusion
+0.02,0.0,0.8,periodic,periodic,sine,rk4,0.1,5,vertical advection
+0.01,0.5,0.0,periodic,periodic,rectangle-grid,rk4,0.1,5,patchwork init
+0.01,0.5,0.0,no-flux,no-flux,rectangle-grid,rk4,0.1,5,patchwork bounded
