@@ -5,3 +5,5 @@ D,alpha,r,hx,hy,BC_x,BC_y,init,solver,dt,t_end,notes
 0.1,1.0,1.0,0.2,0.0,periodic,periodic,gaussian-blobs,rk4,1,130,steep terrain
 0.1,0.5,1.0,-0.1,0.1,no-flux,no-flux,gaussian-blobs,rk4,1,160,opposite slopes bounded
 0.2,0.3,1.0,0.1,0.0,periodic,periodic,step,rk4,1,120,fast weak terrain
+0.1,0.5,1.0,0.1,0.0,periodic,periodic,rectangle-grid,rk4,1,150,patchwork init
+0.1,0.5,1.0,0.1,0.0,no-flux,no-flux,rectangle-grid,rk4,1,150,patchwork bounded

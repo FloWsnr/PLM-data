@@ -5,3 +5,5 @@ D,K,BC_x,BC_y,init,solver,dt,t_end,notes
 2.0,2.0,no-flux,no-flux,random-gaussian,rk4,1,60,fast smoothing
 1.0,0.2,periodic,periodic,step,rk4,1,120,very sharp edges
 0.8,1.5,periodic,periodic,sine,rk4,1,100,moderate edge
+1.0,1.0,periodic,periodic,rectangle-grid,rk4,1,100,patchwork init
+1.0,1.0,no-flux,no-flux,rectangle-grid,rk4,1,100,patchwork bounded

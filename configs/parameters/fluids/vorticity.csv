@@ -6,3 +6,5 @@ nu,BC_x,BC_y,init,solver,dt,t_end,notes
 0.001,periodic,periodic,sine,rk4,1,200,nearly inviscid
 0.015,periodic,periodic,random-gaussian,rk4,1,90,moderate decay turbulent
 0.008,periodic,periodic,gaussian-blobs,rk4,1,120,vortex pair
+0.01,periodic,periodic,rectangle-grid,rk4,1,100,patchwork init
+0.01,no-flux,no-flux,rectangle-grid,rk4,1,100,patchwork bounded

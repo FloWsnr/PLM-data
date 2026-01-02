@@ -6,3 +6,5 @@ D,a,BC_x,BC_y,init,solver,dt,t_end,notes
 0.5,0.7,periodic,periodic,gaussian-blobs,rk4,1,100,high threshold
 0.3,0.4,periodic,periodic,random-uniform,rk4,1,130,intermediate
 1.0,0.2,periodic,periodic,step,rk4,1,70,low threshold fast
+0.5,0.5,periodic,periodic,rectangle-grid,rk4,1,100,patchwork init
+0.5,0.5,no-flux,no-flux,rectangle-grid,rk4,1,100,patchwork bounded

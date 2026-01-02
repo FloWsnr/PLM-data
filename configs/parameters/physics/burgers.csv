@@ -6,3 +6,5 @@ nu,BC_x,BC_y,init,solver,dt,t_end,notes
 0.1,no-flux,no-flux,gaussian-blobs,rk4,1,60,diffusion dominated
 0.005,periodic,periodic,sine,rk4,1,120,sharp shock
 0.03,periodic,periodic,random-gaussian,rk4,1,90,chaotic IC
+0.01,periodic,periodic,rectangle-grid,rk4,1,100,patchwork init
+0.01,no-flux,no-flux,rectangle-grid,rk4,1,100,patchwork bounded

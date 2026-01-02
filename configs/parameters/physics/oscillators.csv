@@ -5,3 +5,5 @@ mu,omega,Du,Dv,BC_x,BC_y,init,solver,dt,t_end,notes
 0.5,1.0,0.1,0.1,periodic,periodic,random-gaussian,rk4,1,180,near-linear
 1.0,1.0,0.2,0.2,no-flux,no-flux,gaussian-blobs,rk4,1,140,stronger coupling bounded
 1.0,0.5,0.05,0.05,periodic,periodic,random-gaussian,rk4,1,200,low frequency weak coupling
+1.0,1.0,0.1,0.1,periodic,periodic,rectangle-grid,rk4,1,150,patchwork init
+1.0,1.0,0.1,0.1,no-flux,no-flux,rectangle-grid,rk4,1,150,patchwork bounded

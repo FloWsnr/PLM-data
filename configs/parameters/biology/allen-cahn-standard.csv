@@ -5,3 +5,5 @@ gamma,mobility,BC_x,BC_y,init,solver,dt,t_end,notes
 1.0,0.5,periodic,periodic,random-uniform,rk4,1,150,slower dynamics
 1.0,2.0,no-flux,no-flux,random-uniform,rk4,1,70,faster bounded
 1.0,1.0,periodic,periodic,step,rk4,1,100,front evolution
+1.0,1.0,periodic,periodic,rectangle-grid,rk4,1,100,patchwork init
+1.0,1.0,no-flux,no-flux,rectangle-grid,rk4,1,100,patchwork bounded

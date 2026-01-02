@@ -6,3 +6,5 @@ nu,BC_x,BC_y,init,solver,dt,t_end,notes
 0.8,periodic,periodic,random-gaussian,rk4,1,200,intermediate
 0.3,periodic,periodic,random-gaussian,rk4,1,400,very strong chaos
 1.5,periodic,periodic,gaussian-blobs,rk4,1,180,localized perturbation
+1.0,periodic,periodic,rectangle-grid,rk4,1,200,patchwork init
+1.0,no-flux,no-flux,rectangle-grid,rk4,1,200,patchwork bounded

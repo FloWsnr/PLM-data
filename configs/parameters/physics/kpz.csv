@@ -5,3 +5,5 @@ nu,lmbda,BC_x,BC_y,init,solver,dt,t_end,notes
 0.2,1.0,periodic,periodic,sine,rk4,1,250,low diffusion
 0.5,0.5,no-flux,no-flux,random-gaussian,rk4,1,200,weaker nonlinearity
 0.3,1.5,periodic,periodic,gaussian-blobs,rk4,1,220,localized start
+0.5,1.0,periodic,periodic,rectangle-grid,rk4,1,200,patchwork init
+0.5,1.0,no-flux,no-flux,rectangle-grid,rk4,1,200,patchwork bounded

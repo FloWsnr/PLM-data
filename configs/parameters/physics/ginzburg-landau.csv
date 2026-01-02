@@ -7,3 +7,5 @@ c1,c3,BC_x,BC_y,init,solver,dt,t_end,notes
 2.0,-1.0,periodic,periodic,random-gaussian,rk4,1,180,frozen patterns
 0.5,0.5,no-flux,no-flux,gaussian-blobs,rk4,1,200,bounded domain
 1.0,1.0,periodic,periodic,sine,rk4,1,180,from ordered
+0.0,0.0,periodic,periodic,rectangle-grid,rk4,1,200,patchwork init
+0.0,0.0,no-flux,no-flux,rectangle-grid,rk4,1,200,patchwork bounded

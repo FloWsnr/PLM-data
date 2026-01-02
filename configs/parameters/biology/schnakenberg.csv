@@ -6,3 +6,5 @@ a,b,Du,Dv,BC_x,BC_y,init,solver,dt,t_end,notes
 0.1,0.9,1.0,100.0,no-flux,no-flux,random-gaussian,implicit,1,500,bounded domain
 0.08,0.92,1.0,150.0,periodic,periodic,random-gaussian,implicit,1,450,larger ratio
 0.12,0.88,1.0,60.0,periodic,periodic,gaussian-blobs,implicit,1,550,mixed patterns
+0.1,0.9,1.0,100.0,periodic,periodic,rectangle-grid,implicit,1,500,patchwork init
+0.1,0.9,1.0,100.0,no-flux,no-flux,rectangle-grid,implicit,1,500,patchwork bounded

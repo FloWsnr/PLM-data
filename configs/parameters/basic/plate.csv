@@ -5,3 +5,5 @@ D,BC_x,BC_y,init,solver,dt,t_end,notes
 0.01,periodic,periodic,sine,implicit,1,200,modal excitation
 0.001,periodic,periodic,random-gaussian,implicit,1,500,very stiff
 0.05,no-flux,no-flux,step,implicit,1,100,flexible plate
+0.01,periodic,periodic,rectangle-grid,implicit,1,200,patchwork init
+0.01,no-flux,no-flux,rectangle-grid,implicit,1,200,patchwork bounded

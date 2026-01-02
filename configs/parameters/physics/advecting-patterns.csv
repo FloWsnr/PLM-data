@@ -5,3 +5,5 @@ Du,Dv,v_flow,a,b,BC_x,BC_y,init,solver,dt,t_end,notes
 0.05,8.0,0.5,0.1,0.9,periodic,periodic,random-gaussian,implicit,1,450,different diffusion ratio
 0.1,5.0,0.5,0.15,0.85,no-flux,periodic,random-gaussian,implicit,1,400,channel with Turing
 0.15,6.0,0.8,0.12,0.88,periodic,periodic,gaussian-blobs,implicit,1,350,localized start
+0.1,5.0,0.5,0.1,0.9,periodic,periodic,rectangle-grid,implicit,1,400,patchwork init
+0.1,5.0,0.5,0.1,0.9,no-flux,no-flux,rectangle-grid,implicit,1,400,patchwork bounded

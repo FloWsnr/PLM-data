@@ -5,3 +5,5 @@ D,BC_x,BC_y,init,solver,dt,t_end,notes
 1.0,no-flux,no-flux,gaussian-blobs,rk4,1,50,particle in box
 1.0,periodic,periodic,sine,rk4,1,60,plane wave
 0.2,periodic,periodic,random-gaussian,rk4,1,100,weak dispersion
+1.0,periodic,periodic,rectangle-grid,rk4,1,50,patchwork init
+1.0,no-flux,no-flux,rectangle-grid,rk4,1,50,patchwork bounded

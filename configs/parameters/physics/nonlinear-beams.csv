@@ -5,3 +5,5 @@ D,alpha,BC_x,BC_y,init,solver,dt,t_end,notes
 0.5,0.1,no-flux,no-flux,gaussian-blobs,rk4,1,180,clamped weak
 2.0,0.2,periodic,periodic,sine,rk4,1,100,stiffer plate
 0.5,0.5,periodic,periodic,step,rk4,1,150,flexible moderate
+1.0,0.1,periodic,periodic,rectangle-grid,rk4,1,150,patchwork init
+1.0,0.1,no-flux,no-flux,rectangle-grid,rk4,1,150,patchwork bounded

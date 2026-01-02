@@ -7,3 +7,5 @@ M,gamma,BC_x,BC_y,init,solver,dt,t_end,notes
 1.0,0.01,no-flux,no-flux,step,implicit,1,500,wetting dynamics
 0.2,0.005,periodic,periodic,random-gaussian,implicit,1,1000,very slow sharp
 3.0,0.015,periodic,periodic,random-uniform,implicit,1,250,very fast
+1.0,0.01,periodic,periodic,rectangle-grid,implicit,1,500,patchwork init
+1.0,0.01,no-flux,no-flux,rectangle-grid,implicit,1,500,patchwork bounded

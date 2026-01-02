@@ -5,3 +5,5 @@ D1,D2,alpha,beta,BC_x,BC_y,init,solver,dt,t_end,notes
 0.1,0.1,0.0,1.0,periodic,periodic,random-gaussian,implicit,1,300,beta only
 0.05,0.05,1.0,0.0,no-flux,no-flux,random-gaussian,implicit,1,400,slower bounded
 0.2,0.1,1.0,0.5,periodic,periodic,gaussian-blobs,implicit,1,280,different D ratio
+0.1,0.1,1.0,0.0,periodic,periodic,rectangle-grid,implicit,1,300,patchwork init
+0.1,0.1,1.0,0.0,no-flux,no-flux,rectangle-grid,implicit,1,300,patchwork bounded

@@ -5,3 +5,5 @@ Du,Dc,chi,alpha,beta,BC_x,BC_y,init,solver,dt,t_end,notes
 0.5,1.0,1.0,1.0,1.0,periodic,periodic,gaussian-blobs,rk4,1,100,slower cell diffusion
 1.0,0.5,1.0,1.0,1.0,no-flux,no-flux,gaussian-blobs,rk4,1,100,slower chemical bounded
 1.0,1.0,1.5,0.5,0.5,periodic,periodic,gaussian-blobs,rk4,1,90,different kinetics
+1.0,1.0,1.0,1.0,1.0,periodic,periodic,rectangle-grid,rk4,1,100,patchwork init
+1.0,1.0,1.0,1.0,1.0,no-flux,no-flux,rectangle-grid,rk4,1,100,patchwork bounded

@@ -5,3 +5,5 @@ nu,wall_distance,BC_x,BC_y,init,solver,dt,t_end,notes
 0.01,0.1,periodic,periodic,gaussian-blobs,rk4,1,100,closer to wall
 0.01,0.3,periodic,periodic,gaussian-blobs,rk4,1,100,farther from wall
 0.01,0.2,no-flux,no-flux,gaussian-blobs,rk4,1,100,bounded domain
+0.01,0.2,periodic,periodic,rectangle-grid,rk4,1,100,patchwork init
+0.01,0.2,no-flux,no-flux,rectangle-grid,rk4,1,100,patchwork bounded

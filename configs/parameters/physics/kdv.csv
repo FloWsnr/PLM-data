@@ -6,3 +6,5 @@ c,alpha,beta,BC_x,BC_y,init,solver,dt,t_end,notes
 -0.5,6.0,1.0,periodic,periodic,sine,rk4,1,100,counter flow
 0.0,10.0,1.0,periodic,periodic,gaussian-blobs,rk4,1,80,strong nonlinearity
 0.0,6.0,2.0,periodic,periodic,gaussian-blobs,rk4,1,120,strong dispersion
+0.0,6.0,1.0,periodic,periodic,rectangle-grid,rk4,1,100,patchwork init
+0.0,6.0,1.0,no-flux,no-flux,rectangle-grid,rk4,1,100,patchwork bounded

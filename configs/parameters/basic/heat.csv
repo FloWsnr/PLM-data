@@ -6,3 +6,5 @@ D,BC_x,BC_y,init,solver,dt,t_end,notes
 2.0,periodic,no-flux,sine,implicit,1,30,mixed BC
 0.05,periodic,periodic,random-gaussian,implicit,1,150,very slow diffusion
 3.0,no-flux,periodic,gaussian-blobs,implicit,1,25,asymmetric BC
+0.1,periodic,periodic,rectangle-grid,implicit,1,100,patchwork init
+0.1,no-flux,no-flux,rectangle-grid,implicit,1,100,patchwork bounded

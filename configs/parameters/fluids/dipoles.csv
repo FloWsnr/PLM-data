@@ -5,3 +5,5 @@ nu,separation,BC_x,BC_y,init,solver,dt,t_end,notes
 0.005,0.2,periodic,periodic,gaussian-blobs,rk4,1,150,wider separation
 0.005,0.1,periodic,periodic,gaussian-blobs,rk4,1,150,closer separation
 0.005,0.15,no-flux,no-flux,gaussian-blobs,rk4,1,150,bounded domain
+0.005,0.15,periodic,periodic,rectangle-grid,rk4,1,150,patchwork init
+0.005,0.15,no-flux,no-flux,rectangle-grid,rk4,1,150,patchwork bounded
