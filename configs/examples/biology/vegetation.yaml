@@ -19,7 +19,7 @@ bc:
   y: periodic
 output:
   path: ./output
-  frames_per_save: 5
+  num_frames: 100
   colormap: YlGn
   field_to_plot: mag(w,n)
   show_vectors: true

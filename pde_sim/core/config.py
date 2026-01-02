@@ -12,7 +12,7 @@ class OutputConfig:
     """Output configuration."""
 
     path: Path
-    frames_per_save: int = 10
+    num_frames: int = 100  # Total number of frames to save
     colormap: str = "turbo"
     field_to_plot: str | None = None
     save_array: bool = False  # Save trajectory as numpy array (.npy)
@@ -89,7 +89,7 @@ def load_config(path: Path | str) -> SimulationConfig:
     output_raw = raw.get("output", {})
     output_config = OutputConfig(
         path=Path(output_raw.get("path", "./output")),
-        frames_per_save=output_raw.get("frames_per_save", 10),
+        num_frames=output_raw.get("num_frames", 100),
         colormap=output_raw.get("colormap", "turbo"),
         field_to_plot=output_raw.get("field_to_plot"),
         save_array=output_raw.get("save_array", False),
@@ -134,7 +134,7 @@ def config_to_dict(config: SimulationConfig) -> dict[str, Any]:
         },
         "output": {
             "path": str(config.output.path),
-            "frames_per_save": config.output.frames_per_save,
+            "num_frames": config.output.num_frames,
             "colormap": config.output.colormap,
             "field_to_plot": config.output.field_to_plot,
             "save_array": config.output.save_array,

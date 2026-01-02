@@ -80,7 +80,7 @@ bc:                         # Boundary conditions
 
 output:
   path: ./output            # Output directory
-  frames_per_save: 100      # Save every N timesteps
+  num_frames: 100           # Total number of frames to save
   colormap: turbo           # Matplotlib colormap
   field_to_plot: v          # Which field to render
 

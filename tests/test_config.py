@@ -137,7 +137,7 @@ class TestOutputConfig:
     def test_default_values(self):
         """Test that OutputConfig has correct defaults."""
         output = OutputConfig(path=Path("./test"))
-        assert output.frames_per_save == 10
+        assert output.num_frames == 100
         assert output.colormap == "turbo"
         assert output.field_to_plot is None
 
@@ -145,10 +145,10 @@ class TestOutputConfig:
         """Test OutputConfig with custom values."""
         output = OutputConfig(
             path=Path("./custom"),
-            frames_per_save=50,
+            num_frames=50,
             colormap="viridis",
             field_to_plot="u",
         )
-        assert output.frames_per_save == 50
+        assert output.num_frames == 50
         assert output.colormap == "viridis"
         assert output.field_to_plot == "u"

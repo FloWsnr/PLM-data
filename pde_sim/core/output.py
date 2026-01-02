@@ -398,7 +398,7 @@ def create_metadata(
         },
         "simulation": {
             "totalFrames": len(frame_annotations),
-            "timestepsPerFrame": config.output.frames_per_save,
+            "numFrames": config.output.num_frames,
             "totalTime": total_time,
             "resolution": [config.resolution, config.resolution],
         },

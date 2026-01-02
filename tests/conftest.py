@@ -60,7 +60,7 @@ def sample_config_dict():
         "bc": {"x": "periodic", "y": "periodic"},
         "output": {
             "path": "./output",
-            "frames_per_save": 10,
+            "num_frames": 10,
             "colormap": "turbo",
         },
         "seed": 42,

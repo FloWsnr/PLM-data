@@ -49,7 +49,7 @@ class TestSimulationRunner:
             "dt": 0.0001,
             "resolution": 16,
             "bc": {"x": "periodic", "y": "periodic"},
-            "output": {"path": str(tmp_path), "frames_per_save": 10},
+            "output": {"path": str(tmp_path), "num_frames": 6},
             "seed": 42,
         }
 
@@ -88,7 +88,7 @@ class TestSimulationRunner:
                 "dt": 0.0001,
                 "resolution": 16,
                 "bc": {"x": "periodic", "y": "periodic"},
-                "output": {"path": str(tmp_path), "frames_per_save": 5},
+                "output": {"path": str(tmp_path), "num_frames": 3},
                 "seed": 42,
             }
 
@@ -118,7 +118,7 @@ class TestRunFromConfig:
             "dt": 0.0001,
             "resolution": 16,
             "bc": {"x": "periodic", "y": "periodic"},
-            "output": {"path": str(tmp_path), "frames_per_save": 10},
+            "output": {"path": str(tmp_path), "num_frames": 6},
             "seed": 123,
         }
 
@@ -142,7 +142,7 @@ class TestRunFromConfig:
             "dt": 0.0001,
             "resolution": 16,
             "bc": {"x": "periodic", "y": "periodic"},
-            "output": {"path": str(tmp_path), "frames_per_save": 5},
+            "output": {"path": str(tmp_path), "num_frames": 3},
             "seed": 42,
         }
 
@@ -172,7 +172,7 @@ class TestGrayScottSimulation:
             "bc": {"x": "periodic", "y": "periodic"},
             "output": {
                 "path": str(tmp_path),
-                "frames_per_save": 10,
+                "num_frames": 11,
                 "field_to_plot": "v",
             },
             "seed": 42,
@@ -209,7 +209,7 @@ class TestBackend:
             "dt": 0.0001,
             "resolution": 16,
             "bc": {"x": "periodic", "y": "periodic"},
-            "output": {"path": str(tmp_path), "frames_per_save": 5},
+            "output": {"path": str(tmp_path), "num_frames": 3},
             "seed": 42,
             "backend": backend,
         }
@@ -236,7 +236,7 @@ class TestBackend:
             "dt": 0.0001,
             "resolution": 16,
             "bc": {"x": "periodic", "y": "periodic"},
-            "output": {"path": str(tmp_path), "frames_per_save": 5},
+            "output": {"path": str(tmp_path), "num_frames": 3},
             "seed": 42,
             "backend": "invalid_backend",
         }
@@ -264,7 +264,7 @@ class TestAdaptiveTimeStepping:
             "dt": 0.0001,
             "resolution": 16,
             "bc": {"x": "periodic", "y": "periodic"},
-            "output": {"path": str(tmp_path), "frames_per_save": 5},
+            "output": {"path": str(tmp_path), "num_frames": 3},
             "seed": 42,
             "adaptive": True,
             "tolerance": 1e-5,
@@ -289,7 +289,7 @@ class TestAdaptiveTimeStepping:
             "dt": 0.0001,
             "resolution": 16,
             "bc": {"x": "periodic", "y": "periodic"},
-            "output": {"path": str(tmp_path), "frames_per_save": 10},
+            "output": {"path": str(tmp_path), "num_frames": 6},
             "seed": 42,
             "adaptive": True,
             "tolerance": 1e-4,

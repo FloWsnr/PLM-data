@@ -18,7 +18,7 @@ bc:
   y: periodic
 output:
   path: ./output
-  frames_per_save: 300
+  num_frames: 100
   colormap: Blues
   field_to_plot: h
 seed: 42

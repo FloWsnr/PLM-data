@@ -30,7 +30,7 @@ SPECIAL_COLUMNS = {
     "tolerance": ("tolerance",),
     "colormap": ("output", "colormap"),
     "field_to_plot": ("output", "field_to_plot"),
-    "frames_per_save": ("output", "frames_per_save"),
+    "num_frames": ("output", "num_frames"),
     "save_array": ("output", "save_array"),
     "show_vectors": ("output", "show_vectors"),
     "vector_density": ("output", "vector_density"),

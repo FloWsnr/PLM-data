@@ -18,7 +18,7 @@ bc:
   y: periodic
 output:
   path: ./output
-  frames_per_save: 200
+  num_frames: 100
   colormap: turbo
   field_to_plot: T
 seed: 42

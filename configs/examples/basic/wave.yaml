@@ -18,7 +18,7 @@ bc:
   y: periodic
 output:
   path: ./output
-  frames_per_save: 400
+  num_frames: 100
   colormap: seismic
   field_to_plot: u
 seed: 42

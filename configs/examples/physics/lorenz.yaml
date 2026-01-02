@@ -23,7 +23,7 @@ bc:
   y: periodic
 output:
   path: ./output
-  frames_per_save: 5
+  num_frames: 100
   colormap: turbo
   field_to_plot: mag(X,Y)
   show_vectors: true

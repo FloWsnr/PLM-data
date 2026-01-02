@@ -118,20 +118,24 @@ class SimulationRunner:
         Returns:
             Complete simulation metadata dictionary.
         """
+        # Calculate save interval from num_frames
+        # We want exactly num_frames output frames (including t=0 and t=t_end)
+        num_frames = self.config.output.num_frames
+        if num_frames < 2:
+            raise ValueError("num_frames must be at least 2")
+        save_interval = self.config.t_end / (num_frames - 1)
+
         if verbose:
             print(f"Starting simulation: {self.config.preset}")
             print(f"  Resolution: {self.config.resolution}x{self.config.resolution}")
             print(f"  Final time: {self.config.t_end}, dt: {self.config.dt}")
+            print(f"  Frames: {num_frames} (interval: {save_interval:.4f})")
             print(f"  Solver: {self.config.solver}")
             print(f"  Backend: {self.config.backend}")
             # Only show adaptive info for solvers that support it
             if self._get_solver_name() != "implicit" and self.config.adaptive:
                 print(f"  Adaptive: True (tolerance: {self.config.tolerance})")
             print(f"  Output: {self.output_manager.output_dir}")
-
-        # Calculate time parameters
-        frames_per_save = self.config.output.frames_per_save
-        save_interval = frames_per_save * self.config.dt
 
         # Create storage for capturing frames
         storage = MemoryStorage()

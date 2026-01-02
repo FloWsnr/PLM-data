@@ -17,7 +17,7 @@ bc:
   y: periodic
 output:
   path: ./output
-  frames_per_save: 16
+  num_frames: 100
   colormap: twilight
   field_to_plot: A
 seed: 42

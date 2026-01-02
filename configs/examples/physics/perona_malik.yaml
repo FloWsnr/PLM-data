@@ -22,7 +22,7 @@ bc:
   y: periodic
 output:
   path: ./output
-  frames_per_save: 500
+  num_frames: 100
   colormap: gray
   field_to_plot: u
 seed: 42
