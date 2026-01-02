@@ -69,7 +69,7 @@ class NonlinearBeamsPDE(MultiFieldPDEPreset):
                 "u": "v",
                 "v": f"-{D} * laplace(laplace(u)) + {alpha} * laplace(gradient_squared(u))",
             },
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

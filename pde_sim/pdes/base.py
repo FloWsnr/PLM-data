@@ -6,6 +6,7 @@ from typing import Any
 
 from pde import CartesianGrid, FieldCollection, PDE, ScalarField
 
+from pde_sim.boundaries import BoundaryConditionFactory
 from pde_sim.initial_conditions import create_initial_condition
 
 
@@ -146,6 +147,17 @@ class PDEPreset(ABC):
         # Subclasses can override to provide filled-in versions
         return self.metadata.equations.copy()
 
+    def _convert_bc(self, bc: dict[str, str]) -> list:
+        """Convert boundary condition config to py-pde format.
+
+        Args:
+            bc: Dictionary with 'x' and 'y' keys specifying BC types.
+
+        Returns:
+            List of BC specs for [x, y] axes in py-pde format.
+        """
+        return BoundaryConditionFactory.convert_config(bc)
+
 
 class ScalarPDEPreset(PDEPreset):
     """Base class for single-field scalar PDEs.
@@ -227,33 +239,3 @@ class MultiFieldPDEPreset(PDEPreset):
             fields.append(ic)
 
         return FieldCollection(fields)
-
-
-def convert_bc_to_pde_format(bc: dict[str, str], grid: CartesianGrid) -> list:
-    """Convert boundary condition config to py-pde format.
-
-    Args:
-        bc: Dictionary with 'x' and 'y' keys specifying BC types.
-        grid: The computational grid (used to check periodicity).
-
-    Returns:
-        Boundary condition specification for py-pde.
-    """
-    bc_map = {
-        "periodic": "periodic",
-        "neumann": "no-flux",
-        "no-flux": "no-flux",
-        "dirichlet": {"value": 0},
-        "zero": {"value": 0},
-    }
-
-    x_bc = bc.get("x", "periodic")
-    y_bc = bc.get("y", "periodic")
-
-    # Handle wall/fixed boundaries
-    if x_bc in ("wall", "fixed"):
-        x_bc = "dirichlet"
-    if y_bc in ("wall", "fixed"):
-        y_bc = "dirichlet"
-
-    return [bc_map.get(x_bc, x_bc), bc_map.get(y_bc, y_bc)]

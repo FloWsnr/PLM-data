@@ -64,7 +64,7 @@ class SuperlatticePDE(ScalarPDEPreset):
             rhs={
                 "u": f"{epsilon} * u - u - 2 * laplace(u) - laplace(laplace(u)) + {g2} * u**2 - u**3"
             },
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

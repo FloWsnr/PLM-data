@@ -75,7 +75,7 @@ class HarshEnvironmentPDE(ScalarPDEPreset):
 
         return PDE(
             rhs={"u": f"{D} * laplace(u) + {r} * u * (u - {theta}) * (1 - u)"},
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

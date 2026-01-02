@@ -153,7 +153,7 @@ class OutputManager:
             state: The field state to extract data from.
 
         Returns:
-            2D numpy array of field values.
+            2D numpy array of real field values.
         """
         if isinstance(state, FieldCollection):
             if self.plot_mode == "magnitude" and len(self.plot_fields) == 2:
@@ -163,17 +163,24 @@ class OutputManager:
                 if f1 is not None and f2 is not None:
                     return np.sqrt(f1**2 + f2**2)
                 # Fallback to first field if magnitude fields not found
-                return state[0].data
-
-            if self.plot_fields:
+                data = state[0].data
+            elif self.plot_fields:
                 # Single field mode with explicit field name
                 data = self._get_field_by_name(state, self.plot_fields[0])
-                if data is not None:
-                    return data
-            # Default to first field
-            return state[0].data
+                if data is None:
+                    data = state[0].data
+            else:
+                # Default to first field
+                data = state[0].data
         else:
-            return state.data
+            data = state.data
+
+        # Handle complex-valued fields (e.g., Schrodinger equation)
+        # Plot the absolute value (magnitude) for visualization
+        if np.iscomplexobj(data):
+            data = np.abs(data)
+
+        return data
 
     def _extract_vector_components(
         self, state: ScalarField | FieldCollection

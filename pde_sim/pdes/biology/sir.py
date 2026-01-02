@@ -97,15 +97,13 @@ class SIRModelPDE(MultiFieldPDEPreset):
         gamma = parameters.get("gamma", 0.1)
         D = parameters.get("D", 0.1)
 
-        bc_spec = "periodic" if bc.get("x") == "periodic" else "no-flux"
-
         return PDE(
             rhs={
                 "s": f"{D} * laplace(s) - {beta} * i * s",
                 "i": f"{D} * laplace(i) + {beta} * i * s - {gamma} * i",
                 "r": f"{D} * laplace(r) + {gamma} * i",
             },
-            bc=bc_spec,
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

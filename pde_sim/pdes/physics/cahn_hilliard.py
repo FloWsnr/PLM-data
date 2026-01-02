@@ -65,5 +65,5 @@ class CahnHilliardPDE(ScalarPDEPreset):
 
         return PDE(
             rhs={"u": f"{M} * laplace(u**3 - u - {gamma} * laplace(u))"},
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )

@@ -75,7 +75,7 @@ class CyclicCompetitionPDE(MultiFieldPDEPreset):
                 "v": f"{D} * laplace(v) + v * (1 - u - v - w) - {alpha} * v * w",
                 "w": f"{D} * laplace(w) + w * (1 - u - v - w) - {alpha} * w * u",
             },
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

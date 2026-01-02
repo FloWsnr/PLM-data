@@ -91,5 +91,5 @@ class SwiftHohenbergPDE(ScalarPDEPreset):
 
         return PDE(
             rhs={"u": rhs},
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )

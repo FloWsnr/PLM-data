@@ -1,10 +1,10 @@
 D,BC_x,BC_y,init,solver,dt,t_end,notes
-0.1,periodic,periodic,gaussian-blobs,implicit,1,100,slow diffusion
-1.0,periodic,periodic,gaussian-blobs,implicit,1,50,standard diffusion
-5.0,no-flux,no-flux,gaussian-blobs,implicit,1,20,fast diffusion insulated
-0.5,dirichlet,dirichlet,step,implicit,1,50,fixed boundaries
-2.0,periodic,no-flux,sine,implicit,1,30,mixed BC
-0.05,periodic,periodic,random-gaussian,implicit,1,150,very slow diffusion
-3.0,no-flux,periodic,gaussian-blobs,implicit,1,25,asymmetric BC
-0.1,periodic,periodic,rectangle-grid,implicit,1,100,patchwork init
-0.1,no-flux,no-flux,rectangle-grid,implicit,1,100,patchwork bounded
+0.1,periodic,periodic,gaussian-blobs,euler,1,100,slow diffusion
+1.0,periodic,periodic,gaussian-blobs,euler,1,50,standard diffusion
+5.0,no-flux,no-flux,gaussian-blobs,euler,1,20,fast diffusion insulated
+0.5,dirichlet,dirichlet,step,euler,1,50,fixed boundaries
+2.0,periodic,periodic,sine,euler,1,30,periodic BC
+0.05,periodic,periodic,random-gaussian,euler,1,150,very slow diffusion
+3.0,no-flux,no-flux,gaussian-blobs,euler,1,25,insulated BC
+0.1,periodic,periodic,rectangle-grid,euler,1,100,patchwork init
+0.1,no-flux,no-flux,rectangle-grid,euler,1,100,patchwork bounded

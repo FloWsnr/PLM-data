@@ -59,12 +59,13 @@ class WavePDE(MultiFieldPDEPreset):
         c = parameters.get("c", 1.0)
         c_sq = c * c
 
+        bc_spec = self._convert_bc(bc)
         return PDE(
             rhs={
                 "u": "v",
                 "v": f"{c_sq} * laplace(u)",
             },
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=bc_spec,
         )
 
     def create_initial_state(
@@ -155,9 +156,10 @@ class AdvectionPDE(MultiFieldPDEPreset):
 
         rhs = " ".join(terms) if terms else "0"
 
+        bc_spec = self._convert_bc(bc)
         return PDE(
             rhs={"u": rhs},
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=bc_spec,
         )
 
     def create_initial_state(
@@ -250,12 +252,13 @@ class InhomogeneousWavePDE(MultiFieldPDEPreset):
 
         v_rhs = " ".join(terms)
 
+        bc_spec = self._convert_bc(bc)
         return PDE(
             rhs={
                 "u": "v",
                 "v": v_rhs,
             },
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=bc_spec,
         )
 
     def create_initial_state(

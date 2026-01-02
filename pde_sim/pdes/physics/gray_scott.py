@@ -108,23 +108,6 @@ class GrayScottPDE(MultiFieldPDEPreset):
             bc=self._convert_bc(bc),
         )
 
-    def _convert_bc(self, bc: dict[str, str]) -> str | dict:
-        """Convert boundary condition config to py-pde format."""
-        x_bc = bc.get("x", "periodic")
-        y_bc = bc.get("y", "periodic")
-
-        if x_bc == "periodic" and y_bc == "periodic":
-            return "periodic"
-
-        bc_map = {
-            "periodic": "periodic",
-            "neumann": "no-flux",
-            "no-flux": "no-flux",
-            "dirichlet": {"value": 0},
-        }
-
-        return bc_map.get(x_bc, "periodic")
-
     def create_initial_state(
         self,
         grid: CartesianGrid,

@@ -82,7 +82,7 @@ class BrusselatorPDE(MultiFieldPDEPreset):
                 "u": f"{Du} * laplace(u) + {a} - ({b} + 1) * u + u**2 * v",
                 "v": f"{Dv} * laplace(v) + {b} * u - u**2 * v",
             },
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

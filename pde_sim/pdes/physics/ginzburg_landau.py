@@ -65,13 +65,11 @@ class GinzburgLandauPDE(ScalarPDEPreset):
         c1 = parameters.get("c1", 0.0)
         c3 = parameters.get("c3", 0.0)
 
-        bc_spec = "periodic" if bc.get("x") == "periodic" else "no-flux"
-
         # Complex Ginzburg-Landau equation
         # Note: py-pde handles complex numbers with 1j notation
         return PDE(
             rhs={"A": f"A + (1 + 1j*{c1}) * laplace(A) - (1 + 1j*{c3}) * abs(A)**2 * A"},
-            bc=bc_spec,
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

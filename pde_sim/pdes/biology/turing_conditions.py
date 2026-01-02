@@ -86,7 +86,7 @@ class TuringConditionsPDE(MultiFieldPDEPreset):
                 "u": f"{Du} * laplace(u) + u * ({a} - u) - u * v",
                 "v": f"{Dv} * laplace(v) + u * v - {d} * v",
             },
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

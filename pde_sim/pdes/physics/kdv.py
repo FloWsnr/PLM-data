@@ -80,8 +80,6 @@ class KdVPDE(ScalarPDEPreset):
         alpha = parameters.get("alpha", 6.0)
         beta = parameters.get("beta", 1.0)
 
-        bc_spec = "periodic" if bc.get("x") == "periodic" else "no-flux"
-
         # Third derivative: d_dx(d_dx(d_dx(u)))
         # Linear term
         linear = f"-{c} * d_dx(u)" if c != 0 else ""
@@ -96,7 +94,7 @@ class KdVPDE(ScalarPDEPreset):
 
         return PDE(
             rhs={"u": rhs if rhs else "0"},
-            bc=bc_spec,
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

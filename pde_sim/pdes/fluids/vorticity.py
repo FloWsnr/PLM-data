@@ -64,11 +64,9 @@ class VorticityPDE(ScalarPDEPreset):
     ) -> PDE:
         nu = parameters.get("nu", 0.01)
 
-        bc_spec = "periodic" if bc.get("x") == "periodic" else "no-flux"
-
         return PDE(
             rhs={"w": f"{nu} * laplace(w)"},
-            bc=bc_spec,
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

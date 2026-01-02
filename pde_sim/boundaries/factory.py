@@ -15,10 +15,10 @@ class BoundaryConditionFactory:
     BC_MAP = {
         # Periodic
         "periodic": "periodic",
-        # Neumann (no-flux)
-        "neumann": "no-flux",
-        "no-flux": "no-flux",
-        "zero-flux": "no-flux",
+        # Neumann (no-flux) - use derivative:0 for zero normal derivative
+        "neumann": {"derivative": 0},
+        "no-flux": {"derivative": 0},
+        "zero-flux": {"derivative": 0},
         # Dirichlet (fixed value)
         "dirichlet": {"value": 0},
         "zero": {"value": 0},

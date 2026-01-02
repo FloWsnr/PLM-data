@@ -87,7 +87,7 @@ class OscillatorsPDE(MultiFieldPDEPreset):
                 "u": f"{Du} * laplace(u) + v",
                 "v": f"{Dv} * laplace(v) + {mu} * (1 - u**2) * v - {omega_sq} * u",
             },
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

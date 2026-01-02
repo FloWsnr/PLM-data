@@ -74,12 +74,10 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
         """
         nu = parameters.get("nu", 1.0)
 
-        bc_spec = "periodic" if bc.get("x") == "periodic" else "no-flux"
-
         # py-pde uses gradient_squared for |grad(u)|^2
         return PDE(
             rhs={"u": f"-laplace(u) - {nu} * laplace(laplace(u)) - 0.5 * gradient_squared(u)"},
-            bc=bc_spec,
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

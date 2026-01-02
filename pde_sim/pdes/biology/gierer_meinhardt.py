@@ -107,14 +107,12 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
         u_rhs = f"{Du} * laplace(u) + {rho} * u**2 / (v + 1e-10) - {mu_u} * u + {rho_u}"
         v_rhs = f"{Dv} * laplace(v) + {rho} * u**2 - {mu_v} * v"
 
-        bc_spec = "periodic" if bc.get("x") == "periodic" else "no-flux"
-
         return PDE(
             rhs={
                 "u": u_rhs,
                 "v": v_rhs,
             },
-            bc=bc_spec,
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

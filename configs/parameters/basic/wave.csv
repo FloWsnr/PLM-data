@@ -3,7 +3,7 @@ c,BC_x,BC_y,init,solver,dt,t_end,notes
 1.0,periodic,periodic,gaussian-blobs,rk4,1,50,standard wave
 2.0,no-flux,no-flux,gaussian-blobs,rk4,1,30,fast reflecting
 1.0,periodic,periodic,sine,rk4,1,50,standing wave
-0.8,no-flux,periodic,step,rk4,1,60,mixed BC
+0.8,no-flux,no-flux,step,rk4,1,60,reflecting BC
 0.3,periodic,periodic,gaussian-blobs,rk4,1,150,very slow wave
 1.5,no-flux,no-flux,sine,rk4,1,40,fast standing reflecting
 0.5,periodic,periodic,rectangle-grid,rk4,1,100,patchwork init

@@ -81,7 +81,7 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
                 "T": f"{kappa} * laplace(T)",
                 "w": f"{nu} * laplace(w) + {Ra} * d_dx(T)",
             },
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

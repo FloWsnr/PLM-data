@@ -66,7 +66,7 @@ class PeronaMalikPDE(ScalarPDEPreset):
         # Simplified: linear diffusion with edge-dependent reduction
         return PDE(
             rhs={"u": f"{D} * laplace(u) / (1 + gradient_squared(u) / {K_sq})"},
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

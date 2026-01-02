@@ -98,7 +98,7 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
 
         return PDE(
             rhs={"u": u_eq, "v": v_eq},
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

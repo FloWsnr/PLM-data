@@ -61,11 +61,9 @@ class ShallowWaterPDE(ScalarPDEPreset):
         c = parameters.get("c", 1.0)
         c_sq = c**2
 
-        bc_spec = "periodic" if bc.get("x") == "periodic" else "no-flux"
-
         return PDE(
             rhs={"h": f"{c_sq} * laplace(h)"},
-            bc=bc_spec,
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

@@ -95,7 +95,7 @@ class VegetationPDE(MultiFieldPDEPreset):
                 "w": w_rhs,
                 "n": f"{Dn} * laplace(n) + w * n**2 - {m} * n",
             },
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

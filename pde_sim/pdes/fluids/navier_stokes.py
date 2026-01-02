@@ -85,7 +85,7 @@ class NavierStokesPDE(MultiFieldPDEPreset):
 
         return PDE(
             rhs={"w": rhs},
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

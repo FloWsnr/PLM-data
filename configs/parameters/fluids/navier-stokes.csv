@@ -3,7 +3,7 @@ nu,ux,uy,BC_x,BC_y,init,solver,dt,t_end,notes
 0.01,0.0,0.1,periodic,periodic,gaussian-blobs,rk4,1,100,advected vortex y
 0.005,0.2,0.0,periodic,periodic,gaussian-blobs,rk4,1,80,faster advection
 0.02,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,1,80,diagonal flow
-0.01,0.5,0.0,periodic,no-flux,gaussian-blobs,rk4,1,60,channel flow
+0.01,0.5,0.0,periodic,periodic,gaussian-blobs,rk4,1,60,channel flow periodic
 0.01,-0.1,0.1,periodic,periodic,gaussian-blobs,rk4,1,100,angled flow
 0.005,0.0,0.0,periodic,periodic,random-gaussian,rk4,1,120,pure diffusion
 0.01,0.1,0.0,periodic,periodic,rectangle-grid,rk4,1,100,patchwork init

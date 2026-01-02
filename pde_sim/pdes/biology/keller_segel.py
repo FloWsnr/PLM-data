@@ -101,14 +101,12 @@ class KellerSegelPDE(MultiFieldPDEPreset):
         u_rhs = f"{Du} * laplace(u) - {chi} * (u * laplace(c) + inner(gradient(u), gradient(c)))"
         c_rhs = f"{Dc} * laplace(c) + {alpha} * u - {beta} * c"
 
-        bc_spec = "periodic" if bc.get("x") == "periodic" else "no-flux"
-
         return PDE(
             rhs={
                 "u": u_rhs,
                 "c": c_rhs,
             },
-            bc=bc_spec,
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

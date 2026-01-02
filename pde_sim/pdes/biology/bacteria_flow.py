@@ -119,7 +119,7 @@ class BacteriaFlowPDE(MultiFieldPDEPreset):
 
         return PDE(
             rhs={"b": b_rhs, "c": c_rhs},
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

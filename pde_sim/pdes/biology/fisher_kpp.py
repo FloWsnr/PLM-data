@@ -74,5 +74,5 @@ class FisherKPPPDE(ScalarPDEPreset):
 
         return PDE(
             rhs={"u": f"{D} * laplace(u) + {r} * u * (1 - u / {K})"},
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )

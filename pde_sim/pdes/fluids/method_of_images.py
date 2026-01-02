@@ -59,7 +59,7 @@ class MethodOfImagesPDE(ScalarPDEPreset):
 
         return PDE(
             rhs={"w": f"{nu} * laplace(w)"},
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

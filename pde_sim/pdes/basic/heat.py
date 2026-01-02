@@ -68,26 +68,6 @@ class HeatPDE(ScalarPDEPreset):
             bc=bc_spec,
         )
 
-    def _convert_bc(self, bc: dict[str, str]) -> str | dict:
-        """Convert boundary condition config to py-pde format."""
-        x_bc = bc.get("x", "periodic")
-        y_bc = bc.get("y", "periodic")
-
-        # If both periodic, return "periodic"
-        if x_bc == "periodic" and y_bc == "periodic":
-            return "periodic"
-
-        # Otherwise, return appropriate BC
-        bc_map = {
-            "periodic": "periodic",
-            "neumann": "no-flux",
-            "no-flux": "no-flux",
-            "dirichlet": {"value": 0},
-            "wall": {"value": 0},
-        }
-
-        return bc_map.get(x_bc, "no-flux")
-
     def get_equations_for_metadata(
         self, parameters: dict[str, float]
     ) -> dict[str, str]:
@@ -155,5 +135,5 @@ class InhomogeneousHeatPDE(ScalarPDEPreset):
 
         return PDE(
             rhs={"T": rhs},
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )

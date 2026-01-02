@@ -70,7 +70,7 @@ class SchrodingerPDE(ScalarPDEPreset):
         D = parameters.get("D", 1.0)
 
         # Convert BC to py-pde format
-        bc_spec = "periodic" if bc.get("x") == "periodic" else "no-flux"
+        bc_spec = self._convert_bc(bc)
 
         return PDE(
             rhs={"psi": f"1j * {D} * laplace(psi)"},
@@ -176,7 +176,7 @@ class PlatePDE(ScalarPDEPreset):
         """
         D = parameters.get("D", 0.01)
 
-        bc_spec = "periodic" if bc.get("x") == "periodic" else "no-flux"
+        bc_spec = self._convert_bc(bc)
 
         return PDE(
             rhs={"u": f"-{D} * laplace(laplace(u))"},

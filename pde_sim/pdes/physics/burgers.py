@@ -52,5 +52,5 @@ class BurgersPDE(ScalarPDEPreset):
 
         return PDE(
             rhs={"u": f"{nu} * laplace(u) - u * d_dx(u)"},
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )

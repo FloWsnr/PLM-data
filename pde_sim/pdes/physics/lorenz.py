@@ -106,7 +106,7 @@ class LorenzPDE(MultiFieldPDEPreset):
                 "Y": f"{Dy} * laplace(Y) + X * ({rho} - Z) - Y",
                 "Z": f"{Dz} * laplace(Z) + X * Y - {beta} * Z",
             },
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

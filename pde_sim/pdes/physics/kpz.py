@@ -86,12 +86,10 @@ class KPZInterfacePDE(ScalarPDEPreset):
         nu = parameters.get("nu", 0.5)
         lmbda = parameters.get("lmbda", 1.0)
 
-        bc_spec = "periodic" if bc.get("x") == "periodic" else "no-flux"
-
         # KPZ equation: dh/dt = nu * laplace(h) + (lambda/2) * |grad(h)|^2
         return PDE(
             rhs={"h": f"{nu} * laplace(h) + {lmbda / 2} * gradient_squared(h)"},
-            bc=bc_spec,
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(

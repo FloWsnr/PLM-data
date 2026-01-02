@@ -65,7 +65,7 @@ class AllenCahnPDE(ScalarPDEPreset):
 
         return PDE(
             rhs={"u": f"{D} * laplace(u) + u * (u - {a}) * (1 - u)"},
-            bc="periodic" if bc.get("x") == "periodic" else "no-flux",
+            bc=self._convert_bc(bc),
         )
 
 
@@ -143,8 +143,6 @@ class StandardAllenCahnPDE(ScalarPDEPreset):
         gamma = parameters.get("gamma", 1.0)
         mobility = parameters.get("mobility", 1.0)
 
-        bc_spec = "periodic" if bc.get("x") == "periodic" else "no-flux"
-
         # dc/dt = mobility * (gamma * laplace(c) - c³ + c)
         if mobility == 1.0:
             rhs = f"{gamma} * laplace(c) - c**3 + c"
@@ -153,7 +151,7 @@ class StandardAllenCahnPDE(ScalarPDEPreset):
 
         return PDE(
             rhs={"c": rhs},
-            bc=bc_spec,
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(
