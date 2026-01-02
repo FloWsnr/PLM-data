@@ -162,6 +162,9 @@ class SimulationRunner:
 
         result = self.pde.solve(self.state, **solve_kwargs)
 
+        # Capture solver diagnostics (including adaptive dt statistics)
+        solver_diagnostics = getattr(self.pde, "diagnostics", {}).get("solver", {})
+
         # Save frames from storage
         if verbose:
             print(f"  Saving {len(storage)} frames...")
@@ -192,6 +195,7 @@ class SimulationRunner:
             config=self.config,
             total_time=total_time,
             frame_annotations=self.output_manager.get_frame_annotations(),
+            solver_diagnostics=solver_diagnostics,
         )
 
         self.output_manager.save_metadata(metadata)
@@ -200,6 +204,11 @@ class SimulationRunner:
             print(f"Simulation complete!")
             print(f"  Generated {len(storage)} frames")
             print(f"  Total simulation time: {total_time:.4f}")
+            # Report adaptive dt statistics if available
+            dt_stats = solver_diagnostics.get("dt_statistics")
+            if dt_stats and solver_diagnostics.get("dt_adaptive"):
+                print(f"  Adaptive dt: {dt_stats['min']:.3g} .. {dt_stats['max']:.3g} "
+                      f"(mean: {dt_stats['mean']:.3g}, steps: {dt_stats['count']})")
 
         # Add folder_name to returned metadata (for CLI use, not saved to file)
         metadata["folder_name"] = self.folder_name

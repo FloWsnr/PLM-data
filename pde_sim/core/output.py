@@ -356,6 +356,7 @@ def create_metadata(
     config: Any,
     total_time: float,
     frame_annotations: list[dict[str, Any]],
+    solver_diagnostics: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Create a complete metadata dictionary.
 
@@ -366,10 +367,18 @@ def create_metadata(
         config: SimulationConfig object.
         total_time: Total simulation time.
         frame_annotations: List of per-frame annotations.
+        solver_diagnostics: Optional solver diagnostics from py-pde.
 
     Returns:
         Complete metadata dictionary.
     """
+    solver_diagnostics = solver_diagnostics or {}
+
+    # Convert dt_statistics numpy values to Python floats for JSON serialization
+    dt_stats = solver_diagnostics.get("dt_statistics")
+    if dt_stats:
+        dt_stats = {k: float(v) if hasattr(v, 'item') else v for k, v in dt_stats.items()}
+
     # Load detailed description from markdown file
     description = get_description(preset_name)
 
@@ -401,6 +410,7 @@ def create_metadata(
             "numFrames": config.output.num_frames,
             "totalTime": total_time,
             "resolution": [config.resolution, config.resolution],
+            "dtStatistics": dt_stats,
         },
         "visualization": {
             "colormap": config.output.colormap,
