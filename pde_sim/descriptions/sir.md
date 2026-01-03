@@ -33,9 +33,9 @@ Key processes:
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Transmission | $\beta$ | Infection rate | 0.1 - 10 |
+| Transmission | $\beta$ | Infection rate | 0.1 - 5 |
 | Recovery | $\gamma$ | Recovery rate | 0.01 - 2 |
-| Diffusivity | $D$ | Spatial mobility | 0.001 - 1 |
+| Diffusivity | $D$ | Spatial mobility | 0.001 - 0.3 |
 
 ## Key Quantities
 

@@ -28,8 +28,8 @@ This cyclic hierarchy prevents competitive exclusion and maintains biodiversity.
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Diffusion | $D$ | Movement rate | 0.001 - 10 |
-| Competition | $\alpha$ | Interaction strength | 0.1 - 10 |
+| Diffusion | $D$ | Movement rate | 0.001 - 0.5 |
+| Competition | $\alpha$ | Interaction strength | 0.1 - 5 |
 
 ## Coexistence Mechanism
 

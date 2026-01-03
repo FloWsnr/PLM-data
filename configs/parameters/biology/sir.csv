@@ -1,10 +1,10 @@
 beta,gamma,D,BC_x,BC_y,init,solver,dt,t_end,notes
-2.0,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,1,200,R0=20 fast spread
-0.5,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,1,300,R0=5 moderate
-0.3,0.2,0.05,periodic,periodic,gaussian-blobs,rk4,1,400,R0=1.5 slow
-1.0,0.1,0.2,no-flux,no-flux,gaussian-blobs,rk4,1,250,closed population
-2.0,0.5,0.1,periodic,periodic,step,rk4,1,150,fast recovery
-0.8,0.1,0.15,periodic,periodic,gaussian-blobs,rk4,1,280,R0=8 moderate diff
-1.5,0.3,0.1,periodic,periodic,gaussian-blobs,rk4,1,200,R0=5 faster recovery
-2.0,0.1,0.1,periodic,periodic,rectangle-grid,rk4,1,200,patchwork init
-2.0,0.1,0.1,no-flux,no-flux,rectangle-grid,rk4,1,200,patchwork bounded
+2.0,0.1,0.05,periodic,periodic,gaussian-blobs,rk4,0.01,50,R0=20 fast spread
+0.5,0.1,0.05,periodic,periodic,gaussian-blobs,rk4,0.01,80,R0=5 moderate
+0.3,0.2,0.03,periodic,periodic,gaussian-blobs,rk4,0.01,100,R0=1.5 slow
+1.0,0.1,0.1,no-flux,no-flux,gaussian-blobs,rk4,0.01,60,closed population
+2.0,0.5,0.05,periodic,periodic,step,rk4,0.01,40,fast recovery
+0.8,0.1,0.08,periodic,periodic,gaussian-blobs,rk4,0.01,70,R0=8 moderate diff
+1.5,0.3,0.05,periodic,periodic,gaussian-blobs,rk4,0.01,50,R0=5 faster recovery
+2.0,0.1,0.05,periodic,periodic,rectangle-grid,rk4,0.01,50,patchwork init
+2.0,0.1,0.05,no-flux,no-flux,rectangle-grid,rk4,0.01,50,patchwork bounded

@@ -1,7 +1,7 @@
 preset: topography
 parameters:
   D: 0.1
-  alpha: 0.5
+  alpha: 0.3
   r: 1.0
   hx: 0.1
   hy: 0.0
@@ -26,5 +26,5 @@ output:
   colormap: viridis
   field_to_plot: u
 seed: 42
-domain_size: 10.0
-t_end: 50.0
+domain_size: 2.0
+t_end: 30.0

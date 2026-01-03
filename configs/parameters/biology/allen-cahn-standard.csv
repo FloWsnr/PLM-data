@@ -1,9 +1,9 @@
 gamma,mobility,BC_x,BC_y,init,solver,dt,t_end,notes
-1.0,1.0,periodic,periodic,random-uniform,rk4,1,100,standard spinodal
-0.5,1.0,periodic,periodic,random-uniform,rk4,1,120,sharper interface
-2.0,1.0,periodic,periodic,random-uniform,rk4,1,80,diffuse interface
-1.0,0.5,periodic,periodic,random-uniform,rk4,1,150,slower dynamics
-1.0,2.0,no-flux,no-flux,random-uniform,rk4,1,70,faster bounded
-1.0,1.0,periodic,periodic,step,rk4,1,100,front evolution
-1.0,1.0,periodic,periodic,rectangle-grid,rk4,1,100,patchwork init
-1.0,1.0,no-flux,no-flux,rectangle-grid,rk4,1,100,patchwork bounded
+0.1,1.0,periodic,periodic,random-uniform,rk4,0.1,50,standard spinodal
+0.05,1.0,periodic,periodic,random-uniform,rk4,0.1,60,sharper interface
+0.2,1.0,periodic,periodic,random-uniform,rk4,0.1,40,diffuse interface
+0.1,0.5,periodic,periodic,random-uniform,rk4,0.1,80,slower dynamics
+0.1,2.0,no-flux,no-flux,random-uniform,rk4,0.1,35,faster bounded
+0.1,1.0,periodic,periodic,step,rk4,0.1,50,front evolution
+0.1,1.0,periodic,periodic,rectangle-grid,rk4,0.1,50,patchwork init
+0.1,1.0,no-flux,no-flux,rectangle-grid,rk4,0.1,50,patchwork bounded

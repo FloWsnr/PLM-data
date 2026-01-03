@@ -3,7 +3,7 @@ parameters:
   epsilon: 0.08
   a: 0.7
   b: 0.8
-  Du: 1.0
+  Du: 0.2
   Dv: 0.0
 init:
   type: gaussian-blobs
@@ -28,5 +28,5 @@ output:
   show_vectors: true
   vector_density: 16
 seed: 42
-domain_size: 10.0
-t_end: 50.0
+domain_size: 2.0
+t_end: 100.0

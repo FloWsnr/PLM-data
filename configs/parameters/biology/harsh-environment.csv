@@ -1,10 +1,10 @@
 D,r,theta,BC_x,BC_y,init,solver,dt,t_end,notes
-0.1,1.0,0.2,periodic,periodic,gaussian-blobs,rk4,1,200,standard Allee
-0.1,1.0,0.3,periodic,periodic,gaussian-blobs,rk4,1,180,higher threshold
-0.1,1.0,0.1,periodic,periodic,gaussian-blobs,rk4,1,220,lower threshold
-0.05,1.0,0.2,periodic,periodic,gaussian-blobs,rk4,1,250,slower diffusion
-0.2,1.0,0.2,no-flux,no-flux,gaussian-blobs,rk4,1,160,faster bounded
-0.1,2.0,0.2,periodic,periodic,step,rk4,1,150,faster growth
-0.1,0.5,0.25,periodic,periodic,random-gaussian,rk4,1,280,slow high threshold
-0.1,1.0,0.2,periodic,periodic,rectangle-grid,rk4,1,200,patchwork init
-0.1,1.0,0.2,no-flux,no-flux,rectangle-grid,rk4,1,200,patchwork bounded
+0.1,1.0,0.2,periodic,periodic,gaussian-blobs,rk4,0.01,30,standard Allee
+0.1,1.0,0.3,periodic,periodic,gaussian-blobs,rk4,0.01,28,higher threshold
+0.1,1.0,0.1,periodic,periodic,gaussian-blobs,rk4,0.01,35,lower threshold
+0.05,1.0,0.2,periodic,periodic,gaussian-blobs,rk4,0.01,40,slower diffusion
+0.2,1.0,0.2,no-flux,no-flux,gaussian-blobs,rk4,0.01,25,faster bounded
+0.1,2.0,0.2,periodic,periodic,step,rk4,0.01,22,faster growth
+0.1,0.5,0.25,periodic,periodic,random-gaussian,rk4,0.01,45,slow high threshold
+0.1,1.0,0.2,periodic,periodic,rectangle-grid,rk4,0.01,30,patchwork init
+0.1,1.0,0.2,no-flux,no-flux,rectangle-grid,rk4,0.01,30,patchwork bounded

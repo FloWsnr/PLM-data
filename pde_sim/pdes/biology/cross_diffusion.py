@@ -38,31 +38,31 @@ class CrossDiffusionPDE(MultiFieldPDEPreset):
             parameters=[
                 PDEParameter(
                     name="D1",
-                    default=0.1,
+                    default=0.05,
                     description="Diffusion of species u",
                     min_value=0.01,
-                    max_value=10.0,
+                    max_value=0.5,
                 ),
                 PDEParameter(
                     name="D2",
-                    default=0.1,
+                    default=0.05,
                     description="Diffusion of species v",
                     min_value=0.01,
-                    max_value=10.0,
+                    max_value=0.5,
                 ),
                 PDEParameter(
                     name="alpha",
-                    default=1.0,
+                    default=0.5,
                     description="Cross-diffusion coefficient for u",
                     min_value=0.0,
-                    max_value=10.0,
+                    max_value=5.0,
                 ),
                 PDEParameter(
                     name="beta",
                     default=0.0,
                     description="Cross-diffusion coefficient for v",
                     min_value=0.0,
-                    max_value=10.0,
+                    max_value=5.0,
                 ),
             ],
             num_fields=2,
@@ -76,9 +76,9 @@ class CrossDiffusionPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        D1 = parameters.get("D1", 0.1)
-        D2 = parameters.get("D2", 0.1)
-        alpha = parameters.get("alpha", 1.0)
+        D1 = parameters.get("D1", 0.05)
+        D2 = parameters.get("D2", 0.05)
+        alpha = parameters.get("alpha", 0.5)
         beta = parameters.get("beta", 0.0)
 
         u_rhs = f"{D1} * laplace(u) + {alpha} * laplace(u*v) + u * (1 - u - v)"

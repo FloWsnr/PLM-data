@@ -42,17 +42,17 @@ class CyclicCompetitionPDE(MultiFieldPDEPreset):
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=0.1,
+                    default=0.05,
                     description="Diffusion coefficient",
                     min_value=0.001,
-                    max_value=10.0,
+                    max_value=0.5,
                 ),
                 PDEParameter(
                     name="alpha",
                     default=1.0,
                     description="Competition strength",
                     min_value=0.1,
-                    max_value=10.0,
+                    max_value=5.0,
                 ),
             ],
             num_fields=3,
@@ -66,7 +66,7 @@ class CyclicCompetitionPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        D = parameters.get("D", 0.1)
+        D = parameters.get("D", 0.05)
         alpha = parameters.get("alpha", 1.0)
 
         return PDE(

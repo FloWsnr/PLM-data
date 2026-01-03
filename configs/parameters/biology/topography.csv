@@ -1,9 +1,9 @@
 D,alpha,r,hx,hy,BC_x,BC_y,init,solver,dt,t_end,notes
-0.1,0.5,1.0,0.1,0.0,periodic,periodic,gaussian-blobs,rk4,1,150,x-slope terrain
-0.1,0.5,1.0,0.0,0.1,periodic,periodic,gaussian-blobs,rk4,1,150,y-slope terrain
-0.1,0.5,1.0,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,1,140,diagonal slope
-0.1,1.0,1.0,0.2,0.0,periodic,periodic,gaussian-blobs,rk4,1,130,steep terrain
-0.1,0.5,1.0,-0.1,0.1,no-flux,no-flux,gaussian-blobs,rk4,1,160,opposite slopes bounded
-0.2,0.3,1.0,0.1,0.0,periodic,periodic,step,rk4,1,120,fast weak terrain
-0.1,0.5,1.0,0.1,0.0,periodic,periodic,rectangle-grid,rk4,1,150,patchwork init
-0.1,0.5,1.0,0.1,0.0,no-flux,no-flux,rectangle-grid,rk4,1,150,patchwork bounded
+0.1,0.3,1.0,0.1,0.0,periodic,periodic,gaussian-blobs,rk4,0.01,30,x-slope terrain
+0.1,0.3,1.0,0.0,0.1,periodic,periodic,gaussian-blobs,rk4,0.01,30,y-slope terrain
+0.1,0.3,1.0,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,0.01,28,diagonal slope
+0.1,0.5,1.0,0.2,0.0,periodic,periodic,gaussian-blobs,rk4,0.01,26,steep terrain
+0.1,0.3,1.0,-0.1,0.1,no-flux,no-flux,gaussian-blobs,rk4,0.01,32,opposite slopes bounded
+0.2,0.2,1.0,0.1,0.0,periodic,periodic,step,rk4,0.01,24,fast weak terrain
+0.1,0.3,1.0,0.1,0.0,periodic,periodic,rectangle-grid,rk4,0.01,30,patchwork init
+0.1,0.3,1.0,0.1,0.0,no-flux,no-flux,rectangle-grid,rk4,0.01,30,patchwork bounded

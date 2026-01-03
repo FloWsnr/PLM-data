@@ -1,9 +1,9 @@
 Du,Dc,chi,alpha,beta,BC_x,BC_y,init,solver,dt,t_end,notes
-1.0,1.0,1.0,1.0,1.0,periodic,periodic,gaussian-blobs,rk4,1,100,standard chemotaxis
-1.0,1.0,2.0,1.0,1.0,periodic,periodic,gaussian-blobs,rk4,1,80,stronger chemotaxis
-1.0,1.0,0.5,1.0,1.0,periodic,periodic,gaussian-blobs,rk4,1,120,weaker chemotaxis
-0.5,1.0,1.0,1.0,1.0,periodic,periodic,gaussian-blobs,rk4,1,100,slower cell diffusion
-1.0,0.5,1.0,1.0,1.0,no-flux,no-flux,gaussian-blobs,rk4,1,100,slower chemical bounded
-1.0,1.0,1.5,0.5,0.5,periodic,periodic,gaussian-blobs,rk4,1,90,different kinetics
-1.0,1.0,1.0,1.0,1.0,periodic,periodic,rectangle-grid,rk4,1,100,patchwork init
-1.0,1.0,1.0,1.0,1.0,no-flux,no-flux,rectangle-grid,rk4,1,100,patchwork bounded
+0.1,0.2,1.0,1.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.001,30,standard chemotaxis
+0.1,0.2,2.0,1.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.001,25,stronger chemotaxis
+0.1,0.2,0.5,1.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.001,40,weaker chemotaxis
+0.05,0.2,1.0,1.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.001,30,slower cell diffusion
+0.1,0.1,1.0,1.0,1.0,no-flux,no-flux,gaussian-blobs,rk4,0.001,30,slower chemical bounded
+0.1,0.2,1.5,0.5,0.5,periodic,periodic,gaussian-blobs,rk4,0.001,28,different kinetics
+0.1,0.2,1.0,1.0,1.0,periodic,periodic,rectangle-grid,rk4,0.001,30,patchwork init
+0.1,0.2,1.0,1.0,1.0,no-flux,no-flux,rectangle-grid,rk4,0.001,30,patchwork bounded

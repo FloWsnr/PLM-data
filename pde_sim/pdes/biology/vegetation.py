@@ -45,14 +45,14 @@ class VegetationPDE(MultiFieldPDEPreset):
                     default=2.0,
                     description="Rainfall rate",
                     min_value=0.1,
-                    max_value=10.0,
+                    max_value=5.0,
                 ),
                 PDEParameter(
                     name="v",
-                    default=1.0,
+                    default=0.5,
                     description="Water flow velocity",
                     min_value=0.0,
-                    max_value=10.0,
+                    max_value=2.0,
                 ),
                 PDEParameter(
                     name="m",
@@ -66,7 +66,7 @@ class VegetationPDE(MultiFieldPDEPreset):
                     default=0.01,
                     description="Plant dispersal coefficient",
                     min_value=0.001,
-                    max_value=1.0,
+                    max_value=0.1,
                 ),
             ],
             num_fields=2,
@@ -81,7 +81,7 @@ class VegetationPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
     ) -> PDE:
         a = parameters.get("a", 2.0)
-        v = parameters.get("v", 1.0)
+        v = parameters.get("v", 0.5)
         m = parameters.get("m", 0.45)
         Dn = parameters.get("Dn", 0.01)
 

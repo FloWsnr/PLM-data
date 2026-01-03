@@ -37,17 +37,17 @@ class FisherKPPPDE(ScalarPDEPreset):
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=1.0,
+                    default=0.1,
                     description="Diffusion coefficient",
                     min_value=0.01,
-                    max_value=10.0,
+                    max_value=0.5,
                 ),
                 PDEParameter(
                     name="r",
                     default=1.0,
                     description="Growth rate",
-                    min_value=0.01,
-                    max_value=10.0,
+                    min_value=0.1,
+                    max_value=5.0,
                 ),
                 PDEParameter(
                     name="K",
@@ -68,7 +68,7 @@ class FisherKPPPDE(ScalarPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        D = parameters.get("D", 1.0)
+        D = parameters.get("D", 0.1)
         r = parameters.get("r", 1.0)
         K = parameters.get("K", 1.0)
 

@@ -67,7 +67,7 @@ class TestStandardAllenCahnPDE:
 
         assert "gamma" in params
         assert "mobility" in params
-        assert params["gamma"] == 1.0
+        assert params["gamma"] == 0.1
         assert params["mobility"] == 1.0
 
     def test_create_pde(self, small_grid):

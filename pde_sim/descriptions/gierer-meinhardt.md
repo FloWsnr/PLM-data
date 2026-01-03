@@ -30,12 +30,12 @@ This mechanism was proposed to explain morphogenesis and regeneration in Hydra.
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Activator diffusion | $D_u$ | Short-range (slow) | 0.001 - 1 |
-| Inhibitor diffusion | $D_v$ | Long-range (fast) | 0.1 - 100 |
-| Production rate | $\rho$ | Reaction strength | 0.1 - 10 |
+| Activator diffusion | $D_u$ | Short-range (slow) | 0.001 - 0.1 |
+| Inhibitor diffusion | $D_v$ | Long-range (fast) | 0.05 - 2 |
+| Production rate | $\rho$ | Reaction strength | 0.1 - 5 |
 | Activator decay | $\mu_u$ | Degradation rate | 0.01 - 1 |
 | Inhibitor decay | $\mu_v$ | Degradation rate | 0.01 - 1 |
-| Basal production | $\rho_u$ | Background source | 0 - 1 |
+| Basal production | $\rho_u$ | Background source | 0 - 0.5 |
 
 ## Turing Instability Conditions
 

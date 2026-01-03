@@ -40,7 +40,7 @@ class TestSIRModelPDE:
         assert "D" in params
         assert params["beta"] == 2.0
         assert params["gamma"] == 0.1
-        assert params["D"] == 0.1
+        assert params["D"] == 0.05
 
     def test_create_pde(self, small_grid):
         """Test PDE creation."""

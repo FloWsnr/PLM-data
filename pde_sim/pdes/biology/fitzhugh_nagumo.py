@@ -43,7 +43,7 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
                     default=0.08,
                     description="Timescale ratio (small for excitable)",
                     min_value=0.001,
-                    max_value=1.0,
+                    max_value=0.5,
                 ),
                 PDEParameter(
                     name="a",
@@ -61,17 +61,17 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
                 ),
                 PDEParameter(
                     name="Du",
-                    default=1.0,
+                    default=0.2,
                     description="Diffusion of u",
-                    min_value=0.1,
-                    max_value=10.0,
+                    min_value=0.05,
+                    max_value=1.0,
                 ),
                 PDEParameter(
                     name="Dv",
                     default=0.0,
                     description="Diffusion of v (often 0)",
                     min_value=0.0,
-                    max_value=10.0,
+                    max_value=1.0,
                 ),
             ],
             num_fields=2,
@@ -88,7 +88,7 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
         epsilon = parameters.get("epsilon", 0.08)
         a = parameters.get("a", 0.7)
         b = parameters.get("b", 0.8)
-        Du = parameters.get("Du", 1.0)
+        Du = parameters.get("Du", 0.2)
         Dv = parameters.get("Dv", 0.0)
 
         u_eq = f"{Du} * laplace(u) + u - u**3 / 3 - v"

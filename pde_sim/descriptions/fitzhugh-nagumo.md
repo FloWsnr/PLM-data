@@ -33,11 +33,11 @@ The intersection determines the steady state. System behavior depends on the num
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Timescale ratio | $\varepsilon$ | Separation of fast/slow | 0.001 - 1 |
+| Timescale ratio | $\varepsilon$ | Separation of fast/slow | 0.001 - 0.5 |
 | Parameter a | $a$ | Shifts v-nullcline | 0 - 2 |
 | Parameter b | $b$ | Slope of v-nullcline | 0 - 2 |
-| Diffusion u | $D_u$ | Activator diffusion | 0.1 - 10 |
-| Diffusion v | $D_v$ | Recovery diffusion (often 0) | 0 - 10 |
+| Diffusion u | $D_u$ | Activator diffusion | 0.05 - 1 |
+| Diffusion v | $D_v$ | Recovery diffusion (often 0) | 0 - 1 |
 
 ## Excitable vs Oscillatory Regime
 

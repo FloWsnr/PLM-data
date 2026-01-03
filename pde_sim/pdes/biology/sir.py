@@ -55,7 +55,7 @@ class SIRModelPDE(MultiFieldPDEPreset):
                     default=2.0,
                     description="Transmission rate",
                     min_value=0.1,
-                    max_value=10.0,
+                    max_value=5.0,
                 ),
                 PDEParameter(
                     name="gamma",
@@ -66,10 +66,10 @@ class SIRModelPDE(MultiFieldPDEPreset):
                 ),
                 PDEParameter(
                     name="D",
-                    default=0.1,
+                    default=0.05,
                     description="Diffusivity (spatial mobility)",
                     min_value=0.001,
-                    max_value=1.0,
+                    max_value=0.3,
                 ),
             ],
             num_fields=3,
@@ -95,7 +95,7 @@ class SIRModelPDE(MultiFieldPDEPreset):
         """
         beta = parameters.get("beta", 2.0)
         gamma = parameters.get("gamma", 0.1)
-        D = parameters.get("D", 0.1)
+        D = parameters.get("D", 0.05)
 
         return PDE(
             rhs={

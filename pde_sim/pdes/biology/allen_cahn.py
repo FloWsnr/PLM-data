@@ -36,10 +36,10 @@ class AllenCahnPDE(ScalarPDEPreset):
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=1.0,
+                    default=0.1,
                     description="Diffusion coefficient",
                     min_value=0.01,
-                    max_value=10.0,
+                    max_value=0.5,
                 ),
                 PDEParameter(
                     name="a",
@@ -60,7 +60,7 @@ class AllenCahnPDE(ScalarPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        D = parameters.get("D", 1.0)
+        D = parameters.get("D", 0.1)
         a = parameters.get("a", 0.5)
 
         return PDE(
@@ -106,17 +106,17 @@ class StandardAllenCahnPDE(ScalarPDEPreset):
             parameters=[
                 PDEParameter(
                     name="gamma",
-                    default=1.0,
+                    default=0.1,
                     description="Interfacial width parameter",
                     min_value=0.01,
-                    max_value=10.0,
+                    max_value=0.5,
                 ),
                 PDEParameter(
                     name="mobility",
                     default=1.0,
                     description="Mobility (rate of evolution)",
                     min_value=0.1,
-                    max_value=10.0,
+                    max_value=5.0,
                 ),
             ],
             num_fields=1,
@@ -140,7 +140,7 @@ class StandardAllenCahnPDE(ScalarPDEPreset):
         Returns:
             Configured PDE instance.
         """
-        gamma = parameters.get("gamma", 1.0)
+        gamma = parameters.get("gamma", 0.1)
         mobility = parameters.get("mobility", 1.0)
 
         # dc/dt = mobility * (gamma * laplace(c) - c³ + c)
@@ -190,7 +190,7 @@ class StandardAllenCahnPDE(ScalarPDEPreset):
 
         if ic_type == "tanh":
             # Tanh profile (exact interface solution)
-            gamma = ic_params.get("gamma", 1.0)
+            gamma = ic_params.get("gamma", 0.1)
             x_bounds = grid.axes_bounds[0]
             x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
             y = np.linspace(grid.axes_bounds[1][0], grid.axes_bounds[1][1], grid.shape[1])

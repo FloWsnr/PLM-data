@@ -53,17 +53,17 @@ class SchnakenbergPDE(MultiFieldPDEPreset):
                 ),
                 PDEParameter(
                     name="Du",
-                    default=1.0,
+                    default=0.01,
                     description="Diffusion of u (activator)",
-                    min_value=0.01,
-                    max_value=10.0,
+                    min_value=0.001,
+                    max_value=0.1,
                 ),
                 PDEParameter(
                     name="Dv",
-                    default=100.0,
+                    default=1.0,
                     description="Diffusion of v (inhibitor)",
-                    min_value=1.0,
-                    max_value=1000.0,
+                    min_value=0.1,
+                    max_value=10.0,
                 ),
             ],
             num_fields=2,
@@ -79,8 +79,8 @@ class SchnakenbergPDE(MultiFieldPDEPreset):
     ) -> PDE:
         a = parameters.get("a", 0.1)
         b = parameters.get("b", 0.9)
-        Du = parameters.get("Du", 1.0)
-        Dv = parameters.get("Dv", 100.0)
+        Du = parameters.get("Du", 0.01)
+        Dv = parameters.get("Dv", 1.0)
 
         return PDE(
             rhs={

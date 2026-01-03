@@ -1,6 +1,6 @@
 preset: fisher-kpp
 parameters:
-  D: 1.0
+  D: 0.1
   r: 1.0
   K: 1.0
 init:
@@ -27,5 +27,5 @@ output:
   colormap: viridis
   field_to_plot: u
 seed: 42
-domain_size: 20.0
-t_end: 50.0
+domain_size: 2.0
+t_end: 15.0

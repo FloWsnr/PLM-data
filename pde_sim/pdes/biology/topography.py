@@ -37,21 +37,21 @@ class TopographyPDE(MultiFieldPDEPreset):
                     default=0.1,
                     description="Diffusion coefficient",
                     min_value=0.01,
-                    max_value=10.0,
+                    max_value=0.5,
                 ),
                 PDEParameter(
                     name="alpha",
-                    default=0.5,
+                    default=0.3,
                     description="Terrain influence strength",
                     min_value=0.0,
-                    max_value=5.0,
+                    max_value=2.0,
                 ),
                 PDEParameter(
                     name="r",
                     default=1.0,
                     description="Growth rate",
                     min_value=0.0,
-                    max_value=5.0,
+                    max_value=3.0,
                 ),
                 PDEParameter(
                     name="hx",
@@ -80,7 +80,7 @@ class TopographyPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
     ) -> PDE:
         D = parameters.get("D", 0.1)
-        alpha = parameters.get("alpha", 0.5)
+        alpha = parameters.get("alpha", 0.3)
         r = parameters.get("r", 1.0)
         hx = parameters.get("hx", 0.1)
         hy = parameters.get("hy", 0.0)

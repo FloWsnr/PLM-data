@@ -33,8 +33,8 @@ Mechanisms causing Allee effects:
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Diffusion | $D$ | Movement rate | 0.001 - 10 |
-| Growth rate | $r$ | Intrinsic reproduction | 0.1 - 10 |
+| Diffusion | $D$ | Movement rate | 0.01 - 0.5 |
+| Growth rate | $r$ | Intrinsic reproduction | 0.1 - 5 |
 | Threshold | $\theta$ | Allee threshold | 0 - 0.5 |
 
 ## Traveling Wave Dynamics

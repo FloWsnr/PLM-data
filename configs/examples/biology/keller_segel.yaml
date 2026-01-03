@@ -1,7 +1,7 @@
 preset: keller-segel
 parameters:
-  Du: 1.0
-  Dc: 1.0
+  Du: 0.1
+  Dc: 0.2
   chi: 1.0
   alpha: 1.0
   beta: 1.0
@@ -28,5 +28,5 @@ output:
   show_vectors: true
   vector_density: 16
 seed: 42
-domain_size: 10.0
-t_end: 50.0
+domain_size: 2.0
+t_end: 30.0

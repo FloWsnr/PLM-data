@@ -34,8 +34,8 @@ For initial conditions with compact support, the wave speed approaches $c_{\min}
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Diffusion | $D$ | Dispersal rate | 0.01 - 10 |
-| Growth rate | $r$ | Per capita growth | 0.01 - 10 |
+| Diffusion | $D$ | Dispersal rate | 0.01 - 0.5 |
+| Growth rate | $r$ | Per capita growth | 0.1 - 5 |
 | Carrying capacity | $K$ | Maximum density | 0.1 - 10 |
 
 ## Wave Profile

@@ -38,31 +38,31 @@ class TuringConditionsPDE(MultiFieldPDEPreset):
             parameters=[
                 PDEParameter(
                     name="Du",
-                    default=0.1,
+                    default=0.01,
                     description="Activator diffusion (small)",
-                    min_value=0.01,
-                    max_value=1.0,
+                    min_value=0.005,
+                    max_value=0.1,
                 ),
                 PDEParameter(
                     name="Dv",
-                    default=10.0,
+                    default=1.0,
                     description="Inhibitor diffusion (large)",
-                    min_value=1.0,
-                    max_value=100.0,
+                    min_value=0.1,
+                    max_value=5.0,
                 ),
                 PDEParameter(
                     name="a",
                     default=1.0,
                     description="Activator growth rate",
                     min_value=0.1,
-                    max_value=5.0,
+                    max_value=3.0,
                 ),
                 PDEParameter(
                     name="d",
                     default=0.5,
                     description="Inhibitor decay rate",
                     min_value=0.1,
-                    max_value=5.0,
+                    max_value=3.0,
                 ),
             ],
             num_fields=2,
@@ -76,8 +76,8 @@ class TuringConditionsPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        Du = parameters.get("Du", 0.1)
-        Dv = parameters.get("Dv", 10.0)
+        Du = parameters.get("Du", 0.01)
+        Dv = parameters.get("Dv", 1.0)
         a = parameters.get("a", 1.0)
         d = parameters.get("d", 0.5)
 

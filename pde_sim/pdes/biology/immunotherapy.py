@@ -41,52 +41,52 @@ class ImmunotherapyPDE(MultiFieldPDEPreset):
             parameters=[
                 PDEParameter(
                     name="Dt",
-                    default=0.01,
+                    default=0.005,
                     description="Tumor diffusion",
                     min_value=0.001,
-                    max_value=1.0,
+                    max_value=0.2,
                 ),
                 PDEParameter(
                     name="Di",
-                    default=0.1,
+                    default=0.05,
                     description="Immune cell diffusion",
                     min_value=0.001,
-                    max_value=1.0,
+                    max_value=0.3,
                 ),
                 PDEParameter(
                     name="rT",
                     default=1.0,
                     description="Tumor growth rate",
                     min_value=0.1,
-                    max_value=5.0,
+                    max_value=3.0,
                 ),
                 PDEParameter(
                     name="K",
                     default=1.0,
                     description="Tumor carrying capacity",
                     min_value=0.1,
-                    max_value=10.0,
+                    max_value=5.0,
                 ),
                 PDEParameter(
                     name="k",
                     default=1.0,
                     description="Immune kill rate",
                     min_value=0.1,
-                    max_value=10.0,
+                    max_value=5.0,
                 ),
                 PDEParameter(
                     name="s",
                     default=0.1,
                     description="Immune source (therapy)",
                     min_value=0.0,
-                    max_value=2.0,
+                    max_value=1.0,
                 ),
                 PDEParameter(
                     name="rI",
                     default=0.5,
                     description="Immune recruitment rate",
                     min_value=0.0,
-                    max_value=5.0,
+                    max_value=3.0,
                 ),
                 PDEParameter(
                     name="a",
@@ -100,7 +100,7 @@ class ImmunotherapyPDE(MultiFieldPDEPreset):
                     default=0.3,
                     description="Immune death rate",
                     min_value=0.01,
-                    max_value=2.0,
+                    max_value=1.0,
                 ),
             ],
             num_fields=2,
@@ -114,8 +114,8 @@ class ImmunotherapyPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        Dt = parameters.get("Dt", 0.01)
-        Di = parameters.get("Di", 0.1)
+        Dt = parameters.get("Dt", 0.005)
+        Di = parameters.get("Di", 0.05)
         rT = parameters.get("rT", 1.0)
         K = parameters.get("K", 1.0)
         k = parameters.get("k", 1.0)

@@ -44,24 +44,24 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
             parameters=[
                 PDEParameter(
                     name="Du",
-                    default=0.01,
+                    default=0.005,
                     description="Activator diffusion coefficient",
                     min_value=0.001,
-                    max_value=1.0,
+                    max_value=0.1,
                 ),
                 PDEParameter(
                     name="Dv",
-                    default=1.0,
+                    default=0.5,
                     description="Inhibitor diffusion coefficient",
-                    min_value=0.1,
-                    max_value=100.0,
+                    min_value=0.05,
+                    max_value=2.0,
                 ),
                 PDEParameter(
                     name="rho",
                     default=1.0,
                     description="Production rate",
                     min_value=0.1,
-                    max_value=10.0,
+                    max_value=5.0,
                 ),
                 PDEParameter(
                     name="mu_u",
@@ -82,7 +82,7 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
                     default=0.01,
                     description="Basal activator production",
                     min_value=0.0,
-                    max_value=1.0,
+                    max_value=0.5,
                 ),
             ],
             num_fields=2,
@@ -96,8 +96,8 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        Du = parameters.get("Du", 0.01)
-        Dv = parameters.get("Dv", 1.0)
+        Du = parameters.get("Du", 0.005)
+        Dv = parameters.get("Dv", 0.5)
         rho = parameters.get("rho", 1.0)
         mu_u = parameters.get("mu_u", 0.1)
         mu_v = parameters.get("mu_v", 0.1)

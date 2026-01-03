@@ -37,28 +37,28 @@ class BrusselatorPDE(MultiFieldPDEPreset):
                     default=1.0,
                     description="Parameter a",
                     min_value=0.1,
-                    max_value=5.0,
+                    max_value=3.0,
                 ),
                 PDEParameter(
                     name="b",
                     default=3.0,
                     description="Parameter b",
                     min_value=0.1,
-                    max_value=10.0,
+                    max_value=5.0,
                 ),
                 PDEParameter(
                     name="Du",
-                    default=1.0,
+                    default=0.05,
                     description="Diffusion of u",
-                    min_value=0.1,
-                    max_value=10.0,
+                    min_value=0.01,
+                    max_value=0.5,
                 ),
                 PDEParameter(
                     name="Dv",
-                    default=8.0,
+                    default=0.4,
                     description="Diffusion of v",
                     min_value=0.1,
-                    max_value=100.0,
+                    max_value=5.0,
                 ),
             ],
             num_fields=2,
@@ -74,8 +74,8 @@ class BrusselatorPDE(MultiFieldPDEPreset):
     ) -> PDE:
         a = parameters.get("a", 1.0)
         b = parameters.get("b", 3.0)
-        Du = parameters.get("Du", 1.0)
-        Dv = parameters.get("Dv", 8.0)
+        Du = parameters.get("Du", 0.05)
+        Dv = parameters.get("Dv", 0.4)
 
         return PDE(
             rhs={

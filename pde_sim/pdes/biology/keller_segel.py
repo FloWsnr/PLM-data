@@ -44,38 +44,38 @@ class KellerSegelPDE(MultiFieldPDEPreset):
             parameters=[
                 PDEParameter(
                     name="Du",
-                    default=1.0,
+                    default=0.1,
                     description="Cell diffusion coefficient",
                     min_value=0.01,
-                    max_value=10.0,
+                    max_value=0.5,
                 ),
                 PDEParameter(
                     name="Dc",
-                    default=1.0,
+                    default=0.2,
                     description="Chemoattractant diffusion coefficient",
                     min_value=0.01,
-                    max_value=10.0,
+                    max_value=1.0,
                 ),
                 PDEParameter(
                     name="chi",
                     default=1.0,
                     description="Chemotactic sensitivity",
                     min_value=0.0,
-                    max_value=10.0,
+                    max_value=5.0,
                 ),
                 PDEParameter(
                     name="alpha",
                     default=1.0,
                     description="Chemoattractant production rate",
                     min_value=0.0,
-                    max_value=10.0,
+                    max_value=5.0,
                 ),
                 PDEParameter(
                     name="beta",
                     default=1.0,
                     description="Chemoattractant decay rate",
                     min_value=0.01,
-                    max_value=10.0,
+                    max_value=5.0,
                 ),
             ],
             num_fields=2,
@@ -89,8 +89,8 @@ class KellerSegelPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        Du = parameters.get("Du", 1.0)
-        Dc = parameters.get("Dc", 1.0)
+        Du = parameters.get("Du", 0.1)
+        Dc = parameters.get("Dc", 0.2)
         chi = parameters.get("chi", 1.0)
         alpha = parameters.get("alpha", 1.0)
         beta = parameters.get("beta", 1.0)

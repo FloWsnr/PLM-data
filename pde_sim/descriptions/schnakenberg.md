@@ -36,8 +36,8 @@ For patterns to emerge:
 |-----------|--------|-------------|---------------|
 | Feed rate u | $a$ | Activator source | 0 - 1 |
 | Feed rate v | $b$ | Inhibitor source | 0 - 2 |
-| Diffusion u | $D_u$ | Activator diffusion (slow) | 0.01 - 10 |
-| Diffusion v | $D_v$ | Inhibitor diffusion (fast) | 1 - 1000 |
+| Diffusion u | $D_u$ | Activator diffusion (slow) | 0.001 - 0.1 |
+| Diffusion v | $D_v$ | Inhibitor diffusion (fast) | 0.1 - 10 |
 
 ## Pattern Types
 

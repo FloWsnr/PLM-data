@@ -2,7 +2,7 @@ preset: sir
 parameters:
   beta: 2.0
   gamma: 0.1
-  D: 0.1
+  D: 0.05
 init:
   type: gaussian-blobs
   params:
@@ -26,5 +26,5 @@ output:
   show_vectors: true
   vector_density: 16
 seed: 42
-domain_size: 10.0
-t_end: 50.0
+domain_size: 2.0
+t_end: 30.0

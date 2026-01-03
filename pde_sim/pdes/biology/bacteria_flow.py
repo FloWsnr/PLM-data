@@ -41,52 +41,52 @@ class BacteriaFlowPDE(MultiFieldPDEPreset):
             parameters=[
                 PDEParameter(
                     name="Db",
-                    default=0.1,
+                    default=0.05,
                     description="Bacteria diffusion",
                     min_value=0.01,
-                    max_value=1.0,
+                    max_value=0.3,
                 ),
                 PDEParameter(
                     name="Dc",
-                    default=1.0,
+                    default=0.5,
                     description="Chemical diffusion",
-                    min_value=0.1,
-                    max_value=10.0,
+                    min_value=0.05,
+                    max_value=2.0,
                 ),
                 PDEParameter(
                     name="chi",
-                    default=1.0,
+                    default=0.5,
                     description="Chemotaxis strength",
                     min_value=0.0,
-                    max_value=10.0,
+                    max_value=3.0,
                 ),
                 PDEParameter(
                     name="v",
-                    default=0.5,
+                    default=0.3,
                     description="Flow velocity",
                     min_value=0.0,
-                    max_value=5.0,
+                    max_value=2.0,
                 ),
                 PDEParameter(
                     name="r",
                     default=0.1,
                     description="Bacteria growth rate",
                     min_value=0.0,
-                    max_value=2.0,
+                    max_value=1.0,
                 ),
                 PDEParameter(
                     name="k",
                     default=0.1,
                     description="Chemical decay rate",
                     min_value=0.01,
-                    max_value=2.0,
+                    max_value=1.0,
                 ),
                 PDEParameter(
                     name="s",
                     default=0.1,
                     description="Chemical production rate",
                     min_value=0.0,
-                    max_value=2.0,
+                    max_value=1.0,
                 ),
             ],
             num_fields=2,
@@ -100,10 +100,10 @@ class BacteriaFlowPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        Db = parameters.get("Db", 0.1)
-        Dc = parameters.get("Dc", 1.0)
-        chi = parameters.get("chi", 1.0)
-        v = parameters.get("v", 0.5)
+        Db = parameters.get("Db", 0.05)
+        Dc = parameters.get("Dc", 0.5)
+        chi = parameters.get("chi", 0.5)
+        v = parameters.get("v", 0.3)
         r = parameters.get("r", 0.1)
         k = parameters.get("k", 0.1)
         s = parameters.get("s", 0.1)
