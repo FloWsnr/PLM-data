@@ -1,6 +1,6 @@
 preset: heat
 parameters:
-  D: 1.0
+  D: 0.1
 init:
   type: gaussian-blobs
   params:
@@ -11,8 +11,8 @@ init:
 solver: euler
 backend: numba
 adaptive: true
-dt: 5.0e-05
-resolution: 64
+dt: 5.0e-04
+resolution: 128
 bc:
   x: periodic
   y: periodic
@@ -22,5 +22,5 @@ output:
   colormap: turbo
   field_to_plot: T
 seed: 42
-domain_size: 1.0
-t_end: 1.0
+domain_size: 2.0
+t_end: 5.0

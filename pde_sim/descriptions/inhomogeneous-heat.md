@@ -24,7 +24,7 @@ The steady-state solution satisfies Poisson's equation: $D \nabla^2 T = -f$
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Diffusion coefficient | $D$ | Rate of heat transport | 0.001 - 100 |
+| Diffusion coefficient | $D$ | Rate of heat transport | 0.01 - 0.5 |
 | Source term | $f$ | Heat generation rate | -10 to +10 |
 
 ## Applications

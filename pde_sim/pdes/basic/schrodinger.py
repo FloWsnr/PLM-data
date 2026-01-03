@@ -40,10 +40,10 @@ class SchrodingerPDE(ScalarPDEPreset):
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=1.0,
+                    default=0.3,
                     description="Diffusion coefficient (hbar/2m)",
-                    min_value=0.01,
-                    max_value=10.0,
+                    min_value=0.1,
+                    max_value=0.5,
                 ),
             ],
             num_fields=1,
@@ -92,7 +92,7 @@ class SchrodingerPDE(ScalarPDEPreset):
             x0 = ic_params.get("x0", 0.5)
             y0 = ic_params.get("y0", 0.5)
             sigma = ic_params.get("sigma", 0.1)
-            kx = ic_params.get("kx", 5.0)  # wave vector
+            kx = ic_params.get("kx", 3.0)  # wave vector
             ky = ic_params.get("ky", 0.0)
 
             # Get coordinates
@@ -147,10 +147,10 @@ class PlatePDE(ScalarPDEPreset):
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=0.01,
+                    default=0.005,
                     description="Biharmonic diffusion coefficient",
-                    min_value=0.0001,
-                    max_value=1.0,
+                    min_value=0.001,
+                    max_value=0.01,
                 ),
             ],
             num_fields=1,

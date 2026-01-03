@@ -1,17 +1,18 @@
 preset: schrodinger
 parameters:
-  D: 1.0
+  D: 0.3
 init:
-  type: gaussian-blobs
+  type: wave-packet
   params:
-    num_blobs: 1
-    amplitude: 1.0
-    width: 0.1
-    background: 0.0
+    x0: 0.5
+    y0: 0.5
+    sigma: 0.1
+    kx: 3.0
+    ky: 0.0
 solver: euler
 backend: numba
 adaptive: true
-dt: 5.0e-05
+dt: 2.0e-04
 resolution: 128
 bc:
   x: periodic

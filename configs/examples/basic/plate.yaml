@@ -1,6 +1,6 @@
 preset: plate
 parameters:
-  D: 0.01
+  D: 0.005
 init:
   type: gaussian-blobs
   params:
@@ -11,8 +11,8 @@ init:
 solver: euler
 backend: numba
 adaptive: true
-dt: 0.005
-resolution: 64
+dt: 1.0e-05
+resolution: 128
 bc:
   x: periodic
   y: periodic
@@ -22,5 +22,5 @@ output:
   colormap: viridis
   field_to_plot: u
 seed: 42
-domain_size: 1.0
-t_end: 2.5
+domain_size: 2.0
+t_end: 2000.0

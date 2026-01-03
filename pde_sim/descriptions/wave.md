@@ -29,7 +29,7 @@ The wave equation was first studied by d'Alembert in 1747 for vibrating strings.
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Wave speed | $c$ | Propagation velocity | 0.01 - 10 |
+| Wave speed | $c$ | Propagation velocity | 0.5 - 2.0 |
 
 ## Wave Phenomena
 

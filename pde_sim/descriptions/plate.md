@@ -27,7 +27,9 @@ Key properties:
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Biharmonic coefficient | $D$ | Bending stiffness / diffusion rate | 0.0001 - 1 |
+| Biharmonic coefficient | $D$ | Bending stiffness / diffusion rate | 0.001 - 0.01 |
+
+**Note**: Due to the extremely restrictive CFL condition ($\Delta t \propto (\Delta x)^4$), the plate equation exhibits slow dynamics at high resolutions. Use small D values or implicit solvers for practical simulations.
 
 ## Comparison with Heat Equation
 

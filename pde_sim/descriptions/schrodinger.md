@@ -28,7 +28,7 @@ The Schrödinger equation is the fundamental equation of quantum mechanics, desc
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Diffusion coefficient | $D$ | Related to $\hbar/(2m)$ | 0.01 - 10 |
+| Diffusion coefficient | $D$ | Related to $\hbar/(2m)$ | 0.1 - 0.5 |
 
 ## Wave Packet Dynamics
 

@@ -34,7 +34,7 @@ Without forcing, the system exhibits:
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Wave speed | $c$ | Propagation velocity | 0.01 - 10 |
+| Wave speed | $c$ | Propagation velocity | 0.5 - 2.0 |
 | Damping | $\gamma$ | Energy dissipation rate | 0 - 10 |
 | Source | $f$ | External forcing | -10 to +10 |
 

@@ -13,7 +13,7 @@ init:
 solver: euler
 backend: numba
 adaptive: true
-dt: 0.0005
+dt: 1.0e-03
 resolution: 128
 bc:
   x: periodic
@@ -25,4 +25,4 @@ output:
   field_to_plot: u
 seed: 42
 domain_size: 2.0
-t_end: 3.0
+t_end: 8.0

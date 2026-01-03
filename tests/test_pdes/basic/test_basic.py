@@ -29,7 +29,7 @@ class TestHeatPDE:
         defaults = pde.get_default_parameters()
 
         assert "D" in defaults
-        assert defaults["D"] == 1.0
+        assert defaults["D"] == 0.1
 
     def test_validate_parameters_valid(self):
         """Test parameter validation with valid params."""

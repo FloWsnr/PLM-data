@@ -30,9 +30,9 @@ The balance is characterized by the Péclet number: $\text{Pe} = \frac{|\mathbf{
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Diffusion coefficient | $D$ | Molecular diffusion rate | 0 - 1 |
-| Velocity x | $v_x$ | Advection speed in x | -10 to +10 |
-| Velocity y | $v_y$ | Advection speed in y | -10 to +10 |
+| Diffusion coefficient | $D$ | Molecular diffusion rate | 0 - 0.2 |
+| Velocity x | $v_x$ | Advection speed in x | -2.0 to +2.0 |
+| Velocity y | $v_y$ | Advection speed in y | -2.0 to +2.0 |
 
 ## Behavior Regimes
 

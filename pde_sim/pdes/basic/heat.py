@@ -31,10 +31,10 @@ class HeatPDE(ScalarPDEPreset):
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=1.0,
+                    default=0.1,
                     description="Diffusion coefficient",
-                    min_value=0.001,
-                    max_value=100.0,
+                    min_value=0.01,
+                    max_value=0.5,
                 ),
             ],
             num_fields=1,
@@ -98,10 +98,10 @@ class InhomogeneousHeatPDE(ScalarPDEPreset):
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=1.0,
+                    default=0.1,
                     description="Diffusion coefficient",
-                    min_value=0.001,
-                    max_value=100.0,
+                    min_value=0.01,
+                    max_value=0.5,
                 ),
                 PDEParameter(
                     name="source",

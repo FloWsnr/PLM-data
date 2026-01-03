@@ -28,7 +28,7 @@ The heat equation was first derived by Joseph Fourier in 1822 to describe heat c
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Diffusion coefficient | $D$ | Rate of heat/mass transport | 0.001 - 100 |
+| Diffusion coefficient | $D$ | Rate of heat/mass transport | 0.01 - 0.5 |
 
 ## Applications
 
