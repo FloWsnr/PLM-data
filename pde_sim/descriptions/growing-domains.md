@@ -31,7 +31,7 @@ The dilution approximation captures key effects simply.
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
 | Activator diffusion | $D_u$ | Small (slow) | 0.01 - 1 |
-| Inhibitor diffusion | $D_v$ | Large (fast) | 0.1 - 50 |
+| Inhibitor diffusion | $D_v$ | Large (fast) | 0.1 - 20 |
 | Production a | $a$ | Activator source | 0 - 1 |
 | Production b | $b$ | Inhibitor source | 0 - 2 |
 | Growth rate | $\rho$ | Dilution rate | 0 - 0.5 |

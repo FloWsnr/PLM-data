@@ -29,7 +29,7 @@ The $\gamma$ terms couple the species in a way that promotes oscillatory behavio
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
 | Activator diffusion | $D_u$ | Must be small | 0.01 - 1 |
-| Inhibitor diffusion | $D_v$ | Must be larger | 0.1 - 50 |
+| Inhibitor diffusion | $D_v$ | Must be larger | 0.1 - 20 |
 | Production a | $a$ | Activator source | 0 - 1 |
 | Production b | $b$ | Inhibitor source | 0 - 2 |
 | Cross-coupling | $\gamma$ | Oscillation promoter | 0 - 1 |

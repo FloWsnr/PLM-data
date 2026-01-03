@@ -1,10 +1,10 @@
 c,BC_x,BC_y,init,solver,dt,t_end,notes
-1.0,periodic,periodic,gaussian-blobs,rk4,1,50,single drop
-2.0,periodic,periodic,gaussian-blobs,rk4,1,30,faster waves
-0.5,no-flux,no-flux,gaussian-blobs,rk4,1,80,reflecting tank
-1.0,periodic,periodic,step,rk4,1,60,dam break
-1.5,periodic,periodic,gaussian-blobs,rk4,1,40,channel periodic
-0.3,periodic,periodic,gaussian-blobs,rk4,1,120,slow waves
-1.0,no-flux,no-flux,sine,rk4,1,50,standing wave tank
-1.0,periodic,periodic,rectangle-grid,rk4,1,50,patchwork init
-1.0,no-flux,no-flux,rectangle-grid,rk4,1,50,patchwork bounded
+0.3,periodic,periodic,gaussian-blobs,rk4,0.005,20,single drop
+0.5,periodic,periodic,gaussian-blobs,rk4,0.002,10,faster spreading
+0.2,no-flux,no-flux,gaussian-blobs,rk4,0.01,30,reflecting tank
+0.3,periodic,periodic,step,rk4,0.005,25,dam break
+0.4,periodic,periodic,gaussian-blobs,rk4,0.003,15,channel periodic
+0.15,periodic,periodic,gaussian-blobs,rk4,0.02,50,slow spreading
+0.3,no-flux,no-flux,sine,rk4,0.005,20,standing wave tank
+0.3,periodic,periodic,rectangle-grid,rk4,0.005,20,patchwork init
+0.3,no-flux,no-flux,rectangle-grid,rk4,0.005,20,patchwork bounded

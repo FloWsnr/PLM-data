@@ -30,8 +30,8 @@ At large deflections, in-plane stretching couples to bending, creating nonlinear
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Bending stiffness | $D$ | Plate rigidity | 0.01 - 10 |
-| Nonlinearity | $\alpha$ | Stretching coupling | 0 - 2 |
+| Bending stiffness | $D$ | Plate rigidity | 0.01 - 2 |
+| Nonlinearity | $\alpha$ | Stretching coupling | 0 - 1 |
 
 ## Physical Interpretation
 

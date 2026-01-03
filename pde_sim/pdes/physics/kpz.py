@@ -49,17 +49,17 @@ class KPZInterfacePDE(ScalarPDEPreset):
             parameters=[
                 PDEParameter(
                     name="nu",
-                    default=0.5,
+                    default=0.1,
                     description="Diffusion coefficient (surface tension)",
                     min_value=0.01,
-                    max_value=2.0,
+                    max_value=0.5,
                 ),
                 PDEParameter(
                     name="lmbda",
                     default=1.0,
                     description="Growth strength (lateral growth rate)",
                     min_value=0.1,
-                    max_value=5.0,
+                    max_value=2.0,
                 ),
             ],
             num_fields=1,

@@ -29,7 +29,7 @@ The vorticity formulation eliminates pressure from the equations.
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Kinematic viscosity | $\nu$ | Fluid viscosity | 0.001 - 1 |
+| Kinematic viscosity | $\nu$ | Fluid viscosity | 0.001 - 0.1 |
 
 ## Velocity Recovery
 

@@ -31,7 +31,7 @@ The linearized version reduces to a wave/diffusion-like equation.
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Wave speed | $c$ | $\sqrt{gH}$ | 0.1 - 10 |
+| Wave speed | $c$ | $\sqrt{gH}$ | 0.1 - 0.5 |
 
 ## Approximation Validity
 

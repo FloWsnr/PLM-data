@@ -21,7 +21,7 @@ The **method of images** is a technique from potential flow theory:
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Viscosity | $\nu$ | Kinematic viscosity | 0.001 - 1 |
+| Viscosity | $\nu$ | Kinematic viscosity | 0.001 - 0.1 |
 | Wall distance | $d$ | Vortex-to-wall distance | 0.05 - 0.4 |
 
 ## Image Configuration

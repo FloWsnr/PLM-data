@@ -21,7 +21,7 @@ The mutual interaction causes **self-propulsion**: the dipole translates perpend
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Viscosity | $\nu$ | Kinematic viscosity | 0.001 - 0.5 |
+| Viscosity | $\nu$ | Kinematic viscosity | 0.001 - 0.1 |
 | Separation | $d$ | Vortex spacing | 0.05 - 0.3 |
 
 ## Dipole Velocity

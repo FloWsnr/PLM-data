@@ -30,8 +30,8 @@ The autocatalytic term $uv^2$ creates positive feedback driving pattern formatio
 |-----------|--------|-------------|---------------|
 | Feed rate | $F$ | Replenishment rate | 0 - 0.1 |
 | Kill rate | $k$ | Removal rate of v | 0 - 0.1 |
-| Diffusion u | $D_u$ | Feed diffusion | 0.01 - 1 |
-| Diffusion v | $D_v$ | Catalyst diffusion | 0.01 - 1 |
+| Diffusion u | $D_u$ | Feed diffusion | 0.0001 - 0.5 |
+| Diffusion v | $D_v$ | Catalyst diffusion | 0.0001 - 0.25 |
 
 ## Pearson's Classification
 

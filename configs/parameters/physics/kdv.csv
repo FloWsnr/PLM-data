@@ -1,10 +1,10 @@
 c,alpha,beta,BC_x,BC_y,init,solver,dt,t_end,notes
-0.0,6.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.0001,1.0,standard soliton
-0.5,6.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.0001,0.8,with background flow
-0.0,3.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.0001,1.0,weaker nonlinearity
-0.0,6.0,0.5,periodic,periodic,gaussian-blobs,rk4,0.0001,1.0,weaker dispersion
--0.5,6.0,1.0,periodic,periodic,sine,rk4,0.0001,0.35,counter flow
-0.0,10.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.0001,0.5,strong nonlinearity
-0.0,6.0,2.0,periodic,periodic,gaussian-blobs,rk4,0.0001,1.0,strong dispersion
-0.0,6.0,1.0,periodic,periodic,rectangle-grid,rk4,0.0001,1.0,patchwork init
-0.0,6.0,1.0,no-flux,no-flux,rectangle-grid,rk4,0.0001,1.0,patchwork bounded
+0.0,6.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.0001,2.0,standard soliton
+0.5,6.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.0001,1.5,with background flow
+0.0,3.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.0001,2.0,weaker nonlinearity
+0.0,6.0,0.5,periodic,periodic,gaussian-blobs,rk4,0.0001,2.0,weaker dispersion
+-0.5,6.0,1.0,periodic,periodic,sine,rk4,0.0001,1.0,counter flow
+0.0,8.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.0001,1.5,strong nonlinearity
+0.0,6.0,1.5,periodic,periodic,gaussian-blobs,rk4,0.0001,2.0,strong dispersion
+0.0,6.0,1.0,periodic,periodic,rectangle-grid,rk4,0.0001,2.0,patchwork init
+0.0,6.0,1.0,no-flux,no-flux,rectangle-grid,rk4,0.0001,2.0,patchwork bounded

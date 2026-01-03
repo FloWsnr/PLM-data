@@ -29,8 +29,8 @@ Spatial coupling creates a field of interacting oscillators.
 |-----------|--------|-------------|---------------|
 | Nonlinearity | $\mu$ | Damping control | 0 - 10 |
 | Frequency | $\omega$ | Natural frequency | 0.1 - 10 |
-| Diffusion x | $D_x$ | Position coupling | 0 - 10 |
-| Diffusion y | $D_y$ | Velocity coupling | 0 - 10 |
+| Diffusion x | $D_x$ | Position coupling | 0 - 0.5 |
+| Diffusion y | $D_y$ | Velocity coupling | 0 - 0.5 |
 
 ## Limit Cycle Dynamics
 

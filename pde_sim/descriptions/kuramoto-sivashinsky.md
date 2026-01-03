@@ -29,7 +29,7 @@ The terms represent:
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Hyperviscosity | $\nu$ | 4th-order diffusion | 0.1 - 10 |
+| Hyperviscosity | $\nu$ | 4th-order diffusion | 0.1 - 2 |
 
 ## Linear Stability
 

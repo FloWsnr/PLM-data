@@ -36,9 +36,9 @@ Standard chaotic regime:
 | Sigma | $\sigma$ | Prandtl number | 1 - 20 |
 | Rho | $\rho$ | Rayleigh number | 1 - 50 |
 | Beta | $\beta$ | Geometric factor | 0.1 - 10 |
-| Diffusion x | $D_x$ | Coupling of x | 0 - 10 |
-| Diffusion y | $D_y$ | Coupling of y | 0 - 10 |
-| Diffusion z | $D_z$ | Coupling of z | 0 - 10 |
+| Diffusion x | $D_x$ | Coupling of x | 0 - 0.5 |
+| Diffusion y | $D_y$ | Coupling of y | 0 - 0.5 |
+| Diffusion z | $D_z$ | Coupling of z | 0 - 0.5 |
 
 ## Strange Attractor
 

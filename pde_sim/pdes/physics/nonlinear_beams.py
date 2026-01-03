@@ -37,17 +37,17 @@ class NonlinearBeamsPDE(MultiFieldPDEPreset):
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=1.0,
+                    default=0.5,
                     description="Bending stiffness",
                     min_value=0.01,
-                    max_value=10.0,
+                    max_value=2.0,
                 ),
                 PDEParameter(
                     name="alpha",
                     default=0.1,
                     description="Nonlinearity coefficient",
                     min_value=0.0,
-                    max_value=2.0,
+                    max_value=1.0,
                 ),
             ],
             num_fields=2,

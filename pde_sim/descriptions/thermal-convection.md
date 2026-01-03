@@ -32,9 +32,9 @@ Rayleigh-Bénard convection occurs when fluid is heated from below:
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Thermal diffusivity | $\kappa$ | Heat conduction rate | 0.001 - 1 |
-| Kinematic viscosity | $\nu$ | Fluid viscosity | 0.001 - 1 |
-| Rayleigh number | Ra | Buoyancy/dissipation ratio | 1 - 10000 |
+| Thermal diffusivity | $\kappa$ | Heat conduction rate | 0.001 - 0.1 |
+| Kinematic viscosity | $\nu$ | Fluid viscosity | 0.001 - 0.1 |
+| Rayleigh number | Ra | Buoyancy/dissipation ratio | 10 - 1000 |
 
 ## Rayleigh Number
 

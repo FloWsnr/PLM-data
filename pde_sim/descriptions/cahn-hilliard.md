@@ -31,8 +31,8 @@ Key property: **Mass conservation** $\frac{d}{dt}\int u \, dx = 0$
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Mobility | $M$ | Diffusion rate | 0.01 - 10 |
-| Interface parameter | $\gamma$ | Interface width | 0.001 - 1 |
+| Mobility | $M$ | Diffusion rate | 0.1 - 3 |
+| Interface parameter | $\gamma$ | Interface width | 0.001 - 0.1 |
 
 ## Phase Separation Dynamics
 

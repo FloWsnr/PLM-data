@@ -1,11 +1,11 @@
 c1,c3,BC_x,BC_y,init,solver,dt,t_end,notes
-0.0,0.0,periodic,periodic,random-gaussian,rk4,0.01,40,real GL
-1.0,0.0,periodic,periodic,random-gaussian,rk4,0.01,40,dispersive
-0.0,1.0,periodic,periodic,random-gaussian,rk4,0.01,40,nonlinear dispersion
-1.5,2.0,periodic,periodic,random-gaussian,rk4,0.01,30,spiral waves
--1.0,1.5,periodic,periodic,random-gaussian,rk4,0.01,40,defect chaos
-2.0,-1.0,periodic,periodic,random-gaussian,rk4,0.01,35,frozen patterns
-0.5,0.5,no-flux,no-flux,gaussian-blobs,rk4,0.01,40,bounded domain
-1.0,1.0,periodic,periodic,sine,rk4,0.01,35,from ordered
-0.0,0.0,periodic,periodic,rectangle-grid,rk4,0.01,40,patchwork init
-0.0,0.0,no-flux,no-flux,rectangle-grid,rk4,0.01,40,patchwork bounded
+0.0,0.0,periodic,periodic,random-gaussian,rk4,0.005,50,real GL
+1.0,0.0,periodic,periodic,random-gaussian,rk4,0.005,50,dispersive
+0.0,1.0,periodic,periodic,random-gaussian,rk4,0.005,50,nonlinear dispersion
+1.5,2.0,periodic,periodic,random-gaussian,rk4,0.005,40,spiral waves
+-1.0,1.5,periodic,periodic,random-gaussian,rk4,0.005,50,defect chaos
+2.0,-1.0,periodic,periodic,random-gaussian,rk4,0.005,45,frozen patterns
+0.5,0.5,no-flux,no-flux,gaussian-blobs,rk4,0.005,50,bounded domain
+1.0,1.0,periodic,periodic,sine,rk4,0.005,45,from ordered
+0.0,0.0,periodic,periodic,rectangle-grid,rk4,0.005,50,patchwork init
+0.0,0.0,no-flux,no-flux,rectangle-grid,rk4,0.005,50,patchwork bounded

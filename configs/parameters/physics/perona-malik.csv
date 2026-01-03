@@ -1,9 +1,9 @@
 D,K,BC_x,BC_y,init,solver,dt,t_end,notes
-1.0,1.0,periodic,periodic,step,rk4,0.01,20,edge preserving
-1.0,0.5,periodic,periodic,step,rk4,0.01,15,sharper edges
-0.5,1.0,periodic,periodic,gaussian-blobs,rk4,0.01,30,slower smoothing
-2.0,2.0,no-flux,no-flux,random-gaussian,rk4,0.01,12,fast smoothing
-1.0,0.2,periodic,periodic,step,rk4,0.01,25,very sharp edges
-0.8,1.5,periodic,periodic,sine,rk4,0.01,20,moderate edge
-1.0,1.0,periodic,periodic,rectangle-grid,rk4,0.01,20,patchwork init
-1.0,1.0,no-flux,no-flux,rectangle-grid,rk4,0.01,20,patchwork bounded
+0.5,1.0,periodic,periodic,step,rk4,0.005,30,edge preserving
+0.5,0.5,periodic,periodic,step,rk4,0.005,25,sharper edges
+0.2,1.0,periodic,periodic,gaussian-blobs,rk4,0.01,50,slower smoothing
+1.0,2.0,no-flux,no-flux,random-gaussian,rk4,0.002,20,fast smoothing
+0.5,0.2,periodic,periodic,step,rk4,0.005,35,very sharp edges
+0.3,1.5,periodic,periodic,sine,rk4,0.005,30,moderate edge
+0.5,1.0,periodic,periodic,rectangle-grid,rk4,0.005,30,patchwork init
+0.5,1.0,no-flux,no-flux,rectangle-grid,rk4,0.005,30,patchwork bounded

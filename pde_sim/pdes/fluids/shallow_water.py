@@ -41,10 +41,10 @@ class ShallowWaterPDE(ScalarPDEPreset):
             parameters=[
                 PDEParameter(
                     name="c",
-                    default=1.0,
+                    default=0.3,
                     description="Wave speed sqrt(g*H)",
                     min_value=0.1,
-                    max_value=10.0,
+                    max_value=0.5,
                 ),
             ],
             num_fields=1,

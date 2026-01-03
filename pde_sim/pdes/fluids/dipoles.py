@@ -34,7 +34,7 @@ class DipolesPDE(ScalarPDEPreset):
                     default=0.005,
                     description="Kinematic viscosity",
                     min_value=0.001,
-                    max_value=0.5,
+                    max_value=0.1,
                 ),
                 PDEParameter(
                     name="separation",

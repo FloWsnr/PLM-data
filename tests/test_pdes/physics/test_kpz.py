@@ -37,7 +37,7 @@ class TestKPZInterfacePDE:
 
         assert "nu" in params
         assert "lmbda" in params
-        assert params["nu"] == 0.5
+        assert params["nu"] == 0.1
         assert params["lmbda"] == 1.0
 
     def test_create_pde(self, small_grid):

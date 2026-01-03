@@ -35,17 +35,17 @@ class PeronaMalikPDE(ScalarPDEPreset):
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=1.0,
+                    default=0.5,
                     description="Diffusion coefficient",
                     min_value=0.01,
-                    max_value=10.0,
+                    max_value=2.0,
                 ),
                 PDEParameter(
                     name="K",
                     default=1.0,
                     description="Edge threshold",
                     min_value=0.1,
-                    max_value=10.0,
+                    max_value=5.0,
                 ),
             ],
             num_fields=1,

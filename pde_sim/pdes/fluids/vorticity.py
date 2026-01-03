@@ -48,7 +48,7 @@ class VorticityPDE(ScalarPDEPreset):
                     default=0.01,
                     description="Kinematic viscosity",
                     min_value=0.001,
-                    max_value=1.0,
+                    max_value=0.1,
                 ),
             ],
             num_fields=1,

@@ -27,7 +27,7 @@ The equation is the simplest PDE exhibiting both nonlinearity and dissipation, m
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Viscosity | $\nu$ | Diffusion strength | 0.001 - 1 |
+| Viscosity | $\nu$ | Diffusion strength | 0.001 - 0.1 |
 
 ## Shock Formation
 

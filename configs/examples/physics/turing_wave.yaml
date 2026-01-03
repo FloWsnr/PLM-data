@@ -1,7 +1,7 @@
 preset: turing-wave
 parameters:
-  Du: 0.1
-  Dv: 5.0
+  Du: 0.05
+  Dv: 2.0
   a: 0.1
   b: 0.9
   gamma: 0.1
@@ -13,7 +13,7 @@ init:
 solver: euler
 backend: numba
 adaptive: true
-dt: 0.0003
+dt: 5.0e-05
 resolution: 128
 bc:
   x: periodic
@@ -27,4 +27,4 @@ output:
   vector_density: 16
 seed: 42
 domain_size: 10.0
-t_end: 14.999999999999998
+t_end: 50.0

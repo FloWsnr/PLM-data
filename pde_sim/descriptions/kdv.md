@@ -26,9 +26,9 @@ When balanced, these effects create **solitons**: localized waves that propagate
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Linear speed | $c$ | Background wave speed | -10 to 10 |
-| Nonlinearity | $\alpha$ | Steepening strength | 0 - 20 |
-| Dispersion | $\beta$ | Dispersive effects | 0.01 - 10 |
+| Linear speed | $c$ | Background wave speed | -2 to 2 |
+| Nonlinearity | $\alpha$ | Steepening strength | 0 - 10 |
+| Dispersion | $\beta$ | Dispersive effects | 0.01 - 2 |
 
 ## Soliton Solutions
 

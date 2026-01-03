@@ -28,8 +28,8 @@ Real systems often have flow (blood, rivers, air), so understanding flow-pattern
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
 | Activator diffusion | $D_u$ | Small (slow) | 0.01 - 1 |
-| Inhibitor diffusion | $D_v$ | Large (fast) | 0.1 - 50 |
-| Flow velocity | $v_f$ | Advection speed | 0 - 5 |
+| Inhibitor diffusion | $D_v$ | Large (fast) | 0.1 - 20 |
+| Flow velocity | $v_f$ | Advection speed | 0 - 2 |
 | Production a | $a$ | Activator source | 0 - 1 |
 | Production b | $b$ | Inhibitor source | 0 - 2 |
 

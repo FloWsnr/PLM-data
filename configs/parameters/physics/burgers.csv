@@ -1,10 +1,10 @@
 nu,BC_x,BC_y,init,solver,dt,t_end,notes
-0.01,periodic,periodic,sine,rk4,0.01,20,shock formation
-0.05,periodic,periodic,sine,rk4,0.01,15,viscous shock
-0.001,periodic,periodic,gaussian-blobs,rk4,0.01,25,near-inviscid
-0.02,periodic,periodic,step,rk4,0.01,20,step shock
-0.1,no-flux,no-flux,gaussian-blobs,rk4,0.01,12,diffusion dominated
-0.005,periodic,periodic,sine,rk4,0.01,25,sharp shock
-0.03,periodic,periodic,random-gaussian,rk4,0.01,18,chaotic IC
-0.01,periodic,periodic,rectangle-grid,rk4,0.01,20,patchwork init
-0.01,no-flux,no-flux,rectangle-grid,rk4,0.01,20,patchwork bounded
+0.01,periodic,periodic,sine,rk4,0.005,30,shock formation
+0.05,periodic,periodic,sine,rk4,0.002,20,viscous shock
+0.002,periodic,periodic,gaussian-blobs,rk4,0.01,40,near-inviscid
+0.02,periodic,periodic,step,rk4,0.005,25,step shock
+0.08,no-flux,no-flux,gaussian-blobs,rk4,0.001,15,diffusion dominated
+0.005,periodic,periodic,sine,rk4,0.01,35,sharp shock
+0.03,periodic,periodic,random-gaussian,rk4,0.003,20,chaotic IC
+0.01,periodic,periodic,rectangle-grid,rk4,0.005,30,patchwork init
+0.01,no-flux,no-flux,rectangle-grid,rk4,0.005,30,patchwork bounded

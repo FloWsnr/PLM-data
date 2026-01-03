@@ -34,7 +34,7 @@ class MethodOfImagesPDE(ScalarPDEPreset):
                     default=0.01,
                     description="Kinematic viscosity",
                     min_value=0.001,
-                    max_value=1.0,
+                    max_value=0.1,
                 ),
                 PDEParameter(
                     name="wall_distance",

@@ -1,9 +1,9 @@
 Du,Dv,a,b,gamma,BC_x,BC_y,init,solver,dt,t_end,notes
-0.1,5.0,0.1,0.9,0.1,periodic,periodic,random-gaussian,rk4,0.01,100,standard Turing-Hopf
-0.1,10.0,0.1,0.9,0.1,periodic,periodic,random-gaussian,rk4,0.01,80,larger Dv ratio
-0.05,5.0,0.15,0.85,0.1,periodic,periodic,random-gaussian,rk4,0.01,100,smaller Du
-0.1,5.0,0.1,0.9,0.2,periodic,periodic,random-gaussian,rk4,0.01,80,stronger coupling
-0.1,5.0,0.1,0.9,0.05,no-flux,no-flux,random-gaussian,rk4,0.01,100,weak coupling bounded
-0.2,8.0,0.12,0.88,0.15,periodic,periodic,gaussian-blobs,rk4,0.01,80,intermediate
-0.1,5.0,0.1,0.9,0.1,periodic,periodic,rectangle-grid,rk4,0.01,100,patchwork init
-0.1,5.0,0.1,0.9,0.1,no-flux,no-flux,rectangle-grid,rk4,0.01,100,patchwork bounded
+0.1,5.0,0.1,0.9,0.1,periodic,periodic,random-gaussian,rk4,0.005,100,standard Turing-Hopf
+0.1,10.0,0.1,0.9,0.1,periodic,periodic,random-gaussian,rk4,0.003,80,larger Dv ratio
+0.05,5.0,0.15,0.85,0.1,periodic,periodic,random-gaussian,rk4,0.01,120,smaller Du
+0.1,5.0,0.1,0.9,0.2,periodic,periodic,random-gaussian,rk4,0.005,80,stronger coupling
+0.1,5.0,0.1,0.9,0.05,no-flux,no-flux,random-gaussian,rk4,0.005,100,weak coupling bounded
+0.2,8.0,0.12,0.88,0.15,periodic,periodic,gaussian-blobs,rk4,0.003,80,intermediate
+0.1,5.0,0.1,0.9,0.1,periodic,periodic,rectangle-grid,rk4,0.005,100,patchwork init
+0.1,5.0,0.1,0.9,0.1,no-flux,no-flux,rectangle-grid,rk4,0.005,100,patchwork bounded

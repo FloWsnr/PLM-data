@@ -31,8 +31,8 @@ This enables noise reduction while maintaining edges.
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Diffusion coefficient | $D$ | Base diffusion rate | 0.01 - 10 |
-| Edge threshold | $K$ | Gradient threshold | 0.1 - 10 |
+| Diffusion coefficient | $D$ | Base diffusion rate | 0.01 - 2 |
+| Edge threshold | $K$ | Gradient threshold | 0.1 - 5 |
 
 ## Diffusivity Functions
 

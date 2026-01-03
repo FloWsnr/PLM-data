@@ -10,7 +10,7 @@ init:
 solver: euler
 backend: numba
 adaptive: true
-dt: 0.03
+dt: 0.001
 resolution: 128
 bc:
   x: periodic
@@ -21,5 +21,5 @@ output:
   colormap: twilight
   field_to_plot: A
 seed: 42
-domain_size: 50.0
-t_end: 49.98
+domain_size: 20.0
+t_end: 50.0

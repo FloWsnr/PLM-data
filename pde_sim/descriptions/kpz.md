@@ -26,8 +26,8 @@ The characteristic nonlinear term $|\nabla h|^2$ arises from geometric considera
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Diffusion | $\nu$ | Surface tension/smoothing | 0.01 - 2 |
-| Growth | $\lambda$ | Lateral growth rate | 0.1 - 5 |
+| Diffusion | $\nu$ | Surface tension/smoothing | 0.01 - 0.5 |
+| Growth | $\lambda$ | Lateral growth rate | 0.1 - 2 |
 
 ## Universality Class
 

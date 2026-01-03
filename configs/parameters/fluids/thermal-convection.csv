@@ -1,10 +1,10 @@
 kappa,nu,Ra,BC_x,BC_y,init,solver,dt,t_end,notes
-0.01,0.01,100.0,periodic,periodic,gaussian-blobs,rk4,1,200,weak convection
-0.01,0.01,500.0,periodic,periodic,gaussian-blobs,rk4,1,150,moderate Ra
-0.01,0.01,1000.0,periodic,periodic,gaussian-blobs,rk4,1,100,strong convection
-0.02,0.01,100.0,periodic,periodic,gaussian-blobs,rk4,1,180,higher thermal diff
-0.01,0.02,100.0,no-flux,no-flux,gaussian-blobs,rk4,1,200,higher viscosity
-0.01,0.01,2000.0,periodic,periodic,random-gaussian,rk4,1,80,very strong Ra
-0.005,0.01,200.0,periodic,periodic,gaussian-blobs,rk4,1,220,lower kappa moderate Ra
-0.01,0.01,100.0,periodic,periodic,rectangle-grid,rk4,1,200,patchwork init
-0.01,0.01,100.0,no-flux,no-flux,rectangle-grid,rk4,1,200,patchwork bounded
+0.01,0.01,100.0,periodic,periodic,gaussian-blobs,rk4,0.005,100,weak convection
+0.01,0.01,300.0,periodic,periodic,gaussian-blobs,rk4,0.005,80,moderate Ra
+0.01,0.01,500.0,periodic,periodic,gaussian-blobs,rk4,0.005,60,strong convection
+0.02,0.01,100.0,periodic,periodic,gaussian-blobs,rk4,0.002,80,higher thermal diff
+0.01,0.02,100.0,no-flux,no-flux,gaussian-blobs,rk4,0.002,100,higher viscosity
+0.01,0.01,800.0,periodic,periodic,random-gaussian,rk4,0.005,50,very strong Ra
+0.005,0.01,200.0,periodic,periodic,gaussian-blobs,rk4,0.01,120,lower kappa moderate Ra
+0.01,0.01,100.0,periodic,periodic,rectangle-grid,rk4,0.005,100,patchwork init
+0.01,0.01,100.0,no-flux,no-flux,rectangle-grid,rk4,0.005,100,patchwork bounded

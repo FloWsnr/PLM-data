@@ -24,4 +24,4 @@ output:
   field_to_plot: w
 seed: 42
 domain_size: 2.0
-t_end: 50.0
+t_end: 100.0

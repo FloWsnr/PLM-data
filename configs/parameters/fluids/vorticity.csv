@@ -1,10 +1,10 @@
 nu,BC_x,BC_y,init,solver,dt,t_end,notes
-0.01,periodic,periodic,gaussian-blobs,rk4,1,100,vortex decay
-0.005,periodic,periodic,gaussian-blobs,rk4,1,150,slower decay
-0.02,periodic,periodic,gaussian-blobs,rk4,1,80,faster decay
-0.01,no-flux,no-flux,gaussian-blobs,rk4,1,100,bounded vortex
-0.001,periodic,periodic,sine,rk4,1,200,nearly inviscid
-0.015,periodic,periodic,random-gaussian,rk4,1,90,moderate decay turbulent
-0.008,periodic,periodic,gaussian-blobs,rk4,1,120,vortex pair
-0.01,periodic,periodic,rectangle-grid,rk4,1,100,patchwork init
-0.01,no-flux,no-flux,rectangle-grid,rk4,1,100,patchwork bounded
+0.01,periodic,periodic,gaussian-blobs,rk4,0.005,50,standard decay
+0.005,periodic,periodic,gaussian-blobs,rk4,0.01,100,slower decay
+0.02,periodic,periodic,gaussian-blobs,rk4,0.002,30,faster decay
+0.01,no-flux,no-flux,gaussian-blobs,rk4,0.005,50,bounded vortex
+0.002,periodic,periodic,sine,rk4,0.02,150,nearly inviscid
+0.015,periodic,periodic,random-gaussian,rk4,0.003,40,moderate decay
+0.008,periodic,periodic,gaussian-blobs,rk4,0.006,60,vortex pair
+0.01,periodic,periodic,rectangle-grid,rk4,0.005,50,patchwork init
+0.01,no-flux,no-flux,rectangle-grid,rk4,0.005,50,patchwork bounded

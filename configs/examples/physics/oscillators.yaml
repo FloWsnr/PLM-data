@@ -12,8 +12,8 @@ init:
 solver: euler
 backend: numba
 adaptive: true
-dt: 0.05
-resolution: 64
+dt: 0.0005
+resolution: 128
 bc:
   x: periodic
   y: periodic
@@ -25,5 +25,5 @@ output:
   show_vectors: true
   vector_density: 12
 seed: 42
-domain_size: 10.0
-t_end: 100.0
+domain_size: 2.0
+t_end: 50.0

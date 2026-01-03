@@ -26,9 +26,9 @@ The simplified version uses a **background velocity** rather than solving for $\
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Viscosity | $\nu$ | Kinematic viscosity | 0.001 - 1 |
-| Background velocity x | $u_x$ | Mean flow in x | -2 to 2 |
-| Background velocity y | $u_y$ | Mean flow in y | -2 to 2 |
+| Viscosity | $\nu$ | Kinematic viscosity | 0.001 - 0.1 |
+| Background velocity x | $u_x$ | Mean flow in x | -1 to 1 |
+| Background velocity y | $u_y$ | Mean flow in y | -1 to 1 |
 
 ## Reynolds Number
 

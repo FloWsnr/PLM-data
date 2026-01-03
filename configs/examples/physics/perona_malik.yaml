@@ -1,6 +1,6 @@
 preset: perona-malik
 parameters:
-  D: 1.0
+  D: 0.5
   K: 1.0
 init:
   type: step
@@ -15,7 +15,7 @@ init:
 solver: euler
 backend: numba
 adaptive: true
-dt: 1.0e-05
+dt: 1.0e-04
 resolution: 128
 bc:
   x: periodic
@@ -26,5 +26,5 @@ output:
   colormap: gray
   field_to_plot: u
 seed: 42
-domain_size: 1.0
-t_end: 0.5
+domain_size: 2.0
+t_end: 2.0

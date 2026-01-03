@@ -48,7 +48,7 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
                     default=1.0,
                     description="Fourth-order diffusion coefficient",
                     min_value=0.1,
-                    max_value=10.0,
+                    max_value=2.0,
                 ),
             ],
             num_fields=1,

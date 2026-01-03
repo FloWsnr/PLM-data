@@ -1,10 +1,10 @@
 nu,BC_x,BC_y,init,solver,dt,t_end,notes
-1.0,periodic,periodic,random-gaussian,rk4,0.01,40,standard chaos
-0.5,periodic,periodic,random-gaussian,rk4,0.01,50,stronger chaos
-2.0,periodic,periodic,random-gaussian,rk4,0.01,30,weaker instability
-1.0,periodic,periodic,sine,rk4,0.01,50,from ordered IC
-0.8,periodic,periodic,random-gaussian,rk4,0.01,40,intermediate
-0.3,periodic,periodic,random-gaussian,rk4,0.01,60,very strong chaos
-1.5,periodic,periodic,gaussian-blobs,rk4,0.01,35,localized perturbation
-1.0,periodic,periodic,rectangle-grid,rk4,0.01,40,patchwork init
-1.0,no-flux,no-flux,rectangle-grid,rk4,0.01,40,patchwork bounded
+1.0,periodic,periodic,random-gaussian,rk4,0.001,50,standard chaos
+0.5,periodic,periodic,random-gaussian,rk4,0.001,60,stronger chaos
+1.5,periodic,periodic,random-gaussian,rk4,0.001,40,weaker instability
+1.0,periodic,periodic,sine,rk4,0.001,60,from ordered IC
+0.8,periodic,periodic,random-gaussian,rk4,0.001,50,intermediate
+0.3,periodic,periodic,random-gaussian,rk4,0.002,80,very strong chaos
+1.2,periodic,periodic,gaussian-blobs,rk4,0.001,45,localized perturbation
+1.0,periodic,periodic,rectangle-grid,rk4,0.001,50,patchwork init
+1.0,no-flux,no-flux,rectangle-grid,rk4,0.001,50,patchwork bounded

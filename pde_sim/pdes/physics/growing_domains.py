@@ -44,7 +44,7 @@ class GrowingDomainsPDE(MultiFieldPDEPreset):
                     default=5.0,
                     description="Inhibitor diffusion",
                     min_value=0.1,
-                    max_value=50.0,
+                    max_value=20.0,
                 ),
                 PDEParameter(
                     name="a",
