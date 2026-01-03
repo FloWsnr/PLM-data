@@ -31,9 +31,9 @@ The term $-\alpha \nabla u \cdot \nabla h$ creates advection **down** gradients 
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Diffusion | $D$ | Random movement | 0.01 - 10 |
-| Terrain influence | $\alpha$ | Slope response | 0 - 5 |
-| Growth rate | $r$ | Reproduction | 0 - 5 |
+| Diffusion | $D$ | Random movement | 0.01 - 0.5 |
+| Terrain influence | $\alpha$ | Slope response | 0.0 - 2.0 |
+| Growth rate | $r$ | Reproduction | 0.1 - 2.0 |
 | Slope x | $h_x$ | East-west slope | -1 to 1 |
 | Slope y | $h_y$ | North-south slope | -1 to 1 |
 

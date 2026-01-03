@@ -35,11 +35,11 @@ A remarkable feature of the Keller-Segel system is **finite-time blow-up**:
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Cell diffusion | $D_u$ | Random motility | 0.01 - 10 |
-| Chemical diffusion | $D_c$ | Signal spread | 0.01 - 10 |
-| Chemotactic sensitivity | $\chi$ | Attraction strength | 0 - 10 |
-| Production rate | $\alpha$ | Signal generation | 0 - 10 |
-| Decay rate | $\beta$ | Signal degradation | 0.01 - 10 |
+| Cell diffusion | $D_u$ | Random motility | 0.01 - 0.5 |
+| Chemical diffusion | $D_c$ | Signal spread | 0.01 - 0.5 |
+| Chemotactic sensitivity | $\chi$ | Attraction strength | 0.0 - 2.0 |
+| Production rate | $\alpha$ | Signal generation | 0.0 - 2.0 |
+| Decay rate | $\beta$ | Signal degradation | 0.01 - 2.0 |
 
 ## Dynamics Regimes
 

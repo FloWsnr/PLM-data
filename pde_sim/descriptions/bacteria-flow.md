@@ -32,9 +32,9 @@ The interplay creates complex spatial-temporal dynamics.
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
 | Bacteria diffusion | $D_b$ | Random swimming | 0.01 - 1 |
-| Chemical diffusion | $D_c$ | Signal spread | 0.1 - 10 |
-| Chemotaxis | $\chi$ | Attraction strength | 0 - 10 |
-| Flow velocity | $v$ | Background flow | 0 - 5 |
+| Chemical diffusion | $D_c$ | Signal spread | 0.01 - 0.5 |
+| Chemotaxis | $\chi$ | Attraction strength | 0.0 - 2.0 |
+| Flow velocity | $v$ | Background flow | 0.0 - 2.0 |
 | Growth rate | $r$ | Reproduction | 0 - 2 |
 | Decay rate | $k$ | Signal degradation | 0.01 - 2 |
 | Production | $s$ | Signal generation | 0 - 2 |

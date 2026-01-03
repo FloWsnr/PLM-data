@@ -40,15 +40,15 @@ class HarshEnvironmentPDE(ScalarPDEPreset):
                     name="D",
                     default=0.1,
                     description="Diffusion coefficient",
-                    min_value=0.001,
-                    max_value=10.0,
+                    min_value=0.01,
+                    max_value=0.5,
                 ),
                 PDEParameter(
                     name="r",
                     default=1.0,
                     description="Growth rate",
                     min_value=0.1,
-                    max_value=10.0,
+                    max_value=2.0,
                 ),
                 PDEParameter(
                     name="theta",

@@ -47,7 +47,7 @@ Alan Turing showed that diffusion, usually a stabilizing force, can **destabiliz
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
 | Activator diffusion | $D_u$ | Must be small | 0.01 - 1 |
-| Inhibitor diffusion | $D_v$ | Must be large | 1 - 100 |
+| Inhibitor diffusion | $D_v$ | Must be large | 1.0 - 20.0 |
 | Activator growth | $a$ | Self-enhancement | 0.1 - 5 |
 | Inhibitor decay | $d$ | Natural turnover | 0.1 - 5 |
 

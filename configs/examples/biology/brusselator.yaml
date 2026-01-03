@@ -2,7 +2,7 @@ preset: brusselator
 parameters:
   a: 1.0
   b: 3.0
-  Du: 1.0
+  Du: 0.5
   Dv: 8.0
 init:
   type: random-gaussian
@@ -25,5 +25,5 @@ output:
   show_vectors: true
   vector_density: 16
 seed: 42
-domain_size: 30.0
+domain_size: 2.0
 t_end: 75.0

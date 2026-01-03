@@ -25,7 +25,7 @@ $$\mathcal{F}[u] = \int \left[\frac{D}{2}|\nabla u|^2 + F(u)\right] dx$$
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Diffusion | $D$ | Interface width control | 0.01 - 10 |
+| Diffusion | $D$ | Interface width control | 0.01 - 0.5 |
 | Threshold | $a$ | Position of unstable state | 0 - 1 |
 
 ## Traveling Front Solutions

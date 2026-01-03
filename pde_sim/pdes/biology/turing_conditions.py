@@ -45,10 +45,10 @@ class TuringConditionsPDE(MultiFieldPDEPreset):
                 ),
                 PDEParameter(
                     name="Dv",
-                    default=10.0,
+                    default=5.0,
                     description="Inhibitor diffusion (large)",
                     min_value=1.0,
-                    max_value=100.0,
+                    max_value=20.0,
                 ),
                 PDEParameter(
                     name="a",

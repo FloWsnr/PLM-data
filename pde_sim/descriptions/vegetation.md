@@ -31,8 +31,8 @@ The interplay creates bands perpendicular to slope direction.
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Rainfall | $a$ | Water input rate | 0.1 - 10 |
-| Flow velocity | $v$ | Downslope water speed | 0 - 10 |
+| Rainfall | $a$ | Water input rate | 0.1 - 5.0 |
+| Flow velocity | $v$ | Downslope water speed | 0.0 - 2.0 |
 | Mortality | $m$ | Plant death rate | 0.01 - 2 |
 | Dispersal | $D_n$ | Plant seed spread | 0.001 - 1 |
 

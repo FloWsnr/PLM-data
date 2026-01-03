@@ -34,11 +34,11 @@ This model captures key tumor-immune interactions:
 |-----------|--------|-------------|---------------|
 | Tumor diffusion | $D_T$ | Tumor spread rate | 0.001 - 1 |
 | Immune diffusion | $D_I$ | Immune motility | 0.001 - 1 |
-| Tumor growth | $r_T$ | Proliferation rate | 0.1 - 5 |
+| Tumor growth | $r_T$ | Proliferation rate | 0.1 - 2.0 |
 | Carrying capacity | $K$ | Maximum tumor size | 0.1 - 10 |
-| Kill rate | $k$ | Immune effectiveness | 0.1 - 10 |
+| Kill rate | $k$ | Immune effectiveness | 0.1 - 2.0 |
 | Immune source | $s$ | Therapy strength | 0 - 2 |
-| Recruitment | $r_I$ | Immune attraction | 0 - 5 |
+| Recruitment | $r_I$ | Immune attraction | 0.0 - 2.0 |
 | Half-saturation | $a$ | Recruitment threshold | 0.01 - 1 |
 | Immune death | $d_I$ | Cell turnover rate | 0.01 - 2 |
 

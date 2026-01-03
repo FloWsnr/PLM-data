@@ -27,5 +27,5 @@ output:
   show_vectors: true
   vector_density: 16
 seed: 42
-domain_size: 5.0
+domain_size: 2.0
 t_end: 14.999999999999998

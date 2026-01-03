@@ -39,8 +39,8 @@ The homogeneous steady state is $(u^*, v^*) = (a, b/a)$.
 |-----------|--------|-------------|---------------|
 | Parameter a | $a$ | Feed rate | 0.1 - 5 |
 | Parameter b | $b$ | Bifurcation control | 0.1 - 10 |
-| Diffusion u | $D_u$ | Activator diffusion | 0.1 - 10 |
-| Diffusion v | $D_v$ | Inhibitor diffusion | 0.1 - 100 |
+| Diffusion u | $D_u$ | Activator diffusion | 0.01 - 0.5 |
+| Diffusion v | $D_v$ | Inhibitor diffusion | 0.1 - 10.0 |
 
 ## Dynamics Regimes
 

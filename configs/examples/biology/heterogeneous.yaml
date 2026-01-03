@@ -23,5 +23,5 @@ output:
   colormap: viridis
   field_to_plot: u
 seed: 42
-domain_size: 10.0
+domain_size: 2.0
 t_end: 50.0

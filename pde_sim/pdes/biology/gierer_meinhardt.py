@@ -51,10 +51,10 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
                 ),
                 PDEParameter(
                     name="Dv",
-                    default=1.0,
+                    default=2.0,
                     description="Inhibitor diffusion coefficient",
                     min_value=0.1,
-                    max_value=100.0,
+                    max_value=10.0,
                 ),
                 PDEParameter(
                     name="rho",

@@ -58,7 +58,7 @@ class ImmunotherapyPDE(MultiFieldPDEPreset):
                     default=1.0,
                     description="Tumor growth rate",
                     min_value=0.1,
-                    max_value=5.0,
+                    max_value=2.0,
                 ),
                 PDEParameter(
                     name="K",
@@ -72,7 +72,7 @@ class ImmunotherapyPDE(MultiFieldPDEPreset):
                     default=1.0,
                     description="Immune kill rate",
                     min_value=0.1,
-                    max_value=10.0,
+                    max_value=2.0,
                 ),
                 PDEParameter(
                     name="s",
@@ -86,7 +86,7 @@ class ImmunotherapyPDE(MultiFieldPDEPreset):
                     default=0.5,
                     description="Immune recruitment rate",
                     min_value=0.0,
-                    max_value=5.0,
+                    max_value=2.0,
                 ),
                 PDEParameter(
                     name="a",

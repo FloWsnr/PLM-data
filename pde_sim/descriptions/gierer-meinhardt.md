@@ -31,7 +31,7 @@ This mechanism was proposed to explain morphogenesis and regeneration in Hydra.
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
 | Activator diffusion | $D_u$ | Short-range (slow) | 0.001 - 1 |
-| Inhibitor diffusion | $D_v$ | Long-range (fast) | 0.1 - 100 |
+| Inhibitor diffusion | $D_v$ | Long-range (fast) | 0.1 - 10.0 |
 | Production rate | $\rho$ | Reaction strength | 0.1 - 10 |
 | Activator decay | $\mu_u$ | Degradation rate | 0.01 - 1 |
 | Inhibitor decay | $\mu_v$ | Degradation rate | 0.01 - 1 |

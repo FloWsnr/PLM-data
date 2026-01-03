@@ -30,7 +30,7 @@ The sinusoidal variation creates alternating bands of good and bad habitat.
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Diffusion | $D$ | Movement rate | 0.01 - 10 |
+| Diffusion | $D$ | Movement rate | 0.01 - 0.5 |
 | Mean growth | $r_{\text{mean}}$ | Average growth rate | 0 - 5 |
 | Amplitude | $r_{\text{amp}}$ | Variation strength | 0 - 2 |
 | Frequency | $f$ | Patches per unit length | 1 - 10 |

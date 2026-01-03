@@ -1,9 +1,9 @@
 Db,Dc,chi,v,r,k,s,BC_x,BC_y,init,solver,dt,t_end,notes
-0.1,1.0,1.0,0.5,0.1,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,1,50,standard bacteria flow
-0.1,1.0,2.0,0.5,0.1,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,1,40,stronger chemotaxis
-0.1,1.0,1.0,1.0,0.1,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,1,50,faster flow
-0.05,1.0,1.0,0.5,0.2,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,1,60,slower diff faster growth
+0.1,0.5,1.0,0.5,0.1,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,1,50,standard bacteria flow
+0.1,0.5,2.0,0.5,0.1,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,1,40,stronger chemotaxis
+0.1,0.5,1.0,1.0,0.1,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,1,50,faster flow
+0.05,0.5,1.0,0.5,0.2,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,1,60,slower diff faster growth
 0.1,0.5,1.0,0.3,0.1,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,1,50,channel flow periodic
-0.15,1.0,1.5,0.8,0.15,0.1,0.15,periodic,periodic,gaussian-blobs,rk4,1,50,intermediate
-0.1,1.0,1.0,0.5,0.1,0.1,0.1,periodic,periodic,rectangle-grid,rk4,1,50,patchwork init
-0.1,1.0,1.0,0.5,0.1,0.1,0.1,no-flux,no-flux,rectangle-grid,rk4,1,50,patchwork bounded
+0.15,0.5,1.5,0.8,0.15,0.1,0.15,periodic,periodic,gaussian-blobs,rk4,1,50,intermediate
+0.1,0.5,1.0,0.5,0.1,0.1,0.1,periodic,periodic,rectangle-grid,rk4,1,50,patchwork init
+0.1,0.5,1.0,0.5,0.1,0.1,0.1,no-flux,no-flux,rectangle-grid,rk4,1,50,patchwork bounded

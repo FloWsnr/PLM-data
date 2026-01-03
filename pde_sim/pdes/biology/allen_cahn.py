@@ -36,10 +36,10 @@ class AllenCahnPDE(ScalarPDEPreset):
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=1.0,
+                    default=0.1,
                     description="Diffusion coefficient",
                     min_value=0.01,
-                    max_value=10.0,
+                    max_value=0.5,
                 ),
                 PDEParameter(
                     name="a",
@@ -106,17 +106,17 @@ class StandardAllenCahnPDE(ScalarPDEPreset):
             parameters=[
                 PDEParameter(
                     name="gamma",
-                    default=1.0,
+                    default=0.1,
                     description="Interfacial width parameter",
                     min_value=0.01,
-                    max_value=10.0,
+                    max_value=0.5,
                 ),
                 PDEParameter(
                     name="mobility",
                     default=1.0,
                     description="Mobility (rate of evolution)",
                     min_value=0.1,
-                    max_value=10.0,
+                    max_value=2.0,
                 ),
             ],
             num_fields=1,

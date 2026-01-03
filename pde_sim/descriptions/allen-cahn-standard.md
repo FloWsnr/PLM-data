@@ -26,7 +26,7 @@ $$\mathcal{F}[c] = \int \left[ \frac{\gamma}{2}|\nabla c|^2 + \frac{1}{4}(c^2 - 
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Interface width | $\gamma$ | Controls diffusion/interface thickness | 0.01 - 10 |
+| Interface width | $\gamma$ | Controls diffusion/interface thickness | 0.01 - 0.5 |
 | Mobility | $M$ | Rate of evolution (optional prefactor) | 0.1 - 10 |
 
 ## Equilibria and Stability

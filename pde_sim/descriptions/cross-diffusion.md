@@ -29,10 +29,10 @@ This can represent:
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Self-diffusion u | $D_1$ | Own-density diffusion | 0.01 - 10 |
-| Self-diffusion v | $D_2$ | Own-density diffusion | 0.01 - 10 |
-| Cross-diffusion u | $\alpha$ | u's response to v | 0 - 10 |
-| Cross-diffusion v | $\beta$ | v's response to u | 0 - 10 |
+| Self-diffusion u | $D_1$ | Own-density diffusion | 0.01 - 0.5 |
+| Self-diffusion v | $D_2$ | Own-density diffusion | 0.01 - 0.5 |
+| Cross-diffusion u | $\alpha$ | u's response to v | 0.0 - 2.0 |
+| Cross-diffusion v | $\beta$ | v's response to u | 0.0 - 2.0 |
 
 ## Pattern Formation Mechanism
 

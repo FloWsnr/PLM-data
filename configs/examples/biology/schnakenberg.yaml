@@ -2,8 +2,8 @@ preset: schnakenberg
 parameters:
   a: 0.1
   b: 0.9
-  Du: 1.0
-  Dv: 100.0
+  Du: 0.5
+  Dv: 50.0
 init:
   type: random-gaussian
   params:
@@ -25,5 +25,5 @@ output:
   show_vectors: true
   vector_density: 16
 seed: 42
-domain_size: 10.0
+domain_size: 2.0
 t_end: 0.5
