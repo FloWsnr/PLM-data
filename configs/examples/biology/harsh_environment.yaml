@@ -10,7 +10,7 @@ init:
     amplitude: 0.8
     width: 0.1
     background: 0.1
-solver: euler
+solver: rk4
 backend: numba
 adaptive: true
 dt: 0.01

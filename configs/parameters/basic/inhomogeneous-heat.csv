@@ -1,9 +1,9 @@
 D,source,BC_x,BC_y,init,solver,dt,t_end,notes
-0.1,0.5,periodic,periodic,gaussian-blobs,euler,1,10,heat source
-0.1,-0.5,periodic,periodic,gaussian-blobs,euler,1,10,heat sink
-0.2,0.2,no-flux,no-flux,gaussian-blobs,euler,1,6,insulated with source
-0.3,1.0,periodic,periodic,random-gaussian,euler,1,5,strong source
-0.1,0.0,no-flux,no-flux,step,euler,1,10,no source baseline
-0.05,0.3,periodic,periodic,sine,euler,1,20,slow with source
-0.1,0.5,periodic,periodic,rectangle-grid,euler,1,10,patchwork init
-0.1,0.5,no-flux,no-flux,rectangle-grid,euler,1,10,patchwork bounded
+0.1,0.5,periodic,periodic,gaussian-blobs,rk4,1,10,heat source
+0.1,-0.5,periodic,periodic,gaussian-blobs,rk4,1,10,heat sink
+0.2,0.2,no-flux,no-flux,gaussian-blobs,rk4,1,6,insulated with source
+0.3,1.0,periodic,periodic,random-gaussian,rk4,1,5,strong source
+0.1,0.0,no-flux,no-flux,step,rk4,1,10,no source baseline
+0.05,0.3,periodic,periodic,sine,rk4,1,20,slow with source
+0.1,0.5,periodic,periodic,rectangle-grid,rk4,1,10,patchwork init
+0.1,0.5,no-flux,no-flux,rectangle-grid,rk4,1,10,patchwork bounded

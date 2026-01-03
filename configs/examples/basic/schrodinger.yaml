@@ -9,7 +9,7 @@ init:
     sigma: 0.1
     kx: 3.0
     ky: 0.0
-solver: euler
+solver: rk4
 backend: numba
 adaptive: true
 dt: 2.0e-04

@@ -13,7 +13,7 @@ init:
     value_inside: 0.9
     value_outside: 0.1
     noise: 0.02
-solver: euler
+solver: rk4
 backend: numba
 adaptive: true
 dt: 0.005

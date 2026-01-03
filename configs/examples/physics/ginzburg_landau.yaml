@@ -7,7 +7,7 @@ init:
   params:
     mean: 0.1
     std: 0.05
-solver: euler
+solver: rk4
 backend: numba
 adaptive: true
 dt: 0.001

@@ -1,9 +1,9 @@
 D,BC_x,BC_y,init,solver,dt,t_end,notes
-0.005,periodic,periodic,gaussian-blobs,euler,0.00001,2000,standard plate
-0.003,periodic,periodic,gaussian-blobs,euler,0.00002,3000,stiffer plate
-0.01,no-flux,no-flux,gaussian-blobs,euler,0.000005,1000,clamped edges
-0.005,periodic,periodic,sine,euler,0.00001,2000,modal excitation
-0.001,periodic,periodic,random-gaussian,euler,0.00005,8000,very stiff
-0.008,no-flux,no-flux,step,euler,0.000006,1200,flexible plate
-0.005,periodic,periodic,rectangle-grid,euler,0.00001,2000,patchwork init
-0.005,no-flux,no-flux,rectangle-grid,euler,0.00001,2000,patchwork bounded
+0.005,periodic,periodic,gaussian-blobs,rk4,0.00001,2000,standard plate
+0.003,periodic,periodic,gaussian-blobs,rk4,0.00002,3000,stiffer plate
+0.01,no-flux,no-flux,gaussian-blobs,rk4,0.000005,1000,clamped edges
+0.005,periodic,periodic,sine,rk4,0.00001,2000,modal excitation
+0.001,periodic,periodic,random-gaussian,rk4,0.00005,8000,very stiff
+0.008,no-flux,no-flux,step,rk4,0.000006,1200,flexible plate
+0.005,periodic,periodic,rectangle-grid,rk4,0.00001,2000,patchwork init
+0.005,no-flux,no-flux,rectangle-grid,rk4,0.00001,2000,patchwork bounded

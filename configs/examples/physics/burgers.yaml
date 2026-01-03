@@ -7,7 +7,7 @@ init:
     kx: 1
     ky: 0
     amplitude: 1.0
-solver: euler
+solver: rk4
 backend: numba
 adaptive: true
 dt: 0.005
