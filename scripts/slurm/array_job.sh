@@ -9,13 +9,15 @@
 #SBATCH --error=logs/slurm-%A_%a.err
 
 # PDE Simulation Array Job
-# Usage: sbatch array_job.sh <config_dir>
+# Usage: sbatch array_job.sh <config_dir> [log_file]
 # Example: sbatch array_job.sh configs/batch/
+# Example with log: sbatch array_job.sh configs/batch/ logs/array.log
 
 set -e
 
-# Get config directory from argument or use default
+# Get arguments
 CONFIG_DIR=${1:-configs/batch}
+LOG_FILE=${2:-}      # Optional: path to log file
 
 # Create logs directory if it doesn't exist
 mkdir -p logs
@@ -38,11 +40,25 @@ echo "==================================="
 echo "SLURM Array Job: ${SLURM_ARRAY_JOB_ID}"
 echo "Task ID: ${SLURM_ARRAY_TASK_ID}"
 echo "Config: ${CONFIG_FILE}"
+if [ -n "$LOG_FILE" ]; then
+    echo "Log file: ${LOG_FILE}"
+fi
 echo "Started: $(date)"
 echo "==================================="
 
-# Run simulation with unique seed based on array task ID
-python -m pde_sim run "${CONFIG_FILE}" --seed ${SLURM_ARRAY_TASK_ID}
+# Build command arguments
+CMD_ARGS=(
+    "${CONFIG_FILE}"
+    --seed ${SLURM_ARRAY_TASK_ID}
+)
+
+# Add log file if specified
+if [ -n "$LOG_FILE" ]; then
+    CMD_ARGS+=(--log-file "$LOG_FILE")
+fi
+
+# Run simulation
+python -m pde_sim run "${CMD_ARGS[@]}"
 
 echo "==================================="
 echo "Completed: $(date)"

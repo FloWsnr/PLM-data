@@ -4,6 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from pde_sim.core.logging import restore_stdout, setup_logging
 from pde_sim.core.simulation import run_from_config
 from pde_sim.pdes import get_pde_preset, get_presets_by_category
 
@@ -39,6 +40,11 @@ def main():
         "-q",
         action="store_true",
         help="Suppress progress output",
+    )
+    run_parser.add_argument(
+        "--log-file",
+        type=Path,
+        help="Path to log file. If provided, all output is logged to this file.",
     )
 
     # List command
@@ -77,6 +83,15 @@ def run_simulation(args):
         print(f"Error: Config file not found: {args.config}")
         sys.exit(1)
 
+    # Setup logging if log file is specified
+    log_file = getattr(args, "log_file", None)
+    if log_file is not None:
+        setup_logging(
+            log_file=log_file,
+            console=not args.quiet,
+            capture_stdout=True,
+        )
+
     try:
         metadata = run_from_config(
             config_path=args.config,
@@ -91,6 +106,10 @@ def run_simulation(args):
     except Exception as e:
         print(f"Error running simulation: {e}")
         sys.exit(1)
+    finally:
+        # Restore stdout/stderr if we were capturing
+        if log_file is not None:
+            restore_stdout()
 
 
 def list_presets(args):
