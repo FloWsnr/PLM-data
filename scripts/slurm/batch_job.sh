@@ -9,7 +9,7 @@
 
 # Batch PDE Simulation Job
 # Usage: sbatch batch_job.sh <base_config.yaml> <parameters.csv> [log_file] [start_row]
-# Example: sbatch batch_job.sh configs/examples/physics/gray_scott.yaml configs/parameters/physics/gray-scott.csv
+# Example: sbatch batch_job.sh configs/defaults/physics/gray_scott.yaml configs/parameters/physics/gray-scott.csv
 # Example with log: sbatch batch_job.sh config.yaml params.csv logs/batch.log
 #
 # The parameters.csv file should have:
