@@ -24,8 +24,8 @@ The output directory will contain the results of the simulation, including image
 
 ## Analysis
 
-After running simulations, analyze the results FOR EACH simulation. In general, we are (1) checking for errors / warnings, (2) inspect the resulting images and see if the simulation produces interesting results/patterns. The changes per image should be visible but not too fast. For example, in a Gray-Scott simulation, you should see the emergence of patterns over time, not just a uniform color or an instantly occuring pattern.
+After running simulations, analyze the results FOR EACH simulation and each parameter combination. Do not skip a simulation. In general, we are (1) checking for errors / warnings, (2) inspect the resulting images and see if the simulation produces interesting results/patterns. The changes per image should be visible but not too fast. For example, in a Gray-Scott simulation, you should see the emergence of patterns over time, not just a uniform color or an instantly occuring pattern.
 
 1. Look at the generated log file to check for errors. Check if the simulation took too much time to run, perhaps indicating wrong parameter combinations.
 2. Look at the metadata.json file in the output directory to see the parameters used for the simulation. Check the adaptive timestep information to see if the simulation was stable.
-3. Look at the start image and some intermediate images in the output directory to see if the simulation produced expected patterns.
+3. Look at the start image and some intermediate images in the output directory of **each simulation dir** to see if the simulation produced expected patterns.
