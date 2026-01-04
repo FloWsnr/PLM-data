@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from pde import CartesianGrid, ScalarField
+from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
@@ -23,8 +23,9 @@ class TestShallowWaterPDE:
 
         assert meta.name == "shallow-water"
         assert meta.category == "fluids"
-        assert meta.num_fields == 1
-        assert meta.field_names == ["h"]
+        # Real shallow water has 3 fields: h (height), u (x-velocity), v (y-velocity)
+        assert meta.num_fields == 3
+        assert meta.field_names == ["h", "u", "v"]
 
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
@@ -40,13 +41,18 @@ class TestShallowWaterPDE:
         """Test water drop initial condition."""
         preset = get_pde_preset("shallow-water")
         state = preset.create_initial_state(
-            small_grid, "drop", {"amplitude": 0.5, "background": 1.0}
+            small_grid, "drop", {"amplitude": 0.5}
         )
 
-        assert isinstance(state, ScalarField)
-        # Should have values around background with peak at center
-        assert np.max(state.data) > 1.0
-        assert np.min(state.data) >= 1.0 - 0.01  # Near background
+        # Should be a FieldCollection with 3 fields
+        assert isinstance(state, FieldCollection)
+        assert len(state) == 3
+        h, u, v = state
+        # Height should have peak at center
+        assert np.max(h.data) > 0
+        # Velocities should start at zero
+        assert np.allclose(u.data, 0)
+        assert np.allclose(v.data, 0)
 
     def test_registered_in_registry(self):
         """Test that PDE is registered."""
@@ -55,7 +61,7 @@ class TestShallowWaterPDE:
     def test_short_simulation(self, small_grid):
         """Test running a short simulation."""
         preset = get_pde_preset("shallow-water")
-        params = {"c": 0.5}  # Slower wave speed for stability
+        params = preset.get_default_parameters()
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
@@ -64,4 +70,6 @@ class TestShallowWaterPDE:
         result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
 
         assert result is not None
-        assert np.isfinite(result.data).all()
+        # Check all fields are finite
+        for field in result:
+            assert np.isfinite(field.data).all()

@@ -3,30 +3,102 @@
 from typing import Any
 
 import numpy as np
-from pde import PDE, CartesianGrid, ScalarField
+from pde import CartesianGrid, ScalarField, solve_poisson_equation
+from pde.pdes.base import PDEBase
 
 from pde_sim.initial_conditions import create_initial_condition
 
-from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
+from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset
 from .. import register_pde
 
 
-@register_pde("navier-stokes")
-class NavierStokesPDE(MultiFieldPDEPreset):
+class NavierStokesVorticityPDE(PDEBase):
     """2D Navier-Stokes in vorticity-stream function formulation.
 
-    Full vorticity equation with advection:
+    Solves the full vorticity transport equation:
+        dw/dt = nu * laplace(w) - u * d_dx(w) - v * d_dy(w)
+
+    where velocity is derived from stream function psi:
+        laplace(psi) = -w  (solved at each timestep)
+        u = d_dy(psi)
+        v = -d_dx(psi)
+
+    This is the proper 2D incompressible Navier-Stokes equations
+    in vorticity-stream function form, where vorticity is advected
+    by its self-induced velocity field.
+    """
+
+    def __init__(self, nu: float = 0.01, bc: list | None = None):
+        """Initialize the Navier-Stokes vorticity equation.
+
+        Args:
+            nu: Kinematic viscosity.
+            bc: Boundary conditions.
+        """
+        super().__init__()
+        self.nu = nu
+        self.bc = bc if bc is not None else "auto_periodic_neumann"
+
+    def evolution_rate(self, state: ScalarField, t: float = 0) -> ScalarField:
+        """Compute dw/dt using stream function for velocity.
+
+        Args:
+            state: Current vorticity field w.
+            t: Current time (unused).
+
+        Returns:
+            Rate of change dw/dt.
+        """
+        w = state
+
+        # Solve Poisson equation: laplace(psi) = -w for stream function
+        # For periodic BC, we need zero mean vorticity. Subtracting the mean
+        # doesn't affect velocities since u = grad(psi) and grad(constant) = 0.
+        w_zero_mean = w - w.average
+        psi = solve_poisson_equation(w_zero_mean, bc=self.bc)
+
+        # Compute velocity from stream function
+        # u = d(psi)/dy, v = -d(psi)/dx
+        grad_psi = psi.gradient(bc=self.bc)
+        u = grad_psi[1]  # d_dy(psi)
+        v = -grad_psi[0]  # -d_dx(psi)
+
+        # Compute vorticity gradients
+        grad_w = w.gradient(bc=self.bc)
+        dw_dx = grad_w[0]
+        dw_dy = grad_w[1]
+
+        # Diffusion term
+        laplacian_w = w.laplace(bc=self.bc)
+
+        # Full vorticity transport: dw/dt = nu * laplace(w) - u * dw/dx - v * dw/dy
+        dw_dt = self.nu * laplacian_w - u * dw_dx - v * dw_dy
+
+        return dw_dt
+
+
+@register_pde("navier-stokes")
+class NavierStokesPDE(ScalarPDEPreset):
+    """2D Navier-Stokes in vorticity-stream function formulation.
+
+    The full incompressible Navier-Stokes equations in 2D can be written
+    in vorticity form:
 
         dw/dt = nu * laplace(w) - u * d_dx(w) - v * d_dy(w)
 
-    where velocity (u, v) is derived from stream function psi.
+    where:
+        - w is the vorticity (w = dv/dx - du/dy)
+        - nu is the kinematic viscosity
+        - (u, v) is the velocity field
 
-    Simplified version with explicit velocity fields:
-        dw/dt = nu * laplace(w) - (d_dy(psi) * d_dx(w) - d_dx(psi) * d_dy(w))
-        laplace(psi) = -w
+    The velocity is derived from the stream function psi:
+        laplace(psi) = -w  (Poisson equation, solved at each timestep)
+        u = d_dy(psi)
+        v = -d_dx(psi)
 
-    For simulation, we use a simplified model where we solve the
-    vorticity transport with diffusion and a simple shear flow.
+    This formulation automatically satisfies incompressibility (div(u) = 0)
+    and captures the proper nonlinear advection of vorticity by the
+    self-induced velocity field.
     """
 
     @property
@@ -34,9 +106,12 @@ class NavierStokesPDE(MultiFieldPDEPreset):
         return PDEMetadata(
             name="navier-stokes",
             category="fluids",
-            description="2D Navier-Stokes vorticity equation",
+            description="2D Navier-Stokes vorticity-stream function",
             equations={
-                "w": "nu * laplace(w) - ux * d_dx(w) - uy * d_dy(w)",
+                "w": "nu * laplace(w) - u * d_dx(w) - v * d_dy(w)",
+                "psi": "laplace(psi) = -w (stream function)",
+                "u": "d_dy(psi)",
+                "v": "-d_dx(psi)",
             },
             parameters=[
                 PDEParameter(
@@ -45,20 +120,6 @@ class NavierStokesPDE(MultiFieldPDEPreset):
                     description="Kinematic viscosity",
                     min_value=0.001,
                     max_value=0.1,
-                ),
-                PDEParameter(
-                    name="ux",
-                    default=0.1,
-                    description="Background velocity x",
-                    min_value=-1.0,
-                    max_value=1.0,
-                ),
-                PDEParameter(
-                    name="uy",
-                    default=0.0,
-                    description="Background velocity y",
-                    min_value=-1.0,
-                    max_value=1.0,
                 ),
             ],
             num_fields=1,
@@ -71,22 +132,11 @@ class NavierStokesPDE(MultiFieldPDEPreset):
         parameters: dict[str, float],
         bc: dict[str, Any],
         grid: CartesianGrid,
-    ) -> PDE:
+    ) -> NavierStokesVorticityPDE:
         nu = parameters.get("nu", 0.01)
-        ux = parameters.get("ux", 0.1)
-        uy = parameters.get("uy", 0.0)
+        bc_spec = self._convert_bc(bc)
 
-        # Vorticity transport with background flow
-        rhs = f"{nu} * laplace(w)"
-        if ux != 0:
-            rhs += f" - {ux} * d_dx(w)"
-        if uy != 0:
-            rhs += f" - {uy} * d_dy(w)"
-
-        return PDE(
-            rhs={"w": rhs},
-            bc=self._convert_bc(bc),
-        )
+        return NavierStokesVorticityPDE(nu=nu, bc=bc_spec)
 
     def create_initial_state(
         self,

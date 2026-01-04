@@ -3,7 +3,8 @@
 from typing import Any
 
 import numpy as np
-from pde import PDE, CartesianGrid, ScalarField
+from pde import CartesianGrid, ScalarField, solve_poisson_equation
+from pde.pdes.base import PDEBase
 
 from pde_sim.initial_conditions import create_initial_condition
 
@@ -11,28 +12,88 @@ from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset
 from .. import register_pde
 
 
+class VorticityStreamFunctionPDE(PDEBase):
+    """2D Vorticity equation with stream function formulation.
+
+    Solves the full vorticity transport equation:
+        dw/dt = nu * laplace(w) - u * d_dx(w) - v * d_dy(w)
+
+    where velocity is derived from stream function psi:
+        laplace(psi) = -w  (solved at each timestep)
+        u = d_dy(psi)
+        v = -d_dx(psi)
+    """
+
+    def __init__(self, nu: float = 0.01, bc: list | None = None):
+        """Initialize the vorticity equation.
+
+        Args:
+            nu: Kinematic viscosity.
+            bc: Boundary conditions.
+        """
+        super().__init__()
+        self.nu = nu
+        self.bc = bc if bc is not None else "auto_periodic_neumann"
+
+    def evolution_rate(self, state: ScalarField, t: float = 0) -> ScalarField:
+        """Compute dw/dt using stream function for velocity.
+
+        Args:
+            state: Current vorticity field w.
+            t: Current time (unused).
+
+        Returns:
+            Rate of change dw/dt.
+        """
+        w = state
+
+        # Solve Poisson equation: laplace(psi) = -w for stream function
+        # For periodic BC, we need zero mean vorticity. Subtracting the mean
+        # doesn't affect velocities since u = grad(psi) and grad(constant) = 0.
+        w_zero_mean = w - w.average
+        psi = solve_poisson_equation(w_zero_mean, bc=self.bc)
+
+        # Compute velocity from stream function
+        # u = d(psi)/dy, v = -d(psi)/dx
+        grad_psi = psi.gradient(bc=self.bc)
+        u = grad_psi[1]  # d_dy(psi)
+        v = -grad_psi[0]  # -d_dx(psi)
+
+        # Compute vorticity gradients
+        grad_w = w.gradient(bc=self.bc)
+        dw_dx = grad_w[0]
+        dw_dy = grad_w[1]
+
+        # Diffusion term
+        laplacian_w = w.laplace(bc=self.bc)
+
+        # Full vorticity transport: dw/dt = nu * laplace(w) - u * dw/dx - v * dw/dy
+        dw_dt = self.nu * laplacian_w - u * dw_dx - v * dw_dy
+
+        return dw_dt
+
+
 @register_pde("vorticity")
 class VorticityPDE(ScalarPDEPreset):
-    """2D Vorticity equation (simplified Navier-Stokes).
+    """2D Vorticity equation with self-advection.
 
-    The vorticity formulation of 2D incompressible Navier-Stokes:
+    The full vorticity formulation of 2D incompressible Navier-Stokes:
 
         dw/dt = nu * laplace(w) - u * d_dx(w) - v * d_dy(w)
 
     where:
         - w is the vorticity (curl of velocity)
         - nu is the kinematic viscosity
-        - (u, v) is the velocity field
+        - (u, v) is the velocity field derived from stream function
 
-    In 2D, velocity can be derived from stream function psi:
-        w = laplace(psi), u = d_dy(psi), v = -d_dx(psi)
+    The stream function psi is solved from:
+        laplace(psi) = -w
 
-    This simplified version uses pure diffusion of vorticity,
-    suitable for decay problems and demonstrating viscous effects:
+    And velocity is computed as:
+        u = d_dy(psi), v = -d_dx(psi)
 
-        dw/dt = nu * laplace(w)
-
-    For full advection, the stream function must be solved at each step.
+    This ensures incompressibility (div(u,v) = 0) and proper
+    self-advection of vorticity by the induced flow.
     """
 
     @property
@@ -40,8 +101,13 @@ class VorticityPDE(ScalarPDEPreset):
         return PDEMetadata(
             name="vorticity",
             category="fluids",
-            description="2D vorticity diffusion equation",
-            equations={"w": "nu * laplace(w)"},
+            description="2D vorticity equation with self-advection",
+            equations={
+                "w": "nu * laplace(w) - u * d_dx(w) - v * d_dy(w)",
+                "psi": "laplace(psi) = -w (stream function)",
+                "u": "d_dy(psi)",
+                "v": "-d_dx(psi)",
+            },
             parameters=[
                 PDEParameter(
                     name="nu",
@@ -53,7 +119,7 @@ class VorticityPDE(ScalarPDEPreset):
             ],
             num_fields=1,
             field_names=["w"],
-            reference="2D Navier-Stokes vorticity formulation",
+            reference="2D Navier-Stokes vorticity-stream function formulation",
         )
 
     def create_pde(
@@ -61,13 +127,11 @@ class VorticityPDE(ScalarPDEPreset):
         parameters: dict[str, float],
         bc: dict[str, Any],
         grid: CartesianGrid,
-    ) -> PDE:
+    ) -> VorticityStreamFunctionPDE:
         nu = parameters.get("nu", 0.01)
+        bc_spec = self._convert_bc(bc)
 
-        return PDE(
-            rhs={"w": f"{nu} * laplace(w)"},
-            bc=self._convert_bc(bc),
-        )
+        return VorticityStreamFunctionPDE(nu=nu, bc=bc_spec)
 
     def create_initial_state(
         self,
