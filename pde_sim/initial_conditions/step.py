@@ -1,9 +1,36 @@
-"""Step function initial condition generators."""
+"""Step function and constant initial condition generators."""
 
 import numpy as np
 from pde import CartesianGrid, ScalarField
 
 from .base import InitialConditionGenerator
+
+
+class Constant(InitialConditionGenerator):
+    """Constant (uniform) initial condition.
+
+    Creates a field with a uniform value everywhere.
+    Useful for plate equation with Dirichlet BC to create inward waves.
+    """
+
+    def generate(
+        self,
+        grid: CartesianGrid,
+        value: float = 1.0,
+        **kwargs,
+    ) -> ScalarField:
+        """Generate constant initial condition.
+
+        Args:
+            grid: The computational grid.
+            value: The constant value everywhere.
+            **kwargs: Additional arguments (ignored).
+
+        Returns:
+            ScalarField with uniform value.
+        """
+        data = np.full(grid.shape, value, dtype=float)
+        return ScalarField(grid, data)
 
 
 class StepFunction(InitialConditionGenerator):

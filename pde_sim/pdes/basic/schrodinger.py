@@ -1,13 +1,13 @@
-"""Schrodinger equation for quantum mechanics."""
+"""Schrodinger equation and plate equation."""
 
 from typing import Any
 
 import numpy as np
-from pde import PDE, CartesianGrid, ScalarField
+from pde import PDE, CartesianGrid, FieldCollection, ScalarField
 
 from pde_sim.initial_conditions import create_initial_condition
 
-from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset
+from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter, ScalarPDEPreset
 from .. import register_pde
 
 
@@ -121,20 +121,26 @@ class SchrodingerPDE(ScalarPDEPreset):
 
 
 @register_pde("plate")
-class PlatePDE(ScalarPDEPreset):
-    """Biharmonic plate equation.
+class PlatePDE(MultiFieldPDEPreset):
+    """Plate vibration equation (wave form).
 
-    The plate equation (or biharmonic equation) describes thin plate vibrations
-    and fourth-order diffusion:
+    The plate equation describes thin elastic plate vibrations using the
+    biharmonic operator:
 
-        du/dt = -D * laplace(laplace(u))
+        d²u/dt² = -D * laplace(laplace(u)) - C * du/dt
 
-    or in the wave form:
+    Converted to first-order system:
+        du/dt = v
+        dv/dt = -D * laplace(laplace(u)) - C * v
 
-        d^2u/dt^2 = -D * laplace(laplace(u))
+    where:
+        - u is plate displacement
+        - v is velocity
+        - D is the bending stiffness
+        - C is damping coefficient
 
-    This implementation uses the first-order (diffusive) form for simplicity.
-    The bilaplacian creates smoothing patterns with fourth-order spatial derivatives.
+    With uniform initial displacement and Dirichlet boundaries, this creates
+    compression waves propagating inward from the edges.
     """
 
     @property
@@ -142,20 +148,30 @@ class PlatePDE(ScalarPDEPreset):
         return PDEMetadata(
             name="plate",
             category="basic",
-            description="Biharmonic plate equation (fourth-order diffusion)",
-            equations={"u": "-D * laplace(laplace(u))"},
+            description="Plate vibration equation (biharmonic wave)",
+            equations={
+                "u": "v",
+                "v": "-D * laplace(laplace(u)) - C * v",
+            },
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=0.1,
-                    description="Biharmonic diffusion coefficient",
-                    min_value=0.001,
-                    max_value=0.5,
+                    default=0.0001,
+                    description="Bending stiffness coefficient",
+                    min_value=0.00001,
+                    max_value=0.001,
+                ),
+                PDEParameter(
+                    name="C",
+                    default=0.5,
+                    description="Damping coefficient",
+                    min_value=0.0,
+                    max_value=2.0,
                 ),
             ],
-            num_fields=1,
-            field_names=["u"],
-            reference="Fourth-order parabolic PDE",
+            num_fields=2,
+            field_names=["u", "v"],
+            reference="Kirchhoff-Love plate theory",
         )
 
     def create_pde(
@@ -164,21 +180,57 @@ class PlatePDE(ScalarPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        """Create the plate equation PDE.
+        """Create the plate vibration PDE.
 
         Args:
-            parameters: Dictionary containing 'D' coefficient.
+            parameters: Dictionary containing 'D' and 'C' coefficients.
             bc: Boundary condition specification.
             grid: The computational grid.
 
         Returns:
             Configured PDE instance.
         """
-        D = parameters.get("D", 0.01)
+        D = parameters.get("D", 0.0001)
+        C = parameters.get("C", 0.5)
 
         bc_spec = self._convert_bc(bc)
 
+        # Build v equation with optional damping
+        v_rhs = f"-{D} * laplace(laplace(u))"
+        if C > 0:
+            v_rhs += f" - {C} * v"
+
         return PDE(
-            rhs={"u": f"-{D} * laplace(laplace(u))"},
+            rhs={
+                "u": "v",
+                "v": v_rhs,
+            },
             bc=bc_spec,
         )
+
+    def create_initial_state(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> FieldCollection:
+        """Create initial state for plate equation.
+
+        Args:
+            grid: The computational grid.
+            ic_type: Type of initial condition.
+            ic_params: Parameters for the initial condition.
+
+        Returns:
+            FieldCollection with u (displacement) and v (velocity) fields.
+        """
+        # u gets the specified initial condition
+        u = create_initial_condition(grid, ic_type, ic_params)
+        u.label = "u"
+
+        # v (velocity) starts at zero by default
+        v_data = np.zeros(grid.shape)
+        v = ScalarField(grid, v_data)
+        v.label = "v"
+
+        return FieldCollection([u, v])

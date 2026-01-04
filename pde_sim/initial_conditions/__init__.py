@@ -8,16 +8,19 @@ from .base import InitialConditionGenerator
 from .blobs import GaussianBlobs
 from .periodic import SinePattern
 from .random import RandomGaussian, RandomUniform
-from .step import RectangleGrid, StepFunction
+from .blobs import SingleBlob
+from .step import Constant, RectangleGrid, StepFunction
 
 # Registry of available initial condition generators
 _IC_REGISTRY: dict[str, type[InitialConditionGenerator]] = {
     "random-uniform": RandomUniform,
     "random-gaussian": RandomGaussian,
     "gaussian-blobs": GaussianBlobs,
+    "single-blob": SingleBlob,
     "sine": SinePattern,
     "step": StepFunction,
     "rectangle-grid": RectangleGrid,
+    "constant": Constant,
 }
 
 
@@ -78,9 +81,11 @@ __all__ = [
     "RandomUniform",
     "RandomGaussian",
     "GaussianBlobs",
+    "SingleBlob",
     "SinePattern",
     "StepFunction",
     "RectangleGrid",
+    "Constant",
     "create_initial_condition",
     "list_initial_conditions",
     "register_initial_condition",

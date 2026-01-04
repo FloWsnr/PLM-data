@@ -209,7 +209,7 @@ class TestSchrodingerPDE:
 
 
 class TestPlatePDE:
-    """Tests for the biharmonic plate equation preset."""
+    """Tests for the plate vibration equation preset."""
 
     def test_metadata(self):
         """Test that metadata is correctly defined."""
@@ -218,10 +218,12 @@ class TestPlatePDE:
 
         assert meta.name == "plate"
         assert meta.category == "basic"
-        assert meta.num_fields == 1
+        assert meta.num_fields == 2
         assert "u" in meta.field_names
-        # Should mention biharmonic/fourth-order
-        assert "biharmonic" in meta.description.lower() or "fourth" in meta.description.lower()
+        assert "v" in meta.field_names
+        # Should mention biharmonic or vibration or wave
+        desc_lower = meta.description.lower()
+        assert "biharmonic" in desc_lower or "vibration" in desc_lower or "wave" in desc_lower
 
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
@@ -239,15 +241,15 @@ class TestPlatePDE:
     def test_short_simulation(self, small_grid):
         """Test running a short simulation."""
         preset = get_pde_preset("plate")
-        params = {"D": 0.001}  # Small coefficient for stability
+        params = {"D": 0.0001, "C": 0.5}  # Small D for stability, with damping
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(
-            small_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
+            small_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 0.5}
         )
 
-        result = pde.solve(state, t_range=0.0001, dt=0.00001, solver="euler")
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
 
         assert result is not None
         assert np.isfinite(result.data).all()

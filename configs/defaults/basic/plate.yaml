@@ -1,26 +1,24 @@
 preset: plate
 parameters:
-  D: 0.001
+  D: 0.0001
+  C: 0.5
 init:
-  type: gaussian-blobs
+  type: constant
   params:
-    num_blobs: 2
-    amplitude: 1.0
-    width: 0.1
-    background: 0.0
+    value: -1.0
 solver: rk4
 backend: numba
 adaptive: true
 dt: 1.0e-04
 resolution: 128
 bc:
-  x: periodic
-  y: periodic
+  x: dirichlet
+  y: dirichlet
 output:
   path: ./output
   num_frames: 100
-  colormap: viridis
+  colormap: RdBu_r
   field_to_plot: u
 seed: 42
 domain_size: 2.0
-t_end: 0.5
+t_end: 2.0
