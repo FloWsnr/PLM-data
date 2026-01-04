@@ -1,6 +1,6 @@
 preset: method-of-images
 parameters:
-  nu: 0.01
+  nu: 0.001
   wall_distance: 0.2
 init:
   type: gaussian-blobs
@@ -24,4 +24,4 @@ output:
   field_to_plot: w
 seed: 42
 domain_size: 2.0
-t_end: 50.0
+t_end: 5.0

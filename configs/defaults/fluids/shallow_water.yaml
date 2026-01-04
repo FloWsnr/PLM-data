@@ -1,13 +1,14 @@
 preset: shallow-water
 parameters:
-  c: 0.3
+  g: 2.0
+  H: 1.0
 init:
-  type: gaussian-blobs
+  type: drop
   params:
-    num_blobs: 1
+    x0: 0.5
+    y0: 0.5
     amplitude: 0.5
-    width: 0.1
-    background: 0.0
+    width: 0.08
 solver: rk4
 backend: numba
 adaptive: true
@@ -19,8 +20,8 @@ bc:
 output:
   path: ./output
   num_frames: 100
-  colormap: Blues
+  colormap: coolwarm
   field_to_plot: h
 seed: 42
 domain_size: 2.0
-t_end: 20.0
+t_end: 3.0

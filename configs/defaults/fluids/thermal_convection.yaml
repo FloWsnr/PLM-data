@@ -1,8 +1,8 @@
 preset: thermal-convection
 parameters:
-  kappa: 0.01
-  nu: 0.01
-  Ra: 100.0
+  kappa: 0.005
+  nu: 0.005
+  Ra: 500.0
 init:
   type: random-gaussian
   params:
@@ -25,4 +25,4 @@ output:
   vector_density: 12
 seed: 42
 domain_size: 2.0
-t_end: 100.0
+t_end: 30.0

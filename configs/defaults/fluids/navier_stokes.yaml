@@ -1,6 +1,6 @@
 preset: navier-stokes
 parameters:
-  nu: 0.01
+  nu: 0.001
   ux: 0.1
   uy: 0.0
 init:
@@ -25,4 +25,4 @@ output:
   field_to_plot: w
 seed: 42
 domain_size: 2.0
-t_end: 50.0
+t_end: 10.0

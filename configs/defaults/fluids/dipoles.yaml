@@ -1,6 +1,6 @@
 preset: dipoles
 parameters:
-  nu: 0.005
+  nu: 0.001
   separation: 0.15
 init:
   type: gaussian-blobs
@@ -24,4 +24,4 @@ output:
   field_to_plot: w
 seed: 42
 domain_size: 2.0
-t_end: 100.0
+t_end: 20.0
