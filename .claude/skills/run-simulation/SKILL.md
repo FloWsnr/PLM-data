@@ -10,7 +10,7 @@ Before running simulations, ensure that you are using the correct python environ
 Run a single PDE simulation by invoking the ``single_job.sh`` script with the required parameters or use the Python module directly, e.g.,
 
 ```bash
-python -m pde_sim run configs/examples/physics/gray_scott.yaml --log-file logs/gray_scott.log
+python -m pde_sim run configs/examples/physics/gray_scott.yaml --log-file logs/physics/gray_scott.log
 ```
 
 To run multiple parameter combinations of the same PDE in parallel, use the ``batch_job.sh`` script, specifying the configuration file and the number of parallel jobs, e.g.,
