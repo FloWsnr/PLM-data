@@ -1,6 +1,6 @@
 preset: plate
 parameters:
-  D: 0.005
+  D: 0.001
 init:
   type: gaussian-blobs
   params:
@@ -11,7 +11,7 @@ init:
 solver: rk4
 backend: numba
 adaptive: true
-dt: 1.0e-05
+dt: 1.0e-04
 resolution: 128
 bc:
   x: periodic
@@ -23,4 +23,4 @@ output:
   field_to_plot: u
 seed: 42
 domain_size: 2.0
-t_end: 2000.0
+t_end: 0.5

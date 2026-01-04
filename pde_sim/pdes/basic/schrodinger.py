@@ -147,10 +147,10 @@ class PlatePDE(ScalarPDEPreset):
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=0.005,
+                    default=0.1,
                     description="Biharmonic diffusion coefficient",
                     min_value=0.001,
-                    max_value=0.01,
+                    max_value=0.5,
                 ),
             ],
             num_fields=1,

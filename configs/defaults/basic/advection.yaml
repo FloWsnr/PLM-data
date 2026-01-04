@@ -1,6 +1,6 @@
 preset: advection
 parameters:
-  D: 0.05
+  D: 0.01
   vx: 0.5
   vy: 0.0
 init:
@@ -25,4 +25,4 @@ output:
   field_to_plot: u
 seed: 42
 domain_size: 2.0
-t_end: 8.0
+t_end: 4.0

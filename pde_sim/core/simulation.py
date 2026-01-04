@@ -106,6 +106,7 @@ class SimulationRunner:
             "runge-kutta": "runge-kutta",
             "implicit": "implicit",
             "implicit-euler": "implicit",
+            "scipy": "scipy",
         }
         return solver_map.get(self.config.solver.lower(), "euler")
 
