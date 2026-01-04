@@ -1,19 +1,19 @@
 preset: advecting-patterns
 parameters:
-  Du: 0.05
-  Dv: 2.0
-  v_flow: 0.5
-  a: 0.1
-  b: 0.9
+  Du: 0.1   # Slightly higher for faster pattern development
+  Dv: 4.0   # Strong inhibitor diffusion for Turing instability
+  v_flow: 0.3  # Moderate flow
+  a: 0.08   # Adjusted for pattern regime
+  b: 1.0
 init:
   type: random-gaussian
   params:
     mean: 0.5
-    std: 0.1
+    std: 0.15  # Larger perturbations
 solver: rk4
 backend: numba
 adaptive: true
-dt: 5.0e-05
+dt: 0.0005  # Larger dt for faster computation
 resolution: 128
 bc:
   x: periodic
@@ -26,5 +26,5 @@ output:
   show_vectors: true
   vector_density: 16
 seed: 42
-domain_size: 10.0
-t_end: 50.0
+domain_size: 15.0  # Larger domain for visible advection
+t_end: 25.0  # Shorter time

@@ -11,7 +11,7 @@ init:
     width: 0.08
     background: 0.0
 solver: rk4
-backend: numba
+backend: numpy
 adaptive: true
 dt: 0.005
 resolution: 128

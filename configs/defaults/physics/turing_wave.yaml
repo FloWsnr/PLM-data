@@ -1,19 +1,19 @@
 preset: turing-wave
 parameters:
-  Du: 0.05
-  Dv: 2.0
-  a: 0.1
-  b: 0.9
-  gamma: 0.1
+  Du: 0.1    # Higher for faster pattern evolution
+  Dv: 4.0    # Strong inhibitor diffusion
+  a: 0.08
+  b: 1.0
+  gamma: 0.2  # Stronger wave coupling
 init:
   type: random-gaussian
   params:
     mean: 0.5
-    std: 0.1
+    std: 0.15
 solver: rk4
 backend: numba
 adaptive: true
-dt: 5.0e-05
+dt: 0.0005  # Larger dt
 resolution: 128
 bc:
   x: periodic
@@ -26,5 +26,5 @@ output:
   show_vectors: true
   vector_density: 16
 seed: 42
-domain_size: 10.0
-t_end: 50.0
+domain_size: 15.0
+t_end: 25.0

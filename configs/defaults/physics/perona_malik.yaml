@@ -1,25 +1,25 @@
 preset: perona-malik
 parameters:
-  D: 0.5
-  K: 1.0
+  D: 0.1   # Slower diffusion for gradual smoothing
+  K: 0.3   # Lower threshold - preserves weaker edges
 init:
   type: step
   params:
-    x0: 0.3
-    x1: 0.7
-    y0: 0.3
-    y1: 0.7
+    x0: 0.25
+    x1: 0.75
+    y0: 0.25
+    y1: 0.75
     value_inside: 1.0
     value_outside: 0.0
-    noise: 0.1
+    noise: 0.2  # More noise to smooth out
 solver: rk4
 backend: numba
 adaptive: true
-dt: 1.0e-04
+dt: 0.001
 resolution: 128
 bc:
-  x: periodic
-  y: periodic
+  x: no-flux  # Better for image processing
+  y: no-flux
 output:
   path: ./output
   num_frames: 100
@@ -27,4 +27,4 @@ output:
   field_to_plot: u
 seed: 42
 domain_size: 2.0
-t_end: 2.0
+t_end: 10.0  # Longer time for gradual edge-preserving smoothing
