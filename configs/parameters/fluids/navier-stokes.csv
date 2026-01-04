@@ -1,10 +1,10 @@
 nu,ux,uy,BC_x,BC_y,init,solver,dt,t_end,notes
-0.01,0.1,0.0,periodic,periodic,gaussian-blobs,rk4,0.005,50,advected vortex x
-0.01,0.0,0.1,periodic,periodic,gaussian-blobs,rk4,0.005,50,advected vortex y
-0.005,0.2,0.0,periodic,periodic,gaussian-blobs,rk4,0.01,40,faster advection
-0.02,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,0.002,30,diagonal flow
-0.01,0.5,0.0,periodic,periodic,gaussian-blobs,rk4,0.005,20,channel flow periodic
-0.01,-0.1,0.1,periodic,periodic,gaussian-blobs,rk4,0.005,50,angled flow
-0.005,0.0,0.0,periodic,periodic,random-gaussian,rk4,0.01,80,pure diffusion
-0.01,0.1,0.0,periodic,periodic,rectangle-grid,rk4,0.005,50,patchwork init
-0.01,0.1,0.0,no-flux,no-flux,rectangle-grid,rk4,0.005,50,patchwork bounded
+0.01,0.1,0.0,periodic,periodic,gaussian-blobs,rk4,0.01,10,advected vortex x
+0.01,0.0,0.1,periodic,periodic,gaussian-blobs,rk4,0.01,10,advected vortex y
+0.005,0.2,0.0,periodic,periodic,gaussian-blobs,rk4,0.01,12,faster advection
+0.02,0.1,0.1,periodic,periodic,gaussian-blobs,rk4,0.01,8,diagonal flow
+0.01,0.5,0.0,periodic,periodic,gaussian-blobs,rk4,0.01,6,channel flow periodic
+0.01,-0.1,0.1,periodic,periodic,gaussian-blobs,rk4,0.01,10,angled flow
+0.005,0.0,0.0,periodic,periodic,random-gaussian,rk4,0.01,20,pure diffusion
+0.01,0.1,0.0,periodic,periodic,rectangle-grid,rk4,0.01,10,patchwork init
+0.01,0.1,0.0,no-flux,no-flux,rectangle-grid,rk4,0.01,10,patchwork bounded

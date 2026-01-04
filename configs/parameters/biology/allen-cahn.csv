@@ -1,10 +1,10 @@
 D,a,BC_x,BC_y,init,solver,dt,t_end,notes
-0.1,0.5,periodic,periodic,random-uniform,rk4,0.1,50,symmetric threshold
-0.1,0.3,periodic,periodic,random-uniform,rk4,0.1,60,biased threshold
-0.2,0.5,periodic,periodic,step,rk4,0.1,40,front motion
-0.05,0.5,no-flux,no-flux,random-uniform,rk4,0.1,80,slow diffusion
-0.1,0.7,periodic,periodic,gaussian-blobs,rk4,0.1,50,high threshold
-0.08,0.4,periodic,periodic,random-uniform,rk4,0.1,65,intermediate
-0.2,0.2,periodic,periodic,step,rk4,0.1,35,low threshold fast
-0.1,0.5,periodic,periodic,rectangle-grid,rk4,0.1,50,patchwork init
-0.1,0.5,no-flux,no-flux,rectangle-grid,rk4,0.1,50,patchwork bounded
+0.1,0.5,periodic,periodic,random-uniform,rk4,0.1,15,symmetric threshold
+0.1,0.3,periodic,periodic,random-uniform,rk4,0.1,18,biased threshold
+0.2,0.5,periodic,periodic,step,rk4,0.1,12,front motion
+0.05,0.5,no-flux,no-flux,random-uniform,rk4,0.1,25,slow diffusion
+0.1,0.7,periodic,periodic,gaussian-blobs,rk4,0.1,15,high threshold
+0.08,0.4,periodic,periodic,random-uniform,rk4,0.1,20,intermediate
+0.2,0.2,periodic,periodic,step,rk4,0.1,10,low threshold fast
+0.1,0.5,periodic,periodic,rectangle-grid,rk4,0.1,15,patchwork init
+0.1,0.5,no-flux,no-flux,rectangle-grid,rk4,0.1,15,patchwork bounded

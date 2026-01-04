@@ -1,10 +1,10 @@
 a,v,m,Dn,BC_x,BC_y,init,solver,dt,t_end,notes
-2.0,0.5,0.45,0.01,periodic,periodic,random-gaussian,rk4,0.1,100,standard Klausmeier
-1.5,0.5,0.45,0.01,periodic,periodic,random-gaussian,rk4,0.1,120,lower rainfall
-3.0,0.5,0.45,0.01,periodic,periodic,random-gaussian,rk4,0.1,80,higher rainfall
-2.0,1.0,0.45,0.01,periodic,periodic,random-gaussian,rk4,0.1,90,faster flow
-2.0,0.5,0.3,0.01,periodic,periodic,random-gaussian,rk4,0.1,100,lower mortality
-2.0,0.5,0.45,0.02,periodic,periodic,random-gaussian,rk4,0.1,95,higher dispersal periodic
-2.5,0.3,0.4,0.01,periodic,periodic,gaussian-blobs,rk4,0.1,105,moderate rain slow flow
-2.0,0.5,0.45,0.01,periodic,periodic,rectangle-grid,rk4,0.1,100,patchwork init
-2.0,0.5,0.45,0.01,no-flux,no-flux,rectangle-grid,rk4,0.1,100,patchwork bounded
+2.0,0.5,0.45,0.01,periodic,periodic,random-gaussian,rk4,0.1,25,standard Klausmeier
+1.5,0.5,0.45,0.01,periodic,periodic,random-gaussian,rk4,0.1,30,lower rainfall
+3.0,0.5,0.45,0.01,periodic,periodic,random-gaussian,rk4,0.1,20,higher rainfall
+2.0,1.0,0.45,0.01,periodic,periodic,random-gaussian,rk4,0.1,20,faster flow
+2.0,0.5,0.3,0.01,periodic,periodic,random-gaussian,rk4,0.1,25,lower mortality
+2.0,0.5,0.45,0.02,periodic,periodic,random-gaussian,rk4,0.1,25,higher dispersal periodic
+2.5,0.3,0.4,0.01,periodic,periodic,gaussian-blobs,rk4,0.1,25,moderate rain slow flow
+2.0,0.5,0.45,0.01,periodic,periodic,rectangle-grid,rk4,0.1,25,patchwork init
+2.0,0.5,0.45,0.01,no-flux,no-flux,rectangle-grid,rk4,0.1,25,patchwork bounded
