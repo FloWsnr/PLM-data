@@ -13,16 +13,18 @@ from .. import register_pde
 
 @register_pde("kpz")
 class KPZInterfacePDE(ScalarPDEPreset):
-    """Kardar-Parisi-Zhang (KPZ) interface growth equation.
+    """Damped Kardar-Parisi-Zhang (KPZ) interface growth equation.
 
-    The KPZ equation is a universal model for surface/interface growth:
+    The damped KPZ equation models stochastic surface/interface growth:
 
-        dh/dt = nu * laplace(h) + (lambda/2) * |grad(h)|^2
+        dh/dt = -gamma * h + nu * laplace(h) + (lambda/2) * |grad(h)|^2 + eta * noise
 
     where:
         - h is the height of the interface
+        - gamma is the linear damping coefficient (keeps mean bounded)
         - nu is the diffusion coefficient (surface tension)
         - lambda is the growth strength (lateral growth rate)
+        - eta is the noise strength (stochastic deposition)
 
     This equation describes:
         - Surface growth by random deposition
@@ -31,8 +33,8 @@ class KPZInterfacePDE(ScalarPDEPreset):
         - Ballistic deposition
         - Flame front propagation (related to KS equation)
 
-    Note: This is the deterministic version. The stochastic version
-    includes additive noise eta(r,t).
+    The damping term -gamma*h prevents unbounded growth of mean height,
+    allowing steady-state roughening dynamics to be visualized.
 
     Reference: Kardar, Parisi, Zhang (1986)
     """
@@ -42,9 +44,9 @@ class KPZInterfacePDE(ScalarPDEPreset):
         return PDEMetadata(
             name="kpz",
             category="physics",
-            description="Kardar-Parisi-Zhang interface growth",
+            description="Kardar-Parisi-Zhang interface growth (stochastic)",
             equations={
-                "h": "nu * laplace(h) + (lambda/2) * gradient_squared(h)",
+                "h": "-gamma * h + nu * laplace(h) + (lambda/2) * gradient_squared(h) + eta * noise",
             },
             parameters=[
                 PDEParameter(
@@ -61,6 +63,20 @@ class KPZInterfacePDE(ScalarPDEPreset):
                     min_value=0.1,
                     max_value=2.0,
                 ),
+                PDEParameter(
+                    name="eta",
+                    default=0.5,
+                    description="Noise strength (stochastic deposition rate)",
+                    min_value=0.0,
+                    max_value=10.0,
+                ),
+                PDEParameter(
+                    name="gamma",
+                    default=0.1,
+                    description="Linear damping (keeps mean height bounded)",
+                    min_value=0.0,
+                    max_value=1.0,
+                ),
             ],
             num_fields=1,
             field_names=["h"],
@@ -73,23 +89,27 @@ class KPZInterfacePDE(ScalarPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        """Create the KPZ interface growth equation PDE.
+        """Create the stochastic damped KPZ interface growth equation PDE.
 
         Args:
-            parameters: Dictionary containing 'nu' and 'lmbda' coefficients.
+            parameters: Dictionary containing 'nu', 'lmbda', 'eta', and 'gamma' coefficients.
             bc: Boundary condition specification.
             grid: The computational grid.
 
         Returns:
-            Configured PDE instance.
+            Configured PDE instance with stochastic noise.
         """
-        nu = parameters.get("nu", 0.5)
+        nu = parameters.get("nu", 0.1)
         lmbda = parameters.get("lmbda", 1.0)
+        eta = parameters.get("eta", 0.5)
+        gamma = parameters.get("gamma", 0.1)
 
-        # KPZ equation: dh/dt = nu * laplace(h) + (lambda/2) * |grad(h)|^2
+        # Damped stochastic KPZ: dh/dt = -gamma*h + nu*laplace(h) + (lambda/2)*|grad(h)|^2 + noise
+        # The damping term -gamma*h keeps the mean height bounded
         return PDE(
-            rhs={"h": f"{nu} * laplace(h) + {lmbda / 2} * gradient_squared(h)"},
+            rhs={"h": f"-{gamma} * h + {nu} * laplace(h) + {lmbda / 2} * gradient_squared(h)"},
             bc=self._convert_bc(bc),
+            noise={"h": eta},  # Additive white noise with strength eta
         )
 
     def create_initial_state(

@@ -1,16 +1,17 @@
 preset: kpz
 parameters:
-  nu: 0.1
-  lmbda: 1.0
+  nu: 0.5    # Strong diffusion for stability
+  lmbda: 0.2 # Weak nonlinearity to avoid blowup
+  eta: 1.0   # Noise strength for stochastic roughening
+  gamma: 0.5 # Strong damping to keep heights bounded
 init:
-  type: random-gaussian
+  type: flat  # Flat IC to see stochastic roughening emerge
   params:
-    mean: 0.0
-    std: 0.1
-solver: rk4
+    amplitude: 0.1  # Initial perturbation
+solver: euler  # Euler for stochastic PDEs
 backend: numba
-adaptive: true
-dt: 0.005
+adaptive: false  # Fixed timestep for stochastic simulation
+dt: 0.001  # Small timestep for numerical stability with noise
 resolution: 128
 bc:
   x: periodic
@@ -21,5 +22,5 @@ output:
   colormap: viridis
   field_to_plot: h
 seed: 42
-domain_size: 2.0
-t_end: 50.0
+domain_size: 8.0  # Larger domain for surface features
+t_end: 20.0  # Reach steady-state roughening
