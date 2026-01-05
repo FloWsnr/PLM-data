@@ -1,16 +1,16 @@
 preset: cyclic-competition
 parameters:
-  D: 0.05
-  alpha: 1.0
+  D: 0.001  # Lower diffusion for sharper boundaries
+  alpha: 1.5  # Strong competition for visible dynamics
 init:
   type: random-uniform
   params:
-    low: 0.2
-    high: 0.4
-solver: rk4
+    low: 0.1
+    high: 0.6
+solver: scipy  # Fast solver for stiff competition dynamics
 backend: numba
 adaptive: true
-dt: 0.01
+dt: 0.1
 resolution: 128
 bc:
   x: periodic
@@ -18,10 +18,8 @@ bc:
 output:
   path: ./output
   num_frames: 100
-  colormap: turbo
-  field_to_plot: mag(u,v)
-  show_vectors: true
-  vector_density: 16
+  colormap: viridis
+  field_to_plot: u  # Show single species for clearer visualization
 seed: 42
-domain_size: 2.0
-t_end: 100.0
+domain_size: 5.0
+t_end: 50.0  # Longer time for spiral formation

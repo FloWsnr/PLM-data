@@ -1,18 +1,19 @@
 preset: turing-conditions
 parameters:
-  Du: 0.01
-  Dv: 1.0
-  a: 1.0
-  d: 0.5
+  Du: 0.01  # Small activator diffusion
+  Dv: 0.5  # Large inhibitor diffusion (Dv >> Du)
+  a: 1.5  # Higher growth for faster instability
+  d: 0.4  # Inhibitor decay
 init:
   type: random-gaussian
   params:
     mean: 0.5
-    std: 0.02
-solver: rk4
+    std: 0.15  # Small perturbation to seed Turing instability
+solver: rk4  # Use explicit solver - more stable for this PDE
 backend: numba
 adaptive: true
-dt: 0.001
+tolerance: 0.001  # Looser tolerance for speed
+dt: 0.001  # Small dt needed for stability
 resolution: 128
 bc:
   x: periodic
@@ -21,9 +22,7 @@ output:
   path: ./output
   num_frames: 100
   colormap: turbo
-  field_to_plot: mag(u,v)
-  show_vectors: true
-  vector_density: 16
+  field_to_plot: u  # Show activator patterns
 seed: 42
-domain_size: 2.0
-t_end: 50.0
+domain_size: 5.0
+t_end: 50.0  # Longer time for Turing patterns to develop

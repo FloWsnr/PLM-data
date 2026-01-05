@@ -1,21 +1,21 @@
 preset: keller-segel
 parameters:
-  Du: 0.1
-  Dc: 0.2
-  chi: 1.0
+  Du: 0.05
+  Dc: 0.5
+  chi: 0.8
   alpha: 1.0
-  beta: 1.0
+  beta: 0.5
 init:
   type: gaussian-blobs
   params:
     num_blobs: 5
     amplitude: 1.0
-    width: 0.08
+    width: 0.1
     background: 0.1
 solver: rk4
 backend: numba
 adaptive: true
-dt: 0.001
+dt: 0.005
 resolution: 128
 bc:
   x: periodic
@@ -29,4 +29,4 @@ output:
   vector_density: 16
 seed: 42
 domain_size: 2.0
-t_end: 30.0
+t_end: 15.0

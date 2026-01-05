@@ -1,20 +1,20 @@
 preset: gierer-meinhardt
 parameters:
-  Du: 0.005
-  Dv: 0.5
-  rho: 1.0
-  mu_u: 0.1
-  mu_v: 0.1
-  rho_u: 0.01
+  Du: 0.01
+  Dv: 1.0
+  rho: 2.0
+  mu_u: 0.5
+  mu_v: 0.5
+  rho_u: 0.05
 init:
   type: random-gaussian
   params:
     mean: 1.0
-    std: 0.2
+    std: 0.3
 solver: rk4
 backend: numba
 adaptive: true
-dt: 0.0005
+dt: 0.01
 resolution: 128
 bc:
   x: periodic
@@ -27,5 +27,5 @@ output:
   show_vectors: true
   vector_density: 16
 seed: 42
-domain_size: 2.0
-t_end: 50.0
+domain_size: 4.0
+t_end: 30.0

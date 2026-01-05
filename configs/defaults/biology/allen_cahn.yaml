@@ -1,16 +1,16 @@
 preset: allen-cahn
 parameters:
-  D: 0.1
-  a: 0.5
+  D: 0.01  # Minimum allowed diffusion for sharp fronts
+  a: 0.5  # Symmetric threshold
 init:
   type: random-uniform
   params:
-    low: -0.5
-    high: 0.5
-solver: rk4
+    low: 0.2
+    high: 0.8  # Start near unstable equilibrium
+solver: scipy
 backend: numba
 adaptive: true
-dt: 0.001
+dt: 0.1
 resolution: 128
 bc:
   x: periodic
@@ -22,4 +22,4 @@ output:
   field_to_plot: u
 seed: 42
 domain_size: 2.0
-t_end: 20.0
+t_end: 10.0

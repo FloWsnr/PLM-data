@@ -1,18 +1,20 @@
 preset: heterogeneous
 parameters:
-  D: 0.1
-  r_mean: 1.0
-  r_amp: 0.5
-  freq: 2.0
+  D: 0.01  # Lower diffusion for slower spreading
+  r_mean: 1.5  # Mean growth rate
+  r_amp: 1.2  # Larger spatial variation amplitude
+  freq: 4.0  # Higher frequency spatial variation
 init:
-  type: random-gaussian
+  type: gaussian-blobs
   params:
-    mean: 0.5
-    std: 0.1
-solver: rk4
+    num_blobs: 2
+    amplitude: 0.9
+    width: 0.05  # Smaller blobs
+    background: 0.0
+solver: scipy
 backend: numba
 adaptive: true
-dt: 0.01
+dt: 0.1
 resolution: 128
 bc:
   x: periodic
@@ -23,5 +25,5 @@ output:
   colormap: viridis
   field_to_plot: u
 seed: 42
-domain_size: 2.0
-t_end: 30.0
+domain_size: 5.0
+t_end: 10.0  # Watch spreading in heterogeneous environment

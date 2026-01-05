@@ -1,21 +1,17 @@
 preset: fitzhugh-nagumo
 parameters:
-  epsilon: 0.08
+  epsilon: 0.08  # Timescale separation
   a: 0.7
   b: 0.8
-  Du: 0.2
-  Dv: 0.0
+  Du: 0.2  # Activator diffusion
+  Dv: 0.0  # No inhibitor diffusion (local recovery)
 init:
-  type: gaussian-blobs
-  params:
-    num_blobs: 3
-    amplitude: 1.0
-    width: 0.05
-    background: -0.5
-solver: rk4
+  type: spiral-seed  # Special IC for spiral wave formation
+  params: {}
+solver: scipy
 backend: numba
 adaptive: true
-dt: 0.001
+dt: 0.1
 resolution: 128
 bc:
   x: periodic
@@ -24,9 +20,7 @@ output:
   path: ./output
   num_frames: 100
   colormap: turbo
-  field_to_plot: mag(u,v)
-  show_vectors: true
-  vector_density: 16
+  field_to_plot: u  # Show activator
 seed: 42
-domain_size: 2.0
-t_end: 100.0
+domain_size: 20.0  # Larger domain for spiral waves
+t_end: 100.0  # Longer time for spiral dynamics

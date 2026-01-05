@@ -1,15 +1,15 @@
 preset: harsh-environment
 parameters:
-  D: 0.1
-  r: 1.0
-  theta: 0.2
+  D: 0.02
+  r: 2.0
+  theta: 0.3
 init:
   type: gaussian-blobs
   params:
-    num_blobs: 3
+    num_blobs: 4
     amplitude: 0.8
-    width: 0.1
-    background: 0.1
+    width: 0.12
+    background: 0.15
 solver: rk4
 backend: numba
 adaptive: true
@@ -24,5 +24,5 @@ output:
   colormap: viridis
   field_to_plot: u
 seed: 42
-domain_size: 2.0
-t_end: 30.0
+domain_size: 3.0
+t_end: 15.0
