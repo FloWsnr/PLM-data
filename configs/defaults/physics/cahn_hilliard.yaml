@@ -1,7 +1,7 @@
 preset: cahn-hilliard
 parameters:
-  M: 0.5
-  gamma: 0.02
+  M: 1.0
+  gamma: 0.05
 init:
   type: random-uniform
   params:
@@ -10,8 +10,8 @@ init:
 solver: rk4
 backend: numba
 adaptive: true
-dt: 1.0e-06
-resolution: 128
+dt: 0.001
+resolution: 64
 bc:
   x: periodic
   y: periodic
@@ -21,5 +21,5 @@ output:
   colormap: coolwarm
   field_to_plot: u
 seed: 42
-domain_size: 2.0
-t_end: 0.1
+domain_size: 6.0
+t_end: 10.0

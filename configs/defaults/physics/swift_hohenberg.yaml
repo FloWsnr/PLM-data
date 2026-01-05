@@ -1,6 +1,6 @@
 preset: swift-hohenberg
 parameters:
-  r: 0.3
+  r: 0.5
   k: 1.0
   g2: 0.0
   g3: -1.0
@@ -8,12 +8,12 @@ init:
   type: random-gaussian
   params:
     mean: 0.0
-    std: 0.01
+    std: 0.05
 solver: rk4
 backend: numba
 adaptive: true
-dt: 0.01
-resolution: 128
+dt: 0.1
+resolution: 64
 bc:
   x: periodic
   y: periodic
@@ -23,5 +23,5 @@ output:
   colormap: seismic
   field_to_plot: u
 seed: 42
-domain_size: 20.0
-t_end: 40.0
+domain_size: 40.0
+t_end: 20.0
