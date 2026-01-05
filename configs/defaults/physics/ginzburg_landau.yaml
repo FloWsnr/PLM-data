@@ -8,10 +8,10 @@ init:
   params:
     mean: 0.1
     std: 0.2  # Larger initial perturbations
-solver: rk4
+solver: scipy  # Implicit solver for stiff complex dynamics (1.32x faster than rk4)
 backend: numba
 adaptive: true
-dt: 0.01
+dt: 0.05
 resolution: 128
 bc:
   x: periodic
