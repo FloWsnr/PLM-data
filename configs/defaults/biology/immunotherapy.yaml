@@ -1,34 +1,34 @@
 preset: immunotherapy
 parameters:
-  Dt: 0.005  # Lower tumor diffusion
-  Di: 0.05  # Immune cell diffusion
-  rT: 1.5  # Tumor growth rate
-  K: 1.0  # Carrying capacity
-  k: 2.0  # Kill rate of tumor by immune cells
-  s: 0.3  # Immune recruitment rate
-  rI: 0.8  # Immune proliferation rate
-  a: 0.15  # Immune saturation
-  dI: 0.4  # Immune death rate
+  Dt: 0.01  # Slightly higher tumor diffusion
+  Di: 0.05
+  rT: 1.5
+  K: 1.0
+  k: 2.0
+  s: 0.3
+  rI: 0.8
+  a: 0.15
+  dI: 0.4
 init:
   type: gaussian-blobs
   params:
-    num_blobs: 2  # Tumor foci
-    amplitude: 0.7
-    width: 0.08
-    background: 0.05
-solver: scipy
+    num_blobs: 2
+    amplitude: 0.5
+    width: 0.1
+    background: 0.1
+solver: euler
 backend: numba
-adaptive: true
-dt: 0.1
-resolution: 128
+adaptive: false
+dt: 0.001
+resolution: 64
 bc:
   x: periodic
   y: periodic
 output:
   path: ./output
-  num_frames: 100
-  colormap: hot  # Hot colormap for tumor density
-  field_to_plot: T  # Show tumor density
+  num_frames: 50
+  colormap: hot
+  field_to_plot: T
 seed: 42
-domain_size: 4.0
-t_end: 30.0  # Watch tumor-immune battle
+domain_size: 2.0
+t_end: 2.0

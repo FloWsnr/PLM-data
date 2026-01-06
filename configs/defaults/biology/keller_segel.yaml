@@ -1,28 +1,28 @@
 preset: keller-segel
 parameters:
-  c: 5.0  # Chemotaxis coefficient
-  D: 0.5  # Chemoattractant diffusion ratio
-  a: 1.0  # Chemoattractant decay rate
+  c: 5.0  # Higher chemotaxis for aggregation
+  D: 0.1  # Lower chemoattractant diffusion
+  a: 0.5  # Lower decay
 init:
   type: gaussian-blobs
   params:
-    num_blobs: 5
-    amplitude: 1.0
-    width: 0.1
+    num_blobs: 8
+    amplitude: 0.5
+    width: 0.08
     background: 0.1
-solver: rk4
+solver: euler
 backend: numba
-adaptive: true
-dt: 0.005
-resolution: 128
+adaptive: false
+dt: 0.00005  # Very small for KS stability
+resolution: 64
 bc:
   x: periodic
   y: periodic
 output:
   path: ./output
-  num_frames: 100
+  num_frames: 50
   colormap: turbo
   field_to_plot: u
 seed: 42
 domain_size: 2.0
-t_end: 15.0
+t_end: 0.2  # Short - KS aggregates fast

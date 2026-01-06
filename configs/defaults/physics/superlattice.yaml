@@ -21,7 +21,7 @@ init:
 solver: scipy  # Implicit solver for stiff 4-field dynamics
 backend: numba
 adaptive: true
-dt: 0.01
+dt: 0.1  # Larger dt for faster runtime
 resolution: 64
 bc:
   x: periodic
@@ -33,4 +33,4 @@ output:
   field_to_plot: u1
 seed: 42
 domain_size: 40.0
-t_end: 50.0  # Longer time for pattern formation
+t_end: 5.0  # Reduced time - patterns form quickly
