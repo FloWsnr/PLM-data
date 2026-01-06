@@ -13,18 +13,19 @@ from .. import register_pde
 class FitzHughNagumoPDE(MultiFieldPDEPreset):
     """FitzHugh-Nagumo model for excitable media.
 
-    Simplified model of neuron action potentials and cardiac tissue:
+    Pattern-forming version from visualpde.com:
 
-        du/dt = Du * laplace(u) + u - u³/3 - v
-        dv/dt = Dv * laplace(v) + epsilon * (u + a - b*v)
+        du/dt = Du * laplace(u) + u - u³ - v
+        dv/dt = Dv * laplace(v) + epsilon * (u - a_v * v - a_z)
 
     where:
         - u is the fast activator (membrane potential analog)
         - v is the slow inhibitor (recovery variable)
         - epsilon controls the timescale separation
-        - a, b are shape parameters
+        - a_v, a_z are parameters
 
     Produces spiral waves, target patterns, and propagating pulses.
+    For Turing patterns, typically D > 1.
     """
 
     @property
@@ -34,49 +35,49 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
             category="biology",
             description="FitzHugh-Nagumo excitable media",
             equations={
-                "u": "Du * laplace(u) + u - u**3/3 - v",
-                "v": "Dv * laplace(v) + epsilon * (u + a - b * v)",
+                "u": "Du * laplace(u) + u - u**3 - v",
+                "v": "Dv * laplace(v) + epsilon * (u - a_v * v - a_z)",
             },
             parameters=[
                 PDEParameter(
                     name="epsilon",
-                    default=0.08,
+                    default=0.1,
                     description="Timescale ratio (small for excitable)",
                     min_value=0.001,
                     max_value=0.5,
                 ),
                 PDEParameter(
-                    name="a",
-                    default=0.7,
-                    description="Parameter a",
+                    name="a_v",
+                    default=0.0,
+                    description="Coefficient of v in recovery",
                     min_value=0.0,
                     max_value=2.0,
                 ),
                 PDEParameter(
-                    name="b",
-                    default=0.8,
-                    description="Parameter b",
-                    min_value=0.0,
-                    max_value=2.0,
+                    name="a_z",
+                    default=0.0,
+                    description="Constant in recovery equation",
+                    min_value=-1.0,
+                    max_value=1.0,
                 ),
                 PDEParameter(
                     name="Du",
-                    default=0.2,
+                    default=1.0,
                     description="Diffusion of u",
                     min_value=0.05,
-                    max_value=1.0,
+                    max_value=5.0,
                 ),
                 PDEParameter(
                     name="Dv",
-                    default=0.0,
-                    description="Diffusion of v (often 0)",
+                    default=10.0,
+                    description="Diffusion of v (D > 1 for patterns)",
                     min_value=0.0,
-                    max_value=1.0,
+                    max_value=100.0,
                 ),
             ],
             num_fields=2,
             field_names=["u", "v"],
-            reference="Nerve impulse and cardiac tissue modeling",
+            reference="visualpde.com FitzHugh-Nagumo pattern formation",
         )
 
     def create_pde(
@@ -85,16 +86,17 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        epsilon = parameters.get("epsilon", 0.08)
-        a = parameters.get("a", 0.7)
-        b = parameters.get("b", 0.8)
-        Du = parameters.get("Du", 0.2)
-        Dv = parameters.get("Dv", 0.0)
+        epsilon = parameters.get("epsilon", 0.1)
+        a_v = parameters.get("a_v", 0.0)
+        a_z = parameters.get("a_z", 0.0)
+        Du = parameters.get("Du", 1.0)
+        Dv = parameters.get("Dv", 10.0)
 
-        u_eq = f"{Du} * laplace(u) + u - u**3 / 3 - v"
-        v_eq = f"{Dv} * laplace(v) + {epsilon} * (u + {a} - {b} * v)"
+        u_eq = f"{Du} * laplace(u) + u - u**3 - v"
         if Dv == 0:
-            v_eq = f"{epsilon} * (u + {a} - {b} * v)"
+            v_eq = f"{epsilon} * (u - {a_v} * v - {a_z})"
+        else:
+            v_eq = f"{Dv} * laplace(v) + {epsilon} * (u - {a_v} * v - {a_z})"
 
         return PDE(
             rhs={"u": u_eq, "v": v_eq},

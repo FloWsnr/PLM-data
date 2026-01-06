@@ -1,8 +1,7 @@
 preset: harsh-environment
 parameters:
-  D: 0.02
-  r: 2.0
-  theta: 0.3
+  D: 1.0  # Diffusion coefficient
+  K: 1.0  # Carrying capacity
 init:
   type: gaussian-blobs
   params:
@@ -16,13 +15,14 @@ adaptive: true
 dt: 0.01
 resolution: 128
 bc:
-  x: periodic
-  y: periodic
+  x: dirichlet  # Harsh boundary: u=0 at edges
+  y: dirichlet
+  value: 0.0
 output:
   path: ./output
   num_frames: 100
   colormap: viridis
   field_to_plot: u
 seed: 42
-domain_size: 3.0
-t_end: 15.0
+domain_size: 10.0  # L=10, critical D ~ 5.066
+t_end: 50.0

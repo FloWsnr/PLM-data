@@ -1,10 +1,10 @@
 preset: fitzhugh-nagumo
 parameters:
-  epsilon: 0.08  # Timescale separation
-  a: 0.7
-  b: 0.8
-  Du: 0.2  # Activator diffusion
-  Dv: 0.0  # No inhibitor diffusion (local recovery)
+  epsilon: 0.1  # Timescale separation
+  a_v: 0.0  # Coefficient of v in recovery
+  a_z: 0.0  # Constant in recovery equation
+  Du: 1.0  # Activator diffusion
+  Dv: 10.0  # Inhibitor diffusion (D > 1 for Turing patterns)
 init:
   type: spiral-seed  # Special IC for spiral wave formation
   params: {}

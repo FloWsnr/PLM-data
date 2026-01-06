@@ -1,18 +1,19 @@
 preset: vegetation
 parameters:
-  a: 1.5  # Water input rate (lower = drier)
-  v: 1.5  # Water uptake efficiency
-  m: 0.5  # Plant mortality rate
-  Dn: 0.0001  # Very low plant diffusion (plants don't move much)
+  a: 2.0  # Rainfall rate
+  v: 182.5  # Water flow velocity (downhill advection)
+  m: 0.45  # Plant mortality rate
+  Dw: 1.0  # Water diffusion coefficient
+  Dn: 1.0  # Plant dispersal coefficient
 init:
   type: random-gaussian
   params:
-    mean: 0.3
+    mean: 0.5
     std: 0.2
 solver: scipy
 backend: numba
 adaptive: true
-dt: 0.1
+dt: 0.01
 resolution: 128
 bc:
   x: periodic
@@ -24,4 +25,4 @@ output:
   field_to_plot: n  # Show plant biomass
 seed: 42
 domain_size: 5.0
-t_end: 100.0  # Longer time for vegetation patterns
+t_end: 50.0  # Time for vegetation patterns

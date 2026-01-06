@@ -1,11 +1,10 @@
 preset: gierer-meinhardt
 parameters:
-  Du: 0.01
-  Dv: 1.0
-  rho: 2.0
-  mu_u: 0.5
-  mu_v: 0.5
-  rho_u: 0.05
+  Du: 1.0  # Activator diffusion
+  Dv: 40.0  # Inhibitor diffusion (Dv >> Du for patterns)
+  a: 0.1  # Basal activator production
+  b: 1.0  # Activator decay rate
+  c: 1.0  # Inhibitor decay rate
 init:
   type: random-gaussian
   params:
@@ -23,9 +22,7 @@ output:
   path: ./output
   num_frames: 100
   colormap: turbo
-  field_to_plot: mag(u,v)
-  show_vectors: true
-  vector_density: 16
+  field_to_plot: u
 seed: 42
 domain_size: 4.0
 t_end: 30.0

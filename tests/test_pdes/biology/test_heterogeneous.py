@@ -1,10 +1,9 @@
-"""Tests for spatially heterogeneous model."""
+"""Tests for heterogeneous Gierer-Meinhardt model."""
 
 import numpy as np
 import pytest
-from pde import CartesianGrid, ScalarField
+from pde import CartesianGrid, FieldCollection
 
-from pde_sim.initial_conditions import create_initial_condition
 from pde_sim.pdes import get_pde_preset, list_presets
 
 
@@ -15,7 +14,7 @@ def small_grid():
 
 
 class TestHeterogeneousPDE:
-    """Tests for spatially heterogeneous model."""
+    """Tests for heterogeneous Gierer-Meinhardt model (visualpde.com)."""
 
     def test_registered(self):
         """Test that heterogeneous is registered."""
@@ -28,7 +27,9 @@ class TestHeterogeneousPDE:
 
         assert meta.name == "heterogeneous"
         assert meta.category == "biology"
-        assert meta.num_fields == 1
+        assert meta.num_fields == 2  # Two fields: u (activator), v (inhibitor)
+        assert "u" in meta.field_names
+        assert "v" in meta.field_names
 
     def test_short_simulation(self, small_grid):
         """Test running a short simulation."""
@@ -37,10 +38,10 @@ class TestHeterogeneousPDE:
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
-        # Use standard IC since heterogeneous doesn't have custom create_initial_state
-        state = create_initial_condition(small_grid, "random-uniform", {"min_val": 0.1, "max_val": 0.9})
+        state = preset.create_initial_state(small_grid, "default", {"noise": 0.01})
 
         result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
-        assert isinstance(result, ScalarField)
-        assert np.isfinite(result.data).all()
+        assert isinstance(result, FieldCollection)
+        assert np.isfinite(result[0].data).all()
+        assert np.isfinite(result[1].data).all()

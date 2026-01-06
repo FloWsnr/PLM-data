@@ -1,10 +1,8 @@
 preset: keller-segel
 parameters:
-  Du: 0.05
-  Dc: 0.5
-  chi: 0.8
-  alpha: 1.0
-  beta: 0.5
+  c: 5.0  # Chemotaxis coefficient
+  D: 0.5  # Chemoattractant diffusion ratio
+  a: 1.0  # Chemoattractant decay rate
 init:
   type: gaussian-blobs
   params:
@@ -24,9 +22,7 @@ output:
   path: ./output
   num_frames: 100
   colormap: turbo
-  field_to_plot: mag(u,c)
-  show_vectors: true
-  vector_density: 16
+  field_to_plot: u
 seed: 42
 domain_size: 2.0
 t_end: 15.0

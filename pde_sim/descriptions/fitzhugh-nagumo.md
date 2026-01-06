@@ -2,17 +2,19 @@
 
 ## Mathematical Formulation
 
-The FitzHugh-Nagumo equations describe excitable media:
+The FitzHugh-Nagumo equations describe excitable and pattern-forming media:
 
-$$\frac{\partial u}{\partial t} = D_u \nabla^2 u + u - \frac{u^3}{3} - v$$
-$$\frac{\partial v}{\partial t} = D_v \nabla^2 v + \varepsilon(u + a - bv)$$
+$$\frac{\partial u}{\partial t} = D_u \nabla^2 u + u - u^3 - v$$
+$$\frac{\partial v}{\partial t} = D_v \nabla^2 v + \varepsilon(u - a_v v - a_z)$$
 
 where:
 - $u$ is the fast activator (membrane potential analog)
 - $v$ is the slow recovery variable
 - $\varepsilon \ll 1$ controls timescale separation
-- $a, b$ are shape parameters
-- $D_u$ is activator diffusion (often $D_v = 0$)
+- $a_v, a_z$ are parameters controlling the v-nullcline
+- $D_u, D_v$ are diffusion coefficients (for Turing patterns, typically $D_v > D_u$)
+
+This is the pattern-forming version from visualpde.com, with the full $u^3$ cubic nonlinearity.
 
 ## Physical Background
 
@@ -24,8 +26,8 @@ The FitzHugh-Nagumo model is a simplified version of the Hodgkin-Huxley equation
 
 ## Nullclines and Phase Portrait
 
-The $u$-nullcline (cubic): $v = u - u^3/3$
-The $v$-nullcline (linear): $v = (u + a)/b$
+The $u$-nullcline (cubic): $v = u - u^3$
+The $v$-nullcline (linear): $v = (u - a_z)/a_v$
 
 The intersection determines the steady state. System behavior depends on the number and stability of intersections.
 
@@ -34,15 +36,14 @@ The intersection determines the steady state. System behavior depends on the num
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
 | Timescale ratio | $\varepsilon$ | Separation of fast/slow | 0.001 - 0.5 |
-| Parameter a | $a$ | Shifts v-nullcline | 0 - 2 |
-| Parameter b | $b$ | Slope of v-nullcline | 0 - 2 |
-| Diffusion u | $D_u$ | Activator diffusion | 0.05 - 1 |
-| Diffusion v | $D_v$ | Recovery diffusion (often 0) | 0 - 1 |
+| Parameter a_v | $a_v$ | Coefficient of v in recovery | 0 - 2 |
+| Parameter a_z | $a_z$ | Constant in recovery | -1 - 1 |
+| Diffusion u | $D_u$ | Activator diffusion | 0.05 - 5 |
+| Diffusion v | $D_v$ | Inhibitor diffusion | 0 - 100 |
 
-## Excitable vs Oscillatory Regime
+## Turing Patterns
 
-- **Excitable** ($a > 1 - b/3$): Single stable rest state, pulse propagation
-- **Oscillatory** ($a < 1 - b/3$): Unstable rest state, sustained oscillations
+For Turing pattern formation, typically $D_v > D_u$ (diffusion-driven instability). The patterns emerge when the inhibitor diffuses faster than the activator.
 
 ## Spatiotemporal Patterns
 

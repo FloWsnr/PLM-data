@@ -1,8 +1,8 @@
-"""Tests for population on terrain model."""
+"""Tests for Klausmeier vegetation on terrain model."""
 
 import numpy as np
 import pytest
-from pde import CartesianGrid, ScalarField
+from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
@@ -14,7 +14,7 @@ def small_grid():
 
 
 class TestTopographyPDE:
-    """Tests for population on terrain model."""
+    """Tests for Klausmeier vegetation on terrain (visualpde.com)."""
 
     def test_registered(self):
         """Test that topography is registered."""
@@ -27,7 +27,9 @@ class TestTopographyPDE:
 
         assert meta.name == "topography"
         assert meta.category == "biology"
-        assert meta.num_fields == 1
+        assert meta.num_fields == 2  # Two fields: water (w), vegetation (n)
+        assert "w" in meta.field_names
+        assert "n" in meta.field_names
 
     def test_short_simulation(self, small_grid):
         """Test running a short simulation."""
@@ -36,9 +38,10 @@ class TestTopographyPDE:
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "random-uniform", {"min_val": 0.1, "max_val": 0.9})
+        state = preset.create_initial_state(small_grid, "default", {"noise": 0.1})
 
         result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
-        assert isinstance(result, ScalarField)
-        assert np.isfinite(result.data).all()
+        assert isinstance(result, FieldCollection)
+        assert np.isfinite(result[0].data).all()
+        assert np.isfinite(result[1].data).all()

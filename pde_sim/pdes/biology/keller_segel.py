@@ -15,20 +15,23 @@ from .. import register_pde
 class KellerSegelPDE(MultiFieldPDEPreset):
     """Keller-Segel chemotaxis model.
 
-    Describes cell movement in response to chemical signals:
+    Standard formulation from visualpde.com with logistic growth:
 
-        du/dt = Du * laplace(u) - chi * div(u * grad(c))
-        dc/dt = Dc * laplace(c) + alpha * u - beta * c
+        du/dt = ∇²u - ∇·(χ(u)∇v) + u(1-u)
+        dv/dt = D∇²v + u - a*v
 
-    where:
+    where χ(u) = c*u/(1+u²) is the chemotactic sensitivity function.
+
+    Components:
         - u is the cell density
-        - c is the chemoattractant concentration
-        - Du, Dc are diffusion coefficients
-        - chi is the chemotactic sensitivity
-        - alpha is the chemoattractant production rate
-        - beta is the chemoattractant decay rate
+        - v is the chemoattractant concentration
+        - c is the chemotaxis coefficient
+        - D is the chemoattractant diffusion ratio
+        - a is the chemoattractant decay rate
 
-    This model can exhibit blow-up (aggregation) in finite time.
+    Pattern formation occurs for: 2√(aD) < c/2 - D - a
+
+    Reference: Keller & Segel (1970), visualpde.com
     """
 
     @property
@@ -36,51 +39,37 @@ class KellerSegelPDE(MultiFieldPDEPreset):
         return PDEMetadata(
             name="keller-segel",
             category="biology",
-            description="Keller-Segel chemotaxis model",
+            description="Keller-Segel chemotaxis with logistic growth",
             equations={
-                "u": "Du * laplace(u) - chi * div(u * gradient(c))",
-                "c": "Dc * laplace(c) + alpha * u - beta * c",
+                "u": "laplace(u) - div(chi(u) * gradient(v)) + u * (1 - u)",
+                "v": "D * laplace(v) + u - a * v",
             },
             parameters=[
                 PDEParameter(
-                    name="Du",
-                    default=0.1,
-                    description="Cell diffusion coefficient",
-                    min_value=0.01,
-                    max_value=0.5,
+                    name="c",
+                    default=5.0,
+                    description="Chemotaxis coefficient",
+                    min_value=1.0,
+                    max_value=20.0,
                 ),
                 PDEParameter(
-                    name="Dc",
-                    default=0.2,
-                    description="Chemoattractant diffusion coefficient",
-                    min_value=0.01,
-                    max_value=1.0,
-                ),
-                PDEParameter(
-                    name="chi",
-                    default=1.0,
-                    description="Chemotactic sensitivity",
-                    min_value=0.0,
+                    name="D",
+                    default=0.5,
+                    description="Chemoattractant diffusion ratio",
+                    min_value=0.1,
                     max_value=5.0,
                 ),
                 PDEParameter(
-                    name="alpha",
-                    default=1.0,
-                    description="Chemoattractant production rate",
-                    min_value=0.0,
-                    max_value=5.0,
-                ),
-                PDEParameter(
-                    name="beta",
+                    name="a",
                     default=1.0,
                     description="Chemoattractant decay rate",
-                    min_value=0.01,
+                    min_value=0.1,
                     max_value=5.0,
                 ),
             ],
             num_fields=2,
-            field_names=["u", "c"],
-            reference="Keller & Segel (1970) chemotaxis",
+            field_names=["u", "v"],
+            reference="visualpde.com Keller-Segel chemotaxis",
         )
 
     def create_pde(
@@ -89,22 +78,28 @@ class KellerSegelPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        Du = parameters.get("Du", 0.1)
-        Dc = parameters.get("Dc", 0.2)
-        chi = parameters.get("chi", 1.0)
-        alpha = parameters.get("alpha", 1.0)
-        beta = parameters.get("beta", 1.0)
+        c = parameters.get("c", 5.0)
+        D = parameters.get("D", 0.5)
+        a = parameters.get("a", 1.0)
 
-        # Note: py-pde uses "gradient" not "grad"
-        # The divergence of u*grad(c) requires careful handling
-        # Using the approximation: div(u*grad(c)) ~ u*laplace(c) + grad(u).grad(c)
-        u_rhs = f"{Du} * laplace(u) - {chi} * (u * laplace(c) + inner(gradient(u), gradient(c)))"
-        c_rhs = f"{Dc} * laplace(c) + {alpha} * u - {beta} * c"
+        # χ(u) = c*u/(1+u²)
+        # ∇·(χ(u)∇v) = χ(u)*∇²v + χ'(u)*∇u·∇v
+        # χ'(u) = c*(1-u²)/(1+u²)²
+        # Simplified: use χ*laplace(v) + (∂χ/∂u)*gradient(u)·gradient(v)
+        chi_expr = f"{c} * u / (1 + u**2)"
+        chi_deriv = f"{c} * (1 - u**2) / (1 + u**2)**2"
+
+        u_rhs = (
+            f"laplace(u) - ({chi_expr}) * laplace(v) "
+            f"- ({chi_deriv}) * inner(gradient(u), gradient(v)) "
+            f"+ u * (1 - u)"
+        )
+        v_rhs = f"{D} * laplace(v) + u - {a} * v"
 
         return PDE(
             rhs={
                 "u": u_rhs,
-                "c": c_rhs,
+                "v": v_rhs,
             },
             bc=self._convert_bc(bc),
         )
@@ -127,10 +122,10 @@ class KellerSegelPDE(MultiFieldPDEPreset):
             u.label = "u"
 
             # Chemoattractant - start uniform
-            c = ScalarField(grid, np.ones(grid.shape) * 0.1)
-            c.label = "c"
+            v = ScalarField(grid, np.ones(grid.shape) * 0.1)
+            v.label = "v"
 
-            return FieldCollection([u, c])
+            return FieldCollection([u, v])
 
         # Use parent implementation for other IC types
         return super().create_initial_state(grid, ic_type, ic_params)

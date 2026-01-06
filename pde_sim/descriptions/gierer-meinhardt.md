@@ -2,18 +2,18 @@
 
 ## Mathematical Formulation
 
-The Gierer-Meinhardt activator-inhibitor system:
+The Gierer-Meinhardt activator-inhibitor system (visualpde.com formulation):
 
-$$\frac{\partial u}{\partial t} = D_u \nabla^2 u + \rho\frac{u^2}{v} - \mu_u u + \rho_u$$
-$$\frac{\partial v}{\partial t} = D_v \nabla^2 v + \rho u^2 - \mu_v v$$
+$$\frac{\partial u}{\partial t} = D_u \nabla^2 u + a + \frac{u^2}{v} - bu$$
+$$\frac{\partial v}{\partial t} = D_v \nabla^2 v + u^2 - cv$$
 
 where:
 - $u$ is the activator concentration
 - $v$ is the inhibitor concentration
 - $D_u, D_v$ are diffusion coefficients ($D_v \gg D_u$)
-- $\rho$ is the production rate
-- $\mu_u, \mu_v$ are decay rates
-- $\rho_u$ is basal activator production
+- $a$ is basal activator production
+- $b$ is activator decay rate
+- $c$ is inhibitor decay rate
 
 ## Physical Background
 
@@ -30,12 +30,11 @@ This mechanism was proposed to explain morphogenesis and regeneration in Hydra.
 
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
-| Activator diffusion | $D_u$ | Short-range (slow) | 0.001 - 0.1 |
-| Inhibitor diffusion | $D_v$ | Long-range (fast) | 0.05 - 2 |
-| Production rate | $\rho$ | Reaction strength | 0.1 - 5 |
-| Activator decay | $\mu_u$ | Degradation rate | 0.01 - 1 |
-| Inhibitor decay | $\mu_v$ | Degradation rate | 0.01 - 1 |
-| Basal production | $\rho_u$ | Background source | 0 - 0.5 |
+| Activator diffusion | $D_u$ | Short-range (slow) | 0.1 - 10 |
+| Inhibitor diffusion | $D_v$ | Long-range (fast) | 1 - 200 |
+| Basal production | $a$ | Background activator source | 0 - 1 |
+| Activator decay | $b$ | Degradation rate | 0.1 - 5 |
+| Inhibitor decay | $c$ | Degradation rate | 0.1 - 5 |
 
 ## Turing Instability Conditions
 

@@ -25,18 +25,16 @@ class TestKellerSegelPDE:
         assert meta.category == "biology"
         assert meta.num_fields == 2
         assert "u" in meta.field_names  # cells
-        assert "c" in meta.field_names  # chemoattractant
+        assert "v" in meta.field_names  # chemoattractant
 
     def test_get_default_parameters(self):
         """Test default parameters retrieval."""
         preset = get_pde_preset("keller-segel")
         params = preset.get_default_parameters()
 
-        assert "Du" in params
-        assert "Dc" in params
-        assert "chi" in params  # chemotactic sensitivity
-        assert "alpha" in params  # production
-        assert "beta" in params  # decay
+        assert "c" in params  # chemotaxis coefficient
+        assert "D" in params  # diffusion ratio
+        assert "a" in params  # decay rate
 
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
@@ -57,7 +55,7 @@ class TestKellerSegelPDE:
         assert isinstance(state, FieldCollection)
         assert len(state) == 2
         assert state[0].label == "u"
-        assert state[1].label == "c"
+        assert state[1].label == "v"
 
     def test_registered_in_registry(self):
         """Test that PDE is registered."""
@@ -67,7 +65,7 @@ class TestKellerSegelPDE:
         """Test running a short simulation."""
         preset = get_pde_preset("keller-segel")
         # Use moderate parameters to avoid blow-up
-        params = {"Du": 1.0, "Dc": 1.0, "chi": 0.5, "alpha": 0.5, "beta": 1.0}
+        params = {"c": 3.0, "D": 1.0, "a": 1.0}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)

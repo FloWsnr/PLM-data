@@ -2,17 +2,18 @@
 
 ## Mathematical Formulation
 
-The Klausmeier model for vegetation-water dynamics on slopes:
+The Klausmeier model for vegetation-water dynamics on slopes (visualpde.com formulation):
 
-$$\frac{\partial w}{\partial t} = a - w - wn^2 + v\frac{\partial w}{\partial x}$$
+$$\frac{\partial w}{\partial t} = D_w \nabla^2 w + a - w - wn^2 + v\frac{\partial w}{\partial x}$$
 $$\frac{\partial n}{\partial t} = D_n \nabla^2 n + wn^2 - mn$$
 
 where:
 - $w$ is water density
 - $n$ is vegetation (plant) density
 - $a$ is rainfall rate
-- $v$ is water flow velocity (downslope)
+- $v$ is water flow velocity (downslope advection)
 - $m$ is plant mortality rate
+- $D_w$ is water diffusion coefficient
 - $D_n$ is plant dispersal coefficient
 
 ## Physical Background
@@ -32,9 +33,10 @@ The interplay creates bands perpendicular to slope direction.
 | Parameter | Symbol | Description | Typical Range |
 |-----------|--------|-------------|---------------|
 | Rainfall | $a$ | Water input rate | 0.1 - 5 |
-| Flow velocity | $v$ | Downslope water speed | 0 - 2 |
+| Flow velocity | $v$ | Downslope water speed | 0 - 500 |
 | Mortality | $m$ | Plant death rate | 0.01 - 2 |
-| Dispersal | $D_n$ | Plant seed spread | 0.001 - 0.1 |
+| Water diffusion | $D_w$ | Water spreading | 0.1 - 10 |
+| Plant dispersal | $D_n$ | Plant seed spread | 0.1 - 10 |
 
 ## Pattern Types
 

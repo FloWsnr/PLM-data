@@ -1,4 +1,4 @@
-"""Population in harsh environment with Allee effect."""
+"""Population in harsh environment - logistic growth with boundary effects."""
 
 from typing import Any
 
@@ -13,19 +13,21 @@ from .. import register_pde
 
 @register_pde("harsh-environment")
 class HarshEnvironmentPDE(ScalarPDEPreset):
-    """Population in harsh environment with Allee effect.
+    """Population in harsh environment - logistic reaction-diffusion.
 
-    Population dynamics with strong Allee effect:
+    Standard logistic growth from visualpde.com:
 
-        du/dt = D * laplace(u) + r * u * (u - theta) * (1 - u)
+        du/dt = D*∇²u + u*(1 - u/K)
 
-    where:
-        - u is population density (normalized)
-        - D is diffusion coefficient
-        - r is growth rate
-        - theta is Allee threshold (below which population declines)
+    The "harsh environment" comes from BOUNDARY CONDITIONS, not the
+    reaction term. With Dirichlet BCs (u=0 at boundaries), populations
+    must overcome both diffusion loss and boundary death.
 
-    Exhibits bistability: extinction or survival depending on initial density.
+    Key result: Population persists if and only if D < L²/(2π²), where L
+    is the domain size. For larger D, boundary effects dominate and the
+    population goes extinct.
+
+    Reference: visualpde.com harsh environment
     """
 
     @property
@@ -33,34 +35,27 @@ class HarshEnvironmentPDE(ScalarPDEPreset):
         return PDEMetadata(
             name="harsh-environment",
             category="biology",
-            description="Allee effect in harsh environment",
-            equations={"u": "D * laplace(u) + r * u * (u - theta) * (1 - u)"},
+            description="Logistic growth with harsh boundary conditions",
+            equations={"u": "D * laplace(u) + u * (1 - u/K)"},
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=0.1,
+                    default=1.0,
                     description="Diffusion coefficient",
                     min_value=0.01,
-                    max_value=0.5,
+                    max_value=10.0,
                 ),
                 PDEParameter(
-                    name="r",
+                    name="K",
                     default=1.0,
-                    description="Growth rate",
+                    description="Carrying capacity",
                     min_value=0.1,
-                    max_value=5.0,
-                ),
-                PDEParameter(
-                    name="theta",
-                    default=0.2,
-                    description="Allee threshold",
-                    min_value=0.0,
-                    max_value=0.5,
+                    max_value=10.0,
                 ),
             ],
             num_fields=1,
             field_names=["u"],
-            reference="Strong Allee effect model",
+            reference="visualpde.com harsh environment",
         )
 
     def create_pde(
@@ -69,12 +64,11 @@ class HarshEnvironmentPDE(ScalarPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        D = parameters.get("D", 0.1)
-        r = parameters.get("r", 1.0)
-        theta = parameters.get("theta", 0.2)
+        D = parameters.get("D", 1.0)
+        K = parameters.get("K", 1.0)
 
         return PDE(
-            rhs={"u": f"{D} * laplace(u) + {r} * u * (u - {theta}) * (1 - u)"},
+            rhs={"u": f"{D} * laplace(u) + u * (1 - u / {K})"},
             bc=self._convert_bc(bc),
         )
 
@@ -84,16 +78,20 @@ class HarshEnvironmentPDE(ScalarPDEPreset):
         ic_type: str,
         ic_params: dict[str, Any],
     ) -> ScalarField:
-        """Create initial population patch."""
+        """Create initial population - localized patches."""
         if ic_type in ("harsh-environment-default", "default"):
-            # Population patch above Allee threshold
+            # Multiple population patches
+            np.random.seed(ic_params.get("seed"))
             x, y = np.meshgrid(
                 np.linspace(0, 1, grid.shape[0]),
                 np.linspace(0, 1, grid.shape[1]),
                 indexing="ij",
             )
-            r_sq = (x - 0.5) ** 2 + (y - 0.5) ** 2
-            data = 0.8 * np.exp(-r_sq / 0.05)
-            return ScalarField(grid, data)
+            # Create a few patches
+            data = np.zeros(grid.shape)
+            for cx, cy in [(0.3, 0.3), (0.7, 0.5), (0.5, 0.7)]:
+                r_sq = (x - cx) ** 2 + (y - cy) ** 2
+                data += 0.8 * np.exp(-r_sq / 0.02)
+            return ScalarField(grid, np.clip(data, 0, 1))
 
         return create_initial_condition(grid, ic_type, ic_params)

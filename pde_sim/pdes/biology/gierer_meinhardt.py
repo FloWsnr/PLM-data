@@ -13,22 +13,22 @@ from .. import register_pde
 class GiererMeinhardtPDE(MultiFieldPDEPreset):
     """Gierer-Meinhardt activator-inhibitor system.
 
-    A classic model for biological pattern formation:
+    Standard formulation from visualpde.com:
 
-        du/dt = Du * laplace(u) + rho * (u^2 / v) - mu_u * u + rho_u
-        dv/dt = Dv * laplace(v) + rho * u^2 - mu_v * v
+        du/dt = Du * laplace(u) + a + u²/v - b*u
+        dv/dt = Dv * laplace(v) + u² - c*v
 
     where:
         - u is the activator concentration
         - v is the inhibitor concentration
         - Du, Dv are diffusion coefficients (Dv >> Du for patterns)
-        - rho is the production rate
-        - mu_u, mu_v are decay rates
-        - rho_u is the basal activator production
+        - a is basal activator production
+        - b is activator decay rate
+        - c is inhibitor decay rate
 
-    For Turing patterns: Dv/Du >> 1 (typically ~10-100)
+    For Turing patterns: Dv/Du >> 1 (D > 1, typically ~10-100)
 
-    Reference: Gierer & Meinhardt (1972)
+    Reference: Gierer & Meinhardt (1972), visualpde.com
     """
 
     @property
@@ -38,56 +38,49 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
             category="biology",
             description="Gierer-Meinhardt activator-inhibitor pattern formation",
             equations={
-                "u": "Du * laplace(u) + rho * u**2 / v - mu_u * u + rho_u",
-                "v": "Dv * laplace(v) + rho * u**2 - mu_v * v",
+                "u": "Du * laplace(u) + a + u**2 / v - b * u",
+                "v": "Dv * laplace(v) + u**2 - c * v",
             },
             parameters=[
                 PDEParameter(
                     name="Du",
-                    default=0.005,
+                    default=1.0,
                     description="Activator diffusion coefficient",
-                    min_value=0.001,
-                    max_value=0.1,
+                    min_value=0.1,
+                    max_value=10.0,
                 ),
                 PDEParameter(
                     name="Dv",
-                    default=0.5,
-                    description="Inhibitor diffusion coefficient",
-                    min_value=0.05,
-                    max_value=2.0,
+                    default=40.0,
+                    description="Inhibitor diffusion coefficient (D = Dv/Du > 1)",
+                    min_value=1.0,
+                    max_value=200.0,
                 ),
                 PDEParameter(
-                    name="rho",
+                    name="a",
+                    default=0.1,
+                    description="Basal activator production",
+                    min_value=0.0,
+                    max_value=1.0,
+                ),
+                PDEParameter(
+                    name="b",
                     default=1.0,
-                    description="Production rate",
+                    description="Activator decay rate",
                     min_value=0.1,
                     max_value=5.0,
                 ),
                 PDEParameter(
-                    name="mu_u",
-                    default=0.1,
-                    description="Activator decay rate",
-                    min_value=0.01,
-                    max_value=1.0,
-                ),
-                PDEParameter(
-                    name="mu_v",
-                    default=0.1,
+                    name="c",
+                    default=1.0,
                     description="Inhibitor decay rate",
-                    min_value=0.01,
-                    max_value=1.0,
-                ),
-                PDEParameter(
-                    name="rho_u",
-                    default=0.01,
-                    description="Basal activator production",
-                    min_value=0.0,
-                    max_value=0.5,
+                    min_value=0.1,
+                    max_value=5.0,
                 ),
             ],
             num_fields=2,
             field_names=["u", "v"],
-            reference="Gierer & Meinhardt (1972) Turing patterns",
+            reference="visualpde.com Gierer-Meinhardt pattern formation",
         )
 
     def create_pde(
@@ -96,16 +89,15 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        Du = parameters.get("Du", 0.005)
-        Dv = parameters.get("Dv", 0.5)
-        rho = parameters.get("rho", 1.0)
-        mu_u = parameters.get("mu_u", 0.1)
-        mu_v = parameters.get("mu_v", 0.1)
-        rho_u = parameters.get("rho_u", 0.01)
+        Du = parameters.get("Du", 1.0)
+        Dv = parameters.get("Dv", 40.0)
+        a = parameters.get("a", 0.1)
+        b = parameters.get("b", 1.0)
+        c = parameters.get("c", 1.0)
 
-        # Build equation strings
-        u_rhs = f"{Du} * laplace(u) + {rho} * u**2 / (v + 1e-10) - {mu_u} * u + {rho_u}"
-        v_rhs = f"{Dv} * laplace(v) + {rho} * u**2 - {mu_v} * v"
+        # Build equation strings (add small epsilon to prevent division by zero)
+        u_rhs = f"{Du} * laplace(u) + {a} + u**2 / (v + 1e-10) - {b} * u"
+        v_rhs = f"{Dv} * laplace(v) + u**2 - {c} * v"
 
         return PDE(
             rhs={

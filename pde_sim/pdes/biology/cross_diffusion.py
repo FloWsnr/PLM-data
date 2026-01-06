@@ -1,4 +1,4 @@
-"""Cross-diffusion system (Shigesada-Kawasaki-Teramoto model)."""
+"""Cross-diffusion Schnakenberg system."""
 
 from typing import Any
 
@@ -11,18 +11,20 @@ from .. import register_pde
 
 @register_pde("cross-diffusion")
 class CrossDiffusionPDE(MultiFieldPDEPreset):
-    """Cross-diffusion system (Shigesada-Kawasaki-Teramoto model).
+    """Cross-diffusion Schnakenberg system.
 
-    Two species with density-dependent diffusion:
+    Schnakenberg kinetics with cross-diffusion from visualpde.com:
 
-        du/dt = laplace((d1 + a11*u + a12*v) * u) + u * (r1 - b1*u - c1*v)
-        dv/dt = laplace((d2 + a21*u + a22*v) * v) + v * (r2 - b2*v - c2*u)
+        du/dt = ∇·(Duu*∇u + Duv*∇v) + a - u + u²v
+        dv/dt = ∇·(Dvu*∇u + Dvv*∇v) + b - u²v
 
-    Simplified version:
-        du/dt = D1 * laplace(u) + alpha * laplace(u*v) + u * (1 - u - v)
-        dv/dt = D2 * laplace(v) + beta * laplace(u*v) + v * (1 - u - v)
+    This extends the standard Schnakenberg model with cross-diffusion terms
+    that allow pattern formation even when Duu = Dvv (equal self-diffusion).
 
-    Cross-diffusion can produce patterns even without Turing instability.
+    Cross-diffusion can produce localized 'dark soliton' patterns and
+    extends the parameter space for Turing instabilities.
+
+    Reference: visualpde.com cross-diffusion
     """
 
     @property
@@ -30,44 +32,58 @@ class CrossDiffusionPDE(MultiFieldPDEPreset):
         return PDEMetadata(
             name="cross-diffusion",
             category="biology",
-            description="Cross-diffusion pattern formation",
+            description="Cross-diffusion Schnakenberg pattern formation",
             equations={
-                "u": "D1 * laplace(u) + alpha * laplace(u*v) + u * (1 - u - v)",
-                "v": "D2 * laplace(v) + beta * laplace(u*v) + v * (1 - u - v)",
+                "u": "div(Duu*gradient(u) + Duv*gradient(v)) + a - u + u**2*v",
+                "v": "div(Dvu*gradient(u) + Dvv*gradient(v)) + b - u**2*v",
             },
             parameters=[
                 PDEParameter(
-                    name="D1",
-                    default=0.05,
-                    description="Diffusion of species u",
-                    min_value=0.01,
-                    max_value=0.5,
+                    name="Duu",
+                    default=1.0,
+                    description="Self-diffusion of u",
+                    min_value=0.1,
+                    max_value=10.0,
                 ),
                 PDEParameter(
-                    name="D2",
-                    default=0.05,
-                    description="Diffusion of species v",
-                    min_value=0.01,
-                    max_value=0.5,
-                ),
-                PDEParameter(
-                    name="alpha",
-                    default=0.5,
-                    description="Cross-diffusion coefficient for u",
-                    min_value=0.0,
-                    max_value=5.0,
-                ),
-                PDEParameter(
-                    name="beta",
+                    name="Duv",
                     default=0.0,
-                    description="Cross-diffusion coefficient for v",
+                    description="Cross-diffusion: u responds to v gradient",
+                    min_value=-10.0,
+                    max_value=10.0,
+                ),
+                PDEParameter(
+                    name="Dvu",
+                    default=-10.0,
+                    description="Cross-diffusion: v responds to u gradient",
+                    min_value=-20.0,
+                    max_value=20.0,
+                ),
+                PDEParameter(
+                    name="Dvv",
+                    default=1.0,
+                    description="Self-diffusion of v",
+                    min_value=0.1,
+                    max_value=10.0,
+                ),
+                PDEParameter(
+                    name="a",
+                    default=0.1,
+                    description="Feed rate for u",
                     min_value=0.0,
-                    max_value=5.0,
+                    max_value=1.0,
+                ),
+                PDEParameter(
+                    name="b",
+                    default=0.9,
+                    description="Feed rate for v",
+                    min_value=0.1,
+                    max_value=2.0,
                 ),
             ],
             num_fields=2,
             field_names=["u", "v"],
-            reference="Shigesada-Kawasaki-Teramoto cross-diffusion",
+            reference="visualpde.com cross-diffusion Schnakenberg",
         )
 
     def create_pde(
@@ -76,13 +92,16 @@ class CrossDiffusionPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        D1 = parameters.get("D1", 0.05)
-        D2 = parameters.get("D2", 0.05)
-        alpha = parameters.get("alpha", 0.5)
-        beta = parameters.get("beta", 0.0)
+        Duu = parameters.get("Duu", 1.0)
+        Duv = parameters.get("Duv", 0.0)
+        Dvu = parameters.get("Dvu", -10.0)
+        Dvv = parameters.get("Dvv", 1.0)
+        a = parameters.get("a", 0.1)
+        b = parameters.get("b", 0.9)
 
-        u_rhs = f"{D1} * laplace(u) + {alpha} * laplace(u*v) + u * (1 - u - v)"
-        v_rhs = f"{D2} * laplace(v) + {beta} * laplace(u*v) + v * (1 - u - v)"
+        # Cross-diffusion: ∇·(D_ij ∇f_j) = D_ij * laplace(f_j) for constant D
+        u_rhs = f"{Duu} * laplace(u) + {Duv} * laplace(v) + {a} - u + u**2 * v"
+        v_rhs = f"{Dvu} * laplace(u) + {Dvv} * laplace(v) + {b} - u**2 * v"
 
         return PDE(
             rhs={"u": u_rhs, "v": v_rhs},

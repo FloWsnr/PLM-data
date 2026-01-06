@@ -34,7 +34,9 @@ class TestGiererMeinhardtPDE:
 
         assert "Du" in params
         assert "Dv" in params
-        assert "rho" in params
+        assert "a" in params  # basal production
+        assert "b" in params  # decay rate
+        assert "c" in params  # inhibitor decay
         assert params["Dv"] > params["Du"]  # Inhibitor should diffuse faster
 
     def test_create_pde(self, small_grid):
@@ -68,7 +70,7 @@ class TestGiererMeinhardtPDE:
     def test_short_simulation(self, small_grid):
         """Test running a short simulation."""
         preset = get_pde_preset("gierer-meinhardt")
-        params = {"Du": 0.01, "Dv": 1.0, "rho": 1.0, "mu_u": 0.1, "mu_v": 0.1, "rho_u": 0.01}
+        params = {"Du": 1.0, "Dv": 40.0, "a": 0.1, "b": 1.0, "c": 1.0}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)

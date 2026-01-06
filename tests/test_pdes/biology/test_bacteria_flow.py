@@ -1,8 +1,8 @@
-"""Tests for bacteria chemotaxis with flow model."""
+"""Tests for bacteria advection-decay in flowing river model."""
 
 import numpy as np
 import pytest
-from pde import CartesianGrid, FieldCollection
+from pde import CartesianGrid, ScalarField
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
@@ -14,7 +14,7 @@ def small_grid():
 
 
 class TestBacteriaFlowPDE:
-    """Tests for bacteria chemotaxis with flow model."""
+    """Tests for bacteria advection-decay model (visualpde.com)."""
 
     def test_registered(self):
         """Test that bacteria-flow is registered."""
@@ -27,9 +27,8 @@ class TestBacteriaFlowPDE:
 
         assert meta.name == "bacteria-flow"
         assert meta.category == "biology"
-        assert meta.num_fields == 2
-        assert "b" in meta.field_names  # bacteria
-        assert "c" in meta.field_names  # chemical
+        assert meta.num_fields == 1  # Single field: concentration C
+        assert "C" in meta.field_names  # bacteria concentration
 
     def test_short_simulation(self, small_grid):
         """Test running a short simulation."""
@@ -42,5 +41,5 @@ class TestBacteriaFlowPDE:
 
         result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
-        assert isinstance(result, FieldCollection)
-        assert np.isfinite(result[0].data).all()
+        assert isinstance(result, ScalarField)
+        assert np.isfinite(result.data).all()

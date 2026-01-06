@@ -13,20 +13,23 @@ from .. import register_pde
 class VegetationPDE(MultiFieldPDEPreset):
     """Klausmeier vegetation model for semi-arid ecosystems.
 
-    Models water-vegetation dynamics on sloped terrain:
+    Standard formulation from visualpde.com:
 
-        dw/dt = a - w - w * n^2 + v * d_dx(w)
-        dn/dt = Dn * laplace(n) + w * n^2 - m * n
+        dw/dt = a - w - w*n² + v*∂w/∂x + Dw*∇²w
+        dn/dt = w*n² - m*n + Dn*∇²n
 
     where:
         - w is water density
         - n is vegetation (plant) density
         - a is rainfall rate
-        - v is water flow velocity (downhill)
+        - v is water flow velocity (downhill advection)
         - m is plant mortality rate
+        - Dw is water diffusion (spreading)
         - Dn is plant dispersal
 
     Produces banded vegetation patterns on hillslopes.
+
+    Reference: Klausmeier (1999), visualpde.com
     """
 
     @property
@@ -36,7 +39,7 @@ class VegetationPDE(MultiFieldPDEPreset):
             category="biology",
             description="Klausmeier vegetation-water dynamics",
             equations={
-                "w": "a - w - w * n**2 + v * d_dx(w)",
+                "w": "Dw * laplace(w) + a - w - w * n**2 + v * d_dx(w)",
                 "n": "Dn * laplace(n) + w * n**2 - m * n",
             },
             parameters=[
@@ -49,10 +52,10 @@ class VegetationPDE(MultiFieldPDEPreset):
                 ),
                 PDEParameter(
                     name="v",
-                    default=0.5,
-                    description="Water flow velocity",
+                    default=182.5,
+                    description="Water flow velocity (downhill)",
                     min_value=0.0,
-                    max_value=2.0,
+                    max_value=500.0,
                 ),
                 PDEParameter(
                     name="m",
@@ -62,16 +65,23 @@ class VegetationPDE(MultiFieldPDEPreset):
                     max_value=2.0,
                 ),
                 PDEParameter(
+                    name="Dw",
+                    default=1.0,
+                    description="Water diffusion coefficient",
+                    min_value=0.1,
+                    max_value=10.0,
+                ),
+                PDEParameter(
                     name="Dn",
-                    default=0.01,
+                    default=1.0,
                     description="Plant dispersal coefficient",
-                    min_value=0.001,
-                    max_value=0.1,
+                    min_value=0.1,
+                    max_value=10.0,
                 ),
             ],
             num_fields=2,
             field_names=["w", "n"],
-            reference="Klausmeier (1999) vegetation patterns",
+            reference="visualpde.com Klausmeier vegetation patterns",
         )
 
     def create_pde(
@@ -81,19 +91,23 @@ class VegetationPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
     ) -> PDE:
         a = parameters.get("a", 2.0)
-        v = parameters.get("v", 0.5)
+        v = parameters.get("v", 182.5)
         m = parameters.get("m", 0.45)
-        Dn = parameters.get("Dn", 0.01)
+        Dw = parameters.get("Dw", 1.0)
+        Dn = parameters.get("Dn", 1.0)
 
-        # Water equation with advection
-        w_rhs = f"{a} - w - w * n**2"
+        # Water equation: diffusion + rainfall - loss - uptake by plants + advection
+        w_rhs = f"{Dw} * laplace(w) + {a} - w - w * n**2"
         if v != 0:
             w_rhs += f" + {v} * d_dx(w)"
+
+        # Vegetation equation: growth from water - mortality + dispersal
+        n_rhs = f"{Dn} * laplace(n) + w * n**2 - {m} * n"
 
         return PDE(
             rhs={
                 "w": w_rhs,
-                "n": f"{Dn} * laplace(n) + w * n**2 - {m} * n",
+                "n": n_rhs,
             },
             bc=self._convert_bc(bc),
         )

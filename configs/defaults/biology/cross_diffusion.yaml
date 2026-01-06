@@ -1,18 +1,20 @@
 preset: cross-diffusion
 parameters:
-  D1: 0.01  # Minimum allowed base diffusion
-  D2: 0.01
-  alpha: 2.0  # Strong cross-diffusion
-  beta: 0.5  # Stronger cross-diffusion effect
+  Duu: 1.0  # Self-diffusion of u
+  Duv: 0.0  # Cross-diffusion: u responds to v gradient
+  Dvu: -10.0  # Cross-diffusion: v responds to u gradient
+  Dvv: 1.0  # Self-diffusion of v
+  a: 0.1  # Feed rate for u (Schnakenberg kinetics)
+  b: 0.9  # Feed rate for v
 init:
   type: random-gaussian
   params:
     mean: 0.5
-    std: 0.3  # More variability
+    std: 0.3
 solver: scipy
 backend: numba
 adaptive: true
-dt: 0.1
+dt: 0.01
 resolution: 128
 bc:
   x: periodic
@@ -21,7 +23,7 @@ output:
   path: ./output
   num_frames: 100
   colormap: turbo
-  field_to_plot: u  # Show single species segregation
+  field_to_plot: u
 seed: 42
 domain_size: 4.0
-t_end: 15.0  # Shorter time to avoid timeout
+t_end: 15.0
