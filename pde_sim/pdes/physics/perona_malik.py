@@ -13,16 +13,23 @@ from .. import register_pde
 
 @register_pde("perona-malik")
 class PeronaMalikPDE(ScalarPDEPreset):
-    """Perona-Malik anisotropic diffusion.
+    """Perona-Malik anisotropic diffusion with exponential diffusivity.
 
-    Image processing PDE for edge-preserving smoothing:
+    Based on visualpde.com formulation:
 
-        du/dt = div(g(|grad(u)|) * grad(u))
+        du/dt = div(exp(-D * |grad(u)|²) * grad(u))
 
-    where g(s) = 1/(1 + (s/K)^2) is the diffusivity function.
+    The exponential diffusivity function strongly suppresses diffusion
+    at edges (where |grad(u)|² is large) while allowing full diffusion
+    in smooth regions.
 
-    Simplified version:
-        du/dt = D * laplace(u) - D * K * gradient_squared(u) / (K^2 + gradient_squared(u))
+    Approximated as:
+        du/dt = laplace(u) * exp(-D * gradient_squared(u))
+
+    This captures the key feature of edge-preserving smoothing where
+    diffusion is exponentially reduced at sharp gradients.
+
+    Reference: https://visualpde.com/nonlinear-physics/perona-malik
     """
 
     @property
@@ -30,27 +37,20 @@ class PeronaMalikPDE(ScalarPDEPreset):
         return PDEMetadata(
             name="perona-malik",
             category="physics",
-            description="Perona-Malik edge-preserving diffusion",
-            equations={"u": "D * laplace(u) / (1 + gradient_squared(u) / K^2)"},
+            description="Perona-Malik edge-preserving diffusion (exponential)",
+            equations={"u": "laplace(u) * exp(-D * gradient_squared(u))"},
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=0.5,
-                    description="Diffusion coefficient",
-                    min_value=0.01,
-                    max_value=2.0,
-                ),
-                PDEParameter(
-                    name="K",
                     default=1.0,
-                    description="Edge threshold",
+                    description="Edge sensitivity (higher = more edge preservation)",
                     min_value=0.1,
-                    max_value=5.0,
+                    max_value=10.0,
                 ),
             ],
             num_fields=1,
             field_names=["u"],
-            reference="Perona & Malik (1990) anisotropic diffusion",
+            reference="https://visualpde.com/nonlinear-physics/perona-malik",
         )
 
     def create_pde(
@@ -60,12 +60,11 @@ class PeronaMalikPDE(ScalarPDEPreset):
         grid: CartesianGrid,
     ) -> PDE:
         D = parameters.get("D", 1.0)
-        K = parameters.get("K", 1.0)
-        K_sq = K**2
 
-        # Simplified: linear diffusion with edge-dependent reduction
+        # Perona-Malik with exponential diffusivity:
+        # du/dt = laplace(u) * exp(-D * |grad(u)|²)
         return PDE(
-            rhs={"u": f"{D} * laplace(u) / (1 + gradient_squared(u) / {K_sq})"},
+            rhs={"u": f"laplace(u) * exp(-{D} * gradient_squared(u))"},
             bc=self._convert_bc(bc),
         )
 

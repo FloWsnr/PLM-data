@@ -35,10 +35,10 @@ class TestCahnHilliardPDE:
         preset = get_pde_preset("cahn-hilliard")
         params = preset.get_default_parameters()
 
-        assert "M" in params
-        assert "gamma" in params
-        assert params["M"] == 1.0
-        assert params["gamma"] == 0.01
+        assert "r" in params
+        assert "g" in params
+        assert params["r"] == 0.01
+        assert params["g"] == 0.01
 
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
@@ -62,7 +62,7 @@ class TestCahnHilliardPDE:
     def test_short_simulation(self, small_grid):
         """Test running a short simulation."""
         preset = get_pde_preset("cahn-hilliard")
-        params = {"M": 1.0, "gamma": 0.1}  # Larger gamma for stability
+        params = {"r": 0.01, "g": 0.1}  # Larger g for stability
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)

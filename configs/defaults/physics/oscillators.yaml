@@ -1,9 +1,8 @@
 preset: oscillators
 parameters:
-  mu: 0.5    # Weaker nonlinearity - prevents rapid synchronization
-  omega: 1.5 # Higher frequency for visible oscillations
-  Du: 0.01   # Very weak u diffusion - maintains spatial inhomogeneity
-  Dv: 0.2    # Stronger v coupling - creates wave patterns
+  mu: 1.0    # Nonlinearity strength (damping)
+  D: 0.5     # Diffusion coupling strength
+  eps: 0.1   # Artificial diffusion (numerical stability)
 init:
   type: random-gaussian
   params:

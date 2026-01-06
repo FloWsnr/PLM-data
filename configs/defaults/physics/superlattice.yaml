@@ -1,16 +1,27 @@
 preset: superlattice
 parameters:
-  epsilon: 0.2
-  g2: 0.7
+  # Coupled Brusselator + Lengyll-Epstein system
+  a: 3.0          # Brusselator parameter a
+  b: 9.0          # Brusselator parameter b
+  c: 15.0         # Lengyll-Epstein parameter c
+  d: 9.0          # Lengyll-Epstein parameter d
+  alpha: 0.15     # Coupling parameter
+  D_u1: 3.1       # Diffusion of u1 (Brusselator activator)
+  D_v1: 13.95     # Diffusion of v1 (Brusselator inhibitor)
+  D_u2: 18.9      # Diffusion of u2 (Lengyll-Epstein activator)
+  D_v2: 670.0     # Diffusion of v2 (Lengyll-Epstein inhibitor)
 init:
-  type: random-gaussian
+  type: default
   params:
-    mean: 0.0
-    std: 0.05
-solver: rk4
+    noise: 0.1
+    a: 3.0
+    b: 9.0
+    c: 15.0
+    d: 9.0
+solver: scipy  # Implicit solver for stiff 4-field dynamics
 backend: numba
 adaptive: true
-dt: 0.1
+dt: 0.01
 resolution: 64
 bc:
   x: periodic
@@ -19,7 +30,7 @@ output:
   path: ./output
   num_frames: 100
   colormap: seismic
-  field_to_plot: u
+  field_to_plot: u1
 seed: 42
 domain_size: 40.0
-t_end: 30.0
+t_end: 50.0  # Longer time for pattern formation

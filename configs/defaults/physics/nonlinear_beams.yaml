@@ -1,19 +1,17 @@
 preset: nonlinear-beams
 parameters:
-  D: 0.5
-  alpha: 0.1
+  E_star: 1.0     # Baseline stiffness
+  Delta_E: 5.0    # Stiffness variation (curvature-dependent)
+  eps: 1.0        # Curvature sensitivity
 init:
-  type: gaussian-blobs
+  type: default
   params:
-    num_blobs: 1
     amplitude: 0.5
-    width: 0.1
-    background: 0.0
-solver: rk4
+solver: scipy  # Implicit solver for stiff biharmonic dynamics
 backend: numba
 adaptive: true
 dt: 0.001
-resolution: 128
+resolution: 64
 bc:
   x: periodic
   y: periodic
@@ -21,9 +19,7 @@ output:
   path: ./output
   num_frames: 100
   colormap: turbo
-  field_to_plot: mag(u,v)
-  show_vectors: true
-  vector_density: 12
+  field_to_plot: u
 seed: 42
-domain_size: 2.0
-t_end: 1.0
+domain_size: 6.28  # 2*pi for periodic sinusoidal IC
+t_end: 5.0

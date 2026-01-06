@@ -11,18 +11,24 @@ from .. import register_pde
 
 @register_pde("oscillators")
 class OscillatorsPDE(MultiFieldPDEPreset):
-    """Coupled nonlinear oscillators (Van der Pol type).
+    """Diffusively coupled Van der Pol oscillators.
 
-    Spatially extended Van der Pol oscillator:
+    Based on visualpde.com formulation:
 
-        du/dt = Du * laplace(u) + v
-        dv/dt = Dv * laplace(v) + mu * (1 - u^2) * v - omega^2 * u
+        du/dt = v
+        dv/dt = D * (laplace(u) + eps * laplace(v)) + mu * (1 - u²) * v - u
 
     where:
-        - u is the position variable (renamed from x to avoid grid coordinate collision)
-        - v is the velocity variable (renamed from y to avoid grid coordinate collision)
-        - mu controls nonlinearity strength
-        - omega is the natural frequency
+        - u is the position variable
+        - v is the velocity variable
+        - D is the diffusion coupling strength
+        - eps is artificial diffusion for numerical stability
+        - mu controls nonlinearity strength (damping)
+
+    The diffusive coupling connects oscillators at each spatial point,
+    leading to interesting collective dynamics like spiral waves.
+
+    Reference: https://visualpde.com/nonlinear-physics/oscillators
     """
 
     @property
@@ -30,44 +36,37 @@ class OscillatorsPDE(MultiFieldPDEPreset):
         return PDEMetadata(
             name="oscillators",
             category="physics",
-            description="Coupled Van der Pol oscillators",
+            description="Diffusively coupled Van der Pol oscillators",
             equations={
-                "u": "Du * laplace(u) + v",
-                "v": "Dv * laplace(v) + mu * (1 - u^2) * v - omega^2 * u",
+                "u": "v",
+                "v": "D * (laplace(u) + eps * laplace(v)) + mu * (1 - u^2) * v - u",
             },
             parameters=[
                 PDEParameter(
                     name="mu",
                     default=1.0,
-                    description="Nonlinearity strength",
+                    description="Nonlinearity strength (damping)",
                     min_value=0.0,
                     max_value=10.0,
                 ),
                 PDEParameter(
-                    name="omega",
-                    default=1.0,
-                    description="Natural frequency",
-                    min_value=0.1,
-                    max_value=10.0,
+                    name="D",
+                    default=0.5,
+                    description="Diffusion coupling strength",
+                    min_value=0.0,
+                    max_value=5.0,
                 ),
                 PDEParameter(
-                    name="Du",
+                    name="eps",
                     default=0.1,
-                    description="Diffusion of u",
+                    description="Artificial diffusion (numerical stability)",
                     min_value=0.0,
-                    max_value=0.5,
-                ),
-                PDEParameter(
-                    name="Dv",
-                    default=0.1,
-                    description="Diffusion of v",
-                    min_value=0.0,
-                    max_value=0.5,
+                    max_value=1.0,
                 ),
             ],
             num_fields=2,
             field_names=["u", "v"],
-            reference="Van der Pol oscillator field",
+            reference="https://visualpde.com/nonlinear-physics/oscillators",
         )
 
     def create_pde(
@@ -77,15 +76,13 @@ class OscillatorsPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
     ) -> PDE:
         mu = parameters.get("mu", 1.0)
-        omega = parameters.get("omega", 1.0)
-        Du = parameters.get("Du", 0.1)
-        Dv = parameters.get("Dv", 0.1)
-        omega_sq = omega**2
+        D = parameters.get("D", 0.5)
+        eps = parameters.get("eps", 0.1)
 
         return PDE(
             rhs={
-                "u": f"{Du} * laplace(u) + v",
-                "v": f"{Dv} * laplace(v) + {mu} * (1 - u**2) * v - {omega_sq} * u",
+                "u": "v",
+                "v": f"{D} * (laplace(u) + {eps} * laplace(v)) + {mu} * (1 - u**2) * v - u",
             },
             bc=self._convert_bc(bc),
         )

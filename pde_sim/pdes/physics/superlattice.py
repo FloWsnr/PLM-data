@@ -1,25 +1,35 @@
-"""Superlattice pattern formation."""
+"""Superlattice pattern formation via coupled reaction-diffusion systems."""
 
 from typing import Any
 
 import numpy as np
-from pde import PDE, CartesianGrid, ScalarField
+from pde import PDE, CartesianGrid, FieldCollection, ScalarField
 
 from pde_sim.initial_conditions import create_initial_condition
 
-from ..base import ScalarPDEPreset, PDEMetadata, PDEParameter
+from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
 
 
 @register_pde("superlattice")
-class SuperlatticePDE(ScalarPDEPreset):
-    """Superlattice pattern formation.
+class SuperlatticePDE(MultiFieldPDEPreset):
+    """Superlattice pattern formation via coupled Brusselator + Lengyll-Epstein.
 
-    Swift-Hohenberg with hexagonal modulation for superlattice patterns:
+    Based on visualpde.com formulation - coupling two pattern-forming systems:
 
-        du/dt = epsilon * u - (1 + laplace)^2 * u + g2 * u^2 - u^3
+    Brusselator subsystem (u1, v1):
+        du1/dt = D_u1·∇²u1 + a - (b+1)u1 + u1²v1 + α·u1·u2·(u2-u1)
+        dv1/dt = D_v1·∇²v1 + b·u1 - u1²v1
 
-    With additional modulation to promote superlattice structures.
+    Lengyll-Epstein subsystem (u2, v2):
+        du2/dt = D_u2·∇²u2 + c - u2 - 4u2v2/(1+u2²) + α·u1·u2·(u1-u2)
+        dv2/dt = D_v2·∇²v2 + d·[u2 - u2v2/(1+u2²)]
+
+    The coupling parameter α controls interaction between subsystems.
+    Different diffusion ratios create overlapping pattern wavelengths,
+    leading to superlattice structures.
+
+    Reference: https://visualpde.com/nonlinear-physics/superlattice-patterns
     """
 
     @property
@@ -27,27 +37,81 @@ class SuperlatticePDE(ScalarPDEPreset):
         return PDEMetadata(
             name="superlattice",
             category="physics",
-            description="Superlattice pattern formation",
-            equations={"u": "epsilon * u - (1 + laplace)^2 * u + g2 * u^2 - u^3"},
+            description="Coupled Brusselator + Lengyll-Epstein superlattice",
+            equations={
+                "u1": "D_u1*laplace(u1) + a - (b+1)*u1 + u1^2*v1 + alpha*u1*u2*(u2-u1)",
+                "v1": "D_v1*laplace(v1) + b*u1 - u1^2*v1",
+                "u2": "D_u2*laplace(u2) + c - u2 - 4*u2*v2/(1+u2^2) + alpha*u1*u2*(u1-u2)",
+                "v2": "D_v2*laplace(v2) + d*(u2 - u2*v2/(1+u2^2))",
+            },
             parameters=[
                 PDEParameter(
-                    name="epsilon",
-                    default=0.1,
-                    description="Control parameter",
-                    min_value=-0.5,
+                    name="a",
+                    default=3.0,
+                    description="Brusselator parameter a",
+                    min_value=1.0,
+                    max_value=5.0,
+                ),
+                PDEParameter(
+                    name="b",
+                    default=9.0,
+                    description="Brusselator parameter b",
+                    min_value=5.0,
+                    max_value=15.0,
+                ),
+                PDEParameter(
+                    name="c",
+                    default=15.0,
+                    description="Lengyll-Epstein parameter c",
+                    min_value=5.0,
+                    max_value=25.0,
+                ),
+                PDEParameter(
+                    name="d",
+                    default=9.0,
+                    description="Lengyll-Epstein parameter d",
+                    min_value=5.0,
+                    max_value=15.0,
+                ),
+                PDEParameter(
+                    name="alpha",
+                    default=0.15,
+                    description="Coupling parameter",
+                    min_value=0.0,
                     max_value=1.0,
                 ),
                 PDEParameter(
-                    name="g2",
-                    default=0.5,
-                    description="Quadratic nonlinearity",
-                    min_value=0.0,
-                    max_value=2.0,
+                    name="D_u1",
+                    default=3.1,
+                    description="Diffusion of u1 (Brusselator activator)",
+                    min_value=0.1,
+                    max_value=10.0,
+                ),
+                PDEParameter(
+                    name="D_v1",
+                    default=13.95,
+                    description="Diffusion of v1 (Brusselator inhibitor)",
+                    min_value=1.0,
+                    max_value=50.0,
+                ),
+                PDEParameter(
+                    name="D_u2",
+                    default=18.9,
+                    description="Diffusion of u2 (Lengyll-Epstein activator)",
+                    min_value=1.0,
+                    max_value=50.0,
+                ),
+                PDEParameter(
+                    name="D_v2",
+                    default=670.0,
+                    description="Diffusion of v2 (Lengyll-Epstein inhibitor)",
+                    min_value=100.0,
+                    max_value=1000.0,
                 ),
             ],
-            num_fields=1,
-            field_names=["u"],
-            reference="Superlattice patterns in nonlinear optics",
+            num_fields=4,
+            field_names=["u1", "v1", "u2", "v2"],
+            reference="https://visualpde.com/nonlinear-physics/superlattice-patterns",
         )
 
     def create_pde(
@@ -56,13 +120,23 @@ class SuperlatticePDE(ScalarPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        epsilon = parameters.get("epsilon", 0.1)
-        g2 = parameters.get("g2", 0.5)
+        a = parameters.get("a", 3.0)
+        b = parameters.get("b", 9.0)
+        c = parameters.get("c", 15.0)
+        d = parameters.get("d", 9.0)
+        alpha = parameters.get("alpha", 0.15)
+        D_u1 = parameters.get("D_u1", 3.1)
+        D_v1 = parameters.get("D_v1", 13.95)
+        D_u2 = parameters.get("D_u2", 18.9)
+        D_v2 = parameters.get("D_v2", 670.0)
 
-        # (1 + laplace)^2 = 1 + 2*laplace + laplace(laplace)
+        # Coupled Brusselator + Lengyll-Epstein system
         return PDE(
             rhs={
-                "u": f"{epsilon} * u - u - 2 * laplace(u) - laplace(laplace(u)) + {g2} * u**2 - u**3"
+                "u1": f"{D_u1}*laplace(u1) + {a} - ({b}+1)*u1 + u1**2*v1 + {alpha}*u1*u2*(u2-u1)",
+                "v1": f"{D_v1}*laplace(v1) + {b}*u1 - u1**2*v1",
+                "u2": f"{D_u2}*laplace(u2) + {c} - u2 - 4*u2*v2/(1+u2**2) + {alpha}*u1*u2*(u1-u2)",
+                "v2": f"{D_v2}*laplace(v2) + {d}*(u2 - u2*v2/(1+u2**2))",
             },
             bc=self._convert_bc(bc),
         )
@@ -72,26 +146,45 @@ class SuperlatticePDE(ScalarPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
-    ) -> ScalarField:
-        """Create initial hexagonal seed pattern."""
-        if ic_type in ("superlattice-default", "default"):
-            np.random.seed(ic_params.get("seed"))
-            amplitude = ic_params.get("amplitude", 0.1)
+    ) -> FieldCollection:
+        """Create initial state near equilibrium with perturbations."""
+        np.random.seed(ic_params.get("seed"))
+        noise = ic_params.get("noise", 0.1)
 
-            x, y = np.meshgrid(
-                np.linspace(0, 2 * np.pi, grid.shape[0]),
-                np.linspace(0, 2 * np.pi, grid.shape[1]),
-                indexing="ij",
-            )
+        # Get parameters for equilibrium calculation
+        a = ic_params.get("a", 3.0)
+        b = ic_params.get("b", 9.0)
+        c = ic_params.get("c", 15.0)
+        d = ic_params.get("d", 9.0)
 
-            # Hexagonal seed + noise
-            k = 1.0
-            hex_pattern = (
-                np.cos(k * x)
-                + np.cos(k * (x / 2 + y * np.sqrt(3) / 2))
-                + np.cos(k * (x / 2 - y * np.sqrt(3) / 2))
-            )
-            data = amplitude * (hex_pattern / 3 + 0.1 * np.random.randn(*grid.shape))
-            return ScalarField(grid, data)
+        # Approximate equilibrium values (simplified)
+        # Brusselator equilibrium: u1* = a, v1* = b/a
+        u1_eq = a
+        v1_eq = b / a
 
-        return create_initial_condition(grid, ic_type, ic_params)
+        # Lengyll-Epstein equilibrium (approximate)
+        u2_eq = c / (1 + 4 / (1 + c**2))  # Simplified
+        v2_eq = 1.0  # Approximate
+
+        # Add noise around equilibrium
+        u1_data = u1_eq + noise * np.random.randn(*grid.shape)
+        v1_data = v1_eq + noise * np.random.randn(*grid.shape)
+        u2_data = u2_eq + noise * np.random.randn(*grid.shape)
+        v2_data = v2_eq + noise * np.random.randn(*grid.shape)
+
+        # Ensure positive values
+        u1_data = np.maximum(u1_data, 0.01)
+        v1_data = np.maximum(v1_data, 0.01)
+        u2_data = np.maximum(u2_data, 0.01)
+        v2_data = np.maximum(v2_data, 0.01)
+
+        u1 = ScalarField(grid, u1_data)
+        u1.label = "u1"
+        v1 = ScalarField(grid, v1_data)
+        v1.label = "v1"
+        u2 = ScalarField(grid, u2_data)
+        u2.label = "u2"
+        v2 = ScalarField(grid, v2_data)
+        v2.label = "v2"
+
+        return FieldCollection([u1, v1, u2, v2])

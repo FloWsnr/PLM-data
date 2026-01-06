@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from pde import CartesianGrid
+from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
@@ -23,26 +23,31 @@ class TestGinzburgLandauPDE:
 
         assert meta.name == "ginzburg-landau"
         assert meta.category == "physics"
-        assert meta.num_fields == 1
+        assert meta.num_fields == 2  # Now uses real/imaginary form (u, v)
+        assert "u" in meta.field_names
+        assert "v" in meta.field_names
 
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("ginzburg-landau")
-        params = {"c1": 0.5, "c3": 0.5}
+        params = preset.get_default_parameters()
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
         assert pde is not None
 
-    def test_complex_initial_condition(self, small_grid):
-        """Test complex field initial condition."""
+    def test_real_imaginary_initial_condition(self, small_grid):
+        """Test real/imaginary field initial condition."""
         preset = get_pde_preset("ginzburg-landau")
         state = preset.create_initial_state(
             small_grid, "default", {"amplitude": 0.1}
         )
 
         assert state is not None
-        assert np.iscomplexobj(state.data)
+        assert isinstance(state, FieldCollection)
+        assert len(state) == 2  # u and v fields
+        assert np.isfinite(state[0].data).all()
+        assert np.isfinite(state[1].data).all()
 
     def test_registered_in_registry(self):
         """Test that PDE is registered."""
@@ -51,7 +56,7 @@ class TestGinzburgLandauPDE:
     def test_short_simulation(self, small_grid):
         """Test running a short simulation."""
         preset = get_pde_preset("ginzburg-landau")
-        params = {"c1": 0.0, "c3": 0.0}  # Real GL for stability
+        params = preset.get_default_parameters()
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
@@ -62,4 +67,6 @@ class TestGinzburgLandauPDE:
         result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
 
         assert result is not None
-        assert np.isfinite(result.data).all()
+        assert isinstance(result, FieldCollection)
+        assert np.isfinite(result[0].data).all()
+        assert np.isfinite(result[1].data).all()

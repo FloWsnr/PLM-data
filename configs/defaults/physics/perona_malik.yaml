@@ -1,7 +1,6 @@
 preset: perona-malik
 parameters:
-  D: 0.1   # Moderate diffusion for visible smoothing
-  K: 0.5   # Edge threshold
+  D: 1.0   # Edge sensitivity (higher = more edge preservation)
 init:
   type: default  # Uses preset's custom IC with built-in step pattern + noise
   params: {}

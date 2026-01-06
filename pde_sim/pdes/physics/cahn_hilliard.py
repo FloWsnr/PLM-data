@@ -10,18 +10,21 @@ from .. import register_pde
 
 @register_pde("cahn-hilliard")
 class CahnHilliardPDE(ScalarPDEPreset):
-    """Cahn-Hilliard equation for phase separation.
+    """Cahn-Hilliard equation for phase separation with reaction term.
 
-    The Cahn-Hilliard equation describes phase separation in binary mixtures:
+    Based on visualpde.com formulation:
 
-        du/dt = M * laplace(u³ - u - gamma * laplace(u))
+        du/dt = r * laplace(u³ - u - g * laplace(u)) + u - u³
 
     where:
         - u is the concentration difference between phases (-1 to 1)
-        - M is mobility
-        - gamma controls interface width
+        - r controls the timescale of phase separation (mobility)
+        - g controls interface width (surface tension)
 
-    The equation conserves the total amount of u.
+    The reaction term (u - u³) drives phase separation while the
+    Cahn-Hilliard term controls the interface dynamics.
+
+    Reference: https://visualpde.com/nonlinear-physics/cahn-hilliard
     """
 
     @property
@@ -29,20 +32,20 @@ class CahnHilliardPDE(ScalarPDEPreset):
         return PDEMetadata(
             name="cahn-hilliard",
             category="physics",
-            description="Cahn-Hilliard phase separation",
+            description="Cahn-Hilliard phase separation with reaction",
             equations={
-                "u": "M * laplace(u**3 - u - gamma * laplace(u))",
+                "u": "r * laplace(u**3 - u - g * laplace(u)) + u - u**3",
             },
             parameters=[
                 PDEParameter(
-                    name="M",
-                    default=1.0,
-                    description="Mobility coefficient",
-                    min_value=0.1,
-                    max_value=3.0,
+                    name="r",
+                    default=0.01,
+                    description="Phase separation timescale (mobility)",
+                    min_value=0.001,
+                    max_value=1.0,
                 ),
                 PDEParameter(
-                    name="gamma",
+                    name="g",
                     default=0.01,
                     description="Interface width parameter",
                     min_value=0.001,
@@ -51,7 +54,7 @@ class CahnHilliardPDE(ScalarPDEPreset):
             ],
             num_fields=1,
             field_names=["u"],
-            reference="Phase separation in binary mixtures",
+            reference="https://visualpde.com/nonlinear-physics/cahn-hilliard",
         )
 
     def create_pde(
@@ -60,10 +63,11 @@ class CahnHilliardPDE(ScalarPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        M = parameters.get("M", 1.0)
-        gamma = parameters.get("gamma", 0.01)
+        r = parameters.get("r", 0.01)
+        g = parameters.get("g", 0.01)
 
+        # Cahn-Hilliard with reaction: du/dt = r*laplace(u³-u-g*laplace(u)) + u - u³
         return PDE(
-            rhs={"u": f"{M} * laplace(u**3 - u - {gamma} * laplace(u))"},
+            rhs={"u": f"{r} * laplace(u**3 - u - {g} * laplace(u)) + u - u**3"},
             bc=self._convert_bc(bc),
         )

@@ -1,8 +1,8 @@
-"""Tests for superlattice pattern formation PDE."""
+"""Tests for superlattice pattern formation PDE (coupled Brusselator + Lengyll-Epstein)."""
 
 import numpy as np
 import pytest
-from pde import CartesianGrid
+from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
@@ -27,32 +27,53 @@ class TestSuperlatticePDE:
 
         assert meta.name == "superlattice"
         assert meta.category == "physics"
-        assert meta.num_fields == 1
+        assert meta.num_fields == 4  # Coupled 4-field system
+        assert "u1" in meta.field_names
+        assert "v1" in meta.field_names
+        assert "u2" in meta.field_names
+        assert "v2" in meta.field_names
+
+    def test_get_default_parameters(self):
+        """Test default parameters."""
+        preset = get_pde_preset("superlattice")
+        params = preset.get_default_parameters()
+
+        assert "a" in params
+        assert "b" in params
+        assert "c" in params
+        assert "d" in params
+        assert "alpha" in params
+        assert "D_u1" in params
+        assert "D_v1" in params
+        assert "D_u2" in params
+        assert "D_v2" in params
 
     def test_create_and_initial_state(self, small_grid):
         """Test that PDE and initial state can be created."""
-        # Superlattice has 4th order terms requiring specialized solvers
         preset = get_pde_preset("superlattice")
         params = preset.get_default_parameters()
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "default", {"amplitude": 0.1})
+        state = preset.create_initial_state(small_grid, "default", {"noise": 0.1})
 
         assert pde is not None
         assert state is not None
-        assert np.isfinite(state.data).all()
+        assert isinstance(state, FieldCollection)
+        assert len(state) == 4
+        assert np.isfinite(state[0].data).all()
 
     def test_short_simulation(self, small_grid):
         """Test running a short simulation."""
         preset = get_pde_preset("superlattice")
-        params = {"epsilon": 0.1, "g2": 0.5}
+        params = preset.get_default_parameters()
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "default", {"amplitude": 0.05})
+        state = preset.create_initial_state(small_grid, "default", {"noise": 0.05})
 
-        # Check that PDE and state are created correctly
-        assert pde is not None
-        assert state is not None
-        assert np.isfinite(state.data).all()
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
+
+        assert isinstance(result, FieldCollection)
+        assert len(result) == 4
+        assert np.isfinite(result[0].data).all()

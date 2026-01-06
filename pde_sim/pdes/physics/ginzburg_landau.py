@@ -3,29 +3,35 @@
 from typing import Any
 
 import numpy as np
-from pde import PDE, CartesianGrid, ScalarField
+from pde import PDE, CartesianGrid, FieldCollection, ScalarField
 
 from pde_sim.initial_conditions import create_initial_condition
 
-from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset
+from ..base import PDEMetadata, PDEParameter, MultiFieldPDEPreset
 from .. import register_pde
 
 
 @register_pde("ginzburg-landau")
-class GinzburgLandauPDE(ScalarPDEPreset):
-    """Complex Ginzburg-Landau equation.
+class GinzburgLandauPDE(MultiFieldPDEPreset):
+    """Complex Ginzburg-Landau equation with full parameterization.
 
-    A universal model for pattern formation near instability:
+    Based on visualpde.com formulation:
 
-        dA/dt = A + (1 + i*c1) * laplace(A) - (1 + i*c3) * |A|^2 * A
+        dψ/dt = (Dr + i*Di)∇²ψ + (ar + i*ai)ψ + (br + i*bi)ψ|ψ|²
 
-    where:
-        - A is the complex amplitude
-        - c1 is the linear dispersion coefficient
-        - c3 is the nonlinear dispersion coefficient
+    Writing ψ = u + i*v, this becomes:
 
-    For c1 = c3 = 0, reduces to the real Ginzburg-Landau equation.
-    Exhibits spiral waves, defect chaos, and other patterns.
+        du/dt = Dr∇²u - Di∇²v + ar·u - ai·v + (br·u - bi·v)(u² + v²)
+        dv/dt = Di∇²u + Dr∇²v + ar·v + ai·u + (br·v + bi·u)(u² + v²)
+
+    Parameters:
+        - Dr, Di: Real and imaginary diffusion coefficients
+        - ar, ai: Real and imaginary linear coefficients
+        - br, bi: Real and imaginary nonlinear coefficients
+
+    For stability, typically need br, Dr >= 0.
+
+    Reference: https://visualpde.com/nonlinear-physics/nls-cgl
     """
 
     @property
@@ -33,27 +39,58 @@ class GinzburgLandauPDE(ScalarPDEPreset):
         return PDEMetadata(
             name="ginzburg-landau",
             category="physics",
-            description="Complex Ginzburg-Landau pattern formation",
-            equations={"A": "A + (1 + 1j*c1) * laplace(A) - (1 + 1j*c3) * |A|^2 * A"},
+            description="Complex Ginzburg-Landau (real/imaginary form)",
+            equations={
+                "u": "Dr*laplace(u) - Di*laplace(v) + ar*u - ai*v + (br*u - bi*v)*(u**2 + v**2)",
+                "v": "Di*laplace(u) + Dr*laplace(v) + ar*v + ai*u + (br*v + bi*u)*(u**2 + v**2)",
+            },
             parameters=[
                 PDEParameter(
-                    name="c1",
+                    name="Dr",
+                    default=1.0,
+                    description="Real diffusion coefficient",
+                    min_value=0.0,
+                    max_value=5.0,
+                ),
+                PDEParameter(
+                    name="Di",
                     default=0.0,
-                    description="Linear dispersion coefficient",
+                    description="Imaginary diffusion coefficient",
                     min_value=-5.0,
                     max_value=5.0,
                 ),
                 PDEParameter(
-                    name="c3",
+                    name="ar",
+                    default=1.0,
+                    description="Real linear coefficient",
+                    min_value=-5.0,
+                    max_value=5.0,
+                ),
+                PDEParameter(
+                    name="ai",
                     default=0.0,
-                    description="Nonlinear dispersion coefficient",
+                    description="Imaginary linear coefficient",
+                    min_value=-5.0,
+                    max_value=5.0,
+                ),
+                PDEParameter(
+                    name="br",
+                    default=-1.0,
+                    description="Real nonlinear coefficient (typically < 0)",
+                    min_value=-5.0,
+                    max_value=0.0,
+                ),
+                PDEParameter(
+                    name="bi",
+                    default=0.0,
+                    description="Imaginary nonlinear coefficient",
                     min_value=-5.0,
                     max_value=5.0,
                 ),
             ],
-            num_fields=1,
-            field_names=["A"],
-            reference="Ginzburg-Landau pattern formation",
+            num_fields=2,
+            field_names=["u", "v"],
+            reference="https://visualpde.com/nonlinear-physics/nls-cgl",
         )
 
     def create_pde(
@@ -62,13 +99,21 @@ class GinzburgLandauPDE(ScalarPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        c1 = parameters.get("c1", 0.0)
-        c3 = parameters.get("c3", 0.0)
+        Dr = parameters.get("Dr", 1.0)
+        Di = parameters.get("Di", 0.0)
+        ar = parameters.get("ar", 1.0)
+        ai = parameters.get("ai", 0.0)
+        br = parameters.get("br", -1.0)
+        bi = parameters.get("bi", 0.0)
 
-        # Complex Ginzburg-Landau equation
-        # Note: py-pde handles complex numbers with 1j notation
+        # Complex Ginzburg-Landau in real/imaginary form:
+        # du/dt = Dr∇²u - Di∇²v + ar·u - ai·v + (br·u - bi·v)(u² + v²)
+        # dv/dt = Di∇²u + Dr∇²v + ar·v + ai·u + (br·v + bi·u)(u² + v²)
         return PDE(
-            rhs={"A": f"A + (1 + 1j*{c1}) * laplace(A) - (1 + 1j*{c3}) * abs(A)**2 * A"},
+            rhs={
+                "u": f"{Dr}*laplace(u) - {Di}*laplace(v) + {ar}*u - {ai}*v + ({br}*u - {bi}*v)*(u**2 + v**2)",
+                "v": f"{Di}*laplace(u) + {Dr}*laplace(v) + {ar}*v + {ai}*u + ({br}*v + {bi}*u)*(u**2 + v**2)",
+            },
             bc=self._convert_bc(bc),
         )
 
@@ -77,18 +122,27 @@ class GinzburgLandauPDE(ScalarPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
-    ) -> ScalarField:
-        """Create initial complex field with small perturbations."""
+    ) -> FieldCollection:
+        """Create initial state with small perturbations."""
         if ic_type in ("ginzburg-landau-default", "default"):
             amplitude = ic_params.get("amplitude", 0.1)
             np.random.seed(ic_params.get("seed"))
 
-            # Small complex perturbations
-            real_part = amplitude * np.random.randn(*grid.shape)
-            imag_part = amplitude * np.random.randn(*grid.shape)
-            data = real_part + 1j * imag_part
+            # Small random perturbations for real and imaginary parts
+            u_data = amplitude * np.random.randn(*grid.shape)
+            v_data = amplitude * np.random.randn(*grid.shape)
 
-            return ScalarField(grid, data, dtype=complex)
+            u = ScalarField(grid, u_data)
+            u.label = "u"
+            v = ScalarField(grid, v_data)
+            v.label = "v"
 
-        field = create_initial_condition(grid, ic_type, ic_params)
-        return ScalarField(grid, field.data.astype(complex), dtype=complex)
+            return FieldCollection([u, v])
+
+        # For other IC types, create the same IC for both fields
+        base = create_initial_condition(grid, ic_type, ic_params)
+        u = ScalarField(grid, base.data.copy())
+        u.label = "u"
+        v = ScalarField(grid, np.zeros(grid.shape))
+        v.label = "v"
+        return FieldCollection([u, v])

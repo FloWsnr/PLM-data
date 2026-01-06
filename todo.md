@@ -173,3 +173,118 @@ All 7 basic PDEs now work with good visible dynamics over 100 frames.
 - All 16 physics PDEs now produce visible, interesting dynamics
 - All 7 basic PDEs work correctly
 - Total: 23/23 PDEs working
+
+---
+
+# Physics PDE Comparison with VisualPDE.com (Jan 6, 2026)
+
+## Comparison of Our Implementations vs. Real VisualPDE Equations
+
+### MAJOR Discrepancies (Different Physics)
+
+| PDE | Severity | Issue |
+|-----|----------|-------|
+| superlattice | **MAJOR** | Completely different model |
+| nonlinear-beams | **MAJOR** | Different model (wave vs overdamped) |
+
+#### superlattice
+- **Our version**: Simple Swift-Hohenberg with hexagonal modulation
+  - `du/dt = ε·u - (1+∇²)²u + g₂·u² - u³`
+- **VisualPDE version**: 4-field coupled Brusselator + Lengyll-Epstein system
+  - `du₁/dt = D_{u₁}∇²u₁ + a - (b+1)u₁ + u₁²v₁ + α·u₁u₂(u₂-u₁)`
+  - `dv₁/dt = D_{u₂}∇²v₁ + b·u₁ - u₁²v₁`
+  - `du₂/dt = D_{u₃}∇²u₂ + c - u₂ - 4u₂v₂/(1+u₂²) + α·u₁u₂(u₁-u₂)`
+  - `dv₂/dt = D_{u₄}∇²v₂ + d[u₂ - u₂v₂/(1+u₂²)]`
+- **Recommendation**: Implement full 4-field coupled system
+
+#### nonlinear-beams
+- **Our version**: 2D biharmonic wave equation
+  - `du/dt = v`
+  - `dv/dt = -D·∇⁴u + α·∇²(|∇u|²)`
+- **VisualPDE version**: 1D overdamped beam with state-dependent stiffness
+  - `dy/dt = -∂²/∂x²[E(y)·∂²y/∂x²]`
+  - where `E = E* + ΔE·(1+tanh(∂²y/∂x²/ε))/2`
+- **Recommendation**: Implement proper 1D overdamped beam or rename our version
+
+### SIGNIFICANT Discrepancies (Missing Terms)
+
+| PDE | Severity | Issue |
+|-----|----------|-------|
+| cahn-hilliard | **SIGNIFICANT** | Missing reaction term |
+| ginzburg-landau | **SIGNIFICANT** | Simplified parameterization |
+| perona-malik | **SIGNIFICANT** | Different diffusivity function |
+| oscillators | **SIGNIFICANT** | Incorrect diffusion coupling |
+| turing-wave | **SIGNIFICANT** | Should be hyperbolic (2nd order in time) |
+
+#### cahn-hilliard
+- **Our version**: `du/dt = M·∇²(u³ - u - γ·∇²u)`
+- **VisualPDE version**: `du/dt = r·∇²(u³ - u - g·∇²u) + u - u³`
+- **Missing**: Reaction term `+ u - u³`
+- **Recommendation**: Add reaction term
+
+#### ginzburg-landau
+- **Our version**: `dA/dt = A + (1+ic₁)∇²A - (1+ic₃)|A|²A`
+- **VisualPDE version**: `dψ/dt = (Dr+iDi)∇²ψ + (ar+iai)ψ + (br+ibi)ψ|ψ|²`
+- **Missing**: Full 6-parameter version (Dr, Di, ar, ai, br, bi)
+- **Recommendation**: Expand parameterization
+
+#### perona-malik
+- **Our version**: `du/dt = D·∇²u / (1 + |∇u|²/K²)`
+- **VisualPDE version**: `du/dt = ∇·(e^{-D|∇u|²}·∇u)`
+- **Difference**: We use rational diffusivity 1/(1+s), they use exponential e^{-s}
+- **Recommendation**: Change to exponential diffusivity
+
+#### oscillators (Van der Pol)
+- **Our version**:
+  - `du/dt = Du·∇²u + v`
+  - `dv/dt = Dv·∇²v + μ(1-u²)v - ω²u`
+- **VisualPDE version**:
+  - `dX/dt = Y`
+  - `dY/dt = D(∇²X + ε∇²Y) + μ(1-X²)Y - X`
+- **Difference**: Diffusion coupling structure is different
+- **Recommendation**: Fix diffusion term structure
+
+#### turing-wave
+- **Our version**: Standard parabolic reaction-diffusion
+- **VisualPDE version**: Hyperbolic reaction-diffusion
+  - `τ·∂²u/∂t² + ∂u/∂t = Du∇²u + f(u,v)`
+  - `τ·∂²v/∂t² + ∂v/∂t = Dv∇²v + g(u,v)`
+- **Missing**: Second-order time derivative terms (τ parameter)
+- **Recommendation**: Add hyperbolic terms
+
+### MINOR Discrepancies (Acceptable Variations)
+
+| PDE | Issue | Status |
+|-----|-------|--------|
+| swift-hohenberg | Missing quintic term (c·u⁵) | OK - optional |
+| gray-scott | Different notation (u/v swapped) | OK - same physics |
+| lorenz | Uses D_x, D_y, D_z vs single D | OK - more flexible |
+| burgers | Same formulation | ✓ Matches |
+| kuramoto-sivashinsky | Has 0.5 and ν coefficients | OK - parameterized |
+| kdv | Different parameterization | OK - same physics |
+| advecting-patterns | Similar approach | OK |
+| growing-domains | Different kinetics model | OK - valid alternative |
+
+### Summary Table
+
+| Category | PDEs | Count |
+|----------|------|-------|
+| **MAJOR** (needs rewrite) | superlattice, nonlinear-beams | 2 |
+| **SIGNIFICANT** (needs update) | cahn-hilliard, ginzburg-landau, perona-malik, oscillators, turing-wave | 5 |
+| **MINOR/OK** | gray-scott, lorenz, burgers, kuramoto-sivashinsky, kdv, swift-hohenberg, advecting-patterns, growing-domains, kpz | 9 |
+
+## Priority for Updates
+
+1. **High Priority** (Major discrepancies):
+   - [ ] superlattice - implement 4-field coupled system
+   - [ ] nonlinear-beams - decide: rename or reimplement
+
+2. **Medium Priority** (Significant discrepancies):
+   - [ ] cahn-hilliard - add `+ u - u³` reaction term
+   - [ ] turing-wave - add hyperbolic terms (τ parameter)
+   - [ ] ginzburg-landau - expand to 6-parameter version
+   - [ ] perona-malik - change to exponential diffusivity
+   - [ ] oscillators - fix diffusion coupling
+
+3. **Low Priority** (Optional enhancements):
+   - [ ] swift-hohenberg - add quintic term option
