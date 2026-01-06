@@ -1,8 +1,8 @@
 preset: inhomogeneous-wave
 parameters:
   c: 1.0
-  gamma: 1.0
-  source: 0.1
+  gamma: 0.15
+  source: 0.0
 init:
   type: gaussian-blobs
   params:
@@ -25,4 +25,4 @@ output:
   field_to_plot: u
 seed: 42
 domain_size: 2.0
-t_end: 8.0
+t_end: 4.0

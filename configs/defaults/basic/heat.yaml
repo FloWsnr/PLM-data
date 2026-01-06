@@ -1,6 +1,6 @@
 preset: heat
 parameters:
-  D: 0.1
+  D: 0.05
 init:
   type: gaussian-blobs
   params:

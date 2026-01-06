@@ -1,6 +1,6 @@
 preset: inhomogeneous-heat
 parameters:
-  D: 0.1
+  D: 0.05
   source: 0.1
 init:
   type: gaussian-blobs
