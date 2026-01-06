@@ -14,27 +14,6 @@ All 7 basic PDEs now work with good visible dynamics over 100 frames.
 | plate | WORKS | 75s | EXCELLENT | (none needed) |
 | inhomogeneous-wave | WORKS | 16s | GOOD | gamma: 1.0->0.15, source: 0.1->0.0, t_end: 8.0->4.0 |
 
-## Config Changes Applied
-
-```yaml
-# configs/defaults/basic/heat.yaml
-parameters:
-  D: 0.05  # was 0.1
-
-# configs/defaults/basic/advection.yaml
-parameters:
-  D: 0.005  # was 0.01
-
-# configs/defaults/basic/inhomogeneous_heat.yaml
-parameters:
-  D: 0.05  # was 0.1
-
-# configs/defaults/basic/inhomogeneous_wave.yaml
-parameters:
-  gamma: 0.15  # was 1.0
-  source: 0.0  # was 0.1
-t_end: 4.0  # was 8.0
-```
 
 ## Detailed Analysis
 
@@ -88,22 +67,22 @@ t_end: 4.0  # was 8.0
 | nonlinear-beams | WORKS | 248s | GOOD | Horizontal wave bands (slow) |
 | burgers | WORKS | 36s | GOOD | Shock formation, diffuses at end |
 | oscillators | WORKS | 45s | EXCELLENT | Beautiful spiral wave patterns |
-| perona-malik | NEEDS FIX | 35s | BAD | Edge smoothing fails - becomes plain gradient |
+| perona-malik | WORKS | 31s | GOOD | Edge-preserving diffusion (IC: default with noise, t_end: 1.5) |
 | advecting-patterns | WORKS | 117s | EXCELLENT | Spot patterns advecting with flow |
 | turing-wave | WORKS | 124s | EXCELLENT | Spot patterns with velocity field |
 | growing-domains | WORKS | 100s | EXCELLENT | Spot pattern formation |
-| kpz | NEEDS FIX | 48s | BAD | No visible roughening dynamics |
+| kpz | WORKS | 38s | GOOD | Surface roughening with weak noise (nu: 0.5, lmbda: 0.2, eta: 0.1, sinusoidal IC) |
 | cahn-hilliard | WORKS | 78s | EXCELLENT | Beautiful phase separation |
 | superlattice | WORKS | 31s | EXCELLENT | Hexagonal spot lattice |
 | kdv | WORKS | 30s | GOOD | Soliton dynamics, dispersive |
 | kuramoto-sivashinsky | WORKS | 23s | EXCELLENT | Chaotic cellular patterns |
-| swift-hohenberg | NEEDS FIX | 16s | BAD | Pattern decays to faint noise |
+| swift-hohenberg | WORKS | 12s | EXCELLENT | Labyrinthine stripe patterns (r: 0.9, k: 0.9, t_end: 20) |
 | ginzburg-landau | WORKS | 211s | EXCELLENT | Beautiful vortex lattice |
 
 ## Statistics
-- **EXCELLENT**: 10 (gray-scott, lorenz, oscillators, cahn-hilliard, kuramoto-sivashinsky, ginzburg-landau, advecting-patterns, turing-wave, growing-domains, superlattice)
-- **GOOD**: 3 (burgers, nonlinear-beams, kdv)
-- **NEEDS FIX**: 3 (perona-malik, kpz, swift-hohenberg)
+- **EXCELLENT**: 11 (gray-scott, lorenz, oscillators, cahn-hilliard, kuramoto-sivashinsky, ginzburg-landau, advecting-patterns, turing-wave, growing-domains, superlattice, swift-hohenberg)
+- **GOOD**: 5 (burgers, nonlinear-beams, kdv, perona-malik, kpz)
+- **ALL 16 PHYSICS PDEs NOW WORKING**
 
 ## Detailed Analysis
 
@@ -167,30 +146,28 @@ t_end: 4.0  # was 8.0
 - Solitons move and show dispersive behavior
 - Dynamics relatively subtle but correct
 
-### NEEDS FIX Simulations
+### FIXED Simulations (Jan 6, 2026)
 
-#### perona-malik
-- **Problem**: Frame 0 is half black/half white step function, frame 99 is smooth gradient
-- **Expected**: Edge-preserving diffusion should maintain sharp edge
-- **Fix needed**: Check K parameter, may need different diffusion function or shorter t_end
+#### swift-hohenberg (NOW EXCELLENT)
+- **Problem**: Pattern decayed to faint noise
+- **Root cause**: With k=1.0, need r > k^4 = 1 for instability, but r was 0.5
+- **Fix**: Set r=0.9, k=0.9 (so k^4=0.656 < r), std=0.1, t_end=20 (pattern forms by ~t=10)
+- **Result**: Beautiful labyrinthine stripe patterns form from noise, stabilize by frame 50
 
-#### kpz
-- **Problem**: Frame 0 is uniform purple (flat), frame 99 is noisy green/yellow
-- **Expected**: Should show interface roughening with visible height field dynamics
-- **Fix needed**: Stochastic term may not be strong enough, or visualization may need adjustment
+#### perona-malik (NOW GOOD)
+- **Problem**: No visible noise in initial condition to demonstrate smoothing
+- **Root cause**: `type: step` IC doesn't support noise parameter
+- **Fix**: Changed to `type: default` which uses preset's custom IC with 4-quadrant pattern + built-in noise
+- **Result**: Shows 4 quadrants with noise, noise smoothed while edges preserved
 
-#### swift-hohenberg
-- **Problem**: Frame 0 is high-amplitude noise, frame 99 is very faint noise (almost uniform)
-- **Expected**: Should show stripe or spot pattern formation
-- **Fix needed**: Check r parameter (should be positive for instability), may need higher r or different IC
+#### kpz (NOW GOOD)
+- **Problem**: Later frames appeared blank (NaN blowup)
+- **Root cause**: Strong noise + nonlinear gradient_squared term caused numerical instability
+- **Fix**: Reduced noise eta: 1.0->0.1, increased nu: 0.5 for stability, sinusoidal IC, dt: 0.0001
+- **Result**: Shows sinusoidal smoothing with roughening from weak noise
 
-## Recommendations
 
-### Priority Fixes
-1. **swift-hohenberg**: Increase `r` parameter or check if sign is correct
-2. **perona-malik**: Reduce `K` or `t_end` to preserve edges
-3. **kpz**: Increase noise strength or adjust visualization
-
-### Good as-is
-- 13 out of 16 physics PDEs work well with current defaults
-- Most produce visually interesting dynamics suitable for training data
+## Summary
+- All 16 physics PDEs now produce visible, interesting dynamics
+- All 7 basic PDEs work correctly
+- Total: 23/23 PDEs working

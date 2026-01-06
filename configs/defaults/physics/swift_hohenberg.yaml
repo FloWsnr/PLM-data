@@ -1,15 +1,15 @@
 preset: swift-hohenberg
 parameters:
-  r: 0.5
-  k: 1.0
+  r: 0.9   # Growth rate (max 1.0 allowed)
+  k: 0.9   # Lower k gives k^4=0.656, so r=0.9 > k^4 enables instability
   g2: 0.0
   g3: -1.0
 init:
   type: random-gaussian
   params:
     mean: 0.0
-    std: 0.05
-solver: scipy  # Implicit solver for stiff 4th-order equation (1.60x faster than rk4)
+    std: 0.1  # Larger initial perturbation
+solver: scipy  # Implicit solver for stiff 4th-order equation
 backend: numba
 adaptive: true
 dt: 0.2
@@ -23,5 +23,5 @@ output:
   colormap: seismic
   field_to_plot: u
 seed: 42
-domain_size: 40.0
-t_end: 20.0
+domain_size: 50.0  # Larger domain for more pattern wavelengths
+t_end: 20.0  # Pattern forms by ~15, capture formation phase

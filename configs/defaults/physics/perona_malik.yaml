@@ -1,17 +1,10 @@
 preset: perona-malik
 parameters:
-  D: 0.1   # Slower diffusion for gradual smoothing
-  K: 0.3   # Lower threshold - preserves weaker edges
+  D: 0.1   # Moderate diffusion for visible smoothing
+  K: 0.5   # Edge threshold
 init:
-  type: step
-  params:
-    x0: 0.25
-    x1: 0.75
-    y0: 0.25
-    y1: 0.75
-    value_inside: 1.0
-    value_outside: 0.0
-    noise: 0.2  # More noise to smooth out
+  type: default  # Uses preset's custom IC with built-in step pattern + noise
+  params: {}
 solver: rk4
 backend: numba
 adaptive: true
@@ -27,4 +20,4 @@ output:
   field_to_plot: u
 seed: 42
 domain_size: 2.0
-t_end: 10.0  # Longer time for gradual edge-preserving smoothing
+t_end: 1.5  # Short time to preserve edges while smoothing noise
