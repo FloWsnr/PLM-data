@@ -1,100 +1,102 @@
 # Diffusively Coupled Lorenz System
 
-## Mathematical Formulation
+A spatially extended version of the famous Lorenz equations, exhibiting spatiotemporal chaos through the interplay of local chaotic dynamics and diffusive coupling.
 
-The Lorenz system with spatial diffusion coupling:
+## Description
 
-$$\frac{\partial x}{\partial t} = D_x \nabla^2 x + \sigma(y - x)$$
-$$\frac{\partial y}{\partial t} = D_y \nabla^2 y + x(\rho - z) - y$$
-$$\frac{\partial z}{\partial t} = D_z \nabla^2 z + xy - \beta z$$
+The Lorenz system, derived by Edward Lorenz in 1963 while studying atmospheric convection, is perhaps the most famous example of deterministic chaos. The original three-variable ODE system exhibits the iconic "butterfly" strange attractor and gave rise to the concept of sensitive dependence on initial conditions - the "butterfly effect."
 
-where:
-- $x, y, z$ are the Lorenz variables (spatially extended)
-- $\sigma, \rho, \beta$ are the classical Lorenz parameters
-- $D_x, D_y, D_z$ are diffusion coefficients
+The diffusively coupled version places a copy of the Lorenz oscillator at every point in space and couples neighboring oscillators through diffusion. This creates a reaction-diffusion system where:
+- **Local dynamics**: Each spatial point undergoes chaotic Lorenz dynamics
+- **Spatial coupling**: Diffusion smooths differences between neighboring regions
 
-## Physical Background
+The interplay between these mechanisms produces rich spatiotemporal behavior:
+- For **weak coupling** (small D): Spatially fragmented chaos with localized oscillating patches
+- For **strong coupling** (large D): Synchronized large-scale oscillations approaching uniform behavior
+- For **intermediate coupling**: Complex spatiotemporal patterns with coherent structures
 
-The original Lorenz system (1963) models atmospheric convection:
-- $x$: Convective intensity
-- $y$: Temperature difference (horizontal)
-- $z$: Temperature difference (vertical)
+This model demonstrates how local chaos can be spatially organized through diffusion, relevant to understanding turbulence, pattern formation in chaotic systems, and synchronization in coupled oscillator networks.
 
-The spatial extension creates a field of coupled chaotic oscillators.
+## Equations
 
-## Classical Lorenz Parameters
+The diffusively coupled Lorenz system:
 
-Standard chaotic regime:
-- $\sigma = 10$ (Prandtl number)
-- $\rho = 28$ (Rayleigh number)
-- $\beta = 8/3$ (geometric factor)
+$$\frac{\partial X}{\partial t} = D \nabla^2 X + \sigma(Y - X)$$
 
-## Parameters
+$$\frac{\partial Y}{\partial t} = D \nabla^2 Y + X(\rho - Z) - Y$$
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Sigma | $\sigma$ | Prandtl number | 1 - 20 |
-| Rho | $\rho$ | Rayleigh number | 1 - 50 |
-| Beta | $\beta$ | Geometric factor | 0.1 - 10 |
-| Diffusion x | $D_x$ | Coupling of x | 0 - 0.5 |
-| Diffusion y | $D_y$ | Coupling of y | 0 - 0.5 |
-| Diffusion z | $D_z$ | Coupling of z | 0 - 0.5 |
+$$\frac{\partial Z}{\partial t} = D \nabla^2 Z + XY - \beta Z$$
 
-## Strange Attractor
+Where:
+- $(X, Y, Z)$ are the Lorenz variables at each spatial point
+- $\sigma$ (sigma) is the Prandtl number
+- $\rho$ (rho) is the Rayleigh number (normalized)
+- $\beta$ (beta) is a geometric factor
+- $D$ is the diffusion coefficient (spatial coupling strength)
 
-Without diffusion, the Lorenz system has:
-- **Strange attractor**: Butterfly-shaped
-- **Sensitive dependence**: Chaos
-- **Two lobes**: Switching between states
-- **Fractal dimension**: ~2.06
+**Physical interpretation** (atmospheric convection):
+- $X$ proportional to convective circulation intensity
+- $Y$ proportional to temperature difference (ascending vs descending)
+- $Z$ proportional to vertical temperature profile deviation from linear
 
-## Spatiotemporal Chaos
+**Classical Lorenz attractor** (ODE, D=0):
+With $\sigma=10$, $\rho=28$, $\beta=8/3$, trajectories spiral around two lobes of the butterfly attractor, switching between them chaotically.
 
-With diffusion, the system exhibits:
-- **Spatiotemporal chaos**: Irregular in space and time
-- **Pattern formation**: Domains of synchronized behavior
-- **Traveling structures**: Propagating chaotic fronts
-- **Coherent structures**: Embedded in turbulent background
+## Default Config
 
-## Synchronization
+```yaml
+solver: euler
+dt: 0.00025
+dx: 0.35
+domain_size: 100 (inferred)
 
-Diffusive coupling can lead to:
-- **Full synchronization**: All points follow same trajectory
-- **Cluster synchronization**: Groups synchronize
-- **Phase synchronization**: Phases lock, amplitudes differ
-- **Chaos synchronization**: Synchronized chaos is possible
+boundary_x: periodic
+boundary_y: periodic
 
-## Bifurcation Behavior
+parameters:
+  sigma: 10    # Prandtl number (fixed)
+  rho: 30      # Rayleigh number (near classical value)
+  beta: 8/3    # geometric factor (2.667)
+  D: 0.5       # diffusion coefficient (coupling strength)
+```
 
-| $\rho$ Value | Behavior |
-|--------------|----------|
-| $\rho < 1$ | Origin stable |
-| $1 < \rho < \rho_H \approx 24.74$ | Two stable fixed points |
-| $\rho > \rho_H$ | Chaotic attractor |
+## Parameter Variants
 
-## Applications
+### Lorenz (Standard)
+Diffusively coupled Lorenz system:
+- `sigma = 10`, `rho = 30`, `beta = 8/3`
+- `D = 0.5` (intermediate coupling)
+- Random initial condition: $X = 0.3 \cdot \text{RANDN} + 1$, $Z = 29$
+- 3D surface plot visualization
+- Embossed rendering for structure visibility
 
-1. **Atmospheric science**: Weather modeling prototype
-2. **Coupled oscillators**: Synchronization studies
-3. **Turbulence**: Simplified turbulence model
-4. **Secure communications**: Chaos-based encryption
-5. **Nonlinear dynamics**: Paradigm for chaos
+### Coupling Strength Effects
 
-## The "Butterfly Effect"
+| D Value | Behavior |
+|---------|----------|
+| D < 0.2 | Fragmented chaos, localized patches |
+| D ~ 0.5 | Complex spatiotemporal patterns |
+| D > 2 | Synchronized oscillations |
+| D > 5 | Nearly uniform large-wavelength oscillations |
 
-Lorenz's 1972 talk: "Predictability: Does the Flap of a Butterfly's Wings in Brazil Set Off a Tornado in Texas?"
+### Exploring the System
 
-This captures sensitive dependence on initial conditions, a hallmark of chaotic systems.
+- Start with uniform initial condition ($X(t=0) = 0$) - system remains at unstable equilibrium
+- Click to perturb - initiates spreading chaotic oscillations
+- Multiple clicks create interacting wave fronts
+- Watch for coalescence and merging of structures over long times
+- Vary $D$ to observe transition from fragmented to synchronized dynamics
 
-## Numerical Considerations
+### Connection to Chaos Theory
 
-- Three coupled fields
-- Explicit schemes work for moderate diffusion
-- Chaotic dynamics require careful integration
-- Long transients before statistical equilibrium
+The Lorenz system exhibits:
+- **Strange attractor**: Fractal structure in phase space
+- **Sensitive dependence**: Exponential divergence of nearby trajectories
+- **Lyapunov exponents**: One positive (chaos), one zero (along trajectory), one negative (contraction)
+- **Topological mixing**: Any region eventually spreads throughout attractor
 
 ## References
 
-- Lorenz, E.N. (1963). *Deterministic Nonperiodic Flow*
-- Sparrow, C. (1982). *The Lorenz Equations: Bifurcations, Chaos, and Strange Attractors*
-- Pikovsky, A. et al. (2001). *Synchronization: A Universal Concept in Nonlinear Sciences*
+- Lorenz, E.N. (1963). "Deterministic nonperiodic flow" - J. Atmos. Sci. 20:130
+- Sparrow, C. (1982). "The Lorenz Equations: Bifurcations, Chaos, and Strange Attractors" - Springer
+- Cross, M.C. & Hohenberg, P.C. (1993). "Pattern formation outside of equilibrium" - Rev. Mod. Phys. 65:851

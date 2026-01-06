@@ -1,17 +1,18 @@
 preset: fitzhugh-nagumo
 parameters:
-  epsilon: 0.1  # Timescale separation
-  a_v: 0.0  # Coefficient of v in recovery
-  a_z: 0.0  # Constant in recovery equation
-  Du: 1.0  # Activator diffusion
-  Dv: 10.0  # Inhibitor diffusion (D > 1 for Turing patterns)
+  Dv: 20.0
+  e_v: 0.5
+  a_v: 1.0
+  a_z: -0.1
 init:
-  type: spiral-seed  # Special IC for spiral wave formation
-  params: {}
-solver: scipy
+  type: random-gaussian
+  params:
+    mean: 0.0
+    std: 0.1
+solver: euler
 backend: numba
-adaptive: true
-dt: 0.1
+adaptive: false
+dt: 0.001
 resolution: 128
 bc:
   x: periodic
@@ -20,7 +21,7 @@ output:
   path: ./output
   num_frames: 100
   colormap: turbo
-  field_to_plot: u  # Show activator
+  field_to_plot: u
 seed: 42
-domain_size: 20.0  # Larger domain for spiral waves
-t_end: 100.0  # Longer time for spiral dynamics
+domain_size: 280.0
+t_end: 100.0

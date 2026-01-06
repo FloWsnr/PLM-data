@@ -1,4 +1,4 @@
-"""Fisher-KPP equation for population dynamics."""
+"""Fisher-KPP equation for population spread and traveling waves."""
 
 from typing import Any
 
@@ -12,17 +12,27 @@ from .. import register_pde
 class FisherKPPPDE(ScalarPDEPreset):
     """Fisher-KPP equation for population dynamics.
 
-    The Fisher-KPP equation describes population growth with diffusion:
+    The Fisher-KPP equation describes traveling waves of invasion:
 
         du/dt = D * laplace(u) + r * u * (1 - u/K)
 
     where:
-        - u is population density
-        - D is diffusion coefficient
-        - r is growth rate
-        - K is carrying capacity
+        - u is the population density
+        - D is the diffusion coefficient
+        - r is the intrinsic growth rate
+        - K is the carrying capacity
 
-    Exhibits traveling wave solutions.
+    Key result: Traveling wave solutions with minimum speed c = 2*sqrt(r*D).
+
+    Applications:
+        - Species invasion and range expansion
+        - Epidemic spread (SIS model reduces to Fisher-KPP)
+        - Tumor growth
+        - Gene propagation
+
+    References:
+        Fisher, R. A. (1937). Annals of Eugenics, 7(4), 355-369.
+        Kolmogorov, Petrovsky, Piskunov (1937). Moscow Univ. Math. Bull.
     """
 
     @property
@@ -30,36 +40,36 @@ class FisherKPPPDE(ScalarPDEPreset):
         return PDEMetadata(
             name="fisher-kpp",
             category="biology",
-            description="Fisher-KPP population dynamics",
+            description="Fisher-KPP equation for population spread",
             equations={
                 "u": "D * laplace(u) + r * u * (1 - u / K)",
             },
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=0.1,
+                    default=1.0,
                     description="Diffusion coefficient",
                     min_value=0.01,
-                    max_value=0.5,
+                    max_value=10.0,
                 ),
                 PDEParameter(
                     name="r",
                     default=1.0,
-                    description="Growth rate",
-                    min_value=0.1,
+                    description="Intrinsic growth rate",
+                    min_value=0.0,
                     max_value=5.0,
                 ),
                 PDEParameter(
                     name="K",
                     default=1.0,
                     description="Carrying capacity",
-                    min_value=0.1,
-                    max_value=10.0,
+                    min_value=0.5,
+                    max_value=1.5,
                 ),
             ],
             num_fields=1,
             field_names=["u"],
-            reference="Population invasion fronts",
+            reference="Fisher (1937), Kolmogorov et al. (1937)",
         )
 
     def create_pde(
@@ -68,7 +78,7 @@ class FisherKPPPDE(ScalarPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        D = parameters.get("D", 0.1)
+        D = parameters.get("D", 1.0)
         r = parameters.get("r", 1.0)
         K = parameters.get("K", 1.0)
 

@@ -1,102 +1,117 @@
-# Perona-Malik Anisotropic Diffusion
+# Perona-Malik Equation
 
-## Mathematical Formulation
+A nonlinear anisotropic diffusion equation for image denoising that smooths homogeneous regions while preserving and enhancing edges.
 
-The Perona-Malik equation for edge-preserving diffusion:
+## Description
 
-$$\frac{\partial u}{\partial t} = \nabla \cdot \left(g(|\nabla u|) \nabla u\right)$$
+The Perona-Malik equation, introduced by Pietro Perona and Jitendra Malik in 1990, revolutionized image processing by providing a principled approach to denoising that respects image structure. Unlike linear diffusion (which blurs everything, including edges), anisotropic diffusion adapts to image content: smoothing within uniform regions while preserving sharp boundaries.
 
-With specific diffusivity function:
-$$g(s) = \frac{1}{1 + (s/K)^2}$$
+The key insight is making the diffusion coefficient depend on the local image gradient:
+- **Small gradients** (smooth regions): Strong diffusion, aggressive smoothing of noise
+- **Large gradients** (edges): Weak or no diffusion, edges remain sharp
 
-Simplified form used in implementation:
-$$\frac{\partial u}{\partial t} = \frac{D \nabla^2 u}{1 + |\nabla u|^2/K^2}$$
+This creates a scale-space where small-scale noise is removed while large-scale structure (edges, contours) is preserved. The process can even **enhance** edges by sharpening gradients over time.
 
-where:
-- $u$ is the image intensity
-- $D$ is the diffusion coefficient
-- $K$ is the edge threshold parameter
-- $|\nabla u|$ is the gradient magnitude
+Applications include:
+- **Image denoising**: Removing sensor noise while preserving detail
+- **Medical imaging**: Enhancing CT/MRI scans
+- **Computer vision preprocessing**: Improving edge detection
+- **Segmentation**: Clarifying region boundaries
 
-## Physical Background
+The equation has sparked extensive mathematical analysis regarding well-posedness (the original formulation is ill-posed) and regularizations that maintain the edge-preserving properties while ensuring mathematical stability.
 
-Standard diffusion (heat equation) smooths all features uniformly. Perona-Malik diffusion is **adaptive**:
+## Equations
 
-- **Smooth regions** ($|\nabla u| \ll K$): Strong diffusion (smoothing)
-- **Edges** ($|\nabla u| \gg K$): Weak diffusion (preserving)
+The Perona-Malik equation:
 
-This enables noise reduction while maintaining edges.
+$$\frac{\partial u}{\partial t} = \nabla \cdot \left( g(|\nabla u|) \nabla u \right)$$
 
-## Parameters
+where $g(s)$ is an edge-stopping function that decreases with gradient magnitude.
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Diffusion coefficient | $D$ | Base diffusion rate | 0.01 - 2 |
-| Edge threshold | $K$ | Gradient threshold | 0.1 - 5 |
+The implemented version uses an exponential edge-stopping function:
 
-## Diffusivity Functions
+$$\frac{\partial u}{\partial t} = \nabla \cdot \left( e^{-D |\nabla u|^2} \nabla u \right)$$
 
-Several choices for $g(s)$:
+Via cross-diffusion with auxiliary variable $v = |\nabla u|^2 = u_x^2 + u_y^2$:
 
-| Function | Formula | Properties |
-|----------|---------|------------|
-| Perona-Malik 1 | $e^{-(s/K)^2}$ | Gaussian decay |
-| Perona-Malik 2 | $1/(1+(s/K)^2)$ | Lorentzian decay |
-| Total Variation | $1/s$ | Scale invariant |
-| Tukey | Bounded | Robust statistics |
+$$\frac{\partial u}{\partial t} = \nabla \cdot \left( e^{-D v} \nabla u \right)$$
 
-## Forward vs Backward Diffusion
+$$v = u_x^2 + u_y^2 \quad \text{(algebraic constraint)}$$
 
-For Perona-Malik 2:
-- $|\nabla u| < K$: Forward diffusion (smoothing)
-- $|\nabla u| > K$: **Backward diffusion** (sharpening)
+Where:
+- $u(x,y,t)$ is the image intensity (grayscale value)
+- $g(|\nabla u|) = e^{-D|\nabla u|^2}$ is the diffusivity function
+- $D$ controls edge sensitivity (larger D = more edge enhancement)
+- $|\nabla u|^2$ measures local gradient magnitude (edge strength)
 
-Backward diffusion can cause:
-- Edge enhancement
-- Staircasing artifacts
-- Mathematical ill-posedness
+**Common edge-stopping functions**:
+1. Exponential: $g(s) = e^{-(s/K)^2}$
+2. Tukey: $g(s) = 1/(1 + (s/K)^2)$
+3. Huber: $g(s) = 1$ if $s < K$, else $K/s$
 
-## Well-Posedness Issues
+## Default Config
 
-The Perona-Malik equation is **ill-posed** in the classical sense:
-- Solutions may not depend continuously on data
-- Can develop singularities
-- Numerical discretization acts as regularization
+```yaml
+solver: euler
+dt: 0.0002
+dx: 0.2
+domain_size: 100 (from image)
 
-## Image Processing Pipeline
+boundary_x: neumann
+boundary_y: neumann
 
-Typical workflow:
-1. Initialize with noisy image
-2. Evolve Perona-Malik equation
-3. Edges preserved, noise reduced
-4. Stop before over-smoothing
+parameters:
+  D: 5       # edge sensitivity parameter
+  sigma: 1   # [0, 2] - initial noise level
+```
 
-## Applications
+## Parameter Variants
 
-1. **Medical imaging**: CT, MRI denoising
-2. **Computer vision**: Edge detection preprocessing
-3. **Photography**: Noise reduction
-4. **Microscopy**: Image enhancement
-5. **Remote sensing**: Satellite image processing
+### PeronaMalik (Standard)
+Image denoising demonstration:
+- `D = 5` (edge sensitivity)
+- `sigma = 1` (noise level in initial condition)
+- Initial condition: Text image with added noise
+- Greyscale colormap
+- Starts paused - press play to denoise
 
-## Comparison with Linear Diffusion
+### Image Sources
 
-| Property | Linear (Heat) | Perona-Malik |
-|----------|---------------|--------------|
-| Edges | Blurred | Preserved |
-| Noise | Reduced | Reduced |
-| Selectivity | None | Gradient-based |
-| Well-posed | Yes | No |
+Two built-in images:
+- `I_T`: Text quote from Bernt Oksendal (default)
+- `I_S`: Aperiodic tiling pattern
+- Change initial condition to use $I_S$ instead of $I_T$ for alternative
 
-## Regularized Versions
+### Edge Sensitivity Parameter D
 
-To address ill-posedness:
-- **Catté et al.**: Regularize gradient $|\nabla G_\sigma * u|$
-- **Total Variation**: Different functional
-- **Bilateral filtering**: Discrete approach
+| D Value | Behavior |
+|---------|----------|
+| D small (~1) | Mild smoothing, weak edge preservation |
+| D medium (~5) | Good balance of denoising and edge preservation |
+| D large (>10) | Strong edge enhancement, risk of instability |
+
+### Workflow
+
+1. **Initial state**: Noisy image (text or pattern with added random noise)
+2. **Play simulation**: Diffusion smooths noise within uniform regions
+3. **Observe**: Edges remain sharp, may even sharpen slightly
+4. **Adjust D**: Higher values preserve more edge detail
+5. **Stop**: When image is sufficiently denoised
+
+### Adding More Noise
+
+Use the brush tool with value `0.3*(RAND-0.5)` to add noise to any region, then continue diffusion to denoise.
+
+### Mathematical Notes
+
+The original Perona-Malik formulation is mathematically **ill-posed** - small perturbations can grow unboundedly. However:
+- In practice, discretization provides regularization
+- Finite difference schemes are stable for reasonable timesteps
+- The visual results remain useful for image processing
+- Regularized versions (e.g., adding higher-order terms) can ensure well-posedness
 
 ## References
 
-- Perona, P. & Malik, J. (1990). *Scale-space and edge detection using anisotropic diffusion*
-- Catté, F. et al. (1992). *Image selective smoothing and edge detection*
-- Weickert, J. (1998). *Anisotropic Diffusion in Image Processing*
+- Perona, P. & Malik, J. (1990). "Scale-space and edge detection using anisotropic diffusion" - IEEE Trans. PAMI 12:629
+- Weickert, J. (1998). "Anisotropic Diffusion in Image Processing" - Teubner
+- Catte, F. et al. (1992). "Image selective smoothing and edge detection by nonlinear diffusion" - SIAM J. Num. Anal. 29:182

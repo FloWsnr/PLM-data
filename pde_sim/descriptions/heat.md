@@ -1,55 +1,80 @@
-# Heat Equation (Diffusion Equation)
+# Heat Equation
 
-## Mathematical Formulation
+The heat equation is a fundamental parabolic partial differential equation that describes how heat diffuses through a material over time.
 
-The heat equation is one of the most fundamental partial differential equations in mathematical physics:
+## Description
 
-$$\frac{\partial T}{\partial t} = D \nabla^2 T$$
+The heat equation is a direct consequence of Fourier's law of heat conduction and the conservation of energy. Fourier's law states that heat flux is proportional to the negative temperature gradient - heat flows from hotter regions to colder regions at a rate proportional to the temperature difference.
+
+This equation is one of the most important PDEs in mathematical physics and has applications far beyond thermal diffusion:
+
+- **Thermal engineering**: Predicting temperature distributions in materials, thermal management in electronics
+- **Financial mathematics**: The Black-Scholes equation for option pricing transforms into the heat equation
+- **Image processing**: Gaussian blur and scale-space analysis use heat equation smoothing
+- **Polymer science**: Measuring thermal diffusivity in rubber and polymeric materials
+- **Porous media**: Pressure diffusion in porous materials follows the same equation
+- **Biophysics**: Protein energy transfer and thermal modeling
+
+A key property of solutions is the gradual smoothing of the initial temperature distribution. Any sharp features in the initial condition will immediately begin to diffuse, with high-frequency components decaying faster than low-frequency ones. This leads to the characteristic smoothing behavior where heat spreads from concentrated regions throughout the domain.
+
+The heat equation exhibits infinite propagation speed - mathematically, a localized disturbance instantly affects all points in the domain, though the effect becomes negligible at large distances.
+
+## Equations
+
+The heat equation in two dimensions:
+
+$$\frac{\partial T}{\partial t} = D_T \nabla^2 T$$
 
 where:
-- $T$ is the temperature (or concentration in diffusion contexts)
-- $D$ is the diffusion coefficient (thermal diffusivity)
-- $\nabla^2$ is the Laplacian operator
+- $T(x, y, t)$ is the temperature field
+- $D_T$ is the thermal diffusivity (diffusion coefficient)
+- $\nabla^2 = \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2}$ is the Laplacian operator
 
-In two dimensions, the Laplacian expands to:
+In the visual-pde framework, this is implemented as:
+- Reaction term: `0` (no reaction/source terms)
+- Diffusion: `D_T = 1` (diffusion coefficient for temperature field)
 
-$$\frac{\partial T}{\partial t} = D \left( \frac{\partial^2 T}{\partial x^2} + \frac{\partial^2 T}{\partial y^2} \right)$$
+## Default Config
 
-## Physical Background
+```yaml
+solver: euler
+dt: 0.01
+dx: 1.5
+domain_size: 320
 
-The heat equation was first derived by Joseph Fourier in 1822 to describe heat conduction in solid bodies. It belongs to the class of parabolic PDEs and is characterized by:
+boundary_x: neumann
+boundary_y: neumann
 
-- **Smoothing behavior**: Initial discontinuities are immediately smoothed out
-- **No finite propagation speed**: Information propagates instantly (unlike wave equations)
-- **Energy dissipation**: Total "energy" (integral of $T^2$) decreases over time
-- **Maximum principle**: Maximum and minimum values occur on boundaries or at initial time
+species:
+  - name: T
+    diffusion: 1.0
+```
 
-## Parameters
+## Parameter Variants
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Diffusion coefficient | $D$ | Rate of heat/mass transport | 0.01 - 0.5 |
+### heatEquation (2D)
+The standard 2D heat equation with:
+- No-flux (Neumann) boundary conditions
+- Zero initial condition (add heat by clicking)
+- Diffusion coefficient $D_T = 1$
 
-## Applications
+### heatEquation1D
+One-dimensional version with:
+- Initial condition: $T(x,0) = \cos(m\pi x / L)$
+- Parameter: `m = 8` in range `[1, 10]` (wave number)
+- Demonstrates exponential decay of Fourier modes
 
-1. **Thermal conduction**: Heat flow in metals, buildings, geological formations
-2. **Molecular diffusion**: Spreading of chemicals in solutions
-3. **Financial mathematics**: Black-Scholes equation is a variant
-4. **Image processing**: Gaussian blurring corresponds to heat equation evolution
-5. **Probability theory**: Connection to Brownian motion and random walks
+The analytical solution is:
+$$T(x,t) = e^{-D_T t (m\pi/L)^2} \cos\left(\frac{m\pi x}{L}\right)$$
 
-## Analytical Solutions
+Higher frequency modes (larger $m$) decay faster.
 
-For a Gaussian initial condition on an infinite domain:
-$$T(x,y,t) = \frac{1}{4\pi Dt} \exp\left(-\frac{x^2 + y^2}{4Dt}\right)$$
-
-## Numerical Considerations
-
-- Explicit schemes require $\Delta t \leq \frac{(\Delta x)^2}{4D}$ for stability (CFL condition)
-- Implicit schemes are unconditionally stable but require matrix inversions
-- The equation is not stiff and can be solved efficiently with explicit methods for moderate $D$
+### heatEquation1DValidity
+Validation preset comparing numerical solution to the analytical fundamental solution:
+$$T(x,t) = \frac{1}{\sqrt{t+t_0}} \exp\left(-\frac{(x-L_x/2)^2}{4(t+t_0)}\right)$$
 
 ## References
 
-- Fourier, J. (1822). *Théorie analytique de la chaleur*
-- Evans, L.C. (2010). *Partial Differential Equations*
+- [Heat equation - Wikipedia](https://en.wikipedia.org/wiki/Heat_equation)
+- [The Heat Equation - Paul's Online Math Notes](https://tutorial.math.lamar.edu/classes/de/theheatequation.aspx)
+- [PDEs, Separation of Variables, and The Heat Equation - Mathematics LibreTexts](https://math.libretexts.org/Bookshelves/Differential_Equations/Differential_Equations_for_Engineers_(Lebl)/4:_Fourier_series_and_PDEs/4.06:_PDEs_separation_of_variables_and_the_heat_equation)

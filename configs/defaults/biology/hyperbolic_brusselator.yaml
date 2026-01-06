@@ -1,0 +1,29 @@
+preset: hyperbolic-brusselator
+parameters:
+  tau: 1.0
+  Du: 2.0
+  Dv: 8.0
+  a: 5.0
+  b: 9.0
+  eps: 0.001
+init:
+  type: random-gaussian
+  params:
+    mean: 5.0
+    std: 0.1
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.00005
+resolution: 128
+bc:
+  x: neumann
+  y: neumann
+output:
+  path: ./output
+  num_frames: 100
+  colormap: turbo
+  field_to_plot: u
+seed: 42
+domain_size: 10.0
+t_end: 10.0

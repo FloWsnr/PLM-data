@@ -1,0 +1,25 @@
+preset: bacteria-advection
+parameters:
+  u: 0.62
+  k: 0.006
+  c0: 0.77
+init:
+  type: uniform
+  params:
+    value: 0.77
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.01
+resolution: 128
+bc:
+  x: dirichlet
+  y: periodic
+output:
+  path: ./output
+  num_frames: 100
+  colormap: viridis
+  field_to_plot: C
+seed: 42
+domain_size: 320.0
+t_end: 100.0

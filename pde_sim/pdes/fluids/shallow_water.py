@@ -1,4 +1,4 @@
-"""Shallow water equations - real hyperbolic wave equations."""
+"""Shallow water equations - 2D wave propagation."""
 
 from typing import Any
 
@@ -13,24 +13,29 @@ from .. import register_pde
 
 @register_pde("shallow-water")
 class ShallowWaterPDE(MultiFieldPDEPreset):
-    """Linearized Shallow Water equations (full hyperbolic system).
+    """2D Shallow Water Equations.
 
-    The shallow water equations describe free surface gravity waves:
+    The shallow water equations model water waves and ripples in a fluid
+    layer where horizontal length scales are much larger than vertical depth.
 
-        dh/dt = -H * (d_dx(u) + d_dy(v))
-        du/dt = -g * d_dx(h)
-        dv/dt = -g * d_dy(h)
+    Water height evolution:
+        dh/dt = -(d_dx(u) + d_dy(v)) * (h + H_e) - (d_dx(h) * u + d_dy(h) * v) - epsilon * h
+
+    Horizontal momentum (x-direction):
+        du/dt = nu * laplace(u) - g * d_dx(h) - k * u - u * d_dx(u) - v * d_dy(u) + f * v
+
+    Horizontal momentum (y-direction):
+        dv/dt = nu * laplace(v) - g * d_dy(h) - k * v - u * d_dx(v) - v * d_dy(v) - f * u
 
     where:
-        - h is the height perturbation from mean depth H
-        - u, v are the depth-averaged velocity components
+        - h is height perturbation from mean depth
+        - u, v are horizontal velocity components
+        - H_e is equilibrium water depth
         - g is gravitational acceleration
-        - H is the mean water depth
-
-    The wave speed is c = sqrt(g*H).
-
-    This is a hyperbolic system that supports propagating waves,
-    unlike the diffusive approximation.
+        - f is Coriolis parameter
+        - k is linear drag coefficient
+        - nu is kinematic viscosity
+        - epsilon is height dissipation rate
     """
 
     @property
@@ -38,31 +43,59 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
         return PDEMetadata(
             name="shallow-water",
             category="fluids",
-            description="Linearized shallow water wave equations",
+            description="2D shallow water wave equations",
             equations={
-                "h": "-H * (d_dx(u) + d_dy(v))",
-                "u": "-g * d_dx(h)",
-                "v": "-g * d_dy(h)",
+                "h": "-(d_dx(u) + d_dy(v)) * (h + H_e) - (d_dx(h) * u + d_dy(h) * v) - epsilon * h",
+                "u": "nu * laplace(u) - g * d_dx(h) - k * u - u * d_dx(u) - v * d_dy(u) + f * v",
+                "v": "nu * laplace(v) - g * d_dy(h) - k * v - u * d_dx(v) - v * d_dy(v) - f * u",
             },
             parameters=[
                 PDEParameter(
-                    name="g",
+                    name="H_e",
                     default=1.0,
-                    description="Gravitational acceleration",
+                    description="Equilibrium water depth",
                     min_value=0.1,
                     max_value=10.0,
                 ),
                 PDEParameter(
-                    name="H",
-                    default=1.0,
-                    description="Mean water depth",
-                    min_value=0.1,
-                    max_value=10.0,
+                    name="g",
+                    default=9.81,
+                    description="Gravitational acceleration",
+                    min_value=1.0,
+                    max_value=20.0,
+                ),
+                PDEParameter(
+                    name="f",
+                    default=0.01,
+                    description="Coriolis parameter",
+                    min_value=0.0,
+                    max_value=1.0,
+                ),
+                PDEParameter(
+                    name="k",
+                    default=0.001,
+                    description="Linear drag coefficient",
+                    min_value=0.0,
+                    max_value=0.1,
+                ),
+                PDEParameter(
+                    name="nu",
+                    default=0.5,
+                    description="Kinematic viscosity",
+                    min_value=0.01,
+                    max_value=5.0,
+                ),
+                PDEParameter(
+                    name="epsilon",
+                    default=0.0001,
+                    description="Height dissipation rate",
+                    min_value=0.0,
+                    max_value=0.01,
                 ),
             ],
             num_fields=3,
             field_names=["h", "u", "v"],
-            reference="Shallow water wave equations (Saint-Venant)",
+            reference="Shallow water equations (Saint-Venant)",
         )
 
     def create_pde(
@@ -71,14 +104,18 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        g = parameters.get("g", 1.0)
-        H = parameters.get("H", 1.0)
+        H_e = parameters.get("H_e", 1.0)
+        g = parameters.get("g", 9.81)
+        f = parameters.get("f", 0.01)
+        k = parameters.get("k", 0.001)
+        nu = parameters.get("nu", 0.5)
+        epsilon = parameters.get("epsilon", 0.0001)
 
         return PDE(
             rhs={
-                "h": f"-{H} * (d_dx(u) + d_dy(v))",
-                "u": f"-{g} * d_dx(h)",
-                "v": f"-{g} * d_dy(h)",
+                "h": f"-(d_dx(u) + d_dy(v)) * (h + {H_e}) - (d_dx(h) * u + d_dy(h) * v) - {epsilon} * h",
+                "u": f"{nu} * laplace(u) - {g} * d_dx(h) - {k} * u - u * d_dx(u) - v * d_dy(u) + {f} * v",
+                "v": f"{nu} * laplace(v) - {g} * d_dy(h) - {k} * v - u * d_dx(v) - v * d_dy(v) - {f} * u",
             },
             bc=self._convert_bc(bc),
         )
@@ -118,6 +155,25 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
             h_data = amplitude * np.exp(-r_sq / (2 * w**2))
 
             # Zero initial velocities (drop starts at rest)
+            u_data = np.zeros_like(h_data)
+            v_data = np.zeros_like(h_data)
+
+        elif ic_type == "dam-break":
+            # Dam break initial condition (step function using tanh)
+            step_width = ic_params.get("step_width", 0.05)
+            amplitude = ic_params.get("amplitude", 0.5)
+
+            x, y = np.meshgrid(
+                np.linspace(x_min, x_max, grid.shape[0]),
+                np.linspace(y_min, y_max, grid.shape[1]),
+                indexing="ij",
+            )
+
+            # Normalize x coordinate
+            x_norm = (x - x_min) / L_x
+
+            # Tanh step function centered at x = 0.5
+            h_data = amplitude * 0.5 * (1.0 - np.tanh((x_norm - 0.5) / step_width))
             u_data = np.zeros_like(h_data)
             v_data = np.zeros_like(h_data)
 

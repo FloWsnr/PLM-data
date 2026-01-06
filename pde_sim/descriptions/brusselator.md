@@ -1,68 +1,75 @@
 # Brusselator Model
 
-## Mathematical Formulation
+A two-component reaction-diffusion system modeling oscillating chemical reactions, named after Brussels where it was developed by Ilya Prigogine's group.
 
-The Brusselator is a theoretical model for autocatalytic reactions:
+## Description
 
-$$\frac{\partial u}{\partial t} = D_u \nabla^2 u + a - (b+1)u + u^2 v$$
+The Brusselator is a theoretical model developed in Brussels by Ilya Prigogine and colleagues to study the emergence of dissipative structures in chemical systems far from equilibrium. It was designed to demonstrate how self-organization and pattern formation can arise from simple chemical kinetics, a concept central to Prigogine's Nobel Prize-winning work on non-equilibrium thermodynamics.
+
+The model captures the essential features of oscillating chemical reactions like the Belousov-Zhabotinsky reaction. It describes the interaction between two chemical species (morphogens): an activator and an inhibitor that react and diffuse with different rates.
+
+Key behaviors include:
+- **Turing patterns**: Stable spatial patterns (spots, stripes) when D exceeds a critical threshold
+- **Oscillations**: Periodic temporal oscillations in concentrations
+- **Turing-Wave instabilities**: In hyperbolic extensions, combined spatial and temporal instabilities
+
+The Brusselator revealed fundamental principles of pattern formation: the coupling between nonlinear reaction kinetics and differential diffusion rates, where the inhibitor must diffuse more rapidly than the activator. This activator-inhibitor principle has become universal for explaining pattern formation in chemical, ecological, physical, and biological systems.
+
+### Stability Conditions
+- Homogeneous equilibrium is stable for $b - 1 < a^2$
+- Turing instability occurs for $D > \frac{a^2}{(\sqrt{b}-1)^2}$
+- For $a = 2$, $b = 3$: critical $D_c \approx 7.46$
+
+## Equations
+
+$$\frac{\partial u}{\partial t} = \nabla^2 u + a - (b+1)u + u^2 v$$
+
 $$\frac{\partial v}{\partial t} = D_v \nabla^2 v + bu - u^2 v$$
 
-where:
-- $u, v$ are chemical concentrations
-- $D_u, D_v$ are diffusion coefficients
-- $a, b$ are kinetic parameters
+Where:
+- $u$ is the activator concentration
+- $v$ is the inhibitor concentration
+- $a, b > 0$ are kinetic parameters
+- $D_v$ is the diffusion coefficient ratio
 
-## Physical Background
+### Hyperbolic Extension
+$$\tau \frac{\partial^2 u}{\partial t^2} + \frac{\partial u}{\partial t} = D \nabla^2 u + a - (b+1)u + u^2 v$$
 
-Developed by Prigogine and Lefever at the Brussels school, the Brusselator corresponds to the reaction scheme:
+$$\tau \frac{\partial^2 v}{\partial t^2} + \frac{\partial v}{\partial t} = \nabla^2 v + bu - u^2 v$$
 
-$$A \to X$$
-$$B + X \to Y + D$$
-$$2X + Y \to 3X$$
-$$X \to E$$
+## Default Config
 
-The system exhibits:
-- **Limit cycles**: Temporal oscillations when $b > 1 + a^2$
-- **Turing patterns**: Spatial structures with differential diffusion
-- **Turing-Hopf interaction**: Complex spatiotemporal dynamics
+```yaml
+solver: euler
+dt: 0.001
+dx: 1.0
+domain_size: 100
 
-## Steady State
+boundary_x: periodic
+boundary_y: periodic
 
-The homogeneous steady state is $(u^*, v^*) = (a, b/a)$.
+parameters:
+  D_v: 8    # range: [7, 9], step: 0.1
+  a: 2
+  b: 3
+```
 
-**Hopf bifurcation** occurs at $b_H = 1 + a^2$, leading to oscillations.
-**Turing bifurcation** occurs when diffusion destabilizes the steady state.
+## Parameter Variants
 
-## Parameters
+### brusselator (Standard)
+Standard configuration near the Turing instability threshold.
+- `D_v = 8` (range: [7, 9]): Just above critical threshold (~7.46)
+- `a = 2`, `b = 3`: Classic parameter values
+- Initial conditions: `u(0) = a`, `v(0) = b/a`
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Parameter a | $a$ | Feed rate | 0.1 - 3 |
-| Parameter b | $b$ | Bifurcation control | 0.1 - 5 |
-| Diffusion u | $D_u$ | Activator diffusion | 0.01 - 0.5 |
-| Diffusion v | $D_v$ | Inhibitor diffusion | 0.1 - 5 |
-
-## Dynamics Regimes
-
-| Condition | Behavior |
-|-----------|----------|
-| $b < 1 + a^2$, no diffusion | Stable steady state |
-| $b > 1 + a^2$, no diffusion | Limit cycle oscillations |
-| $D_v/D_u \gg 1$, Turing condition | Stationary patterns |
-| Both conditions | Oscillating patterns |
-
-## Applications
-
-1. **Chemical oscillations**: BZ reaction analog
-2. **Glycolysis models**: Metabolic oscillations
-3. **Theoretical chemistry**: Nonequilibrium thermodynamics
-4. **Pattern formation**: Morphogenesis studies
-
-## Historical Significance
-
-The Brusselator was one of the first models to demonstrate that chemical systems far from equilibrium can spontaneously organize into ordered structures (dissipative structures), contributing to Prigogine's Nobel Prize in 1977.
+### Hyperbolic Variants (Turing-Wave)
+Extensions with second-order time derivatives enabling Turing-Wave instabilities:
+- `tau > 0`: Inertial parameter
+- `D < 1`: Diffusion ratio on u equation (reversed from standard)
+- Produces oscillating spatial patterns and wave-like spatiotemporal behavior
 
 ## References
 
-- Prigogine, I. & Lefever, R. (1968). *Symmetry Breaking Instabilities in Dissipative Systems*
-- Nicolis, G. & Prigogine, I. (1977). *Self-Organization in Nonequilibrium Systems*
+- Prigogine, I., & Lefever, R. (1968). Symmetry breaking instabilities in dissipative systems. II. Journal of Chemical Physics, 48(4), 1695-1700.
+- Nicolis, G., & Prigogine, I. (1977). Self-Organization in Nonequilibrium Systems. Wiley.
+- Turing, A. M. (1952). The chemical basis of morphogenesis. Philosophical Transactions of the Royal Society B, 237(641), 37-72.

@@ -1,0 +1,25 @@
+preset: nonlinear-beam
+parameters:
+  E_star: 0.0001
+  Delta_E: 24.0
+  eps: 0.01
+init:
+  type: default
+  params:
+    amplitude: 0.5
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.00004
+t_end: 1.0
+resolution: 128
+bc:
+  x: neumann
+  y: neumann
+output:
+  path: ./output
+  num_frames: 100
+  colormap: viridis
+  field_to_plot: u
+seed: 123
+domain_size: 1

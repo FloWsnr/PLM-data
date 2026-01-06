@@ -1,12 +1,11 @@
 preset: burgers
 parameters:
-  nu: 0.005  # Lower viscosity for sharper shock formation
+  epsilon: 0.05
 init:
-  type: gaussian-blobs  # Multiple blobs create interesting shock interactions
+  type: default
   params:
-    num_blobs: 5
-    amplitude: 2.0
-    sigma: 0.3
+    amplitude: 1.0
+    width: 0.1
 solver: rk4
 backend: numba
 adaptive: true
@@ -21,5 +20,5 @@ output:
   colormap: seismic
   field_to_plot: u
 seed: 42
-domain_size: 4.0  # Larger domain for visible shock propagation
-t_end: 8.0  # Shocks form relatively quickly
+domain_size: 10.0
+t_end: 5.0

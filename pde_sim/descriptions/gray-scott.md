@@ -1,92 +1,91 @@
-# Gray-Scott Reaction-Diffusion System
+# Gray-Scott Model
 
-## Mathematical Formulation
+A reaction-diffusion system exhibiting complex autocatalytic dynamics with an extraordinarily rich variety of pattern-forming behaviors, from spots and stripes to spatiotemporal chaos.
 
-The Gray-Scott model describes autocatalytic reactions:
+## Description
 
-$$\frac{\partial u}{\partial t} = D_u \nabla^2 u - uv^2 + F(1 - u)$$
-$$\frac{\partial v}{\partial t} = D_v \nabla^2 v + uv^2 - (F + k)v$$
+The Gray-Scott model, introduced by Peter Gray and Stephen Scott in 1984, describes two coupled chemical species undergoing autocatalytic reactions with diffusion. Originally derived to model cubic autocatalytic biochemical reactions, it has become one of the most studied systems in pattern formation due to its remarkably rich dynamical behavior.
 
-where:
-- $u$ is the concentration of "feed" chemical
-- $v$ is the concentration of "catalyst" chemical
-- $D_u, D_v$ are diffusion coefficients
-- $F$ is the feed rate (inflow rate)
-- $k$ is the kill rate (outflow rate)
+The system exhibits an extraordinary range of patterns depending on the feed rate (a) and removal rate (b) parameters, including:
+- Labyrinthine/stripe patterns
+- Stationary and pulsating spots
+- Self-replicating spots (mitosis-like behavior)
+- Worm-like structures
+- Holes in otherwise uniform states
+- Spatiotemporal chaos
+- Glider-like moving spots (similar to cellular automata)
 
-## Physical Background
+The famous 1993 Pearson classification mapped out these behavioral regimes across the (a,b) parameter space, revealing the stunning complexity hidden in this deceptively simple system. Pattern selection depends critically on the diffusion ratio D between the two species - with D=2 providing the richest parameter space.
 
-The Gray-Scott model represents a continuously stirred tank reactor (CSTR):
+The model has connections to real chemical systems like the ferrocyanide-iodate-sulphite reaction and serves as a paradigm for understanding Turing-type pattern formation in biology, from animal coat markings to cellular organization.
 
-1. **Feed**: Fresh $u$ enters at concentration 1, rate $F$
-2. **Reaction**: $u + 2v \to 3v$ (autocatalytic)
-3. **Removal**: Both species leave at rate $F$ (plus extra $k$ for $v$)
+## Equations
 
-The autocatalytic term $uv^2$ creates positive feedback driving pattern formation.
+The Gray-Scott model consists of two coupled reaction-diffusion equations:
 
-## Parameters
+$$\frac{\partial u}{\partial t} = \nabla^2 u + u^2 v - (a + b) u$$
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Feed rate | $F$ | Replenishment rate | 0 - 0.1 |
-| Kill rate | $k$ | Removal rate of v | 0 - 0.1 |
-| Diffusion u | $D_u$ | Feed diffusion | 0.0001 - 0.5 |
-| Diffusion v | $D_v$ | Catalyst diffusion | 0.0001 - 0.25 |
+$$\frac{\partial v}{\partial t} = D \nabla^2 v - u^2 v + a(1 - v)$$
 
-## Pearson's Classification
+Where:
+- $u$ is the activator concentration (autocatalytic species)
+- $v$ is the substrate concentration (fuel species)
+- The reaction $u^2 v$ represents the autocatalytic production of $u$ from $v$
+- The term $-a u$ represents decay of $u$
+- The term $-b u$ represents conversion/removal of $u$
+- The term $a(1-v)$ represents feeding of substrate $v$ toward concentration 1
 
-Different $(F, k)$ values produce remarkably diverse patterns:
+## Default Config
 
-| Pattern | Description |
-|---------|-------------|
-| α (alpha) | Traveling waves |
-| β (beta) | Hexagonal spots |
-| γ (gamma) | Stripes/labyrinths |
-| δ (delta) | Spots that replicate |
-| ε (epsilon) | Spots and worms |
-| ζ (zeta) | Chaos |
-| η (eta) | Solitons |
-| θ (theta) | Pulsating spots |
-| ι (iota) | Negative spots |
-| κ (kappa) | Self-replicating spots |
-| λ (lambda) | Mitosis-like behavior |
-| μ (mu) | Mixed patterns |
+```yaml
+solver: euler
+dt: 0.02 (inferred from typical stability)
+dx: 3
+domain_size: 1000
 
-## Classic Parameter Sets
+boundary_x: periodic
+boundary_y: periodic
 
-| Name | F | k | Pattern |
-|------|---|---|---------|
-| Solitons | 0.030 | 0.062 | Moving spots |
-| Mitosis | 0.028 | 0.062 | Dividing spots |
-| Coral | 0.055 | 0.062 | Branching growth |
-| Spirals | 0.014 | 0.054 | Spiral waves |
-| Zebra | 0.035 | 0.065 | Stripes |
-| Fingerprint | 0.037 | 0.060 | Labyrinths |
+parameters:
+  a: 0.037  # [0, 0.1] - feed rate
+  b: 0.06   # [0.04, 0.1] - kill/removal rate
+  D: 2      # diffusion ratio (v diffuses twice as fast as u)
+```
 
-## Initialization
+## Parameter Variants
 
-Typical initial condition:
-- $u = 1$ everywhere (saturated with feed)
-- $v = 0$ everywhere except perturbation region
-- Perturbation seeds pattern growth
+### GrayScott (Standard)
+The default configuration producing labyrinthine/stripe patterns:
+- `a = 0.037`
+- `b = 0.06`
+- `D = 2` (diffusion ratio)
+- Initial condition: u=0, v=1 (uniform substrate)
 
-## Applications
+### GrayScottGliders
+Parameters tuned for moving spot ("glider") dynamics:
+- `a = 0.014`
+- `b = 0.054`
+- Exhibits spots that bob around and interact
 
-1. **Chemical engineering**: CSTR reactor patterns
-2. **Computational art**: Generative graphics
-3. **Biology**: Morphogenesis analogy
-4. **Materials science**: Self-organized textures
-5. **Nonlinear dynamics**: Paradigm for complexity
+### Notable Parameter Combinations
+The system exhibits distinct behaviors for different (a,b) values:
 
-## Numerical Considerations
-
-- Standard explicit schemes work well
-- Periodic boundaries typical
-- Resolution affects pattern wavelength
-- Long integration times needed for steady patterns
+| Pattern Type | a | b |
+|-------------|---|---|
+| Labyrinthine | 0.037 | 0.06 |
+| Spots | 0.03 | 0.062 |
+| Pulsating spots | 0.025 | 0.06 |
+| Worms | 0.078 | 0.061 |
+| Holes | 0.039 | 0.058 |
+| Spatiotemporal chaos | 0.026 | 0.051 |
+| Intermittent chaos/holes | 0.034 | 0.056 |
+| Moving spots (gliders) | 0.014 | 0.054 |
+| Small waves | 0.018 | 0.051 |
+| Big waves | 0.014 | 0.045 |
+| U-skate world | 0.062 | 0.061 |
 
 ## References
 
-- Gray, P. & Scott, S.K. (1984). *Autocatalytic reactions in the isothermal, continuous stirred tank reactor*
-- Pearson, J.E. (1993). *Complex Patterns in a Simple System*, Science 261
-- Munafo, R. (2014). *Gray-Scott pattern gallery* (online resource)
+- Gray, P. & Scott, S.K. (1984). "Autocatalytic reactions in the isothermal, continuous stirred tank reactor"
+- Pearson, J.E. (1993). "Complex Patterns in a Simple System" - Science 261(5118):189-192
+- Munafo, R. "Xmorphia Gallery" - http://www.mrob.com/pub/comp/xmorphia/

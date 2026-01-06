@@ -3,97 +3,40 @@
 from typing import Any
 
 import numpy as np
-from pde import CartesianGrid, ScalarField, solve_poisson_equation
-from pde.pdes.base import PDEBase
+from pde import PDE, CartesianGrid, FieldCollection, ScalarField
 
 from pde_sim.initial_conditions import create_initial_condition
 
-from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset
+from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
 
 
-class VorticityStreamFunctionPDE(PDEBase):
-    """2D Vorticity equation with stream function formulation.
-
-    Solves the full vorticity transport equation:
-        dw/dt = nu * laplace(w) - u * d_dx(w) - v * d_dy(w)
-
-    where velocity is derived from stream function psi:
-        laplace(psi) = -w  (solved at each timestep)
-        u = d_dy(psi)
-        v = -d_dx(psi)
-    """
-
-    def __init__(self, nu: float = 0.01, bc: list | None = None):
-        """Initialize the vorticity equation.
-
-        Args:
-            nu: Kinematic viscosity.
-            bc: Boundary conditions.
-        """
-        super().__init__()
-        self.nu = nu
-        self.bc = bc if bc is not None else "auto_periodic_neumann"
-
-    def evolution_rate(self, state: ScalarField, t: float = 0) -> ScalarField:
-        """Compute dw/dt using stream function for velocity.
-
-        Args:
-            state: Current vorticity field w.
-            t: Current time (unused).
-
-        Returns:
-            Rate of change dw/dt.
-        """
-        w = state
-
-        # Solve Poisson equation: laplace(psi) = -w for stream function
-        # For periodic BC, we need zero mean vorticity. Subtracting the mean
-        # doesn't affect velocities since u = grad(psi) and grad(constant) = 0.
-        w_zero_mean = w - w.average
-        psi = solve_poisson_equation(w_zero_mean, bc=self.bc)
-
-        # Compute velocity from stream function
-        # u = d(psi)/dy, v = -d(psi)/dx
-        grad_psi = psi.gradient(bc=self.bc)
-        u = grad_psi[1]  # d_dy(psi)
-        v = -grad_psi[0]  # -d_dx(psi)
-
-        # Compute vorticity gradients
-        grad_w = w.gradient(bc=self.bc)
-        dw_dx = grad_w[0]
-        dw_dy = grad_w[1]
-
-        # Diffusion term
-        laplacian_w = w.laplace(bc=self.bc)
-
-        # Full vorticity transport: dw/dt = nu * laplace(w) - u * dw/dx - v * dw/dy
-        dw_dt = self.nu * laplacian_w - u * dw_dx - v * dw_dy
-
-        return dw_dt
-
-
 @register_pde("vorticity")
-class VorticityPDE(ScalarPDEPreset):
-    """2D Vorticity equation with self-advection.
+class VorticityPDE(MultiFieldPDEPreset):
+    """2D Vorticity-streamfunction formulation of incompressible flow.
 
-    The full vorticity formulation of 2D incompressible Navier-Stokes:
+    The vorticity equation reformulates the Navier-Stokes equations by
+    focusing on vorticity (curl of velocity) rather than velocity itself.
 
-        dw/dt = nu * laplace(w) - u * d_dx(w) - v * d_dy(w)
+    Vorticity transport:
+        d(omega)/dt = nu * laplace(omega) - d_dy(psi) * d_dx(omega) + d_dx(psi) * d_dy(omega)
 
-    where:
-        - w is the vorticity (curl of velocity)
-        - nu is the kinematic viscosity
-        - (u, v) is the velocity field derived from stream function
+    Stream function (parabolic relaxation of Poisson equation):
+        epsilon * d(psi)/dt = laplace(psi) + omega
 
-    The stream function psi is solved from:
-        laplace(psi) = -w
+    Passive scalar transport:
+        dS/dt = D * laplace(S) - (d_dy(psi) * d_dx(S) - d_dx(psi) * d_dy(S))
 
-    And velocity is computed as:
+    Velocity from stream function:
         u = d_dy(psi), v = -d_dx(psi)
 
-    This ensures incompressibility (div(u,v) = 0) and proper
-    self-advection of vorticity by the induced flow.
+    where:
+        - omega is vorticity (curl of velocity)
+        - psi is stream function
+        - S is passive scalar for visualization
+        - nu is kinematic viscosity
+        - epsilon is relaxation parameter for Poisson solver
+        - D is passive scalar diffusion coefficient
     """
 
     @property
@@ -101,25 +44,38 @@ class VorticityPDE(ScalarPDEPreset):
         return PDEMetadata(
             name="vorticity",
             category="fluids",
-            description="2D vorticity equation with self-advection",
+            description="2D vorticity-streamfunction formulation",
             equations={
-                "w": "nu * laplace(w) - u * d_dx(w) - v * d_dy(w)",
-                "psi": "laplace(psi) = -w (stream function)",
-                "u": "d_dy(psi)",
-                "v": "-d_dx(psi)",
+                "omega": "nu * laplace(omega) - d_dy(psi) * d_dx(omega) + d_dx(psi) * d_dy(omega)",
+                "psi": "(laplace(psi) + omega) / epsilon",
+                "S": "D * laplace(S) - d_dy(psi) * d_dx(S) + d_dx(psi) * d_dy(S)",
             },
             parameters=[
                 PDEParameter(
                     name="nu",
-                    default=0.01,
+                    default=0.05,
                     description="Kinematic viscosity",
+                    min_value=0.01,
+                    max_value=1.0,
+                ),
+                PDEParameter(
+                    name="epsilon",
+                    default=0.05,
+                    description="Relaxation parameter for Poisson solver",
+                    min_value=0.01,
+                    max_value=0.5,
+                ),
+                PDEParameter(
+                    name="D",
+                    default=0.05,
+                    description="Passive scalar diffusion coefficient",
                     min_value=0.001,
-                    max_value=0.1,
+                    max_value=1.0,
                 ),
             ],
-            num_fields=1,
-            field_names=["w"],
-            reference="2D Navier-Stokes vorticity-stream function formulation",
+            num_fields=3,
+            field_names=["omega", "psi", "S"],
+            reference="Vorticity-streamfunction formulation (Chemin)",
         )
 
     def create_pde(
@@ -127,19 +83,35 @@ class VorticityPDE(ScalarPDEPreset):
         parameters: dict[str, float],
         bc: dict[str, Any],
         grid: CartesianGrid,
-    ) -> VorticityStreamFunctionPDE:
-        nu = parameters.get("nu", 0.01)
-        bc_spec = self._convert_bc(bc)
+    ) -> PDE:
+        nu = parameters.get("nu", 0.05)
+        epsilon = parameters.get("epsilon", 0.05)
+        D = parameters.get("D", 0.05)
 
-        return VorticityStreamFunctionPDE(nu=nu, bc=bc_spec)
+        inv_eps = 1.0 / epsilon
+
+        return PDE(
+            rhs={
+                "omega": f"{nu} * laplace(omega) - d_dy(psi) * d_dx(omega) + d_dx(psi) * d_dy(omega)",
+                "psi": f"{inv_eps} * (laplace(psi) + omega)",
+                "S": f"{D} * laplace(S) - d_dy(psi) * d_dx(S) + d_dx(psi) * d_dy(S)",
+            },
+            bc=self._convert_bc(bc),
+        )
 
     def create_initial_state(
         self,
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
-    ) -> ScalarField:
-        """Create initial vorticity distribution."""
+    ) -> FieldCollection:
+        """Create initial vorticity, stream function, and passive scalar."""
+        # Get domain bounds from grid
+        x_min, x_max = grid.axes_bounds[0]
+        y_min, y_max = grid.axes_bounds[1]
+        L_x = x_max - x_min
+        L_y = y_max - y_min
+
         if ic_type in ("vorticity-default", "vortex-pair"):
             # Two counter-rotating vortices
             x0_1, y0_1 = ic_params.get("x1", 0.35), ic_params.get("y1", 0.5)
@@ -148,20 +120,24 @@ class VorticityPDE(ScalarPDEPreset):
             radius = ic_params.get("radius", 0.1)
 
             x, y = np.meshgrid(
-                np.linspace(0, 1, grid.shape[0]),
-                np.linspace(0, 1, grid.shape[1]),
+                np.linspace(x_min, x_max, grid.shape[0]),
+                np.linspace(y_min, y_max, grid.shape[1]),
                 indexing="ij",
             )
 
+            # Normalize coordinates
+            x_norm = (x - x_min) / L_x
+            y_norm = (y - y_min) / L_y
+
             # Gaussian vortices
-            r1_sq = (x - x0_1) ** 2 + (y - y0_1) ** 2
-            r2_sq = (x - x0_2) ** 2 + (y - y0_2) ** 2
+            r1_sq = (x_norm - x0_1) ** 2 + (y_norm - y0_1) ** 2
+            r2_sq = (x_norm - x0_2) ** 2 + (y_norm - y0_2) ** 2
 
-            w1 = strength * np.exp(-r1_sq / (2 * radius**2))
-            w2 = -strength * np.exp(-r2_sq / (2 * radius**2))
-
-            data = w1 + w2
-            return ScalarField(grid, data)
+            omega_data = strength * np.exp(-r1_sq / (2 * radius**2)) - strength * np.exp(
+                -r2_sq / (2 * radius**2)
+            )
+            psi_data = np.zeros_like(omega_data)
+            S_data = np.exp(-r1_sq / (2 * radius**2)) + np.exp(-r2_sq / (2 * radius**2))
 
         elif ic_type == "single-vortex":
             x0 = ic_params.get("x0", 0.5)
@@ -170,13 +146,32 @@ class VorticityPDE(ScalarPDEPreset):
             radius = ic_params.get("radius", 0.15)
 
             x, y = np.meshgrid(
-                np.linspace(0, 1, grid.shape[0]),
-                np.linspace(0, 1, grid.shape[1]),
+                np.linspace(x_min, x_max, grid.shape[0]),
+                np.linspace(y_min, y_max, grid.shape[1]),
                 indexing="ij",
             )
 
-            r_sq = (x - x0) ** 2 + (y - y0) ** 2
-            data = strength * np.exp(-r_sq / (2 * radius**2))
-            return ScalarField(grid, data)
+            # Normalize coordinates
+            x_norm = (x - x_min) / L_x
+            y_norm = (y - y_min) / L_y
 
-        return create_initial_condition(grid, ic_type, ic_params)
+            r_sq = (x_norm - x0) ** 2 + (y_norm - y0) ** 2
+            omega_data = strength * np.exp(-r_sq / (2 * radius**2))
+            psi_data = np.zeros_like(omega_data)
+            S_data = np.exp(-r_sq / (2 * radius**2))
+
+        else:
+            # Default: use standard IC generator for omega, zeros for psi and S
+            omega_field = create_initial_condition(grid, ic_type, ic_params)
+            omega_data = omega_field.data
+            psi_data = np.zeros_like(omega_data)
+            S_data = np.zeros_like(omega_data)
+
+        omega = ScalarField(grid, omega_data)
+        omega.label = "omega"
+        psi = ScalarField(grid, psi_data)
+        psi.label = "psi"
+        S = ScalarField(grid, S_data)
+        S.label = "S"
+
+        return FieldCollection([omega, psi, S])

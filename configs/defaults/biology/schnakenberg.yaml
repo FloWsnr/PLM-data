@@ -1,18 +1,17 @@
 preset: schnakenberg
 parameters:
-  a: 0.1
-  b: 0.9
-  Du: 0.05
-  Dv: 1.0
+  Dv: 100.0
+  a: 0.01
+  b: 2.0
 init:
   type: random-gaussian
   params:
     mean: 1.0
-    std: 0.2
-solver: rk4
+    std: 0.1
+solver: euler
 backend: numba
-adaptive: true
-dt: 0.01
+adaptive: false
+dt: 0.0005
 resolution: 128
 bc:
   x: periodic
@@ -21,9 +20,7 @@ output:
   path: ./output
   num_frames: 100
   colormap: turbo
-  field_to_plot: mag(u,v)
-  show_vectors: true
-  vector_density: 16
+  field_to_plot: u
 seed: 42
-domain_size: 4.0
-t_end: 50.0
+domain_size: 100.0
+t_end: 100.0

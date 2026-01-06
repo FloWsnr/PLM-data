@@ -1,98 +1,80 @@
 # Shallow Water Equations
 
-## Mathematical Formulation
+The shallow water equations model water waves and ripples in a fluid layer where horizontal length scales are much larger than the vertical depth.
 
-Linearized shallow water equation (height component):
+## Description
 
-$$\frac{\partial h}{\partial t} = c^2 \nabla^2 h$$
+The shallow water equations are fundamental in oceanography, coastal engineering, and atmospheric science. They describe the dynamics of a thin layer of fluid under gravity, capturing phenomena like tsunamis, tidal waves, storm surges, and dam break floods.
 
-Full shallow water equations:
-$$\frac{\partial h}{\partial t} + H\left(\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y}\right) = 0$$
-$$\frac{\partial u}{\partial t} + g\frac{\partial h}{\partial x} = 0$$
-$$\frac{\partial v}{\partial t} + g\frac{\partial h}{\partial y} = 0$$
+The equations couple the water height h with horizontal velocity components u and v. Key physical effects include:
+- Gravity waves propagating at speed sqrt(g*H) where H is the mean depth
+- Coriolis force from Earth's rotation (parameter f), crucial for large-scale geophysical flows
+- Friction and dissipation (parameters k and epsilon)
+- Nonlinear advection terms creating steepening waves and solitons
 
-where:
-- $h$ is the surface elevation perturbation
-- $H$ is the mean water depth
-- $u, v$ are depth-averaged velocities
-- $g$ is gravitational acceleration
-- $c = \sqrt{gH}$ is the wave speed
+The Coriolis force leads to geostrophic balance in large-scale ocean currents, where pressure gradients balance rotational effects. This explains why different parts of the ocean can maintain different depths. The equations also exhibit Kelvin-Helmholtz (shear) instabilities when velocity gradients are present.
 
-## Physical Background
+Dam break simulations demonstrate how the Coriolis force can stabilize wave fronts - a counterintuitive result important for understanding ocean dynamics. Vortical solitons emerge when f is significant, showing anticyclonic rotation (positive vorticity indicates counterclockwise flow in the Northern Hemisphere convention).
 
-Shallow water equations describe **long wavelength** surface waves where:
-- Wavelength $\lambda \gg H$ (water depth)
-- Vertical motion negligible
-- Hydrostatic pressure distribution
+## Equations
 
-The linearized version reduces to a wave/diffusion-like equation.
+Water height evolution:
+$$\frac{\partial h}{\partial t} = -\left(\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y}\right)(h + H_e) - \left(\frac{\partial h}{\partial x}u + \frac{\partial h}{\partial y}v\right) - \varepsilon h$$
 
-## Parameters
+Horizontal momentum (x-direction):
+$$\frac{\partial u}{\partial t} = \nu \nabla^2 u - g\frac{\partial h}{\partial x} - ku - u\frac{\partial u}{\partial x} - v\frac{\partial u}{\partial y} + fv$$
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Wave speed | $c$ | $\sqrt{gH}$ | 0.1 - 0.5 |
+Horizontal momentum (y-direction):
+$$\frac{\partial v}{\partial t} = \nu \nabla^2 v - g\frac{\partial h}{\partial y} - kv - u\frac{\partial v}{\partial x} - v\frac{\partial v}{\partial y} - fu$$
 
-## Approximation Validity
+## Default Config
 
-Valid when:
-- $\lambda/H \gg 1$ (long waves)
-- $a/H \ll 1$ (small amplitude), for linear version
-- No significant vertical structure
+```yaml
+solver: euler
+dt: 0.005
+dx: 2
+domain_size: 400
 
-## Wave Properties
+boundary_h: neumann
+boundary_u: dirichlet = 0 (left/right), neumann (top/bottom)
+boundary_v: neumann (left/right), dirichlet = 0 (top/bottom)
 
-**Phase speed**: $c = \sqrt{gH}$ (non-dispersive)
+parameters:
+  H_e: 1       # equilibrium water depth
+  g: 9.81      # gravitational acceleration
+  f: 0.01      # Coriolis parameter, range [0, 1]
+  k: 0.001     # linear drag coefficient
+  nu: 0.5      # kinematic viscosity
+  epsilon: 0.0001  # height dissipation rate
+```
 
-**Group speed**: Same as phase speed (no dispersion)
+## Parameter Variants
 
-All wavelengths travel at the same speed in linear shallow water.
+### ShallowWaterEqns (base)
+Standard 2D shallow water with reflective boundaries. Clicking initiates point waves. Default view shows 3D surface plot of water height.
 
-## Phenomena Described
+### ShallowWaterEqnsDamBreaking
+Dam break simulation:
+- Initial condition: step function in h (tanh profile)
+- Periodic boundaries on all sides
+- f = 0 by default (try f = 0.4 or f = 1 to see Coriolis stabilization)
+- Reduced height diffusion (0.01)
 
-1. **Tsunami propagation**: Classic application
-2. **Tidal waves**: Ocean basin resonance
-3. **Storm surges**: Wind-driven elevation
-4. **River flooding**: Dam break, flood waves
-5. **Lake oscillations**: Seiches
+### ShallowWaterEqnsVorticalSolitons
+Geostrophically balanced vortices:
+- f = 1 (strong Coriolis)
+- Clicking places vortical solitons with positive vorticity
+- 3D surface colored by vorticity
+- Longer click creates deeper vortices
 
-## Tsunami Example
+### 1DShallowWaterEqns
+One-dimensional nonlinear solitary waves:
+- Sech-squared initial conditions (soliton-like)
+- domain_size: 1000
+- Periodic boundaries
+- No Coriolis (1D flow)
 
-Pacific Ocean: $H \approx 4000$ m
-$$c = \sqrt{9.8 \times 4000} \approx 200 \text{ m/s} \approx 700 \text{ km/h}$$
-
-Wavelength: 100-500 km (much larger than depth)
-
-## Conservation Properties
-
-Full shallow water conserves:
-- **Mass**: $\int h \, dA$
-- **Momentum**: $\int \mathbf{u} \, dA$
-- **Energy**: $\int (h^2 + Hu^2) dA$
-
-## Nonlinear Effects
-
-For finite amplitude waves:
-- Wave steepening
-- Bore/shock formation
-- Breaking at shoreline
-
-## Initial Conditions
-
-**Water drop**: Gaussian perturbation
-**Dam break**: Step function
-**Oscillating basin**: Seiches
-
-## Applications
-
-1. **Oceanography**: Tide and tsunami modeling
-2. **River hydraulics**: Flood prediction
-3. **Coastal engineering**: Wave run-up
-4. **Atmospheric dynamics**: Gravity waves
-5. **Astrophysics**: Accretion disk dynamics
-
-## References
-
-- Pedlosky, J. (1987). *Geophysical Fluid Dynamics*
-- Vreugdenhil, C.B. (1994). *Numerical Methods for Shallow-Water Flow*
-- LeVeque, R.J. (2002). *Finite Volume Methods for Hyperbolic Problems*
+### 1DLinearizedShallowWaterEqns
+Linearized 1D version for comparison:
+- Simplified reaction terms without nonlinear advection
+- Shows qualitative similarity but quantitative differences from nonlinear case

@@ -1,69 +1,137 @@
-# Advection-Diffusion Equation
+# Advection-Diffusion Equation (Convection-Diffusion)
 
-## Mathematical Formulation
+The advection-diffusion equation combines diffusive spreading with transport by a velocity field, describing how substances move through flowing media.
 
-The advection-diffusion equation describes transport by both flow and diffusion:
+## Description
+
+The convection-diffusion equation (also called the advection-diffusion equation or drift-diffusion equation) is a parabolic PDE that describes physical phenomena where particles, energy, or other quantities are transferred by two processes simultaneously: diffusion (random molecular motion) and advection (bulk transport by fluid flow).
+
+This equation has crucial applications across many fields:
+
+- **Environmental science**: Transport of pollutants in rivers, groundwater contamination, atmospheric dispersion
+- **Oceanography**: Salt concentration in ocean currents, sediment transport
+- **Chemical engineering**: Mass transfer in reactors, chromatography
+- **Heat transfer**: Convective cooling in moving fluids
+- **Atmospheric science**: Smoke dispersion, aerosol transport
+- **Pharmacokinetics**: Drug distribution in blood flow
+- **Semiconductor physics**: Drift-diffusion of charge carriers (electrons and holes)
+- **Geology**: Solute transport in porous media
+
+### Physical Interpretation
+
+The equation describes a competition between two transport mechanisms:
+
+1. **Diffusion**: Spreads the quantity from high to low concentration (smoothing effect)
+2. **Advection**: Carries the quantity along with the fluid velocity (transport effect)
+
+The **Peclet number** (Pe = vL/D) characterizes which mechanism dominates:
+- Low Pe: Diffusion dominates, advection negligible
+- High Pe: Advection dominates, concentration "rides" with the flow
+
+### Velocity Field Types
+
+Two common velocity fields are explored:
+
+1. **Rotational flow**: $\mathbf{v} = V(y - L_y/2, -(x - L_x/2))$ - circular motion about domain center
+2. **Unidirectional flow**: $\mathbf{v} = V(\cos\theta, \sin\theta)$ - constant velocity in direction $\theta$
+
+## Equations
+
+The advection-diffusion equation:
 
 $$\frac{\partial u}{\partial t} = D \nabla^2 u - \mathbf{v} \cdot \nabla u$$
 
-Expanded in 2D:
-
-$$\frac{\partial u}{\partial t} = D \left( \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} \right) - v_x \frac{\partial u}{\partial x} - v_y \frac{\partial u}{\partial y}$$
-
 where:
-- $u$ is the transported quantity (concentration, temperature, etc.)
+- $u(x, y, t)$ is the concentration field
 - $D$ is the diffusion coefficient
-- $\mathbf{v} = (v_x, v_y)$ is the advection velocity
+- $\mathbf{v} = (v_x, v_y)$ is the velocity field
+- $\nabla u = (u_x, u_y)$ is the concentration gradient
 
-## Physical Background
+Expanding the advection term:
+$$\mathbf{v} \cdot \nabla u = v_x \frac{\partial u}{\partial x} + v_y \frac{\partial u}{\partial y}$$
 
-This equation combines two transport mechanisms:
+**Rotational velocity field:**
+$$\mathbf{v} = V(y - L_y/2, -(x - L_x/2))$$
 
-1. **Advection**: Bulk transport by fluid flow (hyperbolic character)
-2. **Diffusion**: Random molecular motion (parabolic character)
+Advection term becomes: `V*((y-L_y/2)*u_x - (x-L_x/2)*u_y)`
 
-The balance is characterized by the Péclet number: $\text{Pe} = \frac{|\mathbf{v}| L}{D}$
-- $\text{Pe} \ll 1$: Diffusion-dominated
-- $\text{Pe} \gg 1$: Advection-dominated
+**Directed velocity field:**
+$$\mathbf{v} = V(\cos\theta, \sin\theta)$$
 
-## Parameters
+Advection term becomes: `V*(cos(theta)*u_x + sin(theta)*u_y)`
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Diffusion coefficient | $D$ | Molecular diffusion rate | 0 - 0.2 |
-| Velocity x | $v_x$ | Advection speed in x | -2.0 to +2.0 |
-| Velocity y | $v_y$ | Advection speed in y | -2.0 to +2.0 |
+Note: In the preset, advection appears in the reaction term with a sign that implements $-\mathbf{v} \cdot \nabla u$.
 
-## Behavior Regimes
+## Default Config
 
-### Pure Advection ($D = 0$)
-- Solution translates without changing shape
-- Discontinuities persist indefinitely
-- Numerically challenging (spurious oscillations)
+### Rotational Advection
+```yaml
+solver: euler
+dt: 0.002
+dx: 1.25
+domain_size: 320
 
-### Advection-Dominated ($\text{Pe} \gg 1$)
-- Features advect downstream
-- Sharp fronts develop
-- Diffusion acts as regularization
+boundary_x: dirichlet
+boundary_y: dirichlet
 
-### Diffusion-Dominated ($\text{Pe} \ll 1$)
-- Features spread and smooth
-- Advection causes slow drift
+parameters:
+  V: 0.10    # range: [-5, 5], step: 0.01 - rotation speed
 
-## Applications
+species:
+  - name: u
+    diffusion: 1.0
+```
 
-1. **Pollutant transport**: Contaminants in rivers, atmosphere
-2. **Heat transfer**: Convective cooling/heating
-3. **Chemical engineering**: Reactor transport
-4. **Oceanography**: Tracer transport in currents
-5. **Blood flow**: Drug delivery in vessels
+### Directed Advection
+```yaml
+solver: euler
+dt: 0.002
+dx: 1.25
+domain_size: 320
 
-## Numerical Considerations
+boundary_x: periodic
+boundary_y: periodic
 
-- High Péclet number requires special schemes (upwinding, SUPG)
-- Pure advection benefits from conservative schemes
-- Artificial diffusion may be added for stability
+parameters:
+  V: 6.0       # range: [0, 10], step: 0.01 - flow speed
+  theta: -2.0  # range: [-6.4, 6.4], step: 0.01 - flow direction (radians)
+
+species:
+  - name: u
+    diffusion: 1.0
+```
+
+## Parameter Variants
+
+### AdvectionEquationRotational
+Rotational (vortex) velocity field:
+- Velocity: $\mathbf{v} = V(y - L_y/2, -(x - L_x/2))$
+- Dirichlet boundary conditions (concentration absorbed at boundaries)
+- Parameter: `V = 0.10` in range `[-5, 5]`
+- Positive V: counterclockwise rotation
+- Negative V: clockwise rotation
+- Mass is not conserved due to Dirichlet boundaries
+
+### AdvectionEquationDirected
+Uniform directional velocity field:
+- Velocity: $\mathbf{v} = V(\cos\theta, \sin\theta)$
+- Periodic boundary conditions (concentration wraps around)
+- Parameters: `V = 6` in `[0, 10]`, `theta = -2` in `[-6.4, 6.4]`
+- Changing $\theta$ rotates the flow direction
+- Mass is conserved with periodic boundaries
+
+## Numerical Notes
+
+First-order spatial derivatives (advection terms) are numerically challenging:
+- Sharp gradients can cause spurious oscillations
+- High Peclet numbers require special upwind schemes
+- The preset uses smoothed brush application to reduce oscillations
+- Large V values may produce unstable or inaccurate solutions
 
 ## References
 
-- Ferziger, J.H. & Perić, M. (2002). *Computational Methods for Fluid Dynamics*
+- [Convection-diffusion equation - Wikipedia](https://en.wikipedia.org/wiki/Convection–diffusion_equation)
+- [Advection - Wikipedia](https://en.wikipedia.org/wiki/Advection)
+- [Advection-Diffusion Equation - ScienceDirect](https://www.sciencedirect.com/topics/earth-and-planetary-sciences/advection-diffusion-equation)
+- [Advection-Diffusion Equation - Physics Across Oceanography](https://uw.pressbooks.pub/ocean285/chapter/advection-diffusion-equation/)
+- [Advection-dominated equations - Finite Difference Computing](https://hplgit.github.io/fdm-book/doc/pub/book/sphinx/._book012.html)

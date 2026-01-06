@@ -1,19 +1,18 @@
 preset: gierer-meinhardt
 parameters:
-  Du: 1.0  # Activator diffusion
-  Dv: 40.0  # Inhibitor diffusion (Dv >> Du for patterns)
-  a: 0.1  # Basal activator production
-  b: 1.0  # Activator decay rate
-  c: 1.0  # Inhibitor decay rate
+  D: 100.0
+  a: 0.5
+  b: 1.0
+  c: 6.1
 init:
   type: random-gaussian
   params:
     mean: 1.0
-    std: 0.3
-solver: rk4
+    std: 0.1
+solver: euler
 backend: numba
-adaptive: true
-dt: 0.01
+adaptive: false
+dt: 0.0003
 resolution: 128
 bc:
   x: periodic
@@ -24,5 +23,5 @@ output:
   colormap: turbo
   field_to_plot: u
 seed: 42
-domain_size: 4.0
-t_end: 30.0
+domain_size: 100.0
+t_end: 50.0

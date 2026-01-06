@@ -15,15 +15,21 @@ class SchnakenbergPDE(MultiFieldPDEPreset):
 
     The Schnakenberg model produces Turing patterns:
 
-        du/dt = Du * laplace(u) + a - u + u²v
-        dv/dt = Dv * laplace(v) + b - u²v
+        du/dt = laplace(u) + a - u + u^2 * v
+        dv/dt = Dv * laplace(v) + b - u^2 * v
 
     where:
-        - u, v are chemical concentrations
-        - Du, Dv are diffusion coefficients (Dv >> Du for patterns)
-        - a, b are feed rates
+        - u is the activator concentration
+        - v is the inhibitor concentration
+        - Dv > 1 is required for pattern formation
 
-    For Turing instability: Dv/Du > 1 (typically ~10-100)
+    Key phenomena:
+        - Spot patterns: Form when Dv is large (e.g., Dv = 100)
+        - Stripe patterns: Form when Dv is reduced (e.g., Dv = 30)
+
+    References:
+        Schnakenberg, J. (1979). J. Theor. Biol., 81(3), 389-400.
+        Turing, A. M. (1952). Phil. Trans. R. Soc. B, 237(641), 37-72.
     """
 
     @property
@@ -33,42 +39,35 @@ class SchnakenbergPDE(MultiFieldPDEPreset):
             category="biology",
             description="Schnakenberg Turing pattern system",
             equations={
-                "u": "Du * laplace(u) + a - u + u**2 * v",
+                "u": "laplace(u) + a - u + u**2 * v",
                 "v": "Dv * laplace(v) + b - u**2 * v",
             },
             parameters=[
                 PDEParameter(
+                    name="Dv",
+                    default=100.0,
+                    description="Inhibitor diffusion coefficient",
+                    min_value=1.0,
+                    max_value=200.0,
+                ),
+                PDEParameter(
                     name="a",
-                    default=0.1,
-                    description="Feed rate for u",
+                    default=0.01,
+                    description="Production rate parameter",
                     min_value=0.0,
                     max_value=1.0,
                 ),
                 PDEParameter(
                     name="b",
-                    default=0.9,
-                    description="Feed rate for v",
+                    default=2.0,
+                    description="Production rate parameter",
                     min_value=0.0,
-                    max_value=2.0,
-                ),
-                PDEParameter(
-                    name="Du",
-                    default=0.01,
-                    description="Diffusion of u (activator)",
-                    min_value=0.001,
-                    max_value=0.1,
-                ),
-                PDEParameter(
-                    name="Dv",
-                    default=1.0,
-                    description="Diffusion of v (inhibitor)",
-                    min_value=0.1,
-                    max_value=10.0,
+                    max_value=5.0,
                 ),
             ],
             num_fields=2,
             field_names=["u", "v"],
-            reference="Turing pattern formation",
+            reference="Schnakenberg (1979)",
         )
 
     def create_pde(
@@ -77,14 +76,13 @@ class SchnakenbergPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        a = parameters.get("a", 0.1)
-        b = parameters.get("b", 0.9)
-        Du = parameters.get("Du", 0.01)
-        Dv = parameters.get("Dv", 1.0)
+        Dv = parameters.get("Dv", 100.0)
+        a = parameters.get("a", 0.01)
+        b = parameters.get("b", 2.0)
 
         return PDE(
             rhs={
-                "u": f"{Du} * laplace(u) + {a} - u + u**2 * v",
+                "u": f"laplace(u) + {a} - u + u**2 * v",
                 "v": f"{Dv} * laplace(v) + {b} - u**2 * v",
             },
             bc=self._convert_bc(bc),
@@ -97,9 +95,9 @@ class SchnakenbergPDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
     ) -> FieldCollection:
         """Create initial state near the homogeneous steady state with perturbation."""
-        # Steady state: u* = a + b, v* = b / (a + b)²
-        a = ic_params.get("a", 0.1)
-        b = ic_params.get("b", 0.9)
+        # Steady state: u* = a + b, v* = b / (a + b)^2
+        a = ic_params.get("a", 0.01)
+        b = ic_params.get("b", 2.0)
         noise = ic_params.get("noise", 0.01)
 
         u_ss = a + b

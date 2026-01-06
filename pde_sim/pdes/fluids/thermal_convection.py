@@ -1,132 +1,44 @@
-"""Rayleigh-Bénard thermal convection."""
+"""Rayleigh-Benard thermal convection."""
 
 from typing import Any
 
 import numpy as np
-from pde import CartesianGrid, FieldCollection, ScalarField, solve_poisson_equation
-from pde.pdes.base import PDEBase
+from pde import PDE, CartesianGrid, FieldCollection, ScalarField
+
+from pde_sim.initial_conditions import create_initial_condition
 
 from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
 
 
-class ThermalConvectionStreamFunctionPDE(PDEBase):
-    """Rayleigh-Bénard thermal convection with full advection.
-
-    Coupled temperature and vorticity equations with stream function:
-
-        dT/dt = kappa * laplace(T) - u * d_dx(T) - v * d_dy(T)
-        dw/dt = nu * laplace(w) - u * d_dx(w) - v * d_dy(w) + Ra * d_dx(T)
-
-    where velocity is derived from stream function psi:
-        laplace(psi) = -w
-        u = d_dy(psi)
-        v = -d_dx(psi)
-
-    The buoyancy term Ra * d_dx(T) drives convection when there are
-    horizontal temperature gradients.
-    """
-
-    def __init__(
-        self,
-        kappa: float = 0.01,
-        nu: float = 0.01,
-        Ra: float = 100.0,
-        bc: list | None = None,
-    ):
-        """Initialize thermal convection equation.
-
-        Args:
-            kappa: Thermal diffusivity.
-            nu: Kinematic viscosity.
-            Ra: Rayleigh number (buoyancy strength).
-            bc: Boundary conditions.
-        """
-        super().__init__()
-        self.kappa = kappa
-        self.nu = nu
-        self.Ra = Ra
-        self.bc = bc if bc is not None else "auto_periodic_neumann"
-
-    def evolution_rate(
-        self, state: FieldCollection, t: float = 0
-    ) -> FieldCollection:
-        """Compute time derivatives using stream function for velocity.
-
-        Args:
-            state: FieldCollection with [T, w] fields.
-            t: Current time (unused).
-
-        Returns:
-            FieldCollection with [dT/dt, dw/dt].
-        """
-        T = state[0]  # Temperature
-        w = state[1]  # Vorticity
-
-        # Solve Poisson equation: laplace(psi) = -w for stream function
-        # For periodic BC, we need zero mean vorticity. Subtracting the mean
-        # doesn't affect velocities since u = grad(psi) and grad(constant) = 0.
-        w_zero_mean = w - w.average
-        psi = solve_poisson_equation(w_zero_mean, bc=self.bc)
-
-        # Compute velocity from stream function
-        # u = d(psi)/dy, v = -d(psi)/dx
-        grad_psi = psi.gradient(bc=self.bc)
-        u = grad_psi[1]  # d_dy(psi)
-        v = -grad_psi[0]  # -d_dx(psi)
-
-        # Temperature gradients
-        grad_T = T.gradient(bc=self.bc)
-        dT_dx = grad_T[0]
-        dT_dy = grad_T[1]
-
-        # Vorticity gradients
-        grad_w = w.gradient(bc=self.bc)
-        dw_dx = grad_w[0]
-        dw_dy = grad_w[1]
-
-        # Diffusion terms
-        laplacian_T = T.laplace(bc=self.bc)
-        laplacian_w = w.laplace(bc=self.bc)
-
-        # Temperature equation with advection:
-        # dT/dt = kappa * laplace(T) - u * dT/dx - v * dT/dy
-        dT_dt = self.kappa * laplacian_T - u * dT_dx - v * dT_dy
-        dT_dt.label = "T"
-
-        # Vorticity equation with advection and buoyancy:
-        # dw/dt = nu * laplace(w) - u * dw/dx - v * dw/dy + Ra * dT/dx
-        dw_dt = self.nu * laplacian_w - u * dw_dx - v * dw_dy + self.Ra * dT_dx
-        dw_dt.label = "w"
-
-        return FieldCollection([dT_dt, dw_dt])
-
-
 @register_pde("thermal-convection")
 class ThermalConvectionPDE(MultiFieldPDEPreset):
-    """Rayleigh-Bénard thermal convection with full advection.
+    """Rayleigh-Benard thermal convection (Boussinesq model).
 
-    The Boussinesq approximation equations for thermal convection:
+    This system models buoyancy-driven fluid motion from temperature gradients.
+    When a fluid layer is heated from below, it becomes unstable and develops
+    organized convection cells (Benard cells).
 
-        dT/dt = kappa * laplace(T) - u * d_dx(T) - v * d_dy(T)
-        dw/dt = nu * laplace(w) - u * d_dx(w) - v * d_dy(w) + Ra * d_dx(T)
+    Vorticity evolution with buoyancy forcing:
+        d(omega)/dt = nu * laplace(omega) - d_dy(psi) * d_dx(omega) + d_dx(psi) * d_dy(omega) + d_dx(b)
+
+    Stream function (relaxation form):
+        epsilon * d(psi)/dt = laplace(psi) + omega
+
+    Temperature perturbation:
+        db/dt = kappa * laplace(b) - (d_dy(psi) * d_dx(b) - d_dx(psi) * d_dy(b))
+
+    Velocity from stream function:
+        u = d_dy(psi), v = -d_dx(psi)
 
     where:
-        - T is temperature
-        - w is vorticity
-        - Ra is Rayleigh number (buoyancy driving)
-        - kappa is thermal diffusivity
+        - omega is vorticity
+        - psi is stream function
+        - b is temperature perturbation from top boundary
         - nu is kinematic viscosity
-        - (u, v) is velocity from stream function
-
-    The velocity is derived from stream function psi:
-        laplace(psi) = -w (solved at each timestep)
-        u = d_dy(psi)
-        v = -d_dx(psi)
-
-    The buoyancy term Ra * d_dx(T) couples temperature to vorticity,
-    driving convection when horizontal temperature gradients exist.
-    This is the mechanism behind Rayleigh-Bénard convection rolls.
+        - epsilon is relaxation parameter
+        - kappa is thermal diffusivity
+        - T_b is bottom boundary temperature flux
     """
 
     @property
@@ -134,40 +46,45 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
         return PDEMetadata(
             name="thermal-convection",
             category="fluids",
-            description="Rayleigh-Bénard convection with advection",
+            description="Rayleigh-Benard thermal convection",
             equations={
-                "T": "kappa * laplace(T) - u * d_dx(T) - v * d_dy(T)",
-                "w": "nu * laplace(w) - u * d_dx(w) - v * d_dy(w) + Ra * d_dx(T)",
-                "psi": "laplace(psi) = -w (stream function)",
-                "u": "d_dy(psi)",
-                "v": "-d_dx(psi)",
+                "omega": "nu * laplace(omega) - d_dy(psi) * d_dx(omega) + d_dx(psi) * d_dy(omega) + d_dx(b)",
+                "psi": "(laplace(psi) + omega) / epsilon",
+                "b": "kappa * laplace(b) - d_dy(psi) * d_dx(b) + d_dx(psi) * d_dy(b)",
             },
             parameters=[
                 PDEParameter(
-                    name="kappa",
-                    default=0.01,
-                    description="Thermal diffusivity",
-                    min_value=0.001,
-                    max_value=0.1,
-                ),
-                PDEParameter(
                     name="nu",
-                    default=0.01,
+                    default=0.2,
                     description="Kinematic viscosity",
-                    min_value=0.001,
-                    max_value=0.1,
+                    min_value=0.01,
+                    max_value=1.0,
                 ),
                 PDEParameter(
-                    name="Ra",
-                    default=100.0,
-                    description="Rayleigh number",
-                    min_value=10.0,
-                    max_value=1000.0,
+                    name="epsilon",
+                    default=0.05,
+                    description="Relaxation parameter for stream function",
+                    min_value=0.01,
+                    max_value=0.5,
+                ),
+                PDEParameter(
+                    name="kappa",
+                    default=0.5,
+                    description="Thermal diffusivity",
+                    min_value=0.01,
+                    max_value=2.0,
+                ),
+                PDEParameter(
+                    name="T_b",
+                    default=0.08,
+                    description="Bottom boundary temperature flux",
+                    min_value=0.01,
+                    max_value=1.0,
                 ),
             ],
-            num_fields=2,
-            field_names=["T", "w"],
-            reference="Rayleigh-Bénard convection rolls",
+            num_fields=3,
+            field_names=["omega", "psi", "b"],
+            reference="Rayleigh-Benard convection (Boussinesq, Oberbeck)",
         )
 
     def create_pde(
@@ -175,14 +92,20 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
         parameters: dict[str, float],
         bc: dict[str, Any],
         grid: CartesianGrid,
-    ) -> ThermalConvectionStreamFunctionPDE:
-        kappa = parameters.get("kappa", 0.01)
-        nu = parameters.get("nu", 0.01)
-        Ra = parameters.get("Ra", 100.0)
-        bc_spec = self._convert_bc(bc)
+    ) -> PDE:
+        nu = parameters.get("nu", 0.2)
+        epsilon = parameters.get("epsilon", 0.05)
+        kappa = parameters.get("kappa", 0.5)
 
-        return ThermalConvectionStreamFunctionPDE(
-            kappa=kappa, nu=nu, Ra=Ra, bc=bc_spec
+        inv_eps = 1.0 / epsilon
+
+        return PDE(
+            rhs={
+                "omega": f"{nu} * laplace(omega) - d_dy(psi) * d_dx(omega) + d_dx(psi) * d_dy(omega) + d_dx(b)",
+                "psi": f"{inv_eps} * (laplace(psi) + omega)",
+                "b": f"{kappa} * laplace(b) - d_dy(psi) * d_dx(b) + d_dx(psi) * d_dy(b)",
+            },
+            bc=self._convert_bc(bc),
         )
 
     def create_initial_state(
@@ -191,25 +114,58 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
         ic_type: str,
         ic_params: dict[str, Any],
     ) -> FieldCollection:
-        """Create initial temperature gradient with perturbation."""
+        """Create initial temperature perturbation with small noise."""
+        # Get domain bounds from grid
+        x_min, x_max = grid.axes_bounds[0]
+        y_min, y_max = grid.axes_bounds[1]
+        L_y = y_max - y_min
+
         np.random.seed(ic_params.get("seed"))
-        noise = ic_params.get("noise", 0.1)
+        noise = ic_params.get("noise", 0.01)
 
         x, y = np.meshgrid(
-            np.linspace(0, 1, grid.shape[0]),
-            np.linspace(0, 1, grid.shape[1]),
+            np.linspace(x_min, x_max, grid.shape[0]),
+            np.linspace(y_min, y_max, grid.shape[1]),
             indexing="ij",
         )
 
-        # Linear temperature profile (hot bottom, cold top) with perturbation
-        T_data = 1.0 - y + noise * np.random.randn(*grid.shape)
+        # Normalize y coordinate
+        y_norm = (y - y_min) / L_y
 
-        # Small initial vorticity
-        w_data = noise * np.random.randn(*grid.shape)
+        if ic_type in ("thermal-convection-default", "default", "linear-gradient"):
+            # Small random perturbations (instability seeds)
+            omega_data = noise * np.random.randn(*grid.shape)
+            psi_data = np.zeros_like(omega_data)
+            # Small temperature perturbations near bottom (where heating occurs)
+            b_data = noise * np.random.randn(*grid.shape) * (1.0 - y_norm)
 
-        T = ScalarField(grid, T_data)
-        T.label = "T"
-        w = ScalarField(grid, w_data)
-        w.label = "w"
+        elif ic_type == "warm-blob":
+            # Localized warm region
+            x0 = ic_params.get("x0", 0.5)
+            y0 = ic_params.get("y0", 0.2)
+            amplitude = ic_params.get("amplitude", 0.5)
+            radius = ic_params.get("radius", 0.1)
 
-        return FieldCollection([T, w])
+            # Normalize x coordinate
+            x_norm = (x - x_min) / (x_max - x_min)
+
+            r_sq = (x_norm - x0) ** 2 + (y_norm - y0) ** 2
+            b_data = amplitude * np.exp(-r_sq / (2 * radius**2))
+            omega_data = noise * np.random.randn(*grid.shape)
+            psi_data = np.zeros_like(omega_data)
+
+        else:
+            # Default: use standard IC generator for b, small noise for omega
+            b_field = create_initial_condition(grid, ic_type, ic_params)
+            b_data = b_field.data
+            omega_data = noise * np.random.randn(*grid.shape)
+            psi_data = np.zeros_like(omega_data)
+
+        omega = ScalarField(grid, omega_data)
+        omega.label = "omega"
+        psi = ScalarField(grid, psi_data)
+        psi.label = "psi"
+        b = ScalarField(grid, b_data)
+        b.label = "b"
+
+        return FieldCollection([omega, psi, b])

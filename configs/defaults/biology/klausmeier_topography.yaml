@@ -1,0 +1,28 @@
+preset: klausmeier-topography
+parameters:
+  a: 1.1
+  m: 0.63
+  V: 100.0
+  Dn: 1.0
+  Dw: 2.0
+init:
+  type: random-gaussian
+  params:
+    mean: 0.5
+    std: 0.1
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: 128
+bc:
+  x: periodic
+  y: periodic
+output:
+  path: ./output
+  num_frames: 100
+  colormap: turbo
+  field_to_plot: n
+seed: 42
+domain_size: 100.0
+t_end: 100.0

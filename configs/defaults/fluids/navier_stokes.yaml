@@ -1,28 +1,26 @@
 preset: navier-stokes
 parameters:
-  nu: 0.001
-  ux: 0.1
-  uy: 0.0
+  nu: 0.02
+  M: 0.5
+  D: 0.05
 init:
-  type: gaussian-blobs
+  type: shear-layer
   params:
-    num_blobs: 4
-    amplitude: 1.0
-    width: 0.08
-    background: 0.0
-solver: rk4
+    shear_width: 0.1
+    amplitude: 0.5
+solver: euler
 backend: numpy
 adaptive: true
-dt: 0.005
+dt: 0.01
 resolution: 128
 bc:
   x: periodic
-  y: periodic
+  y: neumann
 output:
   path: ./output
   num_frames: 100
-  colormap: seismic
-  field_to_plot: w
+  colormap: viridis
+  field_to_plot: S
 seed: 42
-domain_size: 2.0
-t_end: 10.0
+domain_size: 300.0
+t_end: 50.0

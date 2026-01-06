@@ -1,74 +1,85 @@
 # FitzHugh-Nagumo Model
 
-## Mathematical Formulation
+A simplified model of excitable systems that describes action potentials in neurons, exhibiting patterns, spiral waves, and chaotic dynamics.
 
-The FitzHugh-Nagumo equations describe excitable and pattern-forming media:
+## Description
 
-$$\frac{\partial u}{\partial t} = D_u \nabla^2 u + u - u^3 - v$$
-$$\frac{\partial v}{\partial t} = D_v \nabla^2 v + \varepsilon(u - a_v v - a_z)$$
+The FitzHugh-Nagumo (FHN) model is a two-dimensional simplification of the four-dimensional Hodgkin-Huxley model of neuronal action potentials. Developed independently by Richard FitzHugh (1961) and Jin-ichi Nagumo (1962), it captures the essential dynamics of excitable systems while remaining mathematically tractable.
 
-where:
-- $u$ is the fast activator (membrane potential analog)
-- $v$ is the slow recovery variable
-- $\varepsilon \ll 1$ controls timescale separation
-- $a_v, a_z$ are parameters controlling the v-nullcline
-- $D_u, D_v$ are diffusion coefficients (for Turing patterns, typically $D_v > D_u$)
+The model describes:
+- **Voltage variable (u)**: Represents the membrane potential (fast variable)
+- **Recovery variable (v)**: Represents the slow recovery processes (slow variable)
 
-This is the pattern-forming version from visualpde.com, with the full $u^3$ cubic nonlinearity.
+The FHN model exhibits several key behaviors:
+- **Excitability**: Small perturbations decay, but perturbations above a threshold trigger large excursions (action potentials)
+- **Oscillations**: For certain parameters, sustained periodic oscillations occur
+- **Pattern formation**: In spatially extended systems, Turing-like patterns can emerge
+- **Spiral waves**: Rotating spiral waves that model cardiac arrhythmias and other biological phenomena
+- **Traveling waves**: Action potential propagation along neurons
 
-## Physical Background
+Applications extend beyond neuroscience to cardiac physiology (modeling arrhythmias), cell division, population dynamics, and electronics. The model has been central to the development of nonlinear dynamics and continues to yield new discoveries.
 
-The FitzHugh-Nagumo model is a simplified version of the Hodgkin-Huxley equations for nerve impulse propagation. It captures the essential dynamics of excitable systems:
+## Equations
 
-1. **Excitation**: Rapid transition from rest to excited state
-2. **Recovery**: Slow return to rest state
-3. **Refractory period**: Cannot be re-excited immediately
+### Standard Form
+$$\frac{\partial u}{\partial t} = \nabla^2 u + u - u^3 - v$$
 
-## Nullclines and Phase Portrait
+$$\frac{\partial v}{\partial t} = D \nabla^2 v + \varepsilon_v (u - a_v v - a_z)$$
 
-The $u$-nullcline (cubic): $v = u - u^3$
-The $v$-nullcline (linear): $v = (u - a_z)/a_v$
+### Alternative Parametrization (Action Potential Form)
+$$\frac{\partial v}{\partial t} = D \nabla^2 v + v(v-a)(1-v) - w$$
 
-The intersection determines the steady state. System behavior depends on the number and stability of intersections.
+$$\frac{\partial w}{\partial t} = \varepsilon (\gamma v - w)$$
 
-## Parameters
+Where:
+- $u$ (or $v$ in alternative form) represents membrane voltage
+- $v$ (or $w$) represents the recovery variable
+- $D > 1$ for pattern formation
+- $\varepsilon_v$ controls the timescale separation
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Timescale ratio | $\varepsilon$ | Separation of fast/slow | 0.001 - 0.5 |
-| Parameter a_v | $a_v$ | Coefficient of v in recovery | 0 - 2 |
-| Parameter a_z | $a_z$ | Constant in recovery | -1 - 1 |
-| Diffusion u | $D_u$ | Activator diffusion | 0.05 - 5 |
-| Diffusion v | $D_v$ | Inhibitor diffusion | 0 - 100 |
+## Default Config
 
-## Turing Patterns
+```yaml
+solver: euler
+dt: 0.001
+dx: 1.4
+domain_size: 280
 
-For Turing pattern formation, typically $D_v > D_u$ (diffusion-driven instability). The patterns emerge when the inhibitor diffuses faster than the activator.
+boundary_x: periodic
+boundary_y: periodic
 
-## Spatiotemporal Patterns
+parameters:
+  e_v: 0.5    # recovery timescale
+  a_v: 1      # recovery slope
+  a_z: -0.1   # recovery offset
+  D_v: 20     # inhibitor diffusion
+```
 
-1. **Traveling pulses**: Action potential propagation along nerves
-2. **Spiral waves**: Rotating waves in 2D (cardiac tissue)
-3. **Target patterns**: Concentric rings from pacemaker sources
-4. **Scroll waves**: 3D spiral analogs
-5. **Turbulence**: Breakup of spirals into chaotic activity
+## Parameter Variants
 
-## Applications
+### FitzHugh-Nagumo (Standard)
+Base configuration producing concentric ring patterns and excitable dynamics.
+- `D_v = 20`: Diffusion coefficient for v
+- `e_v = 0.5`, `a_v = 1`, `a_z = -0.1`
 
-1. **Cardiac electrophysiology**: Heart rhythm and arrhythmias
-2. **Neuroscience**: Nerve impulse propagation
-3. **Chemical systems**: BZ reaction dynamics
-4. **Cell signaling**: Calcium waves
-5. **Ecological systems**: Predator-prey waves
+### FitzHugh-Nagumo-Hopf
+Configuration supporting both pattern formation and oscillations (Turing-Hopf regime).
+- `D_v = 26`: Modified diffusion
+- `e_v = 0.2`, `a_v = 0.01`, `a_z = -0.1`
+- `m = 4` (range: [3, 6]): Initial condition wavenumber
+- Exhibits spatial, temporal, and spatiotemporal behaviors depending on initial conditions
 
-## Numerical Considerations
+### FitzHugh-Nagumo-3
+Three-species variant with competing oscillations and pattern formation.
+- Additional species $w$ with its own dynamics
+- `D_v = 40`, `D_w = 200`
+- `a_v = 0.2` (range: [0, 0.5]): Controls pattern vs oscillation dominance
+- `e_v = 0.2`, `e_w = 1`, `a_w = 0.5`, `a_z = -0.1`
 
-- Explicit schemes work well with proper CFL condition
-- Spiral wave simulations require fine resolution
-- Long-time integration for spiral dynamics
+$$\frac{\partial w}{\partial t} = D_w \nabla^2 w + \varepsilon_w (u - w)$$
 
 ## References
 
-- FitzHugh, R. (1961). *Impulses and Physiological States in Models of Nerve Membrane*
-- Nagumo, J. et al. (1962). *An Active Pulse Transmission Line*
-- Winfree, A.T. (1980). *The Geometry of Biological Time*
+- FitzHugh, R. (1961). Impulses and physiological states in theoretical models of nerve membrane. Biophysical Journal, 1(6), 445-466.
+- Nagumo, J., Arimoto, S., & Yoshizawa, S. (1962). An active pulse transmission line simulating nerve axon. Proceedings of the IRE, 50(10), 2061-2070.
+- Hodgkin, A. L., & Huxley, A. F. (1952). A quantitative description of membrane current and its application to conduction and excitation in nerve. Journal of Physiology, 117(4), 500-544.

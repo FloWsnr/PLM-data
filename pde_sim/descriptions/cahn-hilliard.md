@@ -1,87 +1,99 @@
 # Cahn-Hilliard Equation
 
-## Mathematical Formulation
+A fourth-order PDE describing phase separation and spinodal decomposition in binary mixtures, producing characteristic coarsening domain structures.
 
-The Cahn-Hilliard equation describes phase separation:
+## Description
 
-$$\frac{\partial u}{\partial t} = M \nabla^2 (u^3 - u - \gamma \nabla^2 u)$$
+The Cahn-Hilliard equation, developed by John W. Cahn and John E. Hilliard in 1958, describes the process of phase separation (spinodal decomposition) in binary mixtures such as metal alloys or polymer blends. When a homogeneous mixture is rapidly quenched below a critical temperature, it becomes thermodynamically unstable and spontaneously separates into two distinct phases.
 
-Equivalently, introducing chemical potential $\mu$:
-$$\frac{\partial u}{\partial t} = M \nabla^2 \mu$$
-$$\mu = u^3 - u - \gamma \nabla^2 u = \frac{\delta F}{\delta u}$$
+Key physical phenomena captured by this equation:
+- **Spinodal decomposition**: Unlike nucleation (which requires overcoming an energy barrier), spinodal decomposition occurs spontaneously when the mixture is unstable to infinitesimal fluctuations
+- **Coarsening dynamics**: After initial phase separation, domains grow over time through a process called Ostwald ripening, where larger domains grow at the expense of smaller ones
+- **Conservation of mass**: The equation is conservative - the average concentration remains constant
+- **Interfacial energy**: The higher-order derivative term penalizes sharp interfaces, leading to smooth domain boundaries
 
-where:
-- $u$ is the concentration difference (order parameter), $-1 \leq u \leq 1$
-- $M$ is the mobility coefficient
-- $\gamma$ controls interface width
-- $F$ is the free energy functional
+The characteristic "labyrinthine" or "bicontinuous" structures that emerge are ubiquitous in materials science, appearing in phase-separating polymers, lipid membranes, and even galaxy distributions. The coarsening follows a power law with time, making the Cahn-Hilliard equation a benchmark for studying domain growth kinetics.
 
-## Physical Background
+The version implemented here includes an additional reaction term that can create steady-state patterns rather than full phase separation.
 
-The Cahn-Hilliard equation is a **conserved gradient flow**:
+## Equations
 
-$$\frac{\partial u}{\partial t} = \nabla \cdot \left(M \nabla \frac{\delta F}{\delta u}\right)$$
+The standard Cahn-Hilliard equation is:
 
-with Ginzburg-Landau free energy:
-$$F[u] = \int \left[\frac{(u^2-1)^2}{4} + \frac{\gamma}{2}|\nabla u|^2\right] dx$$
+$$\frac{\partial u}{\partial t} = \nabla^2 \left( F'(u) - g \nabla^2 u \right)$$
 
-Key property: **Mass conservation** $\frac{d}{dt}\int u \, dx = 0$
+where $F(u)$ is a double-well free energy density (e.g., $F(u) = \frac{1}{4}(u^2-1)^2$).
 
-## Parameters
+The implemented version with reaction term:
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Mobility | $M$ | Diffusion rate | 0.1 - 3 |
-| Interface parameter | $\gamma$ | Interface width | 0.001 - 0.1 |
+$$\frac{\partial u}{\partial t} = r \nabla^2 \left( u^3 - u - g \nabla^2 u \right) + u - u^3$$
 
-## Phase Separation Dynamics
+Expanding through cross-diffusion formulation, this becomes:
+- Diffusion for $u$: $r D (3u^2 - 1) \nabla^2 u - r D \nabla^2 v$ where $v = \nabla^2 u$
+- Reaction: $r u (1 - u^2)$
 
-Starting from random perturbations:
-1. **Spinodal decomposition**: Rapid separation into phases
-2. **Coarsening**: Domains grow over time
-3. **Ostwald ripening**: Large domains grow, small shrink
-4. **Steady state**: Single interface (eventually)
+Where:
+- $u \in [-1, 1]$ represents the local concentration (relative to the critical mixture)
+- $r$ controls the timescale of the phase separation dynamics
+- $g = a$ controls the interfacial energy / interface width
+- The term $(u^3 - u)$ comes from the derivative of the double-well potential
+- The reaction term $u - u^3$ can stabilize intermediate states
 
-## Coarsening Laws
+## Default Config
 
-Domain size $R(t)$ grows as:
-- **Bulk diffusion**: $R \sim t^{1/3}$ (Lifshitz-Slyozov)
-- **Surface diffusion**: $R \sim t^{1/4}$
+```yaml
+solver: euler
+dt: 0.0005
+dx: 0.5
+domain_size: 100
 
-## Comparison with Allen-Cahn
+boundary_x: periodic
+boundary_y: periodic
 
-| Property | Cahn-Hilliard | Allen-Cahn |
-|----------|---------------|------------|
-| Order | 4th spatial | 2nd spatial |
-| Conservation | Mass conserved | Not conserved |
-| Interface motion | Surface diffusion | Mean curvature |
-| Steady state | Coarsened domains | Single phase |
+parameters:
+  r: 0.01    # [0, 1] - timescale parameter (start small, increase)
+  a: 1       # interfacial energy coefficient
+  D: 1       # diffusion coefficient
+```
 
-## Applications
+## Parameter Variants
 
-1. **Metallurgy**: Alloy phase separation
-2. **Polymer blends**: Demixing dynamics
-3. **Lipid membranes**: Domain formation
-4. **Image processing**: Inpainting, segmentation
-5. **Crystal growth**: Solidification patterns
+### CahnHilliard (Standard)
+Phase separation from random initial conditions:
+- `r = 0.01` (slow initial dynamics - increase to speed up)
+- `a = 1`, `D = 1`
+- Initial condition: `tanh(30*(RAND-0.5))` - random values near +/-1
+- Fixed random seed for reproducibility
+- Exhibits characteristic coarsening behavior
 
-## Interface Width
+### CahnHilliardNonreciprocal
+Non-reciprocal variant with two coupled fields:
+- Additional diffusive coupling between species
+- Parameters: `D_1 = 1`, `D_2 = 1` (coupling), `kappa = 0.1`
+- Produces traveling and oscillating patterns
+- Based on recent work by Brauns and Marchetti (2024)
 
-The equilibrium interface width scales as:
-$$\ell \sim \sqrt{\gamma}$$
+### Physical Interpretation
 
-The interface profile is approximately:
-$$u(x) = \tanh\left(\frac{x}{\sqrt{2\gamma}}\right)$$
+| Parameter | Physical Meaning |
+|-----------|------------------|
+| u = +1 | Pure phase A |
+| u = -1 | Pure phase B |
+| u = 0 | Critical mixture (50-50) |
+| r | Controls separation rate |
+| g (or a) | Interface thickness / surface tension |
 
-## Numerical Considerations
+### Observing Coarsening
 
-- **4th-order equation**: Requires implicit solvers or small time steps
-- **Stiff**: Time step restrictions severe for explicit methods
-- **Mass conservation**: Should be preserved numerically
-- **Energy decay**: Free energy should decrease monotonically
+Starting from random initial conditions:
+1. Initial rapid phase separation creates fine-scale domains
+2. Domains coarsen over time (larger structures emerge)
+3. Characteristic domain size grows as $L(t) \sim t^{1/3}$ (Lifshitz-Slyozov law)
+4. Increase $r$ by 1-2 orders of magnitude to observe faster dynamics
 
 ## References
 
-- Cahn, J.W. & Hilliard, J.E. (1958). *Free Energy of a Nonuniform System*
-- Elliott, C.M. & Zheng, S. (1986). *On the Cahn-Hilliard equation*
-- Bray, A.J. (1994). *Theory of phase-ordering kinetics*
+- Cahn, J.W. & Hilliard, J.E. (1958). "Free Energy of a Nonuniform System" - J. Chem. Phys. 28:258
+- Bray, A.J. (2002). "Theory of phase-ordering kinetics" - Advances in Physics 51:481
+- Brauns, F. & Marchetti, M.C. (2024). "Non-reciprocal pattern formation" - Phys. Rev. X 14:021014
+- Trefethen, L.N. (2001). "Cahn-Hilliard Equation" - pdectb.pdf (Oxford)

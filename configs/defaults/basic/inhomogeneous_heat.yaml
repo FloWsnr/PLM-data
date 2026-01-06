@@ -1,22 +1,24 @@
+# Inhomogeneous heat equation configuration
+# Based on visualpde.com inhomogeneous heat equation
 preset: inhomogeneous-heat
 parameters:
-  D: 0.1
-  n: 2  # Spatial mode number in x direction
-  m: 2  # Spatial mode number in y direction
+  D: 1.0   # Diffusion coefficient
+  n: 4     # Spatial mode number in x direction [1-10]
+  m: 4     # Spatial mode number in y direction [1-10]
 init:
   type: gaussian-blobs
   params:
     num_blobs: 3
     amplitude: 0.8
     sigma: 0.1
-    background: 0.2
-solver: scipy  # Implicit solver works well for diffusion
+    background: 0.0
+solver: euler
 backend: numba
 adaptive: true
-dt: 0.001
-resolution: 128
+dt: 0.004  # From reference: dt=0.004
+resolution: 200  # From reference: dx=0.5, domain_size=100 -> 100/0.5 = 200
 bc:
-  x: neumann  # No-flux boundary conditions (required for this PDE)
+  x: neumann  # Required: Neumann boundary conditions
   y: neumann
 output:
   path: ./output
@@ -24,5 +26,5 @@ output:
   colormap: turbo
   field_to_plot: T
 seed: 42
-domain_size: 2.0
-t_end: 2.0
+domain_size: 100.0  # From reference: domain_size=100
+t_end: 50.0

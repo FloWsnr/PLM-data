@@ -1,82 +1,162 @@
-# Plate Vibration Equation
+# Plate Equation (Linearly Elastic Models)
 
-## Mathematical Formulation
+The plate equation (and related beam equation) describes the vibrations and deformations of thin elastic structures, involving the fourth-order biharmonic operator.
 
-The plate equation describes thin elastic plate vibrations using the biharmonic operator:
+## Description
 
-$$\frac{\partial^2 u}{\partial t^2} = -D \nabla^4 u - C \frac{\partial u}{\partial t}$$
+The plate equation is derived from Kirchhoff-Love plate theory, which extends Euler-Bernoulli beam theory to two-dimensional surfaces. These fourth-order PDEs govern the transverse deflections of thin elastic structures under loading.
 
-where $\nabla^4 = \nabla^2(\nabla^2)$ is the biharmonic operator (bilaplacian):
+### Physical Applications
 
-$$\nabla^4 u = \frac{\partial^4 u}{\partial x^4} + 2\frac{\partial^4 u}{\partial x^2 \partial y^2} + \frac{\partial^4 u}{\partial y^4}$$
+- **Structural engineering**: Bridge decks, floor slabs, aircraft panels
+- **Musical instruments**: Vibrating plates (cymbals, gongs, bells), piano soundboards
+- **Microelectromechanical systems (MEMS)**: Micro-mirrors, pressure sensors
+- **Aerospace**: Wing panels, fuselage sections under aerodynamic loads
+- **Naval architecture**: Ship hull plating
+- **Robotics**: Flexible manipulator arms
+- **Energy**: Turbine blades, rotor dynamics
 
-This is converted to a first-order system:
-- $\frac{\partial u}{\partial t} = v$
-- $\frac{\partial v}{\partial t} = -D \nabla^4 u - C v$
+### Euler-Bernoulli Beam Theory
 
-where $u$ is displacement and $v$ is velocity.
+The 1D beam equation describes transverse vibrations of slender beams:
+- Assumes cross-sections remain plane and perpendicular to the neutral axis
+- Fourth-order spatial derivative captures bending stiffness
+- Used for helicopter rotors, spacecraft structures, flexible robotic arms
 
-## Physical Background
+### Kirchhoff-Love Plate Theory
 
-The plate equation arises from Kirchhoff-Love thin plate theory, describing:
+The 2D plate equation extends beam theory to thin plates:
+- Developed by Kirchhoff (1850) and Love (1888)
+- Accounts for anticlastic curvature (saddle-like bending)
+- Uses the biharmonic operator $\nabla^4 = \nabla^2(\nabla^2)$
+- Assumes plate thickness is small compared to other dimensions
 
-- **Plate bending**: Elastic deformation of thin plates under load
-- **Vibrations**: Oscillatory motion of plates when disturbed
-- **Wave propagation**: Compression and bending waves in stiff materials
+### Key Phenomena
 
-Key properties:
-- Fourth-order spatial derivatives (stiffer than membrane/wave equation)
-- Wave dispersion: different wavelengths travel at different speeds
-- Damping term dissipates energy over time
+- **Bending waves**: Fourth-order equations produce dispersive waves (speed depends on frequency)
+- **Standing modes**: Characteristic patterns (Chladni figures on vibrating plates)
+- **Buckling**: Plates under compression can suddenly buckle
+- **Damping**: Energy loss through internal friction
 
-## Parameters
+## Equations
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Bending stiffness | $D$ | Plate rigidity coefficient | 0.00001 - 0.001 |
-| Damping | $C$ | Energy dissipation rate | 0.0 - 2.0 |
+### Beam Equation (1D)
 
-**Note**: The bending stiffness $D$ is related to material properties: $D = \frac{E h^3}{12(1-\nu^2)}$ where $E$ is Young's modulus, $h$ is plate thickness, and $\nu$ is Poisson's ratio.
+$$\frac{\partial^2 u}{\partial t^2} + C\frac{\partial u}{\partial t} = -D^2 \frac{\partial^4 u}{\partial x^4} - Q$$
 
-## Comparison with Wave Equation
+### Plate Equation (2D)
 
-| Property | Wave Equation | Plate Equation |
-|----------|---------------|----------------|
-| Spatial order | 2nd ($\nabla^2$) | 4th ($\nabla^4$) |
-| Wave speed | Constant | Frequency-dependent |
-| Dispersion | No | Yes |
-| Physics | Strings, membranes | Stiff plates |
+$$\frac{\partial^2 u}{\partial t^2} + C\frac{\partial u}{\partial t} = -D^2 \nabla^4 u - Q$$
 
-## Interesting Initial Conditions
+where:
+- $u(x, y, t)$ is the transverse displacement (deflection)
+- $D$ is related to bending rigidity (combines material stiffness and geometry)
+- $C$ is the damping coefficient
+- $Q$ is a constant load (gravity-like force)
+- $\nabla^4 = \nabla^2(\nabla^2) = \frac{\partial^4}{\partial x^4} + 2\frac{\partial^4}{\partial x^2 \partial y^2} + \frac{\partial^4}{\partial y^4}$ is the biharmonic operator
 
-**Uniform displacement with Dirichlet boundaries**: Setting $u = -1$ everywhere with $u = 0$ at boundaries creates compression waves that propagate inward from all edges, meeting at the center. This demonstrates the wave-like nature of plate vibrations.
+### Boundary Conditions
 
-**Localized disturbance**: A Gaussian bump creates outward-propagating circular waves that reflect from boundaries.
+**Fixed (clamped) edges:**
+- $u = 0$ and $\nabla^2 u = 0$ on boundary
 
-## Applications
+**Free edges (Neumann for all fields):**
+- $\frac{\partial^2 u}{\partial n^2} = 0$ and $\frac{\partial^3 u}{\partial n^3} = 0$ on boundary
 
-1. **Structural engineering**: Building floors, bridge decks
-2. **Acoustics**: Vibrating panels, speaker cones
-3. **Musical instruments**: Cymbals, bells, percussion
-4. **Aerospace**: Aircraft skin panels
-5. **MEMS devices**: Micro-scale vibrating plates
+### Numerical Reformulation
 
-## Boundary Conditions
+Since VisualPDE handles only first-order time derivatives and second-order spatial derivatives, the plate equation is reformulated using three fields:
 
-Common boundary conditions for plates:
-- **Clamped (fixed)**: $u = 0$ and $\partial u/\partial n = 0$
-- **Simply supported**: $u = 0$ (Dirichlet) - used in default config
-- **Free edge**: Zero moment and shear force
+$$\frac{\partial u}{\partial t} = v + D D_c \nabla^2 u$$
 
-## Numerical Considerations
+$$\frac{\partial v}{\partial t} = -D \nabla^2 w - Cv - Q$$
 
-- **Stiff equation**: Fourth-order derivatives require small time steps
-- **Implicit solvers**: Recommended for efficiency
-- **CFL condition**: $\Delta t \propto (\Delta x)^2$ (better than $(\Delta x)^4$ for diffusive form)
-- **Damping helps**: Non-zero $C$ improves numerical stability
+$$w = D \nabla^2 u$$
+
+where:
+- $v$ is the velocity field
+- $w$ is an auxiliary field representing $D \nabla^2 u$
+- $D_c$ is a numerical stabilization parameter (set to 0 for pure plate equation)
+
+Implementation:
+- Reaction terms: `u: v`, `v: -Q - C*v`, `w: 0`
+- Diffusion: `u-u: D_c*D`, `v-w: -D`, `w-u: D`
+- The `w` field is algebraic (computed from $u$, not evolved in time)
+
+## Default Config
+
+### Plate Equation (plateEquation)
+```yaml
+solver: euler
+dt: 0.0001
+dx: 0.5
+domain_size: 100
+
+boundary_x: dirichlet
+boundary_y: dirichlet
+
+parameters:
+  D: 10       # bending rigidity parameter
+  Q: 0.003    # constant load (gravity)
+  C: 0.1      # damping coefficient
+  D_c: 0.1    # numerical stabilization
+
+initial_condition: u = -4  # initial deformation
+
+species:
+  - name: u   # displacement
+  - name: v   # velocity
+  - name: w   # auxiliary (algebraic)
+```
+
+### Beam Equation (BeamEquation)
+```yaml
+solver: euler
+dt: 0.0001
+dimension: 1
+
+boundary_x: dirichlet
+
+parameters:
+  D: 10
+  Q: 0.0      # no gravity by default
+  C: 0        # no damping
+  D_c: 0.1
+
+species:
+  - name: u
+  - name: v
+  - name: w
+```
+
+## Parameter Variants
+
+### BeamEquation
+1D beam equation:
+- One-dimensional (line plot)
+- No gravity ($Q = 0$), no damping ($C = 0$)
+- Fixed (Dirichlet) boundary conditions at both ends
+- Click to push down on beam, creating traveling ripples
+- Change to Neumann boundaries for "free end" conditions
+
+### plateEquation
+2D plate equation:
+- Fixed boundaries ($u = 0$ at edges)
+- Initial deformation $u = -4$ everywhere
+- Instantaneous boundary condition creates inward-propagating compression waves
+- Parameters: $D = 10$, $Q = 0.003$, $C = 0.1$
+- Square domain enforced
+
+### plateEquation3D
+Same as plateEquation with 3D surface visualization:
+- Rotatable 3D view of plate deformation
+- No initial deformation ($u = 0$)
+- No gravity ($Q = 0$)
+- Interactive clicking to create local depressions
 
 ## References
 
-- Timoshenko, S. & Woinowsky-Krieger, S. (1959). *Theory of Plates and Shells*
-- Graff, K. F. (1991). *Wave Motion in Elastic Solids*
-- VisualPDE: https://visualpde.com/basic-pdes/plate-equation
+- [Euler-Bernoulli beam theory - Wikipedia](https://en.wikipedia.org/wiki/Euler–Bernoulli_beam_theory)
+- [Kirchhoff-Love plate theory - Wikipedia](https://en.wikipedia.org/wiki/Kirchhoff–Love_plate_theory)
+- [Euler-Bernoulli Beams: Bending, Buckling, and Vibration - MIT OCW](https://ocw.mit.edu/courses/2-002-mechanics-and-materials-ii-spring-2004/bc25a56b5a91ad29ca5c7419616686f7_lec2.pdf)
+- [Bernoulli-Euler Beams - enDAQ](https://endaq.com/pages/bernoulli-euler-beams)

@@ -1,104 +1,40 @@
-"""2D Navier-Stokes in vorticity-stream function formulation."""
+"""2D Navier-Stokes equations in velocity-pressure formulation."""
 
 from typing import Any
 
 import numpy as np
-from pde import CartesianGrid, ScalarField, solve_poisson_equation
-from pde.pdes.base import PDEBase
+from pde import PDE, CartesianGrid, FieldCollection, ScalarField
 
 from pde_sim.initial_conditions import create_initial_condition
 
-from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset
+from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
 
 
-class NavierStokesVorticityPDE(PDEBase):
-    """2D Navier-Stokes in vorticity-stream function formulation.
-
-    Solves the full vorticity transport equation:
-        dw/dt = nu * laplace(w) - u * d_dx(w) - v * d_dy(w)
-
-    where velocity is derived from stream function psi:
-        laplace(psi) = -w  (solved at each timestep)
-        u = d_dy(psi)
-        v = -d_dx(psi)
-
-    This is the proper 2D incompressible Navier-Stokes equations
-    in vorticity-stream function form, where vorticity is advected
-    by its self-induced velocity field.
-    """
-
-    def __init__(self, nu: float = 0.01, bc: list | None = None):
-        """Initialize the Navier-Stokes vorticity equation.
-
-        Args:
-            nu: Kinematic viscosity.
-            bc: Boundary conditions.
-        """
-        super().__init__()
-        self.nu = nu
-        self.bc = bc if bc is not None else "auto_periodic_neumann"
-
-    def evolution_rate(self, state: ScalarField, t: float = 0) -> ScalarField:
-        """Compute dw/dt using stream function for velocity.
-
-        Args:
-            state: Current vorticity field w.
-            t: Current time (unused).
-
-        Returns:
-            Rate of change dw/dt.
-        """
-        w = state
-
-        # Solve Poisson equation: laplace(psi) = -w for stream function
-        # For periodic BC, we need zero mean vorticity. Subtracting the mean
-        # doesn't affect velocities since u = grad(psi) and grad(constant) = 0.
-        w_zero_mean = w - w.average
-        psi = solve_poisson_equation(w_zero_mean, bc=self.bc)
-
-        # Compute velocity from stream function
-        # u = d(psi)/dy, v = -d(psi)/dx
-        grad_psi = psi.gradient(bc=self.bc)
-        u = grad_psi[1]  # d_dy(psi)
-        v = -grad_psi[0]  # -d_dx(psi)
-
-        # Compute vorticity gradients
-        grad_w = w.gradient(bc=self.bc)
-        dw_dx = grad_w[0]
-        dw_dy = grad_w[1]
-
-        # Diffusion term
-        laplacian_w = w.laplace(bc=self.bc)
-
-        # Full vorticity transport: dw/dt = nu * laplace(w) - u * dw/dx - v * dw/dy
-        dw_dt = self.nu * laplacian_w - u * dw_dx - v * dw_dy
-
-        return dw_dt
-
-
 @register_pde("navier-stokes")
-class NavierStokesPDE(ScalarPDEPreset):
-    """2D Navier-Stokes in vorticity-stream function formulation.
+class NavierStokesPDE(MultiFieldPDEPreset):
+    """2D incompressible Navier-Stokes equations.
 
-    The full incompressible Navier-Stokes equations in 2D can be written
-    in vorticity form:
+    The Navier-Stokes equations govern the motion of viscous fluids,
+    describing how velocity and pressure fields evolve over time.
 
-        dw/dt = nu * laplace(w) - u * d_dx(w) - v * d_dy(w)
+    Momentum equations:
+        du/dt = -(u * d_dx(u) + v * d_dy(u)) - d_dx(p) + nu * laplace(u)
+        dv/dt = -(u * d_dx(v) + v * d_dy(v)) - d_dy(p) + nu * laplace(v)
+
+    Generalized pressure equation:
+        dp/dt = nu * laplace(p) - (1/M^2) * (d_dx(u) + d_dy(v))
+
+    Passive scalar transport:
+        dS/dt = -(u * d_dx(S) + v * d_dy(S)) + D * laplace(S)
 
     where:
-        - w is the vorticity (w = dv/dx - du/dy)
-        - nu is the kinematic viscosity
-        - (u, v) is the velocity field
-
-    The velocity is derived from the stream function psi:
-        laplace(psi) = -w  (Poisson equation, solved at each timestep)
-        u = d_dy(psi)
-        v = -d_dx(psi)
-
-    This formulation automatically satisfies incompressibility (div(u) = 0)
-    and captures the proper nonlinear advection of vorticity by the
-    self-induced velocity field.
+        - u, v are velocity components
+        - p is pressure
+        - S is passive scalar for flow visualization
+        - nu is kinematic viscosity
+        - M is Mach number parameter (related to pressure wave speed)
+        - D is passive scalar diffusion coefficient
     """
 
     @property
@@ -106,25 +42,39 @@ class NavierStokesPDE(ScalarPDEPreset):
         return PDEMetadata(
             name="navier-stokes",
             category="fluids",
-            description="2D Navier-Stokes vorticity-stream function",
+            description="2D incompressible Navier-Stokes equations",
             equations={
-                "w": "nu * laplace(w) - u * d_dx(w) - v * d_dy(w)",
-                "psi": "laplace(psi) = -w (stream function)",
-                "u": "d_dy(psi)",
-                "v": "-d_dx(psi)",
+                "u": "-(u * d_dx(u) + v * d_dy(u)) - d_dx(p) + nu * laplace(u)",
+                "v": "-(u * d_dx(v) + v * d_dy(v)) - d_dy(p) + nu * laplace(v)",
+                "p": "nu * laplace(p) - (1/M^2) * (d_dx(u) + d_dy(v))",
+                "S": "-(u * d_dx(S) + v * d_dy(S)) + D * laplace(S)",
             },
             parameters=[
                 PDEParameter(
                     name="nu",
-                    default=0.01,
+                    default=0.02,
                     description="Kinematic viscosity",
+                    min_value=0.02,
+                    max_value=20.0,
+                ),
+                PDEParameter(
+                    name="M",
+                    default=0.5,
+                    description="Mach number parameter",
+                    min_value=0.1,
+                    max_value=2.0,
+                ),
+                PDEParameter(
+                    name="D",
+                    default=0.05,
+                    description="Passive scalar diffusion coefficient",
                     min_value=0.001,
-                    max_value=0.1,
+                    max_value=1.0,
                 ),
             ],
-            num_fields=1,
-            field_names=["w"],
-            reference="2D incompressible Navier-Stokes",
+            num_fields=4,
+            field_names=["u", "v", "p", "S"],
+            reference="Navier-Stokes equations (Stokes/Navier, 1800s)",
         )
 
     def create_pde(
@@ -132,39 +82,111 @@ class NavierStokesPDE(ScalarPDEPreset):
         parameters: dict[str, float],
         bc: dict[str, Any],
         grid: CartesianGrid,
-    ) -> NavierStokesVorticityPDE:
-        nu = parameters.get("nu", 0.01)
-        bc_spec = self._convert_bc(bc)
+    ) -> PDE:
+        nu = parameters.get("nu", 0.02)
+        M = parameters.get("M", 0.5)
+        D = parameters.get("D", 0.05)
 
-        return NavierStokesVorticityPDE(nu=nu, bc=bc_spec)
+        # Pressure relaxation coefficient
+        inv_M2 = 1.0 / (M * M)
+
+        return PDE(
+            rhs={
+                "u": f"-u * d_dx(u) - v * d_dy(u) - d_dx(p) + {nu} * laplace(u)",
+                "v": f"-u * d_dx(v) - v * d_dy(v) - d_dy(p) + {nu} * laplace(v)",
+                "p": f"{nu} * laplace(p) - {inv_M2} * (d_dx(u) + d_dy(v))",
+                "S": f"-u * d_dx(S) - v * d_dy(S) + {D} * laplace(S)",
+            },
+            bc=self._convert_bc(bc),
+        )
 
     def create_initial_state(
         self,
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
-    ) -> ScalarField:
-        """Create initial vorticity distribution."""
-        if ic_type in ("navier-stokes-default", "default", "vortex-pair"):
-            # Counter-rotating vortex pair
-            x0_1, y0_1 = ic_params.get("x1", 0.35), ic_params.get("y1", 0.5)
-            x0_2, y0_2 = ic_params.get("x2", 0.65), ic_params.get("y2", 0.5)
-            strength = ic_params.get("strength", 10.0)
-            radius = ic_params.get("radius", 0.1)
+    ) -> FieldCollection:
+        """Create initial velocity, pressure, and passive scalar fields."""
+        # Get domain bounds from grid
+        x_min, x_max = grid.axes_bounds[0]
+        y_min, y_max = grid.axes_bounds[1]
+        L_x = x_max - x_min
+        L_y = y_max - y_min
+
+        if ic_type in ("navier-stokes-default", "default", "shear-layer"):
+            # Shear layer initial condition
+            shear_width = ic_params.get("shear_width", 0.1)
+            amplitude = ic_params.get("amplitude", 0.5)
 
             x, y = np.meshgrid(
-                np.linspace(0, 1, grid.shape[0]),
-                np.linspace(0, 1, grid.shape[1]),
+                np.linspace(x_min, x_max, grid.shape[0]),
+                np.linspace(y_min, y_max, grid.shape[1]),
                 indexing="ij",
             )
 
-            r1_sq = (x - x0_1) ** 2 + (y - y0_1) ** 2
-            r2_sq = (x - x0_2) ** 2 + (y - y0_2) ** 2
+            # Normalize y to [0, 1] range
+            y_norm = (y - y_min) / L_y
 
-            w1 = strength * np.exp(-r1_sq / (2 * radius**2))
-            w2 = -strength * np.exp(-r2_sq / (2 * radius**2))
+            # Shear layer velocity profile
+            u_data = amplitude * np.tanh((y_norm - 0.5) / shear_width)
+            v_data = 0.05 * np.sin(2 * np.pi * (x - x_min) / L_x)
+            p_data = np.zeros_like(u_data)
+            # Passive scalar gradient for visualization
+            S_data = y_norm
 
-            data = w1 + w2
-            return ScalarField(grid, data)
+        elif ic_type == "vortex-pair":
+            # Counter-rotating vortex pair
+            x0_1, y0_1 = ic_params.get("x1", 0.35), ic_params.get("y1", 0.5)
+            x0_2, y0_2 = ic_params.get("x2", 0.65), ic_params.get("y2", 0.5)
+            strength = ic_params.get("strength", 1.0)
+            radius = ic_params.get("radius", 0.1)
 
-        return create_initial_condition(grid, ic_type, ic_params)
+            x, y = np.meshgrid(
+                np.linspace(x_min, x_max, grid.shape[0]),
+                np.linspace(y_min, y_max, grid.shape[1]),
+                indexing="ij",
+            )
+
+            # Normalize coordinates
+            x_norm = (x - x_min) / L_x
+            y_norm = (y - y_min) / L_y
+
+            # Distance from vortex centers
+            r1_sq = (x_norm - x0_1) ** 2 + (y_norm - y0_1) ** 2
+            r2_sq = (x_norm - x0_2) ** 2 + (y_norm - y0_2) ** 2
+
+            # Gaussian vortices induce velocity
+            # For a vortex at (x0, y0), velocity is tangential
+            # u = -strength * (y - y0) / r * exp(-r^2/2*sigma^2)
+            # v =  strength * (x - x0) / r * exp(-r^2/2*sigma^2)
+            sigma = radius
+
+            u_data = (
+                -strength * (y_norm - y0_1) * np.exp(-r1_sq / (2 * sigma**2))
+                - (-strength) * (y_norm - y0_2) * np.exp(-r2_sq / (2 * sigma**2))
+            )
+            v_data = (
+                strength * (x_norm - x0_1) * np.exp(-r1_sq / (2 * sigma**2))
+                + (-strength) * (x_norm - x0_2) * np.exp(-r2_sq / (2 * sigma**2))
+            )
+            p_data = np.zeros_like(u_data)
+            S_data = np.exp(-r1_sq / (2 * sigma**2)) + np.exp(-r2_sq / (2 * sigma**2))
+
+        else:
+            # Default: use standard IC generator for S, zeros for velocity/pressure
+            S_field = create_initial_condition(grid, ic_type, ic_params)
+            S_data = S_field.data
+            u_data = np.zeros_like(S_data)
+            v_data = np.zeros_like(S_data)
+            p_data = np.zeros_like(S_data)
+
+        u = ScalarField(grid, u_data)
+        u.label = "u"
+        v = ScalarField(grid, v_data)
+        v.label = "v"
+        p = ScalarField(grid, p_data)
+        p.label = "p"
+        S = ScalarField(grid, S_data)
+        S.label = "S"
+
+        return FieldCollection([u, v, p, S])

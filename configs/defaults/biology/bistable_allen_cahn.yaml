@@ -1,0 +1,26 @@
+preset: bistable-allen-cahn
+parameters:
+  D: 1.0
+  a: 0.5
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 3
+    amplitude: 1.0
+    width: 0.1
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: 128
+bc:
+  x: neumann
+  y: neumann
+output:
+  path: ./output
+  num_frames: 100
+  colormap: viridis
+  field_to_plot: u
+seed: 42
+domain_size: 100.0
+t_end: 50.0

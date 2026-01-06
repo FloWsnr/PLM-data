@@ -1,85 +1,108 @@
-# Harsh Environment Model (Strong Allee Effect)
+# Harsh Environment Model
 
-## Mathematical Formulation
+A logistic reaction-diffusion model demonstrating how boundary conditions determine population survival thresholds in hostile environments.
 
-Population dynamics with strong Allee effect:
+## Description
 
-$$\frac{\partial u}{\partial t} = D \nabla^2 u + ru(u - \theta)(1 - u)$$
+This model explores a fundamental question in spatial ecology: **How do hostile boundaries affect population persistence?** Using the classical logistic growth model with different boundary conditions, it demonstrates the interplay between diffusion, growth, and environmental constraints.
 
-where:
-- $u$ is normalized population density (0 to 1)
-- $D$ is diffusion coefficient
-- $r$ is growth rate
-- $\theta$ is the Allee threshold (0 < $\theta$ < 1)
+The key insight is that Dirichlet boundary conditions (hostile boundaries where population dies at the edge) create a critical relationship between diffusion rate and domain size. If diffusion is too fast relative to domain size, the population cannot persist because individuals diffuse out of the favorable region faster than they can reproduce.
 
-## Physical Background
+This models real ecological scenarios:
+- **Island populations**: Ocean surrounding a favorable habitat
+- **Habitat patches**: Populations in fragmented landscapes
+- **Reserves**: Protected areas surrounded by uninhabitable regions
+- **Laboratory cultures**: Populations in bounded containers with hostile edges
 
-The **Allee effect** describes positive density dependence at low populations:
-- Below threshold $\theta$: Population declines toward extinction
-- Above threshold $\theta$: Population grows toward carrying capacity
+The critical condition for persistence:
+$$D < \frac{L^2}{2\pi^2}$$
 
-This creates **bistability**: two stable states (extinction and carrying capacity) with an unstable threshold between them.
+where $D$ is the diffusion coefficient and $L$ is the domain size. For a domain of $L = 10$, the critical diffusion is approximately $D_c \approx 5.07$.
 
-## Allee Effect Origins
+Key phenomena:
+- Below $D_c$: Positive equilibrium exists and is globally stable
+- Above $D_c$: Only extinction equilibrium is stable
+- The carrying capacity $K$ affects equilibrium density but not the persistence threshold
+- Near $D_c$: Very long transients and small equilibrium populations
 
-Mechanisms causing Allee effects:
-1. **Mate finding**: Difficulty finding partners at low density
-2. **Cooperative defense**: Vulnerability to predators
-3. **Cooperative hunting**: Insufficient hunting success
-4. **Inbreeding**: Genetic depression in small populations
-5. **Environmental modification**: Loss of habitat improvement
+## Equations
 
-## Parameters
+$$\frac{\partial u}{\partial t} = D \nabla^2 u + ru\left(1 - \frac{u}{K}\right)$$
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Diffusion | $D$ | Movement rate | 0.01 - 0.5 |
-| Growth rate | $r$ | Intrinsic reproduction | 0.1 - 5 |
-| Threshold | $\theta$ | Allee threshold | 0 - 0.5 |
+With:
+- **Neumann (no-flux) BC**: Population reflects at boundaries - always persists
+- **Dirichlet (absorbing) BC**: Population dies at boundaries - may go extinct
 
-## Traveling Wave Dynamics
+Where:
+- $u$ is the population density
+- $D$ is the diffusion coefficient
+- $r$ is the intrinsic growth rate
+- $K$ is the carrying capacity
+- $L$ is the domain length
 
-Unlike Fisher-KPP, this equation supports **pushed waves**:
+Critical diffusion threshold: $D_c = \frac{L^2}{2\pi^2}$
 
-- **Pulled wave** (Fisher-KPP): Speed determined by leading edge
-- **Pushed wave** (Allee): Speed determined by bulk dynamics
+## Default Config
 
-Wave speed depends on threshold:
-- Larger $\theta$ → slower or retreating waves
-- Smaller $\theta$ → faster advancing waves
+```yaml
+solver: euler
+dt: 0.0001
+dx: 0.05
+domain_size: 10
 
-## Critical Patch Size
+boundary_x: neumann
+boundary_y: neumann
 
-For bounded domains, there exists a **critical patch size**:
-- Below critical: Population always goes extinct
-- Above critical: Population can persist
+num_species: 1
 
-This has important conservation implications.
+parameters:
+  K: 1      # carrying capacity
+  r: 1      # growth rate
+  D: 0.01   # diffusion coefficient (adjustable)
+```
 
-## Bistability in Space
+## Parameter Variants
 
-Initial condition matters greatly:
-- Small patch below threshold: Extinction
-- Large patch above threshold: Expansion to filling domain
-- Intermediate: Depends on exact shape and size
+### harshEnvironment (Base Configuration)
+Default setup with Neumann boundaries (population always persists).
+- `D = 0.01`: Very small diffusion
+- `K = 1`, `r = 1`: Standard logistic parameters
+- Neumann BC: Population reflects at boundaries
+- Initial condition: Sparse random nucleation sites
 
-## Applications
+### Exploration Protocol
+1. Start with Neumann BC - population spreads and fills domain
+2. Change to Dirichlet BC ($u = 0$ at boundaries) - edges affected
+3. Increase $D$ gradually:
+   - $D = 4$: Population persists (below critical)
+   - $D = 6$: Population goes extinct (above critical)
+   - $D \approx 5$: Near threshold - slow dynamics
 
-1. **Conservation biology**: Minimum viable populations
-2. **Invasive species**: Establishment thresholds
-3. **Fisheries**: Stock collapse and recovery
-4. **Reintroduction**: Required population sizes
-5. **Habitat fragmentation**: Patch viability
+### High Carrying Capacity
+- `K = 1000`: Larger equilibrium population
+- Makes near-threshold behavior more visible
+- Population amplitude varies more strongly with $D$
+- Good for testing $D = 5$ vs $D = 5.2$
 
-## Ecological Implications
+## Notes
 
-- **Extinction debt**: Populations doomed but not yet extinct
-- **Hysteresis**: Different thresholds for collapse vs. recovery
-- **Range limits**: Allee effects determine boundaries
-- **Rescue effects**: Immigration preventing local extinction
+- The threshold $D_c \approx 5.07$ is independent of $K$
+- Near threshold, equilibration timescales become very long
+- Clicking adds population, useful for testing stability of extinction state
+- Square domain assumed; rectangular domains modify the threshold
+- This is the simplest example of a "critical patch size" problem
+- Related to KISS (Keep It Simple, Stupid) principle in ecological modeling
+
+## Mathematical Details
+
+For Dirichlet BC on a square domain $[0,L] \times [0,L]$:
+- The lowest eigenvalue of the Laplacian is $\lambda_1 = 2\pi^2/L^2$
+- Population persists iff $r > D\lambda_1$
+- With $r = 1$: $D < L^2/(2\pi^2) \approx L^2/19.74$
+- For $L = 10$: $D_c \approx 5.07$
 
 ## References
 
-- Lewis, M.A. & Kareiva, P. (1993). *Allee dynamics and the spread of invading organisms*
-- Courchamp, F. et al. (2008). *Allee Effects in Ecology and Conservation*
-- Taylor, C.M. & Hastings, A. (2005). *Allee effects in biological invasions*
+- Skellam, J. G. (1951). Random dispersal in theoretical populations. Biometrika, 38(1/2), 196-218.
+- Kierstead, H., & Slobodkin, L. B. (1953). The size of water masses containing plankton blooms. Journal of Marine Research, 12(1), 141-147.
+- Cantrell, R. S., & Cosner, C. (2003). Spatial Ecology via Reaction-Diffusion Equations. Wiley.

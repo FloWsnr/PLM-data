@@ -1,95 +1,71 @@
-# Rayleigh-Bénard Thermal Convection
+# Thermal Convection (Rayleigh-Benard)
 
-## Mathematical Formulation
+Thermal convection in a 2D Boussinesq model, describing buoyancy-driven fluid motion from temperature gradients.
 
-Simplified thermal convection equations:
+## Description
 
-$$\frac{\partial T}{\partial t} = \kappa \nabla^2 T$$
-$$\frac{\partial \omega}{\partial t} = \nu \nabla^2 \omega + \text{Ra} \frac{\partial T}{\partial x}$$
+This system models Rayleigh-Benard convection, a fundamental phenomenon where a horizontal fluid layer heated from below becomes unstable and develops organized convection cells. First investigated by Joseph Valentin Boussinesq and Anton Oberbeck in the 19th century, this instability is ubiquitous in nature - from atmospheric thermals to mantle convection in Earth's interior.
 
-Full Boussinesq equations:
-$$\frac{\partial T}{\partial t} + (\mathbf{u} \cdot \nabla)T = \kappa \nabla^2 T$$
-$$\frac{\partial \omega}{\partial t} + (\mathbf{u} \cdot \nabla)\omega = \nu \nabla^2 \omega + g\alpha\frac{\partial T}{\partial x}$$
+The Boussinesq approximation treats density variations as negligible except in the buoyancy term, where temperature differences drive vertical motion. The key dimensionless parameters are:
+- Rayleigh number (Ra): ratio of buoyancy forces to viscous dissipation and heat conduction
+- Prandtl number (Pr = nu/kappa): ratio of momentum diffusivity to thermal diffusivity
 
-where:
-- $T$ is temperature
-- $\omega$ is vorticity
-- $\kappa$ is thermal diffusivity
-- $\nu$ is kinematic viscosity
-- $\text{Ra}$ is the Rayleigh number
-- $g\alpha$ represents buoyancy
+When Ra exceeds a critical value (approximately 1707 for idealized boundaries), the system transitions from static conduction to convective motion. Small perturbations grow and organize into Benard cells - counter-rotating convection rolls that efficiently transport heat.
 
-## Physical Background
+The vorticity-streamfunction formulation is used here, with the temperature field b representing the perturbation from the top boundary temperature. Heating at the bottom boundary (via T_b) drives the instability. The coupling term b_x in the vorticity equation represents horizontal buoyancy gradients driving circulation.
 
-Rayleigh-Bénard convection occurs when fluid is heated from below:
+## Equations
 
-1. Hot fluid is less dense (buoyant)
-2. Cold fluid is denser (sinks)
-3. At critical Rayleigh number, convection begins
-4. Convection rolls or cells form
+Vorticity evolution with buoyancy forcing:
+$$\frac{\partial \omega}{\partial t} = \nu \nabla^2 \omega - \frac{\partial \psi}{\partial y}\frac{\partial \omega}{\partial x} + \frac{\partial \psi}{\partial x}\frac{\partial \omega}{\partial y} + \frac{\partial b}{\partial x}$$
 
-## Parameters
+Stream function (relaxation form):
+$$\varepsilon \frac{\partial \psi}{\partial t} = \nabla^2 \psi + \omega$$
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Thermal diffusivity | $\kappa$ | Heat conduction rate | 0.001 - 0.1 |
-| Kinematic viscosity | $\nu$ | Fluid viscosity | 0.001 - 0.1 |
-| Rayleigh number | Ra | Buoyancy/dissipation ratio | 10 - 1000 |
+Temperature perturbation:
+$$\frac{\partial b}{\partial t} = \kappa \nabla^2 b - \left(\frac{\partial \psi}{\partial y}\frac{\partial b}{\partial x} - \frac{\partial \psi}{\partial x}\frac{\partial b}{\partial y}\right)$$
 
-## Rayleigh Number
+Velocity from stream function:
+$$u = \frac{\partial \psi}{\partial y}, \quad v = -\frac{\partial \psi}{\partial x}$$
 
-$$\text{Ra} = \frac{g\alpha\Delta T H^3}{\nu\kappa}$$
+## Default Config
 
-where:
-- $g$: gravitational acceleration
-- $\alpha$: thermal expansion coefficient
-- $\Delta T$: temperature difference
-- $H$: layer height
+```yaml
+solver: euler
+dt: 0.001
+dx: 1.5  # inherited from NavierStokesVorticity
+domain_size: 500  # inherited from NavierStokesVorticity
 
-## Critical Rayleigh Number
+boundary_omega: dirichlet = 0 (top/bottom), periodic (left/right)
+boundary_psi: dirichlet = 0 (all sides)
+boundary_b: neumann = T_b (bottom), dirichlet = 0 (top), periodic (left/right)
 
-Convection onset at $\text{Ra}_c \approx 1708$ (rigid boundaries)
+parameters:
+  nu: 0.2      # kinematic viscosity, range [0.01, 1]
+  epsilon: 0.05  # relaxation parameter for stream function
+  D: 0.05      # passive scalar diffusion (for S field)
+  kappa: 0.5   # thermal diffusivity
+  T_b: 0.08    # bottom boundary temperature flux
+```
 
-| Ra Range | Flow State |
-|----------|------------|
-| Ra < Ra_c | Conduction only |
-| Ra_c < Ra < 10⁴ | Steady convection rolls |
-| 10⁴ < Ra < 10⁶ | Time-dependent convection |
-| Ra > 10⁶ | Turbulent convection |
+## Parameter Variants
 
-## Prandtl Number
+### thermalConvection (base)
+Boundary-driven convection model. Temperature perturbation b is plotted by default. Heating at lower boundary becomes unstable to high-frequency perturbations that grow and coalesce into larger Rayleigh-Benard cells. Clicking adds warm air regions that convect upward.
 
-$$\text{Pr} = \frac{\nu}{\kappa}$$
+### thermalConvectionInitialData
+Larger initial temperature perturbations:
+- Instability develops away from boundary in bulk fluid
+- Same physics, different initial length scales
 
-- Pr << 1: Liquid metals (thermal effects dominate)
-- Pr ~ 1: Gases
-- Pr >> 1: Oils, Earth's mantle (viscous effects dominate)
+### thermalConvectionBoundaries
+Modified boundary conditions:
+- Temperature forcing at both top and bottom boundaries
+- No-flux horizontal conditions (replacing periodic)
+- Clearer visualization of convective cell formation and merging
 
-## Pattern Formation
-
-Near onset, patterns include:
-- **Rolls**: Parallel convection cells
-- **Hexagons**: Six-fold symmetric cells
-- **Squares**: Four-fold cells (special cases)
-- **Spirals**: Time-dependent patterns
-
-## Applications
-
-1. **Atmospheric dynamics**: Cumulus clouds
-2. **Oceanography**: Thermohaline circulation
-3. **Astrophysics**: Stellar convection
-4. **Geophysics**: Mantle convection
-5. **Engineering**: Heat exchangers, cooling
-
-## Bénard Cells
-
-Classic pattern: hexagonal cells with:
-- Rising hot fluid in center
-- Sinking cold fluid at edges
-- Characteristic wavelength ~ 2H
-
-## References
-
-- Chandrasekhar, S. (1961). *Hydrodynamic and Hydromagnetic Stability*
-- Getling, A.V. (1998). *Rayleigh-Bénard Convection*
-- Bodenschatz, E. et al. (2000). *Recent developments in Rayleigh-Bénard convection*
+### DurhamConvection
+Artistic simulation with:
+- Custom color schemes and blending
+- Stochastic forcing
+- Visual overlay of Durham cathedral

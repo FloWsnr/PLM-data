@@ -1,0 +1,25 @@
+preset: potential-flow-images
+parameters:
+  strength: 10.0
+  wall_x: 0.5
+init:
+  type: source-with-image
+  params:
+    strength: 10.0
+    wall_x: 0.5
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.01
+resolution: 128
+bc:
+  x: neumann
+  y: neumann
+output:
+  path: ./output
+  num_frames: 100
+  colormap: viridis
+  field_to_plot: phi
+seed: 42
+domain_size: 320.0
+t_end: 50.0

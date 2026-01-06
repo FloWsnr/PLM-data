@@ -1,34 +1,36 @@
 preset: immunotherapy
 parameters:
-  Dt: 0.01  # Slightly higher tumor diffusion
-  Di: 0.05
-  rT: 1.5
-  K: 1.0
-  k: 2.0
-  s: 0.3
-  rI: 0.8
-  a: 0.15
-  dI: 0.4
+  Du: 0.5
+  Dw: 4.0
+  c: 0.3
+  mu: 0.167
+  p_u: 0.69167
+  g_v: 0.1
+  p_w: 27.778
+  g_w: 0.001
+  nu: 55.55556
+  s_u: 0.0
+  s_w: 10.0
 init:
   type: gaussian-blobs
   params:
-    num_blobs: 2
-    amplitude: 0.5
-    width: 0.1
+    num_blobs: 1
+    amplitude: 0.8
+    width: 0.05
     background: 0.1
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.001
-resolution: 64
+dt: 0.0005
+resolution: 128
 bc:
   x: periodic
   y: periodic
 output:
   path: ./output
-  num_frames: 50
+  num_frames: 100
   colormap: hot
-  field_to_plot: T
+  field_to_plot: v
 seed: 42
-domain_size: 2.0
-t_end: 2.0
+domain_size: 100.0
+t_end: 50.0

@@ -1,92 +1,72 @@
-# 2D Vorticity Equation
+# Vorticity Equation (2D Incompressible Flow)
 
-## Mathematical Formulation
+The vorticity-streamfunction formulation of 2D fluid dynamics, describing spinning fluid motion through vortex dynamics.
 
-The vorticity diffusion equation (simplified Navier-Stokes):
+## Description
 
-$$\frac{\partial \omega}{\partial t} = \nu \nabla^2 \omega$$
+The vorticity equation reformulates the Navier-Stokes equations by focusing on vorticity (the curl of velocity) rather than velocity itself. This approach provides better physical insight for 2D incompressible flows, as noted by Chemin: "The key quantity for understanding 2D incompressible fluids is the vorticity."
 
-Full vorticity equation with advection:
-$$\frac{\partial \omega}{\partial t} + (\mathbf{u} \cdot \nabla)\omega = \nu \nabla^2 \omega$$
+In 2D, the vorticity reduces to a scalar field omega pointing perpendicular to the flow plane (out of screen when positive). The stream function psi automatically satisfies incompressibility and provides velocity through spatial derivatives. Contours of constant psi are streamlines - the paths followed by fluid particles.
 
-where:
-- $\omega = \nabla \times \mathbf{u}$ is the vorticity (curl of velocity)
-- $\nu$ is the kinematic viscosity
-- $\mathbf{u} = (u, v)$ is the velocity field
+Key physical insights:
+- Vorticity is advected by the flow and diffused by viscosity
+- In 2D, vortex stretching is absent (unlike 3D), making the dynamics simpler
+- Following a fluid particle, angular momentum changes only through viscous diffusion
+- Positive omega indicates counterclockwise rotation, negative indicates clockwise
 
-## Physical Background
+The Poisson equation relating psi and omega is elliptic and cannot be solved directly by VisualPDE's timestepping. Instead, a parabolic relaxation with small parameter epsilon is used, which converges to the true Poisson solution.
 
-In 2D incompressible flow, vorticity is a **scalar**:
-$$\omega = \frac{\partial v}{\partial x} - \frac{\partial u}{\partial y}$$
+A passive scalar field S demonstrates convection-diffusion behavior in the computed flow field, useful for visualizing flow patterns and mixing.
 
-The vorticity formulation eliminates pressure from the equations.
+## Equations
 
-**Simplified version** (diffusion only): Models viscous decay of vortices without advection.
+Vorticity transport:
+$$\frac{\partial \omega}{\partial t} = \nu \nabla^2 \omega - \frac{\partial \psi}{\partial y}\frac{\partial \omega}{\partial x} + \frac{\partial \psi}{\partial x}\frac{\partial \omega}{\partial y}$$
 
-**Full version**: Includes vortex transport by the velocity field.
+Stream function (parabolic relaxation of Poisson equation):
+$$\varepsilon \frac{\partial \psi}{\partial t} = \nabla^2 \psi + \omega$$
 
-## Parameters
+Passive scalar transport:
+$$\frac{\partial S}{\partial t} = D \nabla^2 S - \left(\frac{\partial \psi}{\partial y}\frac{\partial S}{\partial x} - \frac{\partial \psi}{\partial x}\frac{\partial S}{\partial y}\right)$$
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Kinematic viscosity | $\nu$ | Fluid viscosity | 0.001 - 0.1 |
-
-## Velocity Recovery
-
-For 2D incompressible flow, velocity comes from the **stream function** $\psi$:
+Velocity from stream function:
 $$u = \frac{\partial \psi}{\partial y}, \quad v = -\frac{\partial \psi}{\partial x}$$
 
-where $\omega = -\nabla^2 \psi$ (Poisson equation).
+Vorticity definition (for reference):
+$$\omega = \frac{\partial v}{\partial x} - \frac{\partial u}{\partial y}$$
 
-## Vortex Dynamics
+## Default Config
 
-Without viscosity ($\nu = 0$):
-- Vorticity conserved along particle paths
-- Kelvin's circulation theorem
-- Point vortices: Singular solutions
+```yaml
+solver: euler
+dt: 0.01
+dx: 1.5
+domain_size: 500
 
-With viscosity ($\nu > 0$):
-- Vorticity diffuses
-- Vortices spread and weaken
-- Enstrophy $\int \omega^2 dx$ decreases
+boundary_omega: periodic
+boundary_psi: periodic (vertical), neumann = 0 (left/right)
+boundary_S: periodic (vertical), neumann = 0 (left/right)
 
-## Reynolds Number
+parameters:
+  nu: 0.05     # kinematic viscosity, range [0.01, 1]
+  epsilon: 0.05  # relaxation parameter for Poisson solver
+  D: 0.05      # passive scalar diffusion coefficient
+```
 
-$$\text{Re} = \frac{UL}{\nu}$$
+## Parameter Variants
 
-- Low Re: Viscosity dominates, smooth flow
-- High Re: Advection dominates, turbulent tendencies
+### NavierStokesVorticity (base)
+Standard vorticity-streamfunction formulation:
+- Clicking adds positive vortices (counterclockwise flow)
+- Right-clicking adds negative vortices (clockwise flow)
+- Equal and opposite vortices nearby create approximately unidirectional flow
+- Default view plots vorticity omega with diverging colormap
+- Alternative views: u, v, speed sqrt(psi_x^2 + psi_y^2), passive scalar S
 
-## Initial Conditions
-
-**Vortex pair**: Counter-rotating vortices
-**Single vortex**: Gaussian or Lamb-Oseen vortex
-**Random field**: Turbulence studies
-
-## Lamb-Oseen Vortex
-
-Exact solution for decaying vortex:
-$$\omega(r,t) = \frac{\Gamma}{4\pi\nu t}\exp\left(-\frac{r^2}{4\nu t}\right)$$
-
-## Applications
-
-1. **Aerodynamics**: Aircraft wake vortices
-2. **Meteorology**: Hurricane dynamics
-3. **Oceanography**: Ocean eddies
-4. **Engineering**: Mixing processes
-5. **Turbulence**: 2D turbulence studies
-
-## 2D vs 3D Vorticity
-
-| Property | 2D | 3D |
-|----------|----|----|
-| Vorticity | Scalar | Vector |
-| Stretching | None | Present |
-| Cascade | Inverse (to large scales) | Forward (to small scales) |
-| Coherent structures | Long-lived | Transient |
-
-## References
-
-- Batchelor, G.K. (1967). *An Introduction to Fluid Dynamics*
-- Majda, A.J. & Bertozzi, A.L. (2002). *Vorticity and Incompressible Flow*
-- Saffman, P.G. (1992). *Vortex Dynamics*
+### NavierStokesVorticityBounded
+Modified for bounded domain studies:
+- Oscillatory initial vorticity with wavenumber k
+- Initial condition: A*cos(k*pi*x/L_x)*cos(k*pi*y/L_x) where A = 0.005*k^1.5
+- k = 51 by default, adjustable range [1, 100]
+- Dirichlet omega = 0 on left/right boundaries
+- Demonstrates decay and reorganization of complex vorticity fields

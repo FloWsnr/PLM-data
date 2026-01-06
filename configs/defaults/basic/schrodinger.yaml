@@ -1,27 +1,29 @@
+# Schrodinger equation configuration
+# Based on visualpde.com stabilized Schrodinger equation
 preset: schrodinger
 parameters:
-  D: 0.3
+  D: 1.0     # Quantum mechanical parameter
+  C: 0.004   # Numerical stabilization parameter
+  n: 3       # x wave number for initial eigenstate [0-10]
+  m: 3       # y wave number for initial eigenstate [0-10]
 init:
-  type: wave-packet
+  type: eigenstate
   params:
-    x0: 0.5
-    y0: 0.5
-    sigma: 0.1
-    kx: 3.0
-    ky: 0.0
-solver: rk4
+    n: 3
+    m: 3
+solver: rk4  # From reference: midpoint timestepping scheme
 backend: numba
 adaptive: true
-dt: 2.0e-04
-resolution: 128
+dt: 0.0001  # From reference: dt=0.0001
+resolution: 200  # From reference: dx=0.5, domain_size=100 -> 100/0.5 = 200
 bc:
-  x: periodic
-  y: periodic
+  x: dirichlet  # From reference: Dirichlet (infinite square well)
+  y: dirichlet
 output:
   path: ./output
   num_frames: 100
   colormap: twilight
-  field_to_plot: psi
+  field_to_plot: u  # Real part of wave function
 seed: 42
-domain_size: 2.0
-t_end: 1.0
+domain_size: 100.0  # From reference: domain_size=100
+t_end: 10.0

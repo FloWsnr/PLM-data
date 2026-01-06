@@ -1,0 +1,24 @@
+preset: korteweg-de-vries
+parameters:
+  scale: 1.0
+init:
+  type: default
+  params:
+    A1: 2.0
+    A2: 1.125
+solver: midpoint
+backend: numba
+adaptive: false
+dt: 0.00002
+t_end: 5.0
+resolution: 256
+bc:
+  x: periodic
+  y: periodic
+output:
+  path: ./output
+  num_frames: 100
+  colormap: viridis
+  field_to_plot: phi
+seed: 123
+domain_size: 40

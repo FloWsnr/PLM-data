@@ -1,37 +1,54 @@
-"""Nonlinear Physics PDEs: Gray-Scott, Swift-Hohenberg, etc."""
+"""Physics PDEs - pattern formation, waves, chaos, and nonlinear dynamics."""
 
+# Basic pattern formation
 from .gray_scott import GrayScottPDE
+from .stochastic_gray_scott import StochasticGrayScottPDE
 from .cahn_hilliard import CahnHilliardPDE
 from .swift_hohenberg import SwiftHohenbergPDE
-from .burgers import BurgersPDE
-from .kuramoto_sivashinsky import KuramotoSivashinskyPDE
-from .kdv import KdVPDE
-from .ginzburg_landau import GinzburgLandauPDE
-from .kpz import KPZInterfacePDE
-from .lorenz import LorenzPDE
+from .swift_hohenberg_advection import SwiftHohenbergAdvectionPDE
 from .superlattice import SuperlatticePDE
-from .oscillators import OscillatorsPDE
+
+# Wave and soliton equations
+from .burgers import BurgersPDE
+from .korteweg_de_vries import KortewegDeVriesPDE
+from .kuramoto_sivashinsky import KuramotoSivashinskyPDE
+from .nonlinear_schrodinger import NonlinearSchrodingerPDE
+from .complex_ginzburg_landau import ComplexGinzburgLandauPDE
+
+# Chaotic systems
+from .lorenz import LorenzPDE
+
+# Image processing and diffusion
 from .perona_malik import PeronaMalikPDE
-from .nonlinear_beams import NonlinearBeamsPDE
-from .turing_wave import TuringWavePDE
-from .advecting_patterns import AdvectingPatternsPDE
-from .growing_domains import GrowingDomainsPDE
+
+# Structural mechanics
+from .nonlinear_beam import NonlinearBeamPDE
+
+# Nonlinear oscillators
+from .van_der_pol import VanDerPolPDE
+from .duffing import DuffingPDE
 
 __all__ = [
+    # Pattern formation
     "GrayScottPDE",
+    "StochasticGrayScottPDE",
     "CahnHilliardPDE",
     "SwiftHohenbergPDE",
-    "BurgersPDE",
-    "KuramotoSivashinskyPDE",
-    "KdVPDE",
-    "GinzburgLandauPDE",
-    "KPZInterfacePDE",
-    "LorenzPDE",
+    "SwiftHohenbergAdvectionPDE",
     "SuperlatticePDE",
-    "OscillatorsPDE",
+    # Waves and solitons
+    "BurgersPDE",
+    "KortewegDeVriesPDE",
+    "KuramotoSivashinskyPDE",
+    "NonlinearSchrodingerPDE",
+    "ComplexGinzburgLandauPDE",
+    # Chaos
+    "LorenzPDE",
+    # Image processing
     "PeronaMalikPDE",
-    "NonlinearBeamsPDE",
-    "TuringWavePDE",
-    "AdvectingPatternsPDE",
-    "GrowingDomainsPDE",
+    # Structural mechanics
+    "NonlinearBeamPDE",
+    # Oscillators
+    "VanDerPolPDE",
+    "DuffingPDE",
 ]

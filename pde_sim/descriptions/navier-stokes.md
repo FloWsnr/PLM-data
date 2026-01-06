@@ -1,92 +1,63 @@
-# 2D Navier-Stokes (Vorticity-Stream Function)
+# Navier-Stokes Equations
 
-## Mathematical Formulation
+The 2D incompressible Navier-Stokes equations govern the motion of viscous fluids, describing how velocity and pressure fields evolve over time.
 
-Vorticity transport with background flow:
+## Description
 
-$$\frac{\partial \omega}{\partial t} = \nu \nabla^2 \omega - u_x\frac{\partial \omega}{\partial x} - u_y\frac{\partial \omega}{\partial y}$$
+The Navier-Stokes equations are fundamental to fluid dynamics and can be seen as Newton's second law of motion for fluids. They model diverse phenomena including weather patterns, atmospheric flow, ocean currents, and pipe flow. The equations were derived by Stokes in England and Navier in France in the early 1800s as extensions of the Euler equations that include viscosity effects.
 
-Full vorticity equation:
-$$\frac{\partial \omega}{\partial t} + (\mathbf{u} \cdot \nabla)\omega = \nu \nabla^2 \omega$$
+The incompressibility constraint requires that the velocity field be divergence-free, which physically means fluid volume is conserved. The Reynolds number Re = rho*U*L/mu characterizes the ratio of inertial to viscous forces - low Reynolds number flows are laminar while high Reynolds number flows become turbulent.
 
-where velocity is recovered from stream function:
-$$\nabla^2 \psi = -\omega$$
-$$u = \frac{\partial \psi}{\partial y}, \quad v = -\frac{\partial \psi}{\partial x}$$
+A passive scalar field S is included to track fluid motion through advection and diffusion. The vortex shedding simulation demonstrates how cylindrical obstacles create periodic vortex patterns behind them (the von Karman vortex street), a classic phenomenon in fluid dynamics.
 
-## Physical Background
+The numerical implementation uses a generalized pressure equation approach, treating pressure evolution through a relaxation method with a tuning parameter M related to the Mach number and pressure wave speed.
 
-The 2D Navier-Stokes equations describe **incompressible viscous flow**. In 2D:
-- Vorticity is a scalar (perpendicular to plane)
-- No vortex stretching (unlike 3D)
-- Vorticity-stream function formulation eliminates pressure
+## Equations
 
-The simplified version uses a **background velocity** rather than solving for $\psi$.
+Momentum equations:
+$$\frac{\partial u}{\partial t} = -\left(u \frac{\partial u}{\partial x} + v \frac{\partial u}{\partial y}\right) - \frac{\partial p}{\partial x} + \nu \nabla^2 u$$
 
-## Parameters
+$$\frac{\partial v}{\partial t} = -\left(u \frac{\partial v}{\partial x} + v \frac{\partial v}{\partial y}\right) - \frac{\partial p}{\partial y} + \nu \nabla^2 v$$
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Viscosity | $\nu$ | Kinematic viscosity | 0.001 - 0.1 |
-| Background velocity x | $u_x$ | Mean flow in x | -1 to 1 |
-| Background velocity y | $u_y$ | Mean flow in y | -1 to 1 |
+Generalized pressure equation:
+$$\frac{\partial p}{\partial t} = \nu \nabla^2 p - \frac{1}{M^2}\left(\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y}\right)$$
 
-## Reynolds Number
+Passive scalar transport:
+$$\frac{\partial S}{\partial t} = -\left(u \frac{\partial S}{\partial x} + v \frac{\partial S}{\partial y}\right) + D \nabla^2 S$$
 
-$$\text{Re} = \frac{UL}{\nu}$$
+## Default Config
 
-| Re Range | Flow Regime |
-|----------|-------------|
-| Re < 1 | Creeping flow (Stokes) |
-| 1 < Re < 100 | Laminar |
-| 100 < Re < 1000 | Transition |
-| Re > 1000 | Turbulent tendencies |
+```yaml
+solver: euler
+dt: 0.01
+dx: 1
+domain_size: 300
 
-## 2D Turbulence
+boundary_x_u: periodic (left/right)
+boundary_y_u: dirichlet = 0 (top/bottom)
+boundary_x_v: periodic (left/right)
+boundary_y_v: dirichlet = 0 (top/bottom)
+boundary_p: neumann
+boundary_S: combo (gradient initial condition)
 
-Unlike 3D, 2D turbulence has:
-- **Inverse energy cascade**: Energy flows to large scales
-- **Forward enstrophy cascade**: Enstrophy flows to small scales
-- **Coherent vortices**: Long-lived structures
+parameters:
+  nu: 0.02  # kinematic viscosity, range [0.02, 20]
+  M: 0.5    # Mach number parameter
+  D: 0.05   # passive scalar diffusion coefficient
+```
 
-## Vortex Interactions
+## Parameter Variants
 
-- **Co-rotating vortices**: Orbit each other
-- **Counter-rotating (dipole)**: Translate together
-- **Merger**: Close vortices can merge
-- **Filamentation**: Stretched vorticity ribbons
+### NavierStokes (base)
+Standard velocity-pressure formulation with passive scalar tracking. Speed is plotted by default with velocity arrows.
 
-## Initial Conditions
+### NavierStokesFlowCylinder
+Modified for vortex shedding simulations:
+- Clicking places cylindrical obstacles that the flow moves around
+- Uses S field as obstruction indicator
+- Additional parameters: U = 0.7 (inlet velocity), a = 0.05 (cylinder radius factor)
+- dt: 0.03, dx: 2
+- Includes momentum damping term: -u*max(S,0) in u equation, -v*max(S,0) in v equation
 
-**Vortex pair**: Counter-rotating for dipole motion
-**Single vortex**: Studies decay
-**Random field**: Turbulence initialization
-
-## Conservation Laws
-
-Inviscid ($\nu = 0$):
-- Energy: $E = \frac{1}{2}\int |\mathbf{u}|^2 dA$
-- Enstrophy: $Z = \frac{1}{2}\int \omega^2 dA$
-- Circulation: $\Gamma = \oint \mathbf{u} \cdot d\mathbf{l}$
-
-Viscous: Energy and enstrophy decrease.
-
-## Applications
-
-1. **Geophysical flows**: Atmosphere, ocean
-2. **Engineering**: 2D flow approximations
-3. **Plasma physics**: Magnetized plasmas
-4. **Soap films**: Nearly 2D flows
-5. **Turbulence theory**: Fundamental studies
-
-## Numerical Methods
-
-- **Stream function solve**: Poisson equation at each step
-- **Spectral methods**: Efficient for periodic domains
-- **Finite difference**: Flexible boundaries
-- **Vortex methods**: Lagrangian tracking
-
-## References
-
-- Batchelor, G.K. (1967). *An Introduction to Fluid Dynamics*
-- Kraichnan, R.H. & Montgomery, D. (1980). *Two-dimensional turbulence*
-- Tabeling, P. (2002). *Two-dimensional turbulence: a physicist approach*
+### NavierStokesPoiseuilleFlow
+Channel flow configuration with pressure-driven flow between parallel plates.

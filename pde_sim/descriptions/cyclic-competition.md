@@ -1,84 +1,94 @@
-# Cyclic Competition Model (Rock-Paper-Scissors)
+# Cyclic Competition Model
 
-## Mathematical Formulation
+A three-species reaction-diffusion system modeling rock-paper-scissors ecological dynamics, exhibiting spiral waves and complex spatiotemporal chaos.
 
-The cyclic competition model for three species:
+## Description
 
-$$\frac{\partial u}{\partial t} = D \nabla^2 u + u(1 - u - v - w) - \alpha uv$$
-$$\frac{\partial v}{\partial t} = D \nabla^2 v + v(1 - u - v - w) - \alpha vw$$
-$$\frac{\partial w}{\partial t} = D \nabla^2 w + w(1 - u - v - w) - \alpha wu$$
+The cyclic competition model, also known as the spatial rock-paper-scissors game, describes ecosystems where three species compete in a non-transitive (cyclic) manner: species A outcompetes B, B outcompetes C, and C outcompetes A. This creates an endless cycle of competition with no single winner.
 
-where:
-- $u, v, w$ are species densities
-- $D$ is the diffusion coefficient
-- $\alpha$ is the competition strength
-- Competition follows: $u \to v \to w \to u$ (rock-paper-scissors)
+This is a generalized Lotka-Volterra system extended to three competing populations with spatial diffusion. When parameters satisfy $a < 1 < b$, each species outcompetes exactly one other species while being outcompeted by the third.
 
-## Physical Background
+Key phenomena include:
+- **Spiral waves**: The dominant feature of the system - rotating spiral waves that form spontaneously from structured initial conditions
+- **Biodiversity maintenance**: All three species coexist indefinitely despite competitive exclusion in well-mixed systems
+- **Wave-induced chaos**: Complex spatiotemporal dynamics even without Turing-like instabilities
+- **Critical mobility threshold**: Above a certain diffusion rate, biodiversity can be lost
 
-This model implements **intransitive competition**: no single species dominates all others.
+The model has been studied in the context of:
+- Microbial ecosystems (e.g., E. coli strains producing colicins)
+- Coral reef competition
+- Lizard mating strategies (side-blotched lizards)
+- Evolutionary game theory
+- Pattern formation in non-equilibrium systems
 
-- Species $u$ outcompetes $v$
-- Species $v$ outcompetes $w$
-- Species $w$ outcompetes $u$
+A key insight is that spatial structure (differential diffusion rates) can maintain biodiversity that would be lost in well-mixed populations. The entanglement of spiral waves creates refugia where each species can persist.
 
-This cyclic hierarchy prevents competitive exclusion and maintains biodiversity.
+## Equations
 
-## Parameters
+$$\frac{\partial u}{\partial t} = D_u \nabla^2 u + u(1 - u - av - bw)$$
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Diffusion | $D$ | Movement rate | 0.001 - 0.5 |
-| Competition | $\alpha$ | Interaction strength | 0.1 - 5 |
+$$\frac{\partial v}{\partial t} = D_v \nabla^2 v + v(1 - bu - v - aw)$$
 
-## Coexistence Mechanism
+$$\frac{\partial w}{\partial t} = D_w \nabla^2 w + w(1 - au - bv - w)$$
 
-Without space (ODE): System exhibits heteroclinic cycles or coexistence point.
+Where:
+- $u, v, w$ are the population densities of the three species
+- $D_u, D_v, D_w$ are diffusion coefficients
+- $a < 1$: Weak competitive effect (species is outcompeted)
+- $b > 1$: Strong competitive effect (species outcompetes)
+- The carrying capacity for each species (alone) is 1
 
-With space (PDE): **Spiral waves** emerge that maintain all three species:
-- Species chase each other around spiral arms
-- Spatial segregation prevents extinction
-- Mobility (diffusion) is essential for coexistence
+Competition structure (with $a < 1 < b$):
+- $u$ beats $v$ (coefficient $a$), loses to $w$ (coefficient $b$)
+- $v$ beats $w$ (coefficient $a$), loses to $u$ (coefficient $b$)
+- $w$ beats $u$ (coefficient $a$), loses to $v$ (coefficient $b$)
 
-## Spiral Wave Formation
+## Default Config
 
-Spontaneous formation of rotating spiral waves:
-1. Local fluctuation creates asymmetry
-2. Cyclic dominance creates rotation
-3. Spirals self-organize and interact
-4. Coarsening: small spirals absorbed by large ones
+```yaml
+solver: euler
+dt: 0.005
+dx: 1.0
+domain_size: 500
 
-## Applications
+boundary_x: neumann
+boundary_y: neumann
 
-1. **Microbial ecology**: Colicin-producing E. coli strains
-2. **Coral reef competition**: Space competition between corals
-3. **Lizard mating strategies**: Side-blotched lizards
-4. **Game theory**: Evolutionary games with cyclic payoffs
-5. **Epidemiology**: Competing pathogen strains
+num_species: 3
 
-## May-Leonard Model
+parameters:
+  a: 0.8    # weak competition coefficient (< 1)
+  b: 1.9    # strong competition coefficient (> 1)
+  D_u: 2    # species u diffusion
+  D_v: 0.5  # species v diffusion
+  D_w: 0.5  # species w diffusion
+```
 
-A related model with different dynamics:
-- Reproduction separate from competition
-- Different mobility for different processes
-- Richer dynamics including vortex pinning
+## Parameter Variants
 
-## Biodiversity Maintenance
+### cyclicCompetition (Standard)
+Base configuration with differential diffusion producing spiral waves.
+- `a = 0.8`, `b = 1.9`: Cyclic competition structure
+- `D_u = 2`, `D_v = 0.5`, `D_w = 0.5`: Asymmetric diffusion
+- Initial condition: Localized bump of all species at domain center
+- Evolves into spiral wave chaos
 
-The cyclic competition model demonstrates how:
-- Spatial structure promotes coexistence
-- Mobility affects diversity
-- "Survival of the weakest" can occur (least competitive persists)
+### cyclicCompetitionWave
+Wave instability configuration without Turing-like requirements.
+- Equal diffusion: `D_u = D_v = D_w = 0.3`
+- Initial condition: Small region with all species
+- Demonstrates wave-induced spatiotemporal chaos
+- Shows that spiral waves persist even with equal diffusion once established
 
-## Numerical Considerations
+## Notes
 
-- Three fields must remain non-negative
-- Initial conditions affect spiral handedness
-- Large domains needed for multiple spirals
-- Long-time simulations for coarsening dynamics
+- Setting all diffusion coefficients equal (e.g., `D_u = 0.5`) after spiral waves form will maintain them
+- The system can exhibit spiral waves without satisfying traditional Turing conditions
+- Above a critical mobility threshold, biodiversity is lost and one species dominates
+- The parameter combination ensures cyclic dominance: each species has both a weak ($a < 1$) and strong ($b > 1$) competitive interaction
 
 ## References
 
-- Kerr, B. et al. (2002). *Local dispersal promotes biodiversity in a real-life game of rock-paper-scissors*
-- Reichenbach, T., Mobilia, M., & Frey, E. (2007). *Mobility promotes and jeopardizes biodiversity*
-- May, R.M. & Leonard, W.J. (1975). *Nonlinear aspects of competition between three species*
+- May, R. M., & Leonard, W. J. (1975). Nonlinear aspects of competition between three species. SIAM Journal on Applied Mathematics, 29(2), 243-253.
+- Reichenbach, T., Mobilia, M., & Frey, E. (2007). Mobility promotes and jeopardizes biodiversity in rock-paper-scissors games. Nature, 448(7157), 1046-1049.
+- Szolnoki, A., et al. (2014). Cyclic dominance in evolutionary games: a review. Journal of the Royal Society Interface, 11(100), 20140735.

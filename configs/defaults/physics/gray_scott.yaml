@@ -1,20 +1,18 @@
 preset: gray-scott
 parameters:
-  F: 0.014
-  k: 0.054
-  Du: 2.0e-05
-  Dv: 1.0e-05
+  a: 0.037
+  b: 0.06
+  D: 2.0
 init:
-  type: gaussian-blobs
+  type: default
   params:
-    num_blobs: 10
-    width: 0.03
+    perturbation_radius: 0.15
     noise: 0.01
-solver: implicit
+solver: euler
 backend: numba
 adaptive: false
-dt: 1
-t_end: 2500.0
+dt: 0.5
+t_end: 500.0
 resolution: 128
 bc:
   x: periodic
@@ -23,8 +21,6 @@ output:
   path: ./output
   num_frames: 100
   colormap: turbo
-  field_to_plot: mag(u,v)
-  show_vectors: true
-  vector_density: 16
+  field_to_plot: u
 seed: 123
-domain_size: 2
+domain_size: 50

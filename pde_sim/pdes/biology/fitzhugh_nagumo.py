@@ -1,4 +1,4 @@
-"""FitzHugh-Nagumo excitable media model."""
+"""FitzHugh-Nagumo model for excitable and pattern-forming systems."""
 
 from typing import Any
 
@@ -13,19 +13,26 @@ from .. import register_pde
 class FitzHughNagumoPDE(MultiFieldPDEPreset):
     """FitzHugh-Nagumo model for excitable media.
 
-    Pattern-forming version from visualpde.com:
+    A simplified model of neuronal action potentials:
 
-        du/dt = Du * laplace(u) + u - u³ - v
-        dv/dt = Dv * laplace(v) + epsilon * (u - a_v * v - a_z)
+        du/dt = laplace(u) + u - u^3 - v
+        dv/dt = Dv * laplace(v) + e_v * (u - a_v*v - a_z)
 
     where:
-        - u is the fast activator (membrane potential analog)
-        - v is the slow inhibitor (recovery variable)
-        - epsilon controls the timescale separation
-        - a_v, a_z are parameters
+        - u is the voltage variable (fast)
+        - v is the recovery variable (slow)
+        - Dv > 1 for pattern formation
+        - e_v controls the timescale separation
 
-    Produces spiral waves, target patterns, and propagating pulses.
-    For Turing patterns, typically D > 1.
+    Key behaviors:
+        - Excitability: threshold-triggered large excursions
+        - Oscillations: sustained periodic behavior
+        - Pattern formation: Turing-like patterns when Dv >> 1
+        - Spiral waves: rotating spirals in excitable regime
+
+    References:
+        FitzHugh, R. (1961). Biophysical J., 1(6), 445-466.
+        Nagumo, J. et al. (1962). Proc. IRE, 50(10), 2061-2070.
     """
 
     @property
@@ -35,49 +42,42 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
             category="biology",
             description="FitzHugh-Nagumo excitable media",
             equations={
-                "u": "Du * laplace(u) + u - u**3 - v",
-                "v": "Dv * laplace(v) + epsilon * (u - a_v * v - a_z)",
+                "u": "laplace(u) + u - u**3 - v",
+                "v": "Dv * laplace(v) + e_v * (u - a_v * v - a_z)",
             },
             parameters=[
                 PDEParameter(
-                    name="epsilon",
-                    default=0.1,
-                    description="Timescale ratio (small for excitable)",
-                    min_value=0.001,
-                    max_value=0.5,
+                    name="Dv",
+                    default=20.0,
+                    description="Inhibitor diffusion coefficient",
+                    min_value=0.0,
+                    max_value=100.0,
+                ),
+                PDEParameter(
+                    name="e_v",
+                    default=0.5,
+                    description="Recovery timescale parameter",
+                    min_value=0.01,
+                    max_value=1.0,
                 ),
                 PDEParameter(
                     name="a_v",
-                    default=0.0,
-                    description="Coefficient of v in recovery",
+                    default=1.0,
+                    description="Recovery slope coefficient",
                     min_value=0.0,
                     max_value=2.0,
                 ),
                 PDEParameter(
                     name="a_z",
-                    default=0.0,
-                    description="Constant in recovery equation",
+                    default=-0.1,
+                    description="Recovery offset parameter",
                     min_value=-1.0,
                     max_value=1.0,
-                ),
-                PDEParameter(
-                    name="Du",
-                    default=1.0,
-                    description="Diffusion of u",
-                    min_value=0.05,
-                    max_value=5.0,
-                ),
-                PDEParameter(
-                    name="Dv",
-                    default=10.0,
-                    description="Diffusion of v (D > 1 for patterns)",
-                    min_value=0.0,
-                    max_value=100.0,
                 ),
             ],
             num_fields=2,
             field_names=["u", "v"],
-            reference="visualpde.com FitzHugh-Nagumo pattern formation",
+            reference="FitzHugh (1961), Nagumo et al. (1962)",
         )
 
     def create_pde(
@@ -86,17 +86,16 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        epsilon = parameters.get("epsilon", 0.1)
-        a_v = parameters.get("a_v", 0.0)
-        a_z = parameters.get("a_z", 0.0)
-        Du = parameters.get("Du", 1.0)
-        Dv = parameters.get("Dv", 10.0)
+        Dv = parameters.get("Dv", 20.0)
+        e_v = parameters.get("e_v", 0.5)
+        a_v = parameters.get("a_v", 1.0)
+        a_z = parameters.get("a_z", -0.1)
 
-        u_eq = f"{Du} * laplace(u) + u - u**3 - v"
+        u_eq = "laplace(u) + u - u**3 - v"
         if Dv == 0:
-            v_eq = f"{epsilon} * (u - {a_v} * v - {a_z})"
+            v_eq = f"{e_v} * (u - {a_v} * v - {a_z})"
         else:
-            v_eq = f"{Dv} * laplace(v) + {epsilon} * (u - {a_v} * v - {a_z})"
+            v_eq = f"{Dv} * laplace(v) + {e_v} * (u - {a_v} * v - {a_z})"
 
         return PDE(
             rhs={"u": u_eq, "v": v_eq},
@@ -110,15 +109,19 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
     ) -> FieldCollection:
         """Create initial state - typically a localized perturbation."""
+        noise = ic_params.get("noise", 0.01)
+        seed = ic_params.get("seed")
+
+        if seed is not None:
+            np.random.seed(seed)
+
         if ic_type == "spiral-seed":
             return self._spiral_seed_init(grid, ic_params)
 
         # Default: rest state with perturbation
-        noise = ic_params.get("noise", 0.01)
-
-        # Rest state is approximately (u, v) = (-1, -0.4) or near nullcline intersection
-        u_data = -1.0 + noise * np.random.randn(*grid.shape)
-        v_data = -0.4 + noise * np.random.randn(*grid.shape)
+        # Rest state is approximately (u, v) = (0, 0) for pattern formation
+        u_data = noise * np.random.randn(*grid.shape)
+        v_data = noise * np.random.randn(*grid.shape)
 
         u = ScalarField(grid, u_data)
         u.label = "u"

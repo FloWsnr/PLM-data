@@ -1,6 +1,9 @@
+# Wave equation configuration
+# Based on visualpde.com wave equation
 preset: wave
 parameters:
-  c: 1.0
+  D: 1.0    # Wave speed squared (c^2) [1-100]
+  C: 0.01   # Damping/stabilization coefficient
 init:
   type: gaussian-blobs
   params:
@@ -8,19 +11,19 @@ init:
     amplitude: 1.0
     width: 0.05
     background: 0.0
-solver: rk4
+solver: euler
 backend: numba
 adaptive: true
-dt: 1.0e-03
-resolution: 128
+dt: 0.002  # From reference: dt=0.002
+resolution: 200  # From reference: dx=0.5, domain_size=100 -> 100/0.5 = 200
 bc:
-  x: periodic
-  y: periodic
+  x: neumann  # From reference: Neumann boundary conditions
+  y: neumann
 output:
   path: ./output
   num_frames: 100
   colormap: seismic
   field_to_plot: u
 seed: 42
-domain_size: 2.0
-t_end: 8.0
+domain_size: 100.0  # From reference: domain_size=100
+t_end: 50.0

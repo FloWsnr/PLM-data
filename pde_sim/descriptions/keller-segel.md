@@ -1,76 +1,97 @@
-# Keller-Segel Chemotaxis Model
+# Keller-Segel Model
 
-## Mathematical Formulation
+A chemotaxis model describing cell movement in response to chemical signals, originally developed to explain slime mold aggregation.
 
-The Keller-Segel system describes cell movement toward chemical gradients:
+## Description
 
-$$\frac{\partial u}{\partial t} = D_u \nabla^2 u - \chi \nabla \cdot (u \nabla c)$$
-$$\frac{\partial c}{\partial t} = D_c \nabla^2 c + \alpha u - \beta c$$
+The Keller-Segel model was introduced by Evelyn Keller and Lee Segel in 1970 to explain the aggregation behavior of the cellular slime mold Dictyostelium discoideum. When starved, these amoebae produce and respond to the chemoattractant cAMP, leading to collective migration and the formation of multicellular structures.
 
-where:
-- $u$ is the cell (bacteria/amoeba) density
-- $c$ is the chemoattractant concentration
-- $D_u, D_c$ are diffusion coefficients
-- $\chi$ is the chemotactic sensitivity
-- $\alpha$ is chemoattractant production rate
-- $\beta$ is chemoattractant decay rate
+The model has become one of the most widely studied in mathematical biology, serving as a prototype for:
+- **Chemotaxis**: Directed cell movement along chemical gradients
+- **Self-organization**: How collective patterns emerge from individual cell behaviors
+- **Blow-up phenomena**: Solutions can concentrate into singular clusters in finite time
 
-## Physical Background
+The model couples two processes:
+1. **Cell flux**: Combines random diffusion with directed movement toward higher chemical concentrations (chemotaxis)
+2. **Chemical dynamics**: Production by cells and natural decay
 
-Chemotaxis is the directed movement of cells in response to chemical gradients. The Keller-Segel model captures:
+Key mathematical features:
+- **Critical mass phenomenon** (in 2D): Below a threshold cell density, solutions remain bounded; above it, blow-up can occur
+- **Pattern formation**: Chemotaxis-driven instabilities lead to cell aggregation patterns
+- **Hysteresis**: Patterns depend on initial conditions and parameter history
 
-1. **Random motility**: Diffusion of cells ($D_u \nabla^2 u$)
-2. **Chemotaxis**: Biased movement up gradients ($-\chi \nabla \cdot (u \nabla c)$)
-3. **Signal production**: Cells produce attractant ($\alpha u$)
-4. **Signal decay**: Attractant degrades ($-\beta c$)
+Applications include:
+- Bacterial colony formation
+- Tumor growth and angiogenesis
+- Wound healing
+- Embryonic development
 
-## Blow-up Phenomenon
+## Equations
 
-A remarkable feature of the Keller-Segel system is **finite-time blow-up**:
-- In 2D: Blow-up occurs if initial mass exceeds critical threshold: $\int u dx > 8\pi D_u/\chi$
-- Cell density becomes singular (delta function)
-- Models extreme aggregation
+### General Form
+$$\frac{\partial u}{\partial t} = \nabla^2 u - \nabla \cdot (\chi(u) \nabla v) + f_u(u)$$
 
-## Parameters
+$$\frac{\partial v}{\partial t} = D \nabla^2 v + f_v(u, v)$$
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Cell diffusion | $D_u$ | Random motility | 0.01 - 0.5 |
-| Chemical diffusion | $D_c$ | Signal spread | 0.01 - 1 |
-| Chemotactic sensitivity | $\chi$ | Attraction strength | 0 - 5 |
-| Production rate | $\alpha$ | Signal generation | 0 - 5 |
-| Decay rate | $\beta$ | Signal degradation | 0.01 - 5 |
+### Specific Implementation
+$$\chi(u) = \frac{cu}{1 + u^2}$$
 
-## Dynamics Regimes
+$$f_u(u) = u(1-u)$$
 
-1. **Diffusion-dominated** ($\chi$ small): Cells spread uniformly
-2. **Chemotaxis-dominated** ($\chi$ large): Aggregation, possible blow-up
-3. **Balanced**: Pattern formation, traveling bands
+$$f_v(u,v) = u - av$$
 
-## Applications
+Where:
+- $u$ is the cell density
+- $v$ is the chemoattractant concentration
+- $\chi(u)$ is the chemotactic sensitivity (saturating)
+- $c$ is the chemotaxis strength
+- $D$ is the chemical diffusion coefficient
+- $a$ is the chemical decay rate
 
-1. **Bacterial swarming**: E. coli colony patterns
-2. **Slime mold aggregation**: Dictyostelium discoideum
-3. **Wound healing**: Neutrophil migration
-4. **Tumor angiogenesis**: Endothelial cell movement
-5. **Immune response**: Lymphocyte homing
+### Instability Condition
+Linear instability predicts pattern formation when:
+$$2\sqrt{aD} < \frac{c}{2} - D - a$$
 
-## Model Variants
+## Default Config
 
-- **Volume-filling**: Prevents blow-up with crowding effects
-- **Signal-dependent sensitivity**: $\chi = \chi(c)$
-- **Multiple populations**: Competing or cooperating species
-- **Nonlocal sensing**: Gradient detection over finite range
+```yaml
+solver: euler
+dt: 0.005
+dx: 0.2
+domain_size: 100
 
-## Numerical Considerations
+boundary_x: periodic
+boundary_y: periodic
 
-- Near blow-up, extreme resolution needed
-- Positivity preservation important
-- Consider volume-filling modifications for robustness
-- Adaptive mesh refinement beneficial
+cross_diffusion: true
+
+parameters:
+  c: 4     # range: [3, 4], step: 0.1
+  D: 1     # range: [0, 1]
+  a: 0.1   # range: [0, 0.2]
+```
+
+## Parameter Variants
+
+### KellerSegel (Standard)
+Base configuration with chemotaxis-driven pattern formation.
+- `c = 4`: Strong chemotaxis
+- `D = 1`: Unit chemical diffusion
+- `a = 0.1`: Slow chemical decay
+- Initial condition: Random low-density cells
+- Cross-diffusion term: `-c*u/(1+u^2)` (chemotactic flux)
+
+The saturation in the chemotactic sensitivity $\chi(u) = cu/(1+u^2)$ prevents unbounded aggregation at high densities.
+
+## Notes
+
+- The standard Keller-Segel model (without saturation) can exhibit finite-time blow-up
+- This implementation uses a saturating chemotactic sensitivity to ensure bounded solutions
+- Pattern formation occurs as cells near the carrying capacity equilibrium ($u = 1$, $v = 1/a$)
+- Varying parameters (especially around $c = 3.3$ to $3.6$) can explore the instability boundary
 
 ## References
 
-- Keller, E.F. & Segel, L.A. (1970). *Initiation of Slime Mold Aggregation*
-- Keller, E.F. & Segel, L.A. (1971). *Model for Chemotaxis*
-- Horstmann, D. (2003). *From 1970 until present: the Keller-Segel model in chemotaxis*
+- Keller, E. F., & Segel, L. A. (1970). Initiation of slime mold aggregation viewed as an instability. Journal of Theoretical Biology, 26(3), 399-415.
+- Keller, E. F., & Segel, L. A. (1971). Model for chemotaxis. Journal of Theoretical Biology, 30(2), 225-234.
+- Patlak, C. S. (1953). Random walk with persistence and external bias. Bulletin of Mathematical Biophysics, 15(3), 311-338.

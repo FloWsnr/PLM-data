@@ -1,17 +1,17 @@
 preset: thermal-convection
 parameters:
-  kappa: 0.005
-  nu: 0.005
-  Ra: 500.0
+  nu: 0.2
+  epsilon: 0.05
+  kappa: 0.5
+  T_b: 0.08
 init:
-  type: random-gaussian
+  type: default
   params:
-    mean: 0.5
-    std: 0.1
-solver: rk4
+    noise: 0.01
+solver: euler
 backend: numpy
 adaptive: true
-dt: 0.005
+dt: 0.001
 resolution: 128
 bc:
   x: periodic
@@ -20,9 +20,7 @@ output:
   path: ./output
   num_frames: 100
   colormap: hot
-  field_to_plot: mag(T,w)
-  show_vectors: true
-  vector_density: 12
+  field_to_plot: b
 seed: 42
-domain_size: 2.0
-t_end: 30.0
+domain_size: 500.0
+t_end: 100.0

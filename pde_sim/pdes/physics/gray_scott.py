@@ -15,23 +15,27 @@ from .. import register_pde
 class GrayScottPDE(MultiFieldPDEPreset):
     """Gray-Scott reaction-diffusion system.
 
-    The Gray-Scott model describes pattern formation in chemical systems
-    with autocatalytic reactions:
+    Based on the visualpde.com formulation:
 
-        du/dt = Du * laplace(u) - u*v^2 + F*(1-u)
-        dv/dt = Dv * laplace(v) + u*v^2 - (F+k)*v
+        du/dt = laplace(u) + u^2*v - (a+b)*u
+        dv/dt = D * laplace(v) - u^2*v + a*(1-v)
 
     where:
-        - u is the concentration of the "feed" chemical
-        - v is the concentration of the "catalyst" chemical
-        - Du, Dv are diffusion coefficients
-        - F is the feed rate
-        - k is the kill rate
+        - u is the activator concentration (autocatalytic species)
+        - v is the substrate concentration (fuel species)
+        - a is the feed rate
+        - b is the kill/removal rate
+        - D is the diffusion ratio (v diffuses D times faster than u)
 
-    The system exhibits a rich variety of patterns depending on F and k:
-        - Spots, stripes, spirals, chaos, etc.
+    The system exhibits an extraordinary range of patterns depending on (a,b):
+        - Labyrinthine/stripe patterns
+        - Stationary and pulsating spots
+        - Self-replicating spots
+        - Worm-like structures
+        - Holes, spatiotemporal chaos
+        - Moving spots (gliders)
 
-    Reference: Pearson, J. E. (1993). Complex patterns in a simple system.
+    Reference: Pearson (1993) "Complex Patterns in a Simple System"
     """
 
     @property
@@ -41,37 +45,30 @@ class GrayScottPDE(MultiFieldPDEPreset):
             category="physics",
             description="Gray-Scott reaction-diffusion pattern formation",
             equations={
-                "u": "Du * laplace(u) - u * v**2 + F * (1 - u)",
-                "v": "Dv * laplace(v) + u * v**2 - (F + k) * v",
+                "u": "laplace(u) + u**2 * v - (a + b) * u",
+                "v": "D * laplace(v) - u**2 * v + a * (1 - v)",
             },
             parameters=[
                 PDEParameter(
-                    name="F",
-                    default=0.04,
+                    name="a",
+                    default=0.037,
                     description="Feed rate",
                     min_value=0.0,
                     max_value=0.1,
                 ),
                 PDEParameter(
-                    name="k",
+                    name="b",
                     default=0.06,
-                    description="Kill rate",
-                    min_value=0.0,
+                    description="Kill/removal rate",
+                    min_value=0.04,
                     max_value=0.1,
                 ),
                 PDEParameter(
-                    name="Du",
-                    default=0.16,
-                    description="Diffusion coefficient for u",
-                    min_value=0.0,
-                    max_value=0.5,
-                ),
-                PDEParameter(
-                    name="Dv",
-                    default=0.08,
-                    description="Diffusion coefficient for v",
-                    min_value=0.0,
-                    max_value=0.25,
+                    name="D",
+                    default=2.0,
+                    description="Diffusion ratio (v diffuses D times faster than u)",
+                    min_value=1.0,
+                    max_value=4.0,
                 ),
             ],
             num_fields=2,
@@ -88,22 +85,24 @@ class GrayScottPDE(MultiFieldPDEPreset):
         """Create the Gray-Scott PDE system.
 
         Args:
-            parameters: Dictionary with F, k, Du, Dv.
+            parameters: Dictionary with a, b, D.
             bc: Boundary condition specification.
             grid: The computational grid.
 
         Returns:
             Configured PDE instance.
         """
-        F = parameters.get("F", 0.04)
-        k = parameters.get("k", 0.06)
-        Du = parameters.get("Du", 0.16)
-        Dv = parameters.get("Dv", 0.08)
+        a = parameters.get("a", 0.037)
+        b = parameters.get("b", 0.06)
+        D = parameters.get("D", 2.0)
 
+        # Gray-Scott equations from reference:
+        # du/dt = laplace(u) + u^2*v - (a+b)*u
+        # dv/dt = D*laplace(v) - u^2*v + a*(1-v)
         return PDE(
             rhs={
-                "u": f"{Du} * laplace(u) - u * v**2 + {F} * (1 - u)",
-                "v": f"{Dv} * laplace(v) + u * v**2 - ({F} + {k}) * v",
+                "u": f"laplace(u) + u**2 * v - ({a} + {b}) * u",
+                "v": f"{D} * laplace(v) - u**2 * v + {a} * (1 - v)",
             },
             bc=self._convert_bc(bc),
         )
@@ -117,8 +116,8 @@ class GrayScottPDE(MultiFieldPDEPreset):
         """Create initial state for Gray-Scott.
 
         The default initialization for Gray-Scott is:
-        - u = 1 everywhere with a perturbation region where u is lower
-        - v = 0 everywhere with a perturbation region where v is higher
+        - u = 0 everywhere with a perturbation region where u is higher
+        - v = 1 everywhere (uniform substrate)
 
         This creates the "seed" for pattern formation.
         """
@@ -128,18 +127,18 @@ class GrayScottPDE(MultiFieldPDEPreset):
             return super().create_initial_state(grid, ic_type, ic_params)
 
         # Default Gray-Scott initialization
-        if ic_type == "gray-scott-default":
+        if ic_type in ("gray-scott-default", "default"):
             return self._default_gray_scott_init(grid, ic_params)
 
         # For other IC types, create uniform backgrounds and add perturbation
         if ic_type in ("random-uniform", "random-gaussian"):
-            # Create random perturbation for v
-            v_field = create_initial_condition(grid, ic_type, ic_params)
-            # Scale v to be small perturbations
-            v_data = v_field.data * 0.1
+            # Create random perturbation for u
+            u_field = create_initial_condition(grid, ic_type, ic_params)
+            # Scale u to be small perturbations
+            u_data = u_field.data * 0.1
 
-            # u starts at 1.0 and is reduced where v is present
-            u_data = np.ones(grid.shape) - v_data * 2
+            # v starts at 1.0
+            v_data = np.ones(grid.shape)
 
             u = ScalarField(grid, u_data)
             u.label = "u"
@@ -183,16 +182,18 @@ class GrayScottPDE(MultiFieldPDEPreset):
         dist = np.sqrt((X - cx) ** 2 + (Y - cy) ** 2)
         mask = dist < r
 
-        # Initialize u = 1, v = 0 everywhere
-        u_data = np.ones(grid.shape)
-        v_data = np.zeros(grid.shape)
+        # Initialize u = 0, v = 1 everywhere (reference default)
+        u_data = np.zeros(grid.shape)
+        v_data = np.ones(grid.shape)
 
-        # Add perturbation in center
+        # Add perturbation in center - seed with some u
         u_data[mask] = 0.5
-        v_data[mask] = 0.25
 
         # Add small noise
         noise = params.get("noise", 0.01)
+        seed = params.get("seed")
+        if seed is not None:
+            np.random.seed(seed)
         u_data += noise * np.random.randn(*grid.shape)
         v_data += noise * np.random.randn(*grid.shape)
 
@@ -227,19 +228,21 @@ class GrayScottPDE(MultiFieldPDEPreset):
         y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
         X, Y = np.meshgrid(x, y, indexing="ij")
 
-        # Initialize u = 1, v = 0
-        u_data = np.ones(grid.shape)
-        v_data = np.zeros(grid.shape)
+        # Initialize u = 0, v = 1
+        u_data = np.zeros(grid.shape)
+        v_data = np.ones(grid.shape)
 
         # Add Gaussian blobs as seeds
         sigma = width * min(Lx, Ly)
+        seed = params.get("seed")
+        if seed is not None:
+            np.random.seed(seed)
         for _ in range(num_blobs):
             cx = np.random.uniform(x_bounds[0] + sigma, x_bounds[1] - sigma)
             cy = np.random.uniform(y_bounds[0] + sigma, y_bounds[1] - sigma)
 
             blob = np.exp(-((X - cx) ** 2 + (Y - cy) ** 2) / (2 * sigma**2))
-            u_data -= 0.5 * blob
-            v_data += 0.25 * blob
+            u_data += 0.5 * blob
 
         # Add small noise
         noise = params.get("noise", 0.01)
@@ -261,12 +264,11 @@ class GrayScottPDE(MultiFieldPDEPreset):
         self, parameters: dict[str, float]
     ) -> dict[str, str]:
         """Get equations with parameter values substituted."""
-        F = parameters.get("F", 0.04)
-        k = parameters.get("k", 0.06)
-        Du = parameters.get("Du", 0.16)
-        Dv = parameters.get("Dv", 0.08)
+        a = parameters.get("a", 0.037)
+        b = parameters.get("b", 0.06)
+        D = parameters.get("D", 2.0)
 
         return {
-            "u": f"{Du} * laplace(u) - u * v**2 + {F} * (1 - u)",
-            "v": f"{Dv} * laplace(v) + u * v**2 - ({F} + {k}) * v",
+            "u": f"laplace(u) + u**2 * v - ({a} + {b}) * u",
+            "v": f"{D} * laplace(v) - u**2 * v + {a} * (1 - v)",
         }

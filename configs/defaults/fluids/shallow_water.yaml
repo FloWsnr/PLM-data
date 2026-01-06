@@ -1,27 +1,31 @@
 preset: shallow-water
 parameters:
-  g: 2.0
-  H: 1.0
+  H_e: 1.0
+  g: 9.81
+  f: 0.01
+  k: 0.001
+  nu: 0.5
+  epsilon: 0.0001
 init:
   type: drop
   params:
     x0: 0.5
     y0: 0.5
-    amplitude: 0.5
-    width: 0.08
-solver: rk4
-backend: numba
+    amplitude: 0.3
+    width: 0.1
+solver: euler
+backend: numpy
 adaptive: true
 dt: 0.005
 resolution: 128
 bc:
-  x: periodic
-  y: periodic
+  x: neumann
+  y: neumann
 output:
   path: ./output
   num_frames: 100
   colormap: coolwarm
   field_to_plot: h
 seed: 42
-domain_size: 2.0
-t_end: 3.0
+domain_size: 400.0
+t_end: 50.0

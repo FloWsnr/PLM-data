@@ -1,17 +1,21 @@
 preset: vorticity
 parameters:
-  nu: 0.001
+  nu: 0.05
+  epsilon: 0.05
+  D: 0.05
 init:
-  type: gaussian-blobs
+  type: vortex-pair
   params:
-    num_blobs: 4
-    amplitude: 1.0
-    width: 0.1
-    background: 0.0
-solver: rk4
+    x1: 0.35
+    y1: 0.5
+    x2: 0.65
+    y2: 0.5
+    strength: 10.0
+    radius: 0.1
+solver: euler
 backend: numpy
 adaptive: true
-dt: 0.005
+dt: 0.01
 resolution: 128
 bc:
   x: periodic
@@ -20,7 +24,7 @@ output:
   path: ./output
   num_frames: 100
   colormap: seismic
-  field_to_plot: w
+  field_to_plot: omega
 seed: 42
-domain_size: 2.0
-t_end: 10.0
+domain_size: 500.0
+t_end: 100.0

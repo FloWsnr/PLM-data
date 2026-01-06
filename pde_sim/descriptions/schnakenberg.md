@@ -1,61 +1,64 @@
-# Schnakenberg Model (Turing Pattern System)
+# Schnakenberg Model
 
-## Mathematical Formulation
+A two-component reaction-diffusion system that forms Turing patterns through activator-inhibitor dynamics, producing spots and stripes.
 
-The Schnakenberg model is a two-component reaction-diffusion system:
+## Description
 
-$$\frac{\partial u}{\partial t} = D_u \nabla^2 u + a - u + u^2 v$$
+The Schnakenberg model is a classical reaction-diffusion system introduced by Juergen Schnakenberg in 1979 as a minimal, chemically sensible model exhibiting limit-cycle behaviour. The model has become a prototype for studying Turing instability in mathematical biology and pattern formation theory.
+
+The system describes the interaction between an activator (u) and an inhibitor (v), where the activator undergoes autocatalytic production modulated by the inhibitor. When the diffusion coefficient of the inhibitor is sufficiently larger than that of the activator (D > 1), the system can exhibit diffusion-driven instability (Turing instability), leading to spontaneous pattern formation from an initially homogeneous state.
+
+Key phenomena include:
+- **Spot patterns**: Form when D is large (e.g., D = 100)
+- **Stripe patterns**: Form when D is reduced (e.g., D = 30)
+- **Hopf bifurcations**: The homogeneous equilibrium can undergo Hopf bifurcations for small values of 1 > b > a >= 0, leading to oscillations and complex spatiotemporal interactions between Turing and Hopf instabilities
+
+The Schnakenberg model has applications in understanding biological morphogenesis, chemical pattern formation, and serves as a testbed for mathematical analysis of pattern-forming systems.
+
+## Equations
+
+$$\frac{\partial u}{\partial t} = \nabla^2 u + a - u + u^2 v$$
+
 $$\frac{\partial v}{\partial t} = D_v \nabla^2 v + b - u^2 v$$
 
-where:
+Where:
 - $u$ is the activator concentration
 - $v$ is the inhibitor concentration
-- $D_u, D_v$ are diffusion coefficients
-- $a, b$ are feed rates
+- $a, b > 0$ are production rate parameters
+- $D_v > 1$ is required for pattern formation
 
-## Physical Background
+## Default Config
 
-The Schnakenberg model is a prototypical **activator-inhibitor system** exhibiting Turing patterns. The mechanism:
+```yaml
+solver: euler
+dt: 0.0005
+dx: 0.5
+domain_size: 100
 
-1. **Activator (u)**: Autocatalytic species that promotes its own production
-2. **Inhibitor (v)**: Species consumed by the activator reaction
-3. **Differential diffusion**: $D_v \gg D_u$ enables pattern formation
+boundary_x: periodic
+boundary_y: periodic
 
-The homogeneous steady state $(u^*, v^*) = (a+b, b/(a+b)^2)$ becomes unstable to spatial perturbations when Turing conditions are satisfied.
+parameters:
+  D_v: 100  # range: [0, 100]
+  a: 0.01
+  b: 2
+```
 
-## Turing Instability Conditions
+## Parameter Variants
 
-For patterns to emerge:
-1. The homogeneous state must be stable: $\text{tr}(J) < 0$ and $\det(J) > 0$
-2. Diffusion must destabilize: $D_v/D_u > 1$ (typically 10-100)
-3. Specific wavenumbers become unstable
+### Schnakenberg (Standard)
+The default configuration produces spot-like patterns with high diffusion ratio.
+- `D_v = 100`: Large diffusion ratio favors spots
+- `a = 0.01, b = 2`: Standard kinetic parameters
 
-## Parameters
-
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Feed rate u | $a$ | Activator source | 0 - 1 |
-| Feed rate v | $b$ | Inhibitor source | 0 - 2 |
-| Diffusion u | $D_u$ | Activator diffusion (slow) | 0.001 - 0.1 |
-| Diffusion v | $D_v$ | Inhibitor diffusion (fast) | 0.1 - 10 |
-
-## Pattern Types
-
-Depending on parameters, the system produces:
-- **Spots**: Localized activator peaks
-- **Stripes**: Labyrinthine patterns
-- **Inverse spots**: Activator holes in inhibitor background
-- **Mixed patterns**: Coexistence of spots and stripes
-
-## Applications
-
-1. **Animal coat patterns**: Zebra stripes, leopard spots
-2. **Embryonic development**: Digit formation, somite patterning
-3. **Chemical systems**: Chlorite-iodide-malonic acid (CIMA) reaction
-4. **Vegetation patterns**: Banded patterns in semi-arid regions
+### SchnakenbergHopf
+Configuration near the Hopf bifurcation boundary where Turing patterns, homogeneous oscillations, and complex spatiotemporal behaviors can coexist.
+- `D_v = 8`: Reduced diffusion ratio
+- `a = 0.05` (range: [0, 0.1])
+- `b = 0.5` (range: [0, 1])
+- Parameters chosen to be in the regime where 1 > b > a >= 0
 
 ## References
 
-- Schnakenberg, J. (1979). *Simple chemical reaction systems with limit cycle behaviour*
-- Murray, J.D. (2003). *Mathematical Biology II: Spatial Models*
-- Turing, A.M. (1952). *The Chemical Basis of Morphogenesis*
+- Schnakenberg, J. (1979). Simple chemical reaction systems with limit cycle behaviour. Journal of Theoretical Biology, 81(3), 389-400.
+- Turing, A. M. (1952). The chemical basis of morphogenesis. Philosophical Transactions of the Royal Society B, 237(641), 37-72.

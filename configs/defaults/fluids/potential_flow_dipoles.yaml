@@ -1,0 +1,25 @@
+preset: potential-flow-dipoles
+parameters:
+  d: 5.0
+  strength: 1000.0
+init:
+  type: dipole
+  params:
+    d: 5.0
+    strength: 1000.0
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.01
+resolution: 128
+bc:
+  x: neumann
+  y: neumann
+output:
+  path: ./output
+  num_frames: 100
+  colormap: viridis
+  field_to_plot: phi
+seed: 42
+domain_size: 200.0
+t_end: 50.0

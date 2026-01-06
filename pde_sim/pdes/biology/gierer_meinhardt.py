@@ -1,4 +1,4 @@
-"""Gierer-Meinhardt activator-inhibitor system."""
+"""Gierer-Meinhardt activator-inhibitor system for morphogenesis."""
 
 from typing import Any
 
@@ -13,22 +13,27 @@ from .. import register_pde
 class GiererMeinhardtPDE(MultiFieldPDEPreset):
     """Gierer-Meinhardt activator-inhibitor system.
 
-    Standard formulation from visualpde.com:
+    A classical model for biological pattern formation:
 
-        du/dt = Du * laplace(u) + a + u²/v - b*u
-        dv/dt = Dv * laplace(v) + u² - c*v
+        du/dt = laplace(u) + a + u^2/v - b*u
+        dv/dt = D * laplace(v) + u^2 - c*v
 
     where:
         - u is the activator concentration
         - v is the inhibitor concentration
-        - Du, Dv are diffusion coefficients (Dv >> Du for patterns)
+        - D > 1 is required for pattern formation
         - a is basal activator production
         - b is activator decay rate
         - c is inhibitor decay rate
 
-    For Turing patterns: Dv/Du >> 1 (D > 1, typically ~10-100)
+    Key phenomena:
+        - Spot patterns: default behavior
+        - Stripe instability: stripes break into spots
+        - Labyrinthine patterns: with saturation term
 
-    Reference: Gierer & Meinhardt (1972), visualpde.com
+    References:
+        Gierer & Meinhardt (1972). Kybernetik, 12(1), 30-39.
+        Meinhardt & Gierer (2000). BioEssays, 22(8), 753-760.
     """
 
     @property
@@ -38,30 +43,23 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
             category="biology",
             description="Gierer-Meinhardt activator-inhibitor pattern formation",
             equations={
-                "u": "Du * laplace(u) + a + u**2 / v - b * u",
-                "v": "Dv * laplace(v) + u**2 - c * v",
+                "u": "laplace(u) + a + u**2 / v - b * u",
+                "v": "D * laplace(v) + u**2 - c * v",
             },
             parameters=[
                 PDEParameter(
-                    name="Du",
-                    default=1.0,
-                    description="Activator diffusion coefficient",
-                    min_value=0.1,
-                    max_value=10.0,
-                ),
-                PDEParameter(
-                    name="Dv",
-                    default=40.0,
-                    description="Inhibitor diffusion coefficient (D = Dv/Du > 1)",
+                    name="D",
+                    default=100.0,
+                    description="Inhibitor diffusion ratio (D > 1 required)",
                     min_value=1.0,
-                    max_value=200.0,
+                    max_value=500.0,
                 ),
                 PDEParameter(
                     name="a",
-                    default=0.1,
+                    default=0.5,
                     description="Basal activator production",
                     min_value=0.0,
-                    max_value=1.0,
+                    max_value=5.0,
                 ),
                 PDEParameter(
                     name="b",
@@ -72,15 +70,15 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
                 ),
                 PDEParameter(
                     name="c",
-                    default=1.0,
+                    default=6.1,
                     description="Inhibitor decay rate",
                     min_value=0.1,
-                    max_value=5.0,
+                    max_value=20.0,
                 ),
             ],
             num_fields=2,
             field_names=["u", "v"],
-            reference="visualpde.com Gierer-Meinhardt pattern formation",
+            reference="Gierer & Meinhardt (1972)",
         )
 
     def create_pde(
@@ -89,15 +87,14 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        Du = parameters.get("Du", 1.0)
-        Dv = parameters.get("Dv", 40.0)
-        a = parameters.get("a", 0.1)
+        D = parameters.get("D", 100.0)
+        a = parameters.get("a", 0.5)
         b = parameters.get("b", 1.0)
-        c = parameters.get("c", 1.0)
+        c = parameters.get("c", 6.1)
 
-        # Build equation strings (add small epsilon to prevent division by zero)
-        u_rhs = f"{Du} * laplace(u) + {a} + u**2 / (v + 1e-10) - {b} * u"
-        v_rhs = f"{Dv} * laplace(v) + u**2 - {c} * v"
+        # Add small epsilon to prevent division by zero
+        u_rhs = f"laplace(u) + {a} + u**2 / (v + 1e-10) - {b} * u"
+        v_rhs = f"{D} * laplace(v) + u**2 - {c} * v"
 
         return PDE(
             rhs={

@@ -1,4 +1,4 @@
-"""Wave equation."""
+"""Wave equation and variants."""
 
 import math
 from typing import Any
@@ -8,7 +8,7 @@ from pde import PDE, CartesianGrid, FieldCollection, ScalarField
 
 from pde_sim.initial_conditions import create_initial_condition
 
-from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
+from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter, ScalarPDEPreset
 from .. import register_pde
 
 
@@ -18,13 +18,17 @@ class WavePDE(MultiFieldPDEPreset):
 
     The wave equation describes wave propagation:
 
-        d²u/dt² = c² * laplace(u)
+        d^2u/dt^2 = D * laplace(u)
 
-    We convert to first order system:
-        du/dt = v
-        dv/dt = c² * laplace(u)
+    Based on visualpde.com, converted to first order system with stabilization:
+        du/dt = v + C*D * laplace(u)
+        dv/dt = D * laplace(u)
 
-    where u is displacement and v is velocity.
+    where:
+        - u is displacement
+        - v is velocity (du/dt)
+        - D is the wave speed squared (c^2)
+        - C is a damping/stabilization parameter (0 for pure wave equation)
     """
 
     @property
@@ -32,23 +36,30 @@ class WavePDE(MultiFieldPDEPreset):
         return PDEMetadata(
             name="wave",
             category="basic",
-            description="Wave equation (second order)",
+            description="Wave equation (second order hyperbolic PDE)",
             equations={
-                "u": "v",
-                "v": "c**2 * laplace(u)",
+                "u": "v + C*D * laplace(u)",
+                "v": "D * laplace(u)",
             },
             parameters=[
                 PDEParameter(
-                    name="c",
+                    name="D",
                     default=1.0,
-                    description="Wave speed",
-                    min_value=0.5,
-                    max_value=2.0,
+                    description="Wave speed squared (c^2)",
+                    min_value=0.1,
+                    max_value=100.0,
+                ),
+                PDEParameter(
+                    name="C",
+                    default=0.01,
+                    description="Damping/stabilization coefficient",
+                    min_value=0.0,
+                    max_value=1.0,
                 ),
             ],
             num_fields=2,
             field_names=["u", "v"],
-            reference="Hyperbolic PDE",
+            reference="https://visualpde.com/basic-pdes/wave-equation",
         )
 
     def create_pde(
@@ -57,14 +68,21 @@ class WavePDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        c = parameters.get("c", 1.0)
-        c_sq = c * c
+        D = parameters.get("D", 1.0)
+        C = parameters.get("C", 0.01)
 
         bc_spec = self._convert_bc(bc)
+
+        # Build u equation with optional damping term
+        if C > 0:
+            u_rhs = f"v + {C * D} * laplace(u)"
+        else:
+            u_rhs = "v"
+
         return PDE(
             rhs={
-                "u": "v",
-                "v": f"{c_sq} * laplace(u)",
+                "u": u_rhs,
+                "v": f"{D} * laplace(u)",
             },
             bc=bc_spec,
         )
@@ -89,14 +107,22 @@ class WavePDE(MultiFieldPDEPreset):
 
 
 @register_pde("advection")
-class AdvectionPDE(MultiFieldPDEPreset):
+class AdvectionPDE(ScalarPDEPreset):
     """Advection-diffusion equation.
 
-    Describes transport of a quantity by flow and diffusion:
+    Based on visualpde.com advection equation:
 
-        du/dt = D * laplace(u) - v · grad(u)
+        du/dt = D * laplace(u) - v . grad(u)
 
-    where D is diffusion and v is velocity vector.
+    Two velocity field types are supported:
+    - Rotational: v = V * (y - L_y/2, -(x - L_x/2))
+    - Directed: v = V * (cos(theta), sin(theta))
+
+    Parameters:
+        D: Diffusion coefficient
+        V: Advection velocity magnitude
+        theta: Flow direction (radians, for directed flow)
+        mode: 'rotational' or 'directed'
     """
 
     @property
@@ -106,34 +132,41 @@ class AdvectionPDE(MultiFieldPDEPreset):
             category="basic",
             description="Advection-diffusion equation",
             equations={
-                "u": "D * laplace(u) - vx * d_dx(u) - vy * d_dy(u)",
+                "u": "D * laplace(u) - V * (v_x * d_dx(u) + v_y * d_dy(u))",
             },
             parameters=[
                 PDEParameter(
                     name="D",
-                    default=0.05,
+                    default=1.0,
                     description="Diffusion coefficient",
                     min_value=0.0,
-                    max_value=0.2,
+                    max_value=10.0,
                 ),
                 PDEParameter(
-                    name="vx",
-                    default=0.5,
-                    description="Advection velocity in x",
-                    min_value=-2.0,
-                    max_value=2.0,
+                    name="V",
+                    default=0.10,
+                    description="Advection velocity magnitude",
+                    min_value=-5.0,
+                    max_value=5.0,
                 ),
                 PDEParameter(
-                    name="vy",
-                    default=0.0,
-                    description="Advection velocity in y",
-                    min_value=-2.0,
-                    max_value=2.0,
+                    name="theta",
+                    default=-2.0,
+                    description="Flow direction in radians (for directed mode)",
+                    min_value=-6.4,
+                    max_value=6.4,
+                ),
+                PDEParameter(
+                    name="mode",
+                    default=0,
+                    description="0=rotational, 1=directed",
+                    min_value=0,
+                    max_value=1,
                 ),
             ],
             num_fields=1,
             field_names=["u"],
-            reference="Convection-diffusion equation",
+            reference="https://visualpde.com/basic-pdes/advection-equation",
         )
 
     def create_pde(
@@ -142,22 +175,36 @@ class AdvectionPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        D = parameters.get("D", 0.01)
-        vx = parameters.get("vx", 1.0)
-        vy = parameters.get("vy", 0.0)
+        D = parameters.get("D", 1.0)
+        V = parameters.get("V", 0.10)
+        theta = parameters.get("theta", -2.0)
+        mode = int(parameters.get("mode", 0))  # 0=rotational, 1=directed
 
-        # Build equation string
-        terms = []
-        if D > 0:
-            terms.append(f"{D} * laplace(u)")
-        if vx != 0:
-            terms.append(f"- {vx} * d_dx(u)")
-        if vy != 0:
-            terms.append(f"- {vy} * d_dy(u)")
-
-        rhs = " ".join(terms) if terms else "0"
+        # Get domain size
+        L_x = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
+        L_y = grid.axes_bounds[1][1] - grid.axes_bounds[1][0]
 
         bc_spec = self._convert_bc(bc)
+
+        if mode == 0:
+            # Rotational velocity field: v = V * (y - L_y/2, -(x - L_x/2))
+            # Advection term: V * ((y - L_y/2) * d_dx(u) - (x - L_x/2) * d_dy(u))
+            half_y = L_y / 2
+            half_x = L_x / 2
+            advection = f"- {V} * ((y - {half_y}) * d_dx(u) - (x - {half_x}) * d_dy(u))"
+        else:
+            # Directed velocity field: v = V * (cos(theta), sin(theta))
+            # Advection term: V * (cos(theta) * d_dx(u) + sin(theta) * d_dy(u))
+            vx = V * math.cos(theta)
+            vy = V * math.sin(theta)
+            advection = f"- {vx} * d_dx(u) - {vy} * d_dy(u)"
+
+        # Build equation string
+        if D > 0:
+            rhs = f"{D} * laplace(u) {advection}"
+        else:
+            rhs = advection.lstrip("- ")  # Remove leading minus if no diffusion
+
         return PDE(
             rhs={"u": rhs},
             bc=bc_spec,
@@ -178,21 +225,21 @@ class InhomogeneousWavePDE(MultiFieldPDEPreset):
 
     Based on the visualpde.com inhomogeneous wave equation:
 
-        d²u/dt² = div(f(x,y) * grad(u))
+        d^2u/dt^2 = div(f(x,y) * grad(u))
 
     where f(x,y) is a spatially varying diffusivity:
 
-        f(x,y) = D * [1 + E*sin(m*pi*x/L)] * [1 + E*sin(n*pi*y/L)]
+        f(x,y) = D * [1 + E*sin(m*pi*x/L_x)] * [1 + E*sin(n*pi*y/L_y)]
 
     This creates a wave equation with position-dependent wave speed,
     leading to interesting refraction and focusing effects.
 
     Converted to first-order system:
-        du/dt = v
+        du/dt = v + C*D * laplace(u)
         dv/dt = div(f(x,y) * grad(u))
 
     The divergence of (f * grad(u)) expands to:
-        f * laplace(u) + grad(f) · grad(u)
+        f * laplace(u) + grad(f) . grad(u)
     """
 
     @property
@@ -202,7 +249,7 @@ class InhomogeneousWavePDE(MultiFieldPDEPreset):
             category="basic",
             description="Wave equation with spatially varying wave speed",
             equations={
-                "u": "v",
+                "u": "v + C*D * laplace(u)",
                 "v": "div(f(x,y) * grad(u))",
             },
             parameters=[
@@ -211,28 +258,35 @@ class InhomogeneousWavePDE(MultiFieldPDEPreset):
                     default=1.0,
                     description="Base diffusivity (wave speed squared)",
                     min_value=0.1,
-                    max_value=2.0,
+                    max_value=100.0,
                 ),
                 PDEParameter(
                     name="E",
-                    default=0.5,
+                    default=0.97,
                     description="Amplitude of spatial variation (|E| < 1)",
-                    min_value=-0.9,
-                    max_value=0.9,
-                ),
-                PDEParameter(
-                    name="n",
-                    default=2,
-                    description="Spatial mode number in x direction",
-                    min_value=1,
-                    max_value=5,
+                    min_value=-0.99,
+                    max_value=0.99,
                 ),
                 PDEParameter(
                     name="m",
-                    default=2,
+                    default=9,
+                    description="Spatial mode number in x direction",
+                    min_value=0,
+                    max_value=10,
+                ),
+                PDEParameter(
+                    name="n",
+                    default=9,
                     description="Spatial mode number in y direction",
-                    min_value=1,
-                    max_value=5,
+                    min_value=0,
+                    max_value=10,
+                ),
+                PDEParameter(
+                    name="C",
+                    default=0.01,
+                    description="Damping/stabilization coefficient",
+                    min_value=0.0,
+                    max_value=1.0,
                 ),
             ],
             num_fields=2,
@@ -247,38 +301,47 @@ class InhomogeneousWavePDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
     ) -> PDE:
         D = parameters.get("D", 1.0)
-        E = parameters.get("E", 0.5)
-        n = int(parameters.get("n", 2))
-        m = int(parameters.get("m", 2))
+        E = parameters.get("E", 0.97)
+        m = int(parameters.get("m", 9))
+        n = int(parameters.get("n", 9))
+        C = parameters.get("C", 0.01)
 
         # Get domain size from grid
-        L = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
+        L_x = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
+        L_y = grid.axes_bounds[1][1] - grid.axes_bounds[1][0]
 
         # Get spatial coordinates
         x_coords = grid.cell_coords[..., 0]
         y_coords = grid.cell_coords[..., 1]
 
-        # Compute f(x,y) = D * [1 + E*sin(m*pi*x/L)] * [1 + E*sin(n*pi*y/L)]
-        sin_x = np.sin(m * math.pi * x_coords / L)
-        sin_y = np.sin(n * math.pi * y_coords / L)
+        # Compute f(x,y) = D * [1 + E*sin(m*pi*x/L_x)] * [1 + E*sin(n*pi*y/L_y)]
+        sin_x = np.sin(m * math.pi * x_coords / L_x)
+        sin_y = np.sin(n * math.pi * y_coords / L_y)
         f_data = D * (1 + E * sin_x) * (1 + E * sin_y)
         f_field = ScalarField(grid, f_data)
 
-        # Compute df/dx = D * E * (m*pi/L) * cos(m*pi*x/L) * [1 + E*sin(n*pi*y/L)]
-        cos_x = np.cos(m * math.pi * x_coords / L)
-        df_dx_data = D * E * (m * math.pi / L) * cos_x * (1 + E * sin_y)
+        # Compute df/dx = D * E * (m*pi/L_x) * cos(m*pi*x/L_x) * [1 + E*sin(n*pi*y/L_y)]
+        cos_x = np.cos(m * math.pi * x_coords / L_x)
+        df_dx_data = D * E * (m * math.pi / L_x) * cos_x * (1 + E * sin_y)
         df_dx_field = ScalarField(grid, df_dx_data)
 
-        # Compute df/dy = D * E * (n*pi/L) * cos(n*pi*y/L) * [1 + E*sin(m*pi*x/L)]
-        cos_y = np.cos(n * math.pi * y_coords / L)
-        df_dy_data = D * E * (n * math.pi / L) * cos_y * (1 + E * sin_x)
+        # Compute df/dy = D * E * (n*pi/L_y) * cos(n*pi*y/L_y) * [1 + E*sin(m*pi*x/L_x)]
+        cos_y = np.cos(n * math.pi * y_coords / L_y)
+        df_dy_data = D * E * (n * math.pi / L_y) * cos_y * (1 + E * sin_x)
         df_dy_field = ScalarField(grid, df_dy_data)
 
         # div(f * grad(u)) = f * laplace(u) + df_dx * d_dx(u) + df_dy * d_dy(u)
         bc_spec = self._convert_bc(bc)
+
+        # Build u equation with optional damping term
+        if C > 0:
+            u_rhs = f"v + {C * D} * laplace(u)"
+        else:
+            u_rhs = "v"
+
         return PDE(
             rhs={
-                "u": "v",
+                "u": u_rhs,
                 "v": "f * laplace(u) + df_dx * d_dx(u) + df_dy * d_dy(u)",
             },
             bc=bc_spec,
@@ -294,13 +357,14 @@ class InhomogeneousWavePDE(MultiFieldPDEPreset):
     ) -> dict[str, str]:
         """Get equations with parameter values substituted."""
         D = parameters.get("D", 1.0)
-        E = parameters.get("E", 0.5)
-        n = int(parameters.get("n", 2))
-        m = int(parameters.get("m", 2))
+        E = parameters.get("E", 0.97)
+        m = int(parameters.get("m", 9))
+        n = int(parameters.get("n", 9))
+        C = parameters.get("C", 0.01)
         return {
-            "u": "v",
+            "u": f"v + {C}*{D} * laplace(u)" if C > 0 else "v",
             "v": "div(f(x,y) * grad(u))",
-            "f(x,y)": f"D*[1+E*sin(mπx/L)]*[1+E*sin(nπy/L)] with D={D}, E={E}, n={n}, m={m}",
+            "f(x,y)": f"D*[1+E*sin(m*pi*x/L_x)]*[1+E*sin(n*pi*y/L_y)] with D={D}, E={E}, m={m}, n={n}",
         }
 
     def create_initial_state(

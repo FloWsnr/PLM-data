@@ -1,28 +1,28 @@
 preset: harsh-environment
 parameters:
-  D: 1.0  # Diffusion coefficient
-  K: 1.0  # Carrying capacity
+  D: 0.01
+  r: 1.0
+  K: 1.0
 init:
   type: gaussian-blobs
   params:
     num_blobs: 4
     amplitude: 0.8
-    width: 0.12
-    background: 0.15
-solver: rk4
+    width: 0.1
+    background: 0.1
+solver: euler
 backend: numba
-adaptive: true
-dt: 0.01
+adaptive: false
+dt: 0.0001
 resolution: 128
 bc:
-  x: dirichlet  # Harsh boundary: u=0 at edges
-  y: dirichlet
-  value: 0.0
+  x: neumann
+  y: neumann
 output:
   path: ./output
   num_frames: 100
   colormap: viridis
   field_to_plot: u
 seed: 42
-domain_size: 10.0  # L=10, critical D ~ 5.066
+domain_size: 10.0
 t_end: 50.0

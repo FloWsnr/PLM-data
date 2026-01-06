@@ -1,93 +1,96 @@
 # Burgers' Equation
 
-## Mathematical Formulation
+The simplest nonlinear PDE combining advection and diffusion, serving as a fundamental model for shock wave formation and viscous flow dynamics.
 
-The viscous Burgers' equation:
+## Description
 
-$$\frac{\partial u}{\partial t} + u\frac{\partial u}{\partial x} = \nu \nabla^2 u$$
+Burgers' equation, studied extensively by Johannes Martinus Burgers in 1948, is the simplest equation that captures the essential physics of nonlinear wave steepening and shock formation. It serves as a one-dimensional model for understanding phenomena in gas dynamics, traffic flow, and fluid turbulence.
 
-Or in conservation form:
-$$\frac{\partial u}{\partial t} + \frac{\partial}{\partial x}\left(\frac{u^2}{2}\right) = \nu \nabla^2 u$$
+The equation exhibits two fundamentally different behaviors:
 
-where:
-- $u$ is the velocity (or transported quantity)
-- $\nu$ is the viscosity (diffusion coefficient)
+**Viscous case** ($\varepsilon > 0$): Diffusion competes with nonlinear steepening, producing smooth traveling waves and preventing true discontinuities. The viscous Burgers equation is exactly solvable via the Cole-Hopf transformation, which reduces it to the linear heat equation.
 
-## Physical Background
+**Inviscid case** ($\varepsilon = 0$): Without diffusion, wave steepening proceeds unchecked. Characteristics can cross, leading to the formation of **shock waves** - discontinuous solutions that propagate at specific speeds determined by the Rankine-Hugoniot conditions.
 
-Burgers' equation combines:
-1. **Nonlinear advection**: $u\partial_x u$ (self-steepening)
-2. **Diffusion**: $\nu\nabla^2 u$ (smoothing)
+Key phenomena:
+- **Wave steepening**: Larger amplitudes travel faster, causing the wavefront to steepen
+- **Shock formation**: In the inviscid limit, steepening leads to discontinuities
+- **Shock thickness**: In the viscous case, $\varepsilon$ determines the shock width
+- **Shock interaction**: Multiple shocks can overtake and merge
 
-This balance creates **shock waves** that travel and eventually smooth out.
+Burgers' equation is often the first nonlinear PDE encountered in applied mathematics courses and provides crucial intuition for more complex systems like the Navier-Stokes and Euler equations.
 
-The equation is the simplest PDE exhibiting both nonlinearity and dissipation, making it a prototype for understanding shock formation.
+## Equations
 
-## Parameters
+**Viscous Burgers' equation**:
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Viscosity | $\nu$ | Diffusion strength | 0.001 - 0.1 |
+$$\frac{\partial u}{\partial t} = -u \frac{\partial u}{\partial x} + \varepsilon \frac{\partial^2 u}{\partial x^2}$$
 
-## Shock Formation
+**Inviscid Burgers' equation** ($\varepsilon = 0$):
 
-For inviscid case ($\nu = 0$):
-- Smooth initial conditions develop discontinuities
-- Characteristics cross, causing multi-valued solutions
-- Physical solutions require shock conditions
+$$\frac{\partial u}{\partial t} + u \frac{\partial u}{\partial x} = 0$$
 
-For viscous case ($\nu > 0$):
-- Shocks are smoothed into steep gradients
-- Shock width scales as $\delta \sim \nu$
-- Eventually, solution smooths to constant
+Where:
+- $u(x,t)$ is the velocity/wave amplitude field
+- $-u \, u_x$ is the nonlinear advection (self-transport)
+- $\varepsilon$ is the viscosity/diffusion coefficient
+- The term $u_x$ can be written as $u_{xb}$ (backward difference) in the numerical scheme
 
-## Cole-Hopf Transformation
+Conservation form:
+$$\frac{\partial u}{\partial t} + \frac{\partial}{\partial x}\left(\frac{u^2}{2}\right) = \varepsilon \frac{\partial^2 u}{\partial x^2}$$
 
-The remarkable transformation:
-$$u = -2\nu \frac{\partial}{\partial x}\ln\phi$$
+## Default Config
 
-reduces Burgers' equation to the **linear heat equation**:
-$$\frac{\partial \phi}{\partial t} = \nu \nabla^2 \phi$$
+```yaml
+solver: euler
+dt: 0.04
+dx: 2
+domain_size: 1000
+dimension: 1
 
-This allows exact solutions!
+boundary_x: neumann
 
-## Traveling Wave Solutions
+parameters:
+  epsilon: 0.05   # viscosity coefficient
+```
 
-Traveling shock: $u(x,t) = U(x - st)$
+## Parameter Variants
 
-Profile: $U(\xi) = \frac{u_L + u_R}{2} - \frac{u_L - u_R}{2}\tanh\left(\frac{(u_L - u_R)\xi}{4\nu}\right)$
+### BurgersEquation (Viscous)
+Standard viscous Burgers equation:
+- `epsilon = 0.05` (moderate viscosity)
+- `dt = 0.04`, `dx = 2`
+- `domain_size = 1000`
+- Initial condition: Gaussian pulse at x = L/5
+- 1D line plot visualization
+- Shows smooth traveling wave with slight amplitude decay
 
-Speed: $s = \frac{u_L + u_R}{2}$ (Rankine-Hugoniot condition)
+### InviscidBurgers
+Shock-capturing formulation using flux splitting:
+- `epsilon = 0` (truly inviscid)
+- Uses algebraic auxiliary variable for flux: $v = u^p$
+- Reaction term: $-\frac{1}{p u^{p-2}} v_{xb}$ with $p=4$
+- RK4 timestepping for better stability
+- Initial condition: Gaussian pulse
+- Shows shock formation and propagation
 
-## Reynolds Number
+### InviscidBurgersShockInteraction
+Multiple shock interaction demonstration:
+- Same inviscid formulation
+- Initial condition: Multiple Gaussian pulses of different heights
+- Shows faster (taller) shocks overtaking slower ones
+- Demonstrates shock merging dynamics
 
-The behavior depends on:
-$$\text{Re} = \frac{UL}{\nu}$$
+### Shock Formation Time
 
-- $\text{Re} \ll 1$: Diffusion-dominated (smooth)
-- $\text{Re} \gg 1$: Advection-dominated (shocks)
+For initial condition $u(x,0) = u_0(x)$, shock forms at:
+$$T_c = -\frac{1}{\min(u_0'(x))}$$
 
-## Applications
-
-1. **Fluid mechanics**: Simplified turbulence model
-2. **Traffic flow**: Vehicle density waves
-3. **Gas dynamics**: Shock wave prototype
-4. **Cosmology**: Large-scale structure formation
-5. **Acoustics**: Nonlinear sound propagation
-
-## Numerical Challenges
-
-- **Inviscid limit**: Requires shock-capturing schemes
-- **Conservation form**: Essential for correct shock speed
-- **Artificial viscosity**: Sometimes added for stability
-- **High Reynolds number**: Fine resolution needed at shocks
-
-## Historical Significance
-
-Burgers' equation (J.M. Burgers, 1948) has been called the "hydrogen atom of nonlinear PDEs" due to its exact solvability and prototypical behavior.
+If $u_0'(x) < 0$ anywhere, a shock will form in finite time.
 
 ## References
 
-- Burgers, J.M. (1948). *A Mathematical Model Illustrating the Theory of Turbulence*
-- Whitham, G.B. (1974). *Linear and Nonlinear Waves*
-- Hopf, E. (1950). *The partial differential equation $u_t + uu_x = \nu u_{xx}$*
+- Burgers, J.M. (1948). "A mathematical model illustrating the theory of turbulence"
+- Cole, J.D. (1951). "On a quasi-linear parabolic equation in aerodynamics"
+- Hopf, E. (1950). "The partial differential equation $u_t + uu_x = \mu u_{xx}$"
+- Whitham, G.B. (1974). "Linear and Nonlinear Waves" - Wiley

@@ -1,4 +1,4 @@
-"""Kuramoto-Sivashinsky equation for chaotic pattern formation."""
+"""Kuramoto-Sivashinsky equation for spatiotemporal chaos."""
 
 from typing import Any
 
@@ -13,24 +13,27 @@ from .. import register_pde
 
 @register_pde("kuramoto-sivashinsky")
 class KuramotoSivashinskyPDE(ScalarPDEPreset):
-    """Kuramoto-Sivashinsky equation.
+    """Kuramoto-Sivashinsky equation for spatiotemporal chaos.
 
-    A canonical model for spatiotemporal chaos:
+    Based on visualpde.com formulation:
 
-        du/dt = -laplace(u) - nu * laplace(laplace(u)) - 0.5 * |grad(u)|^2
+        du/dt = -laplace(u) - laplace(laplace(u)) - |grad(u)|^2
 
-    or equivalently:
+    A fourth-order PDE exhibiting spatiotemporal chaos - one of the simplest
+    equations known to produce turbulent-like dynamics.
 
-        du/dt = -laplace(u) - nu * laplace(laplace(u)) - 0.5 * gradient_squared(u)
+    Physical contexts:
+        - Flame fronts: wrinkling and cellular instabilities
+        - Thin film flows: instability of liquid films
+        - Chemical oscillations: phase dynamics
+        - Plasma physics: edge turbulence
 
-    where:
-        - u is the field variable (e.g., flame front position)
-        - nu is the fourth-order diffusion coefficient
+    Key features:
+        - Negative diffusion (-laplace(u)): creates short-wavelength instability
+        - Hyperdiffusion (-laplace(laplace(u))): provides large-wavenumber damping
+        - Nonlinearity (-|grad(u)|^2): transfers energy between scales
 
-    This equation exhibits:
-        - Linear instability at intermediate wavelengths
-        - Nonlinear saturation
-        - Spatiotemporal chaos
+    The balance produces chaos with characteristic wavelength - irregular but not random.
 
     Reference: Kuramoto (1978), Sivashinsky (1977)
     """
@@ -40,20 +43,22 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
         return PDEMetadata(
             name="kuramoto-sivashinsky",
             category="physics",
-            description="Kuramoto-Sivashinsky chaotic pattern equation",
-            equations={"u": "-laplace(u) - nu * laplace(laplace(u)) - 0.5 * gradient_squared(u)"},
+            description="Kuramoto-Sivashinsky spatiotemporal chaos",
+            equations={
+                "u": "-laplace(u) - laplace(laplace(u)) - gradient_squared(u)",
+            },
             parameters=[
                 PDEParameter(
-                    name="nu",
-                    default=1.0,
-                    description="Fourth-order diffusion coefficient",
-                    min_value=0.1,
-                    max_value=2.0,
+                    name="a",
+                    default=0.03,
+                    description="Damping coefficient (for numerical stability)",
+                    min_value=0.0,
+                    max_value=0.5,
                 ),
             ],
             num_fields=1,
             field_names=["u"],
-            reference="Kuramoto-Sivashinsky spatiotemporal chaos",
+            reference="Kuramoto (1978), Sivashinsky (1977)",
         )
 
     def create_pde(
@@ -65,18 +70,24 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
         """Create the Kuramoto-Sivashinsky equation PDE.
 
         Args:
-            parameters: Dictionary containing 'nu' coefficient.
+            parameters: Dictionary containing 'a' damping coefficient.
             bc: Boundary condition specification.
             grid: The computational grid.
 
         Returns:
             Configured PDE instance.
         """
-        nu = parameters.get("nu", 1.0)
+        a = parameters.get("a", 0.03)
 
-        # py-pde uses gradient_squared for |grad(u)|^2
+        # Kuramoto-Sivashinsky equation:
+        # du/dt = -laplace(u) - laplace(laplace(u)) - |grad(u)|^2 - a*u
+        # The small damping term -a*u helps with numerical stability
+        rhs = "-laplace(u) - laplace(laplace(u)) - gradient_squared(u)"
+        if a > 0:
+            rhs += f" - {a} * u"
+
         return PDE(
-            rhs={"u": f"-laplace(u) - {nu} * laplace(laplace(u)) - 0.5 * gradient_squared(u)"},
+            rhs={"u": rhs},
             bc=self._convert_bc(bc),
         )
 
@@ -86,13 +97,28 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
         ic_type: str,
         ic_params: dict[str, Any],
     ) -> ScalarField:
-        """Create initial state - typically small random perturbations."""
+        """Create initial state - typically small random perturbations.
+
+        Default: constant value with localized perturbations.
+        """
         if ic_type in ("kuramoto-sivashinsky-default", "default"):
             # Small random perturbations around zero
             amplitude = ic_params.get("amplitude", 0.1)
-            np.random.seed(ic_params.get("seed"))
+            seed = ic_params.get("seed")
+            if seed is not None:
+                np.random.seed(seed)
             data = amplitude * np.random.randn(*grid.shape)
             return ScalarField(grid, data)
 
         # Fall back to parent implementation
         return create_initial_condition(grid, ic_type, ic_params)
+
+    def get_equations_for_metadata(
+        self, parameters: dict[str, float]
+    ) -> dict[str, str]:
+        """Get equations with parameter values substituted."""
+        a = parameters.get("a", 0.03)
+        rhs = "-laplace(u) - laplace(laplace(u)) - gradient_squared(u)"
+        if a > 0:
+            rhs += f" - {a} * u"
+        return {"u": rhs}

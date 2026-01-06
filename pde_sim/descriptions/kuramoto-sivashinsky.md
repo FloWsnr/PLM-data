@@ -1,97 +1,95 @@
 # Kuramoto-Sivashinsky Equation
 
-## Mathematical Formulation
+A fourth-order PDE exhibiting spatiotemporal chaos - one of the simplest equations known to produce turbulent-like dynamics with characteristic coherent wavelengths.
 
-The Kuramoto-Sivashinsky equation:
+## Description
 
-$$\frac{\partial u}{\partial t} = -\nabla^2 u - \nu \nabla^4 u - \frac{1}{2}|\nabla u|^2$$
+The Kuramoto-Sivashinsky (KS) equation was independently derived in the late 1970s by Yoshiki Kuramoto (studying phase turbulence in chemical oscillations) and Gregory Sivashinsky (analyzing flame front instabilities). It has become the canonical example of a simple PDE that generates spatiotemporal chaos.
 
-In 1D:
-$$\frac{\partial u}{\partial t} = -\frac{\partial^2 u}{\partial x^2} - \nu\frac{\partial^4 u}{\partial x^4} - \frac{1}{2}\left(\frac{\partial u}{\partial x}\right)^2$$
+The equation arises in several physical contexts:
+- **Flame fronts**: Describes the wrinkling and cellular instabilities of laminar flames
+- **Thin film flows**: Models the instability of liquid films flowing down inclined planes
+- **Chemical oscillations**: Phase dynamics in reaction-diffusion systems
+- **Plasma physics**: Edge turbulence in tokamaks
 
-where:
-- $u$ is the field variable (e.g., flame front position)
-- $\nu$ is the fourth-order diffusion coefficient
+Key mathematical features:
+- **Negative diffusion** ($-\nabla^2 u$): Creates short-wavelength instability (energy injection)
+- **Hyperdiffusion** ($-\nabla^4 u$): Provides large-wavenumber damping (energy dissipation)
+- **Nonlinearity** ($-|\nabla u|^2$): Transfers energy between scales
 
-## Physical Background
+The balance between destabilizing and stabilizing mechanisms produces chaos with a characteristic wavelength - the patterns are irregular but not random. The KS equation has a finite-dimensional global attractor, meaning the infinite-dimensional dynamics effectively reduce to a finite number of "active" modes.
 
-The equation describes:
-1. **Flame fronts**: Wrinkled flame propagation
-2. **Thin film flows**: Falling liquid films
-3. **Crystal growth**: Interface instabilities
+## Equations
 
-The terms represent:
-- $-\nabla^2 u$: Destabilizing (negative diffusion)
-- $-\nu\nabla^4 u$: Stabilizing at short wavelengths
-- $-|\nabla u|^2/2$: Nonlinear saturation
+The standard Kuramoto-Sivashinsky equation:
 
-## Parameters
+$$\frac{\partial u}{\partial t} = -\nabla^2 u - \nabla^4 u - |\nabla u|^2$$
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Hyperviscosity | $\nu$ | 4th-order diffusion | 0.1 - 2 |
+Using the product rule and introducing an auxiliary variable $v = \nabla^2 u$, this is reformulated as:
 
-## Linear Stability
+$$\frac{\partial u}{\partial t} = -\nabla \cdot \left[ (1+u) \nabla u + \nabla v \right] + u v - a u$$
 
-Growth rate of mode $k$:
-$$\sigma(k) = k^2 - \nu k^4$$
+with the algebraic constraint:
+$$v = \nabla^2 u$$
 
-- Maximum growth at $k_* = 1/\sqrt{2\nu}$
-- Unstable for $0 < k < 1/\sqrt{\nu}$
-- Most unstable wavelength: $\lambda_* = 2\pi\sqrt{2\nu}$
+Where:
+- $u$ represents the perturbation from a flat state (e.g., flame height)
+- $-\nabla^2 u$ is the destabilizing negative diffusion
+- $-\nabla^4 u$ is the stabilizing fourth-order dissipation
+- $-|\nabla u|^2$ is the nonlinear advection/steepening term
+- $a$ is a small damping coefficient (numerical stabilization)
 
-## Spatiotemporal Chaos
+## Default Config
 
-The Kuramoto-Sivashinsky equation is a **canonical model for chaos**:
-- Extensive chaos: Complexity grows with system size
-- No simple attractors: Irregular, aperiodic dynamics
-- Statistical stationarity: Well-defined mean properties
-- Sensitive dependence: Exponential divergence of trajectories
+```yaml
+solver: euler
+dt: 0.001
+dx: 0.5
+domain_size: 150
 
-## Lyapunov Spectrum
+boundary_x: periodic
+boundary_y: periodic
 
-The equation has:
-- Positive Lyapunov exponents (chaos)
-- Extensive entropy: $h \propto L$ (system size)
-- Kaplan-Yorke dimension grows with $L$
+parameters:
+  a: 0.03   # damping coefficient (small, for numerical stability)
+```
 
-## Flame Front Interpretation
+## Parameter Variants
 
-For flame propagation, $u$ represents the flame height:
-- Flame naturally unstable (Darrieus-Landau)
-- Thermal diffusion stabilizes short waves
-- Nonlinearity from kinematic effects
+### KuramotoSivashinsky (2D)
+Standard two-dimensional simulation:
+- `domain_size = 150`
+- `dt = 0.001`
+- `a = 0.03` (slight damping)
+- Initial condition: constant value with localized perturbations
+- 2D patterns with cellular/turbulent structures
 
-## Statistical Properties
+### KuramotoSivashinsky3D
+Surface plot visualization:
+- Same parameters as 2D
+- `plotType = "surface"` for 3D height visualization
+- Shows the turbulent surface more intuitively
 
-Despite chaos, statistical properties are well-defined:
-- Mean: $\langle u \rangle = 0$
-- Variance: $\langle u^2 \rangle$ finite
-- Correlation length: Finite
-- Power spectrum: Characteristic shape
+### Chaos Characteristics
 
-## Applications
+The KS equation exhibits:
+- **Coherent wavelengths**: Despite chaos, patterns have characteristic size
+- **Period doubling route to chaos**: As domain size increases
+- **Finite-dimensional attractor**: Dimension scales with domain length
+- **Sensitive dependence**: Butterfly effect in initial conditions
 
-1. **Combustion**: Flame front dynamics
-2. **Plasma physics**: Drift wave turbulence
-3. **Interfacial flows**: Film instabilities
-4. **Phase turbulence**: Oscillator arrays
-5. **Nonlinear dynamics**: Chaos studies
+### Domain Size Effects
 
-## Numerical Considerations
-
-- **4th-order spatial**: Stiff equation
-- **Implicit methods**: Recommended for efficiency
-- **Long integration**: Needed for statistics
-- **Large domains**: Required for extensive chaos
-
-## Historical Development
-
-- Kuramoto (1978): Phase turbulence in chemical oscillators
-- Sivashinsky (1977): Flame front dynamics
+| Domain Length L | Typical Behavior |
+|-----------------|------------------|
+| L < 10 | Trivial/steady solutions |
+| L ~ 20 | Periodic or quasiperiodic |
+| L ~ 30-50 | Period-doubling bifurcations |
+| L > 60 | Full spatiotemporal chaos |
 
 ## References
 
-- Kuramoto, Y. (1978). *Diffusion-Induced Chaos in Reaction Systems*
-- Sivashinsky, G.I. (1977). *Nonlinear analysis of hydrodynamic instability in laminar flames*
-- Hyman, J.M. & Nicolaenko, B. (1986). *The Kuramoto-Sivashinsky equation*
+- Kuramoto, Y. (1978). "Diffusion-Induced Chaos in Reaction Systems" - Prog. Theor. Phys. Suppl. 64:346
+- Sivashinsky, G.I. (1977). "Nonlinear analysis of hydrodynamic instability in laminar flames" - Acta Astronautica 4:1177
+- Manneville, P. (1985). "Liapounov exponents for the Kuramoto-Sivashinsky model" - Macroscopic Modelling of Turbulent Flows
+- Cvitanovic, P. et al. (2009). "State space geometry of chaotic Kuramoto-Sivashinsky flow" - arXiv:0709.2944

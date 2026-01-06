@@ -1,106 +1,95 @@
 # Swift-Hohenberg Equation
 
-## Mathematical Formulation
+A canonical model for pattern formation near criticality, exhibiting stripes, hexagons, and remarkably stable localised structures through subcritical bifurcations.
 
-The Swift-Hohenberg equation for pattern formation:
+## Description
 
-$$\frac{\partial u}{\partial t} = ru - (k_0^2 + \nabla^2)^2 u + g_2 u^2 + g_3 u^3 + g_5 u^5$$
+The Swift-Hohenberg equation was introduced in 1977 by Jack Swift and Pierre Hohenberg as a simplified model for Rayleigh-Benard convection near the onset of instability. It has since become the canonical "normal form" equation for studying pattern formation, particularly near a Turing-type bifurcation.
 
-Expanding the squared operator:
-$$\frac{\partial u}{\partial t} = ru - k_0^4 u - 2k_0^2 \nabla^2 u - \nabla^4 u + g_2 u^2 + g_3 u^3 + g_5 u^5$$
+The equation is notable for several key features:
+- **Pattern selection**: Depending on the signs of parameters r, a, and b, the system can produce stripes, hexagons, squares, or more complex patterns
+- **Subcriticality**: When r < 0, a > 0, and b < 0, the system enters a subcritical regime where both patterned states and the homogeneous state u=0 are stable
+- **Localised solutions**: In subcritical regimes, the system supports stable localised patterns (spots, patches of stripes, or quasipatterns) that decay to the background
+- **Homoclinic snaking**: Localised solutions exhibit "snaking" in parameter space - infinitely many coexisting localised states of different widths
 
-where:
+The Swift-Hohenberg equation serves as the amplitude equation for systems near a Hopf bifurcation and is generic for any pattern-forming system near threshold. Its simplicity makes it analytically tractable while still capturing rich phenomenology observed in fluid convection, chemical reactions, and biological pattern formation.
+
+## Equations
+
+The Swift-Hohenberg equation is a fourth-order PDE:
+
+$$\frac{\partial u}{\partial t} = r u - (k_c^2 + \nabla^2)^2 u + a u^2 + b u^3 + c u^5$$
+
+Expanding the operator, this becomes:
+
+$$\frac{\partial u}{\partial t} = r u - k_c^4 u - 2 k_c^2 \nabla^2 u - \nabla^4 u + a u^2 + b u^3 + c u^5$$
+
+Where:
 - $u$ is the pattern amplitude
-- $r$ is the control parameter (bifurcation parameter)
-- $k_0$ is the critical wavenumber
-- $g_2, g_3, g_5$ are nonlinear coefficients
+- $r$ is the control/bifurcation parameter (distance from onset)
+- $k_c$ is the critical wavenumber (sets the pattern wavelength)
+- $a$ controls quadratic nonlinearity (breaks up-down symmetry, enables hexagons)
+- $b$ controls cubic nonlinearity (saturation)
+- $c$ controls quintic nonlinearity (needed when b > 0 for stability)
 
-For stability, we need $g_5 < 0$ (or $g_3 < 0$ if $g_5 = 0$).
+**Stability requirement**: $c < 0$ (or $b < 0$ if $c = 0$) for bounded solutions.
 
-## Physical Background
+In the simulation, the fourth-order equation is decomposed using an auxiliary variable $v = \nabla^2 u$ via cross-diffusion:
 
-The Swift-Hohenberg equation is an **amplitude equation** derived from Rayleigh-Bénard convection near onset. It captures the universal features of pattern-forming instabilities.
+$$\frac{\partial u}{\partial t} = (r-1)u - 2v + a u^2 + b u^3 + c u^5$$
 
-Key features:
-- **Band of unstable modes**: Wavenumbers near $k_0$ grow
-- **Wavenumber selection**: Preferred pattern wavelength $\lambda = 2\pi/k_0$
-- **Nonlinear saturation**: Cubic term limits growth
+with the algebraic constraint relating $v$ and diffusive coupling.
 
-## Parameters
+## Default Config
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Control parameter | $r$ | Distance from onset | -1 to 1 |
-| Critical wavenumber | $k_0$ | Selected wavelength | 0.1 - 5 |
-| Quadratic nonlinearity | $g_2$ | Breaks up/down symmetry | -5 to 5 |
-| Cubic nonlinearity | $g_3$ | Saturation (< 0 if $g_5=0$) | -5 to 5 |
-| Quintic nonlinearity | $g_5$ | Higher-order saturation (< 0 for stability) | -5 to 0 |
+```yaml
+solver: euler
+dt: 0.0005
+dx: 1 (inferred from domainScale/resolution)
+domain_size: 100 (default) or 150 (localised)
 
-## Linear Stability
+boundary_x: periodic
+boundary_y: periodic
 
-The growth rate of mode $k$ is:
-$$\sigma(k) = r - (k_0^2 - k^2)^2$$
+parameters:
+  r: 0.1     # [-2, 2] - bifurcation parameter
+  a: 1       # [-2, 2] - quadratic coefficient
+  b: 1       # [-2, 2] - cubic coefficient
+  c: -1      # quintic coefficient (must be negative)
+  D: 1       # effective diffusion scale (k_c = 1)
+```
 
-- Maximum at $k = k_0$: $\sigma_{\max} = r$
-- Unstable when $r > 0$: Modes near $k_0$ grow
-- Stable when $r < 0$: All modes decay
+## Parameter Variants
 
-## Pattern Selection
+### swiftHohenberg (Standard)
+Supercritical pattern formation:
+- `r = 0.1` (above threshold)
+- `a = 1`, `b = 1`, `c = -1`
+- Produces domain-filling stripe or hexagonal patterns
+- Initial condition: u = 0 with perturbations
 
-Depending on nonlinearities:
+### swiftHohenbergLocalised
+Subcritical regime supporting localised structures:
+- `r = -0.28` (below threshold - bistable regime)
+- `a = 1.6`, `b = -1`, `c = -1`
+- `domain_size = 150`
+- Supports stable localised patches of pattern
+- Different symmetries accessible via parameter P:
+  - P = 1: D4 symmetric localised structure
+  - P = 2: Hexagonal (D6) localised structure
+  - P = 3: D12 symmetric localised structure
 
-**$g_2 = 0$** (symmetric):
-- Stripes are preferred
-- Up-down symmetry preserved
+### Key Behavioral Regimes
 
-**$g_2 \neq 0$** (asymmetric):
-- Hexagons can form
-- Up-hexagons vs down-hexagons
-
-## Pattern Types
-
-| Pattern | Condition |
-|---------|-----------|
-| Stripes | Generic near onset |
-| Hexagons | With quadratic nonlinearity |
-| Squares | Special parameter values |
-| Quasipatterns | Near certain boundaries |
-| Localised patterns | Subcritical regime ($r<0$, $g_2>0$, $g_3<0$) |
-
-## Subcriticality and Localised Solutions
-
-When $r < 0$, $g_2 > 0$, and $g_3 < 0$ (with $g_5 < 0$ for stability), the system can be in a subcritical regime that supports both stable patterned states and the stable homogeneous state $u = 0$. This enables:
-
-- **Multistability**: Coexistence of patterned and uniform states
-- **Localised solutions**: Patterns that decay to $u = 0$ in most of the domain
-- **Snaking bifurcations**: Complex bifurcation structure
-
-The quintic term $g_5 u^5$ is essential for stabilizing subcritical patterns when $g_3$ alone is insufficient.
-
-## Applications
-
-1. **Convection patterns**: Bénard cells
-2. **Crystal surfaces**: Growth patterns
-3. **Optical systems**: Laser beam patterns
-4. **Chemical reactions**: Spatial patterns
-5. **Biological systems**: Morphogenesis models
-
-## Variational Structure
-
-For $g_2 = 0$, the equation is a gradient flow:
-$$\frac{\partial u}{\partial t} = -\frac{\delta \mathcal{F}}{\delta u}$$
-
-with Lyapunov functional:
-$$\mathcal{F}[u] = \int \left[-\frac{r}{2}u^2 + \frac{1}{2}[(k_0^2 + \nabla^2)u]^2 - \frac{g_3}{4}u^4 - \frac{g_5}{6}u^6\right] dx$$
-
-## Numerical Considerations
-
-- **4th-order spatial**: Requires implicit methods or very small $\Delta t$
-- **Stiff equation**: Explicit stability $\Delta t \sim (\Delta x)^4$
-- **Large domains**: Needed for pattern selection to operate
+| Regime | r | a | b | Behavior |
+|--------|---|---|---|----------|
+| Supercritical | r > 0 | any | b < 0 | Domain-filling patterns |
+| Subcritical bistable | r < 0 | a > 0 | b < 0 | Localised solutions possible |
+| Hexagon-forming | any | a != 0 | any | Up-down asymmetric patterns |
+| Stripe-only | any | a = 0 | b < 0 | Symmetric roll patterns |
 
 ## References
 
-- Swift, J. & Hohenberg, P.C. (1977). *Hydrodynamic fluctuations at the convective instability*
-- Cross, M.C. & Hohenberg, P.C. (1993). *Pattern formation outside of equilibrium*
-- Hoyle, R. (2006). *Pattern Formation*
+- Swift, J. & Hohenberg, P.C. (1977). "Hydrodynamic fluctuations at the convective instability" - Phys. Rev. A 15:319
+- Burke, J. & Knobloch, E. (2006). "Localized states in the generalized Swift-Hohenberg equation"
+- Hill, D. et al. (2023). "Symmetric localised solutions of the Swift-Hohenberg equation" - IOP Nonlinearity

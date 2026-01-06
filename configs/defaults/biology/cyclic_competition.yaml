@@ -1,28 +1,28 @@
 preset: cyclic-competition
 parameters:
-  Du: 0.5  # Diffusion for species u
-  Dv: 0.5  # Diffusion for species v
-  Dw: 0.5  # Diffusion for species w
-  a: 0.5  # Weak competition coefficient (a < 1)
-  b: 1.5  # Strong competition coefficient (b > 1)
+  a: 0.8
+  b: 1.9
+  Du: 2.0
+  Dv: 0.5
+  Dw: 0.5
 init:
   type: random-uniform
   params:
     low: 0.1
-    high: 0.6
-solver: scipy
+    high: 0.5
+solver: euler
 backend: numba
-adaptive: true
-dt: 0.1
+adaptive: false
+dt: 0.005
 resolution: 128
 bc:
-  x: periodic
-  y: periodic
+  x: neumann
+  y: neumann
 output:
   path: ./output
   num_frames: 100
   colormap: viridis
-  field_to_plot: u  # Show single species
+  field_to_plot: u
 seed: 42
-domain_size: 5.0
-t_end: 50.0  # Time for spiral formation
+domain_size: 500.0
+t_end: 100.0

@@ -1,28 +1,28 @@
 preset: fisher-kpp
 parameters:
-  D: 0.01  # Lower diffusion for slower spreading
-  r: 1.5  # Higher growth rate for faster wave formation
+  D: 1.0
+  r: 1.0
   K: 1.0
 init:
   type: gaussian-blobs
   params:
     num_blobs: 2
-    amplitude: 0.95
-    width: 0.05  # Smaller blobs = more visible spreading
-    background: 0.0  # Start with empty background
-solver: scipy
+    amplitude: 1.0
+    width: 0.05
+    background: 0.0
+solver: euler
 backend: numba
-adaptive: true
-dt: 0.1
+adaptive: false
+dt: 0.0005
 resolution: 128
 bc:
-  x: periodic
-  y: periodic
+  x: neumann
+  y: neumann
 output:
   path: ./output
   num_frames: 100
   colormap: viridis
   field_to_plot: u
 seed: 42
-domain_size: 5.0  # Larger domain to see spreading
-t_end: 8.0  # Capture the spreading wave phase
+domain_size: 100.0
+t_end: 50.0
