@@ -36,9 +36,11 @@ Where:
 - $W_t$ is an approximation of a Brownian sheet (spatiotemporal white noise)
 - The noise is multiplicative (multiplied by $u$)
 
-**Noise implementation**:
-The white noise term is scaled as:
-$$\frac{dW_t}{dt} \propto \frac{1}{\sqrt{\Delta t \cdot \Delta x^N}} \xi(t, \mathbf{x})$$
+**Multiplicative noise implementation** (Itô interpretation):
+The noise term $\sigma u \, dW_t$ is implemented as true multiplicative noise, where the noise amplitude scales with the local value of $u$. This creates state-dependent fluctuations that can induce qualitatively different behavior than additive noise.
+
+The spatiotemporal white noise is scaled as:
+$$dW_t \propto \sqrt{\frac{\Delta t}{\Delta x^N}} \xi(t, \mathbf{x})$$
 
 where $\xi$ is a standard normal random variable independent at each grid point and timestep, and $N$ is the spatial dimension.
 
