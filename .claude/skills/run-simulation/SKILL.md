@@ -1,6 +1,6 @@
 ---
-name: Run Simulation
-description: Run and analyze one or multiple PDE simulations.
+name: Analyze PDE Simulation
+description: Run and analyze one or multiple PDE simulations. Use for every simulation.
 ---
 
 Before running simulations, ensure that you are using the correct python environment with the necessary dependencies installed.
