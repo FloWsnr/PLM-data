@@ -48,3 +48,23 @@ class TestNonlinearBeamPDE:
 
         assert isinstance(state, ScalarField)
         assert np.isfinite(state.data).all()
+
+    def test_short_simulation(self, small_grid):
+        """Test running a short simulation."""
+        preset = get_pde_preset("nonlinear-beam")
+        # Use smaller stiffness parameters for stability
+        params = {"E_star": 0.0001, "Delta_E": 1.0, "eps": 0.1}
+        # Use periodic BC to match the periodic grid
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        state = preset.create_initial_state(
+            small_grid, "default", {"amplitude": 0.1, "seed": 42}
+        )
+
+        # Run a very short simulation with tiny timestep (fourth-order PDE is stiff)
+        result = pde.solve(state, t_range=0.0001, dt=1e-7)
+
+        # Check that result is finite and valid
+        assert result is not None
+        assert np.isfinite(result.data).all(), "Simulation produced NaN or Inf values"

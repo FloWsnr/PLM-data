@@ -61,40 +61,49 @@ class TestSwiftHohenbergPDE:
         assert np.isfinite(state.data).all()
 
     def test_short_simulation(self, small_grid):
-        """Test that PDE and state can be created for simulation.
+        """Test running a short simulation.
 
         Swift-Hohenberg has 4th order terms making it numerically stiff.
-        We just verify creation works correctly.
         """
+        # Use larger domain for stability
+        sh_grid = CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
+
         preset = get_pde_preset("swift-hohenberg")
-        params = {"r": 0.1, "a": 0.0, "b": -1.0, "c": 0.0, "D": 1.0}
+        params = {"r": 0.1, "a": 0.0, "b": -1.0, "c": -0.1, "D": 1.0}
         bc = {"x": "periodic", "y": "periodic"}
 
-        pde = preset.create_pde(params, bc, small_grid)
+        pde = preset.create_pde(params, bc, sh_grid)
         state = preset.create_initial_state(
-            small_grid, "random-uniform", {"low": -0.05, "high": 0.05}
+            sh_grid, "random-uniform", {"low": -0.05, "high": 0.05, "seed": 42}
         )
 
-        # Check that PDE and state are created correctly
-        assert pde is not None
-        assert state is not None
-        assert np.isfinite(state.data).all()
+        # Run a very short simulation with tiny timestep (fourth-order PDE is stiff)
+        result = pde.solve(state, t_range=0.001, dt=1e-6)
+
+        # Check that result is finite and valid
+        assert result is not None
+        assert np.isfinite(result.data).all(), "Simulation produced NaN or Inf values"
 
     def test_subcritical_with_quintic(self, small_grid):
         """Test subcritical regime with quintic term.
 
         Parameters for subcritical localised patterns: r<0, a>0, b<0, c<0.
         """
+        # Use larger domain for stability
+        sh_grid = CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
+
         preset = get_pde_preset("swift-hohenberg")
         params = {"r": -0.1, "a": 0.5, "b": -1.0, "c": -0.1, "D": 1.0}
         bc = {"x": "periodic", "y": "periodic"}
 
-        pde = preset.create_pde(params, bc, small_grid)
+        pde = preset.create_pde(params, bc, sh_grid)
         state = preset.create_initial_state(
-            small_grid, "random-uniform", {"low": -0.05, "high": 0.05}
+            sh_grid, "random-uniform", {"low": -0.05, "high": 0.05, "seed": 42}
         )
 
-        # Check that PDE and state are created correctly
-        assert pde is not None
-        assert state is not None
-        assert np.isfinite(state.data).all()
+        # Run a very short simulation with tiny timestep (fourth-order PDE is stiff)
+        result = pde.solve(state, t_range=0.001, dt=1e-6)
+
+        # Check that result is finite and valid
+        assert result is not None
+        assert np.isfinite(result.data).all(), "Simulation produced NaN or Inf values"

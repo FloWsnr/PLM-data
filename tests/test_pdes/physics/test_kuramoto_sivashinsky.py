@@ -41,19 +41,21 @@ class TestKuramotoSivashinskyPDE:
 
     def test_short_simulation(self, small_grid):
         """Test running a short simulation."""
-        # Create a smaller grid for stability (KS is very stiff)
-        small_ks_grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
+        # KS equation is fourth-order and very stiff - use coarse grid and tiny dt
+        ks_grid = CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
 
         preset = get_pde_preset("kuramoto-sivashinsky")
-        params = {"nu": 1.0}
+        params = {"a": 0.1}  # Use damping for stability
         bc = {"x": "periodic", "y": "periodic"}
 
-        pde = preset.create_pde(params, bc, small_ks_grid)
+        pde = preset.create_pde(params, bc, ks_grid)
         state = preset.create_initial_state(
-            small_ks_grid, "default", {"amplitude": 0.001}
+            ks_grid, "default", {"amplitude": 0.01, "seed": 42}
         )
 
-        # Check that PDE and state are created correctly
-        assert pde is not None
-        assert state is not None
-        assert np.isfinite(state.data).all()
+        # Run a very short simulation with tiny timestep (fourth-order PDE is stiff)
+        result = pde.solve(state, t_range=0.001, dt=1e-6)
+
+        # Check that result is finite and valid
+        assert result is not None
+        assert np.isfinite(result.data).all(), "Simulation produced NaN or Inf values"
