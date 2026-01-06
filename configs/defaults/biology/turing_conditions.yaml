@@ -1,19 +1,20 @@
 preset: turing-conditions
 parameters:
-  Du: 0.01  # Small activator diffusion
-  Dv: 0.5  # Large inhibitor diffusion (Dv >> Du)
-  a: 1.5  # Higher growth for faster instability
-  d: 0.4  # Inhibitor decay
+  D: 30.0   # Inhibitor diffusion (from visualpde TuringNotEnoughRD)
+  a: 1.75   # Kinetic parameter
+  b: 18.0   # Coupling strength
+  c: 2.0    # Kinetic parameter
+  d: 5.0    # Kinetic parameter
+  e: 0.02   # Cubic damping
 init:
   type: random-gaussian
   params:
-    mean: 0.5
-    std: 0.15  # Small perturbation to seed Turing instability
-solver: rk4  # Use explicit solver - more stable for this PDE
+    mean: 0.0
+    std: 0.05  # Small perturbation to trigger instability
+solver: scipy
 backend: numba
 adaptive: true
-tolerance: 0.001  # Looser tolerance for speed
-dt: 0.001  # Small dt needed for stability
+dt: 0.002  # From visualpde
 resolution: 128
 bc:
   x: periodic
@@ -22,7 +23,7 @@ output:
   path: ./output
   num_frames: 100
   colormap: turbo
-  field_to_plot: u  # Show activator patterns
+  field_to_plot: u
 seed: 42
-domain_size: 5.0
-t_end: 50.0  # Longer time for Turing patterns to develop
+domain_size: 64.0  # domainScale=100, spatialStep=0.5 -> 100*0.5=50, use ~64
+t_end: 200.0  # Time to see transient patterns form AND decay to uniform

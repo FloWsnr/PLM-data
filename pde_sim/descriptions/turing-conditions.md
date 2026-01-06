@@ -1,93 +1,69 @@
-# Turing Instability Demonstration
+# Turing Instabilities Are Not Enough
+
+## Overview
+
+This system demonstrates that **Turing instabilities alone do not guarantee stable pattern formation**. While linear stability theory predicts pattern-forming instabilities, the presence of multiple equilibria can cause transient patterns to decay to a uniform state.
 
 ## Mathematical Formulation
 
-A system designed to demonstrate Turing pattern conditions:
-
-$$\frac{\partial u}{\partial t} = D_u \nabla^2 u + u(a - u) - uv$$
-$$\frac{\partial v}{\partial t} = D_v \nabla^2 v + uv - dv$$
+$$\frac{\partial u}{\partial t} = \nabla^2 u + u - v - \epsilon u^3$$
+$$\frac{\partial v}{\partial t} = D \nabla^2 v + av(v + c)(v - d) + bu - \epsilon v^3$$
 
 where:
-- $u$ is the activator
-- $v$ is the inhibitor
-- $D_u$ is activator diffusion (small)
-- $D_v$ is inhibitor diffusion (large)
-- $a$ is activator growth rate
-- $d$ is inhibitor decay rate
+- $u$ is the activator field
+- $v$ is the inhibitor field
+- $D$ is the inhibitor diffusion coefficient (large)
+- $a, b, c, d$ are kinetic parameters
+- $\epsilon$ is the cubic damping coefficient
+
+## Key Insight
+
+This system satisfies all classical Turing instability conditions:
+1. Stable uniform steady state without diffusion
+2. Differential diffusion ($D \gg 1$)
+3. Appropriate cross-activation/inhibition kinetics
+
+**However**, the system has multiple homogeneous equilibria. A Turing instability around one equilibrium generates transient patterns, but these patterns eventually decay as the system approaches a different stable uniform state.
 
 ## Physical Background
 
-This system is designed to clearly illustrate **Turing's mechanism**:
+Linear stability analysis can predict when small perturbations grow, but it cannot determine:
+- The **final amplitude** of patterns
+- Whether patterns **persist** or are transient
+- The **global stability** of patterned states
 
-1. **Local activation**: $u(a-u)$ term provides growth
-2. **Cross-inhibition**: $-uv$ limits activator
-3. **Inhibitor production**: $+uv$ from activator presence
-4. **Inhibitor decay**: $-dv$ natural turnover
-5. **Differential diffusion**: $D_v \gg D_u$ is essential
-
-## Turing's Original Insight (1952)
-
-Alan Turing showed that diffusion, usually a stabilizing force, can **destabilize** uniform states:
-
-> "A system of chemical substances, called morphogens, reacting together and diffusing through a tissue, is adequate to account for the main phenomena of morphogenesis."
-
-## Conditions for Turing Instability
-
-**Without diffusion** (ODE): Stable steady state
-- $\text{tr}(J) < 0$: Eigenvalues have negative real parts
-- $\det(J) > 0$: Both eigenvalues have same sign
-
-**With diffusion** (PDE): Instability possible
-- At some wavenumber $k$, eigenvalues become positive
-- Requires $D_v/D_u$ sufficiently large
-- Pattern wavelength $\lambda \sim 2\pi/k_c$
+This demonstration shows that satisfying Turing conditions is **necessary but not sufficient** for persistent pattern formation.
 
 ## Parameters
 
-| Parameter | Symbol | Description | Typical Range |
-|-----------|--------|-------------|---------------|
-| Activator diffusion | $D_u$ | Must be small | 0.005 - 0.1 |
-| Inhibitor diffusion | $D_v$ | Must be large | 0.1 - 5 |
-| Activator growth | $a$ | Self-enhancement | 0.1 - 3 |
-| Inhibitor decay | $d$ | Natural turnover | 0.1 - 3 |
+| Parameter | Symbol | Default | Description |
+|-----------|--------|---------|-------------|
+| Diffusion | $D$ | 30 | Inhibitor diffusion (large) |
+| Kinetic a | $a$ | 1.75 | Controls v-nullcline shape |
+| Coupling | $b$ | 18 | u-to-v coupling strength |
+| Kinetic c | $c$ | 2.0 | Shifts v-nullcline |
+| Kinetic d | $d$ | 5.0 | v-nullcline root |
+| Damping | $\epsilon$ | 0.02 | Cubic saturation |
 
-## Critical Diffusion Ratio
+## Expected Dynamics
 
-For pattern formation:
-$$\frac{D_v}{D_u} > \left(\sqrt{f_u} + \sqrt{-g_v}\right)^2 / \left(\sqrt{-f_v} + \sqrt{g_u}\right)^2$$
+1. **Initial**: Small random perturbations around uniform state
+2. **Early**: Turing instability amplifies perturbations
+3. **Transient**: Spot/stripe patterns emerge and grow
+4. **Late**: Patterns decay toward a different uniform equilibrium
 
-where $f_u, f_v, g_u, g_v$ are Jacobian elements of the kinetics.
+The transient patterns demonstrate that the Turing mechanism is active, but the global dynamics prevent persistent patterning.
 
-Typically requires $D_v/D_u > 10-100$.
+## Implications
 
-## Pattern Wavelength
-
-The selected wavenumber:
-$$k_c^2 = \sqrt{\frac{f_u g_v - f_v g_u}{D_u D_v}}$$
-
-Pattern wavelength: $\lambda = 2\pi/k_c$
-
-## Emerging Patterns
-
-Near onset: Regular patterns
-- **Stripes**: Rolls with one preferred direction
-- **Hexagons**: Two-dimensional lattice
-- **Squares**: At special parameter values
-
-Far from onset: Irregular patterns
-- **Labyrinths**: Curved stripes
-- **Spots**: Isolated peaks
-- **Mixed**: Coexisting patterns
-
-## Applications
-
-1. **Embryology**: Body plan formation
-2. **Chemistry**: Belousov-Zhabotinsky patterns
-3. **Ecology**: Vegetation patterns
-4. **Materials**: Self-organized nanostructures
+This example illustrates important limitations of linear stability theory:
+- **Local vs global**: Instability around one equilibrium doesn't guarantee patterns
+- **Multiple equilibria**: Systems can "escape" to other steady states
+- **Nonlinear effects**: Full dynamics may differ from linearized predictions
 
 ## References
 
+- Krause, A.L. et al. (2023). *Turing instabilities are not enough to ensure pattern formation*. arXiv:2308.15311
 - Turing, A.M. (1952). *The Chemical Basis of Morphogenesis*
 - Murray, J.D. (2003). *Mathematical Biology II*
-- Cross, M.C. & Hohenberg, P.C. (1993). *Pattern formation outside of equilibrium*
+- visualpde.com - Interactive PDE simulations

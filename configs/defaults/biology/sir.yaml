@@ -1,15 +1,13 @@
 preset: sir
 parameters:
-  beta: 0.8  # Lower infection rate for slower spread
-  gamma: 0.3  # Recovery rate
-  D: 0.002  # Very low diffusion for visible wave front
+  beta: 1.5   # High infection rate for visible wave (R0 = 15)
+  gamma: 0.1  # Low recovery for sustained infection front
+  D: 0.01     # Low diffusion for sharp wave front
 init:
-  type: gaussian-blobs
+  type: localized
   params:
-    num_blobs: 1  # Single infection source
-    amplitude: 0.3
-    width: 0.03  # Very small initial infection
-    background: 0.0
+    location: corner
+    size: 5  # Larger initial infection spot
 solver: scipy
 backend: numba
 adaptive: true
@@ -24,5 +22,5 @@ output:
   colormap: hot
   field_to_plot: i
 seed: 42
-domain_size: 8.0  # Larger domain to see spreading
-t_end: 50.0  # Longer time for slower epidemic
+domain_size: 10.0  # Large domain to see wave propagation
+t_end: 30.0  # Time for wave to traverse domain

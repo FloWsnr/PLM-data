@@ -1,4 +1,8 @@
-"""Demonstration of Turing pattern conditions."""
+"""Demonstration that Turing instabilities are not enough for pattern formation.
+
+Based on: "Turing instabilities are not enough to ensure pattern formation"
+https://arxiv.org/abs/2308.15311
+"""
 
 from typing import Any
 
@@ -11,18 +15,20 @@ from .. import register_pde
 
 @register_pde("turing-conditions")
 class TuringConditionsPDE(MultiFieldPDEPreset):
-    """Demonstration of Turing pattern conditions.
+    """Demonstration that Turing instabilities are not enough for patterns.
 
-    Two-species activator-inhibitor system with parameters
-    chosen to satisfy Turing instability conditions:
+    This system satisfies Turing instability conditions but the patterns
+    are transient - they eventually decay to a uniform equilibrium.
 
-        du/dt = Du * laplace(u) + f(u,v)
-        dv/dt = Dv * laplace(v) + g(u,v)
+        du/dt = laplace(u) + u - v - e*u³
+        dv/dt = D * laplace(v) + a*v*(v + c)*(v - d) + b*u - e*v³
 
-    where f = a * u - b * v and g = c * u - d * v (linearized)
-    Full: f = u * (a - u) - u * v,  g = u * v - d * v
+    The system has multiple equilibria. Turing instability around one
+    equilibrium can lead to transient patterns that eventually settle
+    to a different stable uniform state.
 
-    Turing conditions require Dv >> Du and specific kinetics.
+    Reference: "Turing instabilities are not enough to ensure pattern formation"
+    arXiv:2308.15311, visualpde.com
     """
 
     @property
@@ -30,44 +36,58 @@ class TuringConditionsPDE(MultiFieldPDEPreset):
         return PDEMetadata(
             name="turing-conditions",
             category="biology",
-            description="Turing instability demonstration",
+            description="Transient Turing patterns (instability not enough)",
             equations={
-                "u": "Du * laplace(u) + u * (a - u) - u * v",
-                "v": "Dv * laplace(v) + u * v - d * v",
+                "u": "laplace(u) + u - v - e * u**3",
+                "v": "D * laplace(v) + a * v * (v + c) * (v - d) + b * u - e * v**3",
             },
             parameters=[
                 PDEParameter(
-                    name="Du",
-                    default=0.01,
-                    description="Activator diffusion (small)",
-                    min_value=0.005,
-                    max_value=0.1,
-                ),
-                PDEParameter(
-                    name="Dv",
-                    default=1.0,
-                    description="Inhibitor diffusion (large)",
-                    min_value=0.1,
-                    max_value=5.0,
+                    name="D",
+                    default=30.0,
+                    description="Inhibitor diffusion coefficient",
+                    min_value=10.0,
+                    max_value=100.0,
                 ),
                 PDEParameter(
                     name="a",
-                    default=1.0,
-                    description="Activator growth rate",
-                    min_value=0.1,
+                    default=1.75,
+                    description="Kinetic parameter a",
+                    min_value=0.5,
                     max_value=3.0,
                 ),
                 PDEParameter(
+                    name="b",
+                    default=18.0,
+                    description="Coupling strength u to v",
+                    min_value=5.0,
+                    max_value=30.0,
+                ),
+                PDEParameter(
+                    name="c",
+                    default=2.0,
+                    description="Kinetic parameter c",
+                    min_value=0.5,
+                    max_value=5.0,
+                ),
+                PDEParameter(
                     name="d",
-                    default=0.5,
-                    description="Inhibitor decay rate",
-                    min_value=0.1,
-                    max_value=3.0,
+                    default=5.0,
+                    description="Kinetic parameter d",
+                    min_value=1.0,
+                    max_value=10.0,
+                ),
+                PDEParameter(
+                    name="e",
+                    default=0.02,
+                    description="Cubic damping coefficient",
+                    min_value=0.01,
+                    max_value=0.1,
                 ),
             ],
             num_fields=2,
             field_names=["u", "v"],
-            reference="Turing (1952) pattern formation",
+            reference="arXiv:2308.15311 - Turing instabilities not enough",
         )
 
     def create_pde(
@@ -76,15 +96,17 @@ class TuringConditionsPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        Du = parameters.get("Du", 0.01)
-        Dv = parameters.get("Dv", 1.0)
-        a = parameters.get("a", 1.0)
-        d = parameters.get("d", 0.5)
+        D = parameters.get("D", 30.0)
+        a = parameters.get("a", 1.75)
+        b = parameters.get("b", 18.0)
+        c = parameters.get("c", 2.0)
+        d = parameters.get("d", 5.0)
+        e = parameters.get("e", 0.02)
 
         return PDE(
             rhs={
-                "u": f"{Du} * laplace(u) + u * ({a} - u) - u * v",
-                "v": f"{Dv} * laplace(v) + u * v - {d} * v",
+                "u": f"laplace(u) + u - v - {e} * u**3",
+                "v": f"{D} * laplace(v) + {a} * v * (v + {c}) * (v - {d}) + {b} * u - {e} * v**3",
             },
             bc=self._convert_bc(bc),
         )
@@ -95,15 +117,13 @@ class TuringConditionsPDE(MultiFieldPDEPreset):
         ic_type: str,
         ic_params: dict[str, Any],
     ) -> FieldCollection:
-        """Create small perturbation around steady state."""
+        """Create small random perturbation to trigger Turing instability."""
         np.random.seed(ic_params.get("seed"))
-        noise = ic_params.get("noise", 0.05)
+        amplitude = ic_params.get("amplitude", 0.05)
 
-        # Near uniform with small perturbations
-        u_data = 0.5 + noise * np.random.randn(*grid.shape)
-        v_data = 0.5 + noise * np.random.randn(*grid.shape)
-        u_data = np.clip(u_data, 0.01, 2.0)
-        v_data = np.clip(v_data, 0.01, 2.0)
+        # Small random perturbations around zero
+        u_data = amplitude * np.random.randn(*grid.shape)
+        v_data = amplitude * np.random.randn(*grid.shape)
 
         u = ScalarField(grid, u_data)
         u.label = "u"

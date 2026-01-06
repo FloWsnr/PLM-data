@@ -1,12 +1,15 @@
 preset: allen-cahn
 parameters:
-  D: 0.01  # Minimum allowed diffusion for sharp fronts
-  a: 0.5  # Symmetric threshold
+  D: 0.01  # Minimum diffusion for sharp fronts
+  a: 0.5   # Symmetric threshold for balanced phase competition
 init:
-  type: random-uniform
+  type: gaussian-blobs
   params:
-    low: 0.2
-    high: 0.8  # Start near unstable equilibrium
+    num_blobs: 8
+    base_value: 0.0   # Background phase u=0
+    blob_value: 1.0   # Blob phase u=1
+    min_radius: 0.3
+    max_radius: 0.6
 solver: scipy
 backend: numba
 adaptive: true
@@ -21,5 +24,5 @@ output:
   colormap: coolwarm
   field_to_plot: u
 seed: 42
-domain_size: 2.0
-t_end: 10.0
+domain_size: 4.0  # Larger domain for multiple domains
+t_end: 5.0  # Shorter time to see coarsening dynamics
