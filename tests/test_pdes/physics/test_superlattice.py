@@ -1,4 +1,4 @@
-"""Tests for superlattice pattern formation PDE (coupled Brusselator + Lengyll-Epstein)."""
+"""Tests for superlattice pattern formation PDE (coupled Brusselator + Lengyel-Epstein)."""
 
 import numpy as np
 import pytest
@@ -43,10 +43,11 @@ class TestSuperlatticePDE:
         assert "c" in params
         assert "d" in params
         assert "alpha" in params
-        assert "D_u1" in params
-        assert "D_v1" in params
-        assert "D_u2" in params
-        assert "D_v2" in params
+        # New parameter names with underscores
+        assert "D_uone" in params
+        assert "D_utwo" in params
+        assert "D_uthree" in params
+        assert "D_ufour" in params
 
     def test_create_and_initial_state(self, small_grid):
         """Test that PDE and initial state can be created."""

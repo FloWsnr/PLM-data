@@ -35,8 +35,9 @@ class TestBurgersPDE:
         preset = get_pde_preset("burgers")
         params = preset.get_default_parameters()
 
-        assert "nu" in params
-        assert params["nu"] == 0.01
+        # New parameter name from reference
+        assert "epsilon" in params
+        assert params["epsilon"] == 0.05
 
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
@@ -60,7 +61,7 @@ class TestBurgersPDE:
     def test_short_simulation(self, small_grid):
         """Test running a short simulation."""
         preset = get_pde_preset("burgers")
-        params = {"nu": 0.1}  # Higher viscosity for stability
+        params = {"epsilon": 0.1}  # Higher viscosity for stability
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)

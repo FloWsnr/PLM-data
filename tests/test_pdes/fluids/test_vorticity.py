@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from pde import CartesianGrid, ScalarField
+from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
@@ -23,9 +23,10 @@ class TestVorticityPDE:
 
         assert meta.name == "vorticity"
         assert meta.category == "fluids"
-        assert meta.num_fields == 1
-        assert meta.field_names == ["w"]
-        assert len(meta.parameters) >= 1
+        assert meta.num_fields == 3
+        assert "omega" in meta.field_names
+        assert "psi" in meta.field_names
+        assert "S" in meta.field_names
 
     def test_get_default_parameters(self):
         """Test default parameters retrieval."""
@@ -33,7 +34,11 @@ class TestVorticityPDE:
         params = preset.get_default_parameters()
 
         assert "nu" in params
-        assert params["nu"] > 0
+        assert "epsilon" in params
+        assert "D" in params
+        assert params["nu"] == 0.05
+        assert params["epsilon"] == 0.05
+        assert params["D"] == 0.05
 
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
@@ -52,11 +57,12 @@ class TestVorticityPDE:
             small_grid, "vortex-pair", {"strength": 5.0, "radius": 0.1}
         )
 
-        assert isinstance(state, ScalarField)
-        assert state.data.shape == small_grid.shape
+        assert isinstance(state, FieldCollection)
+        assert len(state) == 3
+        omega = state[0]
         # Should have positive and negative regions (counter-rotating)
-        assert np.any(state.data > 0)
-        assert np.any(state.data < 0)
+        assert np.any(omega.data > 0)
+        assert np.any(omega.data < 0)
 
     def test_registered_in_registry(self):
         """Test that PDE is registered."""
@@ -75,4 +81,6 @@ class TestVorticityPDE:
         result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
         assert result is not None
-        assert np.isfinite(result.data).all()
+        assert isinstance(result, FieldCollection)
+        for field in result:
+            assert np.isfinite(field.data).all()

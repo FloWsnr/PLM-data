@@ -6,6 +6,8 @@ from pde import PDE, ScalarField, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
 from pde_sim.pdes.basic.heat import HeatPDE, InhomogeneousHeatPDE
+from pde_sim.pdes.basic.wave import WavePDE, AdvectionPDE, InhomogeneousWavePDE
+from pde_sim.pdes.basic.schrodinger import SchrodingerPDE, PlatePDE
 
 
 class TestHeatPDE:
@@ -21,33 +23,33 @@ class TestHeatPDE:
         assert meta.num_fields == 1
         assert "T" in meta.field_names
         assert len(meta.parameters) == 1
-        assert meta.parameters[0].name == "D"
+        assert meta.parameters[0].name == "D_T"
 
     def test_get_default_parameters(self):
         """Test getting default parameters."""
         pde = HeatPDE()
         defaults = pde.get_default_parameters()
 
-        assert "D" in defaults
-        assert defaults["D"] == 0.1
+        assert "D_T" in defaults
+        assert defaults["D_T"] == 1.0  # Updated default from reference
 
     def test_validate_parameters_valid(self):
         """Test parameter validation with valid params."""
         pde = HeatPDE()
         # Should not raise
-        pde.validate_parameters({"D": 0.5})
+        pde.validate_parameters({"D_T": 5.0})
 
     def test_validate_parameters_invalid(self):
         """Test parameter validation with invalid params."""
         pde = HeatPDE()
-        with pytest.raises(ValueError, match="D must be >="):
-            pde.validate_parameters({"D": 0.0001})
+        with pytest.raises(ValueError, match="D_T must be >="):
+            pde.validate_parameters({"D_T": 0.001})
 
     def test_create_pde(self, small_grid):
         """Test creating the PDE object."""
         pde_preset = HeatPDE()
         pde = pde_preset.create_pde(
-            parameters={"D": 0.5},
+            parameters={"D_T": 1.0},
             bc={"x": "periodic", "y": "periodic"},
             grid=small_grid,
         )
@@ -82,7 +84,7 @@ class TestHeatPDE:
         pde_preset = HeatPDE()
 
         # Use small diffusion coefficient for stability
-        params = {"D": 0.01}
+        params = {"D_T": 0.01}
         pde = pde_preset.create_pde(
             parameters=params,
             bc={"x": "periodic", "y": "periodic"},
@@ -130,6 +132,9 @@ class TestInhomogeneousHeatPDE:
         assert "D" in params  # diffusion coefficient
         assert "n" in params  # spatial mode x
         assert "m" in params  # spatial mode y
+        assert params["D"] == 1.0
+        assert params["n"] == 4
+        assert params["m"] == 4
 
     def test_create_with_source(self, non_periodic_grid):
         """Test creating PDE with spatial source term."""
@@ -160,6 +165,140 @@ class TestInhomogeneousHeatPDE:
         assert np.isfinite(result.data).all()
 
 
+class TestWavePDE:
+    """Tests for the Wave equation preset."""
+
+    def test_metadata(self):
+        """Test that metadata is correctly defined."""
+        preset = get_pde_preset("wave")
+        meta = preset.metadata
+
+        assert meta.name == "wave"
+        assert meta.category == "basic"
+        assert meta.num_fields == 2
+        assert "u" in meta.field_names
+        assert "v" in meta.field_names
+
+    def test_get_default_parameters(self):
+        """Test default parameters."""
+        preset = get_pde_preset("wave")
+        params = preset.get_default_parameters()
+
+        assert "D" in params
+        assert "C" in params
+        assert params["D"] == 1.0
+        assert params["C"] == 0.01
+
+    def test_create_pde(self, small_grid):
+        """Test PDE creation."""
+        preset = get_pde_preset("wave")
+        params = {"D": 1.0, "C": 0.01}
+        bc = {"x": "neumann", "y": "neumann"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        assert pde is not None
+
+    def test_create_initial_state(self, small_grid):
+        """Test initial state creation."""
+        preset = get_pde_preset("wave")
+        state = preset.create_initial_state(
+            small_grid, "gaussian-blobs", {"num_blobs": 1}
+        )
+
+        assert isinstance(state, FieldCollection)
+        assert len(state) == 2
+        assert state[0].label == "u"
+        assert state[1].label == "v"
+        # Velocity should start at zero
+        assert np.allclose(state[1].data, 0)
+
+    def test_registered_in_registry(self):
+        """Test that PDE is registered."""
+        assert "wave" in list_presets()
+
+    def test_short_simulation(self, non_periodic_grid):
+        """Test running a short simulation."""
+        preset = get_pde_preset("wave")
+        params = {"D": 1.0, "C": 0.01}
+        bc = {"x": "neumann", "y": "neumann"}
+
+        pde = preset.create_pde(params, bc, non_periodic_grid)
+        state = preset.create_initial_state(
+            non_periodic_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 0.5}
+        )
+
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
+
+        assert isinstance(result, FieldCollection)
+        assert np.isfinite(result[0].data).all()
+        assert np.isfinite(result[1].data).all()
+
+
+class TestAdvectionPDE:
+    """Tests for the Advection-diffusion equation preset."""
+
+    def test_metadata(self):
+        """Test that metadata is correctly defined."""
+        preset = get_pde_preset("advection")
+        meta = preset.metadata
+
+        assert meta.name == "advection"
+        assert meta.category == "basic"
+        assert meta.num_fields == 1
+        assert "u" in meta.field_names
+
+    def test_get_default_parameters(self):
+        """Test default parameters."""
+        preset = get_pde_preset("advection")
+        params = preset.get_default_parameters()
+
+        assert "D" in params
+        assert "V" in params
+        assert "theta" in params
+        assert "mode" in params
+        assert params["D"] == 1.0
+        assert params["V"] == 0.10
+        assert params["mode"] == 0  # rotational
+
+    def test_create_pde_rotational(self, small_grid):
+        """Test PDE creation with rotational mode."""
+        preset = get_pde_preset("advection")
+        params = {"D": 1.0, "V": 0.1, "mode": 0}
+        bc = {"x": "dirichlet", "y": "dirichlet"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        assert pde is not None
+
+    def test_create_pde_directed(self, small_grid):
+        """Test PDE creation with directed mode."""
+        preset = get_pde_preset("advection")
+        params = {"D": 1.0, "V": 6.0, "theta": -2.0, "mode": 1}
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        assert pde is not None
+
+    def test_registered_in_registry(self):
+        """Test that PDE is registered."""
+        assert "advection" in list_presets()
+
+    def test_short_simulation(self, small_grid):
+        """Test running a short simulation."""
+        preset = get_pde_preset("advection")
+        params = {"D": 0.1, "V": 0.1, "mode": 0}
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        state = preset.create_initial_state(
+            small_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
+        )
+
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
+
+        assert isinstance(result, ScalarField)
+        assert np.isfinite(result.data).all()
+
+
 class TestSchrodingerPDE:
     """Tests for the Schrodinger equation preset."""
 
@@ -170,17 +309,46 @@ class TestSchrodingerPDE:
 
         assert meta.name == "schrodinger"
         assert meta.category == "basic"
-        assert meta.num_fields == 1
-        assert "psi" in meta.field_names
+        assert meta.num_fields == 2  # Now uses real u, v components
+        assert "u" in meta.field_names
+        assert "v" in meta.field_names
+
+    def test_get_default_parameters(self):
+        """Test default parameters."""
+        preset = get_pde_preset("schrodinger")
+        params = preset.get_default_parameters()
+
+        assert "D" in params
+        assert "C" in params
+        assert "n" in params
+        assert "m" in params
+        assert params["D"] == 1.0
+        assert params["C"] == 0.004
+        assert params["n"] == 3
+        assert params["m"] == 3
 
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("schrodinger")
         params = preset.get_default_parameters()
-        bc = {"x": "periodic", "y": "periodic"}
+        bc = {"x": "dirichlet", "y": "dirichlet"}
 
         pde = preset.create_pde(params, bc, small_grid)
         assert pde is not None
+
+    def test_create_initial_state_eigenstate(self, small_grid):
+        """Test eigenstate initial condition."""
+        preset = get_pde_preset("schrodinger")
+        state = preset.create_initial_state(
+            small_grid, "eigenstate", {"n": 3, "m": 3}
+        )
+
+        assert isinstance(state, FieldCollection)
+        assert len(state) == 2
+        # Should have non-zero u (real part)
+        assert np.any(state[0].data != 0)
+        # v (imaginary part) should start at zero for eigenstate
+        assert np.allclose(state[1].data, 0)
 
     def test_create_initial_state_wave_packet(self, small_grid):
         """Test wave packet initial condition."""
@@ -189,32 +357,32 @@ class TestSchrodingerPDE:
             small_grid, "wave-packet", {"kx": 5.0, "sigma": 0.1}
         )
 
-        assert isinstance(state, ScalarField)
-        # Should be complex
-        assert np.iscomplexobj(state.data)
-        # Should be normalized (approximately)
-        norm = np.sum(np.abs(state.data) ** 2)
+        assert isinstance(state, FieldCollection)
+        assert len(state) == 2
+        # Should have non-zero data
+        norm = np.sum(state[0].data**2 + state[1].data**2)
         assert norm > 0
 
     def test_registered_in_registry(self):
         """Test that PDE is registered."""
         assert "schrodinger" in list_presets()
 
-    def test_short_simulation(self, small_grid):
+    def test_short_simulation(self, non_periodic_grid):
         """Test running a short simulation."""
         preset = get_pde_preset("schrodinger")
-        params = {"D": 0.1}
-        bc = {"x": "periodic", "y": "periodic"}
+        params = {"D": 1.0, "C": 0.004}
+        bc = {"x": "dirichlet", "y": "dirichlet"}
 
-        pde = preset.create_pde(params, bc, small_grid)
+        pde = preset.create_pde(params, bc, non_periodic_grid)
         state = preset.create_initial_state(
-            small_grid, "wave-packet", {"kx": 2.0, "sigma": 0.15}
+            non_periodic_grid, "eigenstate", {"n": 3, "m": 3}
         )
 
         result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
 
         assert result is not None
-        assert np.isfinite(result.data).all()
+        assert np.isfinite(result[0].data).all()
+        assert np.isfinite(result[1].data).all()
 
 
 class TestPlatePDE:
@@ -227,41 +395,75 @@ class TestPlatePDE:
 
         assert meta.name == "plate"
         assert meta.category == "basic"
-        assert meta.num_fields == 2
+        assert meta.num_fields == 3  # u, v, w
         assert "u" in meta.field_names
         assert "v" in meta.field_names
+        assert "w" in meta.field_names
         # Should mention biharmonic or vibration or wave
         desc_lower = meta.description.lower()
         assert "biharmonic" in desc_lower or "vibration" in desc_lower or "wave" in desc_lower
+
+    def test_get_default_parameters(self):
+        """Test default parameters."""
+        preset = get_pde_preset("plate")
+        params = preset.get_default_parameters()
+
+        assert "D" in params
+        assert "Q" in params
+        assert "C" in params
+        assert "D_c" in params
+        assert params["D"] == 10.0
+        assert params["Q"] == 0.003
+        assert params["C"] == 0.1
+        assert params["D_c"] == 0.1
 
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("plate")
         params = preset.get_default_parameters()
-        bc = {"x": "periodic", "y": "periodic"}
+        bc = {"x": "dirichlet", "y": "dirichlet"}
 
         pde = preset.create_pde(params, bc, small_grid)
         assert pde is not None
+
+    def test_create_initial_state(self, small_grid):
+        """Test initial state creation."""
+        preset = get_pde_preset("plate")
+        state = preset.create_initial_state(
+            small_grid, "constant", {"value": -4.0}
+        )
+
+        assert isinstance(state, FieldCollection)
+        assert len(state) == 3
+        assert state[0].label == "u"
+        assert state[1].label == "v"
+        assert state[2].label == "w"
+        # u should be -4, v and w should be zero
+        assert np.allclose(state[0].data, -4.0)
+        assert np.allclose(state[1].data, 0)
+        assert np.allclose(state[2].data, 0)
 
     def test_registered_in_registry(self):
         """Test that PDE is registered."""
         assert "plate" in list_presets()
 
-    def test_short_simulation(self, small_grid):
+    def test_short_simulation(self, non_periodic_grid):
         """Test running a short simulation."""
         preset = get_pde_preset("plate")
-        params = {"D": 0.0001, "C": 0.5}  # Small D for stability, with damping
-        bc = {"x": "periodic", "y": "periodic"}
+        params = {"D": 10.0, "Q": 0.003, "C": 0.1, "D_c": 0.1}
+        bc = {"x": "dirichlet", "y": "dirichlet"}
 
-        pde = preset.create_pde(params, bc, small_grid)
+        pde = preset.create_pde(params, bc, non_periodic_grid)
         state = preset.create_initial_state(
-            small_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 0.5}
+            non_periodic_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 0.5}
         )
 
         result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
 
         assert result is not None
-        assert np.isfinite(result.data).all()
+        assert np.isfinite(result[0].data).all()
+        assert np.isfinite(result[1].data).all()
+        assert np.isfinite(result[2].data).all()
 
 
 class TestInhomogeneousWavePDE:
@@ -289,8 +491,14 @@ class TestInhomogeneousWavePDE:
 
         assert "D" in params  # base diffusivity (wave speed squared)
         assert "E" in params  # amplitude of spatial variation
-        assert "n" in params  # spatial mode x
-        assert "m" in params  # spatial mode y
+        assert "m" in params  # spatial mode x
+        assert "n" in params  # spatial mode y
+        assert "C" in params  # damping
+        assert params["D"] == 1.0
+        assert params["E"] == 0.97
+        assert params["m"] == 9
+        assert params["n"] == 9
+        assert params["C"] == 0.01
 
     def test_create_pde(self, non_periodic_grid):
         """Test PDE creation."""
@@ -318,7 +526,7 @@ class TestInhomogeneousWavePDE:
     def test_short_simulation(self, non_periodic_grid):
         """Test running a short simulation."""
         preset = get_pde_preset("inhomogeneous-wave")
-        params = {"D": 1.0, "E": 0.5, "n": 2, "m": 2}
+        params = {"D": 1.0, "E": 0.5, "m": 2, "n": 2, "C": 0.01}
         bc = {"x": "neumann", "y": "neumann"}
 
         pde = preset.create_pde(params, bc, non_periodic_grid)
@@ -364,7 +572,7 @@ class TestBoundaryConditions:
     def test_simulation_with_no_flux_bc(self, non_periodic_grid):
         """Test running simulation with no-flux boundary conditions."""
         preset = get_pde_preset("heat")
-        params = {"D": 0.01}
+        params = {"D_T": 0.01}
         bc = {"x": "no-flux", "y": "no-flux"}
 
         pde = preset.create_pde(params, bc, non_periodic_grid)
@@ -383,7 +591,7 @@ class TestBackends:
     def test_numba_backend(self, small_grid):
         """Test running simulation with numba backend."""
         preset = get_pde_preset("heat")
-        params = {"D": 0.01}
+        params = {"D_T": 0.01}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
@@ -399,7 +607,7 @@ class TestBackends:
     def test_numpy_backend(self, small_grid):
         """Test running simulation with numpy backend."""
         preset = get_pde_preset("heat")
-        params = {"D": 0.01}
+        params = {"D_T": 0.01}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)

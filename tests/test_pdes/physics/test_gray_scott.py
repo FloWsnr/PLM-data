@@ -27,35 +27,36 @@ class TestGrayScottPDE:
         assert meta.num_fields == 2
         assert "u" in meta.field_names
         assert "v" in meta.field_names
-        assert len(meta.parameters) == 4
+        # New parameters: a, b, D (3 parameters)
+        assert len(meta.parameters) == 3
 
     def test_get_default_parameters(self):
         """Test getting default parameters."""
         pde = GrayScottPDE()
         defaults = pde.get_default_parameters()
 
-        assert "F" in defaults
-        assert "k" in defaults
-        assert "Du" in defaults
-        assert "Dv" in defaults
+        # New parameter names from reference
+        assert "a" in defaults
+        assert "b" in defaults
+        assert "D" in defaults
 
     def test_validate_parameters_valid(self):
         """Test parameter validation with valid params."""
         pde = GrayScottPDE()
-        # Should not raise
-        pde.validate_parameters({"F": 0.04, "k": 0.06})
+        # Should not raise with new parameter names
+        pde.validate_parameters({"a": 0.037, "b": 0.06})
 
     def test_validate_parameters_invalid(self):
         """Test parameter validation with invalid params."""
         pde = GrayScottPDE()
-        with pytest.raises(ValueError, match="F must be <="):
-            pde.validate_parameters({"F": 0.5})  # F max is 0.1
+        with pytest.raises(ValueError, match="a must be <="):
+            pde.validate_parameters({"a": 0.5})  # a max is 0.1
 
     def test_create_pde(self, small_grid):
         """Test creating the PDE object."""
         pde_preset = GrayScottPDE()
         pde = pde_preset.create_pde(
-            parameters={"F": 0.04, "k": 0.06, "Du": 0.16, "Dv": 0.08},
+            parameters={"a": 0.037, "b": 0.06, "D": 2.0},
             bc={"x": "periodic", "y": "periodic"},
             grid=small_grid,
         )
@@ -89,10 +90,10 @@ class TestGrayScottPDE:
         )
 
         assert isinstance(state, FieldCollection)
-        # u should start mostly at 1.0
-        assert np.mean(state[0].data) > 0.8
-        # v should start mostly at 0.0
-        assert np.mean(state[1].data) < 0.2
+        # u should start mostly at 0.0 (with small perturbation)
+        assert np.mean(state[0].data) < 0.2
+        # v should start mostly at 1.0
+        assert np.mean(state[1].data) > 0.8
 
     def test_registered_in_registry(self):
         """Test that gray-scott PDE is registered."""
@@ -108,7 +109,7 @@ class TestGrayScottPDE:
         np.random.seed(42)
         pde_preset = GrayScottPDE()
 
-        params = {"F": 0.04, "k": 0.06, "Du": 0.16, "Dv": 0.08}
+        params = {"a": 0.037, "b": 0.06, "D": 2.0}
         pde = pde_preset.create_pde(
             parameters=params,
             bc={"x": "periodic", "y": "periodic"},
@@ -135,11 +136,11 @@ class TestGrayScottPDE:
         """Test getting equations with parameter substitution."""
         pde = GrayScottPDE()
         eqs = pde.get_equations_for_metadata(
-            {"F": 0.04, "k": 0.06, "Du": 0.16, "Dv": 0.08}
+            {"a": 0.037, "b": 0.06, "D": 2.0}
         )
 
         assert "u" in eqs
         assert "v" in eqs
         # Parameters should be substituted
-        assert "0.04" in eqs["u"]
-        assert "0.06" in eqs["v"]
+        assert "0.037" in eqs["u"]
+        assert "0.06" in eqs["u"] or "0.06" in eqs["v"]

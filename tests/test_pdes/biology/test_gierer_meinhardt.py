@@ -10,7 +10,7 @@ from pde_sim.pdes import get_pde_preset, list_presets
 @pytest.fixture
 def small_grid():
     """Create a small grid for fast tests."""
-    return CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
+    return CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
 
 
 class TestGiererMeinhardtPDE:
@@ -32,12 +32,11 @@ class TestGiererMeinhardtPDE:
         preset = get_pde_preset("gierer-meinhardt")
         params = preset.get_default_parameters()
 
-        assert "Du" in params
-        assert "Dv" in params
+        assert "D" in params  # Now uses single D for inhibitor diffusion ratio
         assert "a" in params  # basal production
         assert "b" in params  # decay rate
         assert "c" in params  # inhibitor decay
-        assert params["Dv"] > params["Du"]  # Inhibitor should diffuse faster
+        assert params["D"] > 1  # D > 1 required for pattern formation
 
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
@@ -52,7 +51,7 @@ class TestGiererMeinhardtPDE:
         """Test initial state creation."""
         preset = get_pde_preset("gierer-meinhardt")
         state = preset.create_initial_state(
-            small_grid, "default", {"noise": 0.01}
+            small_grid, "default", {"noise": 0.01, "seed": 42}
         )
 
         assert isinstance(state, FieldCollection)
@@ -70,11 +69,11 @@ class TestGiererMeinhardtPDE:
     def test_short_simulation(self, small_grid):
         """Test running a short simulation."""
         preset = get_pde_preset("gierer-meinhardt")
-        params = {"Du": 1.0, "Dv": 40.0, "a": 0.1, "b": 1.0, "c": 1.0}
+        params = {"D": 100.0, "a": 0.5, "b": 1.0, "c": 6.1}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "default", {"noise": 0.01})
+        state = preset.create_initial_state(small_grid, "default", {"noise": 0.01, "seed": 42})
 
         result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 
