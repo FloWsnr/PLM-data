@@ -115,34 +115,43 @@ class TestInhomogeneousHeatPDE:
         assert meta.name == "inhomogeneous-heat"
         assert meta.category == "basic"
         assert meta.num_fields == 1
-        assert len(meta.parameters) == 2
+        assert len(meta.parameters) == 3  # D, n, m
 
     def test_registered_in_registry(self):
         """Test that inhomogeneous-heat PDE is registered."""
         presets = list_presets()
         assert "inhomogeneous-heat" in presets
 
-    def test_create_with_source(self, small_grid):
-        """Test creating PDE with source term."""
+    def test_get_default_parameters(self):
+        """Test default parameters retrieval."""
+        preset = get_pde_preset("inhomogeneous-heat")
+        params = preset.get_default_parameters()
+
+        assert "D" in params  # diffusion coefficient
+        assert "n" in params  # spatial mode x
+        assert "m" in params  # spatial mode y
+
+    def test_create_with_source(self, non_periodic_grid):
+        """Test creating PDE with spatial source term."""
         pde_preset = InhomogeneousHeatPDE()
         pde = pde_preset.create_pde(
-            parameters={"D": 0.1, "source": 1.0},
-            bc={"x": "periodic", "y": "periodic"},
-            grid=small_grid,
+            parameters={"D": 0.1, "n": 2, "m": 2},
+            bc={"x": "neumann", "y": "neumann"},
+            grid=non_periodic_grid,
         )
 
         assert isinstance(pde, PDE)
 
-    def test_short_simulation(self, small_grid):
+    def test_short_simulation(self, non_periodic_grid):
         """Test running a short simulation."""
         np.random.seed(42)
         pde_preset = InhomogeneousHeatPDE()
-        params = {"D": 0.01, "source": 0.1}
-        bc = {"x": "periodic", "y": "periodic"}
+        params = {"D": 0.01, "n": 2, "m": 2}
+        bc = {"x": "neumann", "y": "neumann"}
 
-        pde = pde_preset.create_pde(params, bc, small_grid)
+        pde = pde_preset.create_pde(params, bc, non_periodic_grid)
         state = pde_preset.create_initial_state(
-            small_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
+            non_periodic_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
         )
 
         result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
@@ -256,7 +265,7 @@ class TestPlatePDE:
 
 
 class TestInhomogeneousWavePDE:
-    """Tests for the inhomogeneous wave equation with damping."""
+    """Tests for the inhomogeneous wave equation with spatially varying wave speed."""
 
     def test_registered(self):
         """Test that inhomogeneous-wave is registered."""
@@ -278,24 +287,25 @@ class TestInhomogeneousWavePDE:
         preset = get_pde_preset("inhomogeneous-wave")
         params = preset.get_default_parameters()
 
-        assert "c" in params  # wave speed
-        assert "gamma" in params  # damping
-        assert "source" in params  # forcing
+        assert "D" in params  # base diffusivity (wave speed squared)
+        assert "E" in params  # amplitude of spatial variation
+        assert "n" in params  # spatial mode x
+        assert "m" in params  # spatial mode y
 
-    def test_create_pde(self, small_grid):
+    def test_create_pde(self, non_periodic_grid):
         """Test PDE creation."""
         preset = get_pde_preset("inhomogeneous-wave")
         params = preset.get_default_parameters()
-        bc = {"x": "periodic", "y": "periodic"}
+        bc = {"x": "neumann", "y": "neumann"}
 
-        pde = preset.create_pde(params, bc, small_grid)
+        pde = preset.create_pde(params, bc, non_periodic_grid)
         assert pde is not None
 
-    def test_create_initial_state(self, small_grid):
+    def test_create_initial_state(self, non_periodic_grid):
         """Test initial state creation."""
         preset = get_pde_preset("inhomogeneous-wave")
         state = preset.create_initial_state(
-            small_grid, "gaussian-blobs", {"num_blobs": 1}
+            non_periodic_grid, "gaussian-blobs", {"num_blobs": 1}
         )
 
         assert isinstance(state, FieldCollection)
@@ -305,15 +315,15 @@ class TestInhomogeneousWavePDE:
         # Velocity should start at zero
         assert np.allclose(state[1].data, 0)
 
-    def test_short_simulation(self, small_grid):
+    def test_short_simulation(self, non_periodic_grid):
         """Test running a short simulation."""
         preset = get_pde_preset("inhomogeneous-wave")
-        params = {"c": 1.0, "gamma": 0.1, "source": 0.0}
-        bc = {"x": "periodic", "y": "periodic"}
+        params = {"D": 1.0, "E": 0.5, "n": 2, "m": 2}
+        bc = {"x": "neumann", "y": "neumann"}
 
-        pde = preset.create_pde(params, bc, small_grid)
+        pde = preset.create_pde(params, bc, non_periodic_grid)
         state = preset.create_initial_state(
-            small_grid, "gaussian-blobs", {"num_blobs": 1}
+            non_periodic_grid, "gaussian-blobs", {"num_blobs": 1}
         )
 
         result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")

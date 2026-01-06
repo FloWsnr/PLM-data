@@ -1,23 +1,24 @@
 preset: inhomogeneous-wave
 parameters:
-  c: 1.0
-  gamma: 0.15
-  source: 0.0
+  D: 1.0       # Base diffusivity (wave speed squared)
+  E: 0.5       # Amplitude of spatial variation (|E| < 1)
+  n: 2         # Spatial mode number in x direction
+  m: 2         # Spatial mode number in y direction
 init:
   type: gaussian-blobs
   params:
     num_blobs: 2
     amplitude: 1.0
-    width: 0.05
+    sigma: 0.08
     background: 0.0
-solver: scipy  # Implicit solver for damped wave (1.68x faster than rk4)
+solver: scipy  # Implicit solver handles variable coefficients well
 backend: numba
 adaptive: true
 dt: 0.01
 resolution: 128
 bc:
-  x: periodic
-  y: periodic
+  x: neumann   # No-flux boundary conditions
+  y: neumann
 output:
   path: ./output
   num_frames: 100

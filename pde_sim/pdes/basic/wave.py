@@ -1,5 +1,6 @@
 """Wave equation."""
 
+import math
 from typing import Any
 
 import numpy as np
@@ -173,22 +174,25 @@ class AdvectionPDE(MultiFieldPDEPreset):
 
 @register_pde("inhomogeneous-wave")
 class InhomogeneousWavePDE(MultiFieldPDEPreset):
-    """Inhomogeneous wave equation with damping and source.
+    """Inhomogeneous wave equation with spatially varying wave speed.
 
-    Wave equation with additional terms:
+    Based on the visualpde.com inhomogeneous wave equation:
 
-        d²u/dt² = c² * laplace(u) - gamma * du/dt + source
+        d²u/dt² = div(f(x,y) * grad(u))
+
+    where f(x,y) is a spatially varying diffusivity:
+
+        f(x,y) = D * [1 + E*sin(m*pi*x/L)] * [1 + E*sin(n*pi*y/L)]
+
+    This creates a wave equation with position-dependent wave speed,
+    leading to interesting refraction and focusing effects.
 
     Converted to first-order system:
         du/dt = v
-        dv/dt = c² * laplace(u) - gamma * v + source
+        dv/dt = div(f(x,y) * grad(u))
 
-    where:
-        - u is displacement
-        - v is velocity
-        - c is wave speed
-        - gamma is damping coefficient
-        - source is a forcing term
+    The divergence of (f * grad(u)) expands to:
+        f * laplace(u) + grad(f) · grad(u)
     """
 
     @property
@@ -196,37 +200,44 @@ class InhomogeneousWavePDE(MultiFieldPDEPreset):
         return PDEMetadata(
             name="inhomogeneous-wave",
             category="basic",
-            description="Wave equation with damping and source",
+            description="Wave equation with spatially varying wave speed",
             equations={
                 "u": "v",
-                "v": "c**2 * laplace(u) - gamma * v + source",
+                "v": "div(f(x,y) * grad(u))",
             },
             parameters=[
                 PDEParameter(
-                    name="c",
+                    name="D",
                     default=1.0,
-                    description="Wave speed",
-                    min_value=0.5,
+                    description="Base diffusivity (wave speed squared)",
+                    min_value=0.1,
                     max_value=2.0,
                 ),
                 PDEParameter(
-                    name="gamma",
-                    default=0.1,
-                    description="Damping coefficient",
-                    min_value=0.0,
-                    max_value=10.0,
+                    name="E",
+                    default=0.5,
+                    description="Amplitude of spatial variation (|E| < 1)",
+                    min_value=-0.9,
+                    max_value=0.9,
                 ),
                 PDEParameter(
-                    name="source",
-                    default=0.0,
-                    description="Constant forcing term",
-                    min_value=-10.0,
-                    max_value=10.0,
+                    name="n",
+                    default=2,
+                    description="Spatial mode number in x direction",
+                    min_value=1,
+                    max_value=5,
+                ),
+                PDEParameter(
+                    name="m",
+                    default=2,
+                    description="Spatial mode number in y direction",
+                    min_value=1,
+                    max_value=5,
                 ),
             ],
             num_fields=2,
             field_names=["u", "v"],
-            reference="Damped wave equation",
+            reference="https://visualpde.com/basic-pdes/inhomogeneous-wave-equation",
         )
 
     def create_pde(
@@ -235,31 +246,62 @@ class InhomogeneousWavePDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        c = parameters.get("c", 1.0)
-        gamma = parameters.get("gamma", 0.1)
-        source = parameters.get("source", 0.0)
-        c_sq = c * c
+        D = parameters.get("D", 1.0)
+        E = parameters.get("E", 0.5)
+        n = int(parameters.get("n", 2))
+        m = int(parameters.get("m", 2))
 
-        # Build v equation
-        terms = [f"{c_sq} * laplace(u)"]
-        if gamma > 0:
-            terms.append(f"- {gamma} * v")
-        if source != 0:
-            if source > 0:
-                terms.append(f"+ {source}")
-            else:
-                terms.append(f"- {abs(source)}")
+        # Get domain size from grid
+        L = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
 
-        v_rhs = " ".join(terms)
+        # Get spatial coordinates
+        x_coords = grid.cell_coords[..., 0]
+        y_coords = grid.cell_coords[..., 1]
 
+        # Compute f(x,y) = D * [1 + E*sin(m*pi*x/L)] * [1 + E*sin(n*pi*y/L)]
+        sin_x = np.sin(m * math.pi * x_coords / L)
+        sin_y = np.sin(n * math.pi * y_coords / L)
+        f_data = D * (1 + E * sin_x) * (1 + E * sin_y)
+        f_field = ScalarField(grid, f_data)
+
+        # Compute df/dx = D * E * (m*pi/L) * cos(m*pi*x/L) * [1 + E*sin(n*pi*y/L)]
+        cos_x = np.cos(m * math.pi * x_coords / L)
+        df_dx_data = D * E * (m * math.pi / L) * cos_x * (1 + E * sin_y)
+        df_dx_field = ScalarField(grid, df_dx_data)
+
+        # Compute df/dy = D * E * (n*pi/L) * cos(n*pi*y/L) * [1 + E*sin(m*pi*x/L)]
+        cos_y = np.cos(n * math.pi * y_coords / L)
+        df_dy_data = D * E * (n * math.pi / L) * cos_y * (1 + E * sin_x)
+        df_dy_field = ScalarField(grid, df_dy_data)
+
+        # div(f * grad(u)) = f * laplace(u) + df_dx * d_dx(u) + df_dy * d_dy(u)
         bc_spec = self._convert_bc(bc)
         return PDE(
             rhs={
                 "u": "v",
-                "v": v_rhs,
+                "v": "f * laplace(u) + df_dx * d_dx(u) + df_dy * d_dy(u)",
             },
             bc=bc_spec,
+            consts={
+                "f": f_field,
+                "df_dx": df_dx_field,
+                "df_dy": df_dy_field,
+            },
         )
+
+    def get_equations_for_metadata(
+        self, parameters: dict[str, float]
+    ) -> dict[str, str]:
+        """Get equations with parameter values substituted."""
+        D = parameters.get("D", 1.0)
+        E = parameters.get("E", 0.5)
+        n = int(parameters.get("n", 2))
+        m = int(parameters.get("m", 2))
+        return {
+            "u": "v",
+            "v": "div(f(x,y) * grad(u))",
+            "f(x,y)": f"D*[1+E*sin(mπx/L)]*[1+E*sin(nπy/L)] with D={D}, E={E}, n={n}, m={m}",
+        }
 
     def create_initial_state(
         self,

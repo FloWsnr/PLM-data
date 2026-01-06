@@ -9,11 +9,10 @@ All 7 basic PDEs now work with good visible dynamics over 100 frames.
 | heat | WORKS | 22s | GOOD | D: 0.1 -> 0.05 |
 | wave | WORKS | 55s | GOOD | (none needed) |
 | advection | WORKS | 38s | GOOD | D: 0.01 -> 0.005 |
-| inhomogeneous-heat | WORKS | 22s | GOOD | D: 0.1 -> 0.05 |
+| inhomogeneous-heat | WORKS | 13s | EXCELLENT | Converted to real visualpde.com equation with spatial source |
 | schrodinger | WORKS | 75s | EXCELLENT | (none needed) |
 | plate | WORKS | 75s | EXCELLENT | (none needed) |
-| inhomogeneous-wave | WORKS | 16s | GOOD | gamma: 1.0->0.15, source: 0.1->0.0, t_end: 8.0->4.0 |
-
+| inhomogeneous-wave | WORKS | 23s | EXCELLENT | Converted to real visualpde.com equation with varying wave speed |
 
 ## Detailed Analysis
 
@@ -33,10 +32,11 @@ All 7 basic PDEs now work with good visible dynamics over 100 frames.
 - Shows advection-diffusion dynamics clearly
 
 ### inhomogeneous-heat
-- Similar to heat but with source term
-- Source term helps maintain visible structure even at frame 99
-- Good parameter balance
-- We should convert to the actual inhomogenous case: https://visualpde.com/basic-pdes/inhomogeneous-heat-equation
+- **CONVERTED** to real visualpde.com equation: dT/dt = D∇²T + f(x,y)
+- Source term f(x,y) = D·π²·(n²+m²)/L² · cos(nπx/L)·cos(mπy/L)
+- Creates beautiful 2x2 grid pattern as system evolves to steady state
+- Initial Gaussian blobs diffuse while cosine source pattern becomes dominant
+- Uses Neumann BCs (required for bounded solutions)
 
 ### schrodinger
 - Wave packet with momentum creates interference patterns
@@ -49,10 +49,12 @@ All 7 basic PDEs now work with good visible dynamics over 100 frames.
 - Excellent demonstration of plate vibration modes
 
 ### inhomogeneous-wave
-- Damped wave equation (no source to avoid saturation)
-- Shows wave propagation with gentle damping
-- Wave interference visible throughout all 100 frames
-- Similar to heat - we should use the real one: https://visualpde.com/basic-pdes/inhomogeneous-wave-equation
+- **CONVERTED** to real visualpde.com equation: d²u/dt² = ∇·(f(x,y)∇u)
+- Spatially varying wave speed: f(x,y) = D·[1+E·sin(mπx/L)]·[1+E·sin(nπy/L)]
+- Waves travel faster through regions with larger f(x,y)
+- Shows beautiful refraction and focusing effects
+- Complex interference patterns from variable wave speed
+- Uses Neumann BCs for wave reflection at boundaries
 
 ---
 

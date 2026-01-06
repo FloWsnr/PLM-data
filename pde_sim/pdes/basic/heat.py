@@ -1,8 +1,10 @@
 """Heat/diffusion equation."""
 
+import math
 from typing import Any
 
-from pde import PDE, CartesianGrid
+import numpy as np
+from pde import PDE, CartesianGrid, ScalarField
 
 from ..base import PDEMetadata, PDEParameter, ScalarPDEPreset
 from .. import register_pde
@@ -78,14 +80,20 @@ class HeatPDE(ScalarPDEPreset):
 
 @register_pde("inhomogeneous-heat")
 class InhomogeneousHeatPDE(ScalarPDEPreset):
-    """Inhomogeneous heat equation with spatially varying diffusion.
+    """Inhomogeneous heat equation with spatially varying source term.
 
-    dT/dt = div(g(x,y) * grad(T)) + f(x,y)
+    Based on the visualpde.com inhomogeneous heat equation:
 
-    This simplified version uses constant coefficients that can vary:
-        dT/dt = D * laplace(T) + source
+        dT/dt = D * laplace(T) + f(x,y)
 
-    where source is a constant source/sink term.
+    where the source term f(x,y) is:
+
+        f(x,y) = D * pi^2 * (n^2 + m^2) / L^2 * cos(n*pi*x/L) * cos(m*pi*y/L)
+
+    This creates oscillating heat sources and sinks that average to zero
+    over the domain, ensuring bounded solutions with Neumann BCs.
+
+    The integers n and m control the spatial frequency of the source pattern.
     """
 
     @property
@@ -93,8 +101,8 @@ class InhomogeneousHeatPDE(ScalarPDEPreset):
         return PDEMetadata(
             name="inhomogeneous-heat",
             category="basic",
-            description="Heat equation with source term",
-            equations={"T": "D * laplace(T) + source"},
+            description="Heat equation with spatially varying source term",
+            equations={"T": "D * laplace(T) + f(x,y)"},
             parameters=[
                 PDEParameter(
                     name="D",
@@ -104,16 +112,23 @@ class InhomogeneousHeatPDE(ScalarPDEPreset):
                     max_value=0.5,
                 ),
                 PDEParameter(
-                    name="source",
-                    default=0.0,
-                    description="Constant source/sink term",
-                    min_value=-10.0,
-                    max_value=10.0,
+                    name="n",
+                    default=2,
+                    description="Spatial mode number in x direction",
+                    min_value=1,
+                    max_value=5,
+                ),
+                PDEParameter(
+                    name="m",
+                    default=2,
+                    description="Spatial mode number in y direction",
+                    min_value=1,
+                    max_value=5,
                 ),
             ],
             num_fields=1,
             field_names=["T"],
-            reference="Inhomogeneous parabolic PDE",
+            reference="https://visualpde.com/basic-pdes/inhomogeneous-heat-equation",
         )
 
     def create_pde(
@@ -122,18 +137,40 @@ class InhomogeneousHeatPDE(ScalarPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        D = parameters.get("D", 1.0)
-        source = parameters.get("source", 0.0)
+        D = parameters.get("D", 0.1)
+        n = int(parameters.get("n", 2))
+        m = int(parameters.get("m", 2))
 
-        # Build equation string
-        if source == 0:
-            rhs = f"{D} * laplace(T)"
-        elif source > 0:
-            rhs = f"{D} * laplace(T) + {source}"
-        else:
-            rhs = f"{D} * laplace(T) - {abs(source)}"
+        # Get domain size from grid (assuming square domain)
+        L = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
+
+        # Compute the source term coefficient
+        # f(x,y) = D * pi^2 * (n^2 + m^2) / L^2 * cos(n*pi*x/L) * cos(m*pi*y/L)
+        coeff = D * math.pi**2 * (n**2 + m**2) / L**2
+
+        # Create spatial source field
+        # For py-pde, create the source as a constant field
+        x_coords = grid.cell_coords[..., 0]
+        y_coords = grid.cell_coords[..., 1]
+        source_data = coeff * np.cos(n * math.pi * x_coords / L) * np.cos(
+            m * math.pi * y_coords / L
+        )
+        source_field = ScalarField(grid, source_data)
 
         return PDE(
-            rhs={"T": rhs},
+            rhs={"T": f"{D} * laplace(T) + source"},
             bc=self._convert_bc(bc),
+            consts={"source": source_field},
         )
+
+    def get_equations_for_metadata(
+        self, parameters: dict[str, float]
+    ) -> dict[str, str]:
+        """Get equations with parameter values substituted."""
+        D = parameters.get("D", 0.1)
+        n = int(parameters.get("n", 2))
+        m = int(parameters.get("m", 2))
+        return {
+            "T": f"{D} * laplace(T) + f(x,y)",
+            "f(x,y)": f"D*π²*(n²+m²)/L² * cos(nπx/L)*cos(mπy/L) with n={n}, m={m}",
+        }

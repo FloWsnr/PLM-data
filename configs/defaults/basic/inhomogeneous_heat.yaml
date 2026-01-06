@@ -1,22 +1,23 @@
 preset: inhomogeneous-heat
 parameters:
-  D: 0.05
-  source: 0.1
+  D: 0.1
+  n: 2  # Spatial mode number in x direction
+  m: 2  # Spatial mode number in y direction
 init:
   type: gaussian-blobs
   params:
     num_blobs: 3
     amplitude: 0.8
     sigma: 0.1
-    background: 0.1
-solver: rk4
+    background: 0.2
+solver: scipy  # Implicit solver works well for diffusion
 backend: numba
 adaptive: true
-dt: 5.0e-04
+dt: 0.001
 resolution: 128
 bc:
-  x: periodic
-  y: periodic
+  x: neumann  # No-flux boundary conditions (required for this PDE)
+  y: neumann
 output:
   path: ./output
   num_frames: 100
@@ -24,4 +25,4 @@ output:
   field_to_plot: T
 seed: 42
 domain_size: 2.0
-t_end: 1.0
+t_end: 2.0
