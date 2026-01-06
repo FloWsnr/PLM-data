@@ -288,3 +288,132 @@ All 7 basic PDEs now work with good visible dynamics over 100 frames.
 
 3. **Low Priority** (Optional enhancements):
    - [ ] swift-hohenberg - add quintic term option
+
+---
+
+# Biology PDE Simulation Analysis
+
+## Summary
+
+| PDE | Status | Dynamics | Notes |
+|-----|--------|----------|-------|
+| allen-cahn | NEEDS FIX | BAD | Noise diffuses to uniform too fast |
+| allen-cahn-standard | WORKS | GOOD | Nice phase separation dynamics |
+| bacteria-flow | WORKS | EXCELLENT | Beautiful chemotaxis with flow field |
+| brusselator | WORKS | EXCELLENT | Beautiful Turing spot patterns with velocity |
+| cross-diffusion | NEEDS FIX | BAD | Goes to uniform green quickly |
+| cyclic-competition | WORKS | EXCELLENT | Beautiful domain competition patterns |
+| fisher-kpp | WORKS | EXCELLENT | Classic front propagation dynamics |
+| fitzhugh-nagumo | NEEDS FIX | BAD | Equilibrates to uniform too fast |
+| gierer-meinhardt | NEEDS FIX | POOR | No Turing spots, goes to uniform gradient |
+| harsh-environment | WORKS | GOOD | Allee effect dynamics (ends uniform) |
+| heterogeneous | WORKS | GOOD | Shows spatial heterogeneity influence |
+| immunotherapy | NEEDS FIX | POOR | Tumor shrinks too fast, then all black |
+| keller-segel | WORKS | GOOD | Chemotactic aggregation dynamics |
+| schnakenberg | WORKS | EXCELLENT | Beautiful Turing spots with flow field |
+| sir | NEEDS FIX | BAD | No epidemic wave visible, uniform → black |
+| topography | WORKS | GOOD | Ring structures (but ends saturated white) |
+| turing-conditions | NEEDS FIX | BAD | Doesn't show Turing patterns, goes uniform |
+| vegetation | ERROR | FAILED | Dn=0.0001 below minimum 0.001 |
+
+## Statistics
+- **EXCELLENT**: 5 (bacteria-flow, brusselator, cyclic-competition, fisher-kpp, schnakenberg)
+- **GOOD**: 5 (allen-cahn-standard, harsh-environment, heterogeneous, keller-segel, topography)
+- **NEEDS FIX**: 7 (allen-cahn, cross-diffusion, fitzhugh-nagumo, gierer-meinhardt, immunotherapy, sir, turing-conditions)
+- **ERROR**: 1 (vegetation - parameter validation error)
+
+## Working: 10/18 (55%)
+
+## Detailed Analysis
+
+### EXCELLENT Simulations
+
+#### bacteria-flow
+- Localized blob with flow field grows and spreads
+- Shows beautiful chemotaxis dynamics
+- Velocity field visualization with arrows
+
+#### brusselator
+- Starts with noise + velocity field
+- Develops beautiful localized spots by frame 50
+- Classic Turing pattern formation
+
+#### cyclic-competition
+- Rock-paper-scissors dynamics
+- Noise → patches → domain competition patterns
+- Beautiful boundary dynamics
+
+#### fisher-kpp
+- Two initial blobs grow and spread as fronts
+- Classic population wave dynamics
+- By frame 99 nearly fills domain
+
+#### schnakenberg
+- Uniform → gradient → beautiful Turing spot patterns
+- Shows flow field with velocity arrows
+- Classic activator-inhibitor system
+
+### GOOD Simulations
+
+#### allen-cahn-standard
+- Noise → smoothing → clear blue/red phase domains
+- Shows bistable phase separation
+- Good dynamics throughout
+
+#### harsh-environment
+- Blobs grow and merge with Allee effect
+- Middle frames show nice dynamics
+- Ends uniform yellow (t_end too long?)
+
+#### heterogeneous
+- Blobs grow with different rates
+- Shows spatial heterogeneity influence
+- Some low regions persist
+
+#### keller-segel
+- Multiple blobs with chemotactic gradients
+- Shows aggregation dynamics
+- Forms concentrated blob by frame 99
+
+#### topography
+- Ring structures around "mountains"
+- Beautiful patterns at frame 50
+- Ends saturated white (t_end too long)
+
+### NEEDS FIX
+
+#### allen-cahn
+- Noise diffuses to uniform too quickly
+- Need slower diffusion or different parameters
+
+#### cross-diffusion
+- Goes to uniform green by frame 50
+- No pattern formation visible
+
+#### fitzhugh-nagumo
+- Square stimulus equilibrates to uniform blue
+- Need more excitable parameters or spiral-inducing IC
+
+#### gierer-meinhardt
+- Should show Turing spots but goes uniform
+- Reaction overwhelms pattern formation
+- Need parameter tuning for Turing instability
+
+#### immunotherapy
+- Tumor shrinks too fast, all black by frame 50
+- Need slower dynamics or shorter t_end
+
+#### sir
+- Uniform red → black, no wave dynamics
+- Need localized infection IC for epidemic wave
+
+#### turing-conditions
+- Should demonstrate Turing instability but goes uniform
+- Parameters not in Turing regime
+
+### ERROR
+
+#### vegetation
+- **Error**: `Dn must be >= 0.001, got 0.0001`
+- Config has Dn=0.0001 which is below preset minimum
+- **Fix**: Increase Dn to >= 0.001
