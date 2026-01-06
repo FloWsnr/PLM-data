@@ -5,10 +5,9 @@ from typing import Any
 from pde import CartesianGrid, ScalarField
 
 from .base import InitialConditionGenerator
-from .blobs import GaussianBlobs
+from .blobs import GaussianBlobs, SingleBlob
 from .periodic import SinePattern
 from .random import RandomGaussian, RandomUniform
-from .blobs import SingleBlob
 from .step import Constant, RectangleGrid, StepFunction
 
 # Registry of available initial condition generators

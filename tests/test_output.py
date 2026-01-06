@@ -1,8 +1,9 @@
 """Tests for output management."""
 
 import json
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 from pde import ScalarField, FieldCollection
 
 from pde_sim.core.output import OutputManager, create_metadata
@@ -322,7 +323,7 @@ class TestCreateMetadata:
         # Description should be loaded from gray-scott.md
         assert metadata["description"] is not None
         assert "Gray-Scott" in metadata["description"]
-        assert "## Mathematical Formulation" in metadata["description"]
+        assert "## Equations" in metadata["description"]
 
     def test_create_metadata_description_not_found(self):
         """Test that description is None for presets without markdown files."""

@@ -1,6 +1,7 @@
 """Main simulation orchestrator."""
 
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -40,7 +41,6 @@ class SimulationRunner:
         self.sim_id = sim_id or str(uuid.uuid4())
 
         # Generate run name with datetime (e.g., 2024-01-15_143052)
-        from datetime import datetime
         datetime_str = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         self.run_name = datetime_str
         # Full folder path: {preset}/{datetime}

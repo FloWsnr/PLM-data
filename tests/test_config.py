@@ -1,8 +1,9 @@
 """Tests for configuration loading and validation."""
 
+from pathlib import Path
+
 import pytest
 import yaml
-from pathlib import Path
 
 from pde_sim.core.config import (
     SimulationConfig,

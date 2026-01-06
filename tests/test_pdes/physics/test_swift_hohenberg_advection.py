@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+
 from pde import CartesianGrid, ScalarField
 
 from pde_sim.pdes import get_pde_preset, list_presets
