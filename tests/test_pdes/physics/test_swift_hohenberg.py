@@ -39,6 +39,7 @@ class TestSwiftHohenbergPDE:
         assert "k" in params
         assert "g2" in params
         assert "g3" in params
+        assert "g5" in params
 
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
@@ -66,7 +67,26 @@ class TestSwiftHohenbergPDE:
         We just verify creation works correctly.
         """
         preset = get_pde_preset("swift-hohenberg")
-        params = {"r": 0.1, "k": 1.0, "g2": 0.0, "g3": -1.0}
+        params = {"r": 0.1, "k": 1.0, "g2": 0.0, "g3": -1.0, "g5": 0.0}
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        state = preset.create_initial_state(
+            small_grid, "random-uniform", {"low": -0.05, "high": 0.05}
+        )
+
+        # Check that PDE and state are created correctly
+        assert pde is not None
+        assert state is not None
+        assert np.isfinite(state.data).all()
+
+    def test_subcritical_with_quintic(self, small_grid):
+        """Test subcritical regime with quintic term.
+
+        Parameters for subcritical localised patterns: r<0, g2>0, g3<0, g5<0.
+        """
+        preset = get_pde_preset("swift-hohenberg")
+        params = {"r": -0.1, "k": 1.0, "g2": 0.5, "g3": -1.0, "g5": -0.1}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)

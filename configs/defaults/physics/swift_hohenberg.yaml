@@ -4,6 +4,7 @@ parameters:
   k: 0.9   # Lower k gives k^4=0.656, so r=0.9 > k^4 enables instability
   g2: 0.0
   g3: -1.0
+  g5: 0.0  # Quintic nonlinearity (needed for subcritical patterns)
 init:
   type: random-gaussian
   params:

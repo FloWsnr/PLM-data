@@ -4,16 +4,18 @@
 
 The Swift-Hohenberg equation for pattern formation:
 
-$$\frac{\partial u}{\partial t} = ru - (k_0^2 + \nabla^2)^2 u + g_2 u^2 + g_3 u^3$$
+$$\frac{\partial u}{\partial t} = ru - (k_0^2 + \nabla^2)^2 u + g_2 u^2 + g_3 u^3 + g_5 u^5$$
 
 Expanding the squared operator:
-$$\frac{\partial u}{\partial t} = ru - k_0^4 u - 2k_0^2 \nabla^2 u - \nabla^4 u + g_2 u^2 + g_3 u^3$$
+$$\frac{\partial u}{\partial t} = ru - k_0^4 u - 2k_0^2 \nabla^2 u - \nabla^4 u + g_2 u^2 + g_3 u^3 + g_5 u^5$$
 
 where:
 - $u$ is the pattern amplitude
 - $r$ is the control parameter (bifurcation parameter)
 - $k_0$ is the critical wavenumber
-- $g_2, g_3$ are nonlinear coefficients
+- $g_2, g_3, g_5$ are nonlinear coefficients
+
+For stability, we need $g_5 < 0$ (or $g_3 < 0$ if $g_5 = 0$).
 
 ## Physical Background
 
@@ -31,7 +33,8 @@ Key features:
 | Control parameter | $r$ | Distance from onset | -1 to 1 |
 | Critical wavenumber | $k_0$ | Selected wavelength | 0.1 - 5 |
 | Quadratic nonlinearity | $g_2$ | Breaks up/down symmetry | -5 to 5 |
-| Cubic nonlinearity | $g_3$ | Saturation (usually < 0) | -5 to 0 |
+| Cubic nonlinearity | $g_3$ | Saturation (< 0 if $g_5=0$) | -5 to 5 |
+| Quintic nonlinearity | $g_5$ | Higher-order saturation (< 0 for stability) | -5 to 0 |
 
 ## Linear Stability
 
@@ -62,6 +65,17 @@ Depending on nonlinearities:
 | Hexagons | With quadratic nonlinearity |
 | Squares | Special parameter values |
 | Quasipatterns | Near certain boundaries |
+| Localised patterns | Subcritical regime ($r<0$, $g_2>0$, $g_3<0$) |
+
+## Subcriticality and Localised Solutions
+
+When $r < 0$, $g_2 > 0$, and $g_3 < 0$ (with $g_5 < 0$ for stability), the system can be in a subcritical regime that supports both stable patterned states and the stable homogeneous state $u = 0$. This enables:
+
+- **Multistability**: Coexistence of patterned and uniform states
+- **Localised solutions**: Patterns that decay to $u = 0$ in most of the domain
+- **Snaking bifurcations**: Complex bifurcation structure
+
+The quintic term $g_5 u^5$ is essential for stabilizing subcritical patterns when $g_3$ alone is insufficient.
 
 ## Applications
 
@@ -77,7 +91,7 @@ For $g_2 = 0$, the equation is a gradient flow:
 $$\frac{\partial u}{\partial t} = -\frac{\delta \mathcal{F}}{\delta u}$$
 
 with Lyapunov functional:
-$$\mathcal{F}[u] = \int \left[-\frac{r}{2}u^2 + \frac{1}{2}[(k_0^2 + \nabla^2)u]^2 - \frac{g_3}{4}u^4\right] dx$$
+$$\mathcal{F}[u] = \int \left[-\frac{r}{2}u^2 + \frac{1}{2}[(k_0^2 + \nabla^2)u]^2 - \frac{g_3}{4}u^4 - \frac{g_5}{6}u^6\right] dx$$
 
 ## Numerical Considerations
 

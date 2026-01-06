@@ -14,12 +14,12 @@ class SwiftHohenbergPDE(ScalarPDEPreset):
 
     The Swift-Hohenberg equation is a model for pattern formation:
 
-        du/dt = r*u - (k²+laplace)²*u + g₂*u² + g₃*u³
+        du/dt = r*u - (k²+laplace)²*u + g₂*u² + g₃*u³ + g₅*u⁵
 
     where:
         - r is the control parameter
         - k is the critical wavenumber
-        - g₂, g₃ are nonlinear coefficients
+        - g₂, g₃, g₅ are nonlinear coefficients
     """
 
     @property
@@ -29,7 +29,7 @@ class SwiftHohenbergPDE(ScalarPDEPreset):
             category="physics",
             description="Swift-Hohenberg pattern formation",
             equations={
-                "u": "r*u - (k**2 + laplace(u))**2 + g2*u**2 + g3*u**3",
+                "u": "r*u - (k**2 + laplace(u))**2 + g2*u**2 + g3*u**3 + g5*u**5",
             },
             parameters=[
                 PDEParameter(
@@ -56,7 +56,14 @@ class SwiftHohenbergPDE(ScalarPDEPreset):
                 PDEParameter(
                     name="g3",
                     default=-1.0,
-                    description="Cubic nonlinearity (should be negative)",
+                    description="Cubic nonlinearity (should be negative for stability if g5=0)",
+                    min_value=-5.0,
+                    max_value=5.0,
+                ),
+                PDEParameter(
+                    name="g5",
+                    default=0.0,
+                    description="Quintic nonlinearity (should be negative for stability)",
                     min_value=-5.0,
                     max_value=0.0,
                 ),
@@ -76,10 +83,11 @@ class SwiftHohenbergPDE(ScalarPDEPreset):
         k = parameters.get("k", 1.0)
         g2 = parameters.get("g2", 0.0)
         g3 = parameters.get("g3", -1.0)
+        g5 = parameters.get("g5", 0.0)
 
         k_sq = k * k
 
-        # Swift-Hohenberg: du/dt = r*u - (k² + ∇²)²u + g₂u² + g₃u³
+        # Swift-Hohenberg: du/dt = r*u - (k² + ∇²)²u + g₂u² + g₃u³ + g₅u⁵
         # Expanding (k² + ∇²)²u = k⁴u + 2k²∇²u + ∇⁴u
         rhs = (
             f"{r} * u - {k_sq**2} * u - 2 * {k_sq} * laplace(u) - laplace(laplace(u))"
@@ -88,6 +96,8 @@ class SwiftHohenbergPDE(ScalarPDEPreset):
             rhs += f" + {g2} * u**2"
         if g3 != 0:
             rhs += f" + {g3} * u**3"
+        if g5 != 0:
+            rhs += f" + {g5} * u**5"
 
         return PDE(
             rhs={"u": rhs},

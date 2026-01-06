@@ -4,8 +4,7 @@
 All working correctly. No fixes needed.
 
 ## Physics PDEs (16/16)
-All working correctly after fixes. One optional enhancement:
-- `swift-hohenberg` - could add quintic term option (low priority)
+All working correctly after fixes. ✓ Quintic term added to `swift-hohenberg`.
 
 ## Biology PDEs (10/18 working, 8 need fixes)
 
