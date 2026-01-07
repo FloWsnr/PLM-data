@@ -357,6 +357,7 @@ def create_metadata(
     total_time: float,
     frame_annotations: list[dict[str, Any]],
     solver_diagnostics: dict[str, Any] | None = None,
+    wall_clock_duration: float | None = None,
 ) -> dict[str, Any]:
     """Create a complete metadata dictionary.
 
@@ -368,6 +369,7 @@ def create_metadata(
         total_time: Total simulation time.
         frame_annotations: List of per-frame annotations.
         solver_diagnostics: Optional solver diagnostics from py-pde.
+        wall_clock_duration: Wall clock time in seconds for the simulation.
 
     Returns:
         Complete metadata dictionary.
@@ -409,6 +411,7 @@ def create_metadata(
             "totalFrames": len(frame_annotations),
             "numFrames": config.output.num_frames,
             "totalTime": total_time,
+            "wallClockDuration": wall_clock_duration,
             "resolution": [config.resolution, config.resolution],
             "dtStatistics": dt_stats,
         },

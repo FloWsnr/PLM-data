@@ -1,5 +1,6 @@
 """Main simulation orchestrator."""
 
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -161,7 +162,10 @@ class SimulationRunner:
             solve_kwargs["adaptive"] = self.config.adaptive
             solve_kwargs["tolerance"] = self.config.tolerance
 
+        # Time the simulation
+        wall_clock_start = time.perf_counter()
         result = self.pde.solve(self.state, **solve_kwargs)
+        wall_clock_duration = time.perf_counter() - wall_clock_start
 
         # Capture solver diagnostics (including adaptive dt statistics)
         solver_diagnostics = getattr(self.pde, "diagnostics", {}).get("solver", {})
@@ -177,8 +181,8 @@ class SimulationRunner:
         self.output_manager.compute_range(all_fields)
 
         # 2. Save frames with the pre-computed range
-        for frame_index, (time, field) in enumerate(storage.items()):
-            self.output_manager.save_frame(field, frame_index, time)
+        for frame_index, (t, field) in enumerate(storage.items()):
+            self.output_manager.save_frame(field, frame_index, t)
 
         # 3. Save trajectory array if requested
         if self.output_manager.save_array:
@@ -197,6 +201,7 @@ class SimulationRunner:
             total_time=total_time,
             frame_annotations=self.output_manager.get_frame_annotations(),
             solver_diagnostics=solver_diagnostics,
+            wall_clock_duration=wall_clock_duration,
         )
 
         self.output_manager.save_metadata(metadata)
