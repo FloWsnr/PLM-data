@@ -1,8 +1,13 @@
 """Boundary condition factory for py-pde."""
 
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from pde import CartesianGrid
+
+if TYPE_CHECKING:
+    from pde_sim.core.config import BoundaryConfig, FieldBoundaryConfig
 
 
 class BoundaryConditionFactory:
@@ -80,6 +85,89 @@ class BoundaryConditionFactory:
         x_bc = cls.convert(bc_config.get("x", "periodic"))
         y_bc = cls.convert(bc_config.get("y", "periodic"))
         return [x_bc, y_bc]
+
+    @classmethod
+    def convert_per_side(
+        cls, left: str, right: str, top: str, bottom: str
+    ) -> list[list[Any]]:
+        """Convert per-side BCs to py-pde format.
+
+        Args:
+            left: BC for left side (x-)
+            right: BC for right side (x+)
+            top: BC for top side (y+)
+            bottom: BC for bottom side (y-)
+
+        Returns:
+            List of BC specs: [[left_bc, right_bc], [bottom_bc, top_bc]]
+            Note: py-pde uses [x_axis, y_axis] where x_axis=[lower, upper]
+        """
+        return [
+            [cls.convert(left), cls.convert(right)],
+            [cls.convert(bottom), cls.convert(top)],
+        ]
+
+    @classmethod
+    def convert_field_bc(cls, field_bc: FieldBoundaryConfig) -> list[Any]:
+        """Convert FieldBoundaryConfig to py-pde format.
+
+        Handles both axis-based (x/y) and side-based (left/right/top/bottom) specs.
+
+        Args:
+            field_bc: Field boundary configuration
+
+        Returns:
+            BC specification in py-pde format
+        """
+        # If any individual sides are specified, use per-side conversion
+        has_sides = any([field_bc.left, field_bc.right, field_bc.top, field_bc.bottom])
+
+        if has_sides:
+            # Use side-specific BCs, falling back to axis-level for unspecified sides
+            left = field_bc.left or field_bc.x or "periodic"
+            right = field_bc.right or field_bc.x or "periodic"
+            top = field_bc.top or field_bc.y or "periodic"
+            bottom = field_bc.bottom or field_bc.y or "periodic"
+            return cls.convert_per_side(left, right, top, bottom)
+
+        # Otherwise use simple axis-based BCs
+        x_bc = field_bc.x or "periodic"
+        y_bc = field_bc.y or "periodic"
+        return [cls.convert(x_bc), cls.convert(y_bc)]
+
+    @classmethod
+    def build_bc_ops(
+        cls,
+        bc_config: BoundaryConfig,
+        field_names: list[str],
+    ) -> dict[str, Any]:
+        """Build py-pde bc_ops dictionary for per-field BCs.
+
+        Args:
+            bc_config: The boundary configuration
+            field_names: List of field names in the PDE
+
+        Returns:
+            Dictionary suitable for py-pde PDE bc_ops parameter.
+            Format: {"field:operator": bc_spec, ...}
+        """
+        if bc_config.is_simple():
+            # Simple case: same BC for all fields, use wildcard
+            return {"*:*": cls.convert_config({"x": bc_config.x, "y": bc_config.y})}
+
+        bc_ops: dict[str, Any] = {}
+
+        # Set default (fallback) for any unspecified field/operator
+        bc_ops["*:*"] = cls.convert_config({"x": bc_config.x, "y": bc_config.y})
+
+        # Add per-field specifications
+        for field_name in field_names:
+            field_bc = bc_config.get_field_bc(field_name)
+            bc_spec = cls.convert_field_bc(field_bc)
+            # Apply to all operators for this field
+            bc_ops[f"{field_name}:*"] = bc_spec
+
+        return bc_ops
 
     @classmethod
     def get_periodic_flags(cls, bc_config: dict[str, str]) -> list[bool]:

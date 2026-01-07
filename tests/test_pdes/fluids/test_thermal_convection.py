@@ -6,6 +6,7 @@ import pytest
 from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.core.config import BoundaryConfig, FieldBoundaryConfig
 
 
 @pytest.fixture
@@ -65,6 +66,79 @@ class TestThermalConvectionPDE:
 
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(small_grid, "default", {"noise": 0.01, "seed": 42})
+
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
+
+        assert isinstance(result, FieldCollection)
+        for field in result:
+            assert np.isfinite(field.data).all()
+
+    def test_per_field_boundary_conditions(self):
+        """Test simulation with per-field boundary conditions.
+
+        Uses the physical BCs from Visual PDE reference:
+        - omega, psi: Dirichlet=0 top/bottom, periodic left/right
+        - b: Dirichlet=0 top, Neumann=T_b bottom (heat flux), periodic left/right
+        """
+        # Non-periodic grid for Dirichlet BCs on y-axis
+        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=[True, False])
+
+        preset = get_pde_preset("thermal-convection")
+        params = preset.get_default_parameters()
+
+        # Per-field BC configuration
+        bc = BoundaryConfig(
+            x="periodic",
+            y="periodic",  # Default fallback
+            fields={
+                "omega": FieldBoundaryConfig(
+                    x="periodic",
+                    top="dirichlet:0",
+                    bottom="dirichlet:0"
+                ),
+                "psi": FieldBoundaryConfig(
+                    x="periodic",
+                    top="dirichlet:0",
+                    bottom="dirichlet:0"
+                ),
+                "b": FieldBoundaryConfig(
+                    x="periodic",
+                    top="dirichlet:0",
+                    bottom="neumann:0.08"  # T_b heat flux
+                ),
+            }
+        )
+
+        pde = preset.create_pde(params, bc, grid)
+        state = preset.create_initial_state(grid, "default", {"noise": 0.01, "seed": 42})
+
+        # Run a short simulation
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
+
+        assert isinstance(result, FieldCollection)
+        for field in result:
+            assert np.isfinite(field.data).all()
+
+    def test_per_field_bc_via_dict(self):
+        """Test per-field BCs using dict format (as from YAML config)."""
+        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=[True, False])
+
+        preset = get_pde_preset("thermal-convection")
+        params = preset.get_default_parameters()
+
+        # Dict format (as would come from YAML parsing)
+        bc = {
+            "x": "periodic",
+            "y": "periodic",
+            "fields": {
+                "omega": {"top": "dirichlet:0", "bottom": "dirichlet:0"},
+                "psi": {"top": "dirichlet:0", "bottom": "dirichlet:0"},
+                "b": {"top": "dirichlet:0", "bottom": "neumann:0.08"},
+            }
+        }
+
+        pde = preset.create_pde(params, bc, grid)
+        state = preset.create_initial_state(grid, "default", {"noise": 0.01, "seed": 42})
 
         result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
 

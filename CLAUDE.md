@@ -106,6 +106,41 @@ The result should be finite and not NaN or Inf.
 
 YAML configs include: `preset`, `parameters`, `init` (initial conditions), `solver` (euler/rk4), `timesteps`, `dt`, `resolution`, `bc` (boundary conditions), `output` settings.
 
+### Boundary Conditions
+
+Simple boundary conditions (same for all fields):
+```yaml
+bc:
+  x: periodic
+  y: neumann
+```
+
+Per-field boundary conditions (for multi-field PDEs like thermal-convection):
+```yaml
+bc:
+  x: periodic           # Default for all fields
+  y: periodic
+  fields:               # Per-field overrides (optional)
+    omega:
+      top: dirichlet:0
+      bottom: dirichlet:0
+    b:
+      top: dirichlet:0
+      bottom: neumann:0.08  # Heat flux
+```
+
+Supported BC types:
+- `periodic` - Periodic boundary
+- `neumann` / `no-flux` / `zero-flux` - Zero normal derivative
+- `dirichlet` / `zero` / `wall` - Fixed value (default 0)
+- `dirichlet:VALUE` - Fixed value (e.g., `dirichlet:0.5`)
+- `neumann:VALUE` - Fixed derivative (e.g., `neumann:0.08`)
+
+Per-field BCs can specify:
+- `x`, `y` - Same BC for both sides of axis
+- `left`, `right` - Individual x-axis sides
+- `top`, `bottom` - Individual y-axis sides
+
 ## Output Structure
 
 ```

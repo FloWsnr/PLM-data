@@ -105,7 +105,7 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
                 "psi": f"{inv_eps} * (laplace(psi) + omega)",
                 "b": f"{kappa} * laplace(b) - d_dy(psi) * d_dx(b) + d_dx(psi) * d_dy(b)",
             },
-            bc=self._convert_bc(bc),
+            **self._get_pde_bc_kwargs(bc),
         )
 
     def create_initial_state(

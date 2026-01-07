@@ -349,6 +349,39 @@ class OutputManager:
         return array_path
 
 
+def _bc_to_metadata(bc: Any) -> dict[str, Any]:
+    """Convert BoundaryConfig to metadata dictionary.
+
+    Args:
+        bc: BoundaryConfig object
+
+    Returns:
+        Dictionary with boundary condition information for metadata.
+    """
+    result: dict[str, Any] = {"x": bc.x, "y": bc.y}
+
+    if bc.fields:
+        result["fields"] = {}
+        for field_name, field_bc in bc.fields.items():
+            field_dict: dict[str, str] = {}
+            if field_bc.x is not None:
+                field_dict["x"] = field_bc.x
+            if field_bc.y is not None:
+                field_dict["y"] = field_bc.y
+            if field_bc.left is not None:
+                field_dict["left"] = field_bc.left
+            if field_bc.right is not None:
+                field_dict["right"] = field_bc.right
+            if field_bc.top is not None:
+                field_dict["top"] = field_bc.top
+            if field_bc.bottom is not None:
+                field_dict["bottom"] = field_bc.bottom
+            if field_dict:
+                result["fields"][field_name] = field_dict
+
+    return result
+
+
 def create_metadata(
     sim_id: str,
     preset_name: str,
@@ -391,10 +424,7 @@ def create_metadata(
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "generatorVersion": "1.0.0",
         "equations": preset_metadata.equations,
-        "boundaryConditions": {
-            "x": config.bc.x,
-            "y": config.bc.y,
-        },
+        "boundaryConditions": _bc_to_metadata(config.bc),
         "initialConditions": config.init.type,
         "parameters": {
             "kinetic": config.parameters,

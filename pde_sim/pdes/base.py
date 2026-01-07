@@ -2,7 +2,10 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from pde_sim.core.config import BoundaryConfig
 
 from pde import CartesianGrid, FieldCollection, PDE, ScalarField
 
@@ -157,6 +160,73 @@ class PDEPreset(ABC):
             List of BC specs for [x, y] axes in py-pde format.
         """
         return BoundaryConditionFactory.convert_config(bc)
+
+    def _build_bc_ops(self, bc: Any) -> dict | None:
+        """Build bc_ops dictionary for per-field boundary conditions.
+
+        Args:
+            bc: Boundary condition configuration (BoundaryConfig or dict)
+
+        Returns:
+            bc_ops dict if per-field BCs are needed, None otherwise.
+        """
+        from pde_sim.core.config import BoundaryConfig
+
+        # Handle BoundaryConfig directly
+        if isinstance(bc, BoundaryConfig):
+            if bc.is_simple():
+                return None
+            return BoundaryConditionFactory.build_bc_ops(bc, self.metadata.field_names)
+
+        # Handle dict - check for per-field config
+        if isinstance(bc, dict) and "fields" in bc and bc["fields"]:
+            from pde_sim.core.config import FieldBoundaryConfig
+
+            # Convert dict to BoundaryConfig
+            fields = {}
+            for field_name, field_bc in bc["fields"].items():
+                if isinstance(field_bc, dict):
+                    fields[field_name] = FieldBoundaryConfig(
+                        x=field_bc.get("x"),
+                        y=field_bc.get("y"),
+                        left=field_bc.get("left"),
+                        right=field_bc.get("right"),
+                        top=field_bc.get("top"),
+                        bottom=field_bc.get("bottom"),
+                    )
+            bc_config = BoundaryConfig(
+                x=bc.get("x", "periodic"),
+                y=bc.get("y", "periodic"),
+                fields=fields,
+            )
+            return BoundaryConditionFactory.build_bc_ops(
+                bc_config, self.metadata.field_names
+            )
+
+        return None
+
+    def _get_pde_bc_kwargs(self, bc: Any) -> dict:
+        """Get bc/bc_ops kwargs for PDE constructor.
+
+        Returns appropriate kwargs based on BC complexity.
+        Uses bc_ops for per-field BCs, otherwise uses simple bc.
+
+        Args:
+            bc: Boundary condition configuration
+
+        Returns:
+            Dictionary with either {'bc': ...} or {'bc_ops': ...}
+        """
+        from pde_sim.core.config import BoundaryConfig
+
+        bc_ops = self._build_bc_ops(bc)
+        if bc_ops is not None:
+            return {"bc_ops": bc_ops}
+
+        # Simple BC case
+        if isinstance(bc, BoundaryConfig):
+            return {"bc": self._convert_bc({"x": bc.x, "y": bc.y})}
+        return {"bc": self._convert_bc(bc)}
 
 
 class ScalarPDEPreset(PDEPreset):

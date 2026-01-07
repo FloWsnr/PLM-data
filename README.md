@@ -78,6 +78,18 @@ bc:                         # Boundary conditions
   x: periodic
   y: periodic
 
+# Per-field boundary conditions (for multi-field PDEs)
+# bc:
+#   x: periodic             # Default for all fields
+#   y: periodic
+#   fields:                 # Per-field overrides
+#     omega:
+#       top: dirichlet:0
+#       bottom: dirichlet:0
+#     b:
+#       top: dirichlet:0
+#       bottom: neumann:0.08
+
 output:
   path: ./output            # Output directory
   num_frames: 100           # Total number of frames to save

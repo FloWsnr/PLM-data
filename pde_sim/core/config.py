@@ -21,11 +21,56 @@ class OutputConfig:
 
 
 @dataclass
+class FieldBoundaryConfig:
+    """Boundary conditions for a single field.
+
+    Can specify either:
+    - x/y (same BC for both sides of that axis), or
+    - left/right/top/bottom (individual sides)
+
+    Side-specific values override axis-level values.
+    """
+
+    x: str | None = None
+    y: str | None = None
+    left: str | None = None  # Overrides x for left side (x-)
+    right: str | None = None  # Overrides x for right side (x+)
+    top: str | None = None  # Overrides y for top (y+)
+    bottom: str | None = None  # Overrides y for bottom (y-)
+
+
+@dataclass
 class BoundaryConfig:
-    """Boundary condition configuration."""
+    """Boundary condition configuration.
+
+    Supports three modes:
+    1. Simple: x/y strings (backward compatible)
+    2. Per-field: fields dict mapping field names to FieldBoundaryConfig
+    3. Mixed: default x/y plus per-field overrides
+    """
 
     x: str = "periodic"
     y: str = "periodic"
+    fields: dict[str, FieldBoundaryConfig] | None = None
+
+    def is_simple(self) -> bool:
+        """Check if this is a simple (non-per-field) BC config."""
+        return self.fields is None or len(self.fields) == 0
+
+    def get_field_bc(self, field_name: str) -> FieldBoundaryConfig:
+        """Get BC for a specific field, falling back to defaults."""
+        if self.fields and field_name in self.fields:
+            field_bc = self.fields[field_name]
+            # Fill in defaults for unspecified values
+            return FieldBoundaryConfig(
+                x=field_bc.x if field_bc.x is not None else self.x,
+                y=field_bc.y if field_bc.y is not None else self.y,
+                left=field_bc.left,
+                right=field_bc.right,
+                top=field_bc.top,
+                bottom=field_bc.bottom,
+            )
+        return FieldBoundaryConfig(x=self.x, y=self.y)
 
 
 @dataclass
@@ -56,6 +101,38 @@ class SimulationConfig:
     tolerance: float = 1e-4  # Error tolerance for adaptive stepping
 
 
+def _parse_bc_config(bc_raw: dict) -> BoundaryConfig:
+    """Parse boundary condition configuration from raw dict.
+
+    Supports:
+    - Simple format: {x: "periodic", y: "neumann"}
+    - Per-field format: {x: "periodic", y: "periodic", fields: {u: {x: "dirichlet"}, ...}}
+    """
+    if not bc_raw:
+        return BoundaryConfig()
+
+    # Get default x/y BCs
+    default_x = bc_raw.get("x", "periodic")
+    default_y = bc_raw.get("y", "periodic")
+
+    # Parse per-field BCs if present
+    fields = None
+    if "fields" in bc_raw and bc_raw["fields"]:
+        fields = {}
+        for field_name, field_bc in bc_raw["fields"].items():
+            if isinstance(field_bc, dict):
+                fields[field_name] = FieldBoundaryConfig(
+                    x=field_bc.get("x"),
+                    y=field_bc.get("y"),
+                    left=field_bc.get("left"),
+                    right=field_bc.get("right"),
+                    top=field_bc.get("top"),
+                    bottom=field_bc.get("bottom"),
+                )
+
+    return BoundaryConfig(x=default_x, y=default_y, fields=fields)
+
+
 def load_config(path: Path | str) -> SimulationConfig:
     """Load and validate a YAML configuration file.
 
@@ -81,10 +158,7 @@ def load_config(path: Path | str) -> SimulationConfig:
         params=raw["init"].get("params", {}),
     )
 
-    bc_config = BoundaryConfig(
-        x=raw.get("bc", {}).get("x", "periodic"),
-        y=raw.get("bc", {}).get("y", "periodic"),
-    )
+    bc_config = _parse_bc_config(raw.get("bc", {}))
 
     output_raw = raw.get("output", {})
     output_config = OutputConfig(
@@ -115,6 +189,32 @@ def load_config(path: Path | str) -> SimulationConfig:
     )
 
 
+def _bc_config_to_dict(bc: BoundaryConfig) -> dict[str, Any]:
+    """Convert BoundaryConfig to dictionary for serialization."""
+    bc_dict: dict[str, Any] = {"x": bc.x, "y": bc.y}
+
+    if bc.fields:
+        bc_dict["fields"] = {}
+        for field_name, field_bc in bc.fields.items():
+            field_dict: dict[str, str] = {}
+            if field_bc.x is not None:
+                field_dict["x"] = field_bc.x
+            if field_bc.y is not None:
+                field_dict["y"] = field_bc.y
+            if field_bc.left is not None:
+                field_dict["left"] = field_bc.left
+            if field_bc.right is not None:
+                field_dict["right"] = field_bc.right
+            if field_bc.top is not None:
+                field_dict["top"] = field_bc.top
+            if field_bc.bottom is not None:
+                field_dict["bottom"] = field_bc.bottom
+            if field_dict:
+                bc_dict["fields"][field_name] = field_dict
+
+    return bc_dict
+
+
 def config_to_dict(config: SimulationConfig) -> dict[str, Any]:
     """Convert a SimulationConfig back to a dictionary for serialization."""
     return {
@@ -128,10 +228,7 @@ def config_to_dict(config: SimulationConfig) -> dict[str, Any]:
         "t_end": config.t_end,
         "dt": config.dt,
         "resolution": config.resolution,
-        "bc": {
-            "x": config.bc.x,
-            "y": config.bc.y,
-        },
+        "bc": _bc_config_to_dict(config.bc),
         "output": {
             "path": str(config.output.path),
             "num_frames": config.output.num_frames,

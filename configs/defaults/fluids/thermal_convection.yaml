@@ -16,6 +16,19 @@ resolution: 128
 bc:
   x: periodic
   y: periodic
+  fields:
+    omega:
+      # Vorticity vanishes at walls (no-slip condition)
+      top: dirichlet:0
+      bottom: dirichlet:0
+    psi:
+      # Stream function vanishes at walls (no-slip)
+      top: dirichlet:0
+      bottom: dirichlet:0
+    b:
+      # Temperature: cold at top, heat flux at bottom (drives convection)
+      top: dirichlet:0
+      bottom: neumann:0.08  # T_b heat flux
 output:
   path: ./output
   num_frames: 100
