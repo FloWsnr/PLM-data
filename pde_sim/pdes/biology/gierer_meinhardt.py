@@ -15,7 +15,7 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
 
     A classical model for biological pattern formation:
 
-        du/dt = laplace(u) + a + u^2/v - b*u
+        du/dt = laplace(u) + a + u^2/(v*(1+K*u^2)) - b*u
         dv/dt = D * laplace(v) + u^2 - c*v
 
     where:
@@ -25,11 +25,12 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
         - a is basal activator production
         - b is activator decay rate
         - c is inhibitor decay rate
+        - K is the saturation constant (K=0 gives standard model)
 
     Key phenomena:
-        - Spot patterns: default behavior
-        - Stripe instability: stripes break into spots
-        - Labyrinthine patterns: with saturation term
+        - Spot patterns: default behavior (K=0)
+        - Stripe/labyrinthine patterns: K~0.003
+        - Stripe instability: stripes break into spots when K=0
 
     References:
         Gierer & Meinhardt (1972). Kybernetik, 12(1), 30-39.
@@ -43,7 +44,7 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
             category="biology",
             description="Gierer-Meinhardt activator-inhibitor pattern formation",
             equations={
-                "u": "laplace(u) + a + u**2 / v - b * u",
+                "u": "laplace(u) + a + u**2 / (v * (1 + K * u**2)) - b * u",
                 "v": "D * laplace(v) + u**2 - c * v",
             },
             parameters=[
@@ -75,6 +76,13 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
                     min_value=0.1,
                     max_value=20.0,
                 ),
+                PDEParameter(
+                    name="K",
+                    default=0.0,
+                    description="Saturation constant (0=spots, ~0.003=stripes)",
+                    min_value=0.0,
+                    max_value=0.01,
+                ),
             ],
             num_fields=2,
             field_names=["u", "v"],
@@ -91,9 +99,14 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
         a = parameters.get("a", 0.5)
         b = parameters.get("b", 1.0)
         c = parameters.get("c", 6.1)
+        K = parameters.get("K", 0.0)
 
         # Add small epsilon to prevent division by zero
-        u_rhs = f"laplace(u) + {a} + u**2 / (v + 1e-10) - {b} * u"
+        # When K > 0, use saturation term for stripe patterns
+        if K > 0:
+            u_rhs = f"laplace(u) + {a} + u**2 / ((v + 1e-10) * (1 + {K} * u**2)) - {b} * u"
+        else:
+            u_rhs = f"laplace(u) + {a} + u**2 / (v + 1e-10) - {b} * u"
         v_rhs = f"{D} * laplace(v) + u**2 - {c} * v"
 
         return PDE(

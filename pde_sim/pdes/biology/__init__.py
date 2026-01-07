@@ -6,6 +6,7 @@ from .brusselator import BrusselatorPDE
 from .hyperbolic_brusselator import HyperbolicBrusselatorPDE
 from .fisher_kpp import FisherKPPPDE
 from .fitzhugh_nagumo import FitzHughNagumoPDE
+from .fitzhugh_nagumo_3 import FitzHughNagumo3PDE
 from .allen_cahn import BistableAllenCahnPDE
 from .gierer_meinhardt import GiererMeinhardtPDE
 from .heterogeneous_gierer_meinhardt import HeterogeneousGiererMeinhardtPDE
@@ -13,6 +14,7 @@ from .keller_segel import KellerSegelPDE
 from .klausmeier import KlausmeierPDE
 from .klausmeier_topography import KlausmeierTopographyPDE
 from .cyclic_competition import CyclicCompetitionPDE
+from .cyclic_competition_wave import CyclicCompetitionWavePDE
 from .immunotherapy import ImmunotherapyPDE
 from .harsh_environment import HarshEnvironmentPDE
 from .bacteria_advection import BacteriaAdvectionPDE
@@ -24,6 +26,7 @@ __all__ = [
     "HyperbolicBrusselatorPDE",
     "FisherKPPPDE",
     "FitzHughNagumoPDE",
+    "FitzHughNagumo3PDE",
     "BistableAllenCahnPDE",
     "GiererMeinhardtPDE",
     "HeterogeneousGiererMeinhardtPDE",
@@ -31,6 +34,7 @@ __all__ = [
     "KlausmeierPDE",
     "KlausmeierTopographyPDE",
     "CyclicCompetitionPDE",
+    "CyclicCompetitionWavePDE",
     "ImmunotherapyPDE",
     "HarshEnvironmentPDE",
     "BacteriaAdvectionPDE",

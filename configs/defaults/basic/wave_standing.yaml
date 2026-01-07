@@ -1,0 +1,30 @@
+# Standing wave configuration for wave equation
+# Demonstrates membrane vibration modes (Chladni figures)
+
+preset: wave
+
+parameters:
+  D: 1.0       # Wave speed squared
+  C: 0.0       # No damping for pure standing waves
+
+init:
+  type: sine
+  params:
+    kx: 4      # Mode number in x direction
+    ky: 4      # Mode number in y direction
+    amplitude: 1.0
+
+solver: euler
+dt: 0.002
+resolution: 128
+domain_size: 100.0
+t_end: 50.0
+timesteps: 200
+
+bc:
+  x: neumann   # Fixed edges
+  y: neumann
+
+output:
+  frames: true
+  metadata: true

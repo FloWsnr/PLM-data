@@ -16,7 +16,7 @@ class ImmunotherapyPDE(MultiFieldPDEPreset):
     Describes spatial pattern formation in cancer immunotherapy:
 
         du/dt = Du*laplace(u) + c*v - mu*u + p_u*u*w/(1+w) + s_u
-        dv/dt = Dv*laplace(v) + v*(1-v) - u*v/(g_v+v)
+        dv/dt = Dv*laplace(v) + v*(1-v) - p_v*u*v/(g_v+v)
         dw/dt = Dw*laplace(w) + p_w*u*v/(g_w+v) - nu*w + s_w
 
     where:
@@ -40,7 +40,7 @@ class ImmunotherapyPDE(MultiFieldPDEPreset):
             description="Tumor-immune-cytokine immunotherapy model",
             equations={
                 "u": "Du*laplace(u) + c*v - mu*u + p_u*u*w/(1+w) + s_u",
-                "v": "Dv*laplace(v) + v*(1-v) - u*v/(g_v+v)",
+                "v": "Dv*laplace(v) + v*(1-v) - p_v*u*v/(g_v+v)",
                 "w": "Dw*laplace(w) + p_w*u*v/(g_w+v) - nu*w + s_w",
             },
             parameters=[
@@ -92,6 +92,13 @@ class ImmunotherapyPDE(MultiFieldPDEPreset):
                     description="Tumor saturation constant (gamma_v)",
                     min_value=0.01,
                     max_value=1.0,
+                ),
+                PDEParameter(
+                    name="p_v",
+                    default=1.0,
+                    description="Tumor killing rate coefficient",
+                    min_value=0.1,
+                    max_value=2.0,
                 ),
                 PDEParameter(
                     name="p_w",
@@ -147,6 +154,7 @@ class ImmunotherapyPDE(MultiFieldPDEPreset):
         mu = parameters.get("mu", 0.167)
         p_u = parameters.get("p_u", 0.69167)
         g_v = parameters.get("g_v", 0.1)
+        p_v = parameters.get("p_v", 1.0)
         p_w = parameters.get("p_w", 27.778)
         g_w = parameters.get("g_w", 0.001)
         nu = parameters.get("nu", 55.55556)
@@ -154,7 +162,7 @@ class ImmunotherapyPDE(MultiFieldPDEPreset):
         s_w = parameters.get("s_w", 10.0)
 
         u_rhs = f"{Du} * laplace(u) + {c} * v - {mu} * u + {p_u} * u * w / (1 + w) + {s_u}"
-        v_rhs = f"{Dv} * laplace(v) + v * (1 - v) - u * v / ({g_v} + v)"
+        v_rhs = f"{Dv} * laplace(v) + v * (1 - v) - {p_v} * u * v / ({g_v} + v)"
         w_rhs = f"{Dw} * laplace(w) + {p_w} * u * v / ({g_w} + v) - {nu} * w + {s_w}"
 
         return PDE(

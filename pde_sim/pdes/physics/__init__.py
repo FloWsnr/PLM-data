@@ -2,6 +2,7 @@
 
 # Basic pattern formation
 from .gray_scott import GrayScottPDE
+from .bistable_advection import BistableAdvectionPDE
 from .stochastic_gray_scott import StochasticGrayScottPDE
 from .cahn_hilliard import CahnHilliardPDE
 from .swift_hohenberg import SwiftHohenbergPDE
@@ -10,6 +11,7 @@ from .superlattice import SuperlatticePDE
 
 # Wave and soliton equations
 from .burgers import BurgersPDE
+from .inviscid_burgers import InviscidBurgersPDE
 from .korteweg_de_vries import KortewegDeVriesPDE
 from .kuramoto_sivashinsky import KuramotoSivashinskyPDE
 from .nonlinear_schrodinger import NonlinearSchrodingerPDE
@@ -31,6 +33,7 @@ from .duffing import DuffingPDE
 __all__ = [
     # Pattern formation
     "GrayScottPDE",
+    "BistableAdvectionPDE",
     "StochasticGrayScottPDE",
     "CahnHilliardPDE",
     "SwiftHohenbergPDE",
@@ -38,6 +41,7 @@ __all__ = [
     "SuperlatticePDE",
     # Waves and solitons
     "BurgersPDE",
+    "InviscidBurgersPDE",
     "KortewegDeVriesPDE",
     "KuramotoSivashinskyPDE",
     "NonlinearSchrodingerPDE",
