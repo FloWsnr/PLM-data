@@ -2,6 +2,7 @@
 
 import time
 import uuid
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -72,6 +73,19 @@ class SimulationRunner:
         params = self.preset.get_default_parameters()
         params.update(config.parameters)
         self.preset.validate_parameters(params)
+
+        # Warn about unused parameters in config
+        known_param_names = {p.name for p in self.preset.metadata.parameters}
+        provided_param_names = set(config.parameters.keys())
+        unused_params = provided_param_names - known_param_names
+        if unused_params:
+            warnings.warn(
+                f"Unused parameters in config for '{config.preset}': {sorted(unused_params)}. "
+                f"Known parameters are: {sorted(known_param_names)}",
+                UserWarning,
+                stacklevel=2,
+            )
+
         self.parameters = params
 
         self.pde = self.preset.create_pde(

@@ -1,5 +1,7 @@
 """Tests for simulation runner."""
 
+import warnings
+
 import numpy as np
 import pytest
 import yaml
@@ -308,3 +310,101 @@ class TestAdaptiveTimeStepping:
         assert metadata["parameters"]["tolerance"] == 1e-4
 
 
+class TestUnusedParameterWarning:
+    """Tests for unused parameter warning."""
+
+    def test_warns_on_unused_parameter(self, tmp_path):
+        """Test that a warning is raised for unused parameters."""
+        config_dict = {
+            "preset": "heat",
+            "parameters": {
+                "D_T": 0.01,  # Known parameter
+                "unknown_param": 999,  # Unknown parameter
+            },
+            "init": {"type": "random-uniform", "params": {}},
+            "solver": "euler",
+            "t_end": 0.001,
+            "dt": 0.0001,
+            "resolution": 16,
+            "bc": {"x": "periodic", "y": "periodic"},
+            "output": {"path": str(tmp_path), "num_frames": 3},
+            "seed": 42,
+        }
+
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config = load_config(config_path)
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            SimulationRunner(config, output_dir=tmp_path)
+
+            # Check that a warning was raised
+            assert len(w) == 1
+            assert issubclass(w[0].category, UserWarning)
+            assert "unknown_param" in str(w[0].message)
+            assert "heat" in str(w[0].message)
+
+    def test_warns_on_multiple_unused_parameters(self, tmp_path):
+        """Test warning includes all unused parameters."""
+        config_dict = {
+            "preset": "heat",
+            "parameters": {
+                "D_T": 0.01,
+                "foo": 1.0,
+                "bar": 2.0,
+            },
+            "init": {"type": "random-uniform", "params": {}},
+            "solver": "euler",
+            "t_end": 0.001,
+            "dt": 0.0001,
+            "resolution": 16,
+            "bc": {"x": "periodic", "y": "periodic"},
+            "output": {"path": str(tmp_path), "num_frames": 3},
+            "seed": 42,
+        }
+
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config = load_config(config_path)
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            SimulationRunner(config, output_dir=tmp_path)
+
+            assert len(w) == 1
+            msg = str(w[0].message)
+            assert "foo" in msg
+            assert "bar" in msg
+
+    def test_no_warning_when_all_params_used(self, tmp_path):
+        """Test that no warning is raised when all parameters are known."""
+        config_dict = {
+            "preset": "heat",
+            "parameters": {"D_T": 0.01},  # Only known parameter
+            "init": {"type": "random-uniform", "params": {}},
+            "solver": "euler",
+            "t_end": 0.001,
+            "dt": 0.0001,
+            "resolution": 16,
+            "bc": {"x": "periodic", "y": "periodic"},
+            "output": {"path": str(tmp_path), "num_frames": 3},
+            "seed": 42,
+        }
+
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config = load_config(config_path)
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            SimulationRunner(config, output_dir=tmp_path)
+
+            # No warning should be raised
+            assert len(w) == 0
