@@ -103,6 +103,7 @@ class PeronaMalikPDE(ScalarPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> ScalarField:
         """Create initial image-like pattern with edges and noise.
 

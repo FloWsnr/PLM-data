@@ -158,6 +158,7 @@ class ImmunotherapyPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create initial tumor with immune cells and cytokine."""
         noise = ic_params.get("noise", 0.01)

@@ -92,6 +92,7 @@ class HarshEnvironmentPDE(ScalarPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> ScalarField:
         """Create initial population - localized patches."""
         if ic_type in ("harsh-environment-default", "default"):

@@ -85,6 +85,7 @@ class BurgersPDE(ScalarPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> ScalarField:
         """Create initial state for Burgers' equation.
 

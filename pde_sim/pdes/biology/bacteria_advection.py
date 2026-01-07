@@ -92,6 +92,7 @@ class BacteriaAdvectionPDE(ScalarPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> ScalarField:
         """Create initial bacterial concentration."""
         c0 = ic_params.get("c0", 0.77)

@@ -113,6 +113,7 @@ class CyclicCompetitionPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create initial state - localized bump of all species at center."""
         np.random.seed(ic_params.get("seed"))

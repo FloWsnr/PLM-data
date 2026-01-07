@@ -118,6 +118,7 @@ class CrossDiffusionSchnakenbergPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create initial state near the homogeneous steady state with perturbation."""
         a = ic_params.get("a", 0.01)

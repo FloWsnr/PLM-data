@@ -86,6 +86,7 @@ class PotentialFlowImagesPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create initial potential with source and its image."""
         # Get domain bounds from grid

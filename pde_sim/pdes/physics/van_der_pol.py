@@ -112,6 +112,7 @@ class VanDerPolPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create initial oscillator states.
 

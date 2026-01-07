@@ -109,6 +109,7 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create initial state near steady state with perturbation."""
         noise = ic_params.get("noise", 0.01)

@@ -171,6 +171,7 @@ class ScalarPDEPreset(PDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> ScalarField:
         """Create scalar initial field.
 
@@ -178,6 +179,7 @@ class ScalarPDEPreset(PDEPreset):
             grid: The computational grid.
             ic_type: Type of initial condition.
             ic_params: Parameters for the initial condition.
+            **kwargs: Additional arguments (ignored for scalar PDEs).
 
         Returns:
             Initial scalar field.
@@ -205,6 +207,7 @@ class MultiFieldPDEPreset(PDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create multi-field initial state.
 
@@ -212,6 +215,7 @@ class MultiFieldPDEPreset(PDEPreset):
             grid: The computational grid.
             ic_type: Default initial condition type.
             ic_params: Parameters which may include per-field overrides.
+            **kwargs: Additional arguments (parameters, bc) for specific PDEs.
 
         Returns:
             Initial field collection.

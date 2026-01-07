@@ -93,6 +93,7 @@ class SchnakenbergPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create initial state near the homogeneous steady state with perturbation."""
         # Steady state: u* = a + b, v* = b / (a + b)^2

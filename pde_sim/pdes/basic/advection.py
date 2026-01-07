@@ -120,5 +120,6 @@ class AdvectionPDE(ScalarPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> ScalarField:
         return create_initial_condition(grid, ic_type, ic_params)

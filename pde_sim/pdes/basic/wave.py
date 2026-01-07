@@ -92,6 +92,7 @@ class WavePDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create initial state for wave equation."""
         # u gets the specified initial condition
@@ -259,6 +260,7 @@ class InhomogeneousWavePDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create initial state for inhomogeneous wave equation."""
         # u gets the specified initial condition

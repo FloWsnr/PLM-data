@@ -81,10 +81,13 @@ class SimulationRunner:
         )
 
         # Create initial state
+        # Pass parameters and bc for PDEs that need them (e.g., plate equation)
         self.state = self.preset.create_initial_state(
             grid=self.grid,
             ic_type=config.init.type,
             ic_params=config.init.params,
+            parameters=params,
+            bc={"x": config.bc.x, "y": config.bc.y},
         )
 
         # Output management

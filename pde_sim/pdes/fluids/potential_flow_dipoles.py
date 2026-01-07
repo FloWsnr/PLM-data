@@ -87,6 +87,7 @@ class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create initial potential with source-sink pair."""
         # Get domain bounds from grid

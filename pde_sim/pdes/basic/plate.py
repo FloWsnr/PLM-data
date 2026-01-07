@@ -3,12 +3,77 @@
 from typing import Any
 
 import numpy as np
-from pde import PDE, CartesianGrid, FieldCollection, ScalarField
+from pde import CartesianGrid, FieldCollection, ScalarField
+from pde.pdes.base import PDEBase
 
 from pde_sim.initial_conditions import create_initial_condition
 
 from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
+
+
+class PlateEquationPDE(PDEBase):
+    """Custom PDE for plate equation with algebraic w field.
+
+    Implements:
+        du/dt = v + D_c*D * laplace(u)
+        dv/dt = -D * laplace(w) - C*v - Q
+        w = D * laplace(u)  (algebraic constraint, computed each step)
+
+    By substituting w into the v equation:
+        dv/dt = -D^2 * laplace(laplace(u)) - C*v - Q
+    """
+
+    def __init__(self, D: float, Q: float, C: float, D_c: float, bc: dict):
+        super().__init__()
+        self.D = D
+        self.Q = Q
+        self.C = C
+        self.D_c = D_c
+        self.bc = bc
+
+    def evolution_rate(self, state: FieldCollection, t: float = 0) -> FieldCollection:
+        """Compute the right-hand side of the plate equation.
+
+        Args:
+            state: FieldCollection with [u, v, w] fields
+            t: Current time (unused)
+
+        Returns:
+            FieldCollection with time derivatives [du/dt, dv/dt, dw/dt]
+        """
+        u, v, w = state
+
+        # Compute laplacian of u
+        laplace_u = u.laplace(bc=self.bc)
+
+        # Compute w algebraically: w = D * laplace(u)
+        # (We update w in place for consistency, though it's not evolved)
+        w_algebraic = self.D * laplace_u
+
+        # Compute laplacian of w (which is D * laplace(laplace(u)))
+        # We need to create a ScalarField from w_algebraic to compute its laplacian
+        w_field = ScalarField(u.grid, w_algebraic.data)
+        laplace_w = w_field.laplace(bc=self.bc)
+
+        # du/dt = v + D_c*D * laplace(u)
+        du_dt = v.data + self.D_c * self.D * laplace_u.data
+
+        # dv/dt = -D * laplace(w) - C*v - Q
+        dv_dt = -self.D * laplace_w.data - self.C * v.data - self.Q
+
+        # dw/dt = 0 (w is algebraic, but we need to return something)
+        # Actually, we set dw/dt such that w tracks D * laplace(u)
+        # To keep w = D * laplace(u), we set dw/dt = D * laplace(du/dt)
+        # But simpler: just set dw/dt = 0 and reinitialize w each step
+        dw_dt = np.zeros_like(w.data)
+
+        # Create result fields
+        result_u = ScalarField(u.grid, du_dt)
+        result_v = ScalarField(v.grid, dv_dt)
+        result_w = ScalarField(w.grid, dw_dt)
+
+        return FieldCollection([result_u, result_v, result_w])
 
 
 @register_pde("plate")
@@ -23,12 +88,12 @@ class PlatePDE(MultiFieldPDEPreset):
     Based on visualpde.com, reformulated using three fields for numerical stability:
         du/dt = v + D_c*D * laplace(u)
         dv/dt = -D * laplace(w) - C*v - Q
-        w = D * laplace(u)  (auxiliary algebraic field)
+        w = D * laplace(u)  (auxiliary algebraic field, computed each step)
 
     where:
         - u is plate displacement
         - v is velocity
-        - w is an auxiliary field representing D * laplace(u)
+        - w is an auxiliary field representing D * laplace(u) (algebraic, not evolved)
         - D is the bending rigidity parameter
         - C is damping coefficient
         - Q is a constant load (gravity-like force)
@@ -86,7 +151,7 @@ class PlatePDE(MultiFieldPDEPreset):
         parameters: dict[str, float],
         bc: dict[str, Any],
         grid: CartesianGrid,
-    ) -> PDE:
+    ) -> PlateEquationPDE:
         """Create the plate vibration PDE.
 
         Args:
@@ -95,7 +160,7 @@ class PlatePDE(MultiFieldPDEPreset):
             grid: The computational grid.
 
         Returns:
-            Configured PDE instance.
+            Configured PDE instance with algebraic w field.
         """
         D = parameters.get("D", 10.0)
         Q = parameters.get("Q", 0.003)
@@ -104,38 +169,15 @@ class PlatePDE(MultiFieldPDEPreset):
 
         bc_spec = self._convert_bc(bc)
 
-        # Build u equation: v + D_c*D * laplace(u)
-        if D_c > 0:
-            u_rhs = f"v + {D_c * D} * laplace(u)"
-        else:
-            u_rhs = "v"
-
-        # Build v equation: -D * laplace(w) - C*v - Q
-        v_terms = [f"-{D} * laplace(w)"]
-        if C > 0:
-            v_terms.append(f"- {C} * v")
-        if Q != 0:
-            v_terms.append(f"- {Q}")
-        v_rhs = " ".join(v_terms)
-
-        # w is computed from u: w = D * laplace(u)
-        # We use cross-diffusion to implement this relationship
-        w_rhs = f"{D} * laplace(u)"
-
-        return PDE(
-            rhs={
-                "u": u_rhs,
-                "v": v_rhs,
-                "w": w_rhs,
-            },
-            bc=bc_spec,
-        )
+        return PlateEquationPDE(D=D, Q=Q, C=C, D_c=D_c, bc=bc_spec)
 
     def create_initial_state(
         self,
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        parameters: dict[str, float] | None = None,
+        bc: dict[str, Any] | None = None,
     ) -> FieldCollection:
         """Create initial state for plate equation.
 
@@ -143,6 +185,8 @@ class PlatePDE(MultiFieldPDEPreset):
             grid: The computational grid.
             ic_type: Type of initial condition.
             ic_params: Parameters for the initial condition.
+            parameters: PDE parameters (needed to compute w = D * laplace(u)).
+            bc: Boundary conditions (needed to compute laplacian).
 
         Returns:
             FieldCollection with u (displacement), v (velocity), and w (auxiliary) fields.
@@ -156,8 +200,12 @@ class PlatePDE(MultiFieldPDEPreset):
         v = ScalarField(grid, v_data)
         v.label = "v"
 
-        # w starts at zero (will be computed from u during simulation)
-        w_data = np.zeros(grid.shape)
+        # w = D * laplace(u) (algebraic constraint)
+        # Initialize w correctly from u
+        D = parameters.get("D", 10.0) if parameters else 10.0
+        bc_spec = self._convert_bc(bc) if bc else "auto_periodic_neumann"
+        laplace_u = u.laplace(bc=bc_spec)
+        w_data = D * laplace_u.data
         w = ScalarField(grid, w_data)
         w.label = "w"
 

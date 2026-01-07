@@ -104,6 +104,7 @@ class VorticityPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create initial vorticity, stream function, and passive scalar."""
         # Get domain bounds from grid

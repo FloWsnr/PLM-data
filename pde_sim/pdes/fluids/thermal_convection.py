@@ -113,6 +113,7 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create initial temperature perturbation with small noise."""
         # Get domain bounds from grid

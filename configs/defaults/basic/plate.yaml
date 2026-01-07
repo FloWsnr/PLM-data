@@ -11,7 +11,7 @@ init:
   params:
     value: -4.0  # Initial deformation (from reference: u = -4)
 solver: scipy  # Implicit solver for stiff biharmonic equation
-backend: numba
+backend: numpy
 adaptive: true
 dt: 0.0001  # From reference: dt=0.0001
 resolution: 200  # From reference: dx=0.5, domain_size=100 -> 100/0.5 = 200
@@ -25,4 +25,4 @@ output:
   field_to_plot: u
 seed: 42
 domain_size: 100.0  # From reference: domain_size=100
-t_end: 2.0
+t_end: 20.0

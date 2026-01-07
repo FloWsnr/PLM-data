@@ -95,6 +95,7 @@ class BrusselatorPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create initial state near homogeneous steady state."""
         a = ic_params.get("a", 2.0)

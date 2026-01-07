@@ -113,6 +113,7 @@ class KellerSegelPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create initial state with localized cell density."""
         # Default: use gaussian blobs for cells, uniform for chemoattractant
