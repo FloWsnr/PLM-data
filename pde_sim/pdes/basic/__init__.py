@@ -2,6 +2,7 @@
 
 from .heat import HeatPDE, InhomogeneousHeatPDE, InhomogeneousDiffusionHeatPDE
 from .wave import WavePDE, InhomogeneousWavePDE
+from .wave_standing import StandingWavePDE
 from .damped_wave import DampedWavePDE
 from .advection import AdvectionPDE
 from .schrodinger import SchrodingerPDE
@@ -13,6 +14,7 @@ __all__ = [
     "InhomogeneousDiffusionHeatPDE",
     "WavePDE",
     "InhomogeneousWavePDE",
+    "StandingWavePDE",
     "DampedWavePDE",
     "AdvectionPDE",
     "SchrodingerPDE",

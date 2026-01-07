@@ -2,7 +2,7 @@
 # Based on visualpde.com heat equation
 preset: heat
 parameters:
-  D_T: 1.0  # Thermal diffusivity (diffusion coefficient)
+  D_T: 5.0  # Thermal diffusivity (diffusion coefficient) - increased for more visible dynamics
 init:
   type: gaussian-blobs
   params:

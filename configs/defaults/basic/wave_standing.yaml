@@ -1,11 +1,10 @@
 # Standing wave configuration for wave equation
 # Demonstrates membrane vibration modes (Chladni figures)
 
-preset: wave
+preset: wave-standing
 
 parameters:
   D: 1.0       # Wave speed squared
-  C: 0.0       # No damping for pure standing waves
 
 init:
   type: sine
