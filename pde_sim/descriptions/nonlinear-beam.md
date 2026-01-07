@@ -1,8 +1,8 @@
 # Nonlinear Beam Equation
 
-> **Note**: This implementation uses an approximate formulation. See todo.md for details on discrepancies with the Visual PDE reference. The main issues are: (1) equation structure simplification, (2) 2D extension via Laplacians rather than 1D.
-
 A fourth-order equation describing the bending dynamics of elastic beams with state-dependent stiffness, where the bending resistance changes based on local curvature.
+
+> **Note**: Visual PDE implements this as a strictly 1D equation. This implementation extends to 2D using Laplacians (∇²) instead of second x-derivatives (∂²/∂x²).
 
 ## Description
 
@@ -20,26 +20,30 @@ The state-dependent stiffness creates a feedback loop: regions of high curvature
 
 ## Equations
 
-The overdamped nonlinear beam equation:
+The overdamped nonlinear beam equation (1D reference):
 
 $$\frac{\partial y}{\partial t} = -\frac{\partial^2}{\partial x^2}\left( E\left(\frac{\partial^2 y}{\partial x^2}\right) \frac{\partial^2 y}{\partial x^2} \right)$$
 
+The 2D extension uses Laplacians:
+
+$$\frac{\partial u}{\partial t} = -\nabla^2(E(v) \cdot v) \quad \text{where } v = \nabla^2 u$$
+
 With curvature-dependent stiffness:
 
-$$E = E^\star + \Delta_E \frac{1 + \tanh\left(\frac{\partial^2 y}{\partial x^2}/\epsilon\right)}{2}$$
+$$E(v) = E^\star + \Delta_E \frac{1 + \tanh(v/\epsilon)}{2}$$
 
-This is implemented via cross-diffusion with auxiliary variables:
+This is implemented via a 3-field cross-diffusion formulation:
 
-$$\frac{\partial u}{\partial t} = -\frac{\partial w}{\partial x}$$
+$$\frac{\partial u}{\partial t} = -\nabla^2 w$$
 
-$$v = \frac{\partial u}{\partial x}$$
+$$v = \nabla^2 u \quad \text{(algebraic constraint)}$$
 
-$$w = E(v) \cdot v$$
+$$w = E(v) \cdot v \quad \text{(algebraic constraint)}$$
 
 Where:
-- $u(x,t) \equiv y$ is the beam deflection
-- $v = u_{xx}$ is the curvature (second derivative)
-- $w$ is the bending moment
+- $u$ is the beam/plate deflection
+- $v = \nabla^2 u$ is the curvature (Laplacian of deflection)
+- $w = E(v) \cdot v$ is the bending moment
 - $E^\star$ is the baseline stiffness
 - $\Delta_E$ is the stiffness change range
 - $\epsilon$ controls the sharpness of the stiffness transition

@@ -93,3 +93,130 @@ class TestSchrodingerPDE:
         assert result is not None
         assert np.isfinite(result[0].data).all()
         assert np.isfinite(result[1].data).all()
+
+    def test_potential_parameters_in_metadata(self):
+        """Test that potential parameters are in metadata."""
+        preset = get_pde_preset("schrodinger")
+        params = preset.get_default_parameters()
+
+        assert "V_strength" in params
+        assert "pot_n" in params
+        assert "pot_m" in params
+        assert params["V_strength"] == 0.0  # Default: no potential
+
+    def test_create_pde_with_sinusoidal_potential(self, non_periodic_grid):
+        """Test PDE creation with sinusoidal potential."""
+        preset = get_pde_preset("schrodinger")
+        params = {
+            "D": 1.0,
+            "C": 0.004,
+            "potential_type": "sinusoidal",
+            "V_strength": 1.0,
+            "pot_n": 5,
+            "pot_m": 5,
+        }
+        bc = {"x": "dirichlet", "y": "dirichlet"}
+
+        pde = preset.create_pde(params, bc, non_periodic_grid)
+
+        assert pde is not None
+        # Verify consts contains V field
+        assert pde.consts is not None
+        assert "V" in pde.consts
+
+    def test_create_pde_with_harmonic_potential(self, non_periodic_grid):
+        """Test PDE creation with harmonic potential."""
+        preset = get_pde_preset("schrodinger")
+        params = {
+            "D": 1.0,
+            "C": 0.004,
+            "potential_type": "harmonic",
+            "V_strength": 0.1,
+        }
+        bc = {"x": "dirichlet", "y": "dirichlet"}
+
+        pde = preset.create_pde(params, bc, non_periodic_grid)
+
+        assert pde is not None
+        assert pde.consts is not None
+        assert "V" in pde.consts
+        # Harmonic potential should be positive everywhere except center
+        V_field = pde.consts["V"]
+        assert np.all(V_field.data >= 0)
+
+    def test_create_pde_no_potential(self, non_periodic_grid):
+        """Test PDE creation without potential (default behavior)."""
+        preset = get_pde_preset("schrodinger")
+        params = {"D": 1.0, "C": 0.004}
+        bc = {"x": "dirichlet", "y": "dirichlet"}
+
+        pde = preset.create_pde(params, bc, non_periodic_grid)
+
+        assert pde is not None
+        # No consts when potential is not used
+        assert pde.consts is None or "V" not in (pde.consts or {})
+
+    def test_short_simulation_with_potential(self, non_periodic_grid):
+        """Test running simulation with sinusoidal potential."""
+        preset = get_pde_preset("schrodinger")
+        params = {
+            "D": 1.0,
+            "C": 0.004,
+            "potential_type": "sinusoidal",
+            "V_strength": 0.5,
+            "pot_n": 3,
+            "pot_m": 3,
+        }
+        bc = {"x": "dirichlet", "y": "dirichlet"}
+
+        pde = preset.create_pde(params, bc, non_periodic_grid)
+        state = preset.create_initial_state(
+            non_periodic_grid, "eigenstate", {"n": 2, "m": 2}
+        )
+
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
+
+        assert result is not None
+        assert np.isfinite(result[0].data).all()
+        assert np.isfinite(result[1].data).all()
+
+    def test_localized_initial_condition(self, non_periodic_grid):
+        """Test localized initial condition for potential simulations."""
+        preset = get_pde_preset("schrodinger")
+        state = preset.create_initial_state(
+            non_periodic_grid, "localized", {"power": 10}
+        )
+
+        assert isinstance(state, FieldCollection)
+        assert len(state) == 2
+        # Should have non-zero u (real part)
+        assert np.any(state[0].data != 0)
+        # v (imaginary part) should start at zero
+        assert np.allclose(state[1].data, 0)
+
+    def test_get_equations_for_metadata_with_potential(self):
+        """Test equations include potential when present."""
+        preset = get_pde_preset("schrodinger")
+        params = {
+            "D": 1.0,
+            "C": 0.004,
+            "potential_type": "sinusoidal",
+            "V_strength": 2.0,
+        }
+
+        equations = preset.get_equations_for_metadata(params)
+
+        assert "V*v" in equations["u"]
+        assert "V*u" in equations["v"]
+        assert "V(x,y)" in equations
+
+    def test_get_equations_for_metadata_no_potential(self):
+        """Test equations without potential."""
+        preset = get_pde_preset("schrodinger")
+        params = {"D": 1.0, "C": 0.004}
+
+        equations = preset.get_equations_for_metadata(params)
+
+        assert "V" not in equations["u"]
+        assert "V" not in equations["v"]
+        assert "V(x,y)" not in equations

@@ -6,7 +6,11 @@ import pytest
 from pde import PDE, ScalarField
 
 from pde_sim.pdes import get_pde_preset, list_presets
-from pde_sim.pdes.basic.heat import HeatPDE, InhomogeneousHeatPDE
+from pde_sim.pdes.basic.heat import (
+    HeatPDE,
+    InhomogeneousHeatPDE,
+    InhomogeneousDiffusionHeatPDE,
+)
 
 
 class TestHeatPDE:
@@ -162,3 +166,96 @@ class TestInhomogeneousHeatPDE:
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
+
+
+class TestInhomogeneousDiffusionHeatPDE:
+    """Tests for the Inhomogeneous Diffusion Heat equation preset."""
+
+    def test_metadata(self):
+        """Test that metadata is correctly defined."""
+        pde = InhomogeneousDiffusionHeatPDE()
+        meta = pde.metadata
+
+        assert meta.name == "inhomogeneous-diffusion-heat"
+        assert meta.category == "basic"
+        assert meta.num_fields == 1
+        assert len(meta.parameters) == 3  # D, E, n
+
+    def test_registered_in_registry(self):
+        """Test that inhomogeneous-diffusion-heat PDE is registered."""
+        presets = list_presets()
+        assert "inhomogeneous-diffusion-heat" in presets
+
+    def test_get_default_parameters(self):
+        """Test default parameters retrieval."""
+        preset = get_pde_preset("inhomogeneous-diffusion-heat")
+        params = preset.get_default_parameters()
+
+        assert "D" in params
+        assert "E" in params
+        assert "n" in params
+        assert params["D"] == 1.0
+        assert params["E"] == 0.99
+        assert params["n"] == 40
+
+    def test_create_pde_with_varying_diffusion(self, non_periodic_grid):
+        """Test creating PDE with spatially varying diffusion."""
+        preset = get_pde_preset("inhomogeneous-diffusion-heat")
+        pde = preset.create_pde(
+            parameters={"D": 1.0, "E": 0.5, "n": 10},
+            bc={"x": "dirichlet", "y": "dirichlet"},
+            grid=non_periodic_grid,
+        )
+
+        assert isinstance(pde, PDE)
+        # Check that g, dg_dx, dg_dy are in consts
+        assert "g" in pde.consts
+        assert "dg_dx" in pde.consts
+        assert "dg_dy" in pde.consts
+
+    def test_diffusion_coefficient_positive(self, non_periodic_grid):
+        """Test that diffusion coefficient g(x,y) is always positive."""
+        preset = get_pde_preset("inhomogeneous-diffusion-heat")
+        params = {"D": 1.0, "E": 0.99, "n": 40}
+        bc = {"x": "dirichlet", "y": "dirichlet"}
+
+        pde = preset.create_pde(params, bc, non_periodic_grid)
+
+        g_field = pde.consts["g"]
+        # With E < 1, g should always be positive: D*(1-E) <= g <= D*(1+E)
+        assert np.all(g_field.data > 0)
+        # Check bounds
+        assert np.min(g_field.data) >= params["D"] * (1 - params["E"]) - 1e-10
+        assert np.max(g_field.data) <= params["D"] * (1 + params["E"]) + 1e-10
+
+    def test_short_simulation(self, non_periodic_grid):
+        """Test running a short simulation."""
+        preset = get_pde_preset("inhomogeneous-diffusion-heat")
+        params = {"D": 0.1, "E": 0.5, "n": 5}
+        bc = {"x": "dirichlet", "y": "dirichlet"}
+
+        pde = preset.create_pde(params, bc, non_periodic_grid)
+
+        # Use uniform initial condition as specified in todo.md
+        state = ScalarField.from_expression(non_periodic_grid, "1.0")
+        state.label = "T"
+
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
+
+        assert isinstance(result, ScalarField)
+        assert np.isfinite(result.data).all()
+
+    def test_get_equations_for_metadata(self):
+        """Test equations are properly formatted."""
+        preset = get_pde_preset("inhomogeneous-diffusion-heat")
+        params = {"D": 2.0, "E": 0.8, "n": 20}
+
+        equations = preset.get_equations_for_metadata(params)
+
+        assert "T" in equations
+        assert "g(x,y)" in equations
+        assert "div(g(x,y) * grad(T))" in equations["T"]
+        # Check parameter values are included
+        assert "2.0" in equations["g(x,y)"]
+        assert "0.8" in equations["g(x,y)"]
+        assert "20" in equations["g(x,y)"]

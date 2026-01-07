@@ -1,5 +1,6 @@
 """Schrodinger equation (quantum particle in a box)."""
 
+import math
 from typing import Any
 
 import numpy as np
@@ -11,22 +12,28 @@ from .. import register_pde
 
 @register_pde("schrodinger")
 class SchrodingerPDE(MultiFieldPDEPreset):
-    """Schrodinger equation (particle in a box).
+    """Schrodinger equation (particle in a box) with optional potential.
 
     The Schrodinger equation describes quantum mechanical wave functions:
 
-        i * dpsi/dt = -D * laplace(psi)
+        i * dpsi/dt = -D * laplace(psi) + V(x,y) * psi
 
     In dimensionless form. Since the solver works with real numbers, we separate
     real (u) and imaginary (v) parts:
 
-        du/dt = -D * laplace(v) + C*D * laplace(u)
-        dv/dt = D * laplace(u) + C*D * laplace(v)
+        du/dt = -D * laplace(v) + C*D * laplace(u) + V*v
+        dv/dt = D * laplace(u) + C*D * laplace(v) - V*u
 
     where:
         - u = Re(psi), v = Im(psi)
         - D is the quantum mechanical parameter
         - C is an artificial diffusion parameter for numerical stabilization
+        - V(x,y) is the potential energy function
+
+    Supported potential types:
+        - "none": Free particle (V=0)
+        - "sinusoidal": V = V_strength * sin(pot_n*pi*x/L_x) * sin(pot_m*pi*y/L_y)
+        - "harmonic": V = V_strength * ((x-cx)^2 + (y-cy)^2)
 
     Based on visualpde.com stabilized Schrodinger equation.
     """
@@ -36,10 +43,10 @@ class SchrodingerPDE(MultiFieldPDEPreset):
         return PDEMetadata(
             name="schrodinger",
             category="basic",
-            description="Schrodinger equation (quantum particle in a box)",
+            description="Schrodinger equation with optional potential",
             equations={
-                "u": "-D * laplace(v) + C*D * laplace(u)",
-                "v": "D * laplace(u) + C*D * laplace(v)",
+                "u": "-D * laplace(v) + C*D * laplace(u) + V*v",
+                "v": "D * laplace(u) + C*D * laplace(v) - V*u",
             },
             parameters=[
                 PDEParameter(
@@ -70,11 +77,80 @@ class SchrodingerPDE(MultiFieldPDEPreset):
                     min_value=0,
                     max_value=10,
                 ),
+                PDEParameter(
+                    name="V_strength",
+                    default=0.0,
+                    description="Potential amplitude (0 = no potential)",
+                    min_value=0.0,
+                    max_value=100.0,
+                ),
+                PDEParameter(
+                    name="pot_n",
+                    default=15,
+                    description="Potential mode number in x direction (sinusoidal)",
+                    min_value=1,
+                    max_value=50,
+                ),
+                PDEParameter(
+                    name="pot_m",
+                    default=15,
+                    description="Potential mode number in y direction (sinusoidal)",
+                    min_value=1,
+                    max_value=50,
+                ),
             ],
             num_fields=2,
             field_names=["u", "v"],
             reference="https://visualpde.com/basic-pdes/stabilised-schrodinger",
         )
+
+    def _compute_potential(
+        self,
+        grid: CartesianGrid,
+        potential_type: str,
+        V_strength: float,
+        pot_n: int,
+        pot_m: int,
+    ) -> ScalarField | None:
+        """Compute the potential field V(x,y).
+
+        Args:
+            grid: The computational grid.
+            potential_type: Type of potential ("none", "sinusoidal", "harmonic").
+            V_strength: Amplitude of the potential.
+            pot_n: x mode number (for sinusoidal potential).
+            pot_m: y mode number (for sinusoidal potential).
+
+        Returns:
+            ScalarField with potential values, or None if potential_type is "none"
+            or V_strength is 0.
+        """
+        if potential_type == "none" or V_strength == 0:
+            return None
+
+        # Get domain bounds
+        L_x = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
+        L_y = grid.axes_bounds[1][1] - grid.axes_bounds[1][0]
+
+        # Get coordinates
+        x_coords = grid.cell_coords[..., 0]
+        y_coords = grid.cell_coords[..., 1]
+
+        if potential_type == "sinusoidal":
+            # V = V_strength * sin(pot_n*pi*x/L_x) * sin(pot_m*pi*y/L_y)
+            V_data = V_strength * np.sin(pot_n * math.pi * x_coords / L_x) * np.sin(
+                pot_m * math.pi * y_coords / L_y
+            )
+        elif potential_type == "harmonic":
+            # V = V_strength * ((x-cx)^2 + (y-cy)^2)
+            # Centered at domain center
+            cx = (grid.axes_bounds[0][0] + grid.axes_bounds[0][1]) / 2
+            cy = (grid.axes_bounds[1][0] + grid.axes_bounds[1][1]) / 2
+            V_data = V_strength * ((x_coords - cx) ** 2 + (y_coords - cy) ** 2)
+        else:
+            raise ValueError(f"Unknown potential_type: {potential_type}")
+
+        return ScalarField(grid, V_data)
 
     def create_pde(
         self,
@@ -85,7 +161,7 @@ class SchrodingerPDE(MultiFieldPDEPreset):
         """Create the Schrodinger equation PDE.
 
         Args:
-            parameters: Dictionary containing 'D' and 'C' coefficients.
+            parameters: Dictionary containing PDE coefficients and potential params.
             bc: Boundary condition specification.
             grid: The computational grid.
 
@@ -95,22 +171,46 @@ class SchrodingerPDE(MultiFieldPDEPreset):
         D = parameters.get("D", 1.0)
         C = parameters.get("C", 0.004)
 
+        # Potential parameters
+        potential_type = parameters.get("potential_type", "none")
+        V_strength = parameters.get("V_strength", 0.0)
+        pot_n = int(parameters.get("pot_n", 15))
+        pot_m = int(parameters.get("pot_m", 15))
+
         # Convert BC to py-pde format
         bc_spec = self._convert_bc(bc)
 
-        # Build equations
+        # Compute potential field
+        V_field = self._compute_potential(
+            grid, potential_type, V_strength, pot_n, pot_m
+        )
+
+        # Build base equations
         # du/dt = -D * laplace(v) + C*D * laplace(u)
         # dv/dt = D * laplace(u) + C*D * laplace(v)
         if C > 0:
-            u_rhs = f"-{D} * laplace(v) + {C * D} * laplace(u)"
-            v_rhs = f"{D} * laplace(u) + {C * D} * laplace(v)"
+            base_u = f"-{D} * laplace(v) + {C * D} * laplace(u)"
+            base_v = f"{D} * laplace(u) + {C * D} * laplace(v)"
         else:
-            u_rhs = f"-{D} * laplace(v)"
-            v_rhs = f"{D} * laplace(u)"
+            base_u = f"-{D} * laplace(v)"
+            base_v = f"{D} * laplace(u)"
+
+        # Add potential terms if present
+        # du/dt = ... + V*v
+        # dv/dt = ... - V*u
+        if V_field is not None:
+            u_rhs = f"{base_u} + V * v"
+            v_rhs = f"{base_v} - V * u"
+            consts = {"V": V_field}
+        else:
+            u_rhs = base_u
+            v_rhs = base_v
+            consts = {}
 
         return PDE(
             rhs={"u": u_rhs, "v": v_rhs},
             bc=bc_spec,
+            consts=consts if consts else None,
         )
 
     def create_initial_state(
@@ -191,5 +291,58 @@ class SchrodingerPDE(MultiFieldPDEPreset):
 
             return FieldCollection([u, v])
 
+        elif ic_type == "localized":
+            # Localized wave packet for use with potential
+            # (sin(pi*x/L)*sin(pi*y/L))^10 - concentrated at center
+            power = ic_params.get("power", 10)
+
+            L_x = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
+            L_y = grid.axes_bounds[1][1] - grid.axes_bounds[1][0]
+
+            x_coords = grid.cell_coords[..., 0]
+            y_coords = grid.cell_coords[..., 1]
+
+            # Create localized state
+            sin_x = np.sin(np.pi * x_coords / L_x)
+            sin_y = np.sin(np.pi * y_coords / L_y)
+            u_data = (sin_x * sin_y) ** power
+            v_data = np.zeros(grid.shape)
+
+            # Normalize
+            norm = np.sqrt(np.sum(u_data**2 + v_data**2))
+            if norm > 0:
+                u_data = u_data / norm
+
+            u = ScalarField(grid, u_data)
+            u.label = "u"
+            v = ScalarField(grid, v_data)
+            v.label = "v"
+
+            return FieldCollection([u, v])
+
         # Fall back to parent implementation for standard IC types
         return super().create_initial_state(grid, ic_type, ic_params)
+
+    def get_equations_for_metadata(
+        self, parameters: dict[str, float]
+    ) -> dict[str, str]:
+        """Get equations with parameter values substituted."""
+        D = parameters.get("D", 1.0)
+        C = parameters.get("C", 0.004)
+        V_strength = parameters.get("V_strength", 0.0)
+        potential_type = parameters.get("potential_type", "none")
+
+        if C > 0:
+            base_u = f"-{D} * laplace(v) + {C*D} * laplace(u)"
+            base_v = f"{D} * laplace(u) + {C*D} * laplace(v)"
+        else:
+            base_u = f"-{D} * laplace(v)"
+            base_v = f"{D} * laplace(u)"
+
+        if potential_type != "none" and V_strength > 0:
+            return {
+                "u": f"{base_u} + V*v",
+                "v": f"{base_v} - V*u",
+                "V(x,y)": f"{potential_type} potential with strength {V_strength}",
+            }
+        return {"u": base_u, "v": base_v}

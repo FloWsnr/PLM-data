@@ -176,3 +176,147 @@ class InhomogeneousHeatPDE(ScalarPDEPreset):
             "T": f"{D} * laplace(T) + f(x,y)",
             "f(x,y)": f"D*pi^2*(n^2/L_x^2 + m^2/L_y^2)*cos(n*pi*x/L_x)*cos(m*pi*y/L_y) with n={n}, m={m}",
         }
+
+
+@register_pde("inhomogeneous-diffusion-heat")
+class InhomogeneousDiffusionHeatPDE(ScalarPDEPreset):
+    """Heat equation with spatially-varying diffusion coefficient.
+
+    Based on the visualpde.com inhomogeneous diffusion heat equation:
+
+        dT/dt = div(g(x,y) * grad(T))
+
+    where the diffusion coefficient g(x,y) has radial variation:
+
+        g(x,y) = D * (1 + E * cos(n*pi*r/sqrt(L_x*L_y)))
+        r = sqrt((x - L_x/2)^2 + (y - L_y/2)^2)
+
+    The divergence expands to:
+        dT/dt = g * laplace(T) + dg_dx * d_dx(T) + dg_dy * d_dy(T)
+
+    This creates radial bands of alternating high/low thermal conductivity,
+    causing heat to partition into regions bounded by conductivity maxima.
+
+    Physical applications:
+        - Heat flow through composite/layered materials
+        - Geothermal modeling in heterogeneous rock
+        - Thermal management in non-uniform materials
+    """
+
+    @property
+    def metadata(self) -> PDEMetadata:
+        return PDEMetadata(
+            name="inhomogeneous-diffusion-heat",
+            category="basic",
+            description="Heat equation with spatially-varying diffusion coefficient",
+            equations={"T": "div(g(x,y) * grad(T))"},
+            parameters=[
+                PDEParameter(
+                    name="D",
+                    default=1.0,
+                    description="Base diffusion coefficient",
+                    min_value=0.01,
+                    max_value=10.0,
+                ),
+                PDEParameter(
+                    name="E",
+                    default=0.99,
+                    description="Modulation amplitude (0 to 1)",
+                    min_value=0.0,
+                    max_value=0.999,
+                ),
+                PDEParameter(
+                    name="n",
+                    default=40,
+                    description="Number of radial oscillations",
+                    min_value=1,
+                    max_value=50,
+                ),
+            ],
+            num_fields=1,
+            field_names=["T"],
+            reference="https://visualpde.com/basic-pdes/inhomogeneous-diffusion",
+        )
+
+    def create_pde(
+        self,
+        parameters: dict[str, float],
+        bc: dict[str, Any],
+        grid: CartesianGrid,
+    ) -> PDE:
+        """Create the inhomogeneous diffusion heat equation PDE.
+
+        Args:
+            parameters: Dictionary with D, E, n coefficients.
+            bc: Boundary condition specification.
+            grid: The computational grid.
+
+        Returns:
+            Configured PDE instance.
+        """
+        D = parameters.get("D", 1.0)
+        E = parameters.get("E", 0.99)
+        n = int(parameters.get("n", 40))
+
+        # Get domain size from grid
+        L_x = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
+        L_y = grid.axes_bounds[1][1] - grid.axes_bounds[1][0]
+        L = math.sqrt(L_x * L_y)  # Characteristic length
+
+        # Get spatial coordinates
+        x_coords = grid.cell_coords[..., 0]
+        y_coords = grid.cell_coords[..., 1]
+
+        # Center of domain
+        cx = (grid.axes_bounds[0][0] + grid.axes_bounds[0][1]) / 2
+        cy = (grid.axes_bounds[1][0] + grid.axes_bounds[1][1]) / 2
+
+        # Compute r = sqrt((x - cx)^2 + (y - cy)^2)
+        dx = x_coords - cx
+        dy = y_coords - cy
+        r = np.sqrt(dx**2 + dy**2)
+
+        # Compute g(x,y) = D * (1 + E * cos(n*pi*r/L))
+        arg = n * math.pi * r / L
+        cos_term = np.cos(arg)
+        g_data = D * (1 + E * cos_term)
+        g_field = ScalarField(grid, g_data)
+
+        # Compute dg/dr = -D * E * (n*pi/L) * sin(n*pi*r/L)
+        sin_term = np.sin(arg)
+        dg_dr = -D * E * (n * math.pi / L) * sin_term
+
+        # Compute dg/dx = dg/dr * dr/dx = dg/dr * (x - cx) / r
+        # Compute dg/dy = dg/dr * dr/dy = dg/dr * (y - cy) / r
+        # Handle r=0 case to avoid division by zero
+        with np.errstate(divide="ignore", invalid="ignore"):
+            dg_dx_data = np.where(r > 1e-10, dg_dr * dx / r, 0.0)
+            dg_dy_data = np.where(r > 1e-10, dg_dr * dy / r, 0.0)
+
+        dg_dx_field = ScalarField(grid, dg_dx_data)
+        dg_dy_field = ScalarField(grid, dg_dy_data)
+
+        # div(g * grad(T)) = g * laplace(T) + dg_dx * d_dx(T) + dg_dy * d_dy(T)
+        bc_spec = self._convert_bc(bc)
+
+        return PDE(
+            rhs={"T": "g * laplace(T) + dg_dx * d_dx(T) + dg_dy * d_dy(T)"},
+            bc=bc_spec,
+            consts={
+                "g": g_field,
+                "dg_dx": dg_dx_field,
+                "dg_dy": dg_dy_field,
+            },
+        )
+
+    def get_equations_for_metadata(
+        self, parameters: dict[str, float]
+    ) -> dict[str, str]:
+        """Get equations with parameter values substituted."""
+        D = parameters.get("D", 1.0)
+        E = parameters.get("E", 0.99)
+        n = int(parameters.get("n", 40))
+        return {
+            "T": "div(g(x,y) * grad(T))",
+            "g(x,y)": f"D*(1+E*cos(n*pi*r/L)) with D={D}, E={E}, n={n}",
+        }
