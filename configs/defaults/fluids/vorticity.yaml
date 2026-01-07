@@ -18,8 +18,20 @@ adaptive: true
 dt: 0.01
 resolution: 128
 bc:
-  x: periodic
+  x: periodic  # Default fallback
   y: periodic
+  fields:
+    omega:  # Vorticity: periodic all boundaries
+      x: periodic
+      y: periodic
+    psi:  # Stream function: periodic all boundaries
+      x: periodic
+      y: periodic
+    S:  # Passive scalar: Neumann left/right, periodic top/bottom
+      left: neumann
+      right: neumann
+      top: periodic
+      bottom: periodic
 output:
   path: ./output
   num_frames: 100

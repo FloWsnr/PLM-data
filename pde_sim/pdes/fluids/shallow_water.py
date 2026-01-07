@@ -117,7 +117,7 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
                 "u": f"{nu} * laplace(u) - {g} * d_dx(h) - {k} * u - u * d_dx(u) - v * d_dy(u) + {f} * v",
                 "v": f"{nu} * laplace(v) - {g} * d_dy(h) - {k} * v - u * d_dx(v) - v * d_dy(v) - {f} * u",
             },
-            bc=self._convert_bc(bc),
+            **self._get_pde_bc_kwargs(bc),
         )
 
     def create_initial_state(

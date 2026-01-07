@@ -97,7 +97,7 @@ class NavierStokesPDE(MultiFieldPDEPreset):
                 "p": f"{nu} * laplace(p) - {inv_M2} * (d_dx(u) + d_dy(v))",
                 "S": f"-u * d_dx(S) - v * d_dy(S) + {D} * laplace(S)",
             },
-            bc=self._convert_bc(bc),
+            **self._get_pde_bc_kwargs(bc),
         )
 
     def create_initial_state(

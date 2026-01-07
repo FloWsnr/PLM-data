@@ -14,8 +14,25 @@ adaptive: true
 dt: 0.01
 resolution: 128
 bc:
-  x: periodic
+  x: periodic  # Default fallback
   y: neumann
+  fields:
+    u:  # Horizontal velocity: periodic left/right, no-slip top/bottom
+      x: periodic
+      top: dirichlet:0
+      bottom: dirichlet:0
+    v:  # Vertical velocity: periodic left/right, no-slip top/bottom
+      x: periodic
+      top: dirichlet:0
+      bottom: dirichlet:0
+    p:  # Pressure: Neumann on all boundaries
+      x: neumann
+      y: neumann
+    S:  # Passive scalar: inlet/outlet left/right, insulated top/bottom
+      left: dirichlet:1
+      right: dirichlet:0
+      top: neumann
+      bottom: neumann
 output:
   path: ./output
   num_frames: 100

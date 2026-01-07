@@ -19,8 +19,22 @@ adaptive: true
 dt: 0.005
 resolution: 128
 bc:
-  x: neumann
+  x: neumann  # Default fallback
   y: neumann
+  fields:
+    h:  # Height: Neumann on all boundaries (free surface)
+      x: neumann
+      y: neumann
+    u:  # Horizontal velocity: no-flow left/right walls, slip top/bottom
+      left: dirichlet:0
+      right: dirichlet:0
+      top: neumann
+      bottom: neumann
+    v:  # Vertical velocity: no-flow top/bottom walls, slip left/right
+      left: neumann
+      right: neumann
+      top: dirichlet:0
+      bottom: dirichlet:0
 output:
   path: ./output
   num_frames: 100

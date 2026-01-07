@@ -86,7 +86,7 @@ class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
                 "phi": f"laplace(phi) + {strength} * s",
                 "s": "0",  # Indicator field doesn't evolve
             },
-            bc=self._convert_bc(bc),
+            **self._get_pde_bc_kwargs(bc),
         )
 
     def create_initial_state(

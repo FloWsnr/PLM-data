@@ -96,7 +96,7 @@ class VorticityPDE(MultiFieldPDEPreset):
                 "psi": f"{inv_eps} * (laplace(psi) + omega)",
                 "S": f"{D} * laplace(S) - d_dy(psi) * d_dx(S) + d_dx(psi) * d_dy(S)",
             },
-            bc=self._convert_bc(bc),
+            **self._get_pde_bc_kwargs(bc),
         )
 
     def create_initial_state(

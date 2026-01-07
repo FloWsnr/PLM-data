@@ -1,67 +1,5 @@
 # PDE Implementation TODO
 
-## Equation Discrepancies
-
-### `burgers` - Backward Difference for Advection Term
-**Priority**: Medium
-**Reference**: `reference/visual-pde/sim/scripts/RD/presets.js` line 5617
-
-**Issue**: Visual PDE uses a backward difference for the advection term to ensure numerical stability with upwinding.
-
-**Visual PDE BurgersEquation**:
-```javascript
-reactionStr_1: "- u * u_xb"  // u_xb = backward difference
-diffusionStr_1_1: "epsilon"
-```
-
-**Our implementation** (`pde_sim/pdes/physics/burgers.py`):
-```python
-rhs={"u": f"-u * d_dx(u) + {epsilon} * laplace(u)"}  # centered difference
-```
-
-**Impact**: Centered differences can cause oscillations near sharp fronts in advection-dominated flows. With sufficient viscosity (epsilon > 0), this is less critical, but for small epsilon or inviscid limits, backward differencing provides better stability.
-
-**Required investigation**:
-1. Check if py-pde supports backward/forward differences (`d_dx_b`, `d_dx_f`)
-2. If not, consider implementing via custom PDE class with explicit finite differences
-3. May need to use `gradient()` with appropriate boundary handling
-
-**Config fixed** (2026-01-07):
-- Updated `configs/defaults/physics/burgers.yaml` to match Visual PDE parameters:
-  - amplitude: 0.1 (was 1.0)
-  - bc: neumann (was periodic)
-  - dimension: 1
-  - domain_size: 1000 (was 10)
-  - dt: 0.04, solver: euler
-
----
-
-### `inhomogeneous-wave` - Visual PDE uses simplified equation
-**Priority**: Medium
-**Reference**: `reference/visual-pde/sim/scripts/RD/presets.js` line 6840
-
-Our implementation uses the mathematically correct div(f·∇u) formulation, but Visual PDE uses a simpler f·∇²u approximation.
-
-**Our implementation** (`pde_sim/pdes/basic/wave.py:233`):
-```
-dv/dt = f*laplace(u) + df_dx*d_dx(u) + df_dy*d_dy(u)  # = div(f·grad(u))
-```
-
-**Visual PDE preset**:
-```
-dv/dt = f(x,y) * laplace(u)  # simplified approximation
-```
-
-where f(x,y) = D*(1+E*sin(m*π*x/L_x))*(1+E*sin(n*π*y/L_y))
-
-**Issue**: The markdown documentation (`inhomogeneous-wave-equation.md`) states the true equation is ∂²u/∂t² = ∇·(f∇u), which matches our implementation. However, Visual PDE's actual preset uses a simpler approximation.
-
-**Decision needed**:
-1. Keep our mathematically correct implementation (current)
-2. Add a parameter to toggle between formulations
-3. Switch to Visual PDE's simplified version for consistency
-
----
 
 ## Missing Preset Variants
 
@@ -334,149 +272,6 @@ kineticParams: "rho_u=0.692;alpha=0.07;delta_u=100;delta_w=100;..."
 
 ---
 
-### `heterogeneous-gierer-meinhardt` - Boundary Condition Architecture Mismatch
-**Priority**: High
-**Reference**: `reference/visual-pde/sim/scripts/RD/presets.js` line 6369
-
-**Issue**: Visual PDE uses **per-species** boundary conditions, while our framework uses **per-axis** boundary conditions.
-
-**Visual PDE GMHeterogeneous2D**:
-- `boundaryConditions_1: "dirichlet"` → u has Dirichlet (u=0) on ALL boundaries
-- v defaults to Neumann on ALL boundaries
-
-**Our config** (`configs/defaults/biology/heterogeneous_gierer_meinhardt.yaml`):
-```yaml
-bc:
-  x: dirichlet
-  y: neumann
-```
-This applies Dirichlet on x-edges, Neumann on y-edges for BOTH species, which is semantically different.
-
-**Impact**: Pattern formation behavior may differ because:
-1. Visual PDE: u=0 enforced everywhere on boundary, v free everywhere
-2. Ours: Both u,v get Dirichlet on x-edges, Neumann on y-edges
-
-**Required changes**:
-1. Extend BC system to support per-species boundary conditions
-2. Update config schema to allow: `bc: {u: dirichlet, v: neumann}`
-3. Update `heterogeneous-gierer-meinhardt` config to use per-species BCs
-4. Also affects other multi-field PDEs that need asymmetric BCs
-
-**Initial Conditions**:
-Visual PDE uses `v=1` (uniform), u unset/0. Patterns emerge from BC perturbation.
-Our default uses noisy IC (mean=1.0, std=0.1). Consider adding uniform IC option.
-
----
-
-### `navier-stokes` - Per-Field Boundary Conditions
-**Priority**: Low
-**Reference**: `reference/visual-pde/sim/scripts/RD/presets.js` line 2019
-
-**Issue**: Visual PDE uses **per-species** boundary conditions with different BCs for each field, while our config uses simplified per-axis BCs.
-
-**Visual PDE NavierStokes**:
-```javascript
-boundaryConditions_1: "dirichlet"  // u
-boundaryConditions_2: "dirichlet"  // v
-boundaryConditions_3: "neumann"    // p
-boundaryConditions_4: "combo"      // S
-comboStr_1: "Bottom: Dirichlet = 0; Left: Periodic; Right: Periodic; Top: Dirichlet = 0;"
-comboStr_2: "Bottom: Dirichlet = 0; Left: Periodic; Right: Periodic; Top: Dirichlet = 0;"
-comboStr_4: "Bottom: Neumann = 0; Left: Dirichlet = 1; Right: Dirichlet = 0; Top: Neumann = 0;"
-```
-
-Summary:
-- u: periodic left/right, Dirichlet=0 top/bottom (no-slip walls)
-- v: periodic left/right, Dirichlet=0 top/bottom (no-slip walls)
-- p: Neumann on all boundaries
-- S: Dirichlet 1 left, 0 right (inlet/outlet), Neumann top/bottom
-
-**Our config** (`configs/defaults/fluids/navier_stokes.yaml`):
-```yaml
-bc:
-  x: periodic
-  y: neumann
-```
-This applies the same BC to all fields per axis.
-
-**Impact**: Our simulation is still valid but represents a different physical setup (fully periodic in x, slip walls in y) vs the reference (channel flow with no-slip walls and inlet/outlet conditions for the passive scalar).
-
-**Required changes** (same as heterogeneous-gierer-meinhardt):
-1. Extend BC system to support per-species boundary conditions
-2. Update config schema to allow per-field BCs
-
-**Note**: The equations and parameters are correct - only the boundary conditions differ.
-
----
-
-### `shallow-water` - Per-Field Boundary Conditions
-**Priority**: Medium
-**Reference**: `reference/visual-pde/sim/scripts/RD/presets.js` line 2881
-
-**Issue**: Visual PDE uses **per-species** boundary conditions with mixed BCs for velocity fields.
-
-**Visual PDE ShallowWaterEqns**:
-```javascript
-boundaryConditions_1: "neumann"   // h
-boundaryConditions_2: "dirichlet" // u (simplified; combo shows left/right dirichlet, top/bottom neumann)
-boundaryConditions_3: "dirichlet" // v (simplified; combo shows top/bottom dirichlet, left/right neumann)
-comboStr_2: "Left: Dirichlet = 0; Top: Neumann = 0; Right: Dirichlet = 0; Bottom: Neumann = 0;"
-comboStr_3: "Left: Neumann = 0; Top: Dirichlet = 0; Right: Neumann = 0; Bottom: Dirichlet = 0;"
-```
-
-Summary:
-- h: Neumann on all boundaries (free surface)
-- u: Dirichlet=0 on left/right (no-flow through walls), Neumann on top/bottom
-- v: Dirichlet=0 on top/bottom (no-flow through walls), Neumann on left/right
-
-**Our config** (`configs/defaults/fluids/shallow_water.yaml`):
-```yaml
-bc:
-  x: neumann
-  y: neumann
-```
-This applies the same BC to all fields per axis.
-
-**Impact**: The simulation runs correctly but represents slip walls instead of no-slip walls at boundaries. For drop perturbation scenarios this is less critical, but for channel flow or dam-break with walls it affects the physics.
-
-**Required changes**: Same as heterogeneous-gierer-meinhardt - extend BC system to support per-species boundary conditions.
-
-**Equations and parameters**: ✅ Correct and match Visual PDE reference exactly.
-
----
-
-### `vorticity` - Per-Field Boundary Conditions for S Field
-**Priority**: Low
-**Reference**: `reference/visual-pde/sim/scripts/RD/presets.js` line 2172
-
-**Issue**: Visual PDE uses **per-species** boundary conditions for the passive scalar field S.
-
-**Visual PDE NavierStokesVorticity**:
-```javascript
-comboStr_3: "Bottom: Periodic; Left: Neumann = 0; Right: Neumann = 0; Top: Periodic;"
-```
-
-Summary:
-- omega: periodic (all boundaries)
-- psi: periodic (all boundaries)
-- S: Neumann=0 on left/right, periodic top/bottom
-
-**Our config** (`configs/defaults/fluids/vorticity.yaml`):
-```yaml
-bc:
-  x: periodic
-  y: periodic
-```
-This applies periodic to all fields on all axes.
-
-**Impact**: Minor - passive scalar boundary behavior differs but main vorticity dynamics are correct.
-
-**Required changes**: Same as heterogeneous-gierer-meinhardt - extend BC system to support per-species boundary conditions.
-
-**Equations and parameters**: ✅ Correct and match Visual PDE reference exactly.
-
----
-
 ### `vorticity-bounded` - Missing Bounded Domain Variant
 **Priority**: Low
 **Reference**: `reference/visual-pde/sim/scripts/RD/presets.js` line 2111
@@ -585,11 +380,9 @@ s = (bump(x-d*dx,y) - bump(x+d*dx,y)) / (2*d*dx)
 
 **Limitation**: The parameter `d` is baked into the initial condition. Changing `d` during runtime has no effect - a new simulation must be started with different `d` value.
 
-**Visual PDE boundary conditions**:
-- phi: neumann (default)
-- s: dirichlet (s=0 at boundaries)
-
-**Our BCs**: Uses per-axis BCs (neumann on all). The per-species BC requirement (heterogeneous-gierer-meinhardt issue above) also applies here.
+**Boundary conditions** (✅ implemented with per-field BCs):
+- phi: neumann (all boundaries)
+- s: dirichlet:0 (all boundaries)
 
 **Status**: Functionally correct for single simulations with fixed d. The parabolic relaxation approach is preserved. Interactive d-slider behavior cannot be replicated.
 
@@ -616,11 +409,11 @@ s = (bump(x-d*dx,y) - bump(x+d*dx,y)) / (2*d*dx)
 2. Our version shows the completed method of images solution
 3. Our initial phi is near steady-state; Visual PDE relaxes from zero
 
-**Boundary conditions**:
-- Visual PDE: phi=neumann, s=dirichlet
-- Ours: both neumann (per-axis BC limitation)
+**Boundary conditions** (✅ implemented with per-field BCs):
+- phi: neumann (all boundaries)
+- s: dirichlet:0 (all boundaries)
 
-**Status**: Functionally correct for demonstrating method of images. Produces equivalent steady-state solutions. The per-species BC requirement (see heterogeneous-gierer-meinhardt) also applies here.
+**Status**: Functionally correct for demonstrating method of images. Produces equivalent steady-state solutions.
 
 
 ---
@@ -701,47 +494,5 @@ Our implementation tries to compute `laplace(laplace(u))` directly, which:
 5. (Optional) Add support for time-dependent BCs
 
 **Alternatively**: Mark this preset as "approximate" or "experimental" in docs if exact Visual PDE compatibility isn't required.
-
----
-
-### `thermal-convection` - Per-Field Boundary Conditions Required
-**Priority**: High
-**Reference**: `reference/visual-pde/sim/scripts/RD/presets.js` line 1496
-
-**Issue**: Visual PDE uses **per-species** boundary conditions with critical asymmetric BCs that drive the convection, while our config uses simplified per-axis BCs.
-
-**Visual PDE thermalConvection**:
-```javascript
-comboStr_1: "Bottom: Dirichlet = 0; Left: Periodic; Right: Periodic; Top: Dirichlet = 0;"  // omega
-comboStr_2: "Bottom: Dirichlet = 0; Left: Periodic; Right: Periodic; Top: Dirichlet = 0;"  // psi
-comboStr_4: "Bottom: Neumann = T_b; Left: Periodic; Right: Periodic; Top: Dirichlet = 0;"  // b
-```
-
-Summary:
-- omega: Dirichlet=0 top/bottom, Periodic left/right (vorticity vanishes at walls)
-- psi: Dirichlet=0 top/bottom, Periodic left/right (no-slip walls)
-- b: **Neumann=T_b bottom** (heat flux in), Dirichlet=0 top (cold), Periodic left/right
-
-**Our config** (`configs/defaults/fluids/thermal_convection.yaml`):
-```yaml
-bc:
-  x: periodic
-  y: periodic
-```
-This applies periodic BCs to all fields - missing the critical bottom heat flux that drives convection.
-
-**Impact**: The Neumann BC `∂b/∂y = T_b` at bottom boundary is essential for Rayleigh-Benard convection. Without it, there's no continuous heat source to drive instability. Our current config may still show convection from initial perturbations, but lacks sustained boundary forcing.
-
-**Required changes** (same as heterogeneous-gierer-meinhardt):
-1. Extend BC system to support per-species boundary conditions
-2. Update config schema to allow:
-   ```yaml
-   bc:
-     omega: {top: "dirichlet=0", bottom: "dirichlet=0", left: "periodic", right: "periodic"}
-     psi: {top: "dirichlet=0", bottom: "dirichlet=0", left: "periodic", right: "periodic"}
-     b: {top: "dirichlet=0", bottom: "neumann=T_b", left: "periodic", right: "periodic"}
-   ```
-
-**Current workaround**: Initial noise provides some perturbation, but convection will decay without sustained bottom heating.
 
 ---

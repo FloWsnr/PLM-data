@@ -125,7 +125,7 @@ class HeterogeneousGiererMeinhardtPDE(MultiFieldPDEPreset):
                 "u": u_rhs,
                 "v": v_rhs,
             },
-            bc=self._convert_bc(bc),
+            **self._get_pde_bc_kwargs(bc),
         )
 
     def create_initial_state(

@@ -13,8 +13,15 @@ adaptive: true
 dt: 0.01
 resolution: 128
 bc:
-  x: neumann
+  x: neumann  # Default fallback
   y: neumann
+  fields:
+    phi:  # Potential: Neumann on all boundaries
+      x: neumann
+      y: neumann
+    s:  # Indicator field: Dirichlet=0 on all boundaries
+      x: dirichlet:0
+      y: dirichlet:0
 output:
   path: ./output
   num_frames: 100
