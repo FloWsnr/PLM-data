@@ -595,25 +595,6 @@ s = (bump(x-d*dx,y) - bump(x+d*dx,y)) / (2*d*dx)
 
 ---
 
-### `potential-flow-dipoles-click` - Click-to-Place Variant
-**Priority**: Low
-**Reference**: `reference/visual-pde/sim/scripts/RD/presets.js` line 2467
-
-Visual PDE has a `potentialFlowDipoleClick` preset:
-- Fixed source at domain center
-- User clicks to place sink interactively
-- domain_size: 201
-- No slider for d parameter
-
-**Equation**:
-```
-reactionStr_1: "-10*(ind(Bump(L_x/2,L_y/2,L/100)>0) - ind(s > 0.1))"
-```
-
-This is fundamentally interactive and cannot be replicated in batch simulation mode.
-
----
-
 ### `potential-flow-images` - Analytical vs Relaxation Initial Condition
 **Priority**: Low
 **Reference**: `reference/visual-pde/sim/scripts/RD/presets.js` line 2538
@@ -641,27 +622,6 @@ This is fundamentally interactive and cannot be replicated in batch simulation m
 
 **Status**: Functionally correct for demonstrating method of images. Produces equivalent steady-state solutions. The per-species BC requirement (see heterogeneous-gierer-meinhardt) also applies here.
 
----
-
-### `cahn-hilliard` - ✅ RESOLVED
-**Reference**: `reference/visual-pde/sim/scripts/RD/presets.js` line 6125
-
-**Issue**: The Visual PDE preset scales the reaction term by `r`, but the markdown documentation does NOT.
-
-**Resolution** (2025-01-07): Updated implementation to match preset behavior.
-
-**Changes made**:
-1. **Equation** (`pde_sim/pdes/physics/cahn_hilliard.py`):
-   - Old: `r * D * laplace(...) + u - u**3`
-   - New: `r * (D * laplace(...) + u - u**3)` - reaction now scaled by r
-
-2. **Config** (`configs/defaults/physics/cahn_hilliard.yaml`):
-   - `a`: 0.05 → 1.0 (matches preset)
-   - `init.type`: `random-uniform` → `cahn-hilliard-default` (uses correct tanh IC)
-   - `domain_size`: 6.0 → 100.0 (matches preset)
-   - `dt`: 0.001 → 0.0005, `solver`: euler (matches preset)
-
-3. **Description** (`pde_sim/descriptions/cahn-hilliard.md`): Updated equation and config documentation
 
 ---
 
@@ -741,35 +701,6 @@ Our implementation tries to compute `laplace(laplace(u))` directly, which:
 5. (Optional) Add support for time-dependent BCs
 
 **Alternatively**: Mark this preset as "approximate" or "experimental" in docs if exact Visual PDE compatibility isn't required.
-
----
-
-### `perona-malik` - ✅ RESOLVED
-**Reference**: `reference/visual-pde/sim/scripts/RD/presets.js` line 5189
-
-**Issue**: Original approximation was mathematically incorrect, missing the key edge-sharpening term.
-
-**Resolution** (2026-01-07):
-
-1. **Equation fixed** (`pde_sim/pdes/physics/perona_malik.py`):
-   - Old: `laplace(u) * exp(-D * gradient_squared(u))` (only g·Δu term)
-   - New: Full divergence form with cross-term:
-     ```python
-     g = exp(-D * gradient_squared(u))
-     cross_term = u_x² * u_xx + 2 * u_x * u_y * u_xy + u_y² * u_yy
-     rhs = g * (laplace(u) - 2*D * cross_term)
-     ```
-   - This implements `div(g·∇u) = g·Δu + ∇g·∇u` correctly using second derivatives
-
-2. **Config fixed** (`configs/defaults/physics/perona_malik.yaml`):
-   - D: 1.0 → 5.0 (matches Visual PDE)
-   - dt: 0.001 → 0.0002 (matches Visual PDE)
-   - domain_size: 2.0 → 100.0 (matches Visual PDE)
-   - resolution: 128 → 500 (to get dx≈0.2 matching Visual PDE)
-   - solver: rk4 → euler (more stable for this ill-posed equation)
-   - adaptive: true → false
-
-**Verified**: Simulation runs correctly with edge-preserving smoothing behavior.
 
 ---
 
