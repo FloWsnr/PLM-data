@@ -42,6 +42,11 @@ def main():
         help="Suppress progress output",
     )
     run_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite the last numbered output folder instead of creating a new one",
+    )
+    run_parser.add_argument(
         "--log-file",
         type=Path,
         help="Path to log file. If provided, all output is logged to this file.",
@@ -98,6 +103,7 @@ def run_simulation(args):
             output_dir=args.output_dir,
             seed=args.seed,
             verbose=not args.quiet,
+            overwrite=args.overwrite,
         )
 
         if not args.quiet:

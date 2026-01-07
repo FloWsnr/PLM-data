@@ -1,9 +1,9 @@
 """Main simulation orchestrator."""
 
+import re
 import time
 import uuid
 import warnings
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +19,38 @@ from ..pdes import get_pde_preset
 VALID_BACKENDS = ("auto", "numpy", "numba")
 
 
+def _get_next_folder_number(base_path: Path, preset: str, overwrite: bool = False) -> str:
+    """Find the next available folder number for a preset.
+
+    Args:
+        base_path: Base output directory.
+        preset: Name of the PDE preset.
+        overwrite: If True, return the last used number instead of incrementing.
+
+    Returns:
+        The next folder number as a zero-padded string (e.g., "001").
+    """
+    preset_dir = base_path / preset
+    if not preset_dir.exists():
+        return "001"
+
+    # Find all existing numbered folders
+    existing_numbers = []
+    for item in preset_dir.iterdir():
+        if item.is_dir():
+            match = re.match(r"^(\d+)$", item.name)
+            if match:
+                existing_numbers.append(int(match.group(1)))
+
+    if not existing_numbers:
+        return "001"
+
+    max_number = max(existing_numbers)
+    if overwrite:
+        return f"{max_number:03d}"
+    return f"{max_number + 1:03d}"
+
+
 class SimulationRunner:
     """Main simulation orchestrator.
 
@@ -30,6 +62,7 @@ class SimulationRunner:
         config: SimulationConfig,
         output_dir: Path | str | None = None,
         sim_id: str | None = None,
+        overwrite: bool = False,
     ):
         """Initialize the simulation runner.
 
@@ -37,16 +70,17 @@ class SimulationRunner:
             config: Simulation configuration.
             output_dir: Override for output directory.
             sim_id: Override for simulation ID (auto-generated if None).
+            overwrite: If True, overwrite the last numbered folder instead of creating a new one.
         """
         self.config = config
         self.output_dir = Path(output_dir) if output_dir else config.output.path
         self.sim_id = sim_id or str(uuid.uuid4())
 
-        # Generate run name with datetime (e.g., 2024-01-15_143052)
-        datetime_str = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-        self.run_name = datetime_str
-        # Full folder path: {preset}/{datetime}
-        self.folder_name = f"{config.preset}/{datetime_str}"
+        # Generate run name with incremental number (zero-padded, e.g., "001")
+        folder_number = _get_next_folder_number(self.output_dir, config.preset, overwrite)
+        self.run_name = folder_number
+        # Full folder path: {preset}/{number}
+        self.folder_name = f"{config.preset}/{folder_number}"
 
         # Validate backend
         if config.backend not in VALID_BACKENDS:
@@ -243,6 +277,7 @@ def run_from_config(
     output_dir: Path | str | None = None,
     seed: int | None = None,
     verbose: bool = True,
+    overwrite: bool = False,
 ) -> dict[str, Any]:
     """Run a simulation from a config file.
 
@@ -251,6 +286,7 @@ def run_from_config(
         output_dir: Override for output directory.
         seed: Override for random seed.
         verbose: Whether to print progress.
+        overwrite: If True, overwrite the last numbered folder instead of creating a new one.
 
     Returns:
         Simulation metadata dictionary.
@@ -261,5 +297,5 @@ def run_from_config(
     if seed is not None:
         config.seed = seed
 
-    runner = SimulationRunner(config, output_dir=output_dir)
+    runner = SimulationRunner(config, output_dir=output_dir, overwrite=overwrite)
     return runner.run(verbose=verbose)
