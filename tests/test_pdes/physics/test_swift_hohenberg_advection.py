@@ -7,6 +7,8 @@ from pde import CartesianGrid, ScalarField
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
+from tests.conftest import run_short_simulation
+
 
 @pytest.fixture
 def small_grid():
@@ -31,16 +33,10 @@ class TestSwiftHohenbergAdvectionPDE:
         assert meta.num_fields == 1
         assert "u" in meta.field_names
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("swift-hohenberg-advection")
-        params = preset.get_default_parameters()
-        bc = {"x": "periodic", "y": "periodic"}
-
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "default", {"seed": 42})
-
-        result = pde.solve(state, t_range=0.01, dt=0.0008, solver="euler")
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("swift-hohenberg-advection", "physics", t_end=0.01)
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
+        assert config["preset"] == "swift-hohenberg-advection"

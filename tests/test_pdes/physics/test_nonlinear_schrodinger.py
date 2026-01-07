@@ -7,6 +7,8 @@ from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
+from tests.conftest import run_short_simulation
+
 
 @pytest.fixture
 def small_grid():
@@ -32,17 +34,11 @@ class TestNonlinearSchrodingerPDE:
         assert "u" in meta.field_names
         assert "v" in meta.field_names
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("nonlinear-schrodinger")
-        params = preset.get_default_parameters()
-        bc = {"x": "periodic", "y": "periodic"}
-
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "default", {"seed": 42})
-
-        result = pde.solve(state, t_range=0.0001, dt=0.00001, solver="euler")
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("nonlinear-schrodinger", "physics", t_end=0.0001)
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
         assert np.isfinite(result[1].data).all()
+        assert config["preset"] == "nonlinear-schrodinger"

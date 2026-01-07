@@ -8,6 +8,8 @@ from pde import CartesianGrid, FieldCollection
 from pde_sim.pdes import get_pde_preset, list_presets
 from pde_sim.pdes.physics.nonlinear_beam import NonlinearBeamEquationPDE
 
+from tests.conftest import run_short_simulation
+
 
 @pytest.fixture
 def small_grid():
@@ -93,25 +95,10 @@ class TestNonlinearBeamPDE:
         expected_w = E_v * v.data
         np.testing.assert_allclose(w.data, expected_w, rtol=1e-10)
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("nonlinear-beam")
-        # Use smaller stiffness parameters for stability
-        params = {"E_star": 0.0001, "Delta_E": 1.0, "eps": 0.1}
-        # Use periodic BC to match the periodic grid
-        bc = {"x": "periodic", "y": "periodic"}
-
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(
-            small_grid,
-            "default",
-            {"amplitude": 0.1, "seed": 42},
-            parameters=params,
-            bc=bc,
-        )
-
-        # Run a very short simulation with tiny timestep (fourth-order PDE is stiff)
-        result = pde.solve(state, t_range=0.0001, dt=1e-7)
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        # Fourth-order PDE is stiff - use very short time
+        result, config = run_short_simulation("nonlinear-beam", "physics", t_end=0.0001)
 
         # Check that result is finite and valid (result is FieldCollection)
         assert result is not None
@@ -120,6 +107,7 @@ class TestNonlinearBeamPDE:
         assert all(
             np.isfinite(f.data).all() for f in result
         ), "Simulation produced NaN or Inf values"
+        assert config["preset"] == "nonlinear-beam"
 
     def test_evolution_rate(self, small_grid):
         """Test that evolution_rate computes the correct structure."""

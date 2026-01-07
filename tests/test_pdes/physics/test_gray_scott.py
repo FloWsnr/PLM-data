@@ -8,6 +8,8 @@ from pde import PDE, CartesianGrid, FieldCollection
 from pde_sim.pdes import get_pde_preset, list_presets
 from pde_sim.pdes.physics.gray_scott import GrayScottPDE
 
+from tests.conftest import run_short_simulation
+
 
 @pytest.fixture
 def small_grid():
@@ -105,26 +107,9 @@ class TestGrayScottPDE:
         pde = get_pde_preset("gray-scott")
         assert isinstance(pde, GrayScottPDE)
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation with Gray-Scott."""
-        np.random.seed(42)
-        pde_preset = GrayScottPDE()
-
-        params = {"a": 0.037, "b": 0.06, "D": 2.0}
-        pde = pde_preset.create_pde(
-            parameters=params,
-            bc={"x": "periodic", "y": "periodic"},
-            grid=small_grid,
-        )
-
-        state = pde_preset.create_initial_state(
-            grid=small_grid,
-            ic_type="gray-scott-default",
-            ic_params={},
-        )
-
-        # Run short simulation
-        result = pde.solve(state, t_range=0.1, dt=0.05, solver="euler", tracker=None)
+    def test_short_simulation(self):
+        """Test running a short simulation with Gray-Scott using default config."""
+        result, config = run_short_simulation("gray-scott", "physics", t_end=1.0)
 
         # Result should be a FieldCollection
         assert isinstance(result, FieldCollection)
@@ -132,6 +117,7 @@ class TestGrayScottPDE:
         # Values should be finite
         assert np.all(np.isfinite(result[0].data))
         assert np.all(np.isfinite(result[1].data))
+        assert config["preset"] == "gray-scott"
 
     def test_equations_for_metadata(self):
         """Test getting equations with parameter substitution."""

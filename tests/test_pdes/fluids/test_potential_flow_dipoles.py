@@ -6,6 +6,7 @@ import pytest
 from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
+from tests.conftest import run_short_simulation
 
 
 @pytest.fixture
@@ -70,17 +71,13 @@ class TestPotentialFlowDipolesPDE:
         # (radius=L/100=0.01) may be too small to capture. Check s is finite.
         assert np.isfinite(s.data).all()
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("potential-flow-dipoles")
-        params = preset.get_default_parameters()
-        bc = {"x": "neumann", "y": "neumann"}
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("potential-flow-dipoles", "fluids", t_end=0.1)
 
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "dipole", {"d": 5.0})
-
-        result = pde.solve(state, t_range=0.1, dt=0.01, solver="euler")
-
+        # Check result type and finite values
+        assert result is not None
         assert isinstance(result, FieldCollection)
         for field in result:
             assert np.isfinite(field.data).all()
+        assert config["preset"] == "potential-flow-dipoles"

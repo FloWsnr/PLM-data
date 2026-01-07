@@ -6,6 +6,7 @@ import pytest
 from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
+from tests.conftest import run_short_simulation
 
 
 @pytest.fixture
@@ -62,18 +63,13 @@ class TestKellerSegelPDE:
         """Test that PDE is registered."""
         assert "keller-segel" in list_presets()
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("keller-segel")
-        # Use moderate parameters to avoid blow-up
-        params = {"c": 3.0, "D": 1.0, "a": 1.0}
-        bc = {"x": "periodic", "y": "periodic"}
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("keller-segel", "biology", t_end=0.01)
 
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "keller-segel-default", {})
-
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
-
+        # Check result type and finite values
+        assert result is not None
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
         assert np.isfinite(result[1].data).all()
+        assert config["preset"] == "keller-segel"

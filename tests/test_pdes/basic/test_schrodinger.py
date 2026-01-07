@@ -8,6 +8,8 @@ from pde import FieldCollection
 from pde_sim.pdes import get_pde_preset, list_presets
 from pde_sim.pdes.basic.schrodinger import SchrodingerPDE
 
+from tests.conftest import run_short_simulation
+
 
 class TestSchrodingerPDE:
     """Tests for the Schrodinger equation preset."""
@@ -77,22 +79,14 @@ class TestSchrodingerPDE:
         """Test that PDE is registered."""
         assert "schrodinger" in list_presets()
 
-    def test_short_simulation(self, non_periodic_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("schrodinger")
-        params = {"D": 1.0, "C": 0.004}
-        bc = {"x": "dirichlet", "y": "dirichlet"}
-
-        pde = preset.create_pde(params, bc, non_periodic_grid)
-        state = preset.create_initial_state(
-            non_periodic_grid, "eigenstate", {"n": 3, "m": 3}
-        )
-
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("schrodinger", "basic", t_end=0.001)
 
         assert result is not None
         assert np.isfinite(result[0].data).all()
         assert np.isfinite(result[1].data).all()
+        assert config["preset"] == "schrodinger"
 
     def test_potential_parameters_in_metadata(self):
         """Test that potential parameters are in metadata."""

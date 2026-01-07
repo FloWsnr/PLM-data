@@ -8,6 +8,8 @@ from pde import FieldCollection
 from pde_sim.pdes import get_pde_preset, list_presets
 from pde_sim.pdes.basic.wave import WavePDE, InhomogeneousWavePDE
 
+from tests.conftest import run_short_simulation
+
 
 class TestWavePDE:
     """Tests for the Wave equation preset."""
@@ -60,22 +62,14 @@ class TestWavePDE:
         """Test that PDE is registered."""
         assert "wave" in list_presets()
 
-    def test_short_simulation(self, non_periodic_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("wave")
-        params = {"D": 1.0, "C": 0.01}
-        bc = {"x": "neumann", "y": "neumann"}
-
-        pde = preset.create_pde(params, bc, non_periodic_grid)
-        state = preset.create_initial_state(
-            non_periodic_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 0.5}
-        )
-
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("wave", "basic", t_end=0.01)
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
         assert np.isfinite(result[1].data).all()
+        assert config["preset"] == "wave"
 
 
 class TestInhomogeneousWavePDE:
@@ -135,20 +129,12 @@ class TestInhomogeneousWavePDE:
         # Velocity should start at zero
         assert np.allclose(state[1].data, 0)
 
-    def test_short_simulation(self, non_periodic_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("inhomogeneous-wave")
-        params = {"D": 1.0, "E": 0.5, "m": 2, "n": 2, "C": 0.01}
-        bc = {"x": "neumann", "y": "neumann"}
-
-        pde = preset.create_pde(params, bc, non_periodic_grid)
-        state = preset.create_initial_state(
-            non_periodic_grid, "gaussian-blobs", {"num_blobs": 1}
-        )
-
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("inhomogeneous-wave", "basic", t_end=0.01)
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 2
         assert np.isfinite(result[0].data).all()
         assert np.isfinite(result[1].data).all()
+        assert config["preset"] == "inhomogeneous-wave"

@@ -73,23 +73,24 @@ class BoundaryConditionFactory:
         )
 
     @classmethod
-    def convert_config(cls, bc_config: dict[str, str]) -> list:
+    def convert_config(cls, bc_config: dict[str, str]) -> dict[str, Any]:
         """Convert a BC config dict to py-pde format.
 
         Args:
             bc_config: Dictionary with 'x' and 'y' keys.
 
         Returns:
-            List of BC specs for [x, y] axes.
+            Dictionary with axis-keyed BC specs for py-pde.
+            Format: {"x": bc_x, "y": bc_y}
         """
         x_bc = cls.convert(bc_config.get("x", "periodic"))
         y_bc = cls.convert(bc_config.get("y", "periodic"))
-        return [x_bc, y_bc]
+        return {"x": x_bc, "y": y_bc}
 
     @classmethod
     def convert_per_side(
         cls, left: str, right: str, top: str, bottom: str
-    ) -> list[list[Any]]:
+    ) -> dict[str, Any]:
         """Convert per-side BCs to py-pde format.
 
         Args:
@@ -99,16 +100,18 @@ class BoundaryConditionFactory:
             bottom: BC for bottom side (y-)
 
         Returns:
-            List of BC specs: [[left_bc, right_bc], [bottom_bc, top_bc]]
-            Note: py-pde uses [x_axis, y_axis] where x_axis=[lower, upper]
+            Dictionary with side-specific BC specs.
+            Format: {"x-": left_bc, "x+": right_bc, "y-": bottom_bc, "y+": top_bc}
         """
-        return [
-            [cls.convert(left), cls.convert(right)],
-            [cls.convert(bottom), cls.convert(top)],
-        ]
+        return {
+            "x-": cls.convert(left),
+            "x+": cls.convert(right),
+            "y-": cls.convert(bottom),
+            "y+": cls.convert(top),
+        }
 
     @classmethod
-    def convert_field_bc(cls, field_bc: FieldBoundaryConfig) -> list[Any]:
+    def convert_field_bc(cls, field_bc: FieldBoundaryConfig) -> dict[str, Any]:
         """Convert FieldBoundaryConfig to py-pde format.
 
         Handles both axis-based (x/y) and side-based (left/right/top/bottom) specs.
@@ -117,7 +120,7 @@ class BoundaryConditionFactory:
             field_bc: Field boundary configuration
 
         Returns:
-            BC specification in py-pde format
+            BC specification in py-pde format (dictionary)
         """
         # If any individual sides are specified, use per-side conversion
         has_sides = any([field_bc.left, field_bc.right, field_bc.top, field_bc.bottom])
@@ -133,7 +136,7 @@ class BoundaryConditionFactory:
         # Otherwise use simple axis-based BCs
         x_bc = field_bc.x or "periodic"
         y_bc = field_bc.y or "periodic"
-        return [cls.convert(x_bc), cls.convert(y_bc)]
+        return {"x": cls.convert(x_bc), "y": cls.convert(y_bc)}
 
     @classmethod
     def build_bc_ops(

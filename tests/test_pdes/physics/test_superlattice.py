@@ -7,6 +7,8 @@ from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
+from tests.conftest import run_short_simulation
+
 
 @pytest.fixture
 def small_grid():
@@ -65,17 +67,11 @@ class TestSuperlatticePDE:
         assert len(state) == 4
         assert np.isfinite(state[0].data).all()
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("superlattice")
-        params = preset.get_default_parameters()
-        bc = {"x": "periodic", "y": "periodic"}
-
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "default", {"noise": 0.05})
-
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("superlattice", "physics", t_end=0.001)
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 4
         assert np.isfinite(result[0].data).all()
+        assert config["preset"] == "superlattice"

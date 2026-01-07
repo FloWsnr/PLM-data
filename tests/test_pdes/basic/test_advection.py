@@ -8,6 +8,8 @@ from pde import ScalarField
 from pde_sim.pdes import get_pde_preset, list_presets
 from pde_sim.pdes.basic.advection import AdvectionPDE
 
+from tests.conftest import run_short_simulation
+
 
 class TestAdvectionPDE:
     """Tests for the Advection-diffusion equation preset."""
@@ -57,18 +59,10 @@ class TestAdvectionPDE:
         """Test that PDE is registered."""
         assert "advection" in list_presets()
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("advection")
-        params = {"D": 0.1, "V": 0.1, "mode": 0}
-        bc = {"x": "periodic", "y": "periodic"}
-
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(
-            small_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
-        )
-
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("advection", "basic", t_end=0.1)
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
+        assert config["preset"] == "advection"

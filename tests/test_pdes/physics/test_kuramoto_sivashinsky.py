@@ -7,6 +7,8 @@ from pde import CartesianGrid
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
+from tests.conftest import run_short_simulation
+
 
 @pytest.fixture
 def small_grid():
@@ -40,23 +42,12 @@ class TestKuramotoSivashinskyPDE:
         """Test that PDE is registered."""
         assert "kuramoto-sivashinsky" in list_presets()
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        # KS equation is fourth-order and very stiff - use coarse grid and tiny dt
-        ks_grid = CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
-
-        preset = get_pde_preset("kuramoto-sivashinsky")
-        params = {"a": 0.1}  # Use damping for stability
-        bc = {"x": "periodic", "y": "periodic"}
-
-        pde = preset.create_pde(params, bc, ks_grid)
-        state = preset.create_initial_state(
-            ks_grid, "default", {"amplitude": 0.01, "seed": 42}
-        )
-
-        # Run a very short simulation with tiny timestep (fourth-order PDE is stiff)
-        result = pde.solve(state, t_range=0.001, dt=1e-6)
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        # KS equation is fourth-order and very stiff - use tiny t_end
+        result, config = run_short_simulation("kuramoto-sivashinsky", "physics", t_end=0.001)
 
         # Check that result is finite and valid
         assert result is not None
         assert np.isfinite(result.data).all(), "Simulation produced NaN or Inf values"
+        assert config["preset"] == "kuramoto-sivashinsky"

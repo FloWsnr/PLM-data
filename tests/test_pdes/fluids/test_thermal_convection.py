@@ -7,6 +7,7 @@ from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
 from pde_sim.core.config import BoundaryConfig, FieldBoundaryConfig
+from tests.conftest import run_short_simulation
 
 
 @pytest.fixture
@@ -58,20 +59,16 @@ class TestThermalConvectionPDE:
 
         assert pde is not None
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("thermal-convection")
-        params = preset.get_default_parameters()
-        bc = {"x": "periodic", "y": "periodic"}
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("thermal-convection", "fluids", t_end=0.01)
 
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "default", {"noise": 0.01, "seed": 42})
-
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
-
+        # Check result type and finite values
+        assert result is not None
         assert isinstance(result, FieldCollection)
         for field in result:
             assert np.isfinite(field.data).all()
+        assert config["preset"] == "thermal-convection"
 
     def test_per_field_boundary_conditions(self):
         """Test simulation with per-field boundary conditions.

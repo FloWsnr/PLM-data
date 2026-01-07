@@ -7,6 +7,8 @@ from pde import CartesianGrid
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
+from tests.conftest import run_short_simulation
+
 
 @pytest.fixture
 def small_grid():
@@ -61,29 +63,18 @@ class TestSwiftHohenbergPDE:
         assert state is not None
         assert np.isfinite(state.data).all()
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation.
+    def test_short_simulation(self):
+        """Test running a short simulation using default config.
 
         Swift-Hohenberg has 4th order terms making it numerically stiff.
         """
-        # Use larger domain for stability
-        sh_grid = CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
-
-        preset = get_pde_preset("swift-hohenberg")
-        params = {"r": 0.1, "a": 0.0, "b": -1.0, "c": -0.1, "D": 1.0}
-        bc = {"x": "periodic", "y": "periodic"}
-
-        pde = preset.create_pde(params, bc, sh_grid)
-        state = preset.create_initial_state(
-            sh_grid, "random-uniform", {"low": -0.05, "high": 0.05, "seed": 42}
-        )
-
-        # Run a very short simulation with tiny timestep (fourth-order PDE is stiff)
-        result = pde.solve(state, t_range=0.001, dt=1e-6)
+        # Run a very short simulation (fourth-order PDE is stiff)
+        result, config = run_short_simulation("swift-hohenberg", "physics", t_end=0.001)
 
         # Check that result is finite and valid
         assert result is not None
         assert np.isfinite(result.data).all(), "Simulation produced NaN or Inf values"
+        assert config["preset"] == "swift-hohenberg"
 
     def test_subcritical_with_quintic(self, small_grid):
         """Test subcritical regime with quintic term.

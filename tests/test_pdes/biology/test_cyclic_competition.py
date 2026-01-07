@@ -3,15 +3,10 @@
 import numpy as np
 import pytest
 
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
-
-
-@pytest.fixture
-def small_grid():
-    """Create a small grid for fast tests."""
-    return CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
+from tests.conftest import run_short_simulation
 
 
 class TestCyclicCompetitionPDE:
@@ -21,7 +16,7 @@ class TestCyclicCompetitionPDE:
         """Test that cyclic-competition is registered."""
         assert "cyclic-competition" in list_presets()
 
-    def test_metadata(self, small_grid):
+    def test_metadata(self):
         """Test metadata."""
         preset = get_pde_preset("cyclic-competition")
         meta = preset.metadata
@@ -31,16 +26,12 @@ class TestCyclicCompetitionPDE:
         assert meta.num_fields == 3
         assert set(meta.field_names) == {"u", "v", "w"}
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("cyclic-competition")
-        params = preset.get_default_parameters()
-        bc = {"x": "periodic", "y": "periodic"}
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("cyclic-competition", "biology", t_end=0.01)
 
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "default", {"noise": 0.05})
-
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
-
+        # Check result type and finite values
+        assert result is not None
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
+        assert config["preset"] == "cyclic-competition"

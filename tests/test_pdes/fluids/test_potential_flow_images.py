@@ -6,6 +6,7 @@ import pytest
 from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
+from tests.conftest import run_short_simulation
 
 
 @pytest.fixture
@@ -66,17 +67,13 @@ class TestPotentialFlowImagesPDE:
         assert np.std(phi.data) > 0
         assert np.isfinite(phi.data).all()
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("potential-flow-images")
-        params = preset.get_default_parameters()
-        bc = {"x": "neumann", "y": "neumann"}
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("potential-flow-images", "fluids", t_end=0.1)
 
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "source-with-image", {})
-
-        result = pde.solve(state, t_range=0.1, dt=0.01, solver="euler")
-
+        # Check result type and finite values
+        assert result is not None
         assert isinstance(result, FieldCollection)
         for field in result:
             assert np.isfinite(field.data).all()
+        assert config["preset"] == "potential-flow-images"

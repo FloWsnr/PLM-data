@@ -3,15 +3,10 @@
 import numpy as np
 import pytest
 
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
-
-
-@pytest.fixture
-def small_grid():
-    """Create a small grid for fast tests."""
-    return CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
+from tests.conftest import run_short_simulation
 
 
 class TestHyperbolicBrusselatorPDE:
@@ -34,16 +29,12 @@ class TestHyperbolicBrusselatorPDE:
         assert "w" in meta.field_names
         assert "q" in meta.field_names
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("hyperbolic-brusselator")
-        params = preset.get_default_parameters()
-        bc = {"x": "periodic", "y": "periodic"}
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("hyperbolic-brusselator", "biology", t_end=0.001)
 
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "default", {"seed": 42})
-
-        result = pde.solve(state, t_range=0.01, dt=0.0001, solver="euler")
-
+        # Check result type and finite values
+        assert result is not None
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
+        assert config["preset"] == "hyperbolic-brusselator"

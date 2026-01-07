@@ -44,7 +44,7 @@ class TestSimulationRunner:
         # Create config for a very short simulation
         config_dict = {
             "preset": "heat",
-            "parameters": {"D": 0.01},
+            "parameters": {"D_T": 0.01},
             "init": {"type": "random-uniform", "params": {"low": 0.0, "high": 1.0}},
             "solver": "euler",
             "t_end": 0.005,  # 50 * 0.0001
@@ -83,7 +83,7 @@ class TestSimulationRunner:
         for solver in ["euler", "rk4"]:
             config_dict = {
                 "preset": "heat",
-                "parameters": {"D": 0.01},
+                "parameters": {"D_T": 0.01},
                 "init": {"type": "random-uniform", "params": {}},
                 "solver": solver,
                 "t_end": 0.001,
@@ -113,7 +113,7 @@ class TestRunFromConfig:
         """Test running simulation from config file."""
         config_dict = {
             "preset": "heat",
-            "parameters": {"D": 0.01},
+            "parameters": {"D_T": 0.01},
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
             "t_end": 0.002,  # 20 * 0.0001
@@ -137,7 +137,7 @@ class TestRunFromConfig:
         """Test that seed can be overridden."""
         config_dict = {
             "preset": "heat",
-            "parameters": {"D": 0.01},
+            "parameters": {"D_T": 0.01},
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
             "t_end": 0.001,  # 10 * 0.0001
@@ -164,7 +164,7 @@ class TestGrayScottSimulation:
         """Test running a short Gray-Scott simulation."""
         config_dict = {
             "preset": "gray-scott",
-            "parameters": {"F": 0.04, "k": 0.06, "Du": 0.16, "Dv": 0.08},
+            "parameters": {"a": 0.037, "b": 0.06, "D": 2.0},
             "init": {"type": "gaussian-blobs", "params": {"num_blobs": 2}},
             "solver": "euler",
             "backend": "numpy",
@@ -204,7 +204,7 @@ class TestBackend:
         """Test that different backends can be used."""
         config_dict = {
             "preset": "heat",
-            "parameters": {"D": 0.01},
+            "parameters": {"D_T": 0.01},
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
             "t_end": 0.001,  # 10 * 0.0001
@@ -231,7 +231,7 @@ class TestBackend:
         """Test that invalid backend raises ValueError."""
         config_dict = {
             "preset": "heat",
-            "parameters": {"D": 0.01},
+            "parameters": {"D_T": 0.01},
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
             "t_end": 0.001,  # 10 * 0.0001
@@ -259,7 +259,7 @@ class TestAdaptiveTimeStepping:
         """Test that adaptive and tolerance are parsed from config."""
         config_dict = {
             "preset": "heat",
-            "parameters": {"D": 0.01},
+            "parameters": {"D_T": 0.01},
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
             "t_end": 0.001,  # 10 * 0.0001
@@ -284,7 +284,7 @@ class TestAdaptiveTimeStepping:
         """Test that adaptive time stepping works."""
         config_dict = {
             "preset": "heat",
-            "parameters": {"D": 0.01},
+            "parameters": {"D_T": 0.01},
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
             "t_end": 0.002,  # 20 * 0.0001

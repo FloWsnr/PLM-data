@@ -12,6 +12,8 @@ from pde_sim.pdes.basic.heat import (
     InhomogeneousDiffusionHeatPDE,
 )
 
+from tests.conftest import run_short_simulation
+
 
 class TestHeatPDE:
     """Tests for the Heat equation preset."""
@@ -81,32 +83,16 @@ class TestHeatPDE:
         pde = get_pde_preset("heat")
         assert isinstance(pde, HeatPDE)
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation with the heat PDE."""
-        np.random.seed(42)
-        pde_preset = HeatPDE()
-
-        # Use small diffusion coefficient for stability
-        params = {"D_T": 0.01}
-        pde = pde_preset.create_pde(
-            parameters=params,
-            bc={"x": "periodic", "y": "periodic"},
-            grid=small_grid,
-        )
-
-        state = pde_preset.create_initial_state(
-            grid=small_grid,
-            ic_type="gaussian-blobs",
-            ic_params={"num_blobs": 1, "amplitude": 1.0},
-        )
-
-        # Run short simulation with explicit euler solver
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
+    def test_short_simulation(self):
+        """Test running a short simulation with the heat PDE using default config."""
+        result, config = run_short_simulation("heat", "basic", t_end=0.1)
 
         # Result should be a ScalarField
         assert isinstance(result, ScalarField)
         # Values should be finite
         assert np.all(np.isfinite(result.data))
+        # Verify we used the config parameters
+        assert config["preset"] == "heat"
 
 
 class TestInhomogeneousHeatPDE:
@@ -150,22 +136,13 @@ class TestInhomogeneousHeatPDE:
 
         assert isinstance(pde, PDE)
 
-    def test_short_simulation(self, non_periodic_grid):
-        """Test running a short simulation."""
-        np.random.seed(42)
-        pde_preset = InhomogeneousHeatPDE()
-        params = {"D": 0.01, "n": 2, "m": 2}
-        bc = {"x": "neumann", "y": "neumann"}
-
-        pde = pde_preset.create_pde(params, bc, non_periodic_grid)
-        state = pde_preset.create_initial_state(
-            non_periodic_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
-        )
-
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("inhomogeneous-heat", "basic", t_end=0.01)
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
+        assert config["preset"] == "inhomogeneous-heat"
 
 
 class TestInhomogeneousDiffusionHeatPDE:

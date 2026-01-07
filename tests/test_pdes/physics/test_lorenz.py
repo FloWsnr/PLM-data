@@ -7,6 +7,8 @@ from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
+from tests.conftest import run_short_simulation
+
 
 @pytest.fixture
 def small_grid():
@@ -45,24 +47,17 @@ class TestLorenzPDE:
         assert len(state) == 3
         assert np.isfinite(state[0].data).all()
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation with the Lorenz PDE.
+    def test_short_simulation(self):
+        """Test running a short simulation with the Lorenz PDE using default config.
 
         Field names have been changed from (x, y, z) to (X, Y, Z) to avoid
         collision with 2D grid coordinate names.
         """
-        preset = get_pde_preset("lorenz")
-        params = {"sigma": 10.0, "rho": 28.0, "beta": 8.0/3.0, "Dx": 0.1, "Dy": 0.1, "Dz": 0.1}
-        bc = {"x": "periodic", "y": "periodic"}
-
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "default", {"noise": 0.1})
-
-        # Run simulation now that field names don't conflict
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
+        result, config = run_short_simulation("lorenz", "physics", t_end=0.001)
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 3
         assert np.isfinite(result[0].data).all()
         assert np.isfinite(result[1].data).all()
         assert np.isfinite(result[2].data).all()
+        assert config["preset"] == "lorenz"

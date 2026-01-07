@@ -6,6 +6,7 @@ import pytest
 from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
+from tests.conftest import run_short_simulation
 
 
 @pytest.fixture
@@ -59,18 +60,14 @@ class TestShallowWaterPDE:
         """Test that PDE is registered."""
         assert "shallow-water" in list_presets()
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("shallow-water")
-        params = preset.get_default_parameters()
-        bc = {"x": "periodic", "y": "periodic"}
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        # shallow-water needs shorter time due to stability
+        result, config = run_short_simulation("shallow-water", "fluids", t_end=0.001)
 
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "drop", {"amplitude": 0.1})
-
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
-
+        # Check result type and finite values
         assert result is not None
-        # Check all fields are finite
+        assert isinstance(result, FieldCollection)
         for field in result:
             assert np.isfinite(field.data).all()
+        assert config["preset"] == "shallow-water"

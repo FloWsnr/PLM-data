@@ -7,6 +7,8 @@ from pde import CartesianGrid
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
+from tests.conftest import run_short_simulation
+
 
 @pytest.fixture
 def small_grid():
@@ -59,18 +61,10 @@ class TestBurgersPDE:
         assert state is not None
         assert np.isfinite(state.data).all()
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("burgers")
-        params = {"epsilon": 0.1}  # Higher viscosity for stability
-        bc = {"x": "periodic", "y": "periodic"}
-
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(
-            small_grid, "sine", {"wavelength": 0.5}
-        )
-
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("burgers", "physics", t_end=0.01)
 
         assert result is not None
         assert np.isfinite(result.data).all()
+        assert config["preset"] == "burgers"

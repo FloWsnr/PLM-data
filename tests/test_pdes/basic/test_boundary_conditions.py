@@ -13,25 +13,25 @@ class TestBoundaryConditions:
         """Test periodic BC conversion."""
         preset = get_pde_preset("heat")
         bc = preset._convert_bc({"x": "periodic", "y": "periodic"})
-        assert bc == ["periodic", "periodic"]
+        assert bc == {"x": "periodic", "y": "periodic"}
 
     def test_convert_bc_no_flux(self):
         """Test no-flux (Neumann) BC conversion."""
         preset = get_pde_preset("heat")
         bc = preset._convert_bc({"x": "no-flux", "y": "no-flux"})
-        assert bc == [{"derivative": 0}, {"derivative": 0}]
+        assert bc == {"x": {"derivative": 0}, "y": {"derivative": 0}}
 
     def test_convert_bc_dirichlet(self):
         """Test Dirichlet BC conversion."""
         preset = get_pde_preset("heat")
         bc = preset._convert_bc({"x": "dirichlet", "y": "dirichlet"})
-        assert bc == [{"value": 0}, {"value": 0}]
+        assert bc == {"x": {"value": 0}, "y": {"value": 0}}
 
     def test_convert_bc_mixed(self):
         """Test mixed BC conversion."""
         preset = get_pde_preset("heat")
         bc = preset._convert_bc({"x": "periodic", "y": "no-flux"})
-        assert bc == ["periodic", {"derivative": 0}]
+        assert bc == {"x": "periodic", "y": {"derivative": 0}}
 
     def test_simulation_with_no_flux_bc(self, non_periodic_grid):
         """Test running simulation with no-flux boundary conditions."""

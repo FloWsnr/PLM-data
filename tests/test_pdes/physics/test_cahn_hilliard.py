@@ -7,6 +7,8 @@ from pde import CartesianGrid
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
+from tests.conftest import run_short_simulation
+
 
 @pytest.fixture
 def small_grid():
@@ -62,19 +64,11 @@ class TestCahnHilliardPDE:
         assert state is not None
         assert np.isfinite(state.data).all()
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("cahn-hilliard")
-        params = {"r": 0.01, "a": 1.0, "D": 1.0}
-        bc = {"x": "periodic", "y": "periodic"}
-
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(
-            small_grid, "random-uniform", {"low": -0.05, "high": 0.05}
-        )
-
-        # Cahn-Hilliard has 4th order terms, needs small dt
-        result = pde.solve(state, t_range=0.0001, dt=0.00001, solver="euler")
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        # Cahn-Hilliard has 4th order terms, use very short time
+        result, config = run_short_simulation("cahn-hilliard", "physics", t_end=0.0001)
 
         assert result is not None
         assert np.isfinite(result.data).all()
+        assert config["preset"] == "cahn-hilliard"

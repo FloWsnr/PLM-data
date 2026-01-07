@@ -7,6 +7,8 @@ from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
+from tests.conftest import run_short_simulation
+
 
 @pytest.fixture
 def small_grid():
@@ -51,3 +53,13 @@ class TestStochasticGrayScottPDE:
         assert len(state) == 2
         assert np.isfinite(state[0].data).all()
         assert np.isfinite(state[1].data).all()
+
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("stochastic-gray-scott", "physics", t_end=0.1)
+
+        assert isinstance(result, FieldCollection)
+        assert len(result) == 2
+        assert np.isfinite(result[0].data).all()
+        assert np.isfinite(result[1].data).all()
+        assert config["preset"] == "stochastic-gray-scott"

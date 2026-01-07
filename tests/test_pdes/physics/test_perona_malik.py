@@ -7,6 +7,8 @@ from pde import CartesianGrid
 
 from pde_sim.pdes import get_pde_preset, list_presets
 
+from tests.conftest import run_short_simulation
+
 
 @pytest.fixture
 def small_grid():
@@ -30,16 +32,10 @@ class TestPeronaMalikPDE:
         assert meta.category == "physics"
         assert meta.num_fields == 1
 
-    def test_short_simulation(self, small_grid):
-        """Test running a short simulation."""
-        preset = get_pde_preset("perona-malik")
-        params = preset.get_default_parameters()
-        bc = {"x": "periodic", "y": "periodic"}
-
-        pde = preset.create_pde(params, bc, small_grid)
-        state = preset.create_initial_state(small_grid, "default", {})
-
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("perona-malik", "physics", t_end=0.001)
 
         assert result is not None
         assert np.isfinite(result.data).all()
+        assert config["preset"] == "perona-malik"
