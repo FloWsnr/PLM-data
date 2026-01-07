@@ -138,7 +138,8 @@ class VorticityPDE(MultiFieldPDEPreset):
                 -r2_sq / (2 * radius**2)
             )
             psi_data = np.zeros_like(omega_data)
-            S_data = np.exp(-r1_sq / (2 * radius**2)) + np.exp(-r2_sq / (2 * radius**2))
+            # Passive scalar: gradient from 1 (left) to 0 (right), matching Visual PDE
+            S_data = 1.0 - x_norm
 
         elif ic_type == "single-vortex":
             x0 = ic_params.get("x0", 0.5)
@@ -159,14 +160,22 @@ class VorticityPDE(MultiFieldPDEPreset):
             r_sq = (x_norm - x0) ** 2 + (y_norm - y0) ** 2
             omega_data = strength * np.exp(-r_sq / (2 * radius**2))
             psi_data = np.zeros_like(omega_data)
-            S_data = np.exp(-r_sq / (2 * radius**2))
+            # Passive scalar: gradient from 1 (left) to 0 (right), matching Visual PDE
+            S_data = 1.0 - x_norm
 
         else:
-            # Default: use standard IC generator for omega, zeros for psi and S
+            # Default: use standard IC generator for omega, zeros for psi
             omega_field = create_initial_condition(grid, ic_type, ic_params)
             omega_data = omega_field.data
             psi_data = np.zeros_like(omega_data)
-            S_data = np.zeros_like(omega_data)
+            # Passive scalar: gradient from 1 (left) to 0 (right), matching Visual PDE
+            x, y = np.meshgrid(
+                np.linspace(x_min, x_max, grid.shape[0]),
+                np.linspace(y_min, y_max, grid.shape[1]),
+                indexing="ij",
+            )
+            x_norm = (x - x_min) / L_x
+            S_data = 1.0 - x_norm
 
         omega = ScalarField(grid, omega_data)
         omega.label = "omega"

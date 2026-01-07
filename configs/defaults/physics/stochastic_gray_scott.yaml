@@ -14,14 +14,14 @@ backend: numba
 adaptive: false
 dt: 0.02
 t_end: 500.0
-resolution: 128
+resolution: 500
 bc:
   x: periodic
   y: periodic
 output:
   path: ./output
   num_frames: 100
-  colormap: turbo
+  colormap: viridis
   field_to_plot: u
 seed: 123
 domain_size: 300

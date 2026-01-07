@@ -23,11 +23,19 @@ class PeronaMalikPDE(ScalarPDEPreset):
 
     Using exponential diffusivity: g(|grad(u)|) = exp(-D * |grad(u)|^2)
 
-    Approximated as:
-        du/dt = laplace(u) * exp(-D * gradient_squared(u))
+    The full divergence form expands as:
+        div(g*grad(u)) = g*laplace(u) + grad(g)·grad(u)
+
+    With g = exp(-D*v) where v = |grad(u)|^2 = u_x^2 + u_y^2:
+        grad(g) = -2D*g * (u_x*u_xx + u_y*u_xy, u_x*u_xy + u_y*u_yy)
+        grad(g)·grad(u) = -2D*g * [u_x^2*u_xx + 2*u_x*u_y*u_xy + u_y^2*u_yy]
+
+    Full equation:
+        du/dt = g * [laplace(u) - 2D*(u_x^2*u_xx + 2*u_x*u_y*u_xy + u_y^2*u_yy)]
 
     Key features:
         - Edge-preserving: smooths homogeneous regions while preserving edges
+        - Edge-sharpening: the cross-term enhances edges over time
         - Adaptive diffusion: diffusion coefficient depends on local gradient
         - Image denoising: removes noise while maintaining structure
 
@@ -50,7 +58,7 @@ class PeronaMalikPDE(ScalarPDEPreset):
             category="physics",
             description="Perona-Malik edge-preserving anisotropic diffusion",
             equations={
-                "u": "laplace(u) * exp(-D * gradient_squared(u))",
+                "u": "div(exp(-D * |grad(u)|^2) * grad(u))",
             },
             parameters=[
                 PDEParameter(
@@ -79,7 +87,7 @@ class PeronaMalikPDE(ScalarPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        """Create the Perona-Malik PDE.
+        """Create the Perona-Malik PDE with full divergence form.
 
         Args:
             parameters: Dictionary with D.
@@ -91,10 +99,41 @@ class PeronaMalikPDE(ScalarPDEPreset):
         """
         D = parameters.get("D", 5.0)
 
-        # Perona-Malik with exponential diffusivity:
-        # du/dt = laplace(u) * exp(-D * |grad(u)|^2)
+        # Full Perona-Malik equation:
+        # du/dt = div(g * grad(u)) where g = exp(-D * |grad(u)|^2)
+        #
+        # Expanded:
+        # div(g * grad(u)) = g * laplace(u) + grad(g) · grad(u)
+        #
+        # With g = exp(-D * gradient_squared(u)):
+        # grad(g) = -2D * g * (u_x*u_xx + u_y*u_xy, u_x*u_xy + u_y*u_yy)
+        # grad(g) · grad(u) = -2D * g * [u_x^2*u_xx + 2*u_x*u_y*u_xy + u_y^2*u_yy]
+        #
+        # Full RHS:
+        # g * [laplace(u) - 2D * (u_x^2*u_xx + 2*u_x*u_y*u_xy + u_y^2*u_yy)]
+
+        # Define the diffusivity g
+        g = f"exp(-{D} * gradient_squared(u))"
+
+        # Define partial derivatives
+        u_x = "d_dx(u)"
+        u_y = "d_dy(u)"
+        u_xx = "d_dx(d_dx(u))"
+        u_yy = "d_dy(d_dy(u))"
+        u_xy = "d_dx(d_dy(u))"
+
+        # The cross-term: u_x^2*u_xx + 2*u_x*u_y*u_xy + u_y^2*u_yy
+        cross_term = (
+            f"({u_x})**2 * ({u_xx}) + "
+            f"2 * ({u_x}) * ({u_y}) * ({u_xy}) + "
+            f"({u_y})**2 * ({u_yy})"
+        )
+
+        # Full RHS: g * [laplace(u) - 2D * cross_term]
+        rhs = f"({g}) * (laplace(u) - 2 * {D} * ({cross_term}))"
+
         return PDE(
-            rhs={"u": f"laplace(u) * exp(-{D} * gradient_squared(u))"},
+            rhs={"u": rhs},
             bc=self._convert_bc(bc),
         )
 
@@ -173,4 +212,4 @@ class PeronaMalikPDE(ScalarPDEPreset):
     ) -> dict[str, str]:
         """Get equations with parameter values substituted."""
         D = parameters.get("D", 5.0)
-        return {"u": f"laplace(u) * exp(-{D} * gradient_squared(u))"}
+        return {"u": f"div(exp(-{D} * |grad(u)|^2) * grad(u))"}

@@ -30,7 +30,7 @@ This work demonstrates that understanding spatial dynamics is essential for pred
 
 $$\frac{\partial u}{\partial t} = \delta_u \nabla^2 u + \alpha v - \mu_u u + \frac{\rho_u u w}{1 + w} + \sigma_u + K_u t$$
 
-$$\frac{\partial v}{\partial t} = \nabla^2 v + v(1-v) - \frac{u v}{\gamma_v + v}$$
+$$\frac{\partial v}{\partial t} = \delta_v \nabla^2 v + v(1-v) - \frac{u v}{\gamma_v + v}$$
 
 $$\frac{\partial w}{\partial t} = \delta_w \nabla^2 w + \frac{\rho_w u v}{\gamma_w + v} - \mu_w w + \sigma_w + K_w t$$
 
@@ -42,7 +42,7 @@ Where:
 - $\mu_u, \mu_w$ = decay rates
 - $\rho_u, \rho_w$ = proliferation/production rates
 - $\gamma_v, \gamma_w$ = Michaelis-Menten constants
-- $\delta_u, \delta_w$ = diffusion coefficients
+- $\delta_u, \delta_v, \delta_w$ = diffusion coefficients
 - $\sigma_u, \sigma_w$ = constant treatment rates
 - $K_u, K_w$ = time-ramped treatment rates
 
@@ -73,10 +73,10 @@ parameters:
   s_w: 10          # sigma_w (constant cytokine source)
   s_u: 0.0         # sigma_u (constant effector source)
 
-  # Diffusion coefficients
-  D_u: 0.5         # effector diffusion
-  D_v: 0.008       # tumor diffusion (slow)
-  D_w: 4           # cytokine diffusion (fast)
+  # Diffusion coefficients (effector >> tumor, creates Turing instability)
+  Du: 0.5          # effector diffusion (delta_u)
+  Dv: 0.008        # tumor diffusion (delta_v, slow)
+  Dw: 4            # cytokine diffusion (delta_w, fast)
 ```
 
 ## Parameter Variants

@@ -21,18 +21,24 @@ class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
     The simulation uses parabolic relaxation to solve the elliptic Laplace
     equation for potential flow.
 
-    Potential equation (Laplace with source-sink forcing):
-        d(phi)/dt = laplace(phi) + source_forcing
+    Visual PDE reference equation:
+        d(phi)/dt = laplace(phi) + 1000*(ind(s[x-d*dx,y]>0) - ind(s[x+d*dx,y]>0))/(2*d*dx)
 
-    where source_forcing represents the source-sink pair.
+    Since py-pde doesn't support shifted field access, we pre-compute the
+    dipole forcing term in the s field initial condition:
+        s = (bump(x-d*dx,y) - bump(x+d*dx,y)) / (2*d*dx)
+
+    Then the equation simplifies to:
+        d(phi)/dt = laplace(phi) + strength * s
 
     Velocity from potential:
         u = d_dx(phi), v = d_dy(phi)
 
     where:
-        - phi is velocity potential
-        - s is indicator field for source/sink locations
+        - phi is velocity potential (starts at 0, relaxes to steady state)
+        - s is pre-computed dipole forcing field
         - d is separation parameter between source and sink
+        - strength controls the dipole intensity (default 1000)
     """
 
     @property
@@ -90,7 +96,16 @@ class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
         **kwargs,
     ) -> FieldCollection:
-        """Create initial potential with source-sink pair."""
+        """Create initial potential with source-sink pair.
+
+        Following Visual PDE approach:
+        - phi starts at 0 (relaxes to steady state via parabolic relaxation)
+        - s is a single centered bump used as source location marker
+        - The dipole forcing is computed from s via shifted indicators
+
+        Note: Our equation approximates the dipole by pre-computing the shifted
+        indicator difference in s, since py-pde doesn't support field shifting.
+        """
         # Get domain bounds from grid
         x_min, x_max = grid.axes_bounds[0]
         y_min, y_max = grid.axes_bounds[1]
@@ -98,7 +113,6 @@ class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
         L_y = y_max - y_min
 
         d = ic_params.get("d", 5.0)
-        strength = ic_params.get("strength", 1000.0)
 
         x, y = np.meshgrid(
             np.linspace(x_min, x_max, grid.shape[0]),
@@ -109,31 +123,31 @@ class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
         # Center of domain
         cx = x_min + 0.5 * L_x
         cy = y_min + 0.5 * L_y
+        dx = L_x / grid.shape[0]
 
         if ic_type in ("potential-flow-dipoles-default", "default", "dipole"):
-            # Source-sink pair separated by distance 2*d*dx in x-direction
-            dx = L_x / grid.shape[0]
+            # Visual PDE approach: phi starts at 0, relaxes to steady state
+            phi_data = np.zeros(grid.shape)
+
+            # Bump function centered at domain center with radius L/100
+            L = min(L_x, L_y)
+            radius = L / 100.0
+            r_sq = (x - cx) ** 2 + (y - cy) ** 2
+
+            # Create dipole forcing by computing shifted indicator difference
+            # Visual PDE: (ind(s[x-d*dx,y]>0) - ind(s[x+d*dx,y]>0))/(2*d*dx)
+            # The s[x-d*dx] lookup is nonzero when x is near (cx+d*dx), so:
+            # - First term is positive near (cx+d*dx) = RIGHT of center (source)
+            # - Second term is positive near (cx-d*dx) = LEFT of center (sink)
+            # Net: source at right, sink at left
             separation = d * dx
+            r_right_sq = (x - (cx + separation)) ** 2 + (y - cy) ** 2
+            r_left_sq = (x - (cx - separation)) ** 2 + (y - cy) ** 2
 
-            # Source at (cx + separation, cy), sink at (cx - separation, cy)
-            r_source_sq = (x - (cx + separation)) ** 2 + (y - cy) ** 2
-            r_sink_sq = (x - (cx - separation)) ** 2 + (y - cy) ** 2
-
-            # Avoid division by zero at singularities
-            eps = (dx * 0.1) ** 2
-            r_source_sq = np.maximum(r_source_sq, eps)
-            r_sink_sq = np.maximum(r_sink_sq, eps)
-
-            # Potential from source-sink pair (log singularities)
-            phi_data = (strength / (4 * np.pi)) * (
-                np.log(r_sink_sq) - np.log(r_source_sq)
-            )
-
-            # Indicator field showing source/sink locations
-            radius = dx * 2
-            s_data = np.exp(-r_source_sq / (2 * radius**2)) - np.exp(
-                -r_sink_sq / (2 * radius**2)
-            )
+            # Source (+) at right position, sink (-) at left position
+            bump_right = np.where(r_right_sq < radius**2, 1.0, 0.0)
+            bump_left = np.where(r_left_sq < radius**2, 1.0, 0.0)
+            s_data = (bump_right - bump_left) / (2 * d * dx)
 
         else:
             # Default: zero potential with no sources

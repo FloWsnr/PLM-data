@@ -52,19 +52,19 @@ parameters:
   e_v: 0.5    # recovery timescale
   a_v: 1      # recovery slope
   a_z: -0.1   # recovery offset
-  D_v: 20     # inhibitor diffusion
+  Dv: 20      # inhibitor diffusion
 ```
 
 ## Parameter Variants
 
 ### FitzHugh-Nagumo (Standard)
 Base configuration producing concentric ring patterns and excitable dynamics.
-- `D_v = 20`: Diffusion coefficient for v
+- `Dv = 20`: Diffusion coefficient for v
 - `e_v = 0.5`, `a_v = 1`, `a_z = -0.1`
 
 ### FitzHugh-Nagumo-Hopf
 Configuration supporting both pattern formation and oscillations (Turing-Hopf regime).
-- `D_v = 26`: Modified diffusion
+- `Dv = 26`: Modified diffusion
 - `e_v = 0.2`, `a_v = 0.01`, `a_z = -0.1`
 - `m = 4` (range: [3, 6]): Initial condition wavenumber
 - Exhibits spatial, temporal, and spatiotemporal behaviors depending on initial conditions
@@ -72,7 +72,7 @@ Configuration supporting both pattern formation and oscillations (Turing-Hopf re
 ### FitzHugh-Nagumo-3
 Three-species variant with competing oscillations and pattern formation.
 - Additional species $w$ with its own dynamics
-- `D_v = 40`, `D_w = 200`
+- `Dv = 40`, `Dw = 200`
 - `a_v = 0.2` (range: [0, 0.5]): Controls pattern vs oscillation dominance
 - `e_v = 0.2`, `e_w = 1`, `a_w = 0.5`, `a_z = -0.1`
 

@@ -4,12 +4,8 @@ parameters:
   r: 1.0
   K: 1.0
 init:
-  type: gaussian-blobs
-  params:
-    num_blobs: 4
-    amplitude: 0.8
-    width: 0.1
-    background: 0.1
+  type: default
+  params: {}
 solver: euler
 backend: numba
 adaptive: false

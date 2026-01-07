@@ -115,9 +115,12 @@ class CyclicCompetitionPDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
         **kwargs,
     ) -> FieldCollection:
-        """Create initial state - localized bump of all species at center."""
+        """Create initial state - sech bump of all species at center.
+
+        Uses sech(r) = 1/cosh(r) profile matching Visual PDE reference.
+        """
         np.random.seed(ic_params.get("seed"))
-        noise = ic_params.get("noise", 0.1)
+        noise = ic_params.get("noise", 0.01)
 
         x_bounds = grid.axes_bounds[0]
         y_bounds = grid.axes_bounds[1]
@@ -127,20 +130,20 @@ class CyclicCompetitionPDE(MultiFieldPDEPreset):
 
         cx = (x_bounds[0] + x_bounds[1]) / 2
         cy = (y_bounds[0] + y_bounds[1]) / 2
-        Lx = x_bounds[1] - x_bounds[0]
 
-        # Localized bump at center + noise
-        r_sq = ((X - cx) / Lx) ** 2 + ((Y - cy) / Lx) ** 2
-        bump = np.exp(-r_sq / 0.01)
+        # sech(r) profile: 1/cosh(sqrt((x-cx)^2 + (y-cy)^2))
+        # This matches Visual PDE: 1/cosh(sqrt((x-L_x/2)^2+(y-L_y/2)^2))
+        r = np.sqrt((X - cx) ** 2 + (Y - cy) ** 2)
+        bump = 1.0 / np.cosh(r)
 
-        u_data = 0.33 * bump + noise * np.random.randn(*grid.shape)
-        v_data = 0.33 * bump + noise * np.random.randn(*grid.shape)
-        w_data = 0.33 * bump + noise * np.random.randn(*grid.shape)
+        u_data = bump + noise * np.random.randn(*grid.shape)
+        v_data = bump + noise * np.random.randn(*grid.shape)
+        w_data = bump + noise * np.random.randn(*grid.shape)
 
         # Ensure non-negative
-        u_data = np.clip(u_data, 0.01, 1.0)
-        v_data = np.clip(v_data, 0.01, 1.0)
-        w_data = np.clip(w_data, 0.01, 1.0)
+        u_data = np.clip(u_data, 0.0, None)
+        v_data = np.clip(v_data, 0.0, None)
+        w_data = np.clip(w_data, 0.0, None)
 
         u = ScalarField(grid, u_data)
         u.label = "u"

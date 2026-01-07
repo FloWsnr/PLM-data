@@ -43,9 +43,9 @@ dt: 0.01
 dx: 1.5
 domain_size: 500
 
-boundary_omega: periodic
-boundary_psi: periodic (vertical), neumann = 0 (left/right)
-boundary_S: periodic (vertical), neumann = 0 (left/right)
+boundary_omega: periodic (all boundaries)
+boundary_psi: periodic (all boundaries)
+boundary_S: periodic (top/bottom), neumann = 0 (left/right)
 
 parameters:
   nu: 0.05     # kinematic viscosity, range [0.01, 1]
@@ -53,20 +53,32 @@ parameters:
   D: 0.05      # passive scalar diffusion coefficient
 ```
 
+## Initial Conditions
+
+In VisualPDE's [interactive simulation](/sim/?preset=NavierStokesVorticity):
+- omega: zero everywhere (users add vortices by clicking)
+- psi: zero (solved via parabolic relaxation)
+- S: gradient (L_x-x)/L_x for visualizing flow patterns
+
+Our implementation uses a vortex-pair initial condition:
+- omega: two counter-rotating Gaussian vortices
+- psi: zero (relaxes to solution)
+- S: gradient from 1 (left) to 0 (right)
+
 ## Parameter Variants
 
 ### NavierStokesVorticity (base)
 Standard vorticity-streamfunction formulation:
-- Clicking adds positive vortices (counterclockwise flow)
-- Right-clicking adds negative vortices (clockwise flow)
+- In VisualPDE: clicking adds positive vortices (counterclockwise), right-clicking adds negative
 - Equal and opposite vortices nearby create approximately unidirectional flow
 - Default view plots vorticity omega with diverging colormap
 - Alternative views: u, v, speed sqrt(psi_x^2 + psi_y^2), passive scalar S
 
-### NavierStokesVorticityBounded
+### NavierStokesVorticityBounded (not yet implemented)
 Modified for bounded domain studies:
 - Oscillatory initial vorticity with wavenumber k
 - Initial condition: A*cos(k*pi*x/L_x)*cos(k*pi*y/L_x) where A = 0.005*k^1.5
 - k = 51 by default, adjustable range [1, 100]
-- Dirichlet omega = 0 on left/right boundaries
+- D = 0.1 (vs base 0.05)
+- Dirichlet omega = 0 on left/right boundaries, periodic top/bottom
 - Demonstrates decay and reorganization of complex vorticity fields

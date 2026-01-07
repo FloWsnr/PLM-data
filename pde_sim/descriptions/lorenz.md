@@ -66,7 +66,7 @@ parameters:
 Diffusively coupled Lorenz system:
 - `sigma = 10`, `rho = 30`, `beta = 8/3`
 - `D = 0.5` (intermediate coupling)
-- Random initial condition: $X = 0.3 \cdot \text{RANDN} + 1$, $Z = 29$
+- Initial condition: $X = 0.3 \cdot \text{RANDN} + 1$, $Y = 0$, $Z = 29$
 - 3D surface plot visualization
 - Embossed rendering for structure visibility
 

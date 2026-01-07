@@ -76,7 +76,7 @@ parameters:
 Default showing time-varying superlattice patterns:
 - `alpha = 0.15`
 - `D_uone = 4.3`, `D_utwo = 50`, `D_uthree = 22`, `D_ufour = 660`
-- Initial condition: Small random perturbations around $u_1 = 3$
+- Initial condition: $u_1 = 3 + 0.1 \cdot \text{noise}$, $v_1 = 3$, $u_2 = 3$, $v_2 = 10$
 
 ### Pattern Type Gallery
 

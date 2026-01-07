@@ -43,7 +43,7 @@ $$\mathbf{D} = \begin{pmatrix} D_{uu} & D_{uv} \\ D_{vu} & D_{vv} \end{pmatrix} 
 ```yaml
 solver: euler
 dt: 0.001
-dx: 1.0
+dx: 0.2
 domain_size: 50
 
 boundary_x: periodic

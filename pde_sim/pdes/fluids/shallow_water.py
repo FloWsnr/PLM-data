@@ -161,8 +161,10 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
 
         elif ic_type == "dam-break":
             # Dam break initial condition (step function using tanh)
+            # Reference: Visual PDE ShallowWaterEqnsDamBreaking preset
+            # Uses 0.05*(1+tanh(x-L_x/2)) - step goes UP left-to-right
             step_width = ic_params.get("step_width", 0.05)
-            amplitude = ic_params.get("amplitude", 0.5)
+            amplitude = ic_params.get("amplitude", 0.05)  # Match Visual PDE default
 
             x, y = np.meshgrid(
                 np.linspace(x_min, x_max, grid.shape[0]),
@@ -170,11 +172,11 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
                 indexing="ij",
             )
 
-            # Normalize x coordinate
-            x_norm = (x - x_min) / L_x
+            # Center coordinate
+            cx = x_min + 0.5 * L_x
 
-            # Tanh step function centered at x = 0.5
-            h_data = amplitude * 0.5 * (1.0 - np.tanh((x_norm - 0.5) / step_width))
+            # Tanh step function centered at x = L_x/2, matches Visual PDE
+            h_data = amplitude * (1.0 + np.tanh((x - cx) / (step_width * L_x)))
             u_data = np.zeros_like(h_data)
             v_data = np.zeros_like(h_data)
 

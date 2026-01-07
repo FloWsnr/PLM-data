@@ -7,7 +7,7 @@ parameters:
 init:
   type: default
   params:
-    noise: 0.01
+    noise: 0.000001  # Very small perturbations per Visual PDE reference
 solver: euler
 backend: numpy
 adaptive: true

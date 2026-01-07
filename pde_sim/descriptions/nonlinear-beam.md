@@ -1,5 +1,7 @@
 # Nonlinear Beam Equation
 
+> **Note**: This implementation uses an approximate formulation. See todo.md for details on discrepancies with the Visual PDE reference. The main issues are: (1) equation structure simplification, (2) 2D extension via Laplacians rather than 1D.
+
 A fourth-order equation describing the bending dynamics of elastic beams with state-dependent stiffness, where the bending resistance changes based on local curvature.
 
 ## Description

@@ -66,8 +66,9 @@ parameters:
   a: 5           # Brusselator feed rate
   b: 9           # Brusselator removal rate
   tau: 1         # [0, 1] - relaxation time (key parameter)
-  D_v: 1         # [0.1, 2] - inhibitor diffusion (Du > Dv for Turing waves)
-  epsilon: 0.001 # numerical diffusion
+  Du: 2          # Activator diffusion (Du > Dv for Turing waves)
+  Dv: 1          # Inhibitor diffusion
+  epsilon: 0.001 # numerical diffusion for velocity variables
 ```
 
 ## Parameter Variants
@@ -75,16 +76,16 @@ parameters:
 ### BrusselatorTuringWave1D
 One-dimensional Turing wave:
 - `domain_size = 0.5`
-- `D = 2` (D_u = D via preset), `D_v = 8`
+- `Du = 2`, `Dv = 1` (activator diffuses faster for Turing wave regime)
 - `tau = 1`
-- Initial condition: Cosine perturbation
+- Initial condition: Cosine perturbation `u = a*(1 + 0.2*cos(x*π/L))`, `v = b/a`, `w = 0`, `q = 0`
 - Shows oscillating cosine mode (linear theory prediction)
 
 ### BrusselatorTuringWave2D
 Two-dimensional Turing wave:
 - `domain_size = 10`
 - Same parameters, extended to 2D
-- Random initial perturbations
+- Initial condition: Uniform steady state with small perturbation `u = a`, `v = b/a`, `w = 0`, `q = 0`
 - Exhibits complex transient dynamics converging to wave-like patterns
 
 ### TuringWaveFHN / TuringWaveFHN2D
@@ -105,8 +106,8 @@ FitzHugh-Nagumo variant:
 
 ### Diffusion Ratio Effects
 
-With $D_u = D$ and $D_v$ fixed:
-- Decreasing $D$ (or increasing tau) reduces the instability
+With $D_v = 1$ fixed:
+- Decreasing $D_u$ (or decreasing tau) reduces the instability
 - The amplitude of oscillating patterns decreases
 - Eventually patterns become purely decaying
 

@@ -15,9 +15,12 @@ from .. import register_pde
 class CahnHilliardPDE(ScalarPDEPreset):
     """Cahn-Hilliard equation for phase separation with reaction term.
 
-    Based on visualpde.com formulation:
+    Based on visualpde.com preset (presets.js line 6125):
 
-        du/dt = r * laplace(u^3 - u - a * laplace(u)) + u - u^3
+        du/dt = r * [D * laplace(u^3 - u - a * laplace(u)) + u - u^3]
+
+    The parameter r controls the overall timescale - increasing r speeds up
+    both diffusive separation and the reaction dynamics uniformly.
 
     This is the Cahn-Hilliard equation with an additional reaction term (u - u^3).
     The standard Cahn-Hilliard without reaction would be:
@@ -33,7 +36,7 @@ class CahnHilliardPDE(ScalarPDEPreset):
         - Interfacial energy: higher-order derivative controls interface width
 
     Parameters:
-        - r: timescale parameter (mobility) - controls separation rate
+        - r: timescale parameter - controls overall dynamics speed
         - a: interfacial energy coefficient (controls interface width)
         - D: diffusion coefficient
 
@@ -47,7 +50,7 @@ class CahnHilliardPDE(ScalarPDEPreset):
             category="physics",
             description="Cahn-Hilliard phase separation with reaction",
             equations={
-                "u": "r * laplace(u**3 - u - a * laplace(u)) + u - u**3",
+                "u": "r * (D * laplace(u**3 - u - a * laplace(u)) + u - u**3)",
             },
             parameters=[
                 PDEParameter(
@@ -97,11 +100,11 @@ class CahnHilliardPDE(ScalarPDEPreset):
         a = parameters.get("a", 1.0)
         D = parameters.get("D", 1.0)
 
-        # Cahn-Hilliard with reaction:
-        # du/dt = r * laplace(u^3 - u - a * laplace(u)) + u - u^3
-        # Scaling diffusion by D
+        # Cahn-Hilliard with reaction (matches Visual PDE preset):
+        # du/dt = r * [D * laplace(u^3 - u - a * laplace(u)) + u - u^3]
+        # Parameter r controls overall timescale
         return PDE(
-            rhs={"u": f"{r} * {D} * laplace(u**3 - u - {a} * laplace(u)) + u - u**3"},
+            rhs={"u": f"{r} * ({D} * laplace(u**3 - u - {a} * laplace(u)) + u - u**3)"},
             bc=self._convert_bc(bc),
         )
 
@@ -139,5 +142,5 @@ class CahnHilliardPDE(ScalarPDEPreset):
         D = parameters.get("D", 1.0)
 
         return {
-            "u": f"{r} * {D} * laplace(u**3 - u - {a} * laplace(u)) + u - u**3",
+            "u": f"{r} * ({D} * laplace(u**3 - u - {a} * laplace(u)) + u - u**3)",
         }

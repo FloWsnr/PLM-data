@@ -121,18 +121,17 @@ class LorenzPDE(MultiFieldPDEPreset):
     ) -> FieldCollection:
         """Create initial state near Lorenz attractor.
 
-        Default: X = 0.3*RANDN + 1, Y and Z with small noise, Z centered at 29.
+        Default: X = 0.3*RANDN + 1, Y = 0, Z = 29.
         """
         seed = ic_params.get("seed")
         if seed is not None:
             np.random.seed(seed)
         noise = ic_params.get("noise", 0.3)
 
-        # Start near one point on attractor with perturbations
-        # Reference uses X = 0.3*RANDN + 1, Z = 29
+        # Reference uses X = 0.3*RANDN + 1, Y = 0, Z = 29
         x_data = noise * np.random.randn(*grid.shape) + 1.0
-        y_data = noise * np.random.randn(*grid.shape) + 1.0
-        z_data = noise * np.random.randn(*grid.shape) + 29.0
+        y_data = np.zeros(grid.shape)
+        z_data = np.full(grid.shape, 29.0)
 
         X_field = ScalarField(grid, x_data)
         X_field.label = "X"

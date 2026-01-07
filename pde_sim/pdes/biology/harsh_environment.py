@@ -94,26 +94,17 @@ class HarshEnvironmentPDE(ScalarPDEPreset):
         ic_params: dict[str, Any],
         **kwargs,
     ) -> ScalarField:
-        """Create initial population - localized patches."""
+        """Create initial population - sparse random nucleation sites.
+
+        Reference: Visual PDE uses 0.1*exp(-10000*RAND) which creates
+        sparse nucleation sites where random values happen to be near 0.
+        """
         if ic_type in ("harsh-environment-default", "default"):
-            # Multiple population patches
+            # Sparse random nucleation sites (matches Visual PDE reference)
             np.random.seed(ic_params.get("seed"))
-            x_bounds = grid.axes_bounds[0]
-            y_bounds = grid.axes_bounds[1]
-            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-            y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-            X, Y = np.meshgrid(x, y, indexing="ij")
-
-            Lx = x_bounds[1] - x_bounds[0]
-            Ly = y_bounds[1] - y_bounds[0]
-
-            # Create a few patches
-            data = np.zeros(grid.shape)
-            cx_vals = [x_bounds[0] + 0.3 * Lx, x_bounds[0] + 0.7 * Lx, x_bounds[0] + 0.5 * Lx]
-            cy_vals = [y_bounds[0] + 0.3 * Ly, y_bounds[0] + 0.5 * Ly, y_bounds[0] + 0.7 * Ly]
-            for cx, cy in zip(cx_vals, cy_vals):
-                r_sq = ((X - cx) / Lx) ** 2 + ((Y - cy) / Ly) ** 2
-                data += 0.8 * np.exp(-r_sq / 0.02)
-            return ScalarField(grid, np.clip(data, 0, 1))
+            rand_field = np.random.random(grid.shape)
+            # 0.1 * exp(-10000 * RAND) creates sparse nucleation where RAND ~ 0
+            data = 0.1 * np.exp(-10000 * rand_field)
+            return ScalarField(grid, data)
 
         return create_initial_condition(grid, ic_type, ic_params)

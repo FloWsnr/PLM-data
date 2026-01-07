@@ -115,19 +115,24 @@ class KellerSegelPDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
         **kwargs,
     ) -> FieldCollection:
-        """Create initial state with localized cell density."""
-        # Default: use gaussian blobs for cells, uniform for chemoattractant
+        """Create initial state with small random cell density.
+
+        The default uses small random initial population (0 to 0.01) as in
+        visual-pde, which grows towards equilibrium u=1 while undergoing
+        pattern formation instability.
+        """
+        # Default: small random cell population, zero chemoattractant
         if ic_type in ("keller-segel-default", "default"):
             np.random.seed(ic_params.get("seed"))
 
-            # Cells - gaussian blobs
+            # Cells - small random values (0 to 0.01)
             u = create_initial_condition(
-                grid, "gaussian-blobs", {"num_blobs": 3, "amplitude": 1.0, "width": 0.1}
+                grid, "random-uniform", {"low": 0.0, "high": 0.01}
             )
             u.label = "u"
 
-            # Chemoattractant - start uniform
-            v = ScalarField(grid, np.ones(grid.shape) * 0.1)
+            # Chemoattractant - start at zero
+            v = ScalarField(grid, np.zeros(grid.shape))
             v.label = "v"
 
             return FieldCollection([u, v])

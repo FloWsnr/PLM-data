@@ -34,7 +34,12 @@ Velocity from potential:
 $$u = \frac{\partial \phi}{\partial x}, \quad v = \frac{\partial \phi}{\partial y}$$
 
 In the simulation, implemented as parabolic relaxation:
+$$\frac{\partial \phi}{\partial t} = \nabla^2 \phi - \text{strength} \cdot s$$
+
+Visual PDE reference equation (has fixed bump + drawable s):
 $$\frac{\partial \phi}{\partial t} = \nabla^2 \phi - 10s - 10 \cdot \text{Bump}(3L_x/4, L_y/2, L/100)$$
+
+Our implementation encodes all source forcing in the s field initial condition (Gaussian bumps at source and image positions), allowing the equation to be simpler while achieving the same steady-state solution.
 
 No-flux boundary condition at wall x = L_x/2:
 $$u|_{x=L_x/2} = \frac{\partial \phi}{\partial x}\bigg|_{x=L_x/2} = 0$$
@@ -57,8 +62,8 @@ parameters:
 
 ## Parameter Variants
 
-### potentialFlowHalfSpace (base)
-Method of images demonstration:
+### potentialFlowHalfSpace (Visual PDE reference)
+Interactive method of images demonstration:
 - Half-space x > L_x/2 with no-flux boundary visualized as white line
 - Fixed source in right half at (3*L_x/4, L_y/2)
 - Clicking places additional sources
@@ -66,6 +71,14 @@ Method of images demonstration:
 - Can toggle to true half-space domain to verify solution
 - Views: potential phi, horizontal velocity u, vertical velocity v
 - Contour lines show equipotential curves
+- Initial phi = 0 (relaxes to solution)
+
+### Our implementation (source-with-image)
+Pre-computed method of images solution:
+- Source at (3*L_x/4, L_y/2) with image at mirrored position about wall
+- Initial phi uses analytical log potential formula (near steady-state)
+- s field contains Gaussian bumps at source and image locations
+- Demonstrates the completed solution rather than interactive discovery
 
 ## Notes
 

@@ -47,8 +47,8 @@ class SchnakenbergPDE(MultiFieldPDEPreset):
                     name="Dv",
                     default=100.0,
                     description="Inhibitor diffusion coefficient",
-                    min_value=1.0,
-                    max_value=200.0,
+                    min_value=0.0,
+                    max_value=100.0,
                 ),
                 PDEParameter(
                     name="a",

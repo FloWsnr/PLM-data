@@ -94,11 +94,20 @@ class BacteriaAdvectionPDE(ScalarPDEPreset):
         ic_params: dict[str, Any],
         **kwargs,
     ) -> ScalarField:
-        """Create initial bacterial concentration."""
+        """Create initial bacterial concentration.
+
+        Default IC is zero everywhere - the inlet boundary condition
+        (Dirichlet = c0 at left) fills in the concentration over time.
+        """
         c0 = ic_params.get("c0", 0.77)
 
-        if ic_type in ("bacteria-advection-default", "default", "steady-state"):
-            # Start with approximate steady-state profile
+        if ic_type in ("bacteria-advection-default", "default", "zero"):
+            # Start with zero concentration (matches Visual PDE reference)
+            # The left boundary condition provides inlet concentration c0
+            return ScalarField(grid, np.zeros(grid.shape))
+
+        if ic_type == "steady-state":
+            # Analytical steady-state profile: C(x) = c0 * exp(-k*x/u)
             u = ic_params.get("u", 0.62)
             k = ic_params.get("k", 0.006)
 
@@ -109,7 +118,6 @@ class BacteriaAdvectionPDE(ScalarPDEPreset):
             if len(grid.shape) > 1:
                 x = x[:, np.newaxis] * np.ones(grid.shape[1])
 
-            # Steady state: C(x) = c0 * exp(-k*x/u)
             data = c0 * np.exp(-k * x / max(u, 0.01))
             return ScalarField(grid, data)
 

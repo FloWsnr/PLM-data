@@ -39,9 +39,9 @@ Where:
 
 ```yaml
 solver: euler
-dt: 0.02 (inferred from typical stability)
-dx: 3
+dt: 0.2
 domain_size: 1000
+resolution: 333  # gives dx ≈ 3
 
 boundary_x: periodic
 boundary_y: periodic

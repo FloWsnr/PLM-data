@@ -133,7 +133,12 @@ class HyperbolicBrusselatorPDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
         **kwargs,
     ) -> FieldCollection:
-        """Create initial state for hyperbolic Brusselator."""
+        """Create initial state for hyperbolic Brusselator.
+
+        Following Visual-PDE reference:
+        - u, v initialized near steady state with small perturbation
+        - w, q (velocity fields) initialized to 0
+        """
         a = ic_params.get("a", 5.0)
         b = ic_params.get("b", 9.0)
         noise = ic_params.get("noise", 0.1)
@@ -145,8 +150,9 @@ class HyperbolicBrusselatorPDE(MultiFieldPDEPreset):
         np.random.seed(ic_params.get("seed"))
         u_data = u_ss + noise * np.random.randn(*grid.shape)
         v_data = v_ss + noise * np.random.randn(*grid.shape)
-        w_data = noise * np.random.randn(*grid.shape)
-        q_data = noise * np.random.randn(*grid.shape)
+        # Velocity fields w, q start at 0 (consistent with Visual-PDE reference)
+        w_data = np.zeros(grid.shape)
+        q_data = np.zeros(grid.shape)
 
         u = ScalarField(grid, u_data)
         u.label = "u"

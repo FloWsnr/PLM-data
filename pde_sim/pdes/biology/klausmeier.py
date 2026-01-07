@@ -116,18 +116,13 @@ class KlausmeierPDE(MultiFieldPDEPreset):
         **kwargs,
     ) -> FieldCollection:
         """Create initial state for Klausmeier model."""
-        a = ic_params.get("a", 2.0)
-        noise = ic_params.get("noise", 0.1)
-
         np.random.seed(ic_params.get("seed"))
 
-        # Initial water: near rainfall equilibrium with noise
-        w_data = a * (1 + noise * np.random.randn(*grid.shape))
-        w_data = np.maximum(w_data, 0.01)
+        # Initial plants: random uniform [0,1] (matching Visual PDE "RAND")
+        n_data = np.random.rand(*grid.shape)
 
-        # Initial plants: small uniform with noise
-        n_data = 0.1 + noise * np.random.randn(*grid.shape)
-        n_data = np.maximum(n_data, 0.01)
+        # Initial water: constant 1 (matching Visual PDE reference)
+        w_data = np.ones(grid.shape)
 
         n = ScalarField(grid, n_data)
         n.label = "n"

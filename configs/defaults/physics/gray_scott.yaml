@@ -6,21 +6,21 @@ parameters:
 init:
   type: default
   params:
-    perturbation_radius: 0.15
+    perturbation_radius: 0.05
     noise: 0.01
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.5
-t_end: 500.0
-resolution: 128
+dt: 0.2
+t_end: 2000.0
+resolution: 333
 bc:
   x: periodic
   y: periodic
 output:
   path: ./output
   num_frames: 100
-  colormap: turbo
+  colormap: viridis
   field_to_plot: u
 seed: 123
-domain_size: 50
+domain_size: 1000

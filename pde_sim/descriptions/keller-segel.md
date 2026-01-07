@@ -63,12 +63,16 @@ domain_size: 100
 boundary_x: periodic
 boundary_y: periodic
 
-cross_diffusion: true
-
 parameters:
   c: 4     # range: [3, 4], step: 0.1
   D: 1     # range: [0, 1]
   a: 0.1   # range: [0, 0.2]
+
+init:
+  type: random-uniform
+  params:
+    low: 0.0
+    high: 0.01
 ```
 
 ## Parameter Variants
@@ -78,8 +82,8 @@ Base configuration with chemotaxis-driven pattern formation.
 - `c = 4`: Strong chemotaxis
 - `D = 1`: Unit chemical diffusion
 - `a = 0.1`: Slow chemical decay
-- Initial condition: Random low-density cells
-- Cross-diffusion term: `-c*u/(1+u^2)` (chemotactic flux)
+- Initial condition: Small random population (0 to 0.01)
+- Chemoattractant: Starts at zero
 
 The saturation in the chemotactic sensitivity $\chi(u) = cu/(1+u^2)$ prevents unbounded aggregation at high densities.
 
@@ -87,8 +91,10 @@ The saturation in the chemotactic sensitivity $\chi(u) = cu/(1+u^2)$ prevents un
 
 - The standard Keller-Segel model (without saturation) can exhibit finite-time blow-up
 - This implementation uses a saturating chemotactic sensitivity to ensure bounded solutions
-- Pattern formation occurs as cells near the carrying capacity equilibrium ($u = 1$, $v = 1/a$)
+- The initial condition uses a small random population that grows towards equilibrium ($u = 1$, $v = 1/a$)
+- Pattern formation occurs as cells near the carrying capacity equilibrium
 - Varying parameters (especially around $c = 3.3$ to $3.6$) can explore the instability boundary
+- Patterns show hysteresis - they depend on initial conditions and parameter history
 
 ## References
 

@@ -24,18 +24,17 @@ $$\frac{\partial u}{\partial t} = \nabla^2 \left( F'(u) - g \nabla^2 u \right)$$
 
 where $F(u)$ is a double-well free energy density (e.g., $F(u) = \frac{1}{4}(u^2-1)^2$).
 
-The implemented version with reaction term:
+The implemented version with reaction term (matching Visual PDE preset):
 
-$$\frac{\partial u}{\partial t} = r \nabla^2 \left( u^3 - u - g \nabla^2 u \right) + u - u^3$$
+$$\frac{\partial u}{\partial t} = r \left[ D \nabla^2 \left( u^3 - u - a \nabla^2 u \right) + u - u^3 \right]$$
 
-Expanding through cross-diffusion formulation, this becomes:
-- Diffusion for $u$: $r D (3u^2 - 1) \nabla^2 u - r D \nabla^2 v$ where $v = \nabla^2 u$
-- Reaction: $r u (1 - u^2)$
+The parameter $r$ controls the overall timescale - increasing $r$ speeds up both diffusive separation and reaction dynamics uniformly.
 
 Where:
 - $u \in [-1, 1]$ represents the local concentration (relative to the critical mixture)
-- $r$ controls the timescale of the phase separation dynamics
-- $g = a$ controls the interfacial energy / interface width
+- $r$ controls the overall timescale (increase to speed up dynamics)
+- $a$ controls the interfacial energy / interface width
+- $D$ is the diffusion coefficient
 - The term $(u^3 - u)$ comes from the derivative of the double-well potential
 - The reaction term $u - u^3$ can stabilize intermediate states
 
@@ -44,16 +43,19 @@ Where:
 ```yaml
 solver: euler
 dt: 0.0005
-dx: 0.5
+resolution: 200
 domain_size: 100
 
 boundary_x: periodic
 boundary_y: periodic
 
+init:
+  type: cahn-hilliard-default  # tanh(30*(RAND-0.5)) - values near ±1
+
 parameters:
-  r: 0.01    # [0, 1] - timescale parameter (start small, increase)
-  a: 1       # interfacial energy coefficient
-  D: 1       # diffusion coefficient
+  r: 0.01    # [0, 1] - timescale parameter (increase to speed up)
+  a: 1.0     # interfacial energy coefficient
+  D: 1.0     # diffusion coefficient
 ```
 
 ## Parameter Variants

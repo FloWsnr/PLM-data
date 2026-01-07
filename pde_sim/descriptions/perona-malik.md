@@ -32,11 +32,18 @@ The implemented version uses an exponential edge-stopping function:
 
 $$\frac{\partial u}{\partial t} = \nabla \cdot \left( e^{-D |\nabla u|^2} \nabla u \right)$$
 
-Via cross-diffusion with auxiliary variable $v = |\nabla u|^2 = u_x^2 + u_y^2$:
+**Implementation** (full divergence form):
 
-$$\frac{\partial u}{\partial t} = \nabla \cdot \left( e^{-D v} \nabla u \right)$$
+The divergence form expands as:
+$$\nabla \cdot (g \nabla u) = g \Delta u + \nabla g \cdot \nabla u$$
 
-$$v = u_x^2 + u_y^2 \quad \text{(algebraic constraint)}$$
+With $g = e^{-D|\nabla u|^2}$, computing $\nabla g$ requires second derivatives:
+$$\nabla g = -2Dg \cdot (u_x u_{xx} + u_y u_{xy}, u_x u_{xy} + u_y u_{yy})$$
+
+The full equation becomes:
+$$\frac{\partial u}{\partial t} = g \left[ \Delta u - 2D(u_x^2 u_{xx} + 2u_x u_y u_{xy} + u_y^2 u_{yy}) \right]$$
+
+This includes the cross-term $\nabla g \cdot \nabla u$ that produces edge sharpening.
 
 Where:
 - $u(x,y,t)$ is the image intensity (grayscale value)
@@ -54,15 +61,15 @@ Where:
 ```yaml
 solver: euler
 dt: 0.0002
-dx: 0.2
-domain_size: 100 (from image)
+dx: 0.2  # resolution 500 on domain 100
+domain_size: 100
 
-boundary_x: neumann
-boundary_y: neumann
+boundary_x: no-flux (neumann)
+boundary_y: no-flux (neumann)
 
 parameters:
-  D: 5       # edge sensitivity parameter
-  sigma: 1   # [0, 2] - initial noise level
+  D: 5.0     # edge sensitivity parameter
+  sigma: 1.0 # [0, 2] - initial noise level
 ```
 
 ## Parameter Variants

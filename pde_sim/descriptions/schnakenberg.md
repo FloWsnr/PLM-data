@@ -56,6 +56,7 @@ Configuration near the Hopf bifurcation boundary where Turing patterns, homogene
 - `D_v = 8`: Reduced diffusion ratio
 - `a = 0.05` (range: [0, 0.1])
 - `b = 0.5` (range: [0, 1])
+- `dt = 0.001`: Larger timestep than standard configuration
 - Parameters chosen to be in the regime where 1 > b > a >= 0
 
 ## References

@@ -30,37 +30,28 @@ The **Peclet number** (Pe = vL/D) characterizes which mechanism dominates:
 
 ### Velocity Field Types
 
-Two common velocity fields are explored:
+Two velocity fields are supported (matching visual-pde):
 
-1. **Rotational flow**: $\mathbf{v} = V(y - L_y/2, -(x - L_x/2))$ - circular motion about domain center
-2. **Unidirectional flow**: $\mathbf{v} = V(\cos\theta, \sin\theta)$ - constant velocity in direction $\theta$
+1. **Rotational flow**: Counterclockwise rotation about domain center for positive V
+2. **Unidirectional flow**: Directed transport controlled by angle θ and magnitude V
 
 ## Equations
 
-The advection-diffusion equation:
+The advection-diffusion equation as implemented (matching visual-pde convention):
 
-$$\frac{\partial u}{\partial t} = D \nabla^2 u - \mathbf{v} \cdot \nabla u$$
+$$\frac{\partial u}{\partial t} = D \nabla^2 u + \text{advection term}$$
 
 where:
 - $u(x, y, t)$ is the concentration field
 - $D$ is the diffusion coefficient
-- $\mathbf{v} = (v_x, v_y)$ is the velocity field
-- $\nabla u = (u_x, u_y)$ is the concentration gradient
 
-Expanding the advection term:
-$$\mathbf{v} \cdot \nabla u = v_x \frac{\partial u}{\partial x} + v_y \frac{\partial u}{\partial y}$$
+**Rotational mode** (counterclockwise rotation for positive V):
+$$\frac{\partial u}{\partial t} = D \nabla^2 u + V\left((y - L_y/2) \frac{\partial u}{\partial x} - (x - L_x/2) \frac{\partial u}{\partial y}\right)$$
 
-**Rotational velocity field:**
-$$\mathbf{v} = V(y - L_y/2, -(x - L_x/2))$$
+**Directed mode** (transport opposite to angle θ):
+$$\frac{\partial u}{\partial t} = D \nabla^2 u + V\left(\cos\theta \frac{\partial u}{\partial x} + \sin\theta \frac{\partial u}{\partial y}\right)$$
 
-Advection term becomes: `V*((y-L_y/2)*u_x - (x-L_x/2)*u_y)`
-
-**Directed velocity field:**
-$$\mathbf{v} = V(\cos\theta, \sin\theta)$$
-
-Advection term becomes: `V*(cos(theta)*u_x + sin(theta)*u_y)`
-
-Note: In the preset, advection appears in the reaction term with a sign that implements $-\mathbf{v} \cdot \nabla u$.
+Note: This matches the visual-pde sign convention where the "advection term" is added (not subtracted) from the diffusion term. This differs from the standard textbook form $\partial_t u = D\nabla^2 u - \mathbf{v}\cdot\nabla u$.
 
 ## Default Config
 

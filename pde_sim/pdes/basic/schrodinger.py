@@ -60,20 +60,20 @@ class SchrodingerPDE(MultiFieldPDEPreset):
                     name="n",
                     default=3,
                     description="x wave number for initial eigenstate",
-                    min_value=1,
+                    min_value=0,
                     max_value=10,
                 ),
                 PDEParameter(
                     name="m",
                     default=3,
                     description="y wave number for initial eigenstate",
-                    min_value=1,
+                    min_value=0,
                     max_value=10,
                 ),
             ],
             num_fields=2,
             field_names=["u", "v"],
-            reference="https://visualpde.com/basic-pdes/schrodinger-equation",
+            reference="https://visualpde.com/basic-pdes/stabilised-schrodinger",
         )
 
     def create_pde(

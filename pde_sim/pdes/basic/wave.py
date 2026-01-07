@@ -46,7 +46,7 @@ class WavePDE(MultiFieldPDEPreset):
                     name="D",
                     default=1.0,
                     description="Wave speed squared (c^2)",
-                    min_value=0.1,
+                    min_value=1.0,
                     max_value=100.0,
                 ),
                 PDEParameter(

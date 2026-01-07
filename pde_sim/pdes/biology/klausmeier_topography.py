@@ -51,14 +51,14 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
             parameters=[
                 PDEParameter(
                     name="a",
-                    default=1.1,
+                    default=2.0,
                     description="Rainfall rate",
                     min_value=0.01,
                     max_value=10.0,
                 ),
                 PDEParameter(
                     name="m",
-                    default=0.63,
+                    default=0.54,
                     description="Plant mortality rate",
                     min_value=0.2,
                     max_value=1.0,
@@ -96,8 +96,8 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        a = parameters.get("a", 1.1)
-        m = parameters.get("m", 0.63)
+        a = parameters.get("a", 2.0)
+        m = parameters.get("m", 0.54)
         V = parameters.get("V", 100.0)
         Dn = parameters.get("Dn", 1.0)
         Dw = parameters.get("Dw", 2.0)
@@ -120,30 +120,80 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
         **kwargs,
     ) -> FieldCollection:
-        """Create initial state with topography."""
-        a = ic_params.get("a", 1.1)
-        noise = ic_params.get("noise", 0.1)
+        """Create initial state with topography.
 
+        Topography types (set via ic_params["topography"]):
+            - "slope": Simple linear slope in x direction
+            - "hills": Sinusoidal hills pattern
+            - "valley": Central valley with surrounding ridges
+            - "ridge": Central ridge with valleys on sides
+            - "random": Random smooth terrain (sum of sinusoids)
+        """
         np.random.seed(ic_params.get("seed"))
 
-        # Initial water: near rainfall equilibrium with noise
-        w_data = a * (1 + noise * np.random.randn(*grid.shape))
-        w_data = np.maximum(w_data, 0.01)
+        # Initial water: constant (similar to visual-pde initCond_2: "1")
+        w_data = np.ones(grid.shape)
 
-        # Initial plants: small uniform with noise
-        n_data = 0.1 + noise * np.random.randn(*grid.shape)
-        n_data = np.maximum(n_data, 0.01)
+        # Initial plants: random values (similar to visual-pde RAND)
+        n_data = np.random.rand(*grid.shape)  # uniform [0, 1]
 
-        # Topography: default to simple gradient (can be overridden)
+        # Build coordinate grids
         x_bounds = grid.axes_bounds[0]
         y_bounds = grid.axes_bounds[1]
+        Lx = x_bounds[1] - x_bounds[0]
+        Ly = y_bounds[1] - y_bounds[0]
         x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
         y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
         X, Y = np.meshgrid(x, y, indexing="ij")
 
-        # Default: gentle slope in x direction
-        slope = ic_params.get("slope", 0.1)
-        T_data = slope * X
+        # Normalized coordinates [0, 1]
+        Xn = (X - x_bounds[0]) / Lx
+        Yn = (Y - y_bounds[0]) / Ly
+
+        # Generate topography based on type
+        topo_type = ic_params.get("topography", "hills")
+        amplitude = ic_params.get("amplitude", 1.0)
+
+        if topo_type == "slope":
+            # Simple linear slope in x direction
+            slope = ic_params.get("slope", 0.1)
+            T_data = amplitude * slope * X
+
+        elif topo_type == "hills":
+            # Sinusoidal hills pattern
+            n_hills_x = ic_params.get("n_hills_x", 3)
+            n_hills_y = ic_params.get("n_hills_y", 3)
+            T_data = amplitude * (
+                np.sin(n_hills_x * np.pi * Xn) * np.sin(n_hills_y * np.pi * Yn)
+            )
+
+        elif topo_type == "valley":
+            # Central valley running in x direction (low in center, high on edges)
+            T_data = amplitude * (2 * Yn - 1) ** 2
+
+        elif topo_type == "ridge":
+            # Central ridge running in x direction (high in center, low on edges)
+            T_data = amplitude * (1 - (2 * Yn - 1) ** 2)
+
+        elif topo_type == "random":
+            # Random smooth terrain from sum of sinusoids
+            n_modes = ic_params.get("n_modes", 5)
+            T_data = np.zeros_like(X)
+            for _ in range(n_modes):
+                kx = np.random.uniform(1, 4)
+                ky = np.random.uniform(1, 4)
+                phase_x = np.random.uniform(0, 2 * np.pi)
+                phase_y = np.random.uniform(0, 2 * np.pi)
+                amp = np.random.uniform(0.5, 1.0)
+                T_data += amp * np.sin(kx * np.pi * Xn + phase_x) * np.sin(
+                    ky * np.pi * Yn + phase_y
+                )
+            # Normalize and scale
+            T_data = amplitude * T_data / n_modes
+
+        else:
+            # Default: gentle slope
+            T_data = amplitude * 0.1 * X
 
         n = ScalarField(grid, n_data)
         n.label = "n"

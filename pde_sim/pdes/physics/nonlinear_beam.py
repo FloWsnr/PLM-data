@@ -15,23 +15,25 @@ from .. import register_pde
 class NonlinearBeamPDE(ScalarPDEPreset):
     """Overdamped nonlinear beam equation with state-dependent stiffness.
 
-    Based on visualpde.com formulation (adapted to 2D):
+    WARNING: This is an APPROXIMATE implementation. The true Visual PDE equation:
+        du/dt = -laplace(E(v) * v)  where v = laplace(u)
+    requires cross-diffusion with algebraic species to implement correctly.
 
-        du/dt = -laplace(E(u) * laplace(u))
+    This implementation uses a simplification:
+        du/dt = -E(v) * laplace(v)  (factoring E outside)
+    which is only exact when E is spatially constant.
 
-    where the stiffness E depends on local curvature:
+    Additional differences from Visual PDE reference:
+        - Visual PDE is strictly 1D; this extends to 2D via Laplacians
+        - Visual PDE uses time-dependent boundary forcing (not supported)
+        - Stiffness formula matches the markdown doc, but differs from preset.js
 
+    Stiffness function:
         E(u) = E_star + Delta_E * (1 + tanh(laplace(u)/eps)) / 2
 
     For large curvatures (|laplace(u)| >> eps):
         - Positive curvature: E approx E_star + Delta_E (stiffer)
         - Negative curvature: E approx E_star (softer)
-
-    Key features:
-        - Material nonlinearity: stiffness varies with local bending
-        - Curvature softening/hardening: controlled by Delta_E sign
-        - Pattern formation: differential stiffness leads to complex dynamics
-        - Localization: energy focuses in softer regions
 
     Applications:
         - MEMS resonators with nonlinear stiffness
@@ -40,6 +42,7 @@ class NonlinearBeamPDE(ScalarPDEPreset):
         - Smart materials (piezoelectrics, shape-memory alloys)
 
     Reference: Euler-Bernoulli beam theory, Nayfeh & Pai (2004)
+    See todo.md for full discrepancy analysis.
     """
 
     @property
@@ -47,7 +50,7 @@ class NonlinearBeamPDE(ScalarPDEPreset):
         return PDEMetadata(
             name="nonlinear-beam",
             category="physics",
-            description="Overdamped beam with curvature-dependent stiffness",
+            description="Overdamped beam with curvature-dependent stiffness (approximate)",
             equations={
                 "u": "-laplace(E(u) * laplace(u))",
                 "E(u)": "E_star + Delta_E * (1 + tanh(laplace(u)/eps)) / 2",

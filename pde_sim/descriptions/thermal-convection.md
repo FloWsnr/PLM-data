@@ -37,7 +37,7 @@ dx: 1.5  # inherited from NavierStokesVorticity
 domain_size: 500  # inherited from NavierStokesVorticity
 
 boundary_omega: dirichlet = 0 (top/bottom), periodic (left/right)
-boundary_psi: dirichlet = 0 (all sides)
+boundary_psi: dirichlet = 0 (top/bottom), periodic (left/right)
 boundary_b: neumann = T_b (bottom), dirichlet = 0 (top), periodic (left/right)
 
 parameters:

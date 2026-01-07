@@ -4,21 +4,21 @@ parameters:
 init:
   type: default
   params:
-    amplitude: 1.0
-    width: 0.1
-solver: rk4
+    amplitude: 0.1    # Visual PDE uses 0.1, not 1.0
+    width: 0.1        # Relative to domain size
+solver: euler         # Visual PDE uses euler for this preset
 backend: numba
 adaptive: true
-dt: 0.01
-resolution: 128
+dt: 0.04              # Visual PDE uses 0.04
+resolution: 500       # domain_size/spatialStep = 1000/2
+dimension: 1          # 1D problem
 bc:
-  x: periodic
-  y: periodic
+  x: neumann          # Visual PDE uses neumann
 output:
   path: ./output
   num_frames: 100
   colormap: seismic
   field_to_plot: u
 seed: 42
-domain_size: 10.0
-t_end: 5.0
+domain_size: 1000.0   # Visual PDE uses 1000
+t_end: 200.0          # Longer time to see shock dynamics

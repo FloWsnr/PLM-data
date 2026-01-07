@@ -122,7 +122,7 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
         L_y = y_max - y_min
 
         np.random.seed(ic_params.get("seed"))
-        noise = ic_params.get("noise", 0.01)
+        noise = ic_params.get("noise", 0.000001)  # Very small noise per Visual PDE
 
         x, y = np.meshgrid(
             np.linspace(x_min, x_max, grid.shape[0]),

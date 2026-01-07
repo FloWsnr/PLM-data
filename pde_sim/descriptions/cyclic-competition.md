@@ -70,15 +70,16 @@ parameters:
 Base configuration with differential diffusion producing spiral waves.
 - `a = 0.8`, `b = 1.9`: Cyclic competition structure
 - `D_u = 2`, `D_v = 0.5`, `D_w = 0.5`: Asymmetric diffusion
-- Initial condition: Localized bump of all species at domain center
+- Initial condition: `sech(r) = 1/cosh(sqrt((x-L_x/2)^2+(y-L_y/2)^2))` - all species localized at center
 - Evolves into spiral wave chaos
 
 ### cyclicCompetitionWave
 Wave instability configuration without Turing-like requirements.
 - Equal diffusion: `D_u = D_v = D_w = 0.3`
-- Initial condition: Small region with all species
+- Initial condition: `H(0.1-x/L_x)` - Heaviside function, species only in left 10% of domain
 - Demonstrates wave-induced spatiotemporal chaos
 - Shows that spiral waves persist even with equal diffusion once established
+- **Not yet implemented** - requires Heaviside-based initial condition support
 
 ## Notes
 

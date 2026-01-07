@@ -54,8 +54,10 @@ dt: 0.0003
 dx: 0.5
 domain_size: 100
 
-boundary_x: dirichlet  # for u
-boundary_y: neumann    # for v
+# Boundary conditions per species (Visual PDE style):
+# u: Dirichlet (u=0 at all boundaries)
+# v: Neumann (zero flux at all boundaries)
+# Note: Our current implementation uses per-axis BCs which differs from Visual PDE
 
 num_species: 2
 
@@ -66,6 +68,10 @@ parameters:
   D: 55      # inhibitor diffusion
   A: 0       # range: [-1, 1], step: 0.1, production gradient
   B: 0       # range: [0, 5], step: 0.1, decay gradient
+
+# Initial conditions:
+# Visual PDE: v=1 (uniform), u unset (0 or noise)
+# Patterns emerge from Dirichlet BC on u perturbing the equilibrium
 ```
 
 ## Parameter Variants

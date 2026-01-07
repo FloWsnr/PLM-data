@@ -1,17 +1,16 @@
 preset: cahn-hilliard
 parameters:
-  r: 0.01     # Phase separation timescale (mobility)
-  a: 0.05     # Interface width parameter
+  r: 0.01     # Phase separation timescale (mobility) - increase to speed up
+  a: 1.0      # Interface width parameter (reference: a=1)
+  D: 1.0      # Diffusion coefficient
 init:
-  type: random-uniform
-  params:
-    low: -0.1
-    high: 0.1
-solver: rk4
+  type: cahn-hilliard-default  # tanh(30*(RAND-0.5)) - values near ±1
+  params: {}
+solver: euler
 backend: numba
-adaptive: true
-dt: 0.001
-resolution: 64
+adaptive: false
+dt: 0.0005
+resolution: 200
 bc:
   x: periodic
   y: periodic
@@ -21,5 +20,5 @@ output:
   colormap: coolwarm
   field_to_plot: u
 seed: 42
-domain_size: 6.0
-t_end: 10.0
+domain_size: 100.0
+t_end: 50.0

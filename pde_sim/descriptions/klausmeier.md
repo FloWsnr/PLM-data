@@ -76,7 +76,7 @@ Base configuration producing regular stripe patterns.
 - `a = 2`: Moderate rainfall
 - `m = 0.54`: Moderate mortality
 - `V = 50`: Strong downslope water flow
-- Initial conditions: Random water, uniform low biomass
+- Initial conditions: Random plant biomass [0,1], constant water (w=1)
 - Produces traveling wave patterns migrating uphill
 
 ### Harsh Environment Regime

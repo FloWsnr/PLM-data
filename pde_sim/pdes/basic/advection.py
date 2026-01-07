@@ -17,11 +17,11 @@ class AdvectionPDE(ScalarPDEPreset):
 
     Based on visualpde.com advection equation:
 
-        du/dt = D * laplace(u) - v . grad(u)
+        du/dt = D * laplace(u) + V * (advection term)
 
-    Two velocity field types are supported:
-    - Rotational: v = V * (y - L_y/2, -(x - L_x/2))
-    - Directed: v = V * (cos(theta), sin(theta))
+    Two velocity field types are supported (matching visual-pde sign convention):
+    - Rotational: V*((y-L_y/2)*u_x - (x-L_x/2)*u_y) - counterclockwise for V>0
+    - Directed: V*(cos(theta)*u_x + sin(theta)*u_y) - flow opposite to angle theta
 
     Parameters:
         D: Diffusion coefficient
@@ -37,7 +37,7 @@ class AdvectionPDE(ScalarPDEPreset):
             category="basic",
             description="Advection-diffusion equation",
             equations={
-                "u": "D * laplace(u) - V * (v_x * d_dx(u) + v_y * d_dy(u))",
+                "u": "D * laplace(u) + V * (advection term)",
             },
             parameters=[
                 PDEParameter(
@@ -92,23 +92,23 @@ class AdvectionPDE(ScalarPDEPreset):
         bc_spec = self._convert_bc(bc)
 
         if mode == 0:
-            # Rotational velocity field: v = V * (y - L_y/2, -(x - L_x/2))
-            # Advection term: V * ((y - L_y/2) * d_dx(u) - (x - L_x/2) * d_dy(u))
+            # Rotational velocity field (counterclockwise for positive V)
+            # Matches visual-pde: V*((y-L_y/2)*u_x-(x-L_x/2)*u_y)
             half_y = L_y / 2
             half_x = L_x / 2
-            advection = f"- {V} * ((y - {half_y}) * d_dx(u) - (x - {half_x}) * d_dy(u))"
+            advection = f"{V} * ((y - {half_y}) * d_dx(u) - (x - {half_x}) * d_dy(u))"
         else:
-            # Directed velocity field: v = V * (cos(theta), sin(theta))
-            # Advection term: V * (cos(theta) * d_dx(u) + sin(theta) * d_dy(u))
+            # Directed velocity field: flow in direction theta
+            # Matches visual-pde: V*(cos(theta)*u_x + sin(theta)*u_y)
             vx = V * math.cos(theta)
             vy = V * math.sin(theta)
-            advection = f"- {vx} * d_dx(u) - {vy} * d_dy(u)"
+            advection = f"{vx} * d_dx(u) + {vy} * d_dy(u)"
 
         # Build equation string
         if D > 0:
-            rhs = f"{D} * laplace(u) {advection}"
+            rhs = f"{D} * laplace(u) + {advection}"
         else:
-            rhs = advection.lstrip("- ")  # Remove leading minus if no diffusion
+            rhs = advection
 
         return PDE(
             rhs={"u": rhs},

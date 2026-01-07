@@ -58,12 +58,28 @@ num_species: 3  # n, w, T
 cross_diffusion: true
 
 parameters:
-  a: 1.1     # range: [0.01, 10], step: 0.01, rainfall rate
-  m: 0.630   # range: [0.2, 1], step: 0.01, plant mortality
+  a: 2.0     # range: [0.01, 10], step: 0.01, rainfall rate
+  m: 0.54    # range: [0.2, 1], step: 0.01, plant mortality
   V: 100     # gravity-driven flow strength
   D_n: 1     # plant diffusion
   D_w: 2     # water diffusion
+
+init:
+  topography: hills  # slope, hills, valley, ridge, random
+  amplitude: 1.0     # height scale of terrain features
+  n_hills_x: 2       # number of hills in x direction (for hills type)
+  n_hills_y: 2       # number of hills in y direction (for hills type)
 ```
+
+## Topography Types
+
+The simulation supports several procedural topography options:
+
+- **slope**: Simple linear slope in x direction. Water flows uniformly downhill.
+- **hills**: Sinusoidal hills pattern creating peaks and valleys. Parameters: `n_hills_x`, `n_hills_y`.
+- **valley**: Central valley running in x direction (low in center, high on edges). Water accumulates in the center.
+- **ridge**: Central ridge running in x direction (high in center, low on edges). Water flows to the edges.
+- **random**: Random smooth terrain from sum of sinusoids. Parameter: `n_modes` (default 5).
 
 ## Diffusion Structure
 

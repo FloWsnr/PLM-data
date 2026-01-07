@@ -57,7 +57,10 @@ domain_size: 320
 
 dimension: 1
 
-boundary_x: combo  # Dirichlet left, Ghost right
+init:
+  type: zero  # Start with zero concentration; boundary fills in
+
+boundary_x: combo  # Dirichlet left = c0, Ghost right
 
 num_species: 1
 
@@ -106,8 +109,8 @@ Extension with time-varying decay rate.
 
 - This is a linear model - concentrations superpose
 - No diffusion term - transport is purely advective
-- Clicking instantly adds bacteria that then wash downstream
-- The steady-state profile takes time to establish after parameter changes
+- Starts with zero concentration; the inlet boundary condition fills in the profile over time
+- The steady-state profile takes time to establish from the initial zero state
 - Real rivers have turbulent diffusion, stratification, and other complexities not captured here
 
 ## Physical Interpretation

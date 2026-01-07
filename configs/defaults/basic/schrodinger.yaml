@@ -11,7 +11,7 @@ init:
   params:
     n: 3
     m: 3
-solver: rk4  # From reference: midpoint timestepping scheme
+solver: rk4  # Visual PDE uses midpoint, but py-pde doesn't support it; rk4 is closest
 backend: numba
 adaptive: true
 dt: 0.0001  # From reference: dt=0.0001

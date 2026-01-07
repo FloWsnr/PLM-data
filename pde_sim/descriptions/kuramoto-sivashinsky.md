@@ -42,33 +42,48 @@ Where:
 ## Default Config
 
 ```yaml
-solver: euler
-dt: 0.001
-dx: 0.5
+solver: scipy    # Implicit solver for stiff 4th-order equation
+adaptive: true
+dt: 0.1          # Adaptive solver handles larger initial dt
+resolution: 64   # ~2.34 dx (adaptive solver tolerates coarser mesh)
 domain_size: 150
 
-boundary_x: periodic
-boundary_y: periodic
+bc:
+  x: periodic
+  y: periodic
 
 parameters:
-  a: 0.03   # damping coefficient (small, for numerical stability)
+  a: 0.03   # damping coefficient (for numerical stability)
+
+init:
+  type: random-gaussian
+  params:
+    mean: 0.0
+    std: 0.1
 ```
+
+**Note**: Visual-PDE uses explicit solver with `dt=0.001, dx=0.5`. Our implementation uses adaptive implicit solver which is more efficient for this stiff 4th-order equation.
 
 ## Parameter Variants
 
-### KuramotoSivashinsky (2D)
-Standard two-dimensional simulation:
+### Standard K-S Chaos
+Two-dimensional spatiotemporal chaos:
 - `domain_size = 150`
-- `dt = 0.001`
-- `a = 0.03` (slight damping)
-- Initial condition: constant value with localized perturbations
-- 2D patterns with cellular/turbulent structures
+- `a = 0.03` (slight damping for numerical stability)
+- Initial condition: random Gaussian perturbations around zero
+- Produces characteristic cellular/turbulent structures
 
-### KuramotoSivashinsky3D
-Surface plot visualization:
-- Same parameters as 2D
-- `plotType = "surface"` for 3D height visualization
-- Shows the turbulent surface more intuitively
+### No Damping (a=0)
+True Kuramoto-Sivashinsky without damping term:
+- More numerically challenging
+- Slightly different attractor properties
+- Use with caution - may require smaller timesteps
+
+### Strong Damping (a=0.1)
+Reduced chaos:
+- More regular patterns
+- Faster approach to attractor
+- Good for studying transition to chaos
 
 ### Chaos Characteristics
 

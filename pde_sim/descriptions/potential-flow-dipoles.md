@@ -25,8 +25,14 @@ The simulation allows exploration of how the flow field changes as the source-si
 Potential equation (Laplace with singularities):
 $$\nabla^2 \phi = \text{source forcing}$$
 
-In the simulation, implemented as:
+Visual PDE reference equation:
 $$\frac{\partial \phi}{\partial t} = \nabla^2 \phi + \frac{1000}{2d \cdot dx}\left(\text{ind}(s[x-d\cdot dx,y]>0) - \text{ind}(s[x+d\cdot dx,y]>0)\right)$$
+
+Our implementation pre-computes the shifted indicator difference in the s field initial condition, giving:
+$$\frac{\partial \phi}{\partial t} = \nabla^2 \phi + \text{strength} \cdot s$$
+
+where s encodes the dipole forcing:
+$$s = \frac{\text{bump}(x-d\cdot dx, y) - \text{bump}(x+d\cdot dx, y)}{2d \cdot dx}$$
 
 Velocity from potential:
 $$u = \frac{\partial \phi}{\partial x}, \quad v = \frac{\partial \phi}{\partial y}$$

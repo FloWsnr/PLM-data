@@ -30,7 +30,7 @@ Where:
 - $u$ is the activator concentration
 - $v$ is the inhibitor concentration
 - $a, b > 0$ are kinetic parameters
-- $D_v$ is the diffusion coefficient ratio
+- $D_v$ (`Dv`) is the diffusion coefficient ratio
 
 ### Hyperbolic Extension
 $$\tau \frac{\partial^2 u}{\partial t^2} + \frac{\partial u}{\partial t} = D \nabla^2 u + a - (b+1)u + u^2 v$$
@@ -49,7 +49,7 @@ boundary_x: periodic
 boundary_y: periodic
 
 parameters:
-  D_v: 8    # range: [7, 9], step: 0.1
+  Dv: 8    # range: [7, 9], step: 0.1
   a: 2
   b: 3
 ```
@@ -58,7 +58,7 @@ parameters:
 
 ### brusselator (Standard)
 Standard configuration near the Turing instability threshold.
-- `D_v = 8` (range: [7, 9]): Just above critical threshold (~7.46)
+- `Dv = 8` (range: [7, 9]): Just above critical threshold (~7.46)
 - `a = 2`, `b = 3`: Classic parameter values
 - Initial conditions: `u(0) = a`, `v(0) = b/a`
 

@@ -161,39 +161,28 @@ class SuperlatticePDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
         **kwargs,
     ) -> FieldCollection:
-        """Create initial state near equilibrium with perturbations.
+        """Create initial state matching VisualPDE reference.
 
-        Default: u1 = a (Brusselator equilibrium) with small random perturbations.
+        Reference initial conditions:
+            u1: 3 + 0.1*RANDN (noise only on u1 activator)
+            v1: 3 (constant)
+            u2: 3 (constant)
+            v2: 10 (constant)
         """
         seed = ic_params.get("seed")
         if seed is not None:
             np.random.seed(seed)
         noise = ic_params.get("noise", 0.1)
 
-        # Get parameters for equilibrium calculation
-        a = ic_params.get("a", 3.0)
-        b = ic_params.get("b", 9.0)
-        c = ic_params.get("c", 15.0)
+        # Reference values from VisualPDE preset
+        # Only u1 gets noise - this triggers pattern formation
+        u1_data = 3.0 + noise * np.random.randn(*grid.shape)
+        v1_data = np.full(grid.shape, 3.0)
+        u2_data = np.full(grid.shape, 3.0)
+        v2_data = np.full(grid.shape, 10.0)
 
-        # Brusselator equilibrium: u1* = a, v1* = b/a
-        u1_eq = a
-        v1_eq = b / a
-
-        # Lengyel-Epstein equilibrium (approximate)
-        u2_eq = c / (1 + 4 / (1 + c**2))  # Simplified
-        v2_eq = 1.0  # Approximate
-
-        # Add noise around equilibrium
-        u1_data = u1_eq + noise * np.random.randn(*grid.shape)
-        v1_data = v1_eq + noise * np.random.randn(*grid.shape)
-        u2_data = u2_eq + noise * np.random.randn(*grid.shape)
-        v2_data = v2_eq + noise * np.random.randn(*grid.shape)
-
-        # Ensure positive values
+        # Ensure positive values for u1
         u1_data = np.maximum(u1_data, 0.01)
-        v1_data = np.maximum(v1_data, 0.01)
-        u2_data = np.maximum(u2_data, 0.01)
-        v2_data = np.maximum(v2_data, 0.01)
 
         u1 = ScalarField(grid, u1_data)
         u1.label = "u1"
