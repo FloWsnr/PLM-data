@@ -6,10 +6,10 @@ init:
   params:
     amplitude: 0.1    # Visual PDE uses 0.1, not 1.0
     width: 0.1        # Relative to domain size
-solver: euler         # Visual PDE uses euler for this preset
+solver: rk4           # RK4 with small dt for stability (instead of backward differences)
 backend: numba
 adaptive: true
-dt: 0.04              # Visual PDE uses 0.04
+dt: 0.01              # Small time steps for stability with centered differences
 resolution: 500       # domain_size/spatialStep = 1000/2
 dimension: 1          # 1D problem
 bc:
