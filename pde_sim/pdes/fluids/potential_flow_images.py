@@ -72,10 +72,12 @@ class PotentialFlowImagesPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        # Laplace relaxation for potential flow
+        # Laplace relaxation for potential flow with source forcing
+        # The s field indicates source locations (sources are positive)
+        strength = parameters.get("strength", 10.0)
         return PDE(
             rhs={
-                "phi": "laplace(phi)",
+                "phi": f"laplace(phi) - {strength} * s",
                 "s": "0",  # Indicator field doesn't evolve
             },
             bc=self._convert_bc(bc),
@@ -130,7 +132,8 @@ class PotentialFlowImagesPDE(MultiFieldPDEPreset):
 
             # Potential from source and its image (both sources, same sign)
             # This creates no normal flow at the wall
-            phi_data = -(strength / (4 * np.pi)) * (
+            # Using 2*pi for 2D potential (not 4*pi which is for 3D)
+            phi_data = -(strength / (2 * np.pi)) * (
                 np.log(r_source_sq) + np.log(r_image_sq)
             )
 
@@ -151,7 +154,7 @@ class PotentialFlowImagesPDE(MultiFieldPDEPreset):
             r_source_sq = (x - source_x) ** 2 + (y - source_y) ** 2
             r_source_sq = np.maximum(r_source_sq, eps)
 
-            phi_data = -(strength / (4 * np.pi)) * np.log(r_source_sq)
+            phi_data = -(strength / (2 * np.pi)) * np.log(r_source_sq)
 
             radius = dx * 3
             s_data = np.exp(-r_source_sq / (2 * radius**2))

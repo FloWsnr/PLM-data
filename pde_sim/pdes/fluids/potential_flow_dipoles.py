@@ -72,11 +72,12 @@ class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        # For potential flow dipoles, we use simple Laplace relaxation
-        # The source-sink forcing is handled in initial conditions
+        # For potential flow dipoles, we solve Laplace with source-sink forcing
+        # The s field indicates source (+) and sink (-) locations
+        strength = parameters.get("strength", 1000.0)
         return PDE(
             rhs={
-                "phi": "laplace(phi)",
+                "phi": f"laplace(phi) + {strength} * s",
                 "s": "0",  # Indicator field doesn't evolve
             },
             bc=self._convert_bc(bc),

@@ -1,6 +1,6 @@
 preset: kuramoto-sivashinsky
 parameters:
-  nu: 1.0
+  a: 0.03  # Damping coefficient
 init:
   type: random-gaussian
   params:
@@ -20,5 +20,5 @@ output:
   colormap: seismic
   field_to_plot: u
 seed: 42
-domain_size: 30.0
+domain_size: 150
 t_end: 10.0

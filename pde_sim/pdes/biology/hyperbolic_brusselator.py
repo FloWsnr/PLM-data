@@ -67,9 +67,9 @@ class HyperbolicBrusselatorPDE(MultiFieldPDEPreset):
                 ),
                 PDEParameter(
                     name="Dv",
-                    default=8.0,
+                    default=1.0,
                     description="Inhibitor diffusion coefficient",
-                    min_value=1.0,
+                    min_value=0.1,
                     max_value=20.0,
                 ),
                 PDEParameter(
@@ -107,7 +107,7 @@ class HyperbolicBrusselatorPDE(MultiFieldPDEPreset):
     ) -> PDE:
         tau = parameters.get("tau", 1.0)
         Du = parameters.get("Du", 2.0)
-        Dv = parameters.get("Dv", 8.0)
+        Dv = parameters.get("Dv", 1.0)
         a = parameters.get("a", 5.0)
         b = parameters.get("b", 9.0)
         eps = parameters.get("eps", 0.001)

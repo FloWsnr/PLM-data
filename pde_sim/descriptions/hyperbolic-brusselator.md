@@ -66,7 +66,7 @@ parameters:
   a: 5           # Brusselator feed rate
   b: 9           # Brusselator removal rate
   tau: 1         # [0, 1] - relaxation time (key parameter)
-  D_v: 8         # [7, 9] - inhibitor diffusion
+  D_v: 1         # [0.1, 2] - inhibitor diffusion (Du > Dv for Turing waves)
   epsilon: 0.001 # numerical diffusion
 ```
 
