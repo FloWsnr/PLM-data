@@ -1,22 +1,21 @@
 preset: swift-hohenberg-advection
 parameters:
-  r: -0.28
-  a: 1.6
+  r: 0.3
+  a: 0.0
   b: -1.0
   c: -1.0
-  V: 2.0
-  theta: -2.0
+  V: 0.6
+  theta: 0.5
   D: 1.0
 init:
-  type: default
+  type: random-uniform
   params:
-    amplitude: 0.5
-    P: 3
+    amplitude: 0.1
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.0008
-t_end: 50.0
+t_end: 120.0
 resolution: 128
 bc:
   x-: periodic
@@ -28,5 +27,5 @@ output:
   num_frames: 100
   colormap: RdBu_r
   field_to_plot: u
-seed: 123
-domain_size: 150
+seed: 42
+domain_size: 120
