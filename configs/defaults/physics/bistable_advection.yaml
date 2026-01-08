@@ -1,0 +1,40 @@
+# Bistable Advection - Invasion front with flow
+# Flow-assisted invasion: front propagates faster due to aligned flow
+preset: bistable-advection
+parameters:
+  D: 0.1       # diffusion coefficient (increased for smoother front)
+  a: 0.3       # Allee threshold (a < 0.5 strongly favors invasion)
+  theta: 0.0   # flow direction (0 = rightward, aligned with invasion)
+  V: 0.3       # flow velocity (assists invasion)
+
+init:
+  type: default
+  params:
+    direction: x
+    step_position: 0.2   # initial front position (left side)
+    value_low: 0.0       # uninvaded region
+    value_high: 1.0      # invaded region
+    smooth: true
+    width: 0.03          # smoother transition
+
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.01
+resolution: 256
+domain_size: 50.0    # smaller domain to see full front dynamics
+t_end: 60.0          # enough time to see front cross domain
+
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+
+output:
+  path: ./output
+  num_frames: 100
+  colormap: viridis
+  field_to_plot: u
+
+seed: 42

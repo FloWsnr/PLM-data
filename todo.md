@@ -53,21 +53,21 @@
 
 | PDE | Config | Status | Notes |
 |-----|--------|--------|-------|
-| bistable-advection | N/A | PENDING | No config exists |
-| burgers | physics/burgers.yaml | WEAK | Shock front appears static - no visible movement between frames |
+| bistable-advection | physics/bistable_advection.yaml | GOOD | Clear invasion front propagation - yellow (invaded) expands across domain. Flow-assisted invasion with a=0.3, V=0.3, D=0.1 |
+| burgers | physics/burgers.yaml | GOOD | Visible wave steepening and shock propagation - asymmetric profile with steep front, diffuse back (amplitude=2.0, epsilon=0.5) |
 | cahn-hilliard | physics/cahn_hilliard.yaml | GOOD | Beautiful phase separation from noise to meandering domains |
 | complex-ginzburg-landau | physics/complex_ginzburg_landau.yaml | GOOD | Excellent spiral wave chaos and defect dynamics |
 | duffing | physics/duffing.yaml | GOOD | Coupled oscillator domain formation from noise |
-| gray-scott | physics/gray_scott.yaml | PENDING | |
-| inviscid-burgers | physics/inviscid_burgers_shock_interaction.yaml | PENDING | |
-| korteweg-de-vries | physics/korteweg_de_vries.yaml | PENDING | |
-| kuramoto-sivashinsky | physics/kuramoto_sivashinsky.yaml | PENDING | |
-| lorenz | physics/lorenz.yaml | PENDING | |
-| nonlinear-beam | physics/nonlinear_beam.yaml | PENDING | |
-| nonlinear-schrodinger | physics/nonlinear_schrodinger.yaml | PENDING | |
-| perona-malik | physics/perona_malik.yaml | PENDING | |
-| stochastic-gray-scott | physics/stochastic_gray_scott.yaml | PENDING | |
-| superlattice | physics/superlattice.yaml | PENDING | |
-| swift-hohenberg | physics/swift_hohenberg.yaml | PENDING | |
-| swift-hohenberg-advection | physics/swift_hohenberg_advection.yaml | PENDING | |
-| van-der-pol | physics/van_der_pol.yaml | PENDING | |
+| gray-scott | physics/gray_scott.yaml | GOOD | Beautiful labyrinthine pattern growth from single seed - classic self-replication |
+| inviscid-burgers | physics/inviscid_burgers_shock_interaction.yaml | GOOD | Sharp shock formation from Gaussian pulse - front steepens into discontinuity, stretched tail behind (amplitude=1.5, epsilon=0.01) |
+| korteweg-de-vries | physics/korteweg_de_vries.yaml | BAD | Soliton disperses and ends as blank white - numerical instability |
+| kuramoto-sivashinsky | physics/kuramoto_sivashinsky.yaml | OK | Chaotic evolution but low resolution (64x64), looks noisy |
+| lorenz | physics/lorenz.yaml | GOOD | Coupled Lorenz oscillators - synchronized arrow dynamics evolving |
+| nonlinear-beam | physics/nonlinear_beam.yaml | BAD | Biharmonic equation too stiff - blows up even with tiny dt. Needs implicit solver |
+| nonlinear-schrodinger | physics/nonlinear_schrodinger.yaml | GOOD | Soliton propagation maintaining shape across domain |
+| perona-malik | physics/perona_malik.yaml | GOOD | Edge-preserving diffusion - checkerboard smoothing with sharp boundaries |
+| stochastic-gray-scott | physics/stochastic_gray_scott.yaml | GOOD | Stochastic effects visible - noisy irregular boundaries from multiplicative noise |
+| superlattice | physics/superlattice.yaml | GOOD | Beautiful coupled spot patterns - red cores with white halos on blue |
+| swift-hohenberg | physics/swift_hohenberg.yaml | GOOD | Stunning labyrinthine stripe patterns from noise |
+| swift-hohenberg-advection | physics/swift_hohenberg_advection.yaml | GOOD | Beautiful labyrinthine stripes evolving under advection (r=0.3 supercritical, a=0 stripes, V=0.6 diagonal flow) |
+| van-der-pol | physics/van_der_pol.yaml | GOOD | Beautiful domain coarsening from noise - chaotic phase patterns |
