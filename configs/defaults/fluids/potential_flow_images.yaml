@@ -1,32 +1,32 @@
 preset: potential-flow-images
 parameters:
-  strength: 10.0
+  strength: 50.0
   wall_x: 0.5
 init:
   type: source-with-image
   params:
-    strength: 10.0
+    strength: 50.0
     wall_x: 0.5
 solver: euler
 backend: numpy
 adaptive: true
 dt: 0.01
-resolution: 128
+resolution: 256
 bc:
-  x: neumann  # Default fallback
+  x: neumann
   y: neumann
   fields:
-    phi:  # Potential: Neumann on all boundaries
+    phi:
       x: neumann
       y: neumann
-    s:  # Indicator field: Dirichlet=0 on all boundaries
+    s:
       x: dirichlet:0
       y: dirichlet:0
 output:
   path: ./output
   num_frames: 100
-  colormap: viridis
+  colormap: coolwarm
   field_to_plot: phi
 seed: 42
-domain_size: 320.0
-t_end: 50.0
+domain_size: 40.0
+t_end: 5.0

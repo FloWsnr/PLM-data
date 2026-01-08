@@ -1,43 +1,26 @@
 preset: navier-stokes
 parameters:
-  nu: 0.02
-  M: 0.5
-  D: 0.05
+  nu: 0.02       # Minimum allowed viscosity
+  M: 0.3
+  D: 0.001       # Low scalar diffusion to see mixing
 init:
   type: shear-layer
   params:
-    shear_width: 0.1
-    amplitude: 0.5
+    shear_width: 0.03    # Thin shear layer
+    amplitude: 1.5       # Strong velocity difference
 solver: euler
 backend: numpy
 adaptive: true
-dt: 0.01
+dt: 0.001
 resolution: 128
 bc:
-  x: periodic  # Default fallback
-  y: neumann
-  fields:
-    u:  # Horizontal velocity: periodic left/right, no-slip top/bottom
-      x: periodic
-      top: dirichlet:0
-      bottom: dirichlet:0
-    v:  # Vertical velocity: periodic left/right, no-slip top/bottom
-      x: periodic
-      top: dirichlet:0
-      bottom: dirichlet:0
-    p:  # Pressure: Neumann on all boundaries
-      x: neumann
-      y: neumann
-    S:  # Passive scalar: inlet/outlet left/right, insulated top/bottom
-      left: dirichlet:1
-      right: dirichlet:0
-      top: neumann
-      bottom: neumann
+  x: periodic
+  y: periodic
 output:
   path: ./output
   num_frames: 100
-  colormap: viridis
-  field_to_plot: S
+  colormap: RdBu_r
+  field_to_plot: S      # Passive scalar shows KH mixing
 seed: 42
-domain_size: 300.0
-t_end: 50.0
+domain_size: 5.0        # Re = U*L/nu = 1.5*5/0.02 = 375
+t_end: 15.0
