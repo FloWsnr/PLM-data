@@ -17,15 +17,16 @@ adaptive: false
 dt: 0.0003
 resolution: 128
 bc:
-  x: neumann  # Default fallback
-  y: neumann
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
   fields:
-    u:  # Activator: Dirichlet=0 on ALL boundaries (per Visual PDE GMHeterogeneous2D)
-      x: dirichlet
-      y: dirichlet
-    v:  # Inhibitor: Neumann on ALL boundaries (default)
-      x: neumann
-      y: neumann
+    u:
+      x-: dirichlet:0
+      x+: dirichlet:0
+      y-: dirichlet:0
+      y+: dirichlet:0
 output:
   path: ./output
   num_frames: 100

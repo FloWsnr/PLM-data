@@ -1,8 +1,6 @@
-# Heat equation configuration
-# Based on visualpde.com heat equation
 preset: heat
 parameters:
-  D_T: 5.0  # Thermal diffusivity (diffusion coefficient) - increased for more visible dynamics
+  D_T: 5.0
 init:
   type: gaussian-blobs
   params:
@@ -13,16 +11,18 @@ init:
 solver: euler
 backend: numba
 adaptive: true
-dt: 0.01  # From reference: dt=0.01
-resolution: 213  # From reference: dx=1.5, domain_size=320 -> 320/1.5 ~ 213
+dt: 0.01
+resolution: 213
 bc:
-  x: neumann  # From reference: Neumann boundary conditions
-  y: neumann
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
 output:
   path: ./output
   num_frames: 100
   colormap: turbo
   field_to_plot: T
 seed: 42
-domain_size: 320.0  # From reference: domain_size=320
+domain_size: 320.0
 t_end: 100.0

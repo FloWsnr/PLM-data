@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 from pde import PDE, CartesianGrid, FieldCollection, ScalarField
 
-from pde_sim.core.config import BoundaryConfig, FieldBoundaryConfig
+from pde_sim.core.config import BoundaryConfig
 
 from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
@@ -90,19 +90,21 @@ class VorticityBoundedPDE(MultiFieldPDEPreset):
     def get_default_bc(self) -> BoundaryConfig:
         """Return default per-field boundary conditions."""
         return BoundaryConfig(
-            x="periodic",
-            y="periodic",
+            x_minus="periodic",
+            x_plus="periodic",
+            y_minus="periodic",
+            y_plus="periodic",
             fields={
-                "omega": FieldBoundaryConfig(
-                    left="dirichlet:0",
-                    right="dirichlet:0",
+                "omega": {
+                    "x-": "dirichlet:0",
+                    "x+": "dirichlet:0",
                     # y inherits from parent (periodic)
-                ),
-                "S": FieldBoundaryConfig(
-                    left="neumann",
-                    right="neumann",
+                },
+                "S": {
+                    "x-": "neumann:0",
+                    "x+": "neumann:0",
                     # y inherits from parent (periodic)
-                ),
+                },
                 # psi inherits default periodic for all boundaries
             },
         )
@@ -110,7 +112,7 @@ class VorticityBoundedPDE(MultiFieldPDEPreset):
     def create_pde(
         self,
         parameters: dict[str, float],
-        bc: dict[str, Any],
+        bc: Any,
         grid: CartesianGrid,
     ) -> PDE:
         nu = parameters.get("nu", 0.1)

@@ -1,33 +1,27 @@
-# Gierer-Meinhardt with saturation for stripe/labyrinthine patterns
-# Uses K > 0 saturation term to produce stripes instead of spots
-
 preset: gierer-meinhardt
-
 parameters:
-  D: 100.0     # Inhibitor diffusion ratio
-  a: 0.5       # Basal activator production
-  b: 1.0       # Activator decay rate
-  c: 6.1       # Inhibitor decay rate
-  K: 0.003     # Saturation constant (enables stripes)
-
+  D: 100.0
+  a: 0.5
+  b: 1.0
+  c: 6.1
+  K: 0.003
 init:
   type: random-gaussian
   params:
     mean: 1.0
     std: 0.1
     seed: 42
-
 solver: euler
 dt: 0.0003
 resolution: 128
-domain_size: 200.0   # Larger domain for stripe patterns
+domain_size: 200.0
 t_end: 100.0
 timesteps: 200
-
 bc:
-  x: neumann
-  y: neumann
-
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
 output:
   frames: true
   metadata: true

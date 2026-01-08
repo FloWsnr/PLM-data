@@ -9,7 +9,6 @@ from pde_sim.core.config import (
     SimulationConfig,
     OutputConfig,
     BoundaryConfig,
-    FieldBoundaryConfig,
     InitialConditionConfig,
     load_config,
     config_to_dict,
@@ -30,8 +29,8 @@ class TestLoadConfig:
         assert config.t_end == 0.01  # 100 * 0.0001
         assert config.dt == 0.0001
         assert config.resolution == 32
-        assert config.bc.x == "periodic"
-        assert config.bc.y == "periodic"
+        assert config.bc.x_minus == "periodic"
+        assert config.bc.y_minus == "periodic"
         assert config.seed == 42
 
     def test_load_config_with_defaults(self, tmp_path):
@@ -53,8 +52,8 @@ class TestLoadConfig:
         # Check defaults
         assert config.parameters == {}
         assert config.solver == "euler"
-        assert config.bc.x == "periodic"
-        assert config.bc.y == "periodic"
+        assert config.bc.x_minus == "periodic"
+        assert config.bc.y_minus == "periodic"
         assert config.seed is None
         assert config.domain_size == 1.0
 
@@ -108,7 +107,12 @@ class TestSimulationConfig:
             t_end=0.1,  # 100 * 0.001
             dt=0.001,
             resolution=64,
-            bc=BoundaryConfig(x="periodic", y="periodic"),
+            bc=BoundaryConfig(
+                x_minus="periodic",
+                x_plus="periodic",
+                y_minus="periodic",
+                y_plus="periodic",
+            ),
             output=OutputConfig(path=Path("./output")),
         )
 
@@ -123,72 +127,71 @@ class TestBoundaryConfig:
     def test_default_values(self):
         """Test that BoundaryConfig has correct defaults."""
         bc = BoundaryConfig()
-        assert bc.x == "periodic"
-        assert bc.y == "periodic"
+        assert bc.x_minus == "periodic"
+        assert bc.x_plus == "periodic"
+        assert bc.y_minus == "periodic"
+        assert bc.y_plus == "periodic"
 
     def test_custom_values(self):
         """Test BoundaryConfig with custom values."""
-        bc = BoundaryConfig(x="neumann", y="dirichlet")
-        assert bc.x == "neumann"
-        assert bc.y == "dirichlet"
+        bc = BoundaryConfig(
+            x_minus="neumann:0",
+            x_plus="neumann:0",
+            y_minus="dirichlet:0",
+            y_plus="dirichlet:0",
+        )
+        assert bc.x_minus == "neumann:0"
+        assert bc.y_minus == "dirichlet:0"
 
     def test_is_simple_without_fields(self):
         """Test is_simple returns True when no per-field BCs."""
-        bc = BoundaryConfig(x="periodic", y="neumann")
+        bc = BoundaryConfig(
+            x_minus="periodic",
+            x_plus="periodic",
+            y_minus="neumann:0",
+            y_plus="neumann:0",
+        )
         assert bc.is_simple() is True
 
     def test_is_simple_with_fields(self):
         """Test is_simple returns False when per-field BCs present."""
         bc = BoundaryConfig(
-            x="periodic",
-            y="periodic",
-            fields={"u": FieldBoundaryConfig(x="dirichlet")}
+            x_minus="periodic",
+            x_plus="periodic",
+            y_minus="periodic",
+            y_plus="periodic",
+            fields={"u": {"x-": "dirichlet:0"}},
         )
         assert bc.is_simple() is False
 
     def test_get_field_bc_with_override(self):
-        """Test get_field_bc returns field-specific BC."""
+        """Test get_field_bc returns field-specific BC merged with defaults."""
         bc = BoundaryConfig(
-            x="periodic",
-            y="periodic",
-            fields={"u": FieldBoundaryConfig(x="dirichlet", top="neumann")}
+            x_minus="periodic",
+            x_plus="periodic",
+            y_minus="neumann:0",
+            y_plus="neumann:0",
+            fields={"omega": {"y-": "dirichlet:0", "y+": "dirichlet:0"}},
         )
-        field_bc = bc.get_field_bc("u")
-        assert field_bc.x == "dirichlet"
-        assert field_bc.y == "periodic"  # Falls back to default
-        assert field_bc.top == "neumann"
+        field_bc = bc.get_field_bc("omega")
+        assert field_bc["x-"] == "periodic"  # From default
+        assert field_bc["x+"] == "periodic"  # From default
+        assert field_bc["y-"] == "dirichlet:0"  # Override
+        assert field_bc["y+"] == "dirichlet:0"  # Override
 
     def test_get_field_bc_without_override(self):
         """Test get_field_bc returns defaults for unspecified field."""
-        bc = BoundaryConfig(x="neumann", y="dirichlet")
-        field_bc = bc.get_field_bc("v")
-        assert field_bc.x == "neumann"
-        assert field_bc.y == "dirichlet"
-
-
-class TestFieldBoundaryConfig:
-    """Tests for FieldBoundaryConfig dataclass."""
-
-    def test_default_values(self):
-        """Test FieldBoundaryConfig defaults to None."""
-        fbc = FieldBoundaryConfig()
-        assert fbc.x is None
-        assert fbc.y is None
-        assert fbc.left is None
-        assert fbc.right is None
-        assert fbc.top is None
-        assert fbc.bottom is None
-
-    def test_side_specific_values(self):
-        """Test FieldBoundaryConfig with side-specific values."""
-        fbc = FieldBoundaryConfig(
-            x="periodic",
-            top="dirichlet:0",
-            bottom="neumann:0.08"
+        bc = BoundaryConfig(
+            x_minus="neumann:0",
+            x_plus="neumann:0",
+            y_minus="dirichlet:0",
+            y_plus="dirichlet:0",
         )
-        assert fbc.x == "periodic"
-        assert fbc.top == "dirichlet:0"
-        assert fbc.bottom == "neumann:0.08"
+        field_bc = bc.get_field_bc("v")
+        assert field_bc["x-"] == "neumann:0"
+        assert field_bc["x+"] == "neumann:0"
+        assert field_bc["y-"] == "dirichlet:0"
+        assert field_bc["y+"] == "dirichlet:0"
 
 
 class TestPerFieldBCConfigParsing:
@@ -204,13 +207,15 @@ class TestPerFieldBCConfigParsing:
             "dt": 0.001,
             "resolution": 32,
             "bc": {
-                "x": "periodic",
-                "y": "periodic",
+                "x-": "periodic",
+                "x+": "periodic",
+                "y-": "neumann:0",
+                "y+": "neumann:0",
                 "fields": {
-                    "omega": {"top": "dirichlet:0", "bottom": "dirichlet:0"},
-                    "b": {"top": "dirichlet:0", "bottom": "neumann:0.08"}
-                }
-            }
+                    "omega": {"y-": "dirichlet:0", "y+": "dirichlet:0"},
+                    "b": {"y-": "neumann:0.08", "y+": "dirichlet:0"},
+                },
+            },
         }
 
         config_path = tmp_path / "per_field_bc.yaml"
@@ -219,13 +224,13 @@ class TestPerFieldBCConfigParsing:
 
         config = load_config(config_path)
 
-        assert config.bc.x == "periodic"
-        assert config.bc.y == "periodic"
+        assert config.bc.x_minus == "periodic"
+        assert config.bc.y_minus == "neumann:0"
         assert config.bc.fields is not None
         assert "omega" in config.bc.fields
         assert "b" in config.bc.fields
-        assert config.bc.fields["omega"].top == "dirichlet:0"
-        assert config.bc.fields["b"].bottom == "neumann:0.08"
+        assert config.bc.fields["omega"]["y-"] == "dirichlet:0"
+        assert config.bc.fields["b"]["y-"] == "neumann:0.08"
 
     def test_config_to_dict_with_per_field_bc(self, tmp_path):
         """Test config_to_dict preserves per-field BCs."""
@@ -237,12 +242,14 @@ class TestPerFieldBCConfigParsing:
             "dt": 0.001,
             "resolution": 32,
             "bc": {
-                "x": "periodic",
-                "y": "periodic",
+                "x-": "periodic",
+                "x+": "periodic",
+                "y-": "neumann:0",
+                "y+": "neumann:0",
                 "fields": {
-                    "b": {"top": "dirichlet:0", "bottom": "neumann:0.08"}
-                }
-            }
+                    "b": {"y-": "neumann:0.08", "y+": "dirichlet:0"},
+                },
+            },
         }
 
         config_path = tmp_path / "per_field_bc.yaml"
@@ -254,8 +261,8 @@ class TestPerFieldBCConfigParsing:
 
         assert "fields" in result["bc"]
         assert "b" in result["bc"]["fields"]
-        assert result["bc"]["fields"]["b"]["top"] == "dirichlet:0"
-        assert result["bc"]["fields"]["b"]["bottom"] == "neumann:0.08"
+        assert result["bc"]["fields"]["b"]["y-"] == "neumann:0.08"
+        assert result["bc"]["fields"]["b"]["y+"] == "dirichlet:0"
 
 
 class TestOutputConfig:

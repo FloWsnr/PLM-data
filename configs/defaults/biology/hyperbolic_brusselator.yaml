@@ -1,25 +1,27 @@
 preset: hyperbolic-brusselator
 parameters:
   tau: 1.0
-  Du: 2.0       # Matches Visual-PDE: 2/tau
-  Dv: 1.0       # Matches Visual-PDE: 1/tau (Du > Dv for Turing wave)
+  Du: 2.0
+  Dv: 1.0
   a: 5.0
   b: 9.0
   eps: 0.001
 init:
-  type: random-gaussian  # Preset uses steady state + noise internally
+  type: random-gaussian
   params:
     a: 5.0
     b: 9.0
-    noise: 0.5   # Larger perturbation to seed instability
+    noise: 0.5
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.00005
+dt: 5.0e-05
 resolution: 128
 bc:
-  x: neumann    # Match Visual-PDE
-  y: neumann
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
 output:
   path: ./output
   num_frames: 100

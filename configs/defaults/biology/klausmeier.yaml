@@ -16,8 +16,10 @@ adaptive: false
 dt: 0.001
 resolution: 128
 bc:
-  x: periodic
-  y: periodic
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
 output:
   path: ./output
   num_frames: 100

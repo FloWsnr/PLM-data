@@ -7,197 +7,124 @@ from typing import TYPE_CHECKING, Any
 from pde import CartesianGrid
 
 if TYPE_CHECKING:
-    from pde_sim.core.config import BoundaryConfig, FieldBoundaryConfig
+    from pde_sim.core.config import BoundaryConfig
 
 
 class BoundaryConditionFactory:
     """Factory for creating py-pde boundary condition specifications.
 
-    Converts human-readable BC names to py-pde format.
+    Supports three BC types:
+    - `periodic` - periodic boundary (no value needed)
+    - `neumann:VALUE` - fixed derivative (value required, e.g., neumann:0)
+    - `dirichlet:VALUE` - fixed value (value required, e.g., dirichlet:0)
     """
 
-    # Mapping from config names to py-pde BC specs
-    BC_MAP = {
-        # Periodic
-        "periodic": "periodic",
-        # Neumann (no-flux) - use derivative:0 for zero normal derivative
-        "neumann": {"derivative": 0},
-        "no-flux": {"derivative": 0},
-        "zero-flux": {"derivative": 0},
-        # Dirichlet (fixed value)
-        "dirichlet": {"value": 0},
-        "zero": {"value": 0},
-        "wall": {"value": 0},
-        "fixed": {"value": 0},
-        # Derivative conditions
-        "zero-derivative": {"derivative": 0},
-    }
-
     @classmethod
-    def convert(cls, bc_type: str, value: float | None = None) -> Any:
-        """Convert a BC type name to py-pde format.
+    def convert(cls, bc_str: str) -> Any:
+        """Convert BC string to py-pde format.
 
         Args:
-            bc_type: The boundary condition type name.
-            value: Optional value for Dirichlet conditions.
+            bc_str: One of: "periodic", "neumann:VALUE", "dirichlet:VALUE"
 
         Returns:
             py-pde compatible boundary condition specification.
 
         Raises:
-            ValueError: If the BC type is not recognized.
+            ValueError: If the BC type is not recognized or value is missing.
         """
-        bc_lower = bc_type.lower()
+        bc_lower = bc_str.lower().strip()
 
-        if bc_lower in cls.BC_MAP:
-            bc_spec = cls.BC_MAP[bc_lower]
-            # If a specific value is provided for Dirichlet, use it
-            if value is not None and isinstance(bc_spec, dict) and "value" in bc_spec:
-                return {"value": value}
-            return bc_spec
+        if bc_lower == "periodic":
+            return "periodic"
 
-        # Check for parameterized BCs like "dirichlet:0.5"
-        if ":" in bc_type:
-            parts = bc_type.split(":")
-            base_type = parts[0].lower()
-            param_value = float(parts[1])
+        if ":" not in bc_str:
+            raise ValueError(
+                f"BC '{bc_str}' requires a value. Use 'neumann:0' or 'dirichlet:0'"
+            )
 
-            if base_type in ("dirichlet", "value"):
-                return {"value": param_value}
-            elif base_type in ("neumann", "derivative"):
-                return {"derivative": param_value}
+        bc_type, value_str = bc_str.split(":", 1)
+        value = float(value_str)
 
-        raise ValueError(
-            f"Unknown boundary condition type: {bc_type}. "
-            f"Available: {list(cls.BC_MAP.keys())}"
-        )
+        if bc_type.lower() == "neumann":
+            return {"derivative": value}
+        elif bc_type.lower() == "dirichlet":
+            return {"value": value}
+        else:
+            raise ValueError(
+                f"Unknown BC type: {bc_type}. Use periodic, neumann, or dirichlet"
+            )
 
     @classmethod
-    def convert_config(cls, bc_config: dict[str, str]) -> dict[str, Any]:
-        """Convert a BC config dict to py-pde format.
+    def convert_config(cls, bc_config: BoundaryConfig | dict[str, str]) -> dict[str, Any]:
+        """Convert BC config to py-pde format.
 
         Args:
-            bc_config: Dictionary with 'x' and 'y' keys.
+            bc_config: BoundaryConfig object or dict with x-, x+, y-, y+ keys.
 
         Returns:
-            Dictionary with axis-keyed BC specs for py-pde.
-            Format: {"x": bc_x, "y": bc_y}
+            Dictionary with side-keyed BC specs for py-pde.
+            Format: {"x-": bc, "x+": bc, "y-": bc, "y+": bc}
         """
-        x_bc = cls.convert(bc_config.get("x", "periodic"))
-        y_bc = cls.convert(bc_config.get("y", "periodic"))
-        return {"x": x_bc, "y": y_bc}
+        if hasattr(bc_config, "x_minus"):
+            # BoundaryConfig object
+            return {
+                "x-": cls.convert(bc_config.x_minus),
+                "x+": cls.convert(bc_config.x_plus),
+                "y-": cls.convert(bc_config.y_minus),
+                "y+": cls.convert(bc_config.y_plus),
+            }
+        else:
+            # Dict with x-, x+, y-, y+ keys
+            return {
+                "x-": cls.convert(bc_config.get("x-", "periodic")),
+                "x+": cls.convert(bc_config.get("x+", "periodic")),
+                "y-": cls.convert(bc_config.get("y-", "periodic")),
+                "y+": cls.convert(bc_config.get("y+", "periodic")),
+            }
 
     @classmethod
-    def convert_per_side(
-        cls, left: str, right: str, top: str, bottom: str
-    ) -> dict[str, Any]:
-        """Convert per-side BCs to py-pde format.
+    def convert_field_bc(cls, field_bc: dict[str, str]) -> dict[str, Any]:
+        """Convert field-specific BC dict to py-pde format.
 
         Args:
-            left: BC for left side (x-)
-            right: BC for right side (x+)
-            top: BC for top side (y+)
-            bottom: BC for bottom side (y-)
+            field_bc: Dict with x-, x+, y-, y+ keys (already merged with defaults).
 
         Returns:
-            Dictionary with side-specific BC specs.
-            Format: {"x-": left_bc, "x+": right_bc, "y-": bottom_bc, "y+": top_bc}
+            BC specification in py-pde format.
         """
         return {
-            "x-": cls.convert(left),
-            "x+": cls.convert(right),
-            "y-": cls.convert(bottom),
-            "y+": cls.convert(top),
+            "x-": cls.convert(field_bc["x-"]),
+            "x+": cls.convert(field_bc["x+"]),
+            "y-": cls.convert(field_bc["y-"]),
+            "y+": cls.convert(field_bc["y+"]),
         }
 
     @classmethod
-    def convert_field_bc(cls, field_bc: FieldBoundaryConfig) -> dict[str, Any]:
-        """Convert FieldBoundaryConfig to py-pde format.
-
-        Handles both axis-based (x/y) and side-based (left/right/top/bottom) specs.
-
-        Args:
-            field_bc: Field boundary configuration
-
-        Returns:
-            BC specification in py-pde format (dictionary)
-        """
-        # If any individual sides are specified, use per-side conversion
-        has_sides = any([field_bc.left, field_bc.right, field_bc.top, field_bc.bottom])
-
-        if has_sides:
-            # Use side-specific BCs, falling back to axis-level for unspecified sides
-            left = field_bc.left or field_bc.x or "periodic"
-            right = field_bc.right or field_bc.x or "periodic"
-            top = field_bc.top or field_bc.y or "periodic"
-            bottom = field_bc.bottom or field_bc.y or "periodic"
-            return cls.convert_per_side(left, right, top, bottom)
-
-        # Otherwise use simple axis-based BCs
-        x_bc = field_bc.x or "periodic"
-        y_bc = field_bc.y or "periodic"
-        return {"x": cls.convert(x_bc), "y": cls.convert(y_bc)}
-
-    @classmethod
-    def build_bc_ops(
-        cls,
-        bc_config: BoundaryConfig,
-        field_names: list[str],
-    ) -> dict[str, Any]:
-        """Build py-pde bc_ops dictionary for per-field BCs.
-
-        Args:
-            bc_config: The boundary configuration
-            field_names: List of field names in the PDE
-
-        Returns:
-            Dictionary suitable for py-pde PDE bc_ops parameter.
-            Format: {"field:operator": bc_spec, ...}
-        """
-        if bc_config.is_simple():
-            # Simple case: same BC for all fields, use wildcard
-            return {"*:*": cls.convert_config({"x": bc_config.x, "y": bc_config.y})}
-
-        bc_ops: dict[str, Any] = {}
-
-        # Set default (fallback) for any unspecified field/operator
-        bc_ops["*:*"] = cls.convert_config({"x": bc_config.x, "y": bc_config.y})
-
-        # Add per-field specifications
-        for field_name in field_names:
-            field_bc = bc_config.get_field_bc(field_name)
-            bc_spec = cls.convert_field_bc(field_bc)
-            # Apply to all operators for this field
-            bc_ops[f"{field_name}:*"] = bc_spec
-
-        return bc_ops
-
-    @classmethod
-    def get_periodic_flags(cls, bc_config: dict[str, str]) -> list[bool]:
+    def get_periodic_flags(cls, bc_config: BoundaryConfig) -> list[bool]:
         """Get periodic flags for each axis.
 
         Args:
-            bc_config: Dictionary with 'x' and 'y' keys.
+            bc_config: Boundary configuration.
 
         Returns:
             List of boolean flags [x_periodic, y_periodic].
         """
-        x_periodic = bc_config.get("x", "periodic").lower() == "periodic"
-        y_periodic = bc_config.get("y", "periodic").lower() == "periodic"
+        x_periodic = bc_config.x_minus == "periodic" and bc_config.x_plus == "periodic"
+        y_periodic = bc_config.y_minus == "periodic" and bc_config.y_plus == "periodic"
         return [x_periodic, y_periodic]
 
 
 def create_grid_with_bc(
     resolution: int,
     domain_size: float,
-    bc_config: dict[str, str],
+    bc_config: BoundaryConfig,
 ) -> CartesianGrid:
     """Create a CartesianGrid with appropriate periodicity.
 
     Args:
         resolution: Number of grid points in each dimension.
         domain_size: Physical size of the domain.
-        bc_config: Dictionary with 'x' and 'y' boundary conditions.
+        bc_config: Boundary configuration.
 
     Returns:
         Configured CartesianGrid.

@@ -100,7 +100,7 @@ class SimulationRunner:
         self.grid = create_grid_with_bc(
             resolution=config.resolution,
             domain_size=config.domain_size,
-            bc_config={"x": config.bc.x, "y": config.bc.y},
+            bc_config=config.bc,
         )
 
         # Create PDE
@@ -124,7 +124,7 @@ class SimulationRunner:
 
         self.pde = self.preset.create_pde(
             parameters=params,
-            bc={"x": config.bc.x, "y": config.bc.y},
+            bc=config.bc,  # Pass full BoundaryConfig to support per-field BCs
             grid=self.grid,
         )
 
@@ -135,7 +135,7 @@ class SimulationRunner:
             ic_type=config.init.type,
             ic_params=config.init.params,
             parameters=params,
-            bc={"x": config.bc.x, "y": config.bc.y},
+            bc=config.bc,
         )
 
         # Output management

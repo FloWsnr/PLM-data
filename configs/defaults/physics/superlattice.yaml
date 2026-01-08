@@ -1,27 +1,28 @@
 preset: superlattice
 parameters:
-  # Coupled Brusselator + Lengyel-Epstein system
-  a: 3.0          # Brusselator parameter a
-  b: 9.0          # Brusselator parameter b
-  c: 15.0         # Lengyel-Epstein parameter c
-  d: 9.0          # Lengyel-Epstein parameter d
-  alpha: 0.15     # Coupling parameter
-  D_uone: 4.3     # Diffusion of u1 (Brusselator activator)
-  D_utwo: 50.0    # Diffusion of v1 (Brusselator inhibitor)
-  D_uthree: 22.0  # Diffusion of u2 (Lengyel-Epstein activator)
-  D_ufour: 660.0  # Diffusion of v2 (Lengyel-Epstein inhibitor)
+  a: 3.0
+  b: 9.0
+  c: 15.0
+  d: 9.0
+  alpha: 0.15
+  D_uone: 4.3
+  D_utwo: 50.0
+  D_uthree: 22.0
+  D_ufour: 660.0
 init:
   type: default
   params:
     noise: 0.1
-solver: scipy  # Implicit solver for stiff 4-field dynamics
+solver: scipy
 backend: numba
 adaptive: true
-dt: 0.1  # Larger dt for faster runtime
+dt: 0.1
 resolution: 64
 bc:
-  x: periodic
-  y: periodic
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
 output:
   path: ./output
   num_frames: 100
@@ -29,4 +30,4 @@ output:
   field_to_plot: u1
 seed: 42
 domain_size: 40.0
-t_end: 5.0  # Reduced time - patterns form quickly
+t_end: 5.0

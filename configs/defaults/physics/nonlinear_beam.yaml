@@ -10,12 +10,14 @@ init:
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.00004
+dt: 4.0e-05
 t_end: 1.0
 resolution: 128
 bc:
-  x: neumann
-  y: neumann
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
 output:
   path: ./output
   num_frames: 100

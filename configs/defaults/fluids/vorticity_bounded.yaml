@@ -1,32 +1,30 @@
 preset: vorticity-bounded
 solver: euler
 dt: 0.001
-t_end: 80.0           # Longer time to show full decay process
+t_end: 80.0
 resolution: 128
 domain_size: 100.0
-
 bc:
-  x: periodic
-  y: periodic
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
   fields:
     omega:
-      left: dirichlet:0
-      right: dirichlet:0
+      x-: dirichlet:0
+      x+: dirichlet:0
     S:
-      left: neumann
-      right: neumann
-
+      x-: neumann:0
+      x+: neumann:0
 parameters:
-  nu: 0.15            # Higher viscosity to show visible decay over simulation
-  epsilon: 0.02       # Faster Poisson relaxation
-  D: 0.02             # Lower scalar diffusion
-  k: 8                # Moderate wavenumber - balance between visibility and decay rate
-
+  nu: 0.15
+  epsilon: 0.02
+  D: 0.02
+  k: 8
 init:
   type: default
   params:
-    k: 8              # Match the parameter
-
+    k: 8
 output:
   num_frames: 100
   colormap: seismic

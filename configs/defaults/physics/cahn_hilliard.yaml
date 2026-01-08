@@ -1,10 +1,10 @@
 preset: cahn-hilliard
 parameters:
-  r: 0.01     # Phase separation timescale (mobility) - increase to speed up
-  a: 1.0      # Interface width parameter (reference: a=1)
-  D: 1.0      # Diffusion coefficient
+  r: 0.01
+  a: 1.0
+  D: 1.0
 init:
-  type: cahn-hilliard-default  # tanh(30*(RAND-0.5)) - values near ±1
+  type: cahn-hilliard-default
   params: {}
 solver: euler
 backend: numba
@@ -12,8 +12,10 @@ adaptive: false
 dt: 0.0005
 resolution: 200
 bc:
-  x: periodic
-  y: periodic
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
 output:
   path: ./output
   num_frames: 100

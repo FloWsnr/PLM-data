@@ -358,26 +358,15 @@ def _bc_to_metadata(bc: Any) -> dict[str, Any]:
     Returns:
         Dictionary with boundary condition information for metadata.
     """
-    result: dict[str, Any] = {"x": bc.x, "y": bc.y}
+    result: dict[str, Any] = {
+        "x-": bc.x_minus,
+        "x+": bc.x_plus,
+        "y-": bc.y_minus,
+        "y+": bc.y_plus,
+    }
 
     if bc.fields:
-        result["fields"] = {}
-        for field_name, field_bc in bc.fields.items():
-            field_dict: dict[str, str] = {}
-            if field_bc.x is not None:
-                field_dict["x"] = field_bc.x
-            if field_bc.y is not None:
-                field_dict["y"] = field_bc.y
-            if field_bc.left is not None:
-                field_dict["left"] = field_bc.left
-            if field_bc.right is not None:
-                field_dict["right"] = field_bc.right
-            if field_bc.top is not None:
-                field_dict["top"] = field_bc.top
-            if field_bc.bottom is not None:
-                field_dict["bottom"] = field_bc.bottom
-            if field_dict:
-                result["fields"][field_name] = field_dict
+        result["fields"] = bc.fields
 
     return result
 

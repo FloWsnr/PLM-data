@@ -2,37 +2,36 @@ preset: thermal-convection
 parameters:
   nu: 0.2
   epsilon: 0.05
-  kappa: 0.5
-  T_b: 0.08
+  kappa: 0.2
+  T_b: 0.2
 init:
   type: default
   params:
-    noise: 0.000001  # Very small perturbations per Visual PDE reference
+    noise: 0.01
 solver: euler
-backend: numpy
+backend: auto
 adaptive: true
 dt: 0.001
 resolution: 128
 bc:
-  x: periodic
-  y: periodic
+  x-: periodic
+  x+: periodic
+  y-: neumann:0
+  y+: neumann:0
   fields:
     omega:
-      # Vorticity vanishes at walls (no-slip condition)
-      top: dirichlet:0
-      bottom: dirichlet:0
+      y-: dirichlet:0
+      y+: dirichlet:0
     psi:
-      # Stream function vanishes at walls (no-slip)
-      top: dirichlet:0
-      bottom: dirichlet:0
+      y-: dirichlet:0
+      y+: dirichlet:0
     b:
-      # Temperature: cold at top, heat flux at bottom (drives convection)
-      top: dirichlet:0
-      bottom: neumann:0.08  # T_b heat flux
+      y-: neumann:0.2
+      y+: dirichlet:0
 output:
   path: ./output
   num_frames: 100
-  colormap: hot
+  colormap: seismic
   field_to_plot: b
 seed: 42
 domain_size: 500.0

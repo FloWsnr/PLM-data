@@ -108,38 +108,37 @@ YAML configs include: `preset`, `parameters`, `init` (initial conditions), `solv
 
 ### Boundary Conditions
 
+Always specify all 4 boundaries using py-pde notation:
+- `x-` (left), `x+` (right), `y-` (bottom), `y+` (top)
+
 Simple boundary conditions (same for all fields):
 ```yaml
 bc:
-  x: periodic
-  y: neumann
+  x-: periodic
+  x+: periodic
+  y-: neumann:0
+  y+: neumann:0
 ```
 
 Per-field boundary conditions (for multi-field PDEs like thermal-convection):
 ```yaml
 bc:
-  x: periodic           # Default for all fields
-  y: periodic
+  x-: periodic
+  x+: periodic
+  y-: neumann:0
+  y+: neumann:0
   fields:               # Per-field overrides (optional)
     omega:
-      top: dirichlet:0
-      bottom: dirichlet:0
+      y-: dirichlet:0
+      y+: dirichlet:0
     b:
-      top: dirichlet:0
-      bottom: neumann:0.08  # Heat flux
+      y-: neumann:0.2   # Heat flux at bottom
 ```
 
 Supported BC types:
-- `periodic` - Periodic boundary
-- `neumann` / `no-flux` / `zero-flux` - Zero normal derivative
-- `dirichlet` / `zero` / `wall` - Fixed value (default 0)
-- `dirichlet:VALUE` - Fixed value (e.g., `dirichlet:0.5`)
-- `neumann:VALUE` - Fixed derivative (e.g., `neumann:0.08`)
-
-Per-field BCs can specify:
-- `x`, `y` - Same BC for both sides of axis
-- `left`, `right` - Individual x-axis sides
-- `top`, `bottom` - Individual y-axis sides
+- `periodic` - Periodic boundary (no value needed)
+- `neumann:VALUE` - Fixed derivative (value required, e.g., `neumann:0`)
+- `dirichlet:VALUE` - Fixed value (value required, e.g., `dirichlet:0`)
 
 ## Output Structure
 

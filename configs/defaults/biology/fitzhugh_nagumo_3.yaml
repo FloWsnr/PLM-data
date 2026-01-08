@@ -1,20 +1,19 @@
-preset: stochastic-gray-scott
+preset: fitzhugh-nagumo-3
 parameters:
-  a: 0.037
-  b: 0.04
-  D: 4.0
-  sigma: 0.0
+  Dv: 40.0
+  Dw: 200.0
+  a_v: 0.2
+  e_v: 0.2
+  e_w: 1.0
+  a_w: 0.5
+  a_z: -0.1
 init:
   type: default
-  params:
-    perturbation_radius: 0.05
-    noise: 0.001
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.02
-t_end: 500.0
-resolution: 500
+dt: 0.001
+resolution: 128
 bc:
   x-: periodic
   x+: periodic
@@ -25,5 +24,6 @@ output:
   num_frames: 100
   colormap: viridis
   field_to_plot: u
-seed: 123
-domain_size: 300
+seed: 42
+domain_size: 280.0
+t_end: 50.0

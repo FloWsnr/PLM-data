@@ -14,8 +14,10 @@ adaptive: false
 dt: 0.005
 resolution: 128
 bc:
-  x: neumann
-  y: neumann
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
 output:
   path: ./output
   num_frames: 100

@@ -9,6 +9,7 @@ import yaml
 from pde import CartesianGrid
 
 from pde_sim.pdes import get_pde_preset
+from pde_sim.core.config import BoundaryConfig
 
 
 # Path to default configs
@@ -72,11 +73,20 @@ def run_short_simulation(
 
     # Create grid with reduced resolution
     domain_size = config.get("domain_size", 1.0)
-    bc_config = config.get("bc", {"x": "periodic", "y": "periodic"})
+    bc_raw = config.get("bc", {})
+
+    # Parse BC config to determine periodicity
+    bc_config = BoundaryConfig(
+        x_minus=bc_raw.get("x-", "periodic"),
+        x_plus=bc_raw.get("x+", "periodic"),
+        y_minus=bc_raw.get("y-", "periodic"),
+        y_plus=bc_raw.get("y+", "periodic"),
+        fields=bc_raw.get("fields"),
+    )
 
     # Determine if grid should be periodic based on BC
-    periodic_x = bc_config.get("x", "periodic") == "periodic"
-    periodic_y = bc_config.get("y", "periodic") == "periodic"
+    periodic_x = bc_config.x_minus == "periodic" and bc_config.x_plus == "periodic"
+    periodic_y = bc_config.y_minus == "periodic" and bc_config.y_plus == "periodic"
 
     grid = CartesianGrid(
         bounds=[[0, domain_size], [0, domain_size]],
@@ -87,7 +97,7 @@ def run_short_simulation(
     # Get parameters from config
     params = config.get("parameters", pde_preset.get_default_parameters())
 
-    # Create PDE - pass bc_config directly, PDE handles conversion
+    # Create PDE - pass bc_config directly
     pde = pde_preset.create_pde(
         parameters=params,
         bc=bc_config,
@@ -192,7 +202,12 @@ def sample_config_dict():
         "t_end": 0.01,  # 100 * 0.0001
         "dt": 0.0001,
         "resolution": 32,
-        "bc": {"x": "periodic", "y": "periodic"},
+        "bc": {
+            "x-": "periodic",
+            "x+": "periodic",
+            "y-": "periodic",
+            "y+": "periodic",
+        },
         "output": {
             "path": "./output",
             "num_frames": 10,

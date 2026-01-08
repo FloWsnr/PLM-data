@@ -1,28 +1,30 @@
 preset: swift-hohenberg
 parameters:
-  r: 0.1   # Bifurcation parameter (distance from onset)
-  a: 1.0   # Quadratic coefficient (enables hexagons)
-  b: 1.0   # Cubic coefficient (saturation)
-  c: -1.0  # Quintic coefficient (must be negative for stability)
-  D: 1.0   # Effective diffusion scale (k_c = 1)
+  r: 0.1
+  a: 1.0
+  b: 1.0
+  c: -1.0
+  D: 1.0
 init:
   type: random-gaussian
   params:
     mean: 0.0
     std: 0.1
-solver: scipy  # Implicit solver for stiff 4th-order equation
+solver: scipy
 backend: numba
 adaptive: true
-dt: 0.0005  # Match Visual PDE dt
+dt: 0.0005
 resolution: 128
 bc:
-  x: periodic
-  y: periodic
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
 output:
   path: ./output
   num_frames: 100
   colormap: seismic
   field_to_plot: u
 seed: 42
-domain_size: 100.0  # Visual PDE default
+domain_size: 100.0
 t_end: 50.0

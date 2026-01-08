@@ -1,42 +1,36 @@
 preset: vorticity
 parameters:
-  nu: 0.01           # Lower viscosity for less damping
-  epsilon: 0.02      # Faster Poisson relaxation
-  D: 0.01            # Lower scalar diffusion
+  nu: 0.01
+  epsilon: 0.02
+  D: 0.01
 init:
   type: vortex-pair
   params:
     x1: 0.4
-    y1: 0.45          # Offset y positions for orbital motion
+    y1: 0.45
     x2: 0.6
     y2: 0.55
-    strength: 30.0    # Stronger vortices for faster dynamics
-    radius: 0.06      # Tighter vortex cores
+    strength: 30.0
+    radius: 0.06
 solver: euler
 backend: numpy
 adaptive: true
 dt: 0.01
 resolution: 128
 bc:
-  x: periodic  # Default fallback
-  y: periodic
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
   fields:
-    omega:  # Vorticity: periodic all boundaries
-      x: periodic
-      y: periodic
-    psi:  # Stream function: periodic all boundaries
-      x: periodic
-      y: periodic
-    S:  # Passive scalar: Neumann left/right, periodic top/bottom
-      left: neumann
-      right: neumann
-      top: periodic
-      bottom: periodic
+    S:
+      x-: neumann:0
+      x+: neumann:0
 output:
   path: ./output
   num_frames: 100
   colormap: seismic
   field_to_plot: omega
 seed: 42
-domain_size: 20.0    # Much smaller domain for faster dynamics
-t_end: 50.0          # Shorter time, faster dynamics
+domain_size: 20.0
+t_end: 50.0

@@ -19,8 +19,10 @@ resolution: 128
 domain_size: 2.0
 t_end: 25.0
 bc:
-  x: periodic
-  y: periodic
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
 output:
   path: ./output
   num_frames: 100

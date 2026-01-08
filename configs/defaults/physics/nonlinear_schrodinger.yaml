@@ -7,15 +7,18 @@ init:
   type: default
   params:
     amplitude: 1.0
-solver: rk4  # Visual PDE uses midpoint, but py-pde doesn't support it; rk4 is closest
+solver: rk4
 backend: numba
 adaptive: false
-dt: 0.00002
+dt: 2.0e-05
 t_end: 2.0
-dimension: 1  # Visual PDE preset is 1D soliton
-resolution: 300  # Visual PDE: spatialStep=0.1, domainScale=30 -> 300 points
+dimension: 1
+resolution: 300
 bc:
-  x: periodic
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
 output:
   path: ./output
   num_frames: 100

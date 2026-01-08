@@ -1,16 +1,16 @@
 preset: klausmeier-topography
 parameters:
-  a: 1.2           # Low rainfall - more stressed vegetation
-  m: 0.45          # Lower mortality - vegetation persists better
-  V: 30.0          # Moderate-strong topography influence
-  Dn: 0.5          # Lower plant diffusion - more localized
-  Dw: 5.0          # High water diffusion - spreads from valleys
+  a: 1.2
+  m: 0.45
+  V: 30.0
+  Dn: 0.5
+  Dw: 5.0
 init:
   type: custom
   params:
-    topography: hills   # Hills create peaks and valleys
-    amplitude: 0.8      # Strong terrain features
-    n_hills_x: 2        # 2x2 hills = alternating peaks/valleys
+    topography: hills
+    amplitude: 0.8
+    n_hills_x: 2
     n_hills_y: 2
 solver: euler
 backend: numba
@@ -18,8 +18,10 @@ adaptive: false
 dt: 0.001
 resolution: 128
 bc:
-  x: periodic
-  y: periodic
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
 output:
   path: ./output
   num_frames: 50
@@ -27,4 +29,4 @@ output:
   field_to_plot: n
 seed: 42
 domain_size: 100.0
-t_end: 300.0        # Longer time to reach steady state
+t_end: 300.0

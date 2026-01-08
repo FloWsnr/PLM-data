@@ -1,11 +1,9 @@
-# Advection-diffusion equation configuration
-# Based on visualpde.com advection equation (rotational mode)
 preset: advection
 parameters:
-  D: 1.0       # Diffusion coefficient
-  V: 0.10      # Advection velocity magnitude [-5, 5]
-  theta: -2.0  # Flow direction in radians (for directed mode)
-  mode: 0      # 0=rotational, 1=directed
+  D: 1.0
+  V: 0.1
+  theta: -2.0
+  mode: 0
 init:
   type: gaussian-blobs
   params:
@@ -16,16 +14,18 @@ init:
 solver: euler
 backend: numba
 adaptive: true
-dt: 0.002  # From reference: dt=0.002
-resolution: 256  # From reference: dx=1.25, domain_size=320 -> 320/1.25 = 256
+dt: 0.002
+resolution: 256
 bc:
-  x: dirichlet  # From reference: Dirichlet for rotational mode
-  y: dirichlet
+  x-: dirichlet:0
+  x+: dirichlet:0
+  y-: dirichlet:0
+  y+: dirichlet:0
 output:
   path: ./output
   num_frames: 100
   colormap: viridis
   field_to_plot: u
 seed: 42
-domain_size: 320.0  # From reference: domain_size=320
+domain_size: 320.0
 t_end: 100.0

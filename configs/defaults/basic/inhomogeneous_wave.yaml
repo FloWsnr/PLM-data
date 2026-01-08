@@ -1,12 +1,10 @@
-# Inhomogeneous wave equation configuration
-# Based on visualpde.com inhomogeneous wave equation
 preset: inhomogeneous-wave
 parameters:
-  D: 1.0    # Base wave speed squared
-  E: 0.97   # Amplitude of spatial variation (|E| < 1)
-  m: 9      # Spatial mode number in x direction [0-10]
-  n: 9      # Spatial mode number in y direction [0-10]
-  C: 0.01   # Damping/stabilization coefficient
+  D: 1.0
+  E: 0.97
+  m: 9
+  n: 9
+  C: 0.01
 init:
   type: gaussian-blobs
   params:
@@ -17,16 +15,18 @@ init:
 solver: euler
 backend: numba
 adaptive: true
-dt: 0.001  # From reference: dt=0.001
-resolution: 333  # From reference: dx=0.3, domain_size=100 -> 100/0.3 ~ 333
+dt: 0.001
+resolution: 333
 bc:
-  x: neumann  # From reference: Neumann boundary conditions
-  y: neumann
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
 output:
   path: ./output
   num_frames: 100
   colormap: seismic
   field_to_plot: u
 seed: 42
-domain_size: 100.0  # From reference: domain_size=100
+domain_size: 100.0
 t_end: 50.0

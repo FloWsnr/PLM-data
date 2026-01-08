@@ -9,12 +9,14 @@ init:
 solver: midpoint
 backend: numba
 adaptive: false
-dt: 0.00002
+dt: 2.0e-05
 t_end: 5.0
 resolution: 256
 bc:
-  x: periodic
-  y: periodic
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
 output:
   path: ./output
   num_frames: 100

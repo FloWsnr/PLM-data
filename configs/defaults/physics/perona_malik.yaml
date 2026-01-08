@@ -1,23 +1,25 @@
 preset: perona-malik
 parameters:
-  D: 5.0   # Edge sensitivity (higher = more edge preservation)
-  sigma: 1.0  # Noise level in initial condition
+  D: 5.0
+  sigma: 1.0
 init:
-  type: default  # Uses preset's custom IC with built-in step pattern + noise
+  type: default
   params: {}
-solver: euler  # Euler more stable for this ill-posed equation
+solver: euler
 backend: numba
 adaptive: false
-dt: 0.0002  # Small dt needed for stability (matches visual-pde)
-resolution: 500  # 100/0.2 = 500 to match visual-pde's dx=0.2 on domain=100
+dt: 0.0002
+resolution: 500
 bc:
-  x: no-flux  # Better for image processing
-  y: no-flux
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
 output:
   path: ./output
   num_frames: 100
   colormap: gray
   field_to_plot: u
 seed: 42
-domain_size: 100.0  # Matches visual-pde implicit domain
-t_end: 0.5  # Short time to preserve edges while smoothing noise
+domain_size: 100.0
+t_end: 0.5

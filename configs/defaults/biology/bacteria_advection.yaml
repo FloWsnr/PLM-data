@@ -13,8 +13,10 @@ adaptive: false
 dt: 0.01
 resolution: 128
 bc:
-  x: dirichlet
-  y: periodic
+  x-: dirichlet:0
+  x+: dirichlet:0
+  y-: periodic
+  y+: periodic
 output:
   path: ./output
   num_frames: 100

@@ -3,12 +3,87 @@
 from typing import Any
 
 import numpy as np
-from pde import PDE, CartesianGrid, FieldCollection, ScalarField
+from pde import PDEBase, CartesianGrid, FieldCollection, ScalarField
 
+from pde_sim.boundaries import BoundaryConditionFactory
 from pde_sim.initial_conditions import create_initial_condition
 
 from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
+
+
+class ThermalConvectionPDEImpl(PDEBase):
+    """Custom PDEBase for thermal convection with per-field boundary conditions.
+
+    This implementation allows different BCs for different fields:
+    - omega/psi: dirichlet (no-slip walls)
+    - b: neumann at bottom (heat flux), dirichlet at top (cold boundary)
+    """
+
+    def __init__(self, nu: float, epsilon: float, kappa: float,
+                 bc_omega: Any, bc_psi: Any, bc_b: Any):
+        """Initialize thermal convection PDE.
+
+        Args:
+            nu: Kinematic viscosity
+            epsilon: Relaxation parameter for stream function
+            kappa: Thermal diffusivity
+            bc_omega: Boundary condition for vorticity field
+            bc_psi: Boundary condition for stream function field
+            bc_b: Boundary condition for temperature field
+        """
+        super().__init__()
+        self.nu = nu
+        self.epsilon = epsilon
+        self.kappa = kappa
+        self.inv_eps = 1.0 / epsilon
+        self.bc_omega = bc_omega
+        self.bc_psi = bc_psi
+        self.bc_b = bc_b
+
+    def evolution_rate(self, state, t=0):
+        """Evaluate the right hand side of the PDE (numpy backend).
+
+        Equations:
+            d(omega)/dt = nu * laplace(omega) - d_dy(psi) * d_dx(omega)
+                          + d_dx(psi) * d_dy(omega) + d_dx(b)
+            d(psi)/dt = (laplace(psi) + omega) / epsilon
+            d(b)/dt = kappa * laplace(b) - d_dy(psi) * d_dx(b)
+                      + d_dx(psi) * d_dy(b)
+        """
+        omega, psi, b = state
+        rhs = state.copy()
+
+        # Compute gradients (each field uses its own BC)
+        grad_psi = psi.gradient(self.bc_psi)
+        psi_x = grad_psi[0]  # d_dx(psi)
+        psi_y = grad_psi[1]  # d_dy(psi)
+
+        grad_omega = omega.gradient(self.bc_omega)
+        omega_x = grad_omega[0]
+        omega_y = grad_omega[1]
+
+        grad_b = b.gradient(self.bc_b)
+        b_x = grad_b[0]
+        b_y = grad_b[1]
+
+        # omega: vorticity evolution with buoyancy forcing
+        rhs[0] = (self.nu * omega.laplace(self.bc_omega)
+                  - psi_y * omega_x + psi_x * omega_y
+                  + b_x)
+
+        # psi: stream function relaxation
+        rhs[1] = self.inv_eps * (psi.laplace(self.bc_psi) + omega)
+
+        # b: temperature evolution with advection
+        rhs[2] = (self.kappa * b.laplace(self.bc_b)
+                  - psi_y * b_x + psi_x * b_y)
+
+        return rhs
+
+    # Note: make_pde_rhs_numba is not implemented because numba has issues
+    # with multi-field FieldCollection indexing. The numpy backend (via
+    # evolution_rate) works correctly and is used automatically.
 
 
 @register_pde("thermal-convection")
@@ -87,25 +162,58 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
             reference="Rayleigh-Benard convection (Boussinesq, Oberbeck)",
         )
 
+    def _get_field_bc(self, bc: Any, field_name: str) -> Any:
+        """Extract boundary condition for a specific field.
+
+        Args:
+            bc: Boundary configuration (BoundaryConfig)
+            field_name: Name of the field ("omega", "psi", or "b")
+
+        Returns:
+            py-pde compatible BC specification
+        """
+        from pde_sim.core.config import BoundaryConfig
+
+        if isinstance(bc, BoundaryConfig):
+            # Get field BC dict with x-, x+, y-, y+ keys (already merged with defaults)
+            field_bc = bc.get_field_bc(field_name)
+            return BoundaryConditionFactory.convert_field_bc(field_bc)
+        else:
+            # Fallback: assume it's already in py-pde format
+            return bc
+
     def create_pde(
         self,
         parameters: dict[str, float],
-        bc: dict[str, Any],
+        bc: Any,
         grid: CartesianGrid,
-    ) -> PDE:
+    ) -> ThermalConvectionPDEImpl:
+        """Create the thermal convection PDE with per-field BCs.
+
+        Args:
+            parameters: Dictionary of parameter values.
+            bc: Boundary condition specification (BoundaryConfig).
+            grid: The computational grid.
+
+        Returns:
+            Configured ThermalConvectionPDEImpl instance.
+        """
         nu = parameters.get("nu", 0.2)
         epsilon = parameters.get("epsilon", 0.05)
         kappa = parameters.get("kappa", 0.5)
 
-        inv_eps = 1.0 / epsilon
+        # Extract per-field BCs
+        bc_omega = self._get_field_bc(bc, "omega")
+        bc_psi = self._get_field_bc(bc, "psi")
+        bc_b = self._get_field_bc(bc, "b")
 
-        return PDE(
-            rhs={
-                "omega": f"{nu} * laplace(omega) - d_dy(psi) * d_dx(omega) + d_dx(psi) * d_dy(omega) + d_dx(b)",
-                "psi": f"{inv_eps} * (laplace(psi) + omega)",
-                "b": f"{kappa} * laplace(b) - d_dy(psi) * d_dx(b) + d_dx(psi) * d_dy(b)",
-            },
-            **self._get_pde_bc_kwargs(bc),
+        return ThermalConvectionPDEImpl(
+            nu=nu,
+            epsilon=epsilon,
+            kappa=kappa,
+            bc_omega=bc_omega,
+            bc_psi=bc_psi,
+            bc_b=bc_b,
         )
 
     def create_initial_state(

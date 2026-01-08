@@ -21,7 +21,7 @@
 | potential-flow-dipoles | fluids/potential_flow_dipoles.yaml | GOOD | Clean dipole potential field (coolwarm) - blue sink (left), red source (right). Relaxes to steady state quickly. (domain=40, strength=2000, d=10, t_end=5, plot phi) |
 | potential-flow-images | fluids/potential_flow_images.yaml | GOOD | Symmetric sink pair (method of images) - two sinks visible with coolwarm colormap showing potential wells. (domain=40, strength=50, wall_x=0.5, t_end=5, plot phi) |
 | shallow-water | fluids/shallow_water.yaml | GOOD | Nice circular wave propagation from central perturbation |
-| thermal-convection | fluids/thermal_convection.yaml | WEAK | Noise IC smooths to uniform - subcritical Ra. Need stronger T_b or lower diffusion to trigger instability. Warm-blob IC shows single plume dynamics but not multi-cell convection. |
+| thermal-convection | fluids/thermal_convection.yaml | GOOD | Custom PDEBase class enables per-field BCs. Heat flux at bottom creates rising thermal plumes - beautiful Rayleigh-Benard convection cells developing over time. (domain=500, nu=0.2, kappa=0.5, T_b=0.08, noise IC, t_end=300) |
 | vorticity | fluids/vorticity.yaml | OK | Vortex pair orbital dynamics - counter-rotating vortices orbit each other (domain_size=20, nu=0.01, offset y positions for rotation) |
 | vorticity-bounded | fluids/vorticity_bounded.yaml | GOOD | Oscillatory vorticity decay - checkerboard pattern (k=8) gradually fades over time showing viscous diffusion (nu=0.15, t_end=80) |
 
@@ -32,7 +32,7 @@
 | bacteria-advection | biology/bacteria_advection.yaml | WEAK | Advection visible at edges but mostly uniform - needs stronger initial condition |
 | bistable-allen-cahn | biology/bistable_allen_cahn.yaml | GOOD | Three localized spots sharpening over time - bistable/Allee effect visible |
 | brusselator | biology/brusselator.yaml | GOOD | Beautiful Turing patterns - spots from noise |
-| cross-diffusion-schnakenberg | biology/cross_diffusion_schnakenberg.yaml | BAD | Converges to uniform state - no patterns form |
+| cross-diffusion-schnakenberg | biology/cross_diffusion_schnakenberg.yaml | GOOD | Beautiful labyrinthine Turing patterns - b=1 enables pattern formation (b=2.5 was stable/uniform) |
 | cyclic-competition | biology/cyclic_competition.yaml | GOOD | Beautiful spiral wave patterns from noise - rock-paper-scissors dynamics |
 | cyclic-competition-wave | biology/cyclic_competition_wave.yaml | GOOD | Edge invasion front with chaotic wave dynamics spreading |
 | fisher-kpp | biology/fisher_kpp.yaml | OK | Population wave spreads correctly but ends uniform (expected saturation) |
@@ -42,11 +42,11 @@
 | gierer-meinhardt-stripes | biology/gierer_meinhardt_stripes.yaml | GOOD | Labyrinthine stripe patterns (different from spot pattern) |
 | harsh-environment | biology/harsh_environment.yaml | OK | Population spreads from seeds with harsh corner boundary - ends uniform |
 | heterogeneous-gierer-meinhardt | biology/heterogeneous_gierer_meinhardt.yaml | GOOD | Beautiful spot/stripe patterns from spatial heterogeneity |
-| hyperbolic-brusselator | biology/hyperbolic_brusselator.yaml | BAD | Converges to uniform state - no patterns form |
-| immunotherapy | biology/immunotherapy.yaml | BAD | Goes to black (possibly tumor extinction or instability) |
+| hyperbolic-brusselator | biology/hyperbolic_brusselator.yaml | GOOD | Beautiful Turing wave patterns - labyrinthine spots/stripes. Fixed Dv=1 (was 8) to achieve Du>Dv required for Turing wave instability |
+| immunotherapy | biology/immunotherapy.yaml | GOOD | Beautiful Turing labyrinthine patterns - tumor islands (teal) with cleared regions (purple). Used Visual PDE params: Du=10, Dv=0.1 (100:1 ratio), domain=50, s_u=0.02, noise=0.3. Shows spatial tumor heterogeneity from immune-mediated Turing instability |
 | keller-segel | biology/keller_segel.yaml | GOOD | Chemotaxis aggregation - spots and labyrinthine patterns |
 | klausmeier | biology/klausmeier.yaml | GOOD | Beautiful banded vegetation patterns (tiger bush stripes) |
-| klausmeier-topography | biology/klausmeier_topography.yaml | WEAK | Smooth uniform pattern - topography effect too strong |
+| klausmeier-topography | biology/klausmeier_topography.yaml | OK | Vegetation modulated by hills topography - higher vegetation in valleys (water accumulation), lower at peaks. Model differs from standard Klausmeier - shows terrain-following rather than stripe patterns. (V=30, amplitude=0.8, a=1.2, m=0.45, 2x2 hills), still not super big differences |
 | schnakenberg | biology/schnakenberg.yaml | GOOD | Beautiful hexagonal spot patterns from Turing instability |
 
 # Physics PDEs Analysis Status

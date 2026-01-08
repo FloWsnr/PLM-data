@@ -5,21 +5,23 @@ parameters:
   Dvu: 0.2
   Dvv: 1.0
   a: 0.01
-  b: 1.0  # b=1 gives Turing pattern formation (vs b=2.5 dark solitons)
+  b: 1.0
 init:
   type: random-gaussian
   params:
     mean: 1.0
     std: 0.1
-    noise: 0.05  # Stronger perturbation to trigger instability
+    noise: 0.05
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.001
 resolution: 128
 bc:
-  x: periodic
-  y: periodic
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
 output:
   path: ./output
   num_frames: 100

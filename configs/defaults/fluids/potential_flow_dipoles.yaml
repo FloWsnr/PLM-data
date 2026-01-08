@@ -13,15 +13,16 @@ adaptive: true
 dt: 0.01
 resolution: 256
 bc:
-  x: neumann
-  y: neumann
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
   fields:
-    phi:
-      x: neumann
-      y: neumann
     s:
-      x: dirichlet:0
-      y: dirichlet:0
+      x-: dirichlet:0
+      x+: dirichlet:0
+      y-: dirichlet:0
+      y+: dirichlet:0
 output:
   path: ./output
   num_frames: 100
