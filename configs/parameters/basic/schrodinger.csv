@@ -1,9 +1,0 @@
-D,BC_x,BC_y,init,solver,dt,t_end,notes
-0.3,periodic,periodic,gaussian-blobs,rk4,0.0001,1.0,standard quantum
-0.1,periodic,periodic,gaussian-blobs,rk4,0.0002,2.0,slow dispersion
-0.5,periodic,periodic,gaussian-blobs,rk4,0.00005,0.5,faster dispersion
-0.3,no-flux,no-flux,gaussian-blobs,rk4,0.0001,1.0,particle in box
-0.2,periodic,periodic,sine,rk4,0.00015,1.5,plane wave
-0.15,periodic,periodic,random-gaussian,rk4,0.0002,2.0,weak dispersion
-0.3,periodic,periodic,rectangle-grid,rk4,0.0001,1.0,patchwork init
-0.3,no-flux,no-flux,rectangle-grid,rk4,0.0001,1.0,patchwork bounded

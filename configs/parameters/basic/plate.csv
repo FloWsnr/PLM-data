@@ -1,9 +1,0 @@
-D,BC_x,BC_y,init,solver,dt,t_end,notes
-0.005,periodic,periodic,gaussian-blobs,rk4,0.01,20,standard plate
-0.003,periodic,periodic,gaussian-blobs,rk4,0.01,30,stiffer plate
-0.01,no-flux,no-flux,gaussian-blobs,rk4,0.005,15,clamped edges
-0.005,periodic,periodic,sine,rk4,0.01,20,modal excitation
-0.001,periodic,periodic,random-gaussian,rk4,0.02,50,very stiff
-0.008,no-flux,no-flux,step,rk4,0.008,18,flexible plate
-0.005,periodic,periodic,rectangle-grid,rk4,0.01,20,patchwork init
-0.005,no-flux,no-flux,rectangle-grid,rk4,0.01,20,patchwork bounded

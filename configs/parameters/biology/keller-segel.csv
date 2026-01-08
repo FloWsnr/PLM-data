@@ -1,9 +1,0 @@
-Du,Dc,chi,alpha,beta,BC_x,BC_y,init,solver,dt,t_end,notes
-0.1,0.2,0.5,1.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.01,15,mild chemotaxis
-0.1,0.2,0.8,1.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.01,12,moderate chemotaxis
-0.1,0.2,0.3,1.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.01,20,weak chemotaxis
-0.05,0.2,0.5,1.0,1.0,periodic,periodic,gaussian-blobs,rk4,0.01,15,slower cell diffusion
-0.1,0.1,0.5,1.0,1.0,no-flux,no-flux,gaussian-blobs,rk4,0.01,15,slower chemical bounded
-0.1,0.2,0.6,0.5,0.5,periodic,periodic,gaussian-blobs,rk4,0.01,15,different kinetics
-0.1,0.2,0.5,1.0,1.0,periodic,periodic,rectangle-grid,rk4,0.01,15,patchwork init
-0.1,0.2,0.5,1.0,1.0,no-flux,no-flux,rectangle-grid,rk4,0.01,15,patchwork bounded

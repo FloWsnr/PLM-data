@@ -1,9 +1,0 @@
-Du,Dv,a,d,BC_x,BC_y,init,solver,dt,t_end,notes
-0.01,1.0,1.0,0.5,periodic,periodic,random-gaussian,rk4,0.001,50,standard Turing demo
-0.01,2.0,1.0,0.5,periodic,periodic,random-gaussian,rk4,0.001,50,larger ratio
-0.005,1.0,1.0,0.5,periodic,periodic,random-gaussian,rk4,0.001,60,smaller Du
-0.01,1.0,1.5,0.5,periodic,periodic,random-gaussian,rk4,0.001,50,higher a
-0.01,1.0,1.0,0.8,no-flux,no-flux,random-gaussian,rk4,0.001,50,higher d bounded
-0.015,1.5,1.2,0.6,periodic,periodic,gaussian-blobs,rk4,0.001,50,intermediate
-0.01,1.0,1.0,0.5,periodic,periodic,rectangle-grid,rk4,0.001,50,patchwork init
-0.01,1.0,1.0,0.5,no-flux,no-flux,rectangle-grid,rk4,0.001,50,patchwork bounded

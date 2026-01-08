@@ -1,9 +1,0 @@
-D1,D2,alpha,beta,BC_x,BC_y,init,solver,dt,t_end,notes
-0.05,0.05,0.5,0.0,periodic,periodic,random-gaussian,rk4,0.01,50,asymmetric cross-diff
-0.05,0.05,0.3,0.3,periodic,periodic,random-gaussian,rk4,0.01,60,symmetric cross-diff
-0.05,0.05,1.0,0.0,periodic,periodic,random-gaussian,rk4,0.01,40,strong alpha
-0.05,0.05,0.0,0.5,periodic,periodic,random-gaussian,rk4,0.01,50,beta only
-0.03,0.03,0.5,0.0,no-flux,no-flux,random-gaussian,rk4,0.01,70,slower bounded
-0.1,0.05,0.5,0.3,periodic,periodic,gaussian-blobs,rk4,0.01,45,different D ratio
-0.05,0.05,0.5,0.0,periodic,periodic,rectangle-grid,rk4,0.01,50,patchwork init
-0.05,0.05,0.5,0.0,no-flux,no-flux,rectangle-grid,rk4,0.01,50,patchwork bounded
