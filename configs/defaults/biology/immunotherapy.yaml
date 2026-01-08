@@ -1,36 +1,36 @@
 preset: immunotherapy
 parameters:
-  Du: 0.5
-  Dw: 4.0
-  c: 0.3
-  mu: 0.167
-  p_u: 0.69167
-  g_v: 0.1
-  p_w: 27.778
-  g_w: 0.001
-  nu: 55.55556
-  s_u: 0.0
-  s_w: 10.0
+  # Visual PDE params scaled (ratio 100:1 preserved)
+  Du: 10.0        # Effector diffusion (scaled from 100)
+  Dv: 0.1         # Tumor diffusion (scaled from 1)
+  Dw: 10.0        # Cytokine diffusion (scaled from 100)
+  c: 0.07         # alpha - tumor-induced effector recruitment
+  mu: 0.167       # Effector decay rate (mu_u)
+  p_u: 0.692      # Effector proliferation rate (rho_u)
+  g_v: 0.1        # Tumor saturation constant (gamma_v)
+  p_v: 1.0        # Tumor killing rate (from equations)
+  p_w: 2.5        # Cytokine production rate (rho_w) - NOT 27.778!
+  g_w: 0.001      # Cytokine saturation (gamma_w)
+  nu: 55.56       # Cytokine decay rate (mu_w)
+  s_u: 0.02       # Increased effector source to induce instability
+  s_w: 0.5        # Constant cytokine source (sigma_w)
 init:
-  type: gaussian-blobs
+  type: default   # Near-equilibrium IC for Turing instability
   params:
-    num_blobs: 1
-    amplitude: 0.8
-    width: 0.05
-    background: 0.1
+    noise: 0.3    # Higher noise to trigger patterns
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.0005
+dt: 0.0005        # Smaller timestep
 resolution: 128
 bc:
-  x: periodic
-  y: periodic
+  x: neumann      # Neumann BCs as in Visual PDE
+  y: neumann
 output:
   path: ./output
   num_frames: 100
-  colormap: hot
+  colormap: viridis
   field_to_plot: v
 seed: 42
-domain_size: 100.0
-t_end: 50.0
+domain_size: 50.0    # Smaller domain for visible patterns
+t_end: 150.0
