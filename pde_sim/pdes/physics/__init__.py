@@ -23,9 +23,6 @@ from .lorenz import LorenzPDE
 # Image processing and diffusion
 from .perona_malik import PeronaMalikPDE
 
-# Structural mechanics
-from .nonlinear_beam import NonlinearBeamPDE
-
 # Nonlinear oscillators
 from .van_der_pol import VanDerPolPDE
 from .duffing import DuffingPDE
@@ -50,8 +47,6 @@ __all__ = [
     "LorenzPDE",
     # Image processing
     "PeronaMalikPDE",
-    # Structural mechanics
-    "NonlinearBeamPDE",
     # Oscillators
     "VanDerPolPDE",
     "DuffingPDE",

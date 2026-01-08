@@ -63,7 +63,6 @@
 | korteweg-de-vries | physics/korteweg_de_vries.yaml | BAD | Soliton disperses and ends as blank white - numerical instability |
 | kuramoto-sivashinsky | physics/kuramoto_sivashinsky.yaml | OK | Chaotic evolution but low resolution (64x64), looks noisy |
 | lorenz | physics/lorenz.yaml | GOOD | Coupled Lorenz oscillators - synchronized arrow dynamics evolving |
-| nonlinear-beam | physics/nonlinear_beam.yaml | BAD | Biharmonic equation too stiff - blows up even with tiny dt. Needs implicit solver |
 | nonlinear-schrodinger | physics/nonlinear_schrodinger.yaml | GOOD | Soliton propagation maintaining shape across domain |
 | perona-malik | physics/perona_malik.yaml | GOOD | Edge-preserving diffusion - checkerboard smoothing with sharp boundaries |
 | stochastic-gray-scott | physics/stochastic_gray_scott.yaml | GOOD | Stochastic effects visible - noisy irregular boundaries from multiplicative noise |
