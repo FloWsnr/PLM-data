@@ -1,17 +1,16 @@
-preset: korteweg-de-vries
+preset: zakharov-kuznetsov
 parameters:
-  scale: 1.0
+  b: 0.0001
 init:
-  type: default
+  type: offset-soliton
   params:
-    A1: 2.0
-    A2: 1.125
-solver: midpoint
+    a: 0.005
+solver: rk4
 backend: numba
 adaptive: false
-dt: 2.0e-05
-t_end: 5.0
-resolution: 256
+dt: 0.001
+t_end: 60.0
+resolution: 128
 bc:
   x-: periodic
   x+: periodic
@@ -21,6 +20,6 @@ output:
   path: ./output
   num_frames: 100
   colormap: viridis
-  field_to_plot: phi
+  field_to_plot: u
 seed: 123
-domain_size: 40
+domain_size: 100

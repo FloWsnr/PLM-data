@@ -12,7 +12,7 @@ from .superlattice import SuperlatticePDE
 # Wave and soliton equations
 from .burgers import BurgersPDE
 from .inviscid_burgers import InviscidBurgersPDE
-from .korteweg_de_vries import KortewegDeVriesPDE
+from .zakharov_kuznetsov import ZakharovKuznetsovPDE
 from .kuramoto_sivashinsky import KuramotoSivashinskyPDE
 from .nonlinear_schrodinger import NonlinearSchrodingerPDE
 from .complex_ginzburg_landau import ComplexGinzburgLandauPDE
@@ -39,7 +39,7 @@ __all__ = [
     # Waves and solitons
     "BurgersPDE",
     "InviscidBurgersPDE",
-    "KortewegDeVriesPDE",
+    "ZakharovKuznetsovPDE",
     "KuramotoSivashinskyPDE",
     "NonlinearSchrodingerPDE",
     "ComplexGinzburgLandauPDE",
