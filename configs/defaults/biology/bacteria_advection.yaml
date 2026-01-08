@@ -19,7 +19,7 @@ bc:
   y+: periodic
 output:
   path: ./output
-  num_frames: 100
+  num_frames: 10
   colormap: viridis
   field_to_plot: C
 seed: 42

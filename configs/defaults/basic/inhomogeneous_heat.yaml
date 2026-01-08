@@ -22,7 +22,7 @@ bc:
   y+: neumann:0
 output:
   path: ./output
-  num_frames: 100
+  num_frames: 10
   colormap: turbo
   field_to_plot: T
 seed: 42

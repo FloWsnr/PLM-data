@@ -24,7 +24,7 @@ bc:
   y+: periodic
 output:
   path: ./output
-  num_frames: 50
+  num_frames: 10
   colormap: turbo
   field_to_plot: n
 seed: 42

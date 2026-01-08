@@ -30,7 +30,7 @@ bc:
       y+: dirichlet:0
 output:
   path: ./output
-  num_frames: 100
+  num_frames: 10
   colormap: seismic
   field_to_plot: b
 seed: 42
