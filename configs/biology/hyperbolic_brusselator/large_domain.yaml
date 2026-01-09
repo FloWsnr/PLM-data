@@ -11,7 +11,7 @@ init:
   params:
     a: 5.0
     b: 9.0
-    noise: 0.5
+    noise: 0.3
 solver: euler
 backend: numba
 adaptive: false
@@ -25,8 +25,8 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: turbo
-  field_to_plot: u
-seed: 1060
-domain_size: 10.0
-t_end: 50.0
+  fields:
+    - v:magma
+seed: 2048
+domain_size: 20.0
+t_end: 60.0

@@ -1,6 +1,6 @@
 preset: hyperbolic-brusselator
 parameters:
-  tau: 1.0
+  tau: 0.5
   Du: 2.0
   Dv: 1.0
   a: 5.0
@@ -25,8 +25,8 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: turbo
-  field_to_plot: u
+  fields:
+    - u:viridis
 seed: 1060
 domain_size: 10.0
 t_end: 50.0

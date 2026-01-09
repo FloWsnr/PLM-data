@@ -18,15 +18,15 @@ adaptive: false
 dt: 5.0e-05
 resolution: 128
 bc:
-  x-: neumann:0
-  x+: neumann:0
-  y-: neumann:0
-  y+: neumann:0
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
 output:
   path: ./output
   num_frames: 10
-  colormap: turbo
-  field_to_plot: u
+  fields:
+    - u:inferno
 seed: 1060
 domain_size: 10.0
 t_end: 50.0
