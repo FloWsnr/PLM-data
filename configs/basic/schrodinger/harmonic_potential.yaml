@@ -1,0 +1,36 @@
+preset: schrodinger
+parameters:
+  D: 1.0
+  C: 0.004
+  n: 3
+  m: 3
+  potential_type: harmonic
+  V_strength: 0.01       # Strength of parabolic potential
+  pot_n: 1               # Not used for harmonic
+  pot_m: 1               # Not used for harmonic
+init:
+  type: wave-packet
+  params:
+    x0: 0.3              # Start off-center
+    y0: 0.5              # Centered in y
+    sigma: 0.08
+    kx: 0.0              # No initial momentum
+    ky: 0.0
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.0001
+resolution: 200
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+  y-: dirichlet:0
+  y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 30
+  colormap: plasma
+  field_to_plot: u
+seed: 4001
+domain_size: 100.0
+t_end: 30.0

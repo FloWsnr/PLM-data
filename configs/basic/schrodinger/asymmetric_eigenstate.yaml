@@ -1,0 +1,29 @@
+preset: schrodinger
+parameters:
+  D: 1.0
+  C: 0.004
+  n: 2                # Asymmetric: 2 nodes in x
+  m: 7                # 7 nodes in y - creates elongated pattern
+init:
+  type: eigenstate
+  params:
+    n: 2
+    m: 7
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.0001
+resolution: 200
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+  y-: dirichlet:0
+  y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 25
+  colormap: RdYlBu
+  field_to_plot: v      # Show imaginary part for phase evolution
+seed: 6001
+domain_size: 100.0
+t_end: 12.0

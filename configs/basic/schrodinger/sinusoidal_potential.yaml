@@ -1,0 +1,32 @@
+preset: schrodinger
+parameters:
+  D: 1.0
+  C: 0.004
+  n: 3
+  m: 3
+  potential_type: sinusoidal
+  V_strength: 5.0       # Strength of potential wells
+  pot_n: 8              # Number of potential wells in x
+  pot_m: 8              # Number of potential wells in y
+init:
+  type: localized
+  params:
+    power: 10           # Localization power
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.0001
+resolution: 200
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+  y-: dirichlet:0
+  y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 30
+  colormap: viridis
+  field_to_plot: u
+seed: 3002
+domain_size: 100.0
+t_end: 25.0

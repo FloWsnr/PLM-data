@@ -1,0 +1,32 @@
+preset: schrodinger
+parameters:
+  D: 1.0
+  C: 0.004
+  n: 3
+  m: 3
+init:
+  type: wave-packet
+  params:
+    x0: 0.3          # Start off-center
+    y0: 0.3
+    sigma: 0.08      # Slightly larger packet
+    kx: 0.8          # Higher momentum in x direction
+    ky: 0.5          # Higher momentum in y direction
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.0001
+resolution: 200
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+  y-: dirichlet:0
+  y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 30
+  colormap: coolwarm
+  field_to_plot: u
+seed: 2002
+domain_size: 100.0
+t_end: 20.0
