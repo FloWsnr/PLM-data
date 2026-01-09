@@ -1,0 +1,37 @@
+preset: immunotherapy
+parameters:
+  Du: 10.0         # Keep Turing-promoting ratio
+  Dv: 0.1
+  Dw: 10.0
+  c: 0.03          # Low tumor-induced effector recruitment
+  mu: 0.3          # Higher effector decay
+  p_u: 0.4         # Lower effector proliferation
+  g_v: 0.1
+  p_v: 0.5         # Reduced killing rate
+  p_w: 2.5
+  g_w: 0.001
+  nu: 55.56
+  s_u: 0.0         # No effector source
+  s_w: 0.1         # Minimal cytokine source
+init:
+  type: default
+  params:
+    noise: 0.3
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0005
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - v:magma
+seed: 1061
+domain_size: 50.0
+t_end: 5.0
