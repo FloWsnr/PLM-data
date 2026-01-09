@@ -1,0 +1,27 @@
+preset: wave-standing
+parameters:
+  D: 0.5
+init:
+  type: sine
+  params:
+    kx: 1
+    ky: 1
+    amplitude: 1.0
+solver: euler
+dt: 0.002
+resolution: 128
+seed: 6381
+domain_size: 100.0
+t_end: 80.0
+timesteps: 200
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  frames: true
+  metadata: true
+  num_frames: 10
+  fields:
+    - v:bwr

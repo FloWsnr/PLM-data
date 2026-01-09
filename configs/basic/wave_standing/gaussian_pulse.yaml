@@ -1,0 +1,29 @@
+preset: wave-standing
+parameters:
+  D: 2.0
+init:
+  type: single-blob
+  params:
+    amplitude: 1.5
+    width: 0.08
+    center_x: 0.35
+    center_y: 0.35
+    background: 0.0
+solver: euler
+dt: 0.002
+resolution: 128
+seed: 5270
+domain_size: 100.0
+t_end: 60.0
+timesteps: 200
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  frames: true
+  metadata: true
+  num_frames: 10
+  fields:
+    - u:PRGn

@@ -1,0 +1,27 @@
+preset: wave-standing
+parameters:
+  D: 1.0
+init:
+  type: sine
+  params:
+    kx: 3
+    ky: 2
+    amplitude: 1.0
+solver: euler
+dt: 0.002
+resolution: 128
+seed: 4169
+domain_size: 100.0
+t_end: 50.0
+timesteps: 200
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+  y-: dirichlet:0
+  y+: dirichlet:0
+output:
+  frames: true
+  metadata: true
+  num_frames: 10
+  fields:
+    - u:seismic
