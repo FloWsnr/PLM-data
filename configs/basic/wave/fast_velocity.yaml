@@ -1,0 +1,29 @@
+preset: wave
+parameters:
+  D: 5.0  # Faster wave speed (c = sqrt(5) ≈ 2.24)
+  C: 0.015  # Light damping
+init:
+  type: step
+  params:
+    position: 0.3  # Step at 30% of domain
+    direction: x
+    value_low: 0.0
+    value_high: 1.0
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.001
+resolution: 200
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: dirichlet:0
+  y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: PRGn
+  field_to_plot: u
+seed: 5002
+domain_size: 100.0
+t_end: 30.0

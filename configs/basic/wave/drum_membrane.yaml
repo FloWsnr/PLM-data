@@ -1,0 +1,32 @@
+preset: wave
+parameters:
+  D: 1.0
+  C: 0.005  # Light damping
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 1
+    amplitude: 1.0
+    width: 0.08
+    background: 0.0
+    seed: 303
+    center_x: 0.5  # Center of domain
+    center_y: 0.5
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.002
+resolution: 200
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+  y-: dirichlet:0
+  y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: coolwarm
+  field_to_plot: u
+seed: 3001
+domain_size: 100.0
+t_end: 60.0
