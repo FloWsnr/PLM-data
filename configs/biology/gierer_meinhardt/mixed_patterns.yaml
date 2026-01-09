@@ -1,9 +1,10 @@
 preset: gierer-meinhardt
 parameters:
   D: 100.0
-  a: 0.5
-  b: 1.0
-  c: 6.1
+  a: 0.3
+  b: 0.8
+  c: 8.0
+  K: 0.0
 init:
   type: random-gaussian
   params:
@@ -22,8 +23,8 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: turbo
-  field_to_plot: u
-seed: 1056
+  fields:
+    - u:magma
+seed: 6144
 domain_size: 100.0
 t_end: 100.0

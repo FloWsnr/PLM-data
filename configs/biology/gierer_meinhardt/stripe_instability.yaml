@@ -4,11 +4,14 @@ parameters:
   a: 0.5
   b: 1.0
   c: 6.1
+  K: 0.0
 init:
-  type: random-gaussian
+  type: stripes
   params:
-    mean: 1.0
-    std: 0.1
+    n_stripes: 6
+    amplitude: 3.0
+    v0: 1.0
+    noise: 0.05
 solver: euler
 backend: numba
 adaptive: false
@@ -22,8 +25,8 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: turbo
-  field_to_plot: u
-seed: 1056
+  fields:
+    - u:inferno
+seed: 3072
 domain_size: 100.0
 t_end: 100.0

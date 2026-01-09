@@ -4,6 +4,7 @@ parameters:
   a: 0.5
   b: 1.0
   c: 6.1
+  K: 0.0
 init:
   type: random-gaussian
   params:
@@ -15,15 +16,15 @@ adaptive: false
 dt: 0.0003
 resolution: 128
 bc:
-  x-: periodic
-  x+: periodic
-  y-: periodic
-  y+: periodic
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
 output:
   path: ./output
   num_frames: 10
-  colormap: turbo
-  field_to_plot: u
-seed: 1056
+  fields:
+    - v:cividis
+seed: 5120
 domain_size: 100.0
 t_end: 100.0

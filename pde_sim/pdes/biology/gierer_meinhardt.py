@@ -124,7 +124,12 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
         **kwargs,
     ) -> FieldCollection:
-        """Create initial state near steady state with perturbation."""
+        """Create initial state near steady state with perturbation.
+
+        Supports:
+            - random-gaussian: Random perturbation around steady state
+            - stripes: Stripe pattern in x-direction (for stripe instability demos)
+        """
         noise = ic_params.get("noise", 0.01)
 
         # Initial values near steady state (approximate)
@@ -132,8 +137,28 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
         v0 = ic_params.get("v0", 1.0)
 
         np.random.seed(ic_params.get("seed"))
-        u_data = u0 * (1 + noise * np.random.randn(*grid.shape))
-        v_data = v0 * (1 + noise * np.random.randn(*grid.shape))
+
+        if ic_type == "stripes":
+            # Stripe initial condition for demonstrating stripe-to-spot instability
+            # u(0) = amplitude * (1 + cos(n*pi*x/L)), v(0) = v0
+            n_stripes = ic_params.get("n_stripes", 4)
+            amplitude = ic_params.get("amplitude", 3.0)
+
+            x_bounds = grid.axes_bounds[0]
+            Lx = x_bounds[1] - x_bounds[0]
+            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+            y = np.linspace(grid.axes_bounds[1][0], grid.axes_bounds[1][1], grid.shape[1])
+            X, Y = np.meshgrid(x, y, indexing="ij")
+
+            # Create stripe pattern: amplitude * (1 + cos(n*pi*x/L))
+            u_data = amplitude * (1 + np.cos(n_stripes * np.pi * (X - x_bounds[0]) / Lx))
+            # Add small perturbation to trigger instability
+            u_data += noise * np.random.randn(*grid.shape)
+            v_data = v0 * np.ones(grid.shape) + noise * np.random.randn(*grid.shape)
+        else:
+            # Default: random perturbation around steady state
+            u_data = u0 * (1 + noise * np.random.randn(*grid.shape))
+            v_data = v0 * (1 + noise * np.random.randn(*grid.shape))
 
         # Ensure positive values
         u_data = np.maximum(u_data, 0.01)
