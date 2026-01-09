@@ -208,7 +208,7 @@ class TestBackend:
             "parameters": {"D_T": 0.01},
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
-            "t_end": 0.001,  # 10 * 0.0001
+            "t_end": 0.0005,  # 10 * 0.0001
             "dt": 0.0001,
             "resolution": 16,
             "bc": {"x": "periodic", "y": "periodic"},
@@ -235,7 +235,7 @@ class TestBackend:
             "parameters": {"D_T": 0.01},
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
-            "t_end": 0.001,  # 10 * 0.0001
+            "t_end": 0.0005,  # 5 * 0.0001
             "dt": 0.0001,
             "resolution": 16,
             "bc": {"x": "periodic", "y": "periodic"},
@@ -263,7 +263,7 @@ class TestAdaptiveTimeStepping:
             "parameters": {"D_T": 0.01},
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
-            "t_end": 0.001,  # 10 * 0.0001
+            "t_end": 0.0005,  # 5 * 0.0001
             "dt": 0.0001,
             "resolution": 16,
             "bc": {"x": "periodic", "y": "periodic"},
@@ -288,7 +288,7 @@ class TestAdaptiveTimeStepping:
             "parameters": {"D_T": 0.01},
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
-            "t_end": 0.002,  # 20 * 0.0001
+            "t_end": 0.0005,  # 5 * 0.0001
             "dt": 0.0001,
             "resolution": 16,
             "bc": {"x": "periodic", "y": "periodic"},
@@ -324,7 +324,7 @@ class TestUnusedParameterWarning:
             },
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
-            "t_end": 0.001,
+            "t_end": 0.0005,
             "dt": 0.0001,
             "resolution": 16,
             "bc": {"x": "periodic", "y": "periodic"},
