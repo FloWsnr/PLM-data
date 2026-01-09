@@ -1,0 +1,31 @@
+preset: gierer-meinhardt
+parameters:
+  D: 100.0
+  a: 0.5
+  b: 1.0
+  c: 6.1
+  K: 0.003
+init:
+  type: random-gaussian
+  params:
+    mean: 1.0
+    std: 0.1
+    seed: 999
+solver: euler
+dt: 0.0003
+resolution: 128
+seed: 4096
+domain_size: 200.0
+t_end: 120.0
+timesteps: 200
+bc:
+  x-: periodic
+  x+: periodic
+  y-: neumann:0
+  y+: neumann:0
+output:
+  frames: true
+  metadata: true
+  num_frames: 12
+  fields:
+    - v:magma  # Show inhibitor field with magma colormap

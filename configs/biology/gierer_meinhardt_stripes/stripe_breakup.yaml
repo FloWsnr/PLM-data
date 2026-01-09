@@ -1,0 +1,33 @@
+preset: gierer-meinhardt
+parameters:
+  D: 100.0
+  a: 0.5
+  b: 1.0
+  c: 6.1
+  K: 0.0  # No saturation - stripes are unstable and break into spots
+init:
+  type: stripes
+  params:
+    n_stripes: 6
+    amplitude: 3.0
+    v0: 1.0
+    noise: 0.05  # Small perturbation to trigger instability
+    seed: 42
+solver: euler
+dt: 0.0003
+resolution: 128
+seed: 1057
+domain_size: 200.0
+t_end: 150.0  # Longer to see full breakup
+timesteps: 200
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  frames: true
+  metadata: true
+  num_frames: 15
+  fields:
+    - u:viridis
