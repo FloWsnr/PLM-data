@@ -1,27 +1,25 @@
 preset: bacteria-advection
 parameters:
   u: 0.62
-  k: 0.006
-  c0: 0.77
+  k: 0.05
+  c0: 0.9
 init:
-  type: uniform
-  params:
-    value: 0.77
+  type: zero
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.01
 resolution: 128
 bc:
-  x-: dirichlet:0.77
+  x-: dirichlet:0.9
   x+: neumann:0
   y-: periodic
   y+: periodic
 output:
   path: ./output
   num_frames: 10
-  colormap: viridis
+  colormap: inferno
   field_to_plot: C
-seed: 1047
+seed: 2003
 domain_size: 320.0
-t_end: 100.0
+t_end: 300.0

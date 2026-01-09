@@ -1,27 +1,32 @@
 preset: bacteria-advection
 parameters:
-  u: 0.62
-  k: 0.006
-  c0: 0.77
+  u: 0.8
+  k: 0.008
+  c0: 0.0
 init:
-  type: uniform
+  type: gaussian-blobs
   params:
-    value: 0.77
+    num_blobs: 5
+    amplitude: 0.6
+    width: 0.06
+    background: 0.0
+    random_amplitude: true
+    seed: 42
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.01
 resolution: 128
 bc:
-  x-: dirichlet:0.77
+  x-: neumann:0
   x+: neumann:0
   y-: periodic
   y+: periodic
 output:
   path: ./output
   num_frames: 10
-  colormap: viridis
+  colormap: cividis
   field_to_plot: C
-seed: 1047
+seed: 2005
 domain_size: 320.0
-t_end: 100.0
+t_end: 300.0
