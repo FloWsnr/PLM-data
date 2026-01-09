@@ -6,6 +6,7 @@ import pytest
 from pde import FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.core.config import BoundaryConfig
 from pde_sim.pdes.basic.schrodinger import SchrodingerPDE
 
 from tests.conftest import run_short_simulation
@@ -43,7 +44,10 @@ class TestSchrodingerPDE:
         """Test PDE creation."""
         preset = get_pde_preset("schrodinger")
         params = preset.get_default_parameters()
-        bc = {"x": "dirichlet", "y": "dirichlet"}
+        bc = BoundaryConfig(
+            x_minus="dirichlet:0", x_plus="dirichlet:0",
+            y_minus="dirichlet:0", y_plus="dirichlet:0"
+        )
 
         pde = preset.create_pde(params, bc, small_grid)
         assert pde is not None
@@ -109,7 +113,10 @@ class TestSchrodingerPDE:
             "pot_n": 5,
             "pot_m": 5,
         }
-        bc = {"x": "dirichlet", "y": "dirichlet"}
+        bc = BoundaryConfig(
+            x_minus="dirichlet:0", x_plus="dirichlet:0",
+            y_minus="dirichlet:0", y_plus="dirichlet:0"
+        )
 
         pde = preset.create_pde(params, bc, non_periodic_grid)
 
@@ -127,7 +134,10 @@ class TestSchrodingerPDE:
             "potential_type": "harmonic",
             "V_strength": 0.1,
         }
-        bc = {"x": "dirichlet", "y": "dirichlet"}
+        bc = BoundaryConfig(
+            x_minus="dirichlet:0", x_plus="dirichlet:0",
+            y_minus="dirichlet:0", y_plus="dirichlet:0"
+        )
 
         pde = preset.create_pde(params, bc, non_periodic_grid)
 
@@ -142,7 +152,10 @@ class TestSchrodingerPDE:
         """Test PDE creation without potential (default behavior)."""
         preset = get_pde_preset("schrodinger")
         params = {"D": 1.0, "C": 0.004}
-        bc = {"x": "dirichlet", "y": "dirichlet"}
+        bc = BoundaryConfig(
+            x_minus="dirichlet:0", x_plus="dirichlet:0",
+            y_minus="dirichlet:0", y_plus="dirichlet:0"
+        )
 
         pde = preset.create_pde(params, bc, non_periodic_grid)
 
@@ -161,7 +174,10 @@ class TestSchrodingerPDE:
             "pot_n": 3,
             "pot_m": 3,
         }
-        bc = {"x": "dirichlet", "y": "dirichlet"}
+        bc = BoundaryConfig(
+            x_minus="dirichlet:0", x_plus="dirichlet:0",
+            y_minus="dirichlet:0", y_plus="dirichlet:0"
+        )
 
         pde = preset.create_pde(params, bc, non_periodic_grid)
         state = preset.create_initial_state(

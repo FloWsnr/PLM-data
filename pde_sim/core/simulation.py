@@ -138,15 +138,23 @@ class SimulationRunner:
             bc=config.bc,
         )
 
+        # Determine field configurations for output
+        field_configs = config.output.get_field_configs()
+
+        # If no fields specified, default to all fields from PDE metadata
+        if not field_configs:
+            field_configs = [
+                (name, config.output.colormap)
+                for name in self.preset.metadata.field_names
+            ]
+
         # Output management
         self.output_manager = OutputManager(
             base_path=self.output_dir,
             folder_name=self.folder_name,
             colormap=config.output.colormap,
-            field_to_plot=config.output.field_to_plot,
+            field_configs=field_configs,
             save_array=config.output.save_array,
-            show_vectors=config.output.show_vectors,
-            vector_density=config.output.vector_density,
         )
 
     def _get_solver_name(self) -> str:
@@ -226,20 +234,23 @@ class SimulationRunner:
             print(f"  Saving {len(storage)} frames...")
 
         # Two-pass approach for consistent colorscale:
-        # 1. Compute global min/max across all frames
+        # 1. Compute global min/max across all frames per field
         all_fields = [field for _, field in storage.items()]
         all_times = list(storage.times)
-        self.output_manager.compute_range(all_fields)
+
+        for field_name, _ in self.output_manager.field_configs:
+            self.output_manager.compute_range_for_field(all_fields, field_name)
 
         # 2. Save frames with the pre-computed range
         for frame_index, (t, field) in enumerate(storage.items()):
-            self.output_manager.save_frame(field, frame_index, t)
+            self.output_manager.save_all_fields(field, frame_index, t)
 
-        # 3. Save trajectory array if requested
+        # 3. Save trajectory array if requested (per field)
         if self.output_manager.save_array:
-            self.output_manager.save_trajectory_array(all_fields, all_times)
+            for field_name, _ in self.output_manager.field_configs:
+                self.output_manager.save_trajectory_array(all_fields, all_times, field_name)
             if verbose:
-                print(f"  Saved trajectory array: trajectory.npz")
+                print(f"  Saved trajectory arrays")
 
         # Generate and save metadata
         total_time = storage.times[-1] if storage.times else self.config.t_end

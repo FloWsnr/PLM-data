@@ -93,8 +93,11 @@ bc:                         # Boundary conditions
 output:
   path: ./output            # Output directory
   num_frames: 100           # Total number of frames to save
-  colormap: turbo           # Matplotlib colormap
-  field_to_plot: v          # Which field to render
+  fields:                   # Fields to output with colormaps
+    - u:viridis             # Field u with viridis colormap
+    - v:plasma              # Field v with plasma colormap
+# Files are named: u_000000.png, v_000000.png, u_000001.png, ...
+# If fields is omitted, all fields are output with default colormap (turbo)
 
 seed: 123                   # Random seed (optional)
 domain_size: 2.5            # Physical domain size
@@ -134,10 +137,12 @@ Available initial condition types:
 
 Each simulation creates a directory with:
 ```
-output/{simulation-uuid}/
+output/{preset-name}/{run-number}/
 ├── frames/
-│   ├── 000000.png
-│   ├── 000001.png
+│   ├── u_000000.png
+│   ├── v_000000.png
+│   ├── u_000001.png
+│   ├── v_000001.png
 │   └── ...
 └── metadata.json
 ```

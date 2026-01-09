@@ -6,7 +6,7 @@ import pytest
 from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
-from pde_sim.core.config import BoundaryConfig, FieldBoundaryConfig
+from pde_sim.core.config import BoundaryConfig
 from tests.conftest import run_short_simulation
 
 
@@ -85,24 +85,14 @@ class TestThermalConvectionPDE:
 
         # Per-field BC configuration
         bc = BoundaryConfig(
-            x="periodic",
-            y="periodic",  # Default fallback
+            x_minus="periodic",
+            x_plus="periodic",
+            y_minus="periodic",
+            y_plus="periodic",
             fields={
-                "omega": FieldBoundaryConfig(
-                    x="periodic",
-                    top="dirichlet:0",
-                    bottom="dirichlet:0"
-                ),
-                "psi": FieldBoundaryConfig(
-                    x="periodic",
-                    top="dirichlet:0",
-                    bottom="dirichlet:0"
-                ),
-                "b": FieldBoundaryConfig(
-                    x="periodic",
-                    top="dirichlet:0",
-                    bottom="neumann:0.08"  # T_b heat flux
-                ),
+                "omega": {"y-": "dirichlet:0", "y+": "dirichlet:0"},
+                "psi": {"y-": "dirichlet:0", "y+": "dirichlet:0"},
+                "b": {"y-": "neumann:0.08", "y+": "dirichlet:0"},  # T_b heat flux at bottom
             }
         )
 
@@ -125,12 +115,14 @@ class TestThermalConvectionPDE:
 
         # Dict format (as would come from YAML parsing)
         bc = {
-            "x": "periodic",
-            "y": "periodic",
+            "x-": "periodic",
+            "x+": "periodic",
+            "y-": "periodic",
+            "y+": "periodic",
             "fields": {
-                "omega": {"top": "dirichlet:0", "bottom": "dirichlet:0"},
-                "psi": {"top": "dirichlet:0", "bottom": "dirichlet:0"},
-                "b": {"top": "dirichlet:0", "bottom": "neumann:0.08"},
+                "omega": {"y-": "dirichlet:0", "y+": "dirichlet:0"},
+                "psi": {"y-": "dirichlet:0", "y+": "dirichlet:0"},
+                "b": {"y-": "neumann:0.08", "y+": "dirichlet:0"},
             }
         }
 

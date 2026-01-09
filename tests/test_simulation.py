@@ -193,7 +193,8 @@ class TestGrayScottSimulation:
         # Check metadata
         assert metadata["preset"] == "gray-scott"
         assert metadata["parameters"]["numSpecies"] == 2
-        assert metadata["visualization"]["whatToPlot"] == "v"
+        # With new multi-field output, default includes all fields when none specified
+        assert metadata["visualization"]["whatToPlot"] == ["u", "v"]
 
 
 class TestBackend:

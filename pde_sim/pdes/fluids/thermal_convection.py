@@ -166,7 +166,7 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
         """Extract boundary condition for a specific field.
 
         Args:
-            bc: Boundary configuration (BoundaryConfig)
+            bc: Boundary configuration (BoundaryConfig or dict)
             field_name: Name of the field ("omega", "psi", or "b")
 
         Returns:
@@ -178,6 +178,19 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
             # Get field BC dict with x-, x+, y-, y+ keys (already merged with defaults)
             field_bc = bc.get_field_bc(field_name)
             return BoundaryConditionFactory.convert_field_bc(field_bc)
+        elif isinstance(bc, dict):
+            # Handle dict format (from YAML config)
+            # Build base BC dict from x-, x+, y-, y+ keys
+            base_bc = {
+                "x-": bc.get("x-", "periodic"),
+                "x+": bc.get("x+", "periodic"),
+                "y-": bc.get("y-", "periodic"),
+                "y+": bc.get("y+", "periodic"),
+            }
+            # Apply per-field overrides if present
+            if "fields" in bc and field_name in bc["fields"]:
+                base_bc.update(bc["fields"][field_name])
+            return BoundaryConditionFactory.convert_field_bc(base_bc)
         else:
             # Fallback: assume it's already in py-pde format
             return bc

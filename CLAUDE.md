@@ -140,13 +140,39 @@ Supported BC types:
 - `neumann:VALUE` - Fixed derivative (value required, e.g., `neumann:0`)
 - `dirichlet:VALUE` - Fixed value (value required, e.g., `dirichlet:0`)
 
+### Output Fields
+
+Specify which fields to output and their colormaps using the `fields` list:
+
+```yaml
+output:
+  path: ./output
+  num_frames: 100
+  fields:
+    - u:viridis
+    - v:plasma
+```
+
+Each field is saved with a `{field}_{frame:06d}.png` naming scheme (e.g., `u_000000.png`, `v_000000.png`).
+
+For single-field PDEs or to output only one field:
+```yaml
+output:
+  fields:
+    - u:turbo
+```
+
+If no `fields` list is specified, all fields are output using the default colormap (`turbo`).
+
 ## Output Structure
 
 ```
-output/{preset-name}/           # e.g., "heat", "gray-scott"
-└── {datetime}/                 # e.g., "2024-01-15_143052"
-    ├── frames/
-    │   ├── 000000.png
-    │   └── ...
-    └── metadata.json           # Contains PDE description from descriptions/*.md
+output/{preset-name}/{run-number}/
+├── frames/
+│   ├── u_000000.png
+│   ├── v_000000.png
+│   ├── u_000001.png
+│   ├── v_000001.png
+│   └── ...
+└── metadata.json           # Contains per-field colormap info
 ```

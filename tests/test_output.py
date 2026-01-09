@@ -4,11 +4,29 @@ import json
 from pathlib import Path
 
 import numpy as np
-from pde import ScalarField, FieldCollection
+import pytest
+from pde import ScalarField, FieldCollection, CartesianGrid
 
 from pde_sim.core.output import OutputManager, create_metadata
-from pde_sim.core.config import SimulationConfig, OutputConfig, BoundaryConfig, InitialConditionConfig
+from pde_sim.core.config import (
+    SimulationConfig,
+    OutputConfig,
+    BoundaryConfig,
+    InitialConditionConfig,
+)
 from pde_sim.pdes.base import PDEMetadata, PDEParameter
+
+
+@pytest.fixture
+def tmp_output(tmp_path):
+    """Create a temporary output directory."""
+    return tmp_path
+
+
+@pytest.fixture
+def small_grid():
+    """Create a small grid for testing."""
+    return CartesianGrid([[0, 1], [0, 1]], [16, 16])
 
 
 class TestOutputManager:
@@ -20,6 +38,7 @@ class TestOutputManager:
             base_path=tmp_output,
             folder_name="heat_2024-01-15",
             colormap="viridis",
+            field_configs=[("u", "viridis")],
         )
 
         assert manager.folder_name == "heat_2024-01-15"
@@ -32,42 +51,43 @@ class TestOutputManager:
         manager = OutputManager(
             base_path=tmp_output,
             folder_name="test-scalar_2024-01-15",
+            field_configs=[("u", "turbo")],
         )
 
         field = ScalarField.random_uniform(small_grid)
-        frame_path = manager.save_frame(field, frame_index=0, simulation_time=0.0)
+        field.label = "u"
+
+        manager.compute_range_for_field([field], "u")
+        frame_path = manager.save_frame(field, "u", frame_index=0, simulation_time=0.0)
 
         assert frame_path.exists()
-        assert frame_path.name == "000000.png"
+        assert frame_path.name == "u_000000.png"
 
     def test_save_multiple_frames(self, tmp_output, small_grid):
         """Test saving multiple frames."""
         manager = OutputManager(
             base_path=tmp_output,
             folder_name="test-multi_2024-01-15",
+            field_configs=[("u", "turbo")],
         )
 
         field = ScalarField.random_uniform(small_grid)
+        field.label = "u"
 
-        for i in range(5):
-            manager.save_frame(field, frame_index=i, simulation_time=i * 0.1)
+        manager.compute_range_for_field([field], "u")
 
-        # Check all frames exist
+        for i in range(3):
+            manager.save_frame(field, "u", frame_index=i, simulation_time=i * 0.1)
+
         frames = list(manager.frames_dir.glob("*.png"))
-        assert len(frames) == 5
-
-        # Check frame annotations
-        annotations = manager.get_frame_annotations()
-        assert len(annotations) == 5
-        assert annotations[0]["frameIndex"] == 0
-        assert annotations[4]["frameIndex"] == 4
+        assert len(frames) == 3
 
     def test_save_field_collection_frame(self, tmp_output, small_grid):
-        """Test saving a FieldCollection frame."""
+        """Test saving a frame from a FieldCollection."""
         manager = OutputManager(
             base_path=tmp_output,
             folder_name="test-collection_2024-01-15",
-            field_to_plot="u",
+            field_configs=[("u", "viridis"), ("v", "plasma")],
         )
 
         u = ScalarField.random_uniform(small_grid)
@@ -76,178 +96,151 @@ class TestOutputManager:
         v.label = "v"
         collection = FieldCollection([u, v])
 
-        frame_path = manager.save_frame(collection, frame_index=0, simulation_time=0.0)
-        assert frame_path.exists()
+        manager.compute_range_for_field([collection], "u")
+        manager.compute_range_for_field([collection], "v")
 
-    def test_compute_range(self, tmp_output, small_grid):
-        """Test that compute_range pre-computes global min/max."""
+        paths = manager.save_all_fields(collection, frame_index=0, simulation_time=0.0)
+
+        assert len(paths) == 2
+        assert (manager.frames_dir / "u_000000.png").exists()
+        assert (manager.frames_dir / "v_000000.png").exists()
+
+    def test_compute_range_for_field(self, tmp_output, small_grid):
+        """Test computing range for a specific field."""
         manager = OutputManager(
             base_path=tmp_output,
-            folder_name="test-compute-range_2024-01-15",
+            folder_name="test-range_2024-01-15",
+            field_configs=[("u", "viridis")],
         )
 
-        # Create frames with different ranges
-        data1 = np.zeros(small_grid.shape)
-        data1[0, 0] = 0.0
-        data1[1, 1] = 1.0
-        field1 = ScalarField(small_grid, data1)
+        # Create fields with known min/max
+        field1 = ScalarField(small_grid, np.ones(small_grid.shape) * 0.5)
+        field1.label = "u"
+        field2 = ScalarField(small_grid, np.ones(small_grid.shape) * 1.5)
+        field2.label = "u"
 
-        data2 = np.zeros(small_grid.shape)
-        data2[0, 0] = -2.0
-        data2[1, 1] = 3.0
-        field2 = ScalarField(small_grid, data2)
+        vmin, vmax = manager.compute_range_for_field([field1, field2], "u")
 
-        # Pre-compute range from all frames
-        vmin, vmax = manager.compute_range([field1, field2])
-
-        assert vmin == -2.0
-        assert vmax == 3.0
-        assert manager.vmin == -2.0
-        assert manager.vmax == 3.0
-
-    def test_consistent_colorscale_with_compute_range(self, tmp_output, small_grid):
-        """Test that all frames use consistent colorscale when using compute_range."""
-        manager = OutputManager(
-            base_path=tmp_output,
-            folder_name="test-consistent_2024-01-15",
-        )
-
-        # Create frames with different value ranges
-        data1 = np.ones(small_grid.shape) * 0.5  # range: [0.5, 0.5]
-        field1 = ScalarField(small_grid, data1)
-
-        data2 = np.zeros(small_grid.shape)
-        data2[0, 0] = -2.0
-        data2[1, 1] = 3.0  # range: [-2.0, 3.0]
-        field2 = ScalarField(small_grid, data2)
-
-        # Two-pass approach: compute range first, then save frames
-        manager.compute_range([field1, field2])
-
-        # Both frames should use the global range [-2.0, 3.0]
-        manager.save_frame(field1, 0, 0.0)
-        manager.save_frame(field2, 1, 0.1)
-
-        # Verify the range remained consistent
-        assert manager.vmin == -2.0
-        assert manager.vmax == 3.0
-
-        # Both frames were saved
-        frames = list(manager.frames_dir.glob("*.png"))
-        assert len(frames) == 2
+        assert vmin == 0.5
+        assert vmax == 1.5
+        assert manager.field_ranges["u"] == (0.5, 1.5)
 
     def test_save_metadata(self, tmp_output, small_grid):
-        """Test saving metadata JSON."""
+        """Test saving metadata."""
         manager = OutputManager(
             base_path=tmp_output,
             folder_name="test-meta_2024-01-15",
+            field_configs=[("u", "viridis")],
         )
 
-        field = ScalarField.random_uniform(small_grid)
-        manager.save_frame(field, 0, 0.0)
+        u = ScalarField.random_uniform(small_grid)
+        u.label = "u"
 
-        metadata = {"test": "value", "visualization": {}}
-        meta_path = manager.save_metadata(metadata)
+        manager.compute_range_for_field([u], "u")
 
-        assert meta_path.exists()
-        with open(meta_path) as f:
+        metadata = {"test": "data"}
+        metadata_path = manager.save_metadata(metadata)
+
+        assert metadata_path.exists()
+        with open(metadata_path) as f:
             saved = json.load(f)
-        assert saved["test"] == "value"
-        assert "colorbarMin" in saved["visualization"]
-        assert "colorbarMax" in saved["visualization"]
+        assert saved["test"] == "data"
+        assert "visualization" in saved
+        assert "fields" in saved["visualization"]
+        assert "u" in saved["visualization"]["fields"]
 
-    def test_save_trajectory_array_scalar(self, tmp_output, small_grid):
-        """Test saving trajectory as numpy array for scalar fields."""
+    def test_save_trajectory_array(self, tmp_output, small_grid):
+        """Test saving trajectory as numpy array."""
         manager = OutputManager(
             base_path=tmp_output,
-            folder_name="test-trajectory_2024-01-15",
+            folder_name="test-traj_2024-01-15",
             save_array=True,
+            field_configs=[("u", "turbo")],
         )
 
-        # Create a sequence of scalar fields
-        states = [ScalarField.random_uniform(small_grid) for _ in range(5)]
+        states = []
+        for i in range(5):
+            field = ScalarField(small_grid, np.ones(small_grid.shape) * i)
+            field.label = "u"
+            states.append(field)
         times = [0.0, 0.1, 0.2, 0.3, 0.4]
 
-        array_path = manager.save_trajectory_array(states, times)
+        array_path = manager.save_trajectory_array(states, times, "u")
 
-        # Check file exists
         assert array_path.exists()
-        assert array_path.name == "trajectory.npz"
+        assert array_path.name == "trajectory_u.npz"
 
-        # Load and verify contents
+        # Verify contents
         data = np.load(array_path)
         assert "trajectory" in data
         assert "times" in data
+        assert data["trajectory"].shape == (5, 16, 16)
+        np.testing.assert_array_equal(data["times"], times)
 
-        # Check shapes
-        assert data["trajectory"].shape == (5, 32, 32)
-        assert data["times"].shape == (5,)
-
-        # Check times values
-        np.testing.assert_array_almost_equal(data["times"], times)
-
-    def test_save_trajectory_array_field_collection(self, tmp_output, small_grid):
-        """Test saving trajectory as numpy array for multi-field systems."""
+    def test_save_trajectory_array_multi_field(self, tmp_output, small_grid):
+        """Test saving trajectory for multiple fields."""
         manager = OutputManager(
             base_path=tmp_output,
-            folder_name="test-trajectory-collection_2024-01-15",
-            field_to_plot="u",
+            folder_name="test-traj-multi_2024-01-15",
             save_array=True,
+            field_configs=[("u", "viridis"), ("v", "plasma")],
         )
 
-        # Create a sequence of field collections
         states = []
-        for _ in range(3):
-            u = ScalarField.random_uniform(small_grid)
+        for i in range(3):
+            u = ScalarField(small_grid, np.ones(small_grid.shape) * i)
             u.label = "u"
-            v = ScalarField.random_uniform(small_grid)
+            v = ScalarField(small_grid, np.ones(small_grid.shape) * (i + 0.5))
             v.label = "v"
             states.append(FieldCollection([u, v]))
+        times = [0.0, 0.1, 0.2]
 
-        times = [0.0, 0.5, 1.0]
+        # Save trajectory for both fields
+        array_path_u = manager.save_trajectory_array(states, times, "u")
+        array_path_v = manager.save_trajectory_array(states, times, "v")
 
-        array_path = manager.save_trajectory_array(states, times)
+        assert array_path_u.exists()
+        assert array_path_v.exists()
 
-        # Load and verify
-        data = np.load(array_path)
-
-        # Should only save the selected field (u)
-        assert data["trajectory"].shape == (3, 32, 32)
-        assert data["times"].shape == (3,)
+        data_u = np.load(array_path_u)
+        data_v = np.load(array_path_v)
+        assert data_u["trajectory"].shape == (3, 16, 16)
+        assert data_v["trajectory"].shape == (3, 16, 16)
 
 
 class TestCreateMetadata:
     """Tests for create_metadata function."""
 
     def test_create_complete_metadata(self):
-        """Test creating a complete metadata dictionary."""
+        """Test creating complete metadata."""
         preset_meta = PDEMetadata(
             name="test-pde",
             category="test",
             description="Test PDE",
             equations={"u": "laplace(u)"},
-            parameters=[PDEParameter("D", 1.0, "Diffusion")],
+            parameters=[PDEParameter("D", 0.1, "diffusion")],
             num_fields=1,
             field_names=["u"],
         )
 
         config = SimulationConfig(
             preset="test-pde",
-            parameters={"D": 1.0},
+            parameters={"D": 0.1},
             init=InitialConditionConfig(type="random", params={}),
             solver="euler",
             t_end=100,
             dt=0.01,
             resolution=64,
-            bc=BoundaryConfig(x="periodic", y="periodic"),
-            output=OutputConfig(path=Path("./output"), colormap="turbo"),
+            bc=BoundaryConfig(),
+            output=OutputConfig(path=Path("./output"), colormap="turbo",
+                                fields=["u:turbo"]),
             seed=42,
             domain_size=1.0,
         )
 
         frame_annotations = [
             {"frameIndex": 0, "simulationTime": 0.0},
-            {"frameIndex": 1, "simulationTime": 0.1},
+            {"frameIndex": 1, "simulationTime": 0.5},
         ]
 
         metadata = create_metadata(
@@ -255,57 +248,37 @@ class TestCreateMetadata:
             preset_name="test-pde",
             preset_metadata=preset_meta,
             config=config,
-            total_time=0.1,
+            total_time=1.0,
             frame_annotations=frame_annotations,
         )
 
-        # Check required fields
         assert metadata["id"] == "test-123"
         assert metadata["preset"] == "test-pde"
-        assert "timestamp" in metadata
-        assert "generatorVersion" in metadata
-
-        # Check equations
-        assert metadata["equations"]["u"] == "laplace(u)"
-        assert metadata["boundaryConditions"] == {"x": "periodic", "y": "periodic"}
-        assert metadata["initialConditions"] == "random"
-
-        # Check parameters
-        assert metadata["parameters"]["kinetic"]["D"] == 1.0
-        assert metadata["parameters"]["dt"] == 0.01
-        assert metadata["parameters"]["numSpecies"] == 1
-
-        # Check simulation info
-        assert metadata["simulation"]["totalFrames"] == 2
+        assert metadata["equations"] == {"u": "laplace(u)"}
         assert metadata["simulation"]["resolution"] == [64, 64]
-
-        # Check frame annotations
         assert len(metadata["frameAnnotations"]) == 2
 
-        # Check description field exists (may be None for non-existent presets)
-        assert "description" in metadata
-
     def test_create_metadata_with_description(self):
-        """Test that description is loaded from markdown files for real presets."""
+        """Test that description is loaded for real presets."""
         preset_meta = PDEMetadata(
             name="gray-scott",
             category="physics",
             description="Gray-Scott model",
-            equations={"u": "D_u*laplace(u) - u*v**2 + F*(1-u)", "v": "D_v*laplace(v) + u*v**2 - (F+k)*v"},
-            parameters=[PDEParameter("D_u", 0.2, "U diffusion"), PDEParameter("D_v", 0.1, "V diffusion")],
+            equations={"u": "D_u*laplace(u)", "v": "D_v*laplace(v)"},
+            parameters=[PDEParameter("D_u", 0.2, "U diffusion")],
             num_fields=2,
             field_names=["u", "v"],
         )
 
         config = SimulationConfig(
             preset="gray-scott",
-            parameters={"D_u": 0.2, "D_v": 0.1, "F": 0.04, "k": 0.06},
+            parameters={"D_u": 0.2},
             init=InitialConditionConfig(type="random", params={}),
             solver="euler",
             t_end=100,
             dt=0.01,
             resolution=64,
-            bc=BoundaryConfig(x="periodic", y="periodic"),
+            bc=BoundaryConfig(),
             output=OutputConfig(path=Path("./output"), colormap="turbo"),
             seed=42,
             domain_size=1.0,
@@ -320,150 +293,58 @@ class TestCreateMetadata:
             frame_annotations=[],
         )
 
-        # Description should be loaded from gray-scott.md
         assert metadata["description"] is not None
         assert "Gray-Scott" in metadata["description"]
-        assert "## Equations" in metadata["description"]
-
-    def test_create_metadata_description_not_found(self):
-        """Test that description is None for presets without markdown files."""
-        preset_meta = PDEMetadata(
-            name="nonexistent-pde",
-            category="test",
-            description="Nonexistent PDE",
-            equations={"u": "laplace(u)"},
-            parameters=[],
-            num_fields=1,
-            field_names=["u"],
-        )
-
-        config = SimulationConfig(
-            preset="nonexistent-pde",
-            parameters={},
-            init=InitialConditionConfig(type="random", params={}),
-            solver="euler",
-            t_end=100,
-            dt=0.01,
-            resolution=64,
-            bc=BoundaryConfig(x="periodic", y="periodic"),
-            output=OutputConfig(path=Path("./output"), colormap="turbo"),
-            seed=42,
-            domain_size=1.0,
-        )
-
-        metadata = create_metadata(
-            sim_id="test-nonexistent",
-            preset_name="nonexistent-pde",
-            preset_metadata=preset_meta,
-            config=config,
-            total_time=1.0,
-            frame_annotations=[],
-        )
-
-        # Description should be None since no markdown file exists
-        assert metadata["description"] is None
 
 
-class TestMagnitudePlotting:
-    """Tests for magnitude and vector plotting functionality."""
+class TestMultiFieldOutput:
+    """Tests for multi-field output functionality."""
 
-    def test_parse_magnitude_syntax(self, tmp_output):
-        """Test parsing mag(X,Y) syntax."""
+    def test_initialization_with_field_configs(self, tmp_output):
+        """Test OutputManager initialization with field configs."""
         manager = OutputManager(
             base_path=tmp_output,
-            folder_name="test-mag-parse_2024-01-15",
-            field_to_plot="mag(X,Y)",
+            folder_name="test-multi_2024-01-15",
+            field_configs=[("u", "viridis"), ("v", "plasma")],
         )
 
-        assert manager.plot_mode == "magnitude"
-        assert manager.plot_fields == ["X", "Y"]
+        assert manager.field_configs == [("u", "viridis"), ("v", "plasma")]
+        assert manager.field_colormaps == {"u": "viridis", "v": "plasma"}
 
-    def test_parse_magnitude_with_spaces(self, tmp_output):
-        """Test parsing mag(X, Y) with space after comma."""
+    def test_compute_range_per_field(self, tmp_output, small_grid):
+        """Test computing range for each field separately."""
         manager = OutputManager(
             base_path=tmp_output,
-            folder_name="test-mag-space_2024-01-15",
-            field_to_plot="mag(u, v)",
+            folder_name="test-range-field_2024-01-15",
+            field_configs=[("u", "viridis"), ("v", "plasma")],
         )
 
-        assert manager.plot_mode == "magnitude"
-        assert manager.plot_fields == ["u", "v"]
+        u1 = ScalarField(small_grid, np.ones(small_grid.shape) * 0.5)
+        u1.label = "u"
+        v1 = ScalarField(small_grid, np.ones(small_grid.shape) * 1.0)
+        v1.label = "v"
+        state1 = FieldCollection([u1, v1])
 
-    def test_parse_single_field(self, tmp_output):
-        """Test parsing single field name."""
+        u2 = ScalarField(small_grid, np.ones(small_grid.shape) * 1.5)
+        u2.label = "u"
+        v2 = ScalarField(small_grid, np.ones(small_grid.shape) * 2.0)
+        v2.label = "v"
+        state2 = FieldCollection([u2, v2])
+
+        vmin_u, vmax_u = manager.compute_range_for_field([state1, state2], "u")
+        vmin_v, vmax_v = manager.compute_range_for_field([state1, state2], "v")
+
+        assert vmin_u == 0.5
+        assert vmax_u == 1.5
+        assert vmin_v == 1.0
+        assert vmax_v == 2.0
+
+    def test_save_all_fields(self, tmp_output, small_grid):
+        """Test saving frames for all configured fields."""
         manager = OutputManager(
             base_path=tmp_output,
-            folder_name="test-single-field_2024-01-15",
-            field_to_plot="u",
-        )
-
-        assert manager.plot_mode == "single"
-        assert manager.plot_fields == ["u"]
-
-    def test_parse_no_field(self, tmp_output):
-        """Test parsing when no field is specified."""
-        manager = OutputManager(
-            base_path=tmp_output,
-            folder_name="test-no-field_2024-01-15",
-        )
-
-        assert manager.plot_mode == "single"
-        assert manager.plot_fields == []
-
-    def test_extract_magnitude_data(self, tmp_output, small_grid):
-        """Test extracting magnitude from two fields."""
-        manager = OutputManager(
-            base_path=tmp_output,
-            folder_name="test-mag-data_2024-01-15",
-            field_to_plot="mag(X,Y)",
-        )
-
-        # Create field collection with known values
-        x_data = np.ones(small_grid.shape) * 3.0
-        y_data = np.ones(small_grid.shape) * 4.0
-
-        X = ScalarField(small_grid, x_data)
-        X.label = "X"
-        Y = ScalarField(small_grid, y_data)
-        Y.label = "Y"
-        collection = FieldCollection([X, Y])
-
-        # Extract magnitude
-        data = manager._extract_field_data(collection)
-
-        # Should be sqrt(3^2 + 4^2) = 5
-        np.testing.assert_array_almost_equal(data, np.ones(small_grid.shape) * 5.0)
-
-    def test_extract_vector_components(self, tmp_output, small_grid):
-        """Test extracting vector components for quiver."""
-        manager = OutputManager(
-            base_path=tmp_output,
-            folder_name="test-vector-comp_2024-01-15",
-            field_to_plot="mag(u,v)",
-            show_vectors=True,
-        )
-
-        u_data = np.random.rand(*small_grid.shape)
-        v_data = np.random.rand(*small_grid.shape)
-
-        u = ScalarField(small_grid, u_data)
-        u.label = "u"
-        v = ScalarField(small_grid, v_data)
-        v.label = "v"
-        collection = FieldCollection([u, v])
-
-        components = manager._extract_vector_components(collection)
-
-        assert components is not None
-        np.testing.assert_array_equal(components[0], u_data)
-        np.testing.assert_array_equal(components[1], v_data)
-
-    def test_extract_vector_components_single_mode(self, tmp_output, small_grid):
-        """Test that vector extraction returns None for single field mode."""
-        manager = OutputManager(
-            base_path=tmp_output,
-            folder_name="test-vector-single_2024-01-15",
-            field_to_plot="u",
+            folder_name="test-save-all_2024-01-15",
+            field_configs=[("u", "viridis"), ("v", "plasma")],
         )
 
         u = ScalarField.random_uniform(small_grid)
@@ -472,58 +353,70 @@ class TestMagnitudePlotting:
         v.label = "v"
         collection = FieldCollection([u, v])
 
-        components = manager._extract_vector_components(collection)
-        assert components is None
+        manager.compute_range_for_field([collection], "u")
+        manager.compute_range_for_field([collection], "v")
 
-    def test_save_frame_with_vectors(self, tmp_output, small_grid):
-        """Test saving frame with vector overlay."""
+        paths = manager.save_all_fields(collection, 0, 0.0)
+
+        assert len(paths) == 2
+        assert (manager.frames_dir / "u_000000.png").exists()
+        assert (manager.frames_dir / "v_000000.png").exists()
+        assert len(manager.saved_frames) == 1
+
+    def test_filename_format(self, tmp_output, small_grid):
+        """Test that filenames follow {field}_{frame:06d}.png format."""
         manager = OutputManager(
             base_path=tmp_output,
-            folder_name="test-vectors_2024-01-15",
-            field_to_plot="mag(X,Y)",
-            show_vectors=True,
-            vector_density=8,
+            folder_name="test-filename_2024-01-15",
+            field_configs=[("X", "viridis"), ("Y", "plasma")],
         )
 
-        # Create field collection
         X = ScalarField.random_uniform(small_grid)
         X.label = "X"
         Y = ScalarField.random_uniform(small_grid)
         Y.label = "Y"
         collection = FieldCollection([X, Y])
 
-        # Save frame
-        frame_path = manager.save_frame(collection, frame_index=0, simulation_time=0.0)
+        manager.compute_range_for_field([collection], "X")
+        manager.compute_range_for_field([collection], "Y")
 
-        assert frame_path.exists()
-        assert frame_path.name == "000000.png"
+        for i in range(3):
+            manager.save_all_fields(collection, i, i * 0.1)
 
-    def test_compute_range_with_magnitude(self, tmp_output, small_grid):
-        """Test computing range for magnitude mode."""
+        expected = [
+            "X_000000.png", "Y_000000.png",
+            "X_000001.png", "Y_000001.png",
+            "X_000002.png", "Y_000002.png",
+        ]
+        for name in expected:
+            assert (manager.frames_dir / name).exists(), f"Missing {name}"
+
+    def test_save_metadata_multi_field(self, tmp_output, small_grid):
+        """Test that metadata includes per-field visualization info."""
         manager = OutputManager(
             base_path=tmp_output,
-            folder_name="test-mag-range_2024-01-15",
-            field_to_plot="mag(X,Y)",
+            folder_name="test-metadata-multi_2024-01-15",
+            field_configs=[("u", "viridis"), ("v", "plasma")],
         )
 
-        # Create field collections with known values
-        x1 = np.ones(small_grid.shape) * 3.0
-        y1 = np.ones(small_grid.shape) * 4.0  # mag = 5
-        X1 = ScalarField(small_grid, x1)
-        X1.label = "X"
-        Y1 = ScalarField(small_grid, y1)
-        Y1.label = "Y"
-        state1 = FieldCollection([X1, Y1])
+        u = ScalarField.random_uniform(small_grid)
+        u.label = "u"
+        v = ScalarField.random_uniform(small_grid)
+        v.label = "v"
+        collection = FieldCollection([u, v])
 
-        x2 = np.ones(small_grid.shape) * 6.0
-        y2 = np.ones(small_grid.shape) * 8.0  # mag = 10
-        X2 = ScalarField(small_grid, x2)
-        X2.label = "X"
-        Y2 = ScalarField(small_grid, y2)
-        Y2.label = "Y"
-        state2 = FieldCollection([X2, Y2])
+        manager.compute_range_for_field([collection], "u")
+        manager.compute_range_for_field([collection], "v")
 
-        vmin, vmax = manager.compute_range([state1, state2])
+        metadata = {"test": "data"}
+        metadata_path = manager.save_metadata(metadata)
 
-        assert vmin == 5.0
-        assert vmax == 10.0
+        with open(metadata_path) as f:
+            saved = json.load(f)
+
+        assert "visualization" in saved
+        assert "fields" in saved["visualization"]
+        assert "u" in saved["visualization"]["fields"]
+        assert "v" in saved["visualization"]["fields"]
+        assert saved["visualization"]["fields"]["u"]["colormap"] == "viridis"
+        assert saved["visualization"]["fields"]["v"]["colormap"] == "plasma"

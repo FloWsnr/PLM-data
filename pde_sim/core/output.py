@@ -1,7 +1,6 @@
 """Output management for simulation frames and metadata."""
 
 import json
-import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -24,103 +23,100 @@ class OutputManager:
         base_path: Path | str,
         folder_name: str,
         colormap: str = "turbo",
-        field_to_plot: str | None = None,
+        field_configs: list[tuple[str, str]] | None = None,
         dpi: int = 128,
         figsize: tuple[int, int] = (8, 8),
         save_array: bool = False,
-        show_vectors: bool = False,
-        vector_density: int = 16,
     ):
         """Initialize the output manager.
 
         Args:
             base_path: Base directory for output.
-            folder_name: Path for the output folder (e.g., "gray-scott/2024-01-15_143052").
-            colormap: Matplotlib colormap name.
-            field_to_plot: Name of field to render (for multi-field systems).
-                Can be a single field name (e.g., "u") or magnitude syntax (e.g., "mag(X,Y)").
+            folder_name: Path for the output folder (e.g., "gray-scott/001").
+            colormap: Default matplotlib colormap name.
+            field_configs: List of (field_name, colormap) tuples for output.
             dpi: DPI for saved images.
             figsize: Figure size in inches.
             save_array: Whether to save trajectory as numpy array.
-            show_vectors: Whether to overlay vector arrows (only works with mag()).
-            vector_density: Number of arrows per axis (e.g., 16 = 16x16 grid).
         """
         self.base_path = Path(base_path)
         self.folder_name = folder_name
         self.colormap = colormap
-        self.field_to_plot = field_to_plot
         self.dpi = dpi
         self.figsize = figsize
         self.save_array = save_array
-        self.show_vectors = show_vectors
-        self.vector_density = vector_density
 
-        # Parse field_to_plot for magnitude syntax
-        self.plot_mode, self.plot_fields = self._parse_field_to_plot(field_to_plot)
+        # Field configurations: [(field_name, colormap), ...]
+        self.field_configs = field_configs or []
+
+        # Per-field range tracking: field_name -> (vmin, vmax)
+        self.field_ranges: dict[str, tuple[float, float]] = {}
+
+        # Per-field colormap lookup
+        self.field_colormaps: dict[str, str] = {}
+        for field_name, cmap in self.field_configs:
+            self.field_colormaps[field_name] = cmap
 
         # Create output directories
         self.output_dir = self.base_path / self.folder_name
         self.frames_dir = self.output_dir / "frames"
         self.frames_dir.mkdir(parents=True, exist_ok=True)
 
-        # Track min/max values for consistent colormapping
-        self.vmin: float | None = None
-        self.vmax: float | None = None
-
         # Track saved frames
         self.saved_frames: list[dict[str, Any]] = []
 
-    def _parse_field_to_plot(
-        self, field_to_plot: str | None
-    ) -> tuple[str, list[str]]:
-        """Parse field_to_plot string to determine plot mode.
-
-        Args:
-            field_to_plot: Field specification string.
-
-        Returns:
-            Tuple of (plot_mode, field_names) where:
-            - plot_mode is "single" or "magnitude"
-            - field_names is list of field names to extract
-        """
-        if field_to_plot is None:
-            return ("single", [])
-
-        # Check for magnitude syntax: mag(field1, field2)
-        mag_pattern = r"^mag\((\w+),\s*(\w+)\)$"
-        match = re.match(mag_pattern, field_to_plot)
-        if match:
-            return ("magnitude", [match.group(1), match.group(2)])
-
-        # Single field mode
-        return ("single", [field_to_plot])
-
-    def compute_range(
-        self, states: list[ScalarField | FieldCollection]
+    def compute_range_for_field(
+        self,
+        states: list[ScalarField | FieldCollection],
+        field_name: str,
     ) -> tuple[float, float]:
-        """Pre-compute global min/max range across all states.
-
-        This should be called before saving frames to ensure consistent
-        colorscale normalization across the entire trajectory.
+        """Compute global min/max for a specific field across all states.
 
         Args:
-            states: List of field states to compute range from.
+            states: List of field states.
+            field_name: Name of the field to compute range for.
 
         Returns:
-            Tuple of (vmin, vmax) values.
+            Tuple of (vmin, vmax) for this field.
         """
         global_min = float("inf")
         global_max = float("-inf")
 
         for state in states:
-            data = self._extract_field_data(state)
+            data = self._extract_field_data(state, field_name)
             global_min = min(global_min, float(np.min(data)))
             global_max = max(global_max, float(np.max(data)))
 
-        self.vmin = global_min
-        self.vmax = global_max
-
+        self.field_ranges[field_name] = (global_min, global_max)
         return (global_min, global_max)
+
+    def _extract_field_data(
+        self,
+        state: ScalarField | FieldCollection,
+        field_name: str,
+    ) -> np.ndarray:
+        """Extract data for a specific field by name.
+
+        Args:
+            state: The field state.
+            field_name: Name of the field to extract.
+
+        Returns:
+            2D numpy array of field values.
+        """
+        if isinstance(state, FieldCollection):
+            data = self._get_field_by_name(state, field_name)
+            if data is None:
+                # Fallback to first field
+                data = state[0].data
+        else:
+            data = state.data
+
+        # Handle complex-valued fields
+        if np.iscomplexobj(data):
+            data = np.abs(data)
+
+        return data
 
     def _get_field_by_name(
         self, state: FieldCollection, field_name: str
@@ -144,141 +140,78 @@ class OutputManager:
         except (ValueError, IndexError):
             return None
 
-    def _extract_field_data(
-        self, state: ScalarField | FieldCollection
-    ) -> np.ndarray:
-        """Extract the numpy array from a field state.
-
-        Args:
-            state: The field state to extract data from.
-
-        Returns:
-            2D numpy array of real field values.
-        """
-        if isinstance(state, FieldCollection):
-            if self.plot_mode == "magnitude" and len(self.plot_fields) == 2:
-                # Magnitude of two fields: sqrt(f1^2 + f2^2)
-                f1 = self._get_field_by_name(state, self.plot_fields[0])
-                f2 = self._get_field_by_name(state, self.plot_fields[1])
-                if f1 is not None and f2 is not None:
-                    return np.sqrt(f1**2 + f2**2)
-                # Fallback to first field if magnitude fields not found
-                data = state[0].data
-            elif self.plot_fields:
-                # Single field mode with explicit field name
-                data = self._get_field_by_name(state, self.plot_fields[0])
-                if data is None:
-                    data = state[0].data
-            else:
-                # Default to first field
-                data = state[0].data
-        else:
-            data = state.data
-
-        # Handle complex-valued fields (e.g., Schrodinger equation)
-        # Plot the absolute value (magnitude) for visualization
-        if np.iscomplexobj(data):
-            data = np.abs(data)
-
-        return data
-
-    def _extract_vector_components(
-        self, state: ScalarField | FieldCollection
-    ) -> tuple[np.ndarray, np.ndarray] | None:
-        """Extract vector components for quiver plotting.
-
-        Only works when plot_mode is "magnitude".
-
-        Args:
-            state: The field state to extract from.
-
-        Returns:
-            Tuple of (u_component, v_component) arrays or None if not applicable.
-        """
-        if self.plot_mode != "magnitude" or len(self.plot_fields) != 2:
-            return None
-
-        if not isinstance(state, FieldCollection):
-            return None
-
-        f1 = self._get_field_by_name(state, self.plot_fields[0])
-        f2 = self._get_field_by_name(state, self.plot_fields[1])
-
-        if f1 is None or f2 is None:
-            return None
-
-        return (f1, f2)
-
     def save_frame(
         self,
         state: ScalarField | FieldCollection,
+        field_name: str,
         frame_index: int,
         simulation_time: float,
     ) -> Path:
-        """Save a single frame as PNG.
+        """Save a single frame for a specific field.
 
         Args:
-            state: The field state to save.
+            state: The field state.
+            field_name: Name of the field to save.
             frame_index: Index of this frame.
             simulation_time: Simulation time at this frame.
 
         Returns:
             Path to the saved PNG file.
         """
-        data = self._extract_field_data(state)
+        data = self._extract_field_data(state, field_name)
+
+        # Get field-specific colormap and range
+        colormap = self.field_colormaps.get(field_name, self.colormap)
+        vmin, vmax = self.field_ranges.get(field_name, (None, None))
 
         # Create figure
         fig, ax = plt.subplots(figsize=self.figsize, dpi=self.dpi)
         ax.imshow(
-            data.T,  # Transpose for correct orientation (x horizontal, y vertical)
+            data.T,  # Transpose for correct orientation
             origin="lower",
-            cmap=self.colormap,
-            vmin=self.vmin,
-            vmax=self.vmax,
+            cmap=colormap,
+            vmin=vmin,
+            vmax=vmax,
             aspect="equal",
         )
-
-        # Add vector arrows overlay if requested
-        if self.show_vectors and self.plot_mode == "magnitude":
-            vector_components = self._extract_vector_components(state)
-            if vector_components is not None:
-                u_data, v_data = vector_components
-                ny, nx = data.shape
-
-                # Subsample grid for arrows
-                stride = max(1, min(nx, ny) // self.vector_density)
-                x_indices = np.arange(0, nx, stride)
-                y_indices = np.arange(0, ny, stride)
-                X, Y = np.meshgrid(x_indices, y_indices)
-
-                # Subsample vector components (note: data is transposed for display)
-                U = u_data[::stride, ::stride].T
-                V = v_data[::stride, ::stride].T
-
-                # Draw quiver with white arrows and black edges for visibility
-                ax.quiver(
-                    X, Y, U, V,
-                    color="white",
-                    edgecolor="black",
-                    linewidth=0.5,
-                    scale=None,  # Auto-scale
-                    alpha=0.8,
-                )
-
         ax.axis("off")
 
-        # Save
-        frame_path = self.frames_dir / f"{frame_index:06d}.png"
+        # Generate filename with field prefix: {field}_{frame:06d}.png
+        frame_path = self.frames_dir / f"{field_name}_{frame_index:06d}.png"
+
         fig.savefig(frame_path, bbox_inches="tight", pad_inches=0)
         plt.close(fig)
 
-        # Track frame
+        return frame_path
+
+    def save_all_fields(
+        self,
+        state: ScalarField | FieldCollection,
+        frame_index: int,
+        simulation_time: float,
+    ) -> list[Path]:
+        """Save frames for all configured fields.
+
+        Args:
+            state: The field state.
+            frame_index: Index of this frame.
+            simulation_time: Simulation time.
+
+        Returns:
+            List of paths to saved PNG files.
+        """
+        paths = []
+        for field_name, _colormap in self.field_configs:
+            path = self.save_frame(state, field_name, frame_index, simulation_time)
+            paths.append(path)
+
+        # Track frame (once per timestep, not per field)
         self.saved_frames.append({
             "frameIndex": frame_index,
             "simulationTime": simulation_time,
         })
 
-        return frame_path
+        return paths
 
     def save_metadata(self, metadata: dict[str, Any]) -> Path:
         """Save metadata JSON.
@@ -289,16 +222,18 @@ class OutputManager:
         Returns:
             Path to the saved metadata file.
         """
-        # Add colorbar bounds for interpreting the color scale
+        # Add per-field visualization info
         if "visualization" not in metadata:
             metadata["visualization"] = {}
 
-        metadata["visualization"]["colorbarMin"] = (
-            self.vmin if self.vmin is not None else 0.0
-        )
-        metadata["visualization"]["colorbarMax"] = (
-            self.vmax if self.vmax is not None else 1.0
-        )
+        metadata["visualization"]["fields"] = {}
+        for field_name, colormap in self.field_configs:
+            vmin, vmax = self.field_ranges.get(field_name, (0.0, 1.0))
+            metadata["visualization"]["fields"][field_name] = {
+                "colormap": colormap,
+                "colorbarMin": vmin,
+                "colorbarMax": vmax,
+            }
 
         metadata_path = self.output_dir / "metadata.json"
         with open(metadata_path, "w") as f:
@@ -318,32 +253,32 @@ class OutputManager:
         self,
         states: list[ScalarField | FieldCollection],
         times: list[float],
+        field_name: str,
     ) -> Path:
-        """Save the full trajectory as a numpy array.
+        """Save the full trajectory for a field as a numpy array.
 
-        Saves a .npy file containing the trajectory with shape:
-        - For scalar fields: (num_frames, resolution_x, resolution_y)
-        - For multi-field systems: (num_frames, resolution_x, resolution_y)
-          (only the selected field is saved)
+        Saves a .npz file containing the trajectory with shape:
+        (num_frames, resolution_x, resolution_y)
 
         Also saves a times array with shape (num_frames,).
 
         Args:
             states: List of field states from the simulation.
             times: List of simulation times corresponding to each state.
+            field_name: Name of the field to save.
 
         Returns:
             Path to the saved .npz file.
         """
         # Extract field data for each state
         trajectory_data = np.stack([
-            self._extract_field_data(state) for state in states
+            self._extract_field_data(state, field_name) for state in states
         ])
 
         times_array = np.array(times)
 
         # Save as compressed npz with both trajectory and times
-        array_path = self.output_dir / "trajectory.npz"
+        array_path = self.output_dir / f"trajectory_{field_name}.npz"
         np.savez_compressed(array_path, trajectory=trajectory_data, times=times_array)
 
         return array_path
@@ -369,6 +304,30 @@ def _bc_to_metadata(bc: Any) -> dict[str, Any]:
         result["fields"] = bc.fields
 
     return result
+
+
+def _create_visualization_metadata(config: Any, preset_metadata: Any) -> dict[str, Any]:
+    """Create visualization metadata section.
+
+    Args:
+        config: SimulationConfig object.
+        preset_metadata: PDEMetadata from the preset.
+
+    Returns:
+        Visualization metadata dictionary.
+    """
+    field_configs = config.output.get_field_configs()
+    if field_configs:
+        return {
+            "whatToPlot": [fc[0] for fc in field_configs],
+            "colormaps": {fc[0]: fc[1] for fc in field_configs},
+        }
+    else:
+        # Default: all fields with default colormap
+        return {
+            "whatToPlot": preset_metadata.field_names,
+            "colormaps": {name: config.output.colormap for name in preset_metadata.field_names},
+        }
 
 
 def create_metadata(
@@ -434,10 +393,7 @@ def create_metadata(
             "resolution": [config.resolution, config.resolution],
             "dtStatistics": dt_stats,
         },
-        "visualization": {
-            "colormap": config.output.colormap,
-            "whatToPlot": config.output.field_to_plot or preset_metadata.field_names[0],
-        },
+        "visualization": _create_visualization_metadata(config, preset_metadata),
         "interventions": [],
         "frameAnnotations": frame_annotations,
     }

@@ -13,11 +13,30 @@ class OutputConfig:
 
     path: Path
     num_frames: int = 100  # Total number of frames to save
-    colormap: str = "turbo"
-    field_to_plot: str | None = None
+    colormap: str = "turbo"  # Default colormap when field has no colormap specified
+    fields: list[str] | None = None  # List of "field:colormap" entries (e.g., ["u:viridis", "v:plasma"])
     save_array: bool = False  # Save trajectory as numpy array (.npy)
-    show_vectors: bool = False  # Overlay vector arrows when using mag()
-    vector_density: int = 16  # Number of arrows per axis (e.g., 16 = 16x16 grid)
+
+    def get_field_configs(self) -> list[tuple[str, str]]:
+        """Get list of (field_name, colormap) tuples.
+
+        Parses fields list like ["u:viridis", "v:plasma"].
+        If field has no colormap (e.g., "u"), uses default colormap.
+
+        Returns:
+            List of (field_name, colormap) tuples.
+            Empty list if no fields specified (use defaults from PDE metadata).
+        """
+        if self.fields:
+            result = []
+            for entry in self.fields:
+                if ":" in entry:
+                    field_name, cmap = entry.split(":", 1)
+                    result.append((field_name.strip(), cmap.strip()))
+                else:
+                    result.append((entry.strip(), self.colormap))
+            return result
+        return []
 
 
 @dataclass
@@ -153,10 +172,8 @@ def load_config(path: Path | str) -> SimulationConfig:
         path=Path(output_raw.get("path", "./output")),
         num_frames=output_raw.get("num_frames", 100),
         colormap=output_raw.get("colormap", "turbo"),
-        field_to_plot=output_raw.get("field_to_plot"),
+        fields=output_raw.get("fields"),
         save_array=output_raw.get("save_array", False),
-        show_vectors=output_raw.get("show_vectors", False),
-        vector_density=output_raw.get("vector_density", 16),
     )
 
     return SimulationConfig(
@@ -210,10 +227,8 @@ def config_to_dict(config: SimulationConfig) -> dict[str, Any]:
             "path": str(config.output.path),
             "num_frames": config.output.num_frames,
             "colormap": config.output.colormap,
-            "field_to_plot": config.output.field_to_plot,
+            "fields": config.output.fields,
             "save_array": config.output.save_array,
-            "show_vectors": config.output.show_vectors,
-            "vector_density": config.output.vector_density,
         },
         "seed": config.seed,
         "domain_size": config.domain_size,

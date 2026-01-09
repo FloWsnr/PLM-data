@@ -6,6 +6,7 @@ import pytest
 from pde import PDE, ScalarField
 
 from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.core.config import BoundaryConfig
 from pde_sim.pdes.basic.heat import (
     HeatPDE,
     InhomogeneousHeatPDE,
@@ -209,7 +210,10 @@ class TestInhomogeneousDiffusionHeatPDE:
         """Test running a short simulation."""
         preset = get_pde_preset("inhomogeneous-diffusion-heat")
         params = {"D": 0.1, "E": 0.5, "n": 5}
-        bc = {"x": "dirichlet", "y": "dirichlet"}
+        bc = BoundaryConfig(
+            x_minus="dirichlet:0", x_plus="dirichlet:0",
+            y_minus="dirichlet:0", y_plus="dirichlet:0"
+        )
 
         pde = preset.create_pde(params, bc, non_periodic_grid)
 

@@ -273,7 +273,8 @@ class TestOutputConfig:
         output = OutputConfig(path=Path("./test"))
         assert output.num_frames == 100
         assert output.colormap == "turbo"
-        assert output.field_to_plot is None
+        assert output.fields is None
+        assert output.save_array is False
 
     def test_custom_values(self):
         """Test OutputConfig with custom values."""
@@ -281,8 +282,84 @@ class TestOutputConfig:
             path=Path("./custom"),
             num_frames=50,
             colormap="viridis",
-            field_to_plot="u",
+            fields=["u:plasma"],
         )
         assert output.num_frames == 50
         assert output.colormap == "viridis"
-        assert output.field_to_plot == "u"
+        assert output.fields == ["u:plasma"]
+
+
+class TestMultiFieldOutputConfig:
+    """Tests for multi-field output configuration."""
+
+    def test_parse_field_configs_with_colormaps(self):
+        """Test parsing field:colormap syntax."""
+        output = OutputConfig(
+            path=Path("./test"),
+            fields=["u:viridis", "v:plasma"],
+        )
+        configs = output.get_field_configs()
+        assert configs == [("u", "viridis"), ("v", "plasma")]
+
+    def test_parse_field_without_colormap_uses_default(self):
+        """Test that field without colormap uses default."""
+        output = OutputConfig(
+            path=Path("./test"),
+            colormap="turbo",
+            fields=["u", "v:plasma"],
+        )
+        configs = output.get_field_configs()
+        assert configs == [("u", "turbo"), ("v", "plasma")]
+
+    def test_empty_field_configs_when_none_specified(self):
+        """Test that get_field_configs returns empty list when no fields."""
+        output = OutputConfig(path=Path("./test"))
+        configs = output.get_field_configs()
+        assert configs == []
+
+    def test_load_multi_field_config_from_yaml(self, tmp_path):
+        """Test loading config with fields list from YAML."""
+        config_data = {
+            "preset": "gray-scott",
+            "init": {"type": "default"},
+            "t_end": 1.0,
+            "dt": 0.1,
+            "resolution": 32,
+            "output": {
+                "path": "./output",
+                "num_frames": 10,
+                "fields": ["u:viridis", "v:plasma"],
+            },
+        }
+
+        config_path = tmp_path / "multi_field.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        config = load_config(config_path)
+
+        assert config.output.fields == ["u:viridis", "v:plasma"]
+        assert config.output.get_field_configs() == [("u", "viridis"), ("v", "plasma")]
+
+    def test_config_to_dict_preserves_fields(self, tmp_path):
+        """Test config_to_dict preserves fields list."""
+        config_data = {
+            "preset": "gray-scott",
+            "init": {"type": "default"},
+            "t_end": 1.0,
+            "dt": 0.1,
+            "resolution": 32,
+            "output": {
+                "num_frames": 10,
+                "fields": ["u:viridis", "v:plasma"],
+            },
+        }
+
+        config_path = tmp_path / "multi_field.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        config = load_config(config_path)
+        result = config_to_dict(config)
+
+        assert result["output"]["fields"] == ["u:viridis", "v:plasma"]
