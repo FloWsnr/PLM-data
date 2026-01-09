@@ -1,0 +1,27 @@
+preset: inhomogeneous-heat
+parameters:
+  D: 2.0
+  n: 3
+  m: 5
+init:
+  type: constant
+  params:
+    value: 0.0
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.004
+resolution: 200
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: coolwarm
+  field_to_plot: T
+seed: 42
+domain_size: 100.0
+t_end: 30.0

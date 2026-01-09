@@ -1,0 +1,28 @@
+preset: inhomogeneous-heat
+parameters:
+  D: 0.5
+  n: 6
+  m: 4
+init:
+  type: random-gaussian
+  params:
+    mean: 0.0
+    std: 0.5
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.004
+resolution: 200
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: magma
+  field_to_plot: T
+seed: 55
+domain_size: 100.0
+t_end: 80.0

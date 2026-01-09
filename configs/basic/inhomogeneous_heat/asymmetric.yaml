@@ -1,0 +1,30 @@
+preset: inhomogeneous-heat
+parameters:
+  D: 1.0
+  n: 2
+  m: 6
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 5
+    amplitude: 0.8
+    sigma: 0.08
+    background: 0.0
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.004
+resolution: 200
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: viridis
+  field_to_plot: T
+seed: 123
+domain_size: 100.0
+t_end: 50.0
