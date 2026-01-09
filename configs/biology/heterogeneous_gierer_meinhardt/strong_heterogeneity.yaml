@@ -4,8 +4,8 @@ parameters:
   a: 1.0
   b: 1.5
   c: 6.1
-  A: 0.0
-  B: 0.0
+  A: -0.8  # Strong production gradient: much larger patterns on right
+  B: 3.0   # Strong decay gradient: strong leftward spike migration
 init:
   type: random-gaussian
   params:
@@ -31,8 +31,8 @@ output:
   path: ./output
   num_frames: 10
   fields:
-    - u:turbo
-    - v:turbo
-seed: 1059
+    - u:hot
+    - v:cool
+seed: 5120
 domain_size: 100.0
 t_end: 50.0

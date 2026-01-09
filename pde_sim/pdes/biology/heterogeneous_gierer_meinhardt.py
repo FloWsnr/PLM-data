@@ -40,8 +40,9 @@ class HeterogeneousGiererMeinhardtPDE(MultiFieldPDEPreset):
             category="biology",
             description="Heterogeneous Gierer-Meinhardt with spatial gradients",
             equations={
-                "u": "laplace(u) + a + G(x) + u**2/v - [b + H(x)]*u",
+                "u": "laplace(u) + a + A*X + u**2/v - (b + B*X)*u",
                 "v": "D * laplace(v) + u**2 - c*v",
+                "X": "0 (static coordinate field)",
             },
             parameters=[
                 PDEParameter(
@@ -87,8 +88,8 @@ class HeterogeneousGiererMeinhardtPDE(MultiFieldPDEPreset):
                     max_value=5.0,
                 ),
             ],
-            num_fields=2,
-            field_names=["u", "v"],
+            num_fields=3,
+            field_names=["u", "v", "X"],
             reference="Iron, Ward & Wei (2001)",
         )
 
@@ -105,15 +106,11 @@ class HeterogeneousGiererMeinhardtPDE(MultiFieldPDEPreset):
         A = parameters.get("A", 0.0)
         B = parameters.get("B", 0.0)
 
-        # Get domain length
-        L = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
-
-        # G(x) = A*x/L and H(x) = B*x/L
-        # x is the first coordinate accessed via x[0]
-        # Note: py-pde uses x to refer to coordinates. For 2D, x[0] is the first axis.
+        # G(x) = A*X and H(x) = B*X where X is a static field containing x/L
+        # X field is set up in create_initial_state with values in [0, 1]
         if A != 0 or B != 0:
-            # With heterogeneity
-            u_rhs = f"laplace(u) + {a} + {A}*x[0]/{L} + u**2 / (v + 1e-10) - ({b} + {B}*x[0]/{L}) * u"
+            # With heterogeneity - X is the normalized coordinate field
+            u_rhs = f"laplace(u) + {a} + {A}*X + u**2 / (v + 1e-10) - ({b} + {B}*X) * u"
         else:
             # Homogeneous case
             u_rhs = f"laplace(u) + {a} + u**2 / (v + 1e-10) - {b} * u"
@@ -124,6 +121,7 @@ class HeterogeneousGiererMeinhardtPDE(MultiFieldPDEPreset):
             rhs={
                 "u": u_rhs,
                 "v": v_rhs,
+                "X": "0",  # Static coordinate field
             },
             **self._get_pde_bc_kwargs(bc),
         )
@@ -135,7 +133,11 @@ class HeterogeneousGiererMeinhardtPDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
         **kwargs,
     ) -> FieldCollection:
-        """Create initial state near steady state with perturbation."""
+        """Create initial state near steady state with perturbation.
+
+        Includes a static X field containing normalized x-coordinates (x/L)
+        for implementing spatial heterogeneity.
+        """
         noise = ic_params.get("noise", 0.01)
 
         # Initial values near steady state (approximate)
@@ -150,9 +152,20 @@ class HeterogeneousGiererMeinhardtPDE(MultiFieldPDEPreset):
         u_data = np.maximum(u_data, 0.01)
         v_data = np.maximum(v_data, 0.01)
 
+        # Create normalized x-coordinate field X = x/L (values in [0, 1])
+        x_bounds = grid.axes_bounds[0]
+        L = x_bounds[1] - x_bounds[0]
+        x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+        # Normalize to [0, 1]
+        x_normalized = (x - x_bounds[0]) / L
+        # Broadcast to 2D grid (x varies along first axis)
+        X_data = np.broadcast_to(x_normalized[:, np.newaxis], grid.shape).copy()
+
         u = ScalarField(grid, u_data)
         u.label = "u"
         v = ScalarField(grid, v_data)
         v.label = "v"
+        X = ScalarField(grid, X_data)
+        X.label = "X"
 
-        return FieldCollection([u, v])
+        return FieldCollection([u, v, X])

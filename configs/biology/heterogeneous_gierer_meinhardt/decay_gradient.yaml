@@ -5,7 +5,7 @@ parameters:
   b: 1.5
   c: 6.1
   A: 0.0
-  B: 0.0
+  B: 2.0  # Decay gradient: spikes migrate leftward (toward lower decay)
 init:
   type: random-gaussian
   params:
@@ -31,8 +31,8 @@ output:
   path: ./output
   num_frames: 10
   fields:
-    - u:turbo
-    - v:turbo
-seed: 1059
+    - u:plasma
+    - v:cividis
+seed: 3072
 domain_size: 100.0
 t_end: 50.0
