@@ -1,0 +1,28 @@
+preset: brusselator
+parameters:
+  Dv: 7.5
+  a: 2.0
+  b: 3.0
+init:
+  type: random-gaussian
+  params:
+    mean: 2.0
+    std: 0.15
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - u:plasma
+seed: 3072
+domain_size: 100.0
+t_end: 200.0

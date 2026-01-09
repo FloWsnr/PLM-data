@@ -49,8 +49,8 @@ class BrusselatorPDE(MultiFieldPDEPreset):
                     name="Dv",
                     default=8.0,
                     description="Inhibitor diffusion coefficient",
-                    min_value=7.0,
-                    max_value=9.0,
+                    min_value=5.0,
+                    max_value=20.0,
                 ),
                 PDEParameter(
                     name="a",
