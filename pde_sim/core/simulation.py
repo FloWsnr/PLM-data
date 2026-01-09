@@ -19,36 +19,52 @@ from ..pdes import get_pde_preset
 VALID_BACKENDS = ("auto", "numpy", "numba")
 
 
-def _get_next_folder_number(base_path: Path, preset: str, overwrite: bool = False) -> str:
-    """Find the next available folder number for a preset.
+def _get_next_folder_name(
+    base_path: Path, preset: str, config_name: str | None = None, overwrite: bool = False
+) -> str:
+    """Find the next available folder name for a preset.
 
     Args:
         base_path: Base output directory.
         preset: Name of the PDE preset.
+        config_name: Name of the config file (without extension). If provided,
+            folder names will be "{config_name}_{number}" (e.g., "directed_fast_001").
+            If None, folder names will be just "{number}" (e.g., "001").
         overwrite: If True, return the last used number instead of incrementing.
 
     Returns:
-        The next folder number as a zero-padded string (e.g., "001").
+        The next folder name (e.g., "directed_fast_001" or "001").
     """
     preset_dir = base_path / preset
     if not preset_dir.exists():
-        return "001"
+        number = "001"
+        return f"{config_name}_{number}" if config_name else number
 
-    # Find all existing numbered folders
+    # Build regex pattern based on whether we have a config name
+    if config_name:
+        pattern = re.compile(rf"^{re.escape(config_name)}_(\d+)$")
+    else:
+        pattern = re.compile(r"^(\d+)$")
+
+    # Find all existing numbered folders matching the pattern
     existing_numbers = []
     for item in preset_dir.iterdir():
         if item.is_dir():
-            match = re.match(r"^(\d+)$", item.name)
+            match = pattern.match(item.name)
             if match:
                 existing_numbers.append(int(match.group(1)))
 
     if not existing_numbers:
-        return "001"
+        number = "001"
+        return f"{config_name}_{number}" if config_name else number
 
     max_number = max(existing_numbers)
     if overwrite:
-        return f"{max_number:03d}"
-    return f"{max_number + 1:03d}"
+        number = f"{max_number:03d}"
+    else:
+        number = f"{max_number + 1:03d}"
+
+    return f"{config_name}_{number}" if config_name else number
 
 
 class SimulationRunner:
@@ -63,6 +79,7 @@ class SimulationRunner:
         output_dir: Path | str | None = None,
         sim_id: str | None = None,
         overwrite: bool = False,
+        config_name: str | None = None,
     ):
         """Initialize the simulation runner.
 
@@ -71,16 +88,18 @@ class SimulationRunner:
             output_dir: Override for output directory.
             sim_id: Override for simulation ID (auto-generated if None).
             overwrite: If True, overwrite the last numbered folder instead of creating a new one.
+            config_name: Name of the config file (without extension). Used to prefix
+                the output folder name (e.g., "directed_fast_001").
         """
         self.config = config
         self.output_dir = Path(output_dir) if output_dir else config.output.path
         self.sim_id = sim_id or str(uuid.uuid4())
 
-        # Generate run name with incremental number (zero-padded, e.g., "001")
-        folder_number = _get_next_folder_number(self.output_dir, config.preset, overwrite)
-        self.run_name = folder_number
-        # Full folder path: {preset}/{number}
-        self.folder_name = f"{config.preset}/{folder_number}"
+        # Generate run name with incremental number (zero-padded, e.g., "001" or "directed_fast_001")
+        folder_name = _get_next_folder_name(self.output_dir, config.preset, config_name, overwrite)
+        self.run_name = folder_name
+        # Full folder path: {preset}/{folder_name}
+        self.folder_name = f"{config.preset}/{folder_name}"
 
         # Validate backend
         if config.backend not in VALID_BACKENDS:
@@ -302,11 +321,17 @@ def run_from_config(
     Returns:
         Simulation metadata dictionary.
     """
+    config_path = Path(config_path)
     config = load_config(config_path)
+
+    # Extract config name from filename (without .yaml extension)
+    config_name = config_path.stem
 
     # Override seed if provided
     if seed is not None:
         config.seed = seed
 
-    runner = SimulationRunner(config, output_dir=output_dir, overwrite=overwrite)
+    runner = SimulationRunner(
+        config, output_dir=output_dir, overwrite=overwrite, config_name=config_name
+    )
     return runner.run(verbose=verbose)
