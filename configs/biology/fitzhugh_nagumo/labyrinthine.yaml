@@ -5,13 +5,13 @@ parameters:
   a_v: 1.0
   a_z: -0.1
 init:
-  type: single-blob
+  type: gaussian-blobs
   params:
+    num_blobs: 4
     amplitude: 1.0
     width: 0.05
-    center_x: 0.5
-    center_y: 0.5
     background: 0.0
+    seed: 42
 solver: euler
 backend: numba
 adaptive: false
@@ -27,6 +27,6 @@ output:
   num_frames: 10
   colormap: turbo
   field_to_plot: u
-seed: 1054
+seed: 42
 domain_size: 280.0
 t_end: 160.0

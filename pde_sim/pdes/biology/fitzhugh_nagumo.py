@@ -110,26 +110,11 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
         **kwargs,
     ) -> FieldCollection:
         """Create initial state - typically a localized perturbation."""
-        noise = ic_params.get("noise", 0.01)
-        seed = ic_params.get("seed")
-
-        if seed is not None:
-            np.random.seed(seed)
-
         if ic_type == "spiral-seed":
             return self._spiral_seed_init(grid, ic_params)
 
-        # Default: rest state with perturbation
-        # Rest state is approximately (u, v) = (0, 0) for pattern formation
-        u_data = noise * np.random.randn(*grid.shape)
-        v_data = noise * np.random.randn(*grid.shape)
-
-        u = ScalarField(grid, u_data)
-        u.label = "u"
-        v = ScalarField(grid, v_data)
-        v.label = "v"
-
-        return FieldCollection([u, v])
+        # Use base class implementation for all other IC types
+        return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
     def _spiral_seed_init(
         self,
