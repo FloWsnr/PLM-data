@@ -1,0 +1,28 @@
+preset: keller-segel
+parameters:
+  c: 8.0         # Very strong chemotaxis
+  D: 1.0
+  a: 0.4         # Faster chemical decay
+init:
+  type: random-uniform
+  params:
+    low: 0.0
+    high: 0.01
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.003        # Smaller timestep for stronger dynamics
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - v:plasma    # Show chemoattractant field with plasma colormap
+seed: 3142
+domain_size: 100.0
+t_end: 40.0

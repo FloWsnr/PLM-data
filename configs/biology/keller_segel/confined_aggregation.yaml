@@ -1,0 +1,28 @@
+preset: keller-segel
+parameters:
+  c: 5.0
+  D: 1.0
+  a: 0.15       # Slightly higher decay for interesting dynamics
+init:
+  type: random-uniform
+  params:
+    low: 0.0
+    high: 0.01
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: 128
+bc:
+  x-: neumann:0   # No-flux boundaries
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - u:magma
+seed: 5555
+domain_size: 80.0     # Smaller domain
+t_end: 60.0
