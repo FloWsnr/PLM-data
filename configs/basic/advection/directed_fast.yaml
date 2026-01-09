@@ -1,0 +1,32 @@
+preset: advection
+parameters:
+  D: 0.5
+  V: 5.0
+  theta: 0.0
+  mode: 1
+init:
+  type: single-blob
+  params:
+    amplitude: 1.0
+    width: 0.1
+    center_x: 0.2
+    center_y: 0.5
+    background: 0.0
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.002
+resolution: 256
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: plasma
+  field_to_plot: u
+seed: 42
+domain_size: 320.0
+t_end: 50.0

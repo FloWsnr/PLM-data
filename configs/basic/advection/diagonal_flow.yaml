@@ -1,0 +1,32 @@
+preset: advection
+parameters:
+  D: 0.3
+  V: 4.0
+  theta: 0.785
+  mode: 1
+init:
+  type: step
+  params:
+    direction: x
+    position: 0.3
+    value_low: 0.0
+    value_high: 1.0
+    smooth_width: 0.05
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.002
+resolution: 256
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: turbo
+  field_to_plot: u
+seed: 42
+domain_size: 320.0
+t_end: 60.0
