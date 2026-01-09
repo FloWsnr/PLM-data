@@ -134,8 +134,12 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
         # Initial water: constant (similar to visual-pde initCond_2: "1")
         w_data = np.ones(grid.shape)
 
-        # Initial plants: random values (similar to visual-pde RAND)
-        n_data = np.random.rand(*grid.shape)  # uniform [0, 1]
+        # Initial plants: random gaussian around vegetated steady state
+        # Using mean=0.5, std=0.1 works better than uniform [0,1] for pattern formation
+        n_mean = ic_params.get("n_mean", 0.5)
+        n_std = ic_params.get("n_std", 0.1)
+        n_data = np.random.normal(n_mean, n_std, grid.shape)
+        n_data = np.clip(n_data, 0, None)  # Ensure non-negative
 
         # Build coordinate grids
         x_bounds = grid.axes_bounds[0]
@@ -152,7 +156,8 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
 
         # Generate topography based on type
         topo_type = ic_params.get("topography", "hills")
-        amplitude = ic_params.get("amplitude", 1.0)
+        amplitude = ic_params.get("amplitude", 10.0)  # Default ~10 to match reference
+        base_slope = ic_params.get("base_slope", 0.0)  # Linear gradient strength
 
         if topo_type == "slope":
             # Simple linear slope in x direction
@@ -166,6 +171,27 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
             T_data = amplitude * (
                 np.sin(n_hills_x * np.pi * Xn) * np.sin(n_hills_y * np.pi * Yn)
             )
+
+        elif topo_type == "gaussian_blobs":
+            # Gaussian blob hills - more localized peaks than sinusoidal
+            n_blobs = ic_params.get("n_blobs", 4)
+            blob_width = ic_params.get("blob_width", 0.15)  # Width as fraction of domain
+            T_data = np.zeros_like(X)
+
+            # Generate random blob positions
+            for _ in range(n_blobs):
+                cx = np.random.uniform(0.1, 0.9)  # Blob center x (normalized)
+                cy = np.random.uniform(0.1, 0.9)  # Blob center y (normalized)
+                blob_amp = np.random.uniform(0.5, 1.0)  # Random amplitude variation
+                sigma = blob_width
+
+                # Gaussian blob
+                T_data += blob_amp * np.exp(
+                    -((Xn - cx) ** 2 + (Yn - cy) ** 2) / (2 * sigma**2)
+                )
+
+            # Scale to amplitude
+            T_data = amplitude * T_data
 
         elif topo_type == "valley":
             # Central valley running in x direction (low in center, high on edges)
@@ -194,6 +220,11 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
         else:
             # Default: gentle slope
             T_data = amplitude * 0.1 * X
+
+        # Add base slope: base_slope * (x/Lx - 0.5)
+        # This matches the reference: 20*(x/L_x-0.5)
+        if base_slope != 0.0:
+            T_data += base_slope * (Xn - 0.5)
 
         n = ScalarField(grid, n_data)
         n.label = "n"

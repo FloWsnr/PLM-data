@@ -1,0 +1,34 @@
+preset: klausmeier-topography
+parameters:
+  a: 1.0        # Rainfall rate - same as working default
+  m: 0.45       # Plant mortality
+  V: 80.0       # Topography effect - same as working default
+  Dn: 1.0       # Plant diffusion
+  Dw: 2.0       # Water diffusion
+init:
+  type: custom
+  params:
+    topography: gaussian_blobs    # Random overlapping gaussian hills
+    amplitude: 6.0                # Height scale
+    n_blobs: 6                    # Number of random blobs
+    blob_width: 0.18              # Width of each blob
+    n_mean: 0.5
+    n_std: 0.1
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 100
+  fields:
+    - n:YlGn
+seed: 2048
+domain_size: 100.0
+t_end: 500.0

@@ -1,0 +1,32 @@
+preset: klausmeier-topography
+parameters:
+  a: 1.0        # Same as default
+  m: 0.45       # Plant mortality
+  V: 80.0       # Same as default
+  Dn: 1.0       # Plant diffusion
+  Dw: 2.0       # Water diffusion
+init:
+  type: custom
+  params:
+    topography: ridge     # Central ridge - water flows to edges
+    amplitude: 5.0        # Same as default
+    n_mean: 0.5
+    n_std: 0.1
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: 128
+bc:
+  x-: periodic            # Periodic in x (ridge runs along x)
+  x+: periodic
+  y-: neumann:0           # Neumann in y to capture water at edges
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 100
+  fields:
+    - n:BrBG              # Brown-Blue-Green for vegetation contrast
+seed: 4269
+domain_size: 100.0
+t_end: 500.0

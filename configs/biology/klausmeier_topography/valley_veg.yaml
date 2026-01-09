@@ -1,0 +1,32 @@
+preset: klausmeier-topography
+parameters:
+  a: 1.0        # Rainfall rate
+  m: 0.45       # Plant mortality
+  V: 120.0      # High topography effect for strong flow
+  Dn: 1.0       # Plant diffusion
+  Dw: 2.0       # Water diffusion
+init:
+  type: custom
+  params:
+    topography: valley    # Central valley - water accumulates in center
+    amplitude: 6.0        # Height scale
+    n_mean: 0.5
+    n_std: 0.1
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: 128
+bc:
+  x-: periodic            # Periodic in x (valley runs along x)
+  x+: periodic
+  y-: neumann:0           # Neumann at top/bottom
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 100
+  fields:
+    - n:gist_earth        # Earth-like colormap
+seed: 5555
+domain_size: 100.0
+t_end: 500.0
