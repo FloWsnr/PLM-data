@@ -12,8 +12,8 @@ from pde_sim.pdes import get_pde_preset
 from pde_sim.core.config import BoundaryConfig
 
 
-# Path to default configs
-CONFIGS_DIR = Path(__file__).parent.parent / "configs" / "defaults"
+# Path to configs
+CONFIGS_DIR = Path(__file__).parent.parent / "configs"
 
 
 def load_config(preset_name: str, category: str) -> dict:
@@ -27,20 +27,21 @@ def load_config(preset_name: str, category: str) -> dict:
         Dictionary with the config contents
     """
     # Try different file naming conventions
+    # New structure: configs/{category}/{pde_name}/default.yaml
     possible_names = [
         preset_name,
         preset_name.replace("-", "_"),
     ]
 
     for name in possible_names:
-        config_path = CONFIGS_DIR / category / f"{name}.yaml"
+        config_path = CONFIGS_DIR / category / name / "default.yaml"
         if config_path.exists():
             with open(config_path) as f:
                 return yaml.safe_load(f)
 
     raise FileNotFoundError(
         f"Config not found for {preset_name} in {category}. "
-        f"Tried: {[CONFIGS_DIR / category / f'{n}.yaml' for n in possible_names]}"
+        f"Tried: {[CONFIGS_DIR / category / n / 'default.yaml' for n in possible_names]}"
     )
 
 

@@ -29,7 +29,7 @@ python -m pde_sim list --category biology
 python -m pde_sim info gray-scott
 
 # Run a simulation
-python -m pde_sim run configs/defaults/gray_scott_spots.yaml
+python -m pde_sim run configs/physics/gray_scott/default.yaml
 python -m pde_sim run config.yaml --output-dir ./my_output --seed 42
 ```
 

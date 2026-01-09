@@ -60,7 +60,6 @@
 | duffing | physics/duffing.yaml | GOOD | Coupled oscillator domain formation from noise |
 | gray-scott | physics/gray_scott.yaml | GOOD | Beautiful labyrinthine pattern growth from single seed - classic self-replication |
 | inviscid-burgers | physics/inviscid_burgers_shock_interaction.yaml | GOOD | Sharp shock formation from Gaussian pulse - front steepens into discontinuity, stretched tail behind (amplitude=1.5, epsilon=0.01) |
-| korteweg-de-vries | physics/korteweg_de_vries.yaml | BAD | Soliton disperses and ends as blank white - numerical instability |
 | kuramoto-sivashinsky | physics/kuramoto_sivashinsky.yaml | OK | Chaotic evolution but low resolution (64x64), looks noisy |
 | lorenz | physics/lorenz.yaml | GOOD | Coupled Lorenz oscillators - synchronized arrow dynamics evolving |
 | nonlinear-schrodinger | physics/nonlinear_schrodinger.yaml | GOOD | Soliton propagation maintaining shape across domain |

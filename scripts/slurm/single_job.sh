@@ -9,7 +9,7 @@
 
 # Single PDE Simulation Job
 # Usage: sbatch single_job.sh <config_file> [seed] [log_file]
-# Example: sbatch single_job.sh configs/defaults/gray_scott_spots.yaml 42
+# Example: sbatch single_job.sh configs/physics/gray_scott/default.yaml 42
 # Example with log: sbatch single_job.sh config.yaml 42 logs/simulation.log
 
 set -e
