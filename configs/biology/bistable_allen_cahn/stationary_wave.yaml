@@ -1,0 +1,26 @@
+preset: bistable-allen-cahn
+parameters:
+  D: 1.0
+  a: 0.5  # Exactly balanced = stationary interface (wave speed = 0)
+init:
+  type: step
+  params:
+    seed: 501
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: coolwarm
+  field_to_plot: u
+seed: 5048
+domain_size: 100.0
+t_end: 200.0

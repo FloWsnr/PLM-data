@@ -1,0 +1,29 @@
+preset: bistable-allen-cahn
+parameters:
+  D: 1.0
+  a: 0.35  # Expansion favored, but small patches may still fail
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 5
+    amplitude: 1.0
+    width: 0.03  # Very small patches - may fail to establish
+    seed: 401
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: magma
+  field_to_plot: u
+seed: 4048
+domain_size: 100.0
+t_end: 100.0

@@ -1,0 +1,26 @@
+preset: bistable-allen-cahn
+parameters:
+  D: 1.0
+  a: 0.7  # Above 0.5 = waves contract (u=0 invades u=1)
+init:
+  type: step
+  params:
+    seed: 301
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: inferno
+  field_to_plot: u
+seed: 3048
+domain_size: 100.0
+t_end: 200.0

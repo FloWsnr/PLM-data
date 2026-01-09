@@ -1,0 +1,29 @@
+preset: bistable-allen-cahn
+parameters:
+  D: 1.0
+  a: 0.25  # Strong expansion - populations will merge and grow
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 6
+    amplitude: 1.0
+    width: 0.12  # Moderate size - some will merge, showing coarsening
+    seed: 602
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: cividis
+  field_to_plot: u
+seed: 6049
+domain_size: 100.0
+t_end: 100.0
