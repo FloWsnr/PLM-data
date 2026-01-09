@@ -66,7 +66,7 @@ class DampedWavePDE(MultiFieldPDEPreset):
                     default=0.0,
                     description="Velocity damping coefficient",
                     min_value=0.0,
-                    max_value=0.1,
+                    max_value=0.5,
                 ),
             ],
             num_fields=2,

@@ -1,0 +1,30 @@
+preset: damped-wave
+parameters:
+  D: 10.0
+  C: 0.01
+  d: 0.1  # Critical damping - fastest return to equilibrium without oscillation
+init:
+  type: single-blob
+  params:
+    center:
+    - 0.5
+    - 0.5
+    sigma: 0.08
+    amplitude: 1.0
+solver: euler
+dt: 0.002
+resolution: 200
+domain_size: 100.0
+t_end: 50.0
+timesteps: 100
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  frames: true
+  metadata: true
+  num_frames: 10
+  fields:
+    - u:plasma

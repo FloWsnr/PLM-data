@@ -1,0 +1,32 @@
+preset: damped-wave
+parameters:
+  D: 10.0
+  C: 0.01
+  d: 0.01  # Light damping - slow amplitude decay, many oscillations visible
+init:
+  type: gaussian-blobs
+  params:
+    n_blobs: 3
+    sigma_range:
+    - 0.04
+    - 0.08
+    amplitude_range:
+    - 0.6
+    - 1.0
+solver: euler
+dt: 0.002
+resolution: 200
+domain_size: 100.0
+t_end: 80.0  # Longer time to observe sustained oscillations
+timesteps: 100
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  frames: true
+  metadata: true
+  num_frames: 10
+  fields:
+    - u:viridis

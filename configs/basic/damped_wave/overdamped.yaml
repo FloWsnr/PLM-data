@@ -1,0 +1,30 @@
+preset: damped-wave
+parameters:
+  D: 10.0
+  C: 0.01
+  d: 0.3  # Overdamped - slow monotonic return, no oscillations
+init:
+  type: single-blob
+  params:
+    center:
+    - 0.3
+    - 0.3
+    sigma: 0.12
+    amplitude: 1.5
+solver: euler
+dt: 0.002
+resolution: 200
+domain_size: 100.0
+t_end: 30.0  # Capture the slow monotonic decay
+timesteps: 100
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  frames: true
+  metadata: true
+  num_frames: 10
+  fields:
+    - u:inferno

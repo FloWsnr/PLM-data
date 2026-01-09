@@ -1,0 +1,32 @@
+preset: damped-wave
+parameters:
+  D: 50.0   # High wave speed for fast propagation
+  C: 0.01
+  d: 0.03  # Moderate damping
+init:
+  type: gaussian-blobs
+  params:
+    n_blobs: 5
+    sigma_range:
+    - 0.03
+    - 0.06
+    amplitude_range:
+    - 0.7
+    - 1.2
+solver: euler
+dt: 0.001  # Smaller dt for faster waves
+resolution: 200
+domain_size: 100.0
+t_end: 40.0
+timesteps: 100
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  frames: true
+  metadata: true
+  num_frames: 10
+  fields:
+    - v:turbo  # Show velocity field for dynamic visualization
