@@ -1,26 +1,29 @@
 preset: harsh-environment
 parameters:
-  D: 0.01
+  D: 4.8
   r: 1.0
   K: 1.0
 init:
-  type: default
-  params: {}
+  type: single-blob
+  params:
+    center: [5.0, 5.0]
+    radius: 2.0
+    amplitude: 1.0
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.0001
 resolution: 128
 bc:
-  x-: neumann:0
-  x+: neumann:0
-  y-: neumann:0
-  y+: neumann:0
+  x-: dirichlet:0
+  x+: dirichlet:0
+  y-: dirichlet:0
+  y+: dirichlet:0
 output:
   path: ./output
   num_frames: 10
-  colormap: viridis
+  colormap: inferno
   field_to_plot: u
-seed: 1058
+seed: 3033
 domain_size: 10.0
-t_end: 25.0
+t_end: 75.0
