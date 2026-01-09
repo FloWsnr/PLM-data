@@ -1,0 +1,31 @@
+preset: fitzhugh-nagumo-3
+parameters:
+  Dv: 40.0
+  Dw: 200.0
+  a_v: 0.2
+  e_v: 0.5       # Faster v dynamics
+  e_w: 0.3       # Much slower w dynamics (larger separation)
+  a_w: 0.5
+  a_z: -0.1
+init:
+  type: default
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - u:twilight
+    - v:twilight_shifted
+    - w:BrBG
+seed: 1055
+domain_size: 280.0
+t_end: 80.0     # Longer time for slower dynamics

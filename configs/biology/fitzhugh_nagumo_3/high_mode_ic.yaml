@@ -1,0 +1,35 @@
+preset: fitzhugh-nagumo-3
+parameters:
+  Dv: 40.0
+  Dw: 200.0
+  a_v: 0.2
+  e_v: 0.2
+  e_w: 1.0
+  a_w: 0.5
+  a_z: -0.1
+init:
+  type: default
+  amplitude: 8.0     # Stronger initial pulse
+  width: 0.05        # Narrower Gaussian
+  m: 8               # Higher mode - finer initial cosine pattern
+  noise: 0.01        # Small random perturbation
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - w:hot          # Show the slow pattern-forming variable
+    - u:YlGnBu
+    - v:PuRd
+seed: 2024
+domain_size: 280.0
+t_end: 50.0

@@ -1,0 +1,31 @@
+preset: fitzhugh-nagumo-3
+parameters:
+  Dv: 20.0       # Lower Dv
+  Dw: 400.0      # Higher Dw - larger wavelength patterns
+  a_v: 0.25      # Intermediate - some pattern stability
+  e_v: 0.2
+  e_w: 1.0
+  a_w: 0.5
+  a_z: -0.1
+init:
+  type: default
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - u:turbo
+    - v:cividis
+    - w:magma
+seed: 1055
+domain_size: 280.0
+t_end: 50.0

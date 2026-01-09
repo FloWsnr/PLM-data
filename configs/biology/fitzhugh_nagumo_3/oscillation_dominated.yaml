@@ -1,0 +1,31 @@
+preset: fitzhugh-nagumo-3
+parameters:
+  Dv: 40.0
+  Dw: 200.0
+  a_v: 0.1       # Low a_v - oscillations dominate, patterns decay
+  e_v: 0.2
+  e_w: 1.0
+  a_w: 0.5
+  a_z: -0.1
+init:
+  type: default
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - u:coolwarm
+    - v:RdBu
+    - w:seismic
+seed: 1055
+domain_size: 280.0
+t_end: 200.0    # Longer time to see pattern decay
