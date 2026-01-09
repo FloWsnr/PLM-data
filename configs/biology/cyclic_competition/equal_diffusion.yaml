@@ -1,0 +1,32 @@
+preset: cyclic-competition
+parameters:
+  a: 0.8
+  b: 1.9
+  Du: 0.3
+  Dv: 0.3
+  Dw: 0.3
+init:
+  type: random-uniform
+  params:
+    low: 0.2
+    high: 0.6
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - u:magma
+    - v:cividis
+    - w:twilight
+seed: 3033
+domain_size: 200.0
+t_end: 80.0

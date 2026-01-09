@@ -1,0 +1,33 @@
+preset: cyclic-competition
+parameters:
+  a: 0.8
+  b: 1.9
+  Du: 1.5
+  Dv: 0.5
+  Dw: 0.5
+init:
+  type: sine
+  params:
+    wavelength: 0.25
+    amplitude: 0.3
+    offset: 0.4
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - u:turbo
+    - v:RdYlBu
+    - w:Spectral
+seed: 5055
+domain_size: 150.0
+t_end: 60.0

@@ -1,0 +1,35 @@
+preset: cyclic-competition
+parameters:
+  a: 0.8
+  b: 1.9
+  Du: 2.0
+  Dv: 0.5
+  Dw: 0.5
+init:
+  type: single-blob
+  params:
+    amplitude: 0.8
+    sigma: 15.0
+    center_x: 0.5
+    center_y: 0.5
+    background: 0.1
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - u:inferno
+    - v:viridis
+    - w:plasma
+seed: 2024
+domain_size: 100.0
+t_end: 50.0

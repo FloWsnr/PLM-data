@@ -1,0 +1,35 @@
+preset: cyclic-competition
+parameters:
+  a: 0.3
+  b: 2.8
+  Du: 1.0
+  Dv: 1.0
+  Dw: 1.0
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 4
+    min_amplitude: 0.4
+    max_amplitude: 0.8
+    min_sigma: 8.0
+    max_sigma: 20.0
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.003
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - u:YlOrRd
+    - v:YlGnBu
+    - w:PuRd
+seed: 6066
+domain_size: 250.0
+t_end: 50.0
