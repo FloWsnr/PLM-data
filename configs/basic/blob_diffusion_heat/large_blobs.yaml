@@ -1,0 +1,32 @@
+preset: blob-diffusion-heat
+parameters:
+  D_min: 0.15
+  D_max: 2.0
+  n_blobs: 20
+  sigma: 0.2
+  seed: 999
+init:
+  type: single-blob
+  params:
+    amplitude: 1.0
+    center_x: 0.5
+    center_y: 0.5
+    width: 0.15
+solver: euler
+dt: 0.005
+resolution: 200
+seed: 5001
+domain_size: 100.0
+t_end: 50.0
+timesteps: 100
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  frames: true
+  metadata: true
+  num_frames: 10
+  fields:
+    - T:viridis

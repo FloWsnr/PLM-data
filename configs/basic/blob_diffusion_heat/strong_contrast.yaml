@@ -1,0 +1,32 @@
+preset: blob-diffusion-heat
+parameters:
+  D_min: 0.05
+  D_max: 3.0
+  n_blobs: 7
+  sigma: 0.12
+  seed: 789
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 8
+    amplitude: 1.0
+    width: 0.06
+    seed: 888
+solver: euler
+dt: 0.005
+resolution: 200
+seed: 3001
+domain_size: 100.0
+t_end: 150.0
+timesteps: 100
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  frames: true
+  metadata: true
+  num_frames: 10
+  fields:
+    - T:plasma

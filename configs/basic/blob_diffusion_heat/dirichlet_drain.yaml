@@ -1,0 +1,32 @@
+preset: blob-diffusion-heat
+parameters:
+  D_min: 0.1
+  D_max: 2.5
+  n_blobs: 10
+  sigma: 0.1
+  seed: 555
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 5
+    amplitude: 1.0
+    width: 0.1
+    seed: 777
+solver: euler
+dt: 0.005
+resolution: 200
+seed: 4001
+domain_size: 100.0
+t_end: 40.0
+timesteps: 100
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+  y-: dirichlet:0
+  y+: dirichlet:0
+output:
+  frames: true
+  metadata: true
+  num_frames: 10
+  fields:
+    - T:magma
