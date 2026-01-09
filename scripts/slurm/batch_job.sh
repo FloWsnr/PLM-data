@@ -8,31 +8,26 @@
 #SBATCH --error=logs/slurm-batch-%j.err
 
 # Batch PDE Simulation Job
-# Usage: sbatch batch_job.sh <base_config.yaml> <parameters.csv> [log_file] [start_row]
-# Example: sbatch batch_job.sh configs/physics/gray_scott/default.yaml configs/parameters/physics/gray-scott.csv
-# Example with log: sbatch batch_job.sh config.yaml params.csv logs/batch.log
+# Usage: sbatch batch_job.sh <config_dir> [log_file] [start_index] [pattern]
+# Example: sbatch batch_job.sh configs/basic/damped_wave
+# Example with log: sbatch batch_job.sh configs/basic/damped_wave logs/batch.log
+# Example with start index: sbatch batch_job.sh configs/basic/damped_wave logs/batch.log 5
+# Example with pattern: sbatch batch_job.sh configs/basic/damped_wave logs/batch.log 1 "*.yaml"
 #
-# The parameters.csv file should have:
-#   - A header row with parameter names
-#   - One simulation configuration per row
-#   - Special columns: BC_x, BC_y, init, solver, dt, t_end, notes (all optional)
-#   - PDE-specific parameters (e.g., F, k, Du, Dv for Gray-Scott)
-#
-# Example CSV format:
-#   F,k,Du,Dv,BC_x,BC_y,init,solver,dt,t_end,notes
-#   0.014,0.054,2e-05,1e-05,periodic,periodic,gaussian-blobs,implicit,1,2500,gliders
+# The config_dir should contain one or more YAML config files, each specifying
+# a complete simulation configuration including preset, parameters, etc.
 
 set -e
 
 # Get arguments
-BASE_CONFIG=${1}
-PARAMS_CSV=${2}
-LOG_FILE=${3:-}      # Optional: path to log file
-START_ROW=${4:-1}    # Optional: start from row N (1-indexed, excluding header)
+CONFIG_DIR=${1}
+LOG_FILE=${2:-}         # Optional: path to log file
+START_INDEX=${3:-1}     # Optional: start from config N (1-indexed)
+PATTERN=${4:-"*.yaml"}  # Optional: glob pattern for config files
 
-if [ -z "$BASE_CONFIG" ] || [ -z "$PARAMS_CSV" ]; then
-    echo "Error: Both base config and parameters CSV are required"
-    echo "Usage: sbatch batch_job.sh <base_config.yaml> <parameters.csv> [log_file] [start_row]"
+if [ -z "$CONFIG_DIR" ]; then
+    echo "Error: Config directory is required"
+    echo "Usage: sbatch batch_job.sh <config_dir> [log_file] [start_index] [pattern]"
     exit 1
 fi
 
@@ -40,7 +35,7 @@ fi
 mkdir -p logs
 
 # Change to project directory
-cd /home/flwi01/coding/PLM-data
+cd /scratch/zsa8rk/PLM-data
 
 # Activate virtual environment
 source .venv/bin/activate
@@ -53,36 +48,26 @@ fi
 
 echo "==================================="
 echo "SLURM Job ID: ${SLURM_JOB_ID:-local}"
-echo "Base Config: ${BASE_CONFIG}"
-echo "Parameters CSV: ${PARAMS_CSV}"
+echo "Config Directory: ${CONFIG_DIR}"
+echo "Pattern: ${PATTERN}"
 if [ -n "$LOG_FILE" ]; then
     echo "Log file: ${LOG_FILE}"
 fi
-echo "Starting from row: ${START_ROW}"
+echo "Starting from index: ${START_INDEX}"
 echo "Started: $(date)"
 echo "==================================="
 
-# Check files exist
-if [ ! -f "$BASE_CONFIG" ]; then
-    echo "Error: Base config file not found: $BASE_CONFIG"
+# Check directory exists
+if [ ! -d "$CONFIG_DIR" ]; then
+    echo "Error: Config directory not found: $CONFIG_DIR"
     exit 1
 fi
-
-if [ ! -f "$PARAMS_CSV" ]; then
-    echo "Error: Parameters CSV file not found: $PARAMS_CSV"
-    exit 1
-fi
-
-# Create temp directory for generated configs
-TEMP_DIR=$(mktemp -d)
-trap "rm -rf $TEMP_DIR" EXIT
 
 # Build command arguments
 CMD_ARGS=(
-    --base-config "$BASE_CONFIG"
-    --params-csv "$PARAMS_CSV"
-    --start-row "$START_ROW"
-    --temp-dir "$TEMP_DIR"
+    "$CONFIG_DIR"
+    --start-index "$START_INDEX"
+    --pattern "$PATTERN"
 )
 
 # Add log file if specified
