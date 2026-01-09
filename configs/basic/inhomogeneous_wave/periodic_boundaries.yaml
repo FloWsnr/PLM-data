@@ -1,0 +1,32 @@
+preset: inhomogeneous-wave
+parameters:
+  D: 1.0
+  E: 0.97
+  m: 6
+  n: 6
+  C: 0.01
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 1
+    amplitude: 1.0
+    sigma: 0.06
+    background: 0.0
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.001
+resolution: 333
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: viridis
+  field_to_plot: u
+seed: 1036
+domain_size: 100.0
+t_end: 50.0

@@ -1,0 +1,34 @@
+preset: inhomogeneous-wave
+parameters:
+  D: 1.0
+  E: 0.97
+  m: 4
+  n: 4
+  C: 0.01
+init:
+  type: single-blob
+  params:
+    position:
+      - 0.5
+      - 0.5
+    amplitude: 1.0
+    sigma: 0.05
+    background: 0.0
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.001
+resolution: 333
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: coolwarm
+  field_to_plot: u
+seed: 1033
+domain_size: 100.0
+t_end: 60.0
