@@ -92,14 +92,25 @@ class SimulationRunner:
                 the output folder name (e.g., "directed_fast_001").
         """
         self.config = config
-        self.output_dir = Path(output_dir) if output_dir else config.output.path
         self.sim_id = sim_id or str(uuid.uuid4())
 
+        # Track whether output_dir was explicitly provided
+        explicit_output_dir = output_dir is not None
+        self.output_dir = Path(output_dir) if output_dir else config.output.path
+
         # Generate run name with incremental number (zero-padded, e.g., "001" or "directed_fast_001")
-        folder_name = _get_next_folder_name(self.output_dir, config.preset, config_name, overwrite)
-        self.run_name = folder_name
-        # Full folder path: {preset}/{folder_name}
-        self.folder_name = f"{config.preset}/{folder_name}"
+        # When explicit output_dir is provided, place numbered folders directly in that directory
+        # When using default output path, add preset subdirectory
+        if explicit_output_dir:
+            # Look for existing runs directly in output_dir (no preset subdirectory)
+            folder_name = _get_next_folder_name(self.output_dir, ".", config_name, overwrite)
+            self.run_name = folder_name
+            self.folder_name = folder_name
+        else:
+            folder_name = _get_next_folder_name(self.output_dir, config.preset, config_name, overwrite)
+            self.run_name = folder_name
+            # Full folder path: {preset}/{folder_name}
+            self.folder_name = f"{config.preset}/{folder_name}"
 
         # Validate backend
         if config.backend not in VALID_BACKENDS:

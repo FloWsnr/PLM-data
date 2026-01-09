@@ -47,7 +47,11 @@ python -m pde_sim run configs/physics/gray_scott/default.yaml
 ### Run with Custom Output Directory
 
 ```bash
-python -m pde_sim run config.yaml --output-dir ./my_output --seed 42
+# Numbered folders are placed directly in the specified directory
+python -m pde_sim run configs/biology/immunotherapy/high_effector_diffusion.yaml \
+    --output-dir output/biology/immunotherapy
+# Creates: output/biology/immunotherapy/high_effector_diffusion_001/
+# Next run: output/biology/immunotherapy/high_effector_diffusion_002/
 ```
 
 ## Configuration
@@ -135,9 +139,9 @@ Available initial condition types:
 
 ## Output Format
 
-Each simulation creates a directory with:
+Each simulation creates a directory. Default output (no `--output-dir`):
 ```
-output/{preset-name}/{run-number}/
+output/{preset-name}/{config-name}_{run-number}/
 ├── frames/
 │   ├── u_000000.png
 │   ├── v_000000.png
@@ -145,6 +149,11 @@ output/{preset-name}/{run-number}/
 │   ├── v_000001.png
 │   └── ...
 └── metadata.json
+```
+
+With `--output-dir`, numbered folders go directly in the specified directory:
+```
+{output-dir}/{config-name}_{run-number}/
 ```
 
 The `metadata.json` contains:

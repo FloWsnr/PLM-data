@@ -166,8 +166,9 @@ If no `fields` list is specified, all fields are output using the default colorm
 
 ## Output Structure
 
+Default output (no `--output-dir`):
 ```
-output/{preset-name}/{run-number}/
+output/{preset-name}/{config-name}_{run-number}/
 ├── frames/
 │   ├── u_000000.png
 │   ├── v_000000.png
@@ -175,4 +176,12 @@ output/{preset-name}/{run-number}/
 │   ├── v_000001.png
 │   └── ...
 └── metadata.json           # Contains per-field colormap info
+```
+
+With explicit `--output-dir`, numbered folders are placed directly in the specified directory:
+```bash
+python -m pde_sim run configs/biology/immunotherapy/high_effector_diffusion.yaml \
+    --output-dir output/biology/immunotherapy
+# Creates: output/biology/immunotherapy/high_effector_diffusion_001/
+# Next run: output/biology/immunotherapy/high_effector_diffusion_002/
 ```
