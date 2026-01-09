@@ -1,0 +1,30 @@
+# Strong asymmetry variant - Larger difference between weak (a) and strong (b) competition
+# Creates more dramatic dominance oscillations with one species temporarily dominating
+preset: cyclic-competition-wave
+parameters:
+  a: 0.5       # Weaker weak competition (more tolerance)
+  b: 2.5       # Stronger strong competition (more aggression)
+  D: 0.3
+init:
+  type: default
+  params:
+    edge_fraction: 0.1
+    noise: 0.001
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.01
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - u:turbo
+seed: 4096
+domain_size: 200.0
+t_end: 200.0

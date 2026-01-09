@@ -1,0 +1,30 @@
+# Wide invasion variant - Species start in left 40% of domain
+# Creates different wave collision dynamics with invasion meeting later
+preset: cyclic-competition-wave
+parameters:
+  a: 0.8
+  b: 1.9
+  D: 0.3
+init:
+  type: default
+  params:
+    edge_fraction: 0.4   # Wider initial region (left 40%)
+    noise: 0.002         # Slightly more noise for variation
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.01
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - v:magma          # Show v species instead of u
+seed: 5120
+domain_size: 200.0
+t_end: 200.0

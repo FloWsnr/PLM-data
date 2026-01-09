@@ -1,0 +1,30 @@
+# Slow waves variant - Lower diffusion for slower invasion and localized dynamics
+# D = 0.1 leads to more localized wave fronts and sharper boundaries
+preset: cyclic-competition-wave
+parameters:
+  a: 0.8
+  b: 1.9
+  D: 0.1       # Lower diffusion - slower waves, more localized
+init:
+  type: default
+  params:
+    edge_fraction: 0.1
+    noise: 0.001
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.01
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - u:plasma
+seed: 3072
+domain_size: 200.0
+t_end: 400.0   # Longer time since waves are slower

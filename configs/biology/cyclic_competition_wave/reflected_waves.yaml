@@ -1,0 +1,30 @@
+# Reflected waves variant - Neumann boundaries for wave reflections
+# No-flux boundaries cause waves to reflect, creating different interaction patterns
+preset: cyclic-competition-wave
+parameters:
+  a: 0.8
+  b: 1.9
+  D: 0.3
+init:
+  type: default
+  params:
+    edge_fraction: 0.1
+    noise: 0.001
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.01
+resolution: 128
+bc:
+  x-: neumann:0    # No-flux (reflecting) boundaries
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - w:cividis     # Show w species with different colormap
+seed: 6144
+domain_size: 200.0
+t_end: 250.0        # Longer time to see reflection dynamics
