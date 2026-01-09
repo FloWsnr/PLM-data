@@ -1,0 +1,32 @@
+# Periodic boundaries: waves wrap around domain edges
+# Single blob at corner to show wraparound behavior
+preset: fisher-kpp
+parameters:
+  D: 1.0
+  r: 0.8
+  K: 1.0
+init:
+  type: single-blob
+  params:
+    amplitude: 1.0
+    width: 0.06
+    center_x: 0.0
+    center_y: 0.0
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0005
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: turbo
+  field_to_plot: u
+seed: 1058
+domain_size: 100.0
+t_end: 60.0

@@ -1,0 +1,33 @@
+# Multiple nucleation sites: many blobs showing wave merging
+# Shows complex interactions as waves from multiple sources merge
+preset: fisher-kpp
+parameters:
+  D: 0.5
+  r: 1.0
+  K: 1.0
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 8
+    amplitude: 1.0
+    width: 0.03
+    background: 0.0
+    seed: 42
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0005
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: cividis
+  field_to_plot: u
+seed: 1057
+domain_size: 80.0
+t_end: 40.0

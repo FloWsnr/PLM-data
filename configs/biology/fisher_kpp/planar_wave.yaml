@@ -1,0 +1,31 @@
+preset: fisher-kpp
+parameters:
+  D: 1.0
+  r: 1.0
+  K: 1.0
+init:
+  type: step
+  params:
+    direction: x
+    position: 0.1
+    value_low: 1.0
+    value_high: 0.0
+    smooth_width: 0.02
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0005
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: plasma
+  field_to_plot: u
+seed: 1054
+domain_size: 100.0
+t_end: 50.0

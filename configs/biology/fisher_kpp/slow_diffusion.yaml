@@ -1,0 +1,33 @@
+# Slow diffusion wave: low D, moderate r for slower propagation
+# Wave speed c = 2*sqrt(r*D) = 2*sqrt(1.5*0.2) = ~1.1 (slower than default c=2)
+# Shows sharper front profile due to growth dominating over diffusion
+preset: fisher-kpp
+parameters:
+  D: 0.2
+  r: 1.5
+  K: 1.0
+init:
+  type: single-blob
+  params:
+    amplitude: 1.0
+    width: 0.08
+    center_x: 0.2
+    center_y: 0.5
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: magma
+  field_to_plot: u
+seed: 1056
+domain_size: 60.0
+t_end: 50.0
