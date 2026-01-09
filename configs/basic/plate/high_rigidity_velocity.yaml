@@ -1,0 +1,28 @@
+preset: plate
+parameters:
+  D: 25.0     # Higher bending rigidity - stiffer plate, faster waves
+  Q: 0.002    # Light gravity load
+  C: 0.08     # Light damping
+  D_c: 0.1
+init:
+  type: constant
+  params:
+    value: -3.0
+solver: scipy
+backend: numpy
+adaptive: true
+dt: 0.0001
+resolution: 200
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+  y-: dirichlet:0
+  y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - v:plasma      # Visualize velocity field instead of displacement
+seed: 1042
+domain_size: 100.0
+t_end: 12.0

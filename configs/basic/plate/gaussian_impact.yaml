@@ -1,0 +1,32 @@
+preset: plate
+parameters:
+  D: 10.0
+  Q: 0.0      # No gravity - pure wave propagation
+  C: 0.05     # Light damping
+  D_c: 0.1
+init:
+  type: single-blob
+  params:
+    amplitude: -3.0      # Negative = depression (like pushing down)
+    width: 0.08          # Narrow, localized impact
+    center_x: 0.35       # Off-center for asymmetric patterns
+    center_y: 0.35
+    background: 0.0      # Flat plate otherwise
+solver: scipy
+backend: numpy
+adaptive: true
+dt: 0.0001
+resolution: 200
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+  y-: dirichlet:0
+  y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: seismic
+  field_to_plot: u
+seed: 1040
+domain_size: 100.0
+t_end: 15.0

@@ -1,0 +1,28 @@
+preset: plate
+parameters:
+  D: 10.0
+  Q: 0.0      # No gravity - pure vibration
+  C: 0.0      # No damping - sustained oscillations
+  D_c: 0.1
+init:
+  type: constant
+  params:
+    value: -4.0
+solver: scipy
+backend: numpy
+adaptive: true
+dt: 0.0001
+resolution: 200
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+  y-: dirichlet:0
+  y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: RdBu_r
+  field_to_plot: u
+seed: 1043
+domain_size: 100.0
+t_end: 20.0
