@@ -1,0 +1,25 @@
+preset: heat
+parameters:
+  D_T: 2.0
+init:
+  type: constant
+  params:
+    value: 0.5
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.01
+resolution: 213
+bc:
+  x-: dirichlet:1.0
+  x+: dirichlet:0.0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: RdYlBu_r
+  field_to_plot: T
+seed: 42
+domain_size: 320.0
+t_end: 800.0

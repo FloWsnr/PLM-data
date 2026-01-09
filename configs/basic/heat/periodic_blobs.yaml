@@ -1,0 +1,29 @@
+preset: heat
+parameters:
+  D_T: 3.0
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 8
+    amplitude: 1.5
+    width: 0.05
+    background: 0.0
+    random_amplitude: true
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.01
+resolution: 213
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: plasma
+  field_to_plot: T
+seed: 123
+domain_size: 320.0
+t_end: 150.0

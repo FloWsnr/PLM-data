@@ -1,0 +1,28 @@
+preset: heat
+parameters:
+  D_T: 2.0
+init:
+  type: sine
+  params:
+    kx: 4
+    ky: 4
+    amplitude: 1.0
+    offset: 0.5
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.01
+resolution: 213
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: coolwarm
+  field_to_plot: T
+seed: 42
+domain_size: 320.0
+t_end: 200.0
