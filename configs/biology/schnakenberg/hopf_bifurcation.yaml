@@ -1,0 +1,28 @@
+preset: schnakenberg
+parameters:
+  Dv: 8.0
+  a: 0.05
+  b: 0.5
+init:
+  type: random-gaussian
+  params:
+    mean: 1.0
+    std: 0.05
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 20
+  fields:
+    - u:plasma
+seed: 3141
+domain_size: 100.0
+t_end: 200.0

@@ -1,0 +1,28 @@
+preset: schnakenberg
+parameters:
+  Dv: 15.0
+  a: 0.03
+  b: 0.8
+init:
+  type: perlin
+  params:
+    scale: 10.0
+    amplitude: 0.5
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0005
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 20
+  fields:
+    - u:inferno
+seed: 4242
+domain_size: 100.0
+t_end: 300.0

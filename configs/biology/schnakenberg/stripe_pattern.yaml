@@ -1,0 +1,28 @@
+preset: schnakenberg
+parameters:
+  Dv: 30.0
+  a: 0.01
+  b: 2.0
+init:
+  type: random-gaussian
+  params:
+    mean: 1.0
+    std: 0.1
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0005
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - u:viridis
+seed: 2048
+domain_size: 100.0
+t_end: 150.0
