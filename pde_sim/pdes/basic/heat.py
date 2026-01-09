@@ -320,3 +320,155 @@ class InhomogeneousDiffusionHeatPDE(ScalarPDEPreset):
             "T": "div(g(x,y) * grad(T))",
             "g(x,y)": f"D*(1+E*cos(n*pi*r/L)) with D={D}, E={E}, n={n}",
         }
+
+
+@register_pde("blob-diffusion-heat")
+class BlobDiffusionHeatPDE(ScalarPDEPreset):
+    """Heat equation with blob-based spatially-varying diffusion coefficient.
+
+    Similar to inhomogeneous-diffusion-heat but uses gaussian blobs
+    instead of radial cosine pattern for the diffusion coefficient:
+
+        dT/dt = div(g(x,y) * grad(T))
+
+    where the diffusion coefficient is a sum of gaussian blobs:
+
+        g(x,y) = D_min + sum_i (D_max - D_min) * exp(-|r - r_i|^2 / (2*sigma^2))
+
+    This creates randomly distributed regions of high thermal conductivity
+    (at blob centers) surrounded by low conductivity regions.
+
+    Physical applications:
+        - Heat flow through materials with inclusions
+        - Porous media with varying permeability
+        - Biological tissue with heterogeneous thermal properties
+    """
+
+    @property
+    def metadata(self) -> PDEMetadata:
+        return PDEMetadata(
+            name="blob-diffusion-heat",
+            category="basic",
+            description="Heat equation with blob-based varying diffusion",
+            equations={"T": "div(g(x,y) * grad(T))"},
+            parameters=[
+                PDEParameter(
+                    name="D_min",
+                    default=0.1,
+                    description="Minimum diffusion coefficient (background)",
+                    min_value=0.01,
+                    max_value=5.0,
+                ),
+                PDEParameter(
+                    name="D_max",
+                    default=2.0,
+                    description="Maximum diffusion coefficient (at blob centers)",
+                    min_value=0.1,
+                    max_value=10.0,
+                ),
+                PDEParameter(
+                    name="n_blobs",
+                    default=5,
+                    description="Number of diffusion blobs",
+                    min_value=1,
+                    max_value=20,
+                ),
+                PDEParameter(
+                    name="sigma",
+                    default=0.1,
+                    description="Blob size (fraction of domain)",
+                    min_value=0.02,
+                    max_value=0.3,
+                ),
+                PDEParameter(
+                    name="seed",
+                    default=42,
+                    description="Random seed for blob placement",
+                    min_value=0,
+                    max_value=99999,
+                ),
+            ],
+            num_fields=1,
+            field_names=["T"],
+            reference="https://visualpde.com/basic-pdes/inhomogeneous-diffusion",
+        )
+
+    def create_pde(
+        self,
+        parameters: dict[str, float],
+        bc: dict[str, Any],
+        grid: CartesianGrid,
+    ) -> PDE:
+        """Create the blob diffusion heat equation PDE."""
+        D_min = parameters.get("D_min", 0.1)
+        D_max = parameters.get("D_max", 2.0)
+        n_blobs = int(parameters.get("n_blobs", 5))
+        sigma = parameters.get("sigma", 0.1)
+        seed = int(parameters.get("seed", 42))
+
+        # Get domain size from grid
+        L_x = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
+        L_y = grid.axes_bounds[1][1] - grid.axes_bounds[1][0]
+        x_min, x_max = grid.axes_bounds[0]
+        y_min, y_max = grid.axes_bounds[1]
+
+        # Get spatial coordinates
+        x_coords = grid.cell_coords[..., 0]
+        y_coords = grid.cell_coords[..., 1]
+
+        # Generate random blob centers
+        rng = np.random.default_rng(seed)
+        blob_x = rng.uniform(x_min + 0.1 * L_x, x_max - 0.1 * L_x, n_blobs)
+        blob_y = rng.uniform(y_min + 0.1 * L_y, y_max - 0.1 * L_y, n_blobs)
+
+        # Compute sigma in physical units
+        sigma_phys = sigma * math.sqrt(L_x * L_y)
+
+        # Build diffusion coefficient field as sum of gaussians
+        g_data = np.full(grid.shape, D_min, dtype=float)
+        dg_dx_data = np.zeros(grid.shape, dtype=float)
+        dg_dy_data = np.zeros(grid.shape, dtype=float)
+
+        for i in range(n_blobs):
+            dx = x_coords - blob_x[i]
+            dy = y_coords - blob_y[i]
+            r2 = dx**2 + dy**2
+            gaussian = np.exp(-r2 / (2 * sigma_phys**2))
+
+            # Add to g
+            g_data += (D_max - D_min) * gaussian
+
+            # Compute gradient contribution
+            # d/dx[exp(-r^2/(2*s^2))] = -x/s^2 * exp(...)
+            dg_dx_data += (D_max - D_min) * gaussian * (-dx / sigma_phys**2)
+            dg_dy_data += (D_max - D_min) * gaussian * (-dy / sigma_phys**2)
+
+        g_field = ScalarField(grid, g_data)
+        dg_dx_field = ScalarField(grid, dg_dx_data)
+        dg_dy_field = ScalarField(grid, dg_dy_data)
+
+        # div(g * grad(T)) = g * laplace(T) + dg_dx * d_dx(T) + dg_dy * d_dy(T)
+        bc_spec = self._convert_bc(bc)
+
+        return PDE(
+            rhs={"T": "g * laplace(T) + dg_dx * d_dx(T) + dg_dy * d_dy(T)"},
+            bc=bc_spec,
+            consts={
+                "g": g_field,
+                "dg_dx": dg_dx_field,
+                "dg_dy": dg_dy_field,
+            },
+        )
+
+    def get_equations_for_metadata(
+        self, parameters: dict[str, float]
+    ) -> dict[str, str]:
+        """Get equations with parameter values substituted."""
+        D_min = parameters.get("D_min", 0.1)
+        D_max = parameters.get("D_max", 2.0)
+        n_blobs = int(parameters.get("n_blobs", 5))
+        sigma = parameters.get("sigma", 0.1)
+        return {
+            "T": "div(g(x,y) * grad(T))",
+            "g(x,y)": f"D_min + sum of {n_blobs} gaussian blobs, D_min={D_min}, D_max={D_max}, sigma={sigma}",
+        }

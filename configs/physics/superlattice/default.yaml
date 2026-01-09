@@ -28,6 +28,6 @@ output:
   num_frames: 10
   colormap: seismic
   field_to_plot: u1
-seed: 42
+seed: 1085
 domain_size: 40.0
 t_end: 5.0

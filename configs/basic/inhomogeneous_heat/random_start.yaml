@@ -23,6 +23,6 @@ output:
   num_frames: 10
   colormap: magma
   field_to_plot: T
-seed: 55
+seed: 1030
 domain_size: 100.0
 t_end: 80.0

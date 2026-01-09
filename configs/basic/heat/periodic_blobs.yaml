@@ -9,6 +9,7 @@ init:
     width: 0.05
     background: 0.0
     random_amplitude: true
+    seed: 104
 solver: euler
 backend: numba
 adaptive: true
@@ -24,6 +25,6 @@ output:
   num_frames: 10
   colormap: plasma
   field_to_plot: T
-seed: 123
+seed: 1017
 domain_size: 320.0
 t_end: 150.0

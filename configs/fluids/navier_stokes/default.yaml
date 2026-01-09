@@ -23,6 +23,6 @@ output:
   num_frames: 10
   colormap: RdBu_r
   field_to_plot: S
-seed: 42
+seed: 1066
 domain_size: 5.0
 t_end: 15.0

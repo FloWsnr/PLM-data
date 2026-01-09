@@ -30,4 +30,4 @@ output:
   field_to_plot: mag(X,Y)
   show_vectors: true
   vector_density: 16
-seed: 42
+seed: 1081

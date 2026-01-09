@@ -24,6 +24,6 @@ output:
   num_frames: 10
   colormap: turbo
   field_to_plot: u
-seed: 42
+seed: 1054
 domain_size: 280.0
 t_end: 100.0

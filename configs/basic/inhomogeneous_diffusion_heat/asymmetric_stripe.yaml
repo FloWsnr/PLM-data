@@ -1,0 +1,31 @@
+preset: inhomogeneous-diffusion-heat
+parameters:
+  D: 0.8
+  E: 0.85
+  n: 15  # Medium frequency
+init:
+  type: step
+  params:
+    direction: y  # Horizontal stripe (top hot, bottom cold)
+    position: 0.5
+    value_low: 0.0
+    value_high: 1.0
+    smooth_width: 0.05  # Slightly smoothed transition
+solver: euler
+dt: 0.005
+resolution: 200
+seed: 1020
+domain_size: 100.0
+t_end: 60.0
+timesteps: 100
+bc:
+  x-: periodic
+  x+: periodic
+  y-: neumann:0
+  y+: neumann:0
+output:
+  frames: true
+  metadata: true
+  num_frames: 10
+  fields:
+    - T:coolwarm

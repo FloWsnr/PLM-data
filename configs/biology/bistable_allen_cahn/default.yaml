@@ -8,6 +8,7 @@ init:
     num_blobs: 3
     amplitude: 1.0
     width: 0.1
+    seed: 101
 solver: euler
 backend: numba
 adaptive: false
@@ -23,6 +24,6 @@ output:
   num_frames: 10
   colormap: viridis
   field_to_plot: u
-seed: 42
+seed: 1048
 domain_size: 100.0
 t_end: 50.0

@@ -23,6 +23,6 @@ output:
   num_frames: 10
   colormap: viridis
   field_to_plot: u
-seed: 42
+seed: 1052
 domain_size: 200.0
 t_end: 200.0

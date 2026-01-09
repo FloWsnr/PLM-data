@@ -28,6 +28,6 @@ output:
   num_frames: 10
   colormap: coolwarm
   field_to_plot: phi
-seed: 42
+seed: 1067
 domain_size: 40.0
 t_end: 5.0

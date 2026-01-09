@@ -1,22 +1,21 @@
-preset: damped-wave
+preset: inhomogeneous-diffusion-heat
 parameters:
-  D: 10.0
-  C: 0.01
-  d: 0.1  # Critical damping - fastest return to equilibrium without oscillation
+  D: 1.5      # Faster diffusion
+  E: 0.99     # Maximum contrast for visible rings
+  n: 45       # Many fine rings
 init:
   type: single-blob
   params:
-    center:
-    - 0.5
-    - 0.5
-    sigma: 0.08
+    center_x: 0.5  # Centered
+    center_y: 0.5
+    sigma: 0.15
     amplitude: 1.0
 solver: euler
-dt: 0.002
+dt: 0.005
 resolution: 200
-seed: 1008
+seed: 1024
 domain_size: 100.0
-t_end: 50.0
+t_end: 40.0
 timesteps: 100
 bc:
   x-: neumann:0
@@ -28,4 +27,4 @@ output:
   metadata: true
   num_frames: 10
   fields:
-    - u:plasma
+    - T:magma

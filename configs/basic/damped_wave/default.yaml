@@ -13,9 +13,11 @@ init:
     amplitude_range:
     - 0.5
     - 1.0
+    seed: 109
 solver: euler
 dt: 0.002
 resolution: 200
+seed: 1009
 domain_size: 100.0
 t_end: 50.0
 timesteps: 100

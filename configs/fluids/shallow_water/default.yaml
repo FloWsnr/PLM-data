@@ -35,6 +35,6 @@ output:
   num_frames: 10
   colormap: coolwarm
   field_to_plot: h
-seed: 42
+seed: 1069
 domain_size: 400.0
 t_end: 50.0

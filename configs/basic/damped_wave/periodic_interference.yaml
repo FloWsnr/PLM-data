@@ -13,6 +13,7 @@ init:
 solver: euler
 dt: 0.002
 resolution: 200
+seed: 1013
 domain_size: 100.0
 t_end: 60.0
 timesteps: 100

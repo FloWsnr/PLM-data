@@ -31,6 +31,6 @@ output:
   num_frames: 10
   colormap: seismic
   field_to_plot: omega
-seed: 42
+seed: 1071
 domain_size: 20.0
 t_end: 50.0

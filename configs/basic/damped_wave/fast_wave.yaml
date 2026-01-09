@@ -13,9 +13,11 @@ init:
     amplitude_range:
     - 0.7
     - 1.2
+    seed: 110
 solver: euler
 dt: 0.001  # Smaller dt for faster waves
 resolution: 200
+seed: 1010
 domain_size: 100.0
 t_end: 40.0
 timesteps: 100

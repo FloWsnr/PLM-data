@@ -27,6 +27,6 @@ output:
   num_frames: 10
   colormap: plasma
   field_to_plot: u
-seed: 42
+seed: 1005
 domain_size: 320.0
 t_end: 50.0

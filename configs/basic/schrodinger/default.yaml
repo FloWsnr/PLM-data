@@ -24,6 +24,6 @@ output:
   num_frames: 10
   colormap: twilight
   field_to_plot: u
-seed: 42
+seed: 1044
 domain_size: 100.0
 t_end: 10.0

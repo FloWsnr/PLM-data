@@ -31,4 +31,4 @@ output:
   colormap: inferno
   field_to_plot: u
 
-seed: 42
+seed: 1079

@@ -20,6 +20,7 @@ class GaussianBlobs(InitialConditionGenerator):
         width: float = 0.1,
         background: float = 0.0,
         random_amplitude: bool = False,
+        seed: int | None = None,
         **kwargs,
     ) -> ScalarField:
         """Generate Gaussian blobs initial condition.
@@ -31,11 +32,13 @@ class GaussianBlobs(InitialConditionGenerator):
             width: Width of blobs relative to domain size.
             background: Background value.
             random_amplitude: If True, randomize blob amplitudes.
+            seed: Random seed for blob placement (for reproducibility).
             **kwargs: Additional arguments (ignored).
 
         Returns:
             ScalarField with Gaussian blobs.
         """
+        rng = np.random.default_rng(seed)
         data = np.full(grid.shape, background, dtype=float)
 
         # Get domain bounds
@@ -51,12 +54,12 @@ class GaussianBlobs(InitialConditionGenerator):
 
         for _ in range(num_blobs):
             # Random center
-            cx = np.random.uniform(x_bounds[0], x_bounds[1])
-            cy = np.random.uniform(y_bounds[0], y_bounds[1])
+            cx = rng.uniform(x_bounds[0], x_bounds[1])
+            cy = rng.uniform(y_bounds[0], y_bounds[1])
 
             # Blob amplitude
             if random_amplitude:
-                amp = np.random.uniform(0.5 * amplitude, amplitude)
+                amp = rng.uniform(0.5 * amplitude, amplitude)
             else:
                 amp = amplitude
 

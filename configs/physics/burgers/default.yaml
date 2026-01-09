@@ -29,6 +29,6 @@ output:
   colormap: seismic
   field_to_plot: u
 
-seed: 42
+seed: 1074
 domain_size: 100.0   # smaller domain to see dynamics clearly
 t_end: 30.0          # shorter time - shock moves faster with higher amplitude

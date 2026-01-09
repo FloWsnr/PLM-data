@@ -1,0 +1,33 @@
+preset: inhomogeneous-diffusion-heat
+parameters:
+  D: 1.0
+  E: 0.3  # Weak modulation (vs 0.9 in default)
+  n: 10   # Medium number of oscillations
+init:
+  type: rectangle-grid
+  params:
+    nx: 4
+    ny: 4
+    values:
+      - [1.0, 0.0, 1.0, 0.0]
+      - [0.0, 1.0, 0.0, 1.0]
+      - [1.0, 0.0, 1.0, 0.0]
+      - [0.0, 1.0, 0.0, 1.0]
+solver: euler
+dt: 0.005
+resolution: 200
+seed: 1025
+domain_size: 100.0
+t_end: 50.0
+timesteps: 100
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  frames: true
+  metadata: true
+  num_frames: 10
+  fields:
+    - T:plasma

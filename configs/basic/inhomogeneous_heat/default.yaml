@@ -10,6 +10,7 @@ init:
     amplitude: 0.8
     sigma: 0.1
     background: 0.0
+    seed: 112
 solver: euler
 backend: numba
 adaptive: true
@@ -25,6 +26,6 @@ output:
   num_frames: 10
   colormap: turbo
   field_to_plot: T
-seed: 42
+seed: 1027
 domain_size: 100.0
 t_end: 50.0

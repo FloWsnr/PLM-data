@@ -11,6 +11,7 @@ init:
     amplitude: 1.0
     width: 0.08
     background: 0.0
+    seed: 107
 solver: euler
 backend: numba
 adaptive: true
@@ -26,6 +27,6 @@ output:
   num_frames: 10
   colormap: viridis
   field_to_plot: u
-seed: 42
+seed: 1002
 domain_size: 320.0
 t_end: 100.0

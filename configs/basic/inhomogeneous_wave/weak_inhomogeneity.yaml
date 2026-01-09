@@ -12,6 +12,7 @@ init:
     amplitude: 1.0
     sigma: 0.08
     background: 0.0
+    seed: 118
 solver: euler
 backend: numba
 adaptive: true

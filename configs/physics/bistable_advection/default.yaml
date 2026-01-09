@@ -37,4 +37,4 @@ output:
   colormap: viridis
   field_to_plot: u
 
-seed: 42
+seed: 1073
