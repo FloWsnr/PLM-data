@@ -1,0 +1,32 @@
+preset: cross-diffusion-schnakenberg
+parameters:
+  Duu: 1.0
+  Duv: 3.0
+  Dvu: 0.2
+  Dvv: 1.0
+  a: 0.01
+  b: 1.5
+init:
+  type: random-gaussian
+  params:
+    mean: 1.0
+    std: 0.1
+    noise: 0.05
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: turbo
+  field_to_plot: u
+seed: 1051
+domain_size: 50.0
+t_end: 100.0
