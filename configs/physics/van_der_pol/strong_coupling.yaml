@@ -1,0 +1,27 @@
+preset: van-der-pol
+parameters:
+  D: 6.0           # Large D -> strongly coupled, synchronized dynamics
+  mu: 8.53         # Keep intermediate mu
+  epsilon: 0.01    # Slightly higher for stability with larger D
+init:
+  type: default
+  params:
+    noise: 0.05
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001          # Smaller dt for stability with strong coupling
+t_end: 60.0
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: PRGn    # Green-purple for different look
+  field_to_plot: X
+seed: 5555
+domain_size: 50

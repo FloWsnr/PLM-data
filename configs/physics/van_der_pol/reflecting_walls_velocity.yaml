@@ -1,0 +1,27 @@
+preset: van-der-pol
+parameters:
+  D: 1.5
+  mu: 12.0         # Moderate-high mu for visible relaxation transitions
+  epsilon: 0.006
+init:
+  type: default
+  params:
+    noise: 0.08    # Slightly larger perturbation
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0012
+t_end: 70.0
+resolution: 128
+bc:
+  x-: neumann:0    # Reflecting walls - no flux at boundaries
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: viridis
+  field_to_plot: Y   # Show velocity field - captures fast transitions
+seed: 6666
+domain_size: 50

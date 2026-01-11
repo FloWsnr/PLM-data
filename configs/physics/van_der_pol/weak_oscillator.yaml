@@ -1,0 +1,27 @@
+preset: van-der-pol
+parameters:
+  D: 1.0
+  mu: 1.5          # Small mu -> near-sinusoidal oscillations (period ~ 2*pi)
+  epsilon: 0.005
+init:
+  type: default
+  params:
+    noise: 0.1     # Slightly larger noise to see dynamics more clearly
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.002          # Can be slightly larger for smoother dynamics
+t_end: 80.0        # Longer time for slower oscillations
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: coolwarm
+  field_to_plot: X
+seed: 2024
+domain_size: 50

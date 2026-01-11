@@ -1,0 +1,27 @@
+preset: van-der-pol
+parameters:
+  D: 0.15          # Small D -> weakly coupled, more localized dynamics
+  mu: 8.53         # Keep intermediate mu
+  epsilon: 0.005
+init:
+  type: default
+  params:
+    noise: 0.05
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0015
+t_end: 50.0
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: PuOr    # Different colormap for variety
+  field_to_plot: X
+seed: 4444
+domain_size: 50
