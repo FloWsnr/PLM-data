@@ -1,0 +1,36 @@
+# Swift-Hohenberg: Spot-dominated pattern with sine wave IC
+# Very high a (quadratic) strongly breaks symmetry to favor spots/hexagons
+# Sine initial condition breaks isotropy to explore different pattern selection
+preset: swift-hohenberg
+parameters:
+  r: 0.2
+  a: 2.0
+  b: -1.5
+  c: -0.5
+  D: 1.0
+init:
+  type: sine
+  params:
+    amplitude: 0.2
+    wavelength_x: 12.5
+    wavelength_y: 12.5
+    phase_x: 0.0
+    phase_y: 0.0
+solver: scipy
+backend: numba
+adaptive: true
+dt: 0.0005
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: coolwarm
+  field_to_plot: u
+seed: 321
+domain_size: 100.0
+t_end: 80.0

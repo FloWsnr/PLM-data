@@ -1,0 +1,33 @@
+# Swift-Hohenberg: Hexagon-dominant patterns
+# Higher a (quadratic coefficient) breaks up-down symmetry, favoring hexagons
+# Larger domain shows cleaner hexagonal arrangement
+preset: swift-hohenberg
+parameters:
+  r: 0.15
+  a: 1.8
+  b: -1.0
+  c: 0.0
+  D: 1.0
+init:
+  type: random-gaussian
+  params:
+    mean: 0.0
+    std: 0.05
+solver: scipy
+backend: numba
+adaptive: true
+dt: 0.0005
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: hot
+  field_to_plot: u
+seed: 789
+domain_size: 80.0
+t_end: 60.0

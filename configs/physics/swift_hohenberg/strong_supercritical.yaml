@@ -1,0 +1,33 @@
+# Swift-Hohenberg: Strong supercritical regime
+# High r value (far above threshold) gives rapid, strong pattern formation
+# Patterns emerge quickly with high contrast
+preset: swift-hohenberg
+parameters:
+  r: 0.5
+  a: 0.5
+  b: -1.0
+  c: 0.0
+  D: 1.0
+init:
+  type: random-gaussian
+  params:
+    mean: 0.0
+    std: 0.1
+solver: scipy
+backend: numba
+adaptive: true
+dt: 0.0005
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: viridis
+  field_to_plot: u
+seed: 456
+domain_size: 100.0
+t_end: 30.0
