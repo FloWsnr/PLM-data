@@ -1,0 +1,35 @@
+# Inviscid Burgers' Equation - Periodic Propagation
+# Shock wraps around the domain with periodic boundaries
+# Shows shock traveling continuously through the domain
+preset: inviscid-burgers
+parameters:
+  epsilon: 0.01      # small regularization
+
+init:
+  type: default
+  params:
+    offset: 0.1      # higher baseline for periodic case
+    amplitude: 0.8   # moderate amplitude
+    width_coeff: 0.002  # moderate width
+
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.005
+resolution: 256
+domain_size: 60.0    # smaller domain so shock wraps faster
+t_end: 100.0         # longer time to see multiple wraps
+
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+
+output:
+  path: ./output
+  num_frames: 15
+  colormap: turbo
+  field_to_plot: u
+
+seed: 4567

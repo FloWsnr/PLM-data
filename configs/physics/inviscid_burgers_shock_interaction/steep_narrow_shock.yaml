@@ -1,0 +1,35 @@
+# Inviscid Burgers' Equation - Steep Narrow Shock
+# Very narrow high-amplitude pulse for rapid, dramatic shock formation
+# Fast propagation speed due to high amplitude
+preset: inviscid-burgers
+parameters:
+  epsilon: 0.02      # slight regularization
+
+init:
+  type: default
+  params:
+    offset: 0.02     # low baseline
+    amplitude: 2.5   # very high amplitude for fast propagation
+    width_coeff: 0.003  # narrow pulse
+
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.005
+resolution: 256
+domain_size: 100.0   # larger domain to see fast propagation
+t_end: 20.0          # shorter time (fast dynamics)
+
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+
+output:
+  path: ./output
+  num_frames: 12
+  colormap: hot
+  field_to_plot: u
+
+seed: 6789
