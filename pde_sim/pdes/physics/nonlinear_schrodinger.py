@@ -157,6 +157,54 @@ class NonlinearSchrodingerPDE(MultiFieldPDEPreset):
 
             return FieldCollection([u, v])
 
+        elif ic_type == "two_soliton":
+            # Two solitons moving toward each other for collision dynamics
+            c1 = ic_params.get("c1", 8.0)  # velocity of first soliton
+            c2 = ic_params.get("c2", -8.0)  # velocity of second soliton (opposite)
+            amplitude = ic_params.get("amplitude", 1.0)
+            x1_frac = ic_params.get("x1_frac", 0.25)  # position as fraction of domain
+            x2_frac = ic_params.get("x2_frac", 0.75)  # position as fraction of domain
+            seed = ic_params.get("seed")
+            if seed is not None:
+                np.random.seed(seed)
+
+            # Get domain info
+            x_bounds = grid.axes_bounds[0]
+            Lx = x_bounds[1] - x_bounds[0]
+
+            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+
+            if len(grid.shape) > 1:
+                y_bounds = grid.axes_bounds[1]
+                y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
+                X, Y = np.meshgrid(x, y, indexing="ij")
+
+                # Two solitons at different positions
+                x1 = x_bounds[0] + Lx * x1_frac
+                x2 = x_bounds[0] + Lx * x2_frac
+
+                # sech envelopes
+                envelope1 = amplitude / np.cosh(X - x1)
+                envelope2 = amplitude / np.cosh(X - x2)
+
+                # Carrier waves with different velocities
+                u_data = np.cos(c1 * X) * envelope1 + np.cos(c2 * X) * envelope2
+                v_data = np.sin(c1 * X) * envelope1 + np.sin(c2 * X) * envelope2
+            else:
+                x1 = x_bounds[0] + Lx * x1_frac
+                x2 = x_bounds[0] + Lx * x2_frac
+                envelope1 = amplitude / np.cosh(x - x1)
+                envelope2 = amplitude / np.cosh(x - x2)
+                u_data = np.cos(c1 * x) * envelope1 + np.cos(c2 * x) * envelope2
+                v_data = np.sin(c1 * x) * envelope1 + np.sin(c2 * x) * envelope2
+
+            u = ScalarField(grid, u_data)
+            u.label = "u"
+            v = ScalarField(grid, v_data)
+            v.label = "v"
+
+            return FieldCollection([u, v])
+
         # For other IC types
         return super().create_initial_state(grid, ic_type, ic_params)
 

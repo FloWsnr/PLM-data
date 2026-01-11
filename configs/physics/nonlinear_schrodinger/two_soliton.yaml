@@ -1,0 +1,32 @@
+preset: nonlinear-schrodinger
+parameters:
+  kappa: 1.0
+  D: 1.0
+  c: 10.0
+init:
+  type: two_soliton
+  params:
+    amplitude: 1.0
+    c1: 8.0
+    c2: -8.0
+    x1_frac: 0.25
+    x2_frac: 0.75
+solver: rk4
+backend: numba
+adaptive: false
+dt: 2.0e-05
+t_end: 2.0
+dimension: 1
+resolution: 300
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: cividis
+  field_to_plot: mag(u,v)
+seed: 1082
+domain_size: 30

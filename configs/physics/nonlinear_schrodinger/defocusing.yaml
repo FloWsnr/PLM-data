@@ -1,0 +1,28 @@
+preset: nonlinear-schrodinger
+parameters:
+  kappa: -1.0
+  D: 1.0
+  c: 10.0
+init:
+  type: default
+  params:
+    amplitude: 1.0
+solver: rk4
+backend: numba
+adaptive: false
+dt: 2.0e-05
+t_end: 2.0
+dimension: 1
+resolution: 300
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: plasma
+  field_to_plot: mag(u,v)
+seed: 1082
+domain_size: 30
