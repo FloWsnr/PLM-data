@@ -1,0 +1,30 @@
+# Random solitons Zakharov-Kuznetsov: N randomly placed solitons
+# Shows complex multi-soliton dynamics with random initial positions and sizes
+preset: zakharov-kuznetsov
+parameters:
+  b: 0.0001
+init:
+  type: random-solitons
+  params:
+    n: 3
+    a_min: 0.005
+    a_max: 0.01
+    margin: 0.2
+solver: rk4
+backend: numba
+adaptive: false
+dt: 0.001
+t_end: 30.0
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: twilight
+  field_to_plot: u
+seed: 42
+domain_size: 100

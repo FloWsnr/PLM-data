@@ -1,0 +1,28 @@
+# Narrow soliton Zakharov-Kuznetsov: tighter localized wave packet
+# Larger 'a' parameter creates a narrower, more concentrated soliton
+# This shows faster dynamics and potentially more dispersive radiation
+preset: zakharov-kuznetsov
+parameters:
+  b: 0.001
+init:
+  type: offset-soliton
+  params:
+    a: 0.02
+solver: rk4
+backend: numba
+adaptive: false
+dt: 0.001
+t_end: 60.0
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: turbo
+  field_to_plot: u
+seed: 1089
+domain_size: 100

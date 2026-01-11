@@ -1,0 +1,33 @@
+# Asymmetric two-soliton interaction: different sized solitons
+# Vertically separated solitons with different widths
+# Wide soliton on top, narrow soliton below - shows different wake patterns
+preset: zakharov-kuznetsov
+parameters:
+  b: 0.0001
+init:
+  type: two-solitons
+  params:
+    a1: 0.006
+    a2: 0.012
+    x1: 25
+    y1: 35
+    x2: 25
+    y2: 65
+solver: rk4
+backend: numba
+adaptive: false
+dt: 0.001
+t_end: 60.0
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: magma
+  field_to_plot: u
+seed: 1089
+domain_size: 100

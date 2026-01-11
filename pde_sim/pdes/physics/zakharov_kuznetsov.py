@@ -54,6 +54,13 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
                     min_value=0.0,
                     max_value=0.1,
                 ),
+                PDEParameter(
+                    name="theta",
+                    default=0.0,
+                    description="Propagation angle in radians (0 = +x direction)",
+                    min_value=-np.pi,
+                    max_value=np.pi,
+                ),
             ],
             num_fields=1,
             field_names=["u"],
@@ -69,7 +76,7 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
         """Create the Zakharov-Kuznetsov equation PDE.
 
         Args:
-            parameters: Dictionary with dissipation coefficient b.
+            parameters: Dictionary with dissipation coefficient b and theta.
             bc: Boundary condition specification.
             grid: The computational grid.
 
@@ -77,19 +84,38 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
             Configured PDE instance.
         """
         b = parameters.get("b", 0.008)
+        theta = parameters.get("theta", 0.0)
 
-        # Zakharov-Kuznetsov equation (simplified form):
-        # du/dt = -d_dx(laplace(u)) - u*d_dx(u) - b*∇⁴u
+        # Zakharov-Kuznetsov equation with rotated propagation direction:
+        # du/dt = -d_s(laplace(u)) - u*d_s(u) - b*∇⁴u
         #
-        # This uses the identity:
-        #   -∂³u/∂x³ - ∂³u/(∂x∂y²) = -∂/∂x(∂²u/∂x² + ∂²u/∂y²) = -d_dx(laplace(u))
+        # where d_s is the directional derivative in the propagation direction:
+        #   d_s = cos(θ)*d_dx + sin(θ)*d_dy
         #
-        # This formulation is more numerically stable than nested first derivatives
-        # because we compute the Laplacian (2nd derivatives) first, then one 1st derivative.
+        # For theta=0, this reduces to the standard ZK equation with +x propagation.
+        cos_t = np.cos(theta)
+        sin_t = np.sin(theta)
+
+        # Build directional derivative expression
+        # d_s(f) = cos(θ)*d_dx(f) + sin(θ)*d_dy(f)
+        if abs(sin_t) < 1e-10:
+            # Pure x-direction (theta ≈ 0 or π)
+            sign = 1.0 if cos_t > 0 else -1.0
+            rhs = f"{sign} * (-d_dx(laplace(u)) - u * d_dx(u)) - {b} * laplace(laplace(u))"
+        elif abs(cos_t) < 1e-10:
+            # Pure y-direction (theta ≈ ±π/2)
+            sign = 1.0 if sin_t > 0 else -1.0
+            rhs = f"{sign} * (-d_dy(laplace(u)) - u * d_dy(u)) - {b} * laplace(laplace(u))"
+        else:
+            # General direction
+            rhs = (
+                f"-{cos_t} * d_dx(laplace(u)) - {sin_t} * d_dy(laplace(u)) "
+                f"- u * ({cos_t} * d_dx(u) + {sin_t} * d_dy(u)) "
+                f"- {b} * laplace(laplace(u))"
+            )
+
         return PDE(
-            rhs={
-                "u": f"-d_dx(laplace(u)) - u * d_dx(u) - {b} * laplace(laplace(u))"
-            },
+            rhs={"u": rhs},
             bc=self._convert_bc(bc),
         )
 
@@ -149,6 +175,75 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
 
             return ScalarField(grid, data)
 
+        if ic_type == "two-solitons":
+            # Two solitons to observe interaction/collision dynamics
+            a1 = ic_params.get("a1", 0.01)
+            a2 = ic_params.get("a2", 0.01)
+
+            x_bounds = grid.axes_bounds[0]
+            y_bounds = grid.axes_bounds[1]
+            Lx = x_bounds[1] - x_bounds[0]
+            Ly = y_bounds[1] - y_bounds[0]
+
+            # First soliton: left side
+            x1 = ic_params.get("x1", x_bounds[0] + Lx * 0.25)
+            y1 = ic_params.get("y1", y_bounds[0] + Ly * 0.35)
+
+            # Second soliton: also left but different y position
+            x2 = ic_params.get("x2", x_bounds[0] + Lx * 0.25)
+            y2 = ic_params.get("y2", y_bounds[0] + Ly * 0.65)
+
+            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+            y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
+            X, Y = np.meshgrid(x, y, indexing="ij")
+
+            r1_sq = (X - x1) ** 2 + (Y - y1) ** 2
+            r2_sq = (X - x2) ** 2 + (Y - y2) ** 2
+
+            data = 1.0 / np.cosh(a1 * r1_sq) ** 2 + 1.0 / np.cosh(a2 * r2_sq) ** 2
+
+            return ScalarField(grid, data)
+
+        if ic_type == "random-solitons":
+            # N randomly placed solitons with random widths
+            # Parameters:
+            #   n: number of solitons (default 3)
+            #   a_min, a_max: range for width parameter (default 0.005-0.015)
+            #   margin: fraction of domain to avoid at edges (default 0.1)
+            n = ic_params.get("n", 3)
+            a_min = ic_params.get("a_min", 0.005)
+            a_max = ic_params.get("a_max", 0.015)
+            margin = ic_params.get("margin", 0.1)
+
+            x_bounds = grid.axes_bounds[0]
+            y_bounds = grid.axes_bounds[1]
+            Lx = x_bounds[1] - x_bounds[0]
+            Ly = y_bounds[1] - y_bounds[0]
+
+            # Create coordinate arrays
+            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+            y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
+            X, Y = np.meshgrid(x, y, indexing="ij")
+
+            # Use seed from kwargs if provided
+            seed = kwargs.get("seed", None)
+            rng = np.random.default_rng(seed)
+
+            # Generate random positions and widths
+            x_range = (x_bounds[0] + margin * Lx, x_bounds[1] - margin * Lx)
+            y_range = (y_bounds[0] + margin * Ly, y_bounds[1] - margin * Ly)
+
+            data = np.zeros_like(X)
+            for _ in range(n):
+                xi = rng.uniform(x_range[0], x_range[1])
+                yi = rng.uniform(y_range[0], y_range[1])
+                ai = rng.uniform(a_min, a_max)
+
+                r_sq = (X - xi) ** 2 + (Y - yi) ** 2
+                data += 1.0 / np.cosh(ai * r_sq) ** 2
+
+            return ScalarField(grid, data)
+
         return create_initial_condition(grid, ic_type, ic_params)
 
     def get_equations_for_metadata(
@@ -156,6 +251,19 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
     ) -> dict[str, str]:
         """Get equations with parameter values substituted."""
         b = parameters.get("b", 0.008)
-        return {
-            "u": f"-d_dx(laplace(u)) - u * d_dx(u) - {b} * laplace(laplace(u))",
-        }
+        theta = parameters.get("theta", 0.0)
+
+        if abs(theta) < 1e-10:
+            return {
+                "u": f"-d_dx(laplace(u)) - u * d_dx(u) - {b} * laplace(laplace(u))",
+            }
+        else:
+            cos_t = np.cos(theta)
+            sin_t = np.sin(theta)
+            return {
+                "u": (
+                    f"-({cos_t:.3f}*d_dx + {sin_t:.3f}*d_dy)(laplace(u)) "
+                    f"- u*({cos_t:.3f}*d_dx + {sin_t:.3f}*d_dy)(u) "
+                    f"- {b}*laplace(laplace(u))"
+                ),
+            }
