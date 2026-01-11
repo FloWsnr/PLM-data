@@ -1,0 +1,38 @@
+# Burgers' Equation - Riemann Problem (Shock Formation)
+# Classic step function IC leading to shock wave formation
+# When u_left > u_right, characteristics compress into a shock
+preset: burgers
+parameters:
+  epsilon: 0.02      # very low viscosity for sharp shock
+
+init:
+  type: step
+  params:
+    direction: x
+    position: 0.3        # step at 30% of domain
+    value_low: 1.5       # high value on left (faster)
+    value_high: 0.2      # low value on right (slower)
+    smooth_width: 0.01   # slight smoothing for numerical stability
+
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.001
+resolution: 256
+dimension: 1
+
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: periodic
+  y+: periodic
+
+output:
+  path: ./output
+  num_frames: 10
+  colormap: coolwarm
+  field_to_plot: u
+
+seed: 3072
+domain_size: 100.0
+t_end: 40.0       # longer time to see shock propagate

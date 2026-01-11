@@ -1,0 +1,35 @@
+# Burgers' Equation - High Amplitude (Fast Propagation)
+# Higher amplitude leads to faster wave propagation and dramatic dynamics
+# Showcases nonlinear wave speed: u travels at speed u (self-advection)
+preset: burgers
+parameters:
+  epsilon: 0.1       # moderate viscosity to balance speed
+
+init:
+  type: default
+  params:
+    amplitude: 4.0   # high amplitude for very fast propagation
+    width: 0.06      # narrower pulse for sharper initial profile
+
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.002
+resolution: 256
+dimension: 1
+
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: periodic
+  y+: periodic
+
+output:
+  path: ./output
+  num_frames: 10
+  colormap: magma
+  field_to_plot: u
+
+seed: 5120
+domain_size: 100.0
+t_end: 20.0       # shorter time - wave moves fast

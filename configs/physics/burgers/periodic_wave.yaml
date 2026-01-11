@@ -1,0 +1,35 @@
+# Burgers' Equation - Periodic Boundaries (Wave Wrapping)
+# Wave wraps around the domain creating continuous interaction
+# Shows long-term dynamics with wave re-entry
+preset: burgers
+parameters:
+  epsilon: 0.15      # moderate viscosity for stable wrapping
+
+init:
+  type: default
+  params:
+    amplitude: 1.5   # moderate amplitude for steady propagation
+    width: 0.1       # slightly wider pulse
+
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.005
+resolution: 256
+dimension: 1
+
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+
+output:
+  path: ./output
+  num_frames: 10
+  colormap: viridis
+  field_to_plot: u
+
+seed: 6144
+domain_size: 100.0
+t_end: 80.0       # longer time to see multiple wraps

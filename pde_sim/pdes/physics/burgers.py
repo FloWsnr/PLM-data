@@ -90,6 +90,7 @@ class BurgersPDE(ScalarPDEPreset):
         """Create initial state for Burgers' equation.
 
         Default: Gaussian pulse for shock formation demonstration.
+        Multi-pulse: Multiple Gaussian pulses at specified x positions.
         """
         if ic_type in ("burgers-default", "default"):
             # Gaussian pulse at x = L/5
@@ -112,6 +113,34 @@ class BurgersPDE(ScalarPDEPreset):
                 data = amplitude * np.exp(-((X - x0) ** 2) / (2 * width**2))
             else:
                 data = amplitude * np.exp(-((x - x0) ** 2) / (2 * width**2))
+
+            return ScalarField(grid, data)
+
+        if ic_type == "multi-pulse":
+            # Multiple Gaussian pulses at specified x positions
+            # For demonstrating shock interaction (taller = faster)
+            x_bounds = grid.axes_bounds[0]
+            Lx = x_bounds[1] - x_bounds[0]
+
+            # Get pulse parameters (lists)
+            positions = ic_params.get("positions", [0.1, 0.3, 0.5])  # normalized x
+            amplitudes = ic_params.get("amplitudes", [2.0, 1.5, 1.0])
+            width = ic_params.get("width", 0.05) * Lx
+
+            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+            if len(grid.shape) > 1:
+                y_bounds = grid.axes_bounds[1]
+                y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
+                X, Y = np.meshgrid(x, y, indexing="ij")
+                data = np.zeros_like(X)
+                for pos, amp in zip(positions, amplitudes):
+                    x0 = x_bounds[0] + pos * Lx
+                    data += amp * np.exp(-((X - x0) ** 2) / (2 * width**2))
+            else:
+                data = np.zeros_like(x)
+                for pos, amp in zip(positions, amplitudes):
+                    x0 = x_bounds[0] + pos * Lx
+                    data += amp * np.exp(-((x - x0) ** 2) / (2 * width**2))
 
             return ScalarField(grid, data)
 
