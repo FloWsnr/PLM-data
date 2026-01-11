@@ -1,0 +1,31 @@
+preset: duffing
+parameters:
+  D: 0.8          # Stronger diffusion coupling
+  alpha: -1.5     # Moderate double-well
+  beta: 0.3       # Moderate nonlinearity
+  delta: 0.15     # Moderate damping for stability
+  gamma: 3.0      # Strong forcing
+  omega: 6.0      # High forcing frequency (above resonance)
+  epsilon: 0.01
+init:
+  type: default
+  params:
+    noise: 0.8
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+t_end: 40.0
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: BrBG
+  field_to_plot: X
+seed: 7777
+domain_size: 50

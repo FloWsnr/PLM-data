@@ -1,0 +1,31 @@
+preset: duffing
+parameters:
+  D: 1.0          # Strong diffusion for larger spatial structures
+  alpha: -2.0     # Moderate double-well
+  beta: 0.4       # Moderate nonlinearity
+  delta: 0.03     # Very low damping for subharmonic response
+  gamma: 2.5      # Moderate forcing
+  omega: 1.0      # Low frequency - promotes period-doubling
+  epsilon: 0.02
+init:
+  type: default
+  params:
+    noise: 1.2
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+t_end: 80.0
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: PRGn
+  field_to_plot: X
+seed: 9999
+domain_size: 50

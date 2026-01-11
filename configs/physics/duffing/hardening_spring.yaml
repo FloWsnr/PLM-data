@@ -1,0 +1,31 @@
+preset: duffing
+parameters:
+  D: 0.5
+  alpha: 1.0      # Positive: single-well potential
+  beta: 0.5       # Positive: hardening spring (stiffness increases with displacement)
+  delta: 0.05     # Low damping for more dynamic behavior
+  gamma: 3.0      # Strong forcing amplitude
+  omega: 1.5      # Near resonance frequency
+  epsilon: 0.01
+init:
+  type: default
+  params:
+    noise: 1.5    # Larger initial perturbations
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0015
+t_end: 50.0
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: coolwarm
+  field_to_plot: X
+seed: 2048
+domain_size: 50

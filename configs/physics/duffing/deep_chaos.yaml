@@ -1,0 +1,31 @@
+preset: duffing
+parameters:
+  D: 0.3          # Moderate diffusion coupling
+  alpha: -3.0     # Deep double-well potential (stronger bistability)
+  beta: 0.5       # Strong cubic nonlinearity
+  delta: 0.05     # Low damping promotes chaos
+  gamma: 4.0      # Strong forcing amplitude
+  omega: 1.2      # Slightly detuned from natural frequency
+  epsilon: 0.01
+init:
+  type: default
+  params:
+    noise: 1.0
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+t_end: 60.0
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: PiYG
+  field_to_plot: X
+seed: 5555
+domain_size: 50

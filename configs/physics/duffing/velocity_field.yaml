@@ -1,0 +1,32 @@
+preset: duffing
+parameters:
+  D: 0.6          # Moderate diffusion
+  alpha: -1.5     # Double-well
+  beta: 0.35      # Cubic nonlinearity
+  delta: 0.08     # Moderate damping
+  gamma: 2.5      # Moderate forcing
+  omega: 2.5      # Moderate frequency
+  epsilon: 0.01
+init:
+  type: default
+  params:
+    noise: 1.0
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+t_end: 50.0
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: twilight_shifted
+  fields:
+    - Y:twilight_shifted
+seed: 4444
+domain_size: 50
