@@ -5,10 +5,12 @@ parameters:
   beta: 2.6666666666667
   D: 0.5
 init:
-  type: random-gaussian
+  type: gaussian-blob
   params:
-    mean: 1.0
-    std: 0.3
+    amplitude: 1.0
+    center_x: 0.5
+    center_y: 0.5
+    sigma: 0.15
 solver: rk4
 backend: numba
 adaptive: true
@@ -25,5 +27,5 @@ output:
   path: ./output
   num_frames: 100
   fields:
-    - X:inferno
-seed: 42
+    - Z:coolwarm
+seed: 321
