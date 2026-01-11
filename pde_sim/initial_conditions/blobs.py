@@ -76,6 +76,86 @@ class GaussianBlobs(InitialConditionGenerator):
         return ScalarField(grid, data)
 
 
+class AsymmetricBlobs(InitialConditionGenerator):
+    """Multiple asymmetric (elliptical) Gaussian blobs with random orientations.
+
+    Creates a field with elongated Gaussian-shaped bumps at random positions
+    and random orientations, useful for seeding worm-like patterns.
+    """
+
+    def generate(
+        self,
+        grid: CartesianGrid,
+        num_blobs: int = 10,
+        amplitude: float = 1.0,
+        width: float = 0.02,
+        aspect_ratio: float = 3.0,
+        background: float = 0.0,
+        random_aspect: bool = True,
+        seed: int | None = None,
+        **kwargs,
+    ) -> ScalarField:
+        """Generate asymmetric Gaussian blobs initial condition.
+
+        Args:
+            grid: The computational grid.
+            num_blobs: Number of blobs to create.
+            amplitude: Peak amplitude of each blob.
+            width: Base width of blobs relative to domain size (minor axis).
+            aspect_ratio: Ratio of major to minor axis (elongation).
+            background: Background value.
+            random_aspect: If True, randomize aspect ratio for each blob.
+            seed: Random seed for reproducibility.
+            **kwargs: Additional arguments (ignored).
+
+        Returns:
+            ScalarField with asymmetric Gaussian blobs.
+        """
+        rng = np.random.default_rng(seed)
+        data = np.full(grid.shape, background, dtype=float)
+
+        # Get domain bounds
+        x_bounds = grid.axes_bounds[0]
+        y_bounds = grid.axes_bounds[1]
+        Lx = x_bounds[1] - x_bounds[0]
+        Ly = y_bounds[1] - y_bounds[0]
+
+        # Create coordinate arrays
+        x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+        y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
+        X, Y = np.meshgrid(x, y, indexing="ij")
+
+        for _ in range(num_blobs):
+            # Random center
+            cx = rng.uniform(x_bounds[0], x_bounds[1])
+            cy = rng.uniform(y_bounds[0], y_bounds[1])
+
+            # Random orientation angle
+            theta = rng.uniform(0, 2 * np.pi)
+
+            # Aspect ratio (elongation)
+            if random_aspect:
+                ar = rng.uniform(1.5, aspect_ratio)
+            else:
+                ar = aspect_ratio
+
+            # Width in physical units (minor and major axes)
+            sigma_minor = width * min(Lx, Ly)
+            sigma_major = sigma_minor * ar
+
+            # Rotate coordinates
+            X_rot = (X - cx) * np.cos(theta) + (Y - cy) * np.sin(theta)
+            Y_rot = -(X - cx) * np.sin(theta) + (Y - cy) * np.cos(theta)
+
+            # Add elliptical Gaussian blob
+            blob = amplitude * np.exp(
+                -(X_rot**2 / (2 * sigma_major**2) + Y_rot**2 / (2 * sigma_minor**2))
+            )
+            data += blob
+
+        return ScalarField(grid, data)
+
+
 class SingleBlob(InitialConditionGenerator):
     """Single Gaussian blob at a specified position.
 

@@ -1,0 +1,29 @@
+preset: gray-scott
+parameters:
+  a: 0.037
+  b: 0.06
+  D: 2.0
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 10
+    width: 0.04
+    noise: 0.02
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.2
+t_end: 6000.0
+resolution: 333
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: viridis
+  field_to_plot: u
+seed: 1001
+domain_size: 1000

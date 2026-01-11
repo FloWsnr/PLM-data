@@ -5,7 +5,7 @@ from typing import Any
 from pde import CartesianGrid, ScalarField
 
 from .base import InitialConditionGenerator
-from .blobs import GaussianBlobs, SingleBlob
+from .blobs import AsymmetricBlobs, GaussianBlobs, SingleBlob
 from .periodic import SinePattern
 from .random import RandomGaussian, RandomUniform
 from .step import Constant, RectangleGrid, StepFunction
@@ -15,6 +15,7 @@ _IC_REGISTRY: dict[str, type[InitialConditionGenerator]] = {
     "random-uniform": RandomUniform,
     "random-gaussian": RandomGaussian,
     "gaussian-blobs": GaussianBlobs,
+    "asymmetric-blobs": AsymmetricBlobs,
     "single-blob": SingleBlob,
     "sine": SinePattern,
     "step": StepFunction,
@@ -80,6 +81,7 @@ __all__ = [
     "RandomUniform",
     "RandomGaussian",
     "GaussianBlobs",
+    "AsymmetricBlobs",
     "SingleBlob",
     "SinePattern",
     "StepFunction",

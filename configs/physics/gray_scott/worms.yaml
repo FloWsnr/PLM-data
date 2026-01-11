@@ -1,0 +1,29 @@
+preset: gray-scott
+parameters:
+  a: 0.078
+  b: 0.061
+  D: 2.0
+init:
+  type: asymmetric-blobs
+  params:
+    num_blobs: 20
+    width: 0.012
+    aspect_ratio: 4.0
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.2
+t_end: 10000.0
+resolution: 333
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: magma
+  field_to_plot: u
+seed: 1004
+domain_size: 1000

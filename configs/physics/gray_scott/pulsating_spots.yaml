@@ -1,18 +1,19 @@
 preset: gray-scott
 parameters:
-  a: 0.037
+  a: 0.025
   b: 0.06
   D: 2.0
 init:
-  type: default
+  type: gaussian-blobs
   params:
-    perturbation_radius: 0.05
-    noise: 0.01
+    num_blobs: 15
+    width: 0.03
+    noise: 0.02
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.2
-t_end: 2000.0
+t_end: 6000.0
 resolution: 333
 bc:
   x-: periodic
@@ -22,7 +23,7 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: viridis
+  colormap: inferno
   field_to_plot: u
-seed: 1078
+seed: 1003
 domain_size: 1000
