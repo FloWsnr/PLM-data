@@ -1,0 +1,39 @@
+preset: kuramoto-sivashinsky
+
+# Localized perturbation variant
+# Starts from a few Gaussian blobs instead of random noise
+# Shows how chaos emerges from ordered initial conditions
+# Demonstrates sensitive dependence on initial conditions
+
+parameters:
+  a: 0.03  # Standard damping
+
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 4
+    amplitude: 0.5
+    width: 0.08  # Narrow localized blobs
+    background: 0.0
+    random_amplitude: true
+
+solver: scipy
+backend: numba
+adaptive: true
+dt: 0.1
+resolution: 64
+domain_size: 150
+t_end: 24.0
+seed: 42
+
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+
+output:
+  path: ./output
+  num_frames: 10
+  colormap: viridis
+  field_to_plot: u

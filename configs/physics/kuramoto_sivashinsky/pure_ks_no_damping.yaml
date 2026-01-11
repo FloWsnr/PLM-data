@@ -1,0 +1,35 @@
+preset: kuramoto-sivashinsky
+
+# Pure Kuramoto-Sivashinsky without damping term
+# True K-S equation: du/dt = -laplace(u) - laplace(laplace(u)) - |grad(u)|^2
+# More numerically challenging but shows authentic attractor properties
+
+parameters:
+  a: 0.0  # No damping - pure K-S dynamics
+
+init:
+  type: random-gaussian
+  params:
+    mean: 0.0
+    std: 0.1
+
+solver: scipy
+backend: numba
+adaptive: true
+dt: 0.1
+resolution: 64
+domain_size: 150
+t_end: 20.0
+seed: 1080
+
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+
+output:
+  path: ./output
+  num_frames: 10
+  colormap: coolwarm
+  field_to_plot: u

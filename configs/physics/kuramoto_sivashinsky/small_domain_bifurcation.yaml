@@ -1,0 +1,36 @@
+preset: kuramoto-sivashinsky
+
+# Small domain variant - period-doubling bifurcation regime
+# Domain size L~35 shows transition from periodic to chaotic behavior
+# Exhibits period-doubling route to chaos
+# Reference: At L<10 trivial, L~20 periodic, L~30-50 bifurcations, L>60 full chaos
+
+parameters:
+  a: 0.03  # Standard small damping
+
+init:
+  type: random-gaussian
+  params:
+    mean: 0.0
+    std: 0.05  # Smaller perturbation
+
+solver: scipy
+backend: numba
+adaptive: true
+dt: 0.1
+resolution: 64
+domain_size: 35  # Small domain - period-doubling regime
+t_end: 40.0  # Longer time to observe bifurcation dynamics
+seed: 1080
+
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+
+output:
+  path: ./output
+  num_frames: 10
+  colormap: twilight
+  field_to_plot: u

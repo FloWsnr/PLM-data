@@ -1,0 +1,36 @@
+preset: kuramoto-sivashinsky
+
+# Large domain variant - fully developed spatiotemporal turbulence
+# Larger domain (L=250) allows more complex chaotic structures
+# Higher resolution to capture finer details
+# Higher-dimensional attractor with more active modes
+
+parameters:
+  a: 0.02  # Slightly less damping for richer dynamics
+
+init:
+  type: random-gaussian
+  params:
+    mean: 0.0
+    std: 0.1
+
+solver: scipy
+backend: numba
+adaptive: true
+dt: 0.1
+resolution: 96  # Higher resolution for larger domain
+domain_size: 250  # Large domain - fully developed turbulence
+t_end: 30.0
+seed: 2024
+
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+
+output:
+  path: ./output
+  num_frames: 10
+  colormap: plasma
+  field_to_plot: u
