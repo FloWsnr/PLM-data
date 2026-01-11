@@ -1,0 +1,28 @@
+preset: navier-stokes
+parameters:
+  nu: 0.015  # Slightly lower viscosity
+  M: 0.2  # Lower Mach number - faster pressure relaxation
+  D: 0.001
+init:
+  type: shear-layer
+  params:
+    shear_width: 0.025
+    amplitude: 1.8
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.001
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - p:twilight_shifted
+seed: 2024
+domain_size: 5.0
+t_end: 12.0

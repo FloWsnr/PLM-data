@@ -1,0 +1,32 @@
+preset: navier-stokes
+parameters:
+  nu: 0.02
+  M: 0.3
+  D: 0.001
+init:
+  type: vortex-pair
+  params:
+    x1: 0.4
+    y1: 0.5
+    x2: 0.6
+    y2: 0.5
+    strength: 4.0
+    radius: 0.1
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.001
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: viridis
+  field_to_plot: S
+seed: 1066
+domain_size: 5.0
+t_end: 12.0

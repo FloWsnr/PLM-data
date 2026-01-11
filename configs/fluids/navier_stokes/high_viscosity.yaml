@@ -1,0 +1,28 @@
+preset: navier-stokes
+parameters:
+  nu: 0.08  # Higher viscosity - smoother, more laminar dynamics
+  M: 0.3
+  D: 0.001
+init:
+  type: shear-layer
+  params:
+    shear_width: 0.03
+    amplitude: 2.0  # Stronger initial shear
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.001
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: coolwarm
+  field_to_plot: S
+seed: 1066
+domain_size: 5.0
+t_end: 20.0  # Longer time to see evolution
