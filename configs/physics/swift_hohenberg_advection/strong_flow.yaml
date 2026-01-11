@@ -1,0 +1,31 @@
+preset: swift-hohenberg-advection
+parameters:
+  r: 0.25
+  a: 0.0
+  b: -1.0
+  c: -1.0
+  V: 3.0         # strong advection - may destabilize patterns
+  theta: 0.785   # 45 degrees (pi/4) - diagonal flow
+  D: 1.0
+init:
+  type: random-uniform
+  params:
+    amplitude: 0.1
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0005       # smaller dt for stability with strong flow
+t_end: 80.0
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: plasma
+  field_to_plot: u
+seed: 999
+domain_size: 120

@@ -1,0 +1,32 @@
+preset: swift-hohenberg-advection
+parameters:
+  r: 0.15       # weakly supercritical - patterns form but grow slower
+  a: 0.0
+  b: -1.0
+  c: -1.0
+  V: 0.8        # moderate advection velocity
+  theta: 0.0    # horizontal flow (rightward)
+  D: 1.0
+init:
+  type: swift-hohenberg-advection-default
+  params:
+    amplitude: 0.8
+    P: 3         # D12 symmetry (dodecagonal)
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0008
+t_end: 120.0
+resolution: 150
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: coolwarm
+  field_to_plot: u
+seed: 2024
+domain_size: 150

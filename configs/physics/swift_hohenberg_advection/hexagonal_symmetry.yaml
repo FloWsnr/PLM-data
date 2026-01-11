@@ -1,0 +1,32 @@
+preset: swift-hohenberg-advection
+parameters:
+  r: 0.2
+  a: 0.5         # quadratic term to favor hexagons over stripes
+  b: -1.0
+  c: -1.0
+  V: 0.4         # slow advection to see pattern drift
+  theta: 1.57    # vertical flow (pi/2)
+  D: 1.0
+init:
+  type: swift-hohenberg-advection-default
+  params:
+    amplitude: 0.6
+    P: 2         # D6 hexagonal symmetry
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0008
+t_end: 120.0
+resolution: 150
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: cividis
+  field_to_plot: u
+seed: 314
+domain_size: 150
