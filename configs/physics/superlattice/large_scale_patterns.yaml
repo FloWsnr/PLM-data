@@ -1,0 +1,33 @@
+preset: superlattice
+parameters:
+  a: 3.0
+  b: 9.0
+  c: 15.0
+  d: 9.0
+  alpha: 0.15
+  D_uone: 4.3
+  D_utwo: 50.0
+  D_uthree: 22.0
+  D_ufour: 660.0
+init:
+  type: default
+  params:
+    noise: 0.1
+solver: scipy
+backend: numba
+adaptive: true
+dt: 0.1
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - u1:turbo
+seed: 6144
+domain_size: 100.0
+t_end: 10.0
