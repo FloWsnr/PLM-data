@@ -1,0 +1,31 @@
+preset: shallow-water
+parameters:
+  H_e: 1.0
+  g: 9.81
+  f: 0.0       # No Coriolis - pure dam break
+  k: 0.001
+  nu: 0.1      # Lower viscosity for sharper fronts
+  epsilon: 0.01  # Match Visual PDE dam break
+init:
+  type: dam-break
+  params:
+    amplitude: 0.1
+    step_width: 0.05
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.005
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - h:Blues
+seed: 2024
+domain_size: 400.0
+t_end: 40.0

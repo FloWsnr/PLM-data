@@ -1,0 +1,38 @@
+preset: shallow-water
+parameters:
+  H_e: 1.0
+  g: 9.81
+  f: 0.15      # Moderate Coriolis - visible rotation effects
+  k: 0.0005
+  nu: 0.1      # Low viscosity for more dynamics
+  epsilon: 0.00005
+init:
+  type: ripple
+  params:
+    amplitude: 0.3
+    width: 0.08
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.005
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+  fields:
+    u:
+      x-: dirichlet:0
+      x+: dirichlet:0
+    v:
+      y-: dirichlet:0
+      y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - h:RdBu_r
+seed: 3142
+domain_size: 400.0
+t_end: 40.0

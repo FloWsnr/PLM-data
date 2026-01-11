@@ -1,0 +1,42 @@
+preset: shallow-water
+parameters:
+  H_e: 1.0
+  g: 9.81
+  f: 0.05      # Small Coriolis for slight rotation
+  k: 0.0005
+  nu: 0.15     # Moderate viscosity
+  epsilon: 0.0001
+init:
+  type: asymmetric-blobs
+  params:
+    num_blobs: 6
+    amplitude: 0.2
+    width: 0.04
+    aspect_ratio: 1.5
+    random_aspect: true
+    seed: 42
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.005
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+  fields:
+    u:
+      x-: dirichlet:0
+      x+: dirichlet:0
+    v:
+      y-: dirichlet:0
+      y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - h:ocean
+seed: 7890
+domain_size: 400.0
+t_end: 45.0

@@ -1,0 +1,31 @@
+preset: shallow-water
+parameters:
+  H_e: 1.0
+  g: 9.81
+  f: 0.4       # Moderate Coriolis - stabilizes dam break fronts
+  k: 0.001
+  nu: 0.2      # Moderate viscosity
+  epsilon: 0.01
+init:
+  type: dam-break
+  params:
+    amplitude: 0.1
+    step_width: 0.05
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.005
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - h:viridis
+seed: 6789
+domain_size: 400.0
+t_end: 50.0

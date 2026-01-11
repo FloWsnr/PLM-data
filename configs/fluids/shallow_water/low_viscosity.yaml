@@ -1,0 +1,40 @@
+preset: shallow-water
+parameters:
+  H_e: 1.0
+  g: 9.81
+  f: 0.01      # Small Coriolis
+  k: 0.0001    # Very low drag
+  nu: 0.05     # Low viscosity for sharp waves
+  epsilon: 0.00001  # Minimal height dissipation
+init:
+  type: drop
+  params:
+    x0: 0.3
+    y0: 0.5
+    amplitude: 0.4
+    width: 0.08
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.005
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+  fields:
+    u:
+      x-: dirichlet:0
+      x+: dirichlet:0
+    v:
+      y-: dirichlet:0
+      y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - h:turbo
+seed: 5678
+domain_size: 400.0
+t_end: 60.0
