@@ -1,0 +1,30 @@
+preset: cahn-hilliard
+parameters:
+  r: 0.05   # Moderate speed
+  a: 1.0
+  D: 1.0
+init:
+  type: sine
+  params:
+    kx: 4              # 4 complete waves in x
+    ky: 4              # 4 complete waves in y
+    amplitude: 0.9     # Almost full amplitude, near ±1
+    offset: 0.0        # Centered at zero
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0005
+resolution: 200
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: viridis  # Green-blue-yellow sequential colormap
+  field_to_plot: u
+seed: 4242
+domain_size: 100.0
+t_end: 60.0

@@ -1,0 +1,32 @@
+preset: cahn-hilliard
+parameters:
+  r: 0.05   # Moderate speed to see droplet evolution
+  a: 1.5    # Moderate interfacial width for clear droplets
+  D: 1.0
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 15        # Multiple droplets
+    amplitude: 2.0       # Peaks reach +1 (background -1 + amplitude 2)
+    width: 0.06          # Droplet size relative to domain
+    background: -1.0     # Matrix phase (u=-1)
+    random_amplitude: true
+    seed: 9999
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0005
+resolution: 200
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: RdYlBu_r  # Reversed Red-Yellow-Blue
+  field_to_plot: u
+seed: 5678
+domain_size: 100.0
+t_end: 80.0

@@ -1,0 +1,26 @@
+preset: cahn-hilliard
+parameters:
+  r: 0.05  # Moderate speed
+  a: 0.25  # Lower value for sharper, thinner interfaces
+  D: 1.0
+init:
+  type: cahn-hilliard-default
+  params: {}
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0005
+resolution: 200
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: bwr  # Different colormap for visual distinction
+  field_to_plot: u
+seed: 2024
+domain_size: 100.0
+t_end: 50.0
