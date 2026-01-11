@@ -1,0 +1,40 @@
+# Bistable Advection - No Flow (Pure Allen-Cahn)
+# Without flow (V=0), this is the standard Allen-Cahn bistable equation
+# Front propagates purely due to the bistable reaction term
+preset: bistable-advection
+parameters:
+  D: 0.1       # diffusion coefficient
+  a: 0.3       # Allee threshold (a < 0.5 favors invasion)
+  theta: 0.0   # flow direction (irrelevant when V=0)
+  V: 0.0       # NO FLOW - pure Allen-Cahn dynamics
+
+init:
+  type: default
+  params:
+    direction: x
+    step_position: 0.5   # start front in middle to observe symmetric propagation
+    value_low: 0.0       # uninvaded region
+    value_high: 1.0      # invaded region
+    smooth: true
+    width: 0.03
+
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.01
+resolution: 256
+domain_size: 50.0
+t_end: 80.0          # longer time to see slower front motion
+
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+
+output:
+  path: ./output
+  num_frames: 10
+  colormap: plasma     # different colormap to distinguish from default
+
+seed: 2048

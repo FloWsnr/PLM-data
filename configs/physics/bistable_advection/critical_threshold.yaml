@@ -1,0 +1,40 @@
+# Bistable Advection - Critical Threshold
+# At a=0.5, the bistable reaction is balanced (stationary front without flow)
+# Front motion is driven purely by the advection term
+preset: bistable-advection
+parameters:
+  D: 0.08      # diffusion coefficient
+  a: 0.5       # CRITICAL threshold - balanced bistable dynamics
+  theta: 0.785  # flow direction (pi/4 = diagonal, 45 degrees)
+  V: 0.35      # moderate flow to drive front motion
+
+init:
+  type: default
+  params:
+    direction: x
+    step_position: 0.3   # front starts at 30%
+    value_low: 0.0       # uninvaded
+    value_high: 1.0      # invaded
+    smooth: true
+    width: 0.04
+
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.01
+resolution: 256
+domain_size: 50.0
+t_end: 100.0
+
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+
+output:
+  path: ./output
+  num_frames: 10
+  colormap: magma      # different colormap for variety
+
+seed: 4096
