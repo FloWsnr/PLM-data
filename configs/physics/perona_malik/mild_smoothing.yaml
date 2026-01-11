@@ -1,0 +1,25 @@
+preset: perona-malik
+parameters:
+  D: 1.0
+  sigma: 1.0
+init:
+  type: default
+  params: {}
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0002
+resolution: 500
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: gray
+  field_to_plot: u
+seed: 1083
+domain_size: 100.0
+t_end: 0.5
