@@ -1,14 +1,14 @@
 preset: potential-flow-dipoles
 parameters:
-  strength: 500.0
-  separation: 3.0
-  sigma: 1.0
-  omega: 0.5
-  orbit_radius: 8.0
+  strength: 600.0
+  separation: 4.0
+  sigma: 1.2
+  omega: 0.8
+  orbit_radius: 10.0
 init:
   type: default
   params:
-    motion: circular
+    motion: oscillating
 solver: euler
 backend: numpy
 adaptive: true
@@ -24,6 +24,6 @@ output:
   num_frames: 20
   colormap: coolwarm
   field_to_plot: phi
-seed: 1067
+seed: 1068
 domain_size: 40.0
-t_end: 12.56
+t_end: 15.7

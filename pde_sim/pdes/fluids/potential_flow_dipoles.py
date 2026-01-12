@@ -1,4 +1,4 @@
-"""Potential flow dipoles - source-sink pair dynamics."""
+"""Potential flow dipoles - source-sink pair dynamics with optional motion."""
 
 from typing import Any
 
@@ -11,34 +11,31 @@ from .. import register_pde
 
 @register_pde("potential-flow-dipoles")
 class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
-    """Dipole (doublet) flows in 2D potential flow.
+    """Dipole (doublet) flows in 2D potential flow with moving sources.
 
     In potential flow theory, singularity solutions represent idealized point
     forces, vortices, sources, and sinks. A dipole arises when two equal and
-    opposite singularities are brought infinitesimally close together while
-    maintaining a finite product of strength and separation.
+    opposite singularities are brought infinitesimally close together.
 
-    The simulation uses parabolic relaxation to solve the elliptic Laplace
-    equation for potential flow.
+    This implementation supports both static and moving source-sink pairs:
+    - Static: Sources remain fixed, system relaxes to steady state
+    - Circular: Dipole rotates around domain center
+    - Oscillating: Dipole oscillates back and forth
 
-    Visual PDE reference equation:
-        d(phi)/dt = laplace(phi) + 1000*(ind(s[x-d*dx,y]>0) - ind(s[x+d*dx,y]>0))/(2*d*dx)
+    The simulation uses smooth Gaussian sources for numerical stability:
+        d(phi)/dt = laplace(phi) + strength * (G_source - G_sink)
 
-    Since py-pde doesn't support shifted field access, we pre-compute the
-    dipole forcing term in the s field initial condition:
-        s = (bump(x-d*dx,y) - bump(x+d*dx,y)) / (2*d*dx)
-
-    Then the equation simplifies to:
-        d(phi)/dt = laplace(phi) + strength * s
+    where G_source and G_sink are Gaussians at time-dependent positions.
 
     Velocity from potential:
         u = d_dx(phi), v = d_dy(phi)
 
-    where:
-        - phi is velocity potential (starts at 0, relaxes to steady state)
-        - s is pre-computed dipole forcing field
-        - d is separation parameter between source and sink
-        - strength controls the dipole intensity (default 1000)
+    Parameters:
+        - strength: Source/sink intensity
+        - separation: Distance between source and sink
+        - sigma: Gaussian width for smooth sources
+        - omega: Angular velocity for circular motion (rad/time)
+        - motion: Type of motion (static, circular, oscillating)
     """
 
     @property
@@ -46,30 +43,50 @@ class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
         return PDEMetadata(
             name="potential-flow-dipoles",
             category="fluids",
-            description="Potential flow dipole (source-sink pair)",
+            description="Potential flow dipole with moving source-sink pair",
             equations={
-                "phi": "laplace(phi) + source_forcing",
-                "s": "0 (indicator field)",
+                "phi": "laplace(phi) + strength * (G_source(t) - G_sink(t))",
             },
             parameters=[
                 PDEParameter(
-                    name="d",
-                    default=5.0,
-                    description="Separation parameter",
-                    min_value=1.0,
-                    max_value=30.0,
+                    name="strength",
+                    default=500.0,
+                    description="Source/sink strength",
+                    min_value=50.0,
+                    max_value=2000.0,
                 ),
                 PDEParameter(
-                    name="strength",
-                    default=1000.0,
-                    description="Source/sink strength",
-                    min_value=100.0,
-                    max_value=5000.0,
+                    name="separation",
+                    default=3.0,
+                    description="Distance between source and sink",
+                    min_value=1.0,
+                    max_value=10.0,
+                ),
+                PDEParameter(
+                    name="sigma",
+                    default=1.0,
+                    description="Gaussian width for smooth sources",
+                    min_value=0.5,
+                    max_value=3.0,
+                ),
+                PDEParameter(
+                    name="omega",
+                    default=1.0,
+                    description="Angular velocity (rad/time) for motion",
+                    min_value=0.1,
+                    max_value=5.0,
+                ),
+                PDEParameter(
+                    name="orbit_radius",
+                    default=8.0,
+                    description="Radius of circular orbit around center",
+                    min_value=2.0,
+                    max_value=15.0,
                 ),
             ],
-            num_fields=2,
-            field_names=["phi", "s"],
-            reference="Potential flow theory (Laplace equation)",
+            num_fields=1,
+            field_names=["phi"],
+            reference="Potential flow theory with time-dependent sources",
         )
 
     def create_pde(
@@ -77,14 +94,104 @@ class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
         parameters: dict[str, float],
         bc: dict[str, Any],
         grid: CartesianGrid,
+        init_params: dict[str, Any] | None = None,
+        **kwargs,
     ) -> PDE:
-        # For potential flow dipoles, we solve Laplace with source-sink forcing
-        # The s field indicates source (+) and sink (-) locations
-        strength = parameters.get("strength", 1000.0)
+        """Create PDE with moving Gaussian sources."""
+        strength = parameters.get("strength", 500.0)
+        separation = parameters.get("separation", 3.0)
+        sigma = parameters.get("sigma", 1.0)
+        omega = parameters.get("omega", 1.0)
+        orbit_radius = parameters.get("orbit_radius", 8.0)
+
+        # Motion type comes from init_params (string parameter)
+        init_params = init_params or {}
+        motion = init_params.get("motion", "circular")
+
+        # Get domain center
+        x_min, x_max = grid.axes_bounds[0]
+        y_min, y_max = grid.axes_bounds[1]
+        cx = (x_min + x_max) / 2
+        cy = (y_min + y_max) / 2
+
+        # Half separation for source/sink offset from dipole center
+        half_sep = separation / 2
+
+        if motion == "static":
+            # Static sources at fixed positions
+            # Source at (cx + half_sep, cy), sink at (cx - half_sep, cy)
+            source_x = cx + half_sep
+            source_y = cy
+            sink_x = cx - half_sep
+            sink_y = cy
+
+            gaussian_source = f"exp(-((x - {source_x})**2 + (y - {source_y})**2) / (2 * {sigma}**2))"
+            gaussian_sink = f"exp(-((x - {sink_x})**2 + (y - {sink_y})**2) / (2 * {sigma}**2))"
+
+        elif motion == "circular":
+            # Dipole center orbits around domain center
+            # Dipole center position: (cx + R*cos(omega*t), cy + R*sin(omega*t))
+            # Source/sink are offset from dipole center along the tangent direction
+            dipole_cx = f"({cx} + {orbit_radius} * cos({omega} * t))"
+            dipole_cy = f"({cy} + {orbit_radius} * sin({omega} * t))"
+
+            # Tangent direction for source-sink alignment (perpendicular to radius)
+            # tangent = (-sin(omega*t), cos(omega*t))
+            source_x = f"({dipole_cx} - {half_sep} * sin({omega} * t))"
+            source_y = f"({dipole_cy} + {half_sep} * cos({omega} * t))"
+            sink_x = f"({dipole_cx} + {half_sep} * sin({omega} * t))"
+            sink_y = f"({dipole_cy} - {half_sep} * cos({omega} * t))"
+
+            gaussian_source = f"exp(-((x - {source_x})**2 + (y - {source_y})**2) / (2 * {sigma}**2))"
+            gaussian_sink = f"exp(-((x - {sink_x})**2 + (y - {sink_y})**2) / (2 * {sigma}**2))"
+
+        elif motion == "oscillating":
+            # Dipole oscillates horizontally through center
+            # Position: (cx + orbit_radius * sin(omega*t), cy)
+            dipole_cx = f"({cx} + {orbit_radius} * sin({omega} * t))"
+            dipole_cy = f"{cy}"
+
+            # Source/sink aligned vertically (perpendicular to motion)
+            source_x = dipole_cx
+            source_y = f"({dipole_cy} + {half_sep})"
+            sink_x = dipole_cx
+            sink_y = f"({dipole_cy} - {half_sep})"
+
+            gaussian_source = f"exp(-((x - {source_x})**2 + (y - {source_y})**2) / (2 * {sigma}**2))"
+            gaussian_sink = f"exp(-((x - {sink_x})**2 + (y - {sink_y})**2) / (2 * {sigma}**2))"
+
+        elif motion == "figure8":
+            # Lissajous figure-8 pattern
+            dipole_cx = f"({cx} + {orbit_radius} * sin({omega} * t))"
+            dipole_cy = f"({cy} + {orbit_radius * 0.5} * sin({2 * omega} * t))"
+
+            source_x = f"({dipole_cx} + {half_sep})"
+            source_y = dipole_cy
+            sink_x = f"({dipole_cx} - {half_sep})"
+            sink_y = dipole_cy
+
+            gaussian_source = f"exp(-((x - {source_x})**2 + (y - {source_y})**2) / (2 * {sigma}**2))"
+            gaussian_sink = f"exp(-((x - {sink_x})**2 + (y - {sink_y})**2) / (2 * {sigma}**2))"
+
+        else:
+            # Default to circular
+            dipole_cx = f"({cx} + {orbit_radius} * cos({omega} * t))"
+            dipole_cy = f"({cy} + {orbit_radius} * sin({omega} * t))"
+            source_x = f"({dipole_cx} - {half_sep} * sin({omega} * t))"
+            source_y = f"({dipole_cy} + {half_sep} * cos({omega} * t))"
+            sink_x = f"({dipole_cx} + {half_sep} * sin({omega} * t))"
+            sink_y = f"({dipole_cy} - {half_sep} * cos({omega} * t))"
+
+            gaussian_source = f"exp(-((x - {source_x})**2 + (y - {source_y})**2) / (2 * {sigma}**2))"
+            gaussian_sink = f"exp(-((x - {sink_x})**2 + (y - {sink_y})**2) / (2 * {sigma}**2))"
+
+        # Normalize Gaussians and compute forcing
+        norm = 1.0 / (2 * np.pi * sigma**2)
+        forcing = f"{strength * norm} * ({gaussian_source} - {gaussian_sink})"
+
         return PDE(
             rhs={
-                "phi": f"laplace(phi) + {strength} * s",
-                "s": "0",  # Indicator field doesn't evolve
+                "phi": f"laplace(phi) + {forcing}",
             },
             **self._get_pde_bc_kwargs(bc),
         )
@@ -96,67 +203,14 @@ class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
         **kwargs,
     ) -> FieldCollection:
-        """Create initial potential with source-sink pair.
+        """Create initial potential field.
 
-        Following Visual PDE approach:
-        - phi starts at 0 (relaxes to steady state via parabolic relaxation)
-        - s is a single centered bump used as source location marker
-        - The dipole forcing is computed from s via shifted indicators
-
-        Note: Our equation approximates the dipole by pre-computing the shifted
-        indicator difference in s, since py-pde doesn't support field shifting.
+        The potential starts at zero and evolves as sources move.
         """
-        # Get domain bounds from grid
-        x_min, x_max = grid.axes_bounds[0]
-        y_min, y_max = grid.axes_bounds[1]
-        L_x = x_max - x_min
-        L_y = y_max - y_min
-
-        d = ic_params.get("d", 5.0)
-
-        x, y = np.meshgrid(
-            np.linspace(x_min, x_max, grid.shape[0]),
-            np.linspace(y_min, y_max, grid.shape[1]),
-            indexing="ij",
-        )
-
-        # Center of domain
-        cx = x_min + 0.5 * L_x
-        cy = y_min + 0.5 * L_y
-        dx = L_x / grid.shape[0]
-
-        if ic_type in ("potential-flow-dipoles-default", "default", "dipole"):
-            # Visual PDE approach: phi starts at 0, relaxes to steady state
-            phi_data = np.zeros(grid.shape)
-
-            # Bump function centered at domain center with radius L/100
-            L = min(L_x, L_y)
-            radius = L / 100.0
-            r_sq = (x - cx) ** 2 + (y - cy) ** 2
-
-            # Create dipole forcing by computing shifted indicator difference
-            # Visual PDE: (ind(s[x-d*dx,y]>0) - ind(s[x+d*dx,y]>0))/(2*d*dx)
-            # The s[x-d*dx] lookup is nonzero when x is near (cx+d*dx), so:
-            # - First term is positive near (cx+d*dx) = RIGHT of center (source)
-            # - Second term is positive near (cx-d*dx) = LEFT of center (sink)
-            # Net: source at right, sink at left
-            separation = d * dx
-            r_right_sq = (x - (cx + separation)) ** 2 + (y - cy) ** 2
-            r_left_sq = (x - (cx - separation)) ** 2 + (y - cy) ** 2
-
-            # Source (+) at right position, sink (-) at left position
-            bump_right = np.where(r_right_sq < radius**2, 1.0, 0.0)
-            bump_left = np.where(r_left_sq < radius**2, 1.0, 0.0)
-            s_data = (bump_right - bump_left) / (2 * d * dx)
-
-        else:
-            # Default: zero potential with no sources
-            phi_data = np.zeros(grid.shape)
-            s_data = np.zeros(grid.shape)
+        # Initialize phi to zero - it will develop structure as sources move
+        phi_data = np.zeros(grid.shape)
 
         phi = ScalarField(grid, phi_data)
         phi.label = "phi"
-        s = ScalarField(grid, s_data)
-        s.label = "s"
 
-        return FieldCollection([phi, s])
+        return FieldCollection([phi])

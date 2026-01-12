@@ -1,6 +1,6 @@
 # Potential Flow Dipoles
 
-Dipole (doublet) flows in 2D potential flow, formed by bringing equal and opposite singularities together.
+Dipole (doublet) flows in 2D potential flow with time-dependent moving sources, creating dynamic trailing wake patterns.
 
 ## Description
 
@@ -11,61 +11,89 @@ A dipole (or doublet) arises when two equal and opposite singularities are broug
 - Force dipole: two opposing point forces
 - Vortex dipole: counter-rotating vortex pair
 
-For a source-sink pair separated by distance 2d with strength Q, the potential phi satisfies:
-$$\nabla^2 \phi = Q\delta(x-d,y) - Q\delta(x+d,y)$$
+This implementation features **moving source-sink pairs** that follow prescribed trajectories (circular orbits, oscillations, or figure-8 patterns). As the dipole moves, it leaves trailing potential patterns that create rich, time-evolving dynamics. This is physically analogous to a moving source/sink pair in a fluid, or equivalently, a moving electric dipole creating time-varying potential fields.
 
-Taking the limit as d approaches 0 while dQ remains constant yields a dipole - mathematically equivalent to taking a spatial derivative of a single source solution.
+The motion types available are:
+- **circular**: Dipole orbits around the domain center, creating spiral wake patterns
+- **oscillating**: Dipole oscillates horizontally with source/sink stacked vertically, creating streaked patterns
+- **figure8**: Dipole traces a Lissajous figure-8 path, creating complex crossing patterns
+- **static**: Traditional fixed dipole that relaxes to steady state
 
 Dipoles are fundamental in aerodynamics and hydrodynamics. A uniform flow plus a source dipole produces flow around a circular cylinder. The concept extends to electrostatics and magnetism (electric and magnetic dipoles), governed by analogous equations.
 
-The simulation allows exploration of how the flow field changes as the source-sink separation d varies. For finite d, one sees two distinct singularities; as d approaches zero, the flow transitions to the idealized dipole pattern.
-
 ## Equations
 
-Potential equation (Laplace with singularities):
-$$\nabla^2 \phi = \text{source forcing}$$
+The potential evolves via a parabolic equation with time-dependent Gaussian source forcing:
 
-Visual PDE reference equation:
-$$\frac{\partial \phi}{\partial t} = \nabla^2 \phi + \frac{1000}{2d \cdot dx}\left(\text{ind}(s[x-d\cdot dx,y]>0) - \text{ind}(s[x+d\cdot dx,y]>0)\right)$$
+$$\frac{\partial \phi}{\partial t} = \nabla^2 \phi + \text{strength} \cdot \left(G_{\text{source}}(t) - G_{\text{sink}}(t)\right)$$
 
-Our implementation pre-computes the shifted indicator difference in the s field initial condition, giving:
-$$\frac{\partial \phi}{\partial t} = \nabla^2 \phi + \text{strength} \cdot s$$
+where the Gaussian sources have time-dependent centers:
 
-where s encodes the dipole forcing:
-$$s = \frac{\text{bump}(x-d\cdot dx, y) - \text{bump}(x+d\cdot dx, y)}{2d \cdot dx}$$
+$$G(x, y, t) = \frac{1}{2\pi\sigma^2} \exp\left(-\frac{(x - x_c(t))^2 + (y - y_c(t))^2}{2\sigma^2}\right)$$
+
+For circular motion with orbit radius $R$ and angular velocity $\omega$:
+$$x_c(t) = x_0 + R\cos(\omega t), \quad y_c(t) = y_0 + R\sin(\omega t)$$
 
 Velocity from potential:
 $$u = \frac{\partial \phi}{\partial x}, \quad v = \frac{\partial \phi}{\partial y}$$
 
+## Parameters
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| strength | 500 | 50-2000 | Source/sink intensity |
+| separation | 3.0 | 1-10 | Distance between source and sink |
+| sigma | 1.0 | 0.5-3.0 | Gaussian width for smooth sources |
+| omega | 1.0 | 0.1-5.0 | Angular velocity (rad/time) for motion |
+| orbit_radius | 8.0 | 2-15 | Radius of orbit around domain center |
+
+Motion type is specified via `init.params.motion`: `circular`, `oscillating`, `figure8`, or `static`.
+
 ## Default Config
 
 ```yaml
-solver: euler (parabolic relaxation)
-dt: default
-dx: 1
-domain_size: default
-
-boundary_phi: neumann
-boundary_s: dirichlet = 0
-
+preset: potential-flow-dipoles
 parameters:
-  d: 5  # separation parameter, range [1, 30]
+  strength: 500.0
+  separation: 3.0
+  sigma: 1.0
+  omega: 0.5
+  orbit_radius: 8.0
+init:
+  type: default
+  params:
+    motion: circular
+solver: euler
+bc: neumann (all boundaries)
+t_end: 12.56  # ~2*pi for one full orbit at omega=0.5
 ```
 
-## Parameter Variants
+## Config Variants
 
-### potentialFlowDipoleSlider (base)
-Interactive dipole formation exploration:
-- Slider controls separation parameter d
-- Source-sink pair centered at domain middle
-- Shows transition from distinct singularities (large d) to idealized dipole (small d)
-- Velocity arrows and potential contours displayed
-- Views: potential phi, horizontal velocity u, vertical velocity v
+### default (circular orbit)
+Dipole orbits around domain center creating spiral wake patterns:
+- omega: 0.5, orbit_radius: 8
+- Creates smooth spiraling potential trails
 
-### potentialFlowDipoleClick
-Click-to-place version:
-- Fixed source at domain center
-- Clicking places a sink to create source-sink pair
-- domain_size: 201
-- No slider control for d
-- Allows interactive exploration of source-sink flow patterns
+### oscillating
+Horizontal back-and-forth motion with vertically-stacked source/sink:
+- omega: 0.8, orbit_radius: 10
+- Creates horizontal streaked patterns
+
+### figure8
+Lissajous figure-8 trajectory:
+- omega: 0.4, orbit_radius: 10
+- Creates complex crossing wake patterns
+- Uses seismic colormap for high contrast
+
+### fast_rotation
+Tight, fast circular orbit:
+- omega: 1.5, orbit_radius: 6
+- Creates tight spiral patterns
+- Uses RdBu colormap
+
+### wide_orbit
+Large slow orbit with periodic boundaries:
+- omega: 0.3, orbit_radius: 14, domain_size: 50
+- Periodic BC allows wrap-around effects
+- Shows extended trailing wakes

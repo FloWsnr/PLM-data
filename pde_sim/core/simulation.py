@@ -156,6 +156,7 @@ class SimulationRunner:
             parameters=params,
             bc=config.bc,  # Pass full BoundaryConfig to support per-field BCs
             grid=self.grid,
+            init_params=config.init.params,  # Pass init params for PDEs with special options
         )
 
         # Create initial state

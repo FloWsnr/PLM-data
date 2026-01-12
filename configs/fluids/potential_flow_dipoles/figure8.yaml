@@ -3,12 +3,12 @@ parameters:
   strength: 500.0
   separation: 3.0
   sigma: 1.0
-  omega: 0.5
-  orbit_radius: 8.0
+  omega: 0.4
+  orbit_radius: 10.0
 init:
   type: default
   params:
-    motion: circular
+    motion: figure8
 solver: euler
 backend: numpy
 adaptive: true
@@ -22,8 +22,8 @@ bc:
 output:
   path: ./output
   num_frames: 20
-  colormap: coolwarm
+  colormap: seismic
   field_to_plot: phi
-seed: 1067
+seed: 1069
 domain_size: 40.0
-t_end: 12.56
+t_end: 15.7

@@ -1,10 +1,10 @@
 preset: potential-flow-dipoles
 parameters:
-  strength: 500.0
-  separation: 3.0
-  sigma: 1.0
-  omega: 0.5
-  orbit_radius: 8.0
+  strength: 400.0
+  separation: 2.5
+  sigma: 0.8
+  omega: 1.5
+  orbit_radius: 6.0
 init:
   type: default
   params:
@@ -22,8 +22,8 @@ bc:
 output:
   path: ./output
   num_frames: 20
-  colormap: coolwarm
+  colormap: RdBu
   field_to_plot: phi
-seed: 1067
+seed: 1070
 domain_size: 40.0
-t_end: 12.56
+t_end: 8.38
