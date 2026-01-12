@@ -1,0 +1,36 @@
+# Wall near source: wall_x = 0.65, bringing image closer to source
+# Creates stronger interaction between source and image
+# Source at 3/4 = 0.75, image reflected about wall at 0.65 -> image at 0.55
+preset: potential-flow-images
+parameters:
+  strength: 50.0
+  wall_x: 0.65
+init:
+  type: source-with-image
+  params:
+    strength: 50.0
+    wall_x: 0.65
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.01
+resolution: 256
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+  fields:
+    s:
+      x-: dirichlet:0
+      x+: dirichlet:0
+      y-: dirichlet:0
+      y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: RdBu_r
+  field_to_plot: phi
+seed: 3072
+domain_size: 40.0
+t_end: 5.0

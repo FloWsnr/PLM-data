@@ -1,0 +1,36 @@
+# Source-only configuration: single source without its image
+# Demonstrates asymmetric flow without method of images
+# Compare with default to see how image source enforces no-flux BC
+preset: potential-flow-images
+parameters:
+  strength: 50.0
+  wall_x: 0.5
+init:
+  type: source-only
+  params:
+    strength: 50.0
+    wall_x: 0.5
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.01
+resolution: 256
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+  fields:
+    s:
+      x-: dirichlet:0
+      x+: dirichlet:0
+      y-: dirichlet:0
+      y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: coolwarm
+  field_to_plot: phi
+seed: 2048
+domain_size: 40.0
+t_end: 5.0

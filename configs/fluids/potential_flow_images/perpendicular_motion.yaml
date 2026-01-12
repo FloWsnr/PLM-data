@@ -1,0 +1,40 @@
+# Perpendicular motion: source oscillates toward/away from wall
+# When source approaches wall, image approaches from the other side
+# Creates pulsing potential patterns with varying source-image separation
+preset: potential-flow-images
+parameters:
+  strength: 350.0
+  wall_x: 0.5
+  sigma: 1.0
+  omega: 0.8
+  amplitude: 10.0
+init:
+  type: moving
+  params:
+    strength: 350.0
+    wall_x: 0.5
+    motion: perpendicular
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.01
+resolution: 256
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+  fields:
+    s:
+      x-: dirichlet:0
+      x+: dirichlet:0
+      y-: dirichlet:0
+      y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 30
+  colormap: turbo
+  field_to_plot: phi
+seed: 6144
+domain_size: 40.0
+t_end: 10.0

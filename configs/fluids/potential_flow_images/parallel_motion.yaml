@@ -1,0 +1,40 @@
+# Parallel motion: source oscillates parallel to wall (y direction)
+# Image mirrors the motion, maintaining no-flux boundary condition
+# Creates wave-like patterns propagating along the wall
+preset: potential-flow-images
+parameters:
+  strength: 300.0
+  wall_x: 0.5
+  sigma: 1.0
+  omega: 1.5
+  amplitude: 8.0
+init:
+  type: moving
+  params:
+    strength: 300.0
+    wall_x: 0.5
+    motion: parallel
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.01
+resolution: 256
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+  fields:
+    s:
+      x-: dirichlet:0
+      x+: dirichlet:0
+      y-: dirichlet:0
+      y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 30
+  colormap: viridis
+  field_to_plot: phi
+seed: 4096
+domain_size: 40.0
+t_end: 8.0
