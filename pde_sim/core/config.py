@@ -1,5 +1,6 @@
 """YAML configuration parsing and validation."""
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,9 @@ class OutputConfig:
         Parses fields list like ["u:viridis", "v:plasma"].
         If field has no colormap (e.g., "u"), uses default colormap.
 
+        Supports computed field syntax:
+        - mag(u,v):colormap -> computes sqrt(u^2 + v^2) as "speed" field
+
         Returns:
             List of (field_name, colormap) tuples.
             Empty list if no fields specified (use defaults from PDE metadata).
@@ -30,13 +34,37 @@ class OutputConfig:
         if self.fields:
             result = []
             for entry in self.fields:
-                if ":" in entry:
-                    field_name, cmap = entry.split(":", 1)
-                    result.append((field_name.strip(), cmap.strip()))
-                else:
-                    result.append((entry.strip(), self.colormap))
+                field_spec, cmap = self._parse_field_entry(entry)
+                result.append((field_spec, cmap))
             return result
         return []
+
+    def _parse_field_entry(self, entry: str) -> tuple[str, str]:
+        """Parse a single field entry, handling mag() syntax.
+
+        Args:
+            entry: Field specification like "u:viridis" or "mag(u,v):plasma"
+
+        Returns:
+            Tuple of (field_name, colormap). mag(u,v) is converted to "speed".
+        """
+        # Split by colon for colormap
+        if ":" in entry:
+            field_part, cmap = entry.split(":", 1)
+            field_part = field_part.strip()
+            cmap = cmap.strip()
+        else:
+            field_part = entry.strip()
+            cmap = self.colormap
+
+        # Check for mag(field1, field2) syntax
+        mag_pattern = r"^mag\((\w+),\s*(\w+)\)$"
+        match = re.match(mag_pattern, field_part)
+        if match:
+            # Convert mag(u,v) to "speed" - the output system handles this
+            return ("speed", cmap)
+
+        return (field_part, cmap)
 
 
 @dataclass
@@ -168,11 +196,19 @@ def load_config(path: Path | str) -> SimulationConfig:
     bc_config = _parse_bc_config(raw.get("bc", {}))
 
     output_raw = raw.get("output", {})
+    # Handle both new "fields" list and legacy "field_to_plot" single field
+    fields = output_raw.get("fields")
+    if fields is None and "field_to_plot" in output_raw:
+        # Convert legacy field_to_plot to new fields format
+        field_to_plot = output_raw["field_to_plot"]
+        colormap = output_raw.get("colormap", "turbo")
+        fields = [f"{field_to_plot}:{colormap}"]
+
     output_config = OutputConfig(
         path=Path(output_raw.get("path", "./output")),
         num_frames=output_raw.get("num_frames", 100),
         colormap=output_raw.get("colormap", "turbo"),
-        fields=output_raw.get("fields"),
+        fields=fields,
         save_array=output_raw.get("save_array", False),
     )
 

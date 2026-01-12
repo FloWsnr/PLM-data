@@ -97,6 +97,9 @@ class OutputManager:
     ) -> np.ndarray:
         """Extract data for a specific field by name.
 
+        Supports computed fields:
+        - speed: sqrt(u^2 + v^2) for velocity magnitude (requires u, v fields)
+
         Args:
             state: The field state.
             field_name: Name of the field to extract.
@@ -104,6 +107,13 @@ class OutputManager:
         Returns:
             2D numpy array of field values.
         """
+        # Handle computed fields
+        if field_name == "speed" and isinstance(state, FieldCollection):
+            u_data = self._get_field_by_name(state, "u")
+            v_data = self._get_field_by_name(state, "v")
+            if u_data is not None and v_data is not None:
+                return np.sqrt(u_data**2 + v_data**2)
+
         if isinstance(state, FieldCollection):
             data = self._get_field_by_name(state, field_name)
             if data is None:
