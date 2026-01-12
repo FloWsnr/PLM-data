@@ -1,0 +1,44 @@
+# Warm blob convection - localized thermal perturbation
+# A warm region in the lower part of the domain rises due to buoyancy
+preset: thermal-convection
+parameters:
+  nu: 1.0
+  epsilon: 0.05
+  kappa: 0.35
+  T_b: 0.02      # Weak background heating
+init:
+  type: warm-blob
+  params:
+    x0: 0.5       # Center x (normalized 0-1)
+    y0: 0.25      # Center y (normalized 0-1) - lower quarter
+    amplitude: 0.8
+    radius: 0.12
+    noise: 0.005
+solver: euler
+backend: auto
+adaptive: true
+dt: 0.001
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: neumann:0
+  y+: neumann:0
+  fields:
+    omega:
+      y-: dirichlet:0
+      y+: dirichlet:0
+    psi:
+      y-: dirichlet:0
+      y+: dirichlet:0
+    b:
+      y-: neumann:0.02
+      y+: dirichlet:0
+output:
+  path: ./output
+  num_frames: 50
+  colormap: RdYlBu_r
+  field_to_plot: b
+seed: 3141
+domain_size: 500.0
+t_end: 600.0

@@ -133,7 +133,7 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
                     default=0.2,
                     description="Kinematic viscosity",
                     min_value=0.01,
-                    max_value=1.0,
+                    max_value=3.0,
                 ),
                 PDEParameter(
                     name="epsilon",

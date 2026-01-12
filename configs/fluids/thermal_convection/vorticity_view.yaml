@@ -1,13 +1,16 @@
+# Vorticity view - visualize the rotational motion
+# Shows the vorticity field (omega) instead of temperature
+# Blue/red indicates clockwise/counterclockwise rotation
 preset: thermal-convection
 parameters:
-  nu: 1.2        # Kinematic viscosity (moderate for stability)
-  epsilon: 0.05  # Relaxation parameter for stream function
-  kappa: 0.4     # Thermal diffusivity
-  T_b: 0.08      # Bottom boundary temperature flux
+  nu: 0.9
+  epsilon: 0.05
+  kappa: 0.35
+  T_b: 0.12
 init:
   type: default
   params:
-    noise: 0.01
+    noise: 0.02
 solver: euler
 backend: auto
 adaptive: true
@@ -26,13 +29,13 @@ bc:
       y-: dirichlet:0
       y+: dirichlet:0
     b:
-      y-: neumann:0.08
+      y-: neumann:0.12
       y+: dirichlet:0
 output:
   path: ./output
   num_frames: 50
-  colormap: seismic
-  field_to_plot: b
-seed: 1070
+  colormap: RdBu_r
+  field_to_plot: omega
+seed: 6789
 domain_size: 500.0
-t_end: 500.0
+t_end: 400.0

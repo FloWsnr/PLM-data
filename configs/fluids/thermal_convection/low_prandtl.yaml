@@ -1,13 +1,16 @@
+# Low Prandtl number convection - fast thermal diffusion
+# Pr = nu/kappa < 1, characteristic of liquid metals
+# Heat diffuses faster than momentum, creating broader plumes
 preset: thermal-convection
 parameters:
-  nu: 1.2        # Kinematic viscosity (moderate for stability)
-  epsilon: 0.05  # Relaxation parameter for stream function
-  kappa: 0.4     # Thermal diffusivity
-  T_b: 0.08      # Bottom boundary temperature flux
+  nu: 0.5        # Moderate viscosity
+  epsilon: 0.05
+  kappa: 1.5     # High thermal diffusivity (Pr = 0.33)
+  T_b: 0.2       # Strong heating to compensate fast diffusion
 init:
   type: default
   params:
-    noise: 0.01
+    noise: 0.02
 solver: euler
 backend: auto
 adaptive: true
@@ -26,13 +29,13 @@ bc:
       y-: dirichlet:0
       y+: dirichlet:0
     b:
-      y-: neumann:0.08
+      y-: neumann:0.2
       y+: dirichlet:0
 output:
   path: ./output
   num_frames: 50
-  colormap: seismic
+  colormap: coolwarm
   field_to_plot: b
-seed: 1070
+seed: 4242
 domain_size: 500.0
-t_end: 500.0
+t_end: 300.0
