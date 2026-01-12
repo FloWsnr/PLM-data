@@ -54,7 +54,7 @@ class NavierStokesPDE(MultiFieldPDEPreset):
                     name="nu",
                     default=0.02,
                     description="Kinematic viscosity",
-                    min_value=0.02,
+                    min_value=0.001,
                     max_value=20.0,
                 ),
                 PDEParameter(
