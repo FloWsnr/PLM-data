@@ -1,0 +1,30 @@
+preset: stochastic-gray-scott
+parameters:
+  a: 0.037
+  b: 0.04
+  D: 4.0
+  sigma: 0.15
+init:
+  type: random-uniform
+  params:
+    min: 0.3
+    max: 0.7
+    noise: 0.02
+solver: euler
+backend: numpy
+adaptive: false
+dt: 0.02
+t_end: 500.0
+resolution: 500
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  fields:
+    - v:coolwarm
+seed: 6066
+domain_size: 300

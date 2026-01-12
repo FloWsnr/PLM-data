@@ -1,0 +1,30 @@
+preset: stochastic-gray-scott
+parameters:
+  a: 0.037
+  b: 0.04
+  D: 4.0
+  sigma: 0.18
+init:
+  type: gaussian-blobs
+  params:
+    num_blobs: 5
+    width: 0.04
+    noise: 0.01
+solver: euler
+backend: numpy
+adaptive: false
+dt: 0.02
+t_end: 500.0
+resolution: 500
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: plasma
+  field_to_plot: u
+seed: 2024
+domain_size: 300

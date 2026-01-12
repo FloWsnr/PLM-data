@@ -1,0 +1,29 @@
+preset: stochastic-gray-scott
+parameters:
+  a: 0.037
+  b: 0.04
+  D: 4.0
+  sigma: 0.0
+init:
+  type: default
+  params:
+    perturbation_radius: 0.05
+    noise: 0.001
+solver: euler
+backend: numpy
+adaptive: false
+dt: 0.02
+t_end: 500.0
+resolution: 500
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+output:
+  path: ./output
+  num_frames: 10
+  colormap: viridis
+  field_to_plot: u
+seed: 1084
+domain_size: 300
