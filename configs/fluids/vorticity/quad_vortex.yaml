@@ -1,0 +1,35 @@
+# Quad vortex (four-vortex) simulation
+# Shows complex vortex interaction dynamics with four counter-rotating vortices
+preset: vorticity
+parameters:
+  nu: 0.015      # Low viscosity for long-lived interactions
+  epsilon: 0.02
+  D: 0.015
+init:
+  type: quad-vortex
+  params:
+    strength: 25.0   # Vortex strength
+    radius: 0.07     # Vortex radius
+    spacing: 0.18    # Distance from center
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.01
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+  fields:
+    S:
+      x-: neumann:0
+      x+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: bwr
+  field_to_plot: omega
+seed: 4064
+domain_size: 20.0
+t_end: 80.0   # Longer time to see complex dynamics

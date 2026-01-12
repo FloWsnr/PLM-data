@@ -83,6 +83,7 @@ class VorticityPDE(MultiFieldPDEPreset):
         parameters: dict[str, float],
         bc: dict[str, Any],
         grid: CartesianGrid,
+        init_params: dict[str, Any] | None = None,
     ) -> PDE:
         nu = parameters.get("nu", 0.05)
         epsilon = parameters.get("epsilon", 0.05)
@@ -161,6 +162,58 @@ class VorticityPDE(MultiFieldPDEPreset):
             omega_data = strength * np.exp(-r_sq / (2 * radius**2))
             psi_data = np.zeros_like(omega_data)
             # Passive scalar: gradient from 1 (left) to 0 (right), matching Visual PDE
+            S_data = 1.0 - x_norm
+
+        elif ic_type == "oscillatory":
+            # Oscillatory vorticity field (NavierStokesVorticityBounded variant)
+            # Initial condition: A*cos(k*pi*x/L_x)*cos(k*pi*y/L_y) where A = 0.005*k^1.5
+            k = ic_params.get("k", 8)  # Wavenumber (default 8 for visible pattern)
+            amplitude = ic_params.get("amplitude", 0.005 * k**1.5)
+
+            x, y = np.meshgrid(
+                np.linspace(x_min, x_max, grid.shape[0]),
+                np.linspace(y_min, y_max, grid.shape[1]),
+                indexing="ij",
+            )
+
+            # Normalize coordinates to [0, 1]
+            x_norm = (x - x_min) / L_x
+            y_norm = (y - y_min) / L_y
+
+            # Oscillatory vorticity pattern
+            omega_data = amplitude * np.cos(k * np.pi * x_norm) * np.cos(k * np.pi * y_norm)
+            psi_data = np.zeros_like(omega_data)
+            S_data = 1.0 - x_norm
+
+        elif ic_type == "quad-vortex":
+            # Four vortices in a square arrangement
+            strength = ic_params.get("strength", 20.0)
+            radius = ic_params.get("radius", 0.08)
+            spacing = ic_params.get("spacing", 0.2)  # Distance from center
+
+            x, y = np.meshgrid(
+                np.linspace(x_min, x_max, grid.shape[0]),
+                np.linspace(y_min, y_max, grid.shape[1]),
+                indexing="ij",
+            )
+
+            x_norm = (x - x_min) / L_x
+            y_norm = (y - y_min) / L_y
+
+            # Four vortex positions around center with alternating signs
+            centers = [
+                (0.5 - spacing, 0.5 - spacing, 1),   # bottom-left, positive
+                (0.5 + spacing, 0.5 - spacing, -1),  # bottom-right, negative
+                (0.5 - spacing, 0.5 + spacing, -1),  # top-left, negative
+                (0.5 + spacing, 0.5 + spacing, 1),   # top-right, positive
+            ]
+
+            omega_data = np.zeros_like(x_norm)
+            for cx, cy, sign in centers:
+                r_sq = (x_norm - cx) ** 2 + (y_norm - cy) ** 2
+                omega_data += sign * strength * np.exp(-r_sq / (2 * radius**2))
+
+            psi_data = np.zeros_like(omega_data)
             S_data = 1.0 - x_norm
 
         else:

@@ -1,0 +1,36 @@
+# Single rotating vortex simulation
+# Shows isolated vortex diffusion without interaction dynamics
+preset: vorticity
+parameters:
+  nu: 0.02       # Low viscosity to observe slow diffusion
+  epsilon: 0.02
+  D: 0.02
+init:
+  type: single-vortex
+  params:
+    x0: 0.5
+    y0: 0.5
+    strength: 40.0   # Strong single vortex
+    radius: 0.1
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.01
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+  fields:
+    S:
+      x-: neumann:0
+      x+: neumann:0
+output:
+  path: ./output
+  num_frames: 10
+  colormap: RdBu_r
+  field_to_plot: omega
+seed: 2042
+domain_size: 20.0
+t_end: 60.0
