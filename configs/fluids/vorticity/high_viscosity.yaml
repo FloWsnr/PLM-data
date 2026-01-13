@@ -29,6 +29,7 @@ bc:
       x-: neumann:0
       x+: neumann:0
 output:
+  format: mp4
   path: ./output
   num_frames: 10
 seed: 1071

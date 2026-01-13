@@ -31,6 +31,7 @@ bc:
       y-: neumann:0.1    # Heat flux at bottom (warm)
       y+: neumann:-0.05  # Heat flux at top (cool) - negative means cooling
 output:
+  format: mp4
   path: ./output
   num_frames: 50
 seed: 5555

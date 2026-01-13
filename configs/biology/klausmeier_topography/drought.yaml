@@ -23,6 +23,7 @@ bc:
   y-: neumann:0           # Neumann in y for water accumulation at edges
   y+: neumann:0
 output:
+  format: mp4
   path: ./output
   num_frames: 100
   fields:

@@ -27,4 +27,5 @@ init:
   params:
     k: 8
 output:
+  format: mp4
   num_frames: 10

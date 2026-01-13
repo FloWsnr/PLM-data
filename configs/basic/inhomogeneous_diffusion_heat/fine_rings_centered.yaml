@@ -23,6 +23,7 @@ bc:
   y-: neumann:0
   y+: neumann:0
 output:
+  format: mp4
   frames: true
   metadata: true
   num_frames: 10

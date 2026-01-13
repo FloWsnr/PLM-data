@@ -33,6 +33,7 @@ bc:
       y-: dirichlet:0
       y+: dirichlet:0
 output:
+  format: mp4
   path: ./output
   num_frames: 10
   fields:

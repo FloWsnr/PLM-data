@@ -34,6 +34,7 @@ bc:
       y-: dirichlet:0.05
       y+: dirichlet:0.05
 output:
+  format: mp4
   path: ./output
   num_frames: 10
   fields:

@@ -29,5 +29,6 @@ bc:
   y+: periodic
 
 output:
+  format: mp4
   path: ./output
   num_frames: 10

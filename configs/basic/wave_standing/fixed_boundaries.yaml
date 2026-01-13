@@ -20,6 +20,7 @@ bc:
   y-: dirichlet:0
   y+: dirichlet:0
 output:
+  format: mp4
   frames: true
   metadata: true
   num_frames: 10

@@ -25,6 +25,7 @@ bc:
   y-: periodic
   y+: periodic
 output:
+  format: mp4
   frames: true
   metadata: true
   num_frames: 10
