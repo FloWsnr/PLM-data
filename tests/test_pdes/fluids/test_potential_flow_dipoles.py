@@ -29,19 +29,18 @@ class TestPotentialFlowDipolesPDE:
 
         assert meta.name == "potential-flow-dipoles"
         assert meta.category == "fluids"
-        assert meta.num_fields == 2
+        assert meta.num_fields == 1  # Only phi field
         assert "phi" in meta.field_names
-        assert "s" in meta.field_names
 
     def test_default_parameters(self):
         """Test default parameters match reference."""
         preset = get_pde_preset("potential-flow-dipoles")
         params = preset.get_default_parameters()
 
-        assert "d" in params
+        assert "separation" in params
         assert "strength" in params
-        assert params["d"] == 5.0
-        assert params["strength"] == 1000.0
+        assert params["separation"] == 3.0
+        assert params["strength"] == 500.0
 
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
@@ -57,19 +56,14 @@ class TestPotentialFlowDipolesPDE:
         """Test dipole initial condition."""
         preset = get_pde_preset("potential-flow-dipoles")
         state = preset.create_initial_state(
-            small_grid, "dipole", {"d": 5.0, "strength": 1000.0}
+            small_grid, "default", {}
         )
 
         assert isinstance(state, FieldCollection)
-        assert len(state) == 2
+        assert len(state) == 1  # Only phi field
         phi = state[0]
-        s = state[1]
-        # Potential starts at 0 (relaxes to steady state via parabolic relaxation)
+        # Potential starts at 0 (evolves as sources move)
         assert np.isfinite(phi.data).all()
-        # The s field contains the dipole forcing (source-sink pair)
-        # Note: On a small 16x16 grid with domain [0,1], the dipole bumps
-        # (radius=L/100=0.01) may be too small to capture. Check s is finite.
-        assert np.isfinite(s.data).all()
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""

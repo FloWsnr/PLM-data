@@ -23,7 +23,5 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: hot
-  field_to_plot: u
 seed: 1008
 domain_size: 1000

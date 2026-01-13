@@ -18,8 +18,6 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: viridis
-  field_to_plot: C
 seed: 2001
 domain_size: 320.0
 t_end: 400.0

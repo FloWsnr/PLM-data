@@ -29,7 +29,5 @@ bc:
 output:
   path: ./output
   num_frames: 15
-  colormap: turbo
-  field_to_plot: u
 
 seed: 4567

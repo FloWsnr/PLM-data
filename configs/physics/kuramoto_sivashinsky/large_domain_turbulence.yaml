@@ -32,5 +32,3 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: plasma
-  field_to_plot: u

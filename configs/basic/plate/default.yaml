@@ -21,8 +21,6 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: RdBu_r
-  field_to_plot: u
 seed: 1038
 domain_size: 100.0
 t_end: 20.0

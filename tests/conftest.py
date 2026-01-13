@@ -212,7 +212,6 @@ def sample_config_dict():
         "output": {
             "path": "./output",
             "num_frames": 10,
-            "colormap": "turbo",
         },
         "seed": 42,
         "domain_size": 1.0,

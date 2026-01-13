@@ -7,7 +7,13 @@ import numpy as np
 import pytest
 from pde import ScalarField, FieldCollection, CartesianGrid
 
-from pde_sim.core.output import OutputManager, create_metadata
+from pde_sim.core.output import (
+    OutputManager,
+    create_metadata,
+    PNGHandler,
+    NumpyHandler,
+    create_output_handler,
+)
 from pde_sim.core.config import (
     SimulationConfig,
     OutputConfig,
@@ -29,6 +35,137 @@ def small_grid():
     return CartesianGrid([[0, 1], [0, 1]], [16, 16])
 
 
+class TestOutputHandler:
+    """Tests for OutputHandler classes."""
+
+    def test_create_png_handler(self):
+        """Test creating PNG handler."""
+        handler = create_output_handler("png")
+        assert isinstance(handler, PNGHandler)
+
+    def test_create_numpy_handler(self):
+        """Test creating Numpy handler."""
+        handler = create_output_handler("numpy")
+        assert isinstance(handler, NumpyHandler)
+
+    def test_invalid_format(self):
+        """Test that invalid format raises error."""
+        with pytest.raises(ValueError, match="Unknown output format"):
+            create_output_handler("invalid")
+
+
+class TestPNGHandler:
+    """Tests for PNGHandler."""
+
+    def test_creates_field_subdirectories(self, tmp_output):
+        """Test PNG handler creates per-field subdirectories."""
+        handler = PNGHandler()
+        handler.initialize(
+            tmp_output,
+            field_configs=[("u", "viridis"), ("v", "plasma")],
+            dpi=128,
+            figsize=(8, 8),
+        )
+
+        assert (tmp_output / "frames" / "u").exists()
+        assert (tmp_output / "frames" / "v").exists()
+
+    def test_frame_naming(self, tmp_output):
+        """Test frames are named {frame:06d}.png in subdirectories."""
+        handler = PNGHandler()
+        handler.initialize(
+            tmp_output,
+            field_configs=[("u", "viridis")],
+            dpi=64,
+            figsize=(4, 4),
+        )
+
+        data = np.random.rand(16, 16)
+        handler.save_frame(data, "u", 0, 0.0, 0.0, 1.0, "viridis")
+        handler.save_frame(data, "u", 1, 0.1, 0.0, 1.0, "viridis")
+
+        assert (tmp_output / "frames" / "u" / "000000.png").exists()
+        assert (tmp_output / "frames" / "u" / "000001.png").exists()
+
+    def test_finalize_metadata(self, tmp_output):
+        """Test finalize returns correct metadata."""
+        handler = PNGHandler()
+        handler.initialize(
+            tmp_output,
+            field_configs=[("u", "viridis"), ("v", "plasma")],
+            dpi=64,
+            figsize=(4, 4),
+        )
+
+        metadata = handler.finalize()
+
+        assert metadata["format"] == "png"
+        assert metadata["framesDirectory"] == "frames/"
+        assert "u" in metadata["fields"]
+        assert "v" in metadata["fields"]
+
+
+class TestNumpyHandler:
+    """Tests for NumpyHandler."""
+
+    def test_single_trajectory_file(self, tmp_output):
+        """Test numpy handler creates single trajectory.npy."""
+        handler = NumpyHandler()
+        handler.initialize(
+            tmp_output,
+            field_configs=[("u", "viridis")],
+            dpi=64,
+            figsize=(4, 4),
+        )
+
+        data = np.random.rand(16, 16)
+        for i in range(5):
+            handler.save_frame(data * i, "u", i, i * 0.1, 0.0, 1.0, "viridis")
+
+        handler.finalize()
+
+        assert (tmp_output / "trajectory.npy").exists()
+        assert (tmp_output / "times.npy").exists()
+
+    def test_array_shape(self, tmp_output):
+        """Test array has shape (T, H, W, F)."""
+        handler = NumpyHandler()
+        handler.initialize(
+            tmp_output,
+            field_configs=[("u", "viridis"), ("v", "plasma")],
+            dpi=64,
+            figsize=(4, 4),
+        )
+
+        for i in range(3):
+            handler.save_frame(np.ones((16, 16)) * i, "u", i, i * 0.1, 0.0, 1.0, "viridis")
+            handler.save_frame(np.ones((16, 16)) * (i + 0.5), "v", i, i * 0.1, 0.0, 1.0, "plasma")
+
+        metadata = handler.finalize()
+
+        trajectory = np.load(tmp_output / "trajectory.npy")
+        assert trajectory.shape == (3, 16, 16, 2)  # T, H, W, F
+        assert metadata["shape"] == [3, 16, 16, 2]
+        assert metadata["fieldOrder"] == ["u", "v"]
+
+    def test_field_order(self, tmp_output):
+        """Test field order matches metadata."""
+        handler = NumpyHandler()
+        handler.initialize(
+            tmp_output,
+            field_configs=[("X", "viridis"), ("Y", "plasma")],
+            dpi=64,
+            figsize=(4, 4),
+        )
+
+        handler.save_frame(np.ones((8, 8)), "X", 0, 0.0, 0.0, 1.0, "viridis")
+        handler.save_frame(np.ones((8, 8)), "Y", 0, 0.0, 0.0, 1.0, "plasma")
+
+        metadata = handler.finalize()
+
+        assert metadata["fieldOrder"] == ["X", "Y"]
+
+
 class TestOutputManager:
     """Tests for OutputManager class."""
 
@@ -37,31 +174,42 @@ class TestOutputManager:
         manager = OutputManager(
             base_path=tmp_output,
             folder_name="heat_2024-01-15",
-            colormap="viridis",
             field_configs=[("u", "viridis")],
         )
 
         assert manager.folder_name == "heat_2024-01-15"
-        assert manager.colormap == "viridis"
         assert manager.output_dir == tmp_output / "heat_2024-01-15"
-        assert manager.frames_dir.exists()
+        assert manager.output_format == "png"
 
-    def test_save_scalar_frame(self, tmp_output, small_grid):
-        """Test saving a scalar field frame."""
+    def test_initialization_with_format(self, tmp_output):
+        """Test OutputManager initialization with format."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test_numpy",
+            field_configs=[("u", "viridis")],
+            output_format="numpy",
+        )
+
+        assert manager.output_format == "numpy"
+        assert isinstance(manager.handler, NumpyHandler)
+
+    def test_save_scalar_frame_png(self, tmp_output, small_grid):
+        """Test saving a scalar field frame with PNG format."""
         manager = OutputManager(
             base_path=tmp_output,
             folder_name="test-scalar_2024-01-15",
             field_configs=[("u", "turbo")],
+            output_format="png",
         )
 
         field = ScalarField.random_uniform(small_grid)
         field.label = "u"
 
         manager.compute_range_for_field([field], "u")
-        frame_path = manager.save_frame(field, "u", frame_index=0, simulation_time=0.0)
+        manager.save_frame(field, "u", frame_index=0, simulation_time=0.0)
 
-        assert frame_path.exists()
-        assert frame_path.name == "u_000000.png"
+        # PNG format uses subfolders
+        assert (manager.output_dir / "frames" / "u" / "000000.png").exists()
 
     def test_save_multiple_frames(self, tmp_output, small_grid):
         """Test saving multiple frames."""
@@ -79,7 +227,7 @@ class TestOutputManager:
         for i in range(3):
             manager.save_frame(field, "u", frame_index=i, simulation_time=i * 0.1)
 
-        frames = list(manager.frames_dir.glob("*.png"))
+        frames = list((manager.output_dir / "frames" / "u").glob("*.png"))
         assert len(frames) == 3
 
     def test_save_field_collection_frame(self, tmp_output, small_grid):
@@ -99,11 +247,10 @@ class TestOutputManager:
         manager.compute_range_for_field([collection], "u")
         manager.compute_range_for_field([collection], "v")
 
-        paths = manager.save_all_fields(collection, frame_index=0, simulation_time=0.0)
+        manager.save_all_fields(collection, frame_index=0, simulation_time=0.0)
 
-        assert len(paths) == 2
-        assert (manager.frames_dir / "u_000000.png").exists()
-        assert (manager.frames_dir / "v_000000.png").exists()
+        assert (manager.output_dir / "frames" / "u" / "000000.png").exists()
+        assert (manager.output_dir / "frames" / "v" / "000000.png").exists()
 
     def test_compute_range_for_field(self, tmp_output, small_grid):
         """Test computing range for a specific field."""
@@ -148,42 +295,17 @@ class TestOutputManager:
         assert "visualization" in saved
         assert "fields" in saved["visualization"]
         assert "u" in saved["visualization"]["fields"]
+        # Check output format metadata
+        assert "output" in saved
+        assert saved["output"]["format"] == "png"
 
-    def test_save_trajectory_array(self, tmp_output, small_grid):
-        """Test saving trajectory as numpy array."""
+    def test_numpy_format_saves_trajectory(self, tmp_output, small_grid):
+        """Test numpy format saves trajectory correctly."""
         manager = OutputManager(
             base_path=tmp_output,
-            folder_name="test-traj_2024-01-15",
-            save_array=True,
-            field_configs=[("u", "turbo")],
-        )
-
-        states = []
-        for i in range(5):
-            field = ScalarField(small_grid, np.ones(small_grid.shape) * i)
-            field.label = "u"
-            states.append(field)
-        times = [0.0, 0.1, 0.2, 0.3, 0.4]
-
-        array_path = manager.save_trajectory_array(states, times, "u")
-
-        assert array_path.exists()
-        assert array_path.name == "trajectory_u.npz"
-
-        # Verify contents
-        data = np.load(array_path)
-        assert "trajectory" in data
-        assert "times" in data
-        assert data["trajectory"].shape == (5, 16, 16)
-        np.testing.assert_array_equal(data["times"], times)
-
-    def test_save_trajectory_array_multi_field(self, tmp_output, small_grid):
-        """Test saving trajectory for multiple fields."""
-        manager = OutputManager(
-            base_path=tmp_output,
-            folder_name="test-traj-multi_2024-01-15",
-            save_array=True,
+            folder_name="test-numpy",
             field_configs=[("u", "viridis"), ("v", "plasma")],
+            output_format="numpy",
         )
 
         states = []
@@ -193,19 +315,22 @@ class TestOutputManager:
             v = ScalarField(small_grid, np.ones(small_grid.shape) * (i + 0.5))
             v.label = "v"
             states.append(FieldCollection([u, v]))
-        times = [0.0, 0.1, 0.2]
 
-        # Save trajectory for both fields
-        array_path_u = manager.save_trajectory_array(states, times, "u")
-        array_path_v = manager.save_trajectory_array(states, times, "v")
+        manager.compute_range_for_field(states, "u")
+        manager.compute_range_for_field(states, "v")
 
-        assert array_path_u.exists()
-        assert array_path_v.exists()
+        for i, state in enumerate(states):
+            manager.save_all_fields(state, i, i * 0.1)
 
-        data_u = np.load(array_path_u)
-        data_v = np.load(array_path_v)
-        assert data_u["trajectory"].shape == (3, 16, 16)
-        assert data_v["trajectory"].shape == (3, 16, 16)
+        # Finalize should be called via save_metadata
+        metadata_path = manager.save_metadata({"test": "data"})
+
+        # Check trajectory was saved
+        assert (manager.output_dir / "trajectory.npy").exists()
+        assert (manager.output_dir / "times.npy").exists()
+
+        trajectory = np.load(manager.output_dir / "trajectory.npy")
+        assert trajectory.shape == (3, 16, 16, 2)
 
 
 class TestCreateMetadata:
@@ -232,8 +357,7 @@ class TestCreateMetadata:
             dt=0.01,
             resolution=64,
             bc=BoundaryConfig(),
-            output=OutputConfig(path=Path("./output"), colormap="turbo",
-                                fields=["u:turbo"]),
+            output=OutputConfig(path=Path("./output")),
             seed=42,
             domain_size=1.0,
         )
@@ -279,7 +403,7 @@ class TestCreateMetadata:
             dt=0.01,
             resolution=64,
             bc=BoundaryConfig(),
-            output=OutputConfig(path=Path("./output"), colormap="turbo"),
+            output=OutputConfig(path=Path("./output")),
             seed=42,
             domain_size=1.0,
         )
@@ -356,15 +480,15 @@ class TestMultiFieldOutput:
         manager.compute_range_for_field([collection], "u")
         manager.compute_range_for_field([collection], "v")
 
-        paths = manager.save_all_fields(collection, 0, 0.0)
+        manager.save_all_fields(collection, 0, 0.0)
 
-        assert len(paths) == 2
-        assert (manager.frames_dir / "u_000000.png").exists()
-        assert (manager.frames_dir / "v_000000.png").exists()
+        # PNG format uses subfolders
+        assert (manager.output_dir / "frames" / "u" / "000000.png").exists()
+        assert (manager.output_dir / "frames" / "v" / "000000.png").exists()
         assert len(manager.saved_frames) == 1
 
-    def test_filename_format(self, tmp_output, small_grid):
-        """Test that filenames follow {field}_{frame:06d}.png format."""
+    def test_filename_format_png(self, tmp_output, small_grid):
+        """Test that PNG files follow frames/{field}/{frame:06d}.png format."""
         manager = OutputManager(
             base_path=tmp_output,
             folder_name="test-filename_2024-01-15",
@@ -383,13 +507,10 @@ class TestMultiFieldOutput:
         for i in range(3):
             manager.save_all_fields(collection, i, i * 0.1)
 
-        expected = [
-            "X_000000.png", "Y_000000.png",
-            "X_000001.png", "Y_000001.png",
-            "X_000002.png", "Y_000002.png",
-        ]
-        for name in expected:
-            assert (manager.frames_dir / name).exists(), f"Missing {name}"
+        # Check files in subfolders
+        for i in range(3):
+            assert (manager.output_dir / "frames" / "X" / f"{i:06d}.png").exists()
+            assert (manager.output_dir / "frames" / "Y" / f"{i:06d}.png").exists()
 
     def test_save_metadata_multi_field(self, tmp_output, small_grid):
         """Test that metadata includes per-field visualization info."""

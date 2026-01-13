@@ -31,8 +31,6 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: coolwarm
-  field_to_plot: omega
 seed: 1071
 domain_size: 20.0
 t_end: 7.5   # Shorter time since diffusion is fast

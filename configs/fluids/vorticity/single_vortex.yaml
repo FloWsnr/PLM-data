@@ -29,8 +29,6 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: RdBu_r
-  field_to_plot: omega
 seed: 2042
 domain_size: 20.0
 t_end: 60.0

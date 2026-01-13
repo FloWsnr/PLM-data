@@ -27,8 +27,6 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: magma
-  field_to_plot: u
 
 seed: 5120
 domain_size: 100.0

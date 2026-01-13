@@ -29,8 +29,6 @@ bc:
 output:
   path: ./output
   num_frames: 30
-  colormap: plasma
-  field_to_plot: u
 seed: 4001
 domain_size: 100.0
 t_end: 30.0

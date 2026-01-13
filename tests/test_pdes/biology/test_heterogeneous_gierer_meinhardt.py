@@ -23,7 +23,7 @@ class TestHeterogeneousGiererMeinhardtPDE:
 
         assert meta.name == "heterogeneous-gierer-meinhardt"
         assert meta.category == "biology"
-        assert meta.num_fields == 2
+        assert meta.num_fields == 3  # u, v, and X (static coordinate field)
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""

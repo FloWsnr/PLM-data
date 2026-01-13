@@ -30,4 +30,3 @@ output:
   frames: true
   metadata: true
   num_frames: 10
-  colormap: viridis

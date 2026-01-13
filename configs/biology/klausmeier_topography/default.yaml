@@ -27,7 +27,6 @@ bc:
 output:
   path: ./output
   num_frames: 100
-  colormap: viridis
   fields:
     - n:YlGn
 seed: 1064

@@ -22,8 +22,6 @@ bc:
 output:
   path: ./output
   num_frames: 20
-  colormap: seismic
-  field_to_plot: u
 seed: 5001
 domain_size: 100.0
 t_end: 8.0

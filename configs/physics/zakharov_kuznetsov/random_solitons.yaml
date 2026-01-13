@@ -24,7 +24,5 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: twilight
-  field_to_plot: u
 seed: 42
 domain_size: 100

@@ -22,8 +22,6 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: inferno
-  field_to_plot: u
 seed: 3033
 domain_size: 10.0
 t_end: 75.0

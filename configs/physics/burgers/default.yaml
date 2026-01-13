@@ -26,8 +26,6 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: seismic
-  field_to_plot: u
 
 seed: 1074
 domain_size: 100.0   # smaller domain to see dynamics clearly

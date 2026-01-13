@@ -22,7 +22,5 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: inferno
-  field_to_plot: mag(u,v)
 seed: 1082
 domain_size: 30

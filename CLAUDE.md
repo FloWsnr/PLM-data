@@ -140,42 +140,59 @@ Supported BC types:
 - `neumann:VALUE` - Fixed derivative (value required, e.g., `neumann:0`)
 - `dirichlet:VALUE` - Fixed value (value required, e.g., `dirichlet:0`)
 
-### Output Fields
+### Output Configuration
 
-Specify which fields to output and their colormaps using the `fields` list:
+Output supports three formats: PNG images, MP4 videos, or numpy arrays.
 
 ```yaml
 output:
   path: ./output
   num_frames: 100
+  format: png           # "png", "mp4", or "numpy"
+  fps: 30               # Frame rate for MP4 (default: 30)
   fields:
     - u:viridis
     - v:plasma
 ```
 
-Each field is saved with a `{field}_{frame:06d}.png` naming scheme (e.g., `u_000000.png`, `v_000000.png`).
-
-For single-field PDEs or to output only one field:
-```yaml
-output:
-  fields:
-    - u:turbo
-```
+**Format options:**
+- `png` (default): PNG images per field in subdirectories
+- `mp4`: One MP4 video per field
+- `numpy`: Single numpy array with shape `(Time, Height, Width, Fields)`
 
 If no `fields` list is specified, all fields are output using the default colormap (`turbo`).
 
 ## Output Structure
 
-Default output (no `--output-dir`):
+### PNG Format (default)
 ```
 output/{preset-name}/{config-name}_{run-number}/
 ├── frames/
-│   ├── u_000000.png
-│   ├── v_000000.png
-│   ├── u_000001.png
-│   ├── v_000001.png
-│   └── ...
-└── metadata.json           # Contains per-field colormap info
+│   ├── u/
+│   │   ├── 000000.png
+│   │   ├── 000001.png
+│   │   └── ...
+│   └── v/
+│       ├── 000000.png
+│       ├── 000001.png
+│       └── ...
+└── metadata.json
+```
+
+### MP4 Format
+```
+output/{preset-name}/{config-name}_{run-number}/
+├── u.mp4
+├── v.mp4
+└── metadata.json
+```
+
+### Numpy Format
+```
+output/{preset-name}/{config-name}_{run-number}/
+├── trajectory.npy    # Shape: (T, H, W, F)
+├── times.npy         # Shape: (T,)
+└── metadata.json
 ```
 
 With explicit `--output-dir`, numbered folders are placed directly in the specified directory:

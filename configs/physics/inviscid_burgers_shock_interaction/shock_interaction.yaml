@@ -28,7 +28,5 @@ bc:
 output:
   path: ./output
   num_frames: 12
-  colormap: plasma
-  field_to_plot: u
 
 seed: 2024

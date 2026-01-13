@@ -25,8 +25,6 @@ bc:
 output:
   path: ./output
   num_frames: 30
-  colormap: coolwarm
-  field_to_plot: u
 seed: 2002
 domain_size: 100.0
 t_end: 20.0

@@ -34,8 +34,6 @@ bc:
 output:
   path: ./output
   num_frames: 50
-  colormap: coolwarm
-  field_to_plot: b
 seed: 4242
 domain_size: 500.0
 t_end: 300.0

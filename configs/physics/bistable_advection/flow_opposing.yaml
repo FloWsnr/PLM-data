@@ -35,6 +35,5 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: inferno
 
 seed: 3072

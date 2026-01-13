@@ -74,9 +74,11 @@ class TestSimulationRunner:
         assert (output_dir / "metadata.json").exists()
         assert (output_dir / "frames").exists()
 
-        # Check frames were saved
-        frames = list((output_dir / "frames").glob("*.png"))
-        assert len(frames) == metadata["simulation"]["totalFrames"]
+        # Check frames were saved (in per-field subdirectories)
+        frames = list((output_dir / "frames").glob("**/*.png"))
+        # Each field has totalFrames, so multiply by number of fields
+        num_fields = len(metadata["visualization"]["whatToPlot"])
+        assert len(frames) == metadata["simulation"]["totalFrames"] * num_fields
 
     def test_run_with_different_solvers(self, tmp_path):
         """Test that different solvers can be used."""
@@ -175,7 +177,6 @@ class TestGrayScottSimulation:
             "output": {
                 "path": str(tmp_path),
                 "num_frames": 11,
-                "field_to_plot": "v",
             },
             "seed": 42,
             "domain_size": 2.5,

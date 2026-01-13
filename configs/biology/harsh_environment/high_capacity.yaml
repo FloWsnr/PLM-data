@@ -22,8 +22,6 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: turbo
-  field_to_plot: u
 seed: 5055
 domain_size: 10.0
 t_end: 100.0

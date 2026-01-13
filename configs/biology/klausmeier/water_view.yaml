@@ -23,8 +23,6 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: Blues_r
-  field_to_plot: w
 seed: 1063
 domain_size: 100.0
 t_end: 100.0

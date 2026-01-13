@@ -28,5 +28,3 @@ init:
     k: 8
 output:
   num_frames: 10
-  colormap: seismic
-  field_to_plot: omega

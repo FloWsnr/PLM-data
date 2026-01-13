@@ -25,7 +25,5 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: PiYG
-  field_to_plot: X
 seed: 5555
 domain_size: 50

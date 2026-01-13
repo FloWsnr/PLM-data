@@ -31,8 +31,6 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: viridis
-  field_to_plot: S   # Show passive scalar instead of vorticity
 seed: 5075
 domain_size: 20.0
 t_end: 60.0

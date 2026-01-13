@@ -156,36 +156,40 @@ class SimulationRunner:
             parameters=params,
             bc=config.bc,  # Pass full BoundaryConfig to support per-field BCs
             grid=self.grid,
-            init_params=config.init.params,  # Pass init params for PDEs with special options
         )
 
         # Create initial state
         # Pass parameters and bc for PDEs that need them (e.g., plate equation)
+        # Inject global seed into IC params for reproducibility (if not already specified)
+        ic_params = config.init.params.copy()
+        if config.seed is not None and "seed" not in ic_params:
+            ic_params["seed"] = config.seed
         self.state = self.preset.create_initial_state(
             grid=self.grid,
             ic_type=config.init.type,
-            ic_params=config.init.params,
+            ic_params=ic_params,
             parameters=params,
             bc=config.bc,
         )
 
         # Determine field configurations for output
-        field_configs = config.output.get_field_configs()
+        # Auto-assign colormaps from COLORMAP_CYCLE based on field order
+        from .config import COLORMAP_CYCLE
 
-        # If no fields specified, default to all fields from PDE metadata
-        if not field_configs:
-            field_configs = [
-                (name, config.output.colormap)
-                for name in self.preset.metadata.field_names
-            ]
+        field_names = self.preset.metadata.field_names
+        field_configs = [
+            (name, COLORMAP_CYCLE[i % len(COLORMAP_CYCLE)])
+            for i, name in enumerate(field_names)
+        ]
 
         # Output management
         self.output_manager = OutputManager(
             base_path=self.output_dir,
             folder_name=self.folder_name,
-            colormap=config.output.colormap,
+            colormap=COLORMAP_CYCLE[0],  # Default colormap
             field_configs=field_configs,
-            save_array=config.output.save_array,
+            output_format=config.output.format,
+            fps=config.output.fps,
         )
 
     def _get_solver_name(self) -> str:
@@ -228,6 +232,7 @@ class SimulationRunner:
             if self._get_solver_name() != "implicit" and self.config.adaptive:
                 print(f"  Adaptive: True (tolerance: {self.config.tolerance})")
             print(f"  Output: {self.output_manager.output_dir}")
+            print(f"  Format: {self.config.output.format}")
 
         # Create storage for capturing frames
         storage = MemoryStorage()
@@ -275,13 +280,6 @@ class SimulationRunner:
         # 2. Save frames with the pre-computed range
         for frame_index, (t, field) in enumerate(storage.items()):
             self.output_manager.save_all_fields(field, frame_index, t)
-
-        # 3. Save trajectory array if requested (per field)
-        if self.output_manager.save_array:
-            for field_name, _ in self.output_manager.field_configs:
-                self.output_manager.save_trajectory_array(all_fields, all_times, field_name)
-            if verbose:
-                print(f"  Saved trajectory arrays")
 
         # Generate and save metadata
         total_time = storage.times[-1] if storage.times else self.config.t_end

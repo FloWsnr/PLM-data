@@ -26,7 +26,5 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: cividis
-  field_to_plot: u
 seed: 314
 domain_size: 150

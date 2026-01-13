@@ -33,8 +33,6 @@ bc:
 output:
   path: ./output
   num_frames: 30
-  colormap: plasma
-  field_to_plot: phi
 seed: 5120
 domain_size: 40.0
 t_end: 10.0

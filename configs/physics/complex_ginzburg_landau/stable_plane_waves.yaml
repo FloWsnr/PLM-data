@@ -26,7 +26,5 @@ bc:
 output:
   path: ./output
   num_frames: 15
-  colormap: viridis
-  field_to_plot: mag(u,v)
 seed: 4242
 domain_size: 100

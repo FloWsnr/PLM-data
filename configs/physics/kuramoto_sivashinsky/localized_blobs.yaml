@@ -35,5 +35,3 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: viridis
-  field_to_plot: u

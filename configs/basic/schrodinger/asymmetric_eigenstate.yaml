@@ -22,8 +22,6 @@ bc:
 output:
   path: ./output
   num_frames: 25
-  colormap: RdYlBu
-  field_to_plot: v      # Show imaginary part for phase evolution
 seed: 6001
 domain_size: 100.0
 t_end: 12.0

@@ -34,6 +34,5 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: turbo      # rainbow-style colormap
 
 seed: 6144

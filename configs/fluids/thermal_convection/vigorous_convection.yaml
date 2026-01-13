@@ -33,8 +33,6 @@ bc:
 output:
   path: ./output
   num_frames: 50
-  colormap: inferno
-  field_to_plot: b
 seed: 2048
 domain_size: 500.0
 t_end: 400.0

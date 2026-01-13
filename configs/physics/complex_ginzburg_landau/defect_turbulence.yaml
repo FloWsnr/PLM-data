@@ -26,7 +26,5 @@ bc:
 output:
   path: ./output
   num_frames: 15
-  colormap: twilight_shifted
-  field_to_plot: mag(u,v)
 seed: 2024
 domain_size: 100

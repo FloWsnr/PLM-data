@@ -25,8 +25,6 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: RdYlBu_r  # Reversed Red-Yellow-Blue
-  field_to_plot: u
 seed: 5678
 domain_size: 100.0
 t_end: 80.0

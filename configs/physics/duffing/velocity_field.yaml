@@ -25,7 +25,6 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: twilight_shifted
   fields:
     - Y:twilight_shifted
 seed: 4444

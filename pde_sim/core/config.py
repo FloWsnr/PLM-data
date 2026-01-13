@@ -1,6 +1,5 @@
 """YAML configuration parsing and validation."""
 
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -8,63 +7,33 @@ from typing import Any
 import yaml
 
 
+# Colormap cycle for auto-assigning to fields
+COLORMAP_CYCLE = [
+    "viridis",
+    "plasma",
+    "inferno",
+    "magma",
+    "cividis",
+    "turbo",
+    "coolwarm",
+    "twilight",
+    "RdBu",
+    "Spectral",
+]
+
+
 @dataclass
 class OutputConfig:
-    """Output configuration."""
+    """Output configuration.
+
+    All fields from the PDE are always output. Colormaps are auto-assigned
+    from COLORMAP_CYCLE based on field order.
+    """
 
     path: Path
     num_frames: int = 100  # Total number of frames to save
-    colormap: str = "turbo"  # Default colormap when field has no colormap specified
-    fields: list[str] | None = None  # List of "field:colormap" entries (e.g., ["u:viridis", "v:plasma"])
-    save_array: bool = False  # Save trajectory as numpy array (.npy)
-
-    def get_field_configs(self) -> list[tuple[str, str]]:
-        """Get list of (field_name, colormap) tuples.
-
-        Parses fields list like ["u:viridis", "v:plasma"].
-        If field has no colormap (e.g., "u"), uses default colormap.
-
-        Supports computed field syntax:
-        - mag(u,v):colormap -> computes sqrt(u^2 + v^2) as "speed" field
-
-        Returns:
-            List of (field_name, colormap) tuples.
-            Empty list if no fields specified (use defaults from PDE metadata).
-        """
-        if self.fields:
-            result = []
-            for entry in self.fields:
-                field_spec, cmap = self._parse_field_entry(entry)
-                result.append((field_spec, cmap))
-            return result
-        return []
-
-    def _parse_field_entry(self, entry: str) -> tuple[str, str]:
-        """Parse a single field entry, handling mag() syntax.
-
-        Args:
-            entry: Field specification like "u:viridis" or "mag(u,v):plasma"
-
-        Returns:
-            Tuple of (field_name, colormap). mag(u,v) is converted to "speed".
-        """
-        # Split by colon for colormap
-        if ":" in entry:
-            field_part, cmap = entry.split(":", 1)
-            field_part = field_part.strip()
-            cmap = cmap.strip()
-        else:
-            field_part = entry.strip()
-            cmap = self.colormap
-
-        # Check for mag(field1, field2) syntax
-        mag_pattern = r"^mag\((\w+),\s*(\w+)\)$"
-        match = re.match(mag_pattern, field_part)
-        if match:
-            # Convert mag(u,v) to "speed" - the output system handles this
-            return ("speed", cmap)
-
-        return (field_part, cmap)
+    format: str = "png"  # Output format: "png", "mp4", or "numpy"
+    fps: int = 30  # Frame rate for MP4 output
 
 
 @dataclass
@@ -196,20 +165,12 @@ def load_config(path: Path | str) -> SimulationConfig:
     bc_config = _parse_bc_config(raw.get("bc", {}))
 
     output_raw = raw.get("output", {})
-    # Handle both new "fields" list and legacy "field_to_plot" single field
-    fields = output_raw.get("fields")
-    if fields is None and "field_to_plot" in output_raw:
-        # Convert legacy field_to_plot to new fields format
-        field_to_plot = output_raw["field_to_plot"]
-        colormap = output_raw.get("colormap", "turbo")
-        fields = [f"{field_to_plot}:{colormap}"]
 
     output_config = OutputConfig(
         path=Path(output_raw.get("path", "./output")),
         num_frames=output_raw.get("num_frames", 100),
-        colormap=output_raw.get("colormap", "turbo"),
-        fields=fields,
-        save_array=output_raw.get("save_array", False),
+        format=output_raw.get("format", "png"),
+        fps=output_raw.get("fps", 30),
     )
 
     return SimulationConfig(
@@ -262,9 +223,8 @@ def config_to_dict(config: SimulationConfig) -> dict[str, Any]:
         "output": {
             "path": str(config.output.path),
             "num_frames": config.output.num_frames,
-            "colormap": config.output.colormap,
-            "fields": config.output.fields,
-            "save_array": config.output.save_array,
+            "format": config.output.format,
+            "fps": config.output.fps,
         },
         "seed": config.seed,
         "domain_size": config.domain_size,

@@ -28,7 +28,5 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: inferno
-  field_to_plot: u
 
 seed: 1079

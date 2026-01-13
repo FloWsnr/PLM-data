@@ -21,7 +21,5 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: seismic  # Strong contrast for sharp transitions
-  field_to_plot: X
 seed: 3333
 domain_size: 50

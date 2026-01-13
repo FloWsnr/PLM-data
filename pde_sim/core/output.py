@@ -1,6 +1,7 @@
 """Output management for simulation frames and metadata."""
 
 import json
+from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -12,10 +13,333 @@ from pde import FieldCollection, ScalarField
 from pde_sim.descriptions import get_description
 
 
+class OutputHandler(ABC):
+    """Abstract base class for output format handlers."""
+
+    @abstractmethod
+    def initialize(
+        self,
+        output_dir: Path,
+        field_configs: list[tuple[str, str]],
+        dpi: int,
+        figsize: tuple[int, int],
+    ) -> None:
+        """Set up output directories/files.
+
+        Args:
+            output_dir: Base output directory.
+            field_configs: List of (field_name, colormap) tuples.
+            dpi: DPI for rendered images.
+            figsize: Figure size in inches.
+        """
+        pass
+
+    @abstractmethod
+    def save_frame(
+        self,
+        data: np.ndarray,
+        field_name: str,
+        frame_index: int,
+        simulation_time: float,
+        vmin: float,
+        vmax: float,
+        colormap: str,
+    ) -> None:
+        """Save a single frame for one field.
+
+        Args:
+            data: 2D numpy array of field values.
+            field_name: Name of the field.
+            frame_index: Index of this frame.
+            simulation_time: Simulation time at this frame.
+            vmin: Minimum value for colormap.
+            vmax: Maximum value for colormap.
+            colormap: Matplotlib colormap name.
+        """
+        pass
+
+    @abstractmethod
+    def finalize(self) -> dict[str, Any]:
+        """Complete output (e.g., encode video) and return format-specific metadata.
+
+        Returns:
+            Dictionary with format-specific metadata to include in metadata.json.
+        """
+        pass
+
+
+class PNGHandler(OutputHandler):
+    """Saves PNG frames to per-field subdirectories."""
+
+    def __init__(self) -> None:
+        self.output_dir: Path | None = None
+        self.frames_dir: Path | None = None
+        self.field_dirs: dict[str, Path] = {}
+        self.dpi: int = 128
+        self.figsize: tuple[int, int] = (8, 8)
+
+    def initialize(
+        self,
+        output_dir: Path,
+        field_configs: list[tuple[str, str]],
+        dpi: int,
+        figsize: tuple[int, int],
+    ) -> None:
+        self.output_dir = output_dir
+        self.frames_dir = output_dir / "frames"
+        self.dpi = dpi
+        self.figsize = figsize
+
+        # Create per-field subdirectories
+        for field_name, _ in field_configs:
+            field_dir = self.frames_dir / field_name
+            field_dir.mkdir(parents=True, exist_ok=True)
+            self.field_dirs[field_name] = field_dir
+
+    def save_frame(
+        self,
+        data: np.ndarray,
+        field_name: str,
+        frame_index: int,
+        simulation_time: float,
+        vmin: float,
+        vmax: float,
+        colormap: str,
+    ) -> None:
+        if field_name not in self.field_dirs:
+            # Create directory for unexpected field
+            field_dir = self.frames_dir / field_name
+            field_dir.mkdir(parents=True, exist_ok=True)
+            self.field_dirs[field_name] = field_dir
+
+        # Create figure
+        fig, ax = plt.subplots(figsize=self.figsize, dpi=self.dpi)
+        ax.imshow(
+            data.T,  # Transpose for correct orientation
+            origin="lower",
+            cmap=colormap,
+            vmin=vmin,
+            vmax=vmax,
+            aspect="equal",
+        )
+        ax.axis("off")
+
+        # Save to field subdirectory: frames/{field}/{frame:06d}.png
+        frame_path = self.field_dirs[field_name] / f"{frame_index:06d}.png"
+        fig.savefig(frame_path, bbox_inches="tight", pad_inches=0)
+        plt.close(fig)
+
+    def finalize(self) -> dict[str, Any]:
+        return {
+            "format": "png",
+            "framesDirectory": "frames/",
+            "fields": list(self.field_dirs.keys()),
+        }
+
+
+class MP4Handler(OutputHandler):
+    """Accumulates frames and encodes MP4 videos per field."""
+
+    def __init__(self, fps: int = 30) -> None:
+        self.fps = fps
+        self.output_dir: Path | None = None
+        self.frame_buffers: dict[str, list[np.ndarray]] = {}
+        self.dpi: int = 128
+        self.figsize: tuple[int, int] = (8, 8)
+        self.field_colormaps: dict[str, str] = {}
+
+    def initialize(
+        self,
+        output_dir: Path,
+        field_configs: list[tuple[str, str]],
+        dpi: int,
+        figsize: tuple[int, int],
+    ) -> None:
+        self.output_dir = output_dir
+        self.dpi = dpi
+        self.figsize = figsize
+
+        for field_name, colormap in field_configs:
+            self.frame_buffers[field_name] = []
+            self.field_colormaps[field_name] = colormap
+
+    def save_frame(
+        self,
+        data: np.ndarray,
+        field_name: str,
+        frame_index: int,
+        simulation_time: float,
+        vmin: float,
+        vmax: float,
+        colormap: str,
+    ) -> None:
+        if field_name not in self.frame_buffers:
+            self.frame_buffers[field_name] = []
+
+        # Render frame to numpy array (RGB)
+        fig, ax = plt.subplots(figsize=self.figsize, dpi=self.dpi)
+        ax.imshow(
+            data.T,
+            origin="lower",
+            cmap=colormap,
+            vmin=vmin,
+            vmax=vmax,
+            aspect="equal",
+        )
+        ax.axis("off")
+
+        # Draw canvas and convert to RGB array
+        fig.canvas.draw()
+        frame_data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+        frame_data = frame_data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+        plt.close(fig)
+
+        self.frame_buffers[field_name].append(frame_data)
+
+    def finalize(self) -> dict[str, Any]:
+        import imageio
+
+        video_files: dict[str, str] = {}
+        for field_name, frames in self.frame_buffers.items():
+            if frames:
+                video_path = self.output_dir / f"{field_name}.mp4"
+                imageio.mimwrite(
+                    video_path,
+                    frames,
+                    fps=self.fps,
+                    codec="libx264",
+                    output_params=["-pix_fmt", "yuv420p"],
+                )
+                video_files[field_name] = f"{field_name}.mp4"
+
+        return {
+            "format": "mp4",
+            "fps": self.fps,
+            "videos": video_files,
+        }
+
+
+class NumpyHandler(OutputHandler):
+    """Collects all field data into a single (T, H, W, F) array."""
+
+    def __init__(self) -> None:
+        self.output_dir: Path | None = None
+        self.trajectory_data: dict[str, list[np.ndarray]] = {}
+        self.times: list[float] = []
+        self.field_order: list[str] = []
+        self._times_recorded: set[int] = set()  # Track which frame indices have times
+
+    def initialize(
+        self,
+        output_dir: Path,
+        field_configs: list[tuple[str, str]],
+        dpi: int,
+        figsize: tuple[int, int],
+    ) -> None:
+        self.output_dir = output_dir
+        self.field_order = [name for name, _ in field_configs]
+        for field_name in self.field_order:
+            self.trajectory_data[field_name] = []
+
+    def save_frame(
+        self,
+        data: np.ndarray,
+        field_name: str,
+        frame_index: int,
+        simulation_time: float,
+        vmin: float,
+        vmax: float,
+        colormap: str,
+    ) -> None:
+        if field_name not in self.trajectory_data:
+            self.trajectory_data[field_name] = []
+            self.field_order.append(field_name)
+
+        self.trajectory_data[field_name].append(data.copy())
+
+        # Track time only once per frame index
+        if frame_index not in self._times_recorded:
+            self.times.append(simulation_time)
+            self._times_recorded.add(frame_index)
+
+    def finalize(self) -> dict[str, Any]:
+        if not self.field_order or not self.trajectory_data[self.field_order[0]]:
+            return {"format": "numpy", "error": "No data to save"}
+
+        T = len(self.times)
+        first_field_data = self.trajectory_data[self.field_order[0]]
+        H, W = first_field_data[0].shape
+        F = len(self.field_order)
+
+        # Create combined array with shape (T, H, W, F)
+        array = np.zeros((T, H, W, F), dtype=np.float64)
+        for f_idx, field_name in enumerate(self.field_order):
+            field_frames = self.trajectory_data[field_name]
+            for t_idx, data in enumerate(field_frames):
+                array[t_idx, :, :, f_idx] = data
+
+        # Save trajectory and times
+        np.save(self.output_dir / "trajectory.npy", array)
+        np.save(self.output_dir / "times.npy", np.array(self.times))
+
+        # Compute field ranges for metadata
+        field_ranges = {}
+        for f_idx, field_name in enumerate(self.field_order):
+            field_data = array[:, :, :, f_idx]
+            field_ranges[field_name] = {
+                "min": float(np.min(field_data)),
+                "max": float(np.max(field_data)),
+            }
+
+        return {
+            "format": "numpy",
+            "trajectoryFile": "trajectory.npy",
+            "timesFile": "times.npy",
+            "shape": list(array.shape),
+            "fieldOrder": self.field_order,
+            "fieldRanges": field_ranges,
+            "dtype": str(array.dtype),
+        }
+
+
+def create_output_handler(output_format: str, fps: int = 30) -> OutputHandler:
+    """Factory function to create appropriate output handler.
+
+    Args:
+        output_format: Output format ("png", "mp4", or "numpy").
+        fps: Frame rate for MP4 output.
+
+    Returns:
+        Appropriate OutputHandler instance.
+
+    Raises:
+        ValueError: If format is not recognized.
+    """
+    handlers = {
+        "png": PNGHandler,
+        "mp4": lambda: MP4Handler(fps=fps),
+        "numpy": NumpyHandler,
+    }
+
+    if output_format not in handlers:
+        raise ValueError(
+            f"Unknown output format: {output_format}. "
+            f"Valid formats: {list(handlers.keys())}"
+        )
+
+    handler_class = handlers[output_format]
+    if callable(handler_class) and not isinstance(handler_class, type):
+        return handler_class()
+    return handler_class()
+
+
 class OutputManager:
     """Manages simulation output (frames and metadata).
 
-    Handles saving PNG frames and JSON metadata for each simulation.
+    Uses the strategy pattern to support multiple output formats:
+    - png: PNG images in per-field subdirectories
+    - mp4: MP4 videos per field
+    - numpy: Single numpy array with shape (T, H, W, F)
     """
 
     def __init__(
@@ -26,7 +350,8 @@ class OutputManager:
         field_configs: list[tuple[str, str]] | None = None,
         dpi: int = 128,
         figsize: tuple[int, int] = (8, 8),
-        save_array: bool = False,
+        output_format: str = "png",
+        fps: int = 30,
     ):
         """Initialize the output manager.
 
@@ -37,14 +362,16 @@ class OutputManager:
             field_configs: List of (field_name, colormap) tuples for output.
             dpi: DPI for saved images.
             figsize: Figure size in inches.
-            save_array: Whether to save trajectory as numpy array.
+            output_format: Output format ("png", "mp4", or "numpy").
+            fps: Frame rate for MP4 output.
         """
         self.base_path = Path(base_path)
         self.folder_name = folder_name
         self.colormap = colormap
         self.dpi = dpi
         self.figsize = figsize
-        self.save_array = save_array
+        self.output_format = output_format
+        self.fps = fps
 
         # Field configurations: [(field_name, colormap), ...]
         self.field_configs = field_configs or []
@@ -57,10 +384,13 @@ class OutputManager:
         for field_name, cmap in self.field_configs:
             self.field_colormaps[field_name] = cmap
 
-        # Create output directories
+        # Create output directory
         self.output_dir = self.base_path / self.folder_name
-        self.frames_dir = self.output_dir / "frames"
-        self.frames_dir.mkdir(parents=True, exist_ok=True)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create appropriate handler
+        self.handler = create_output_handler(output_format, fps=fps)
+        self.handler.initialize(self.output_dir, self.field_configs, dpi, figsize)
 
         # Track saved frames
         self.saved_frames: list[dict[str, Any]] = []
@@ -97,9 +427,6 @@ class OutputManager:
     ) -> np.ndarray:
         """Extract data for a specific field by name.
 
-        Supports computed fields:
-        - speed: sqrt(u^2 + v^2) for velocity magnitude (requires u, v fields)
-
         Args:
             state: The field state.
             field_name: Name of the field to extract.
@@ -107,13 +434,6 @@ class OutputManager:
         Returns:
             2D numpy array of field values.
         """
-        # Handle computed fields
-        if field_name == "speed" and isinstance(state, FieldCollection):
-            u_data = self._get_field_by_name(state, "u")
-            v_data = self._get_field_by_name(state, "v")
-            if u_data is not None and v_data is not None:
-                return np.sqrt(u_data**2 + v_data**2)
-
         if isinstance(state, FieldCollection):
             data = self._get_field_by_name(state, field_name)
             if data is None:
@@ -156,7 +476,7 @@ class OutputManager:
         field_name: str,
         frame_index: int,
         simulation_time: float,
-    ) -> Path:
+    ) -> None:
         """Save a single frame for a specific field.
 
         Args:
@@ -164,9 +484,6 @@ class OutputManager:
             field_name: Name of the field to save.
             frame_index: Index of this frame.
             simulation_time: Simulation time at this frame.
-
-        Returns:
-            Path to the saved PNG file.
         """
         data = self._extract_field_data(state, field_name)
 
@@ -174,46 +491,25 @@ class OutputManager:
         colormap = self.field_colormaps.get(field_name, self.colormap)
         vmin, vmax = self.field_ranges.get(field_name, (None, None))
 
-        # Create figure
-        fig, ax = plt.subplots(figsize=self.figsize, dpi=self.dpi)
-        ax.imshow(
-            data.T,  # Transpose for correct orientation
-            origin="lower",
-            cmap=colormap,
-            vmin=vmin,
-            vmax=vmax,
-            aspect="equal",
+        self.handler.save_frame(
+            data, field_name, frame_index, simulation_time, vmin, vmax, colormap
         )
-        ax.axis("off")
-
-        # Generate filename with field prefix: {field}_{frame:06d}.png
-        frame_path = self.frames_dir / f"{field_name}_{frame_index:06d}.png"
-
-        fig.savefig(frame_path, bbox_inches="tight", pad_inches=0)
-        plt.close(fig)
-
-        return frame_path
 
     def save_all_fields(
         self,
         state: ScalarField | FieldCollection,
         frame_index: int,
         simulation_time: float,
-    ) -> list[Path]:
+    ) -> None:
         """Save frames for all configured fields.
 
         Args:
             state: The field state.
             frame_index: Index of this frame.
             simulation_time: Simulation time.
-
-        Returns:
-            List of paths to saved PNG files.
         """
-        paths = []
         for field_name, _colormap in self.field_configs:
-            path = self.save_frame(state, field_name, frame_index, simulation_time)
-            paths.append(path)
+            self.save_frame(state, field_name, frame_index, simulation_time)
 
         # Track frame (once per timestep, not per field)
         self.saved_frames.append({
@@ -221,7 +517,13 @@ class OutputManager:
             "simulationTime": simulation_time,
         })
 
-        return paths
+    def finalize(self) -> dict[str, Any]:
+        """Finalize output and return format-specific metadata.
+
+        Returns:
+            Dictionary with format-specific metadata.
+        """
+        return self.handler.finalize()
 
     def save_metadata(self, metadata: dict[str, Any]) -> Path:
         """Save metadata JSON.
@@ -245,6 +547,9 @@ class OutputManager:
                 "colorbarMax": vmax,
             }
 
+        # Add format-specific output info
+        metadata["output"] = self.finalize()
+
         metadata_path = self.output_dir / "metadata.json"
         with open(metadata_path, "w") as f:
             json.dump(metadata, f, indent=2)
@@ -258,40 +563,6 @@ class OutputManager:
             List of frame annotation dictionaries.
         """
         return self.saved_frames.copy()
-
-    def save_trajectory_array(
-        self,
-        states: list[ScalarField | FieldCollection],
-        times: list[float],
-        field_name: str,
-    ) -> Path:
-        """Save the full trajectory for a field as a numpy array.
-
-        Saves a .npz file containing the trajectory with shape:
-        (num_frames, resolution_x, resolution_y)
-
-        Also saves a times array with shape (num_frames,).
-
-        Args:
-            states: List of field states from the simulation.
-            times: List of simulation times corresponding to each state.
-            field_name: Name of the field to save.
-
-        Returns:
-            Path to the saved .npz file.
-        """
-        # Extract field data for each state
-        trajectory_data = np.stack([
-            self._extract_field_data(state, field_name) for state in states
-        ])
-
-        times_array = np.array(times)
-
-        # Save as compressed npz with both trajectory and times
-        array_path = self.output_dir / f"trajectory_{field_name}.npz"
-        np.savez_compressed(array_path, trajectory=trajectory_data, times=times_array)
-
-        return array_path
 
 
 def _bc_to_metadata(bc: Any) -> dict[str, Any]:
@@ -326,18 +597,17 @@ def _create_visualization_metadata(config: Any, preset_metadata: Any) -> dict[st
     Returns:
         Visualization metadata dictionary.
     """
-    field_configs = config.output.get_field_configs()
-    if field_configs:
-        return {
-            "whatToPlot": [fc[0] for fc in field_configs],
-            "colormaps": {fc[0]: fc[1] for fc in field_configs},
-        }
-    else:
-        # Default: all fields with default colormap
-        return {
-            "whatToPlot": preset_metadata.field_names,
-            "colormaps": {name: config.output.colormap for name in preset_metadata.field_names},
-        }
+    from .config import COLORMAP_CYCLE
+
+    # All fields are always output with auto-assigned colormaps
+    field_names = preset_metadata.field_names
+    return {
+        "whatToPlot": field_names,
+        "colormaps": {
+            name: COLORMAP_CYCLE[i % len(COLORMAP_CYCLE)]
+            for i, name in enumerate(field_names)
+        },
+    }
 
 
 def create_metadata(

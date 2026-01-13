@@ -18,8 +18,6 @@ bc:
 output:
   path: ./output
   num_frames: 10
-  colormap: gray
-  field_to_plot: u
 seed: 1083
 domain_size: 100.0
 t_end: 0.5

@@ -31,8 +31,6 @@ bc:
 output:
   path: ./output
   num_frames: 50
-  colormap: seismic
-  field_to_plot: b
 seed: 1070
 domain_size: 500.0
 t_end: 500.0
