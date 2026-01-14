@@ -206,6 +206,51 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
             u_data = np.zeros_like(h_data)
             v_data = np.zeros_like(h_data)
 
+        elif ic_type == "geostrophic-vortex":
+            # Geostrophically balanced vortex for strong Coriolis (f ~ 1)
+            # In geostrophic balance: f*v = g*dh/dx, f*u = -g*dh/dy
+            # Reference: Visual PDE ShallowWaterEqnsVorticalSolitons preset
+            x0 = ic_params.get("x0", 0.5)
+            y0 = ic_params.get("y0", 0.5)
+            amplitude = ic_params.get("amplitude", 0.02)
+            radius = ic_params.get("radius", 0.15)
+            f = ic_params.get("f", 1.0)
+            g = ic_params.get("g", 9.81)
+
+            x, y = np.meshgrid(
+                np.linspace(x_min, x_max, grid.shape[0]),
+                np.linspace(y_min, y_max, grid.shape[1]),
+                indexing="ij",
+            )
+
+            # Normalize to [0, 1] for position calculations
+            x_norm = (x - x_min) / L_x
+            y_norm = (y - y_min) / L_y
+
+            # Gaussian vortex radius in normalized coordinates
+            r_sq = (x_norm - x0) ** 2 + (y_norm - y0) ** 2
+            sigma = radius
+
+            # Height perturbation (Gaussian)
+            h_data = amplitude * np.exp(-r_sq / (2 * sigma**2))
+
+            # Geostrophic velocities: u = -(g/f) * dh/dy, v = (g/f) * dh/dx
+            # dh/dx = h * (-2*(x-x0))/(2*sigma^2) = -h * (x-x0)/sigma^2
+            dh_dx_norm = -h_data * (x_norm - x0) / (sigma**2)
+            dh_dy_norm = -h_data * (y_norm - y0) / (sigma**2)
+
+            # Convert normalized gradients to physical gradients
+            dh_dx = dh_dx_norm / L_x
+            dh_dy = dh_dy_norm / L_y
+
+            # Geostrophic balance: avoid division by zero if f is small
+            if abs(f) > 1e-6:
+                u_data = -(g / f) * dh_dy
+                v_data = (g / f) * dh_dx
+            else:
+                u_data = np.zeros_like(h_data)
+                v_data = np.zeros_like(h_data)
+
         else:
             # Default: use standard IC generator for h, zeros for u, v
             h_field = create_initial_condition(grid, ic_type, ic_params)

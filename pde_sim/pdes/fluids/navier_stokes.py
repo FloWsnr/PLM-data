@@ -173,6 +173,37 @@ class NavierStokesPDE(MultiFieldPDEPreset):
             p_data = np.zeros_like(u_data)
             S_data = np.exp(-r1_sq / (2 * sigma**2)) + np.exp(-r2_sq / (2 * sigma**2))
 
+        elif ic_type == "poiseuille":
+            # Poiseuille (pressure-driven channel) flow
+            # Reference: Visual PDE NavierStokesPoiseuilleFlow preset
+            # Parabolic velocity profile with no-slip walls at y=0 and y=L_y
+            amplitude = ic_params.get("amplitude", 0.4)
+            pressure_gradient = ic_params.get("pressure_gradient", 1.0)
+
+            x, y = np.meshgrid(
+                np.linspace(x_min, x_max, grid.shape[0]),
+                np.linspace(y_min, y_max, grid.shape[1]),
+                indexing="ij",
+            )
+
+            # Normalize coordinates
+            x_norm = (x - x_min) / L_x
+            y_norm = (y - y_min) / L_y
+
+            # Parabolic velocity profile: u(y) = -amplitude * 6 * y * (1-y)
+            # Peak velocity at center (y=0.5), zero at walls (y=0, y=1)
+            # The factor of 6 normalizes so that the max velocity = amplitude
+            u_data = -amplitude * 6.0 * y_norm * (1.0 - y_norm)
+
+            # No vertical velocity
+            v_data = np.zeros_like(u_data)
+
+            # Linear pressure gradient driving the flow
+            p_data = pressure_gradient * x_norm
+
+            # Passive scalar as x-gradient for visualization
+            S_data = x_norm
+
         else:
             # Default: use standard IC generator for S, zeros for velocity/pressure
             S_field = create_initial_condition(grid, ic_type, ic_params)

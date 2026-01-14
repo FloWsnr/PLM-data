@@ -1,0 +1,45 @@
+preset: navier-stokes-cylinder
+parameters:
+  nu: 0.02           # Lower viscosity = higher Reynolds number
+  M: 0.5
+  U: 0.7
+  cylinder_radius: 0.05
+init:
+  type: cylinder-flow
+  params:
+    U: 0.7
+    cylinder_radius: 0.05
+    cylinder_x: 0.25
+    cylinder_y: 0.5
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.01             # Smaller timestep for stability
+resolution: 128
+bc:
+  x-: dirichlet:0.7
+  x+: dirichlet:0.7
+  y-: periodic
+  y+: periodic
+  fields:
+    v:
+      x-: dirichlet:0
+      x+: dirichlet:0
+    p:
+      x-: neumann:0
+      x+: neumann:0
+    S:
+      x-: dirichlet:0
+      x+: dirichlet:0
+      y-: dirichlet:0
+      y+: dirichlet:0
+output:
+  format: mp4
+  path: ./output
+  num_frames: 10
+  fields:
+    - u:RdBu_r
+    - S:Greys
+seed: 1912
+domain_size: 128.0
+t_end: 100.0

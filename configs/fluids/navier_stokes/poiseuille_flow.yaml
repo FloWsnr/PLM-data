@@ -1,0 +1,34 @@
+preset: navier-stokes
+parameters:
+  nu: 20.0      # High viscosity for stable laminar flow
+  M: 0.5
+  D: 0.05
+init:
+  type: poiseuille
+  params:
+    amplitude: 0.4        # Peak velocity at channel center
+    pressure_gradient: 1.0
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.001
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: dirichlet:0      # No-slip wall at bottom
+  y+: dirichlet:0      # No-slip wall at top
+  fields:
+    p:
+      x-: dirichlet:0
+      x+: dirichlet:0.05   # Pressure drop across channel
+output:
+  format: mp4
+  path: ./output
+  num_frames: 10
+  fields:
+    - u:RdBu_r
+    - S:viridis
+seed: 2024
+domain_size: 5.0
+t_end: 5.0

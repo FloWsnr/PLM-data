@@ -72,6 +72,32 @@ class TestNavierStokesPDE:
         for field in state:
             assert np.isfinite(field.data).all()
 
+    def test_create_initial_state_poiseuille(self, small_grid):
+        """Test Poiseuille (parabolic) initial condition."""
+        preset = get_pde_preset("navier-stokes")
+        state = preset.create_initial_state(
+            small_grid, "poiseuille", {"amplitude": 0.4}
+        )
+
+        assert isinstance(state, FieldCollection)
+        assert len(state) == 4
+        u, v, p, S = state
+
+        # u should have variation (parabolic profile)
+        assert np.std(u.data) > 0
+        # u should be negative (flow in -x direction)
+        assert np.min(u.data) < 0
+
+        # v should be zero (no vertical velocity)
+        assert np.allclose(v.data, 0)
+
+        # p should have variation (pressure gradient)
+        assert np.std(p.data) > 0
+
+        # All fields should be finite
+        for field in state:
+            assert np.isfinite(field.data).all()
+
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
         result, config = run_short_simulation("navier-stokes", "fluids", t_end=0.01)

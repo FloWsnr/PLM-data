@@ -56,6 +56,33 @@ class TestShallowWaterPDE:
         assert np.allclose(u.data, 0)
         assert np.allclose(v.data, 0)
 
+    def test_create_initial_state_geostrophic_vortex(self, small_grid):
+        """Test geostrophic vortex initial condition."""
+        preset = get_pde_preset("shallow-water")
+        state = preset.create_initial_state(
+            small_grid,
+            "geostrophic-vortex",
+            {"amplitude": 0.02, "radius": 0.15, "f": 1.0, "g": 9.81},
+        )
+
+        # Should be a FieldCollection with 3 fields
+        assert isinstance(state, FieldCollection)
+        assert len(state) == 3
+        h, u, v = state
+
+        # Height should have positive perturbation
+        assert np.max(h.data) > 0
+
+        # For geostrophic balance, velocities should be non-zero
+        # (circular flow around the height perturbation)
+        assert np.std(u.data) > 0
+        assert np.std(v.data) > 0
+
+        # All fields should be finite
+        assert np.isfinite(h.data).all()
+        assert np.isfinite(u.data).all()
+        assert np.isfinite(v.data).all()
+
     def test_registered_in_registry(self):
         """Test that PDE is registered."""
         assert "shallow-water" in list_presets()
