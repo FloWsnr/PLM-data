@@ -152,24 +152,21 @@ class NavierStokesCylinderPDE(MultiFieldPDEPreset):
         y_norm = (y - y_min) / L_y
 
         if ic_type in ("cylinder-flow", "default", "navier-stokes-cylinder-default"):
-            # Uniform inflow velocity
+            # Uniform inflow velocity everywhere (including inside cylinder)
+            # The damping term -u*S will naturally bring velocity to zero inside
             u_data = np.full_like(x, U)
             v_data = np.zeros_like(x)
             p_data = np.zeros_like(x)
 
-            # Cylinder obstacle: S = 1 inside, 0 outside
-            # Use smooth transition for numerical stability
+            # Cylinder obstacle: S = 1 inside, 0 outside (binary like reference)
             r_sq = (x_norm - cx) ** 2 + (y_norm - cy) ** 2
             radius_sq = cylinder_radius**2
 
-            # Smooth indicator: 1 inside cylinder, 0 outside
-            # Using tanh for smooth transition
-            sharpness = 100.0  # Higher = sharper boundary
-            S_data = 0.5 * (1.0 - np.tanh(sharpness * (r_sq - radius_sq)))
+            # Binary indicator: exactly 1 inside cylinder, 0 outside (matches reference)
+            S_data = np.where(r_sq < radius_sq, 1.0, 0.0)
 
-            # Zero velocity inside cylinder
-            u_data = u_data * (1.0 - S_data)
-            v_data = v_data * (1.0 - S_data)
+            # Don't zero velocity - let damping term handle it naturally
+            # This matches the reference implementation
 
         elif ic_type == "multi-cylinder":
             # Multiple cylinders for complex vortex interactions
@@ -183,17 +180,15 @@ class NavierStokesCylinderPDE(MultiFieldPDEPreset):
             p_data = np.zeros_like(x)
             S_data = np.zeros_like(x)
 
-            sharpness = 100.0
+            # Binary indicator for each cylinder
             for i in range(min(n_cylinders, len(positions))):
                 cx_i, cy_i = positions[i]
                 r_sq = (x_norm - cx_i) ** 2 + (y_norm - cy_i) ** 2
                 radius_sq = cylinder_radius**2
-                S_i = 0.5 * (1.0 - np.tanh(sharpness * (r_sq - radius_sq)))
+                S_i = np.where(r_sq < radius_sq, 1.0, 0.0)
                 S_data = np.maximum(S_data, S_i)
 
-            # Zero velocity inside cylinders
-            u_data = u_data * (1.0 - S_data)
-            v_data = v_data * (1.0 - S_data)
+            # Don't zero velocity - let damping handle it
 
         else:
             # Default to single cylinder
@@ -203,10 +198,10 @@ class NavierStokesCylinderPDE(MultiFieldPDEPreset):
 
             r_sq = (x_norm - cx) ** 2 + (y_norm - cy) ** 2
             radius_sq = cylinder_radius**2
-            sharpness = 100.0
-            S_data = 0.5 * (1.0 - np.tanh(sharpness * (r_sq - radius_sq)))
+            # Binary indicator: exactly 1 inside cylinder, 0 outside
+            S_data = np.where(r_sq < radius_sq, 1.0, 0.0)
 
-            u_data = u_data * (1.0 - S_data)
+            # Don't zero velocity - let damping handle it
 
         u = ScalarField(grid, u_data)
         u.label = "u"
