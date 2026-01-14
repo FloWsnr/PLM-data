@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import matplotlib
+matplotlib.use("Agg")  # Use non-interactive backend for headless systems
 import matplotlib.pyplot as plt
 import numpy as np
 from pde import FieldCollection, ScalarField
@@ -190,8 +192,9 @@ class MP4Handler(OutputHandler):
 
         # Draw canvas and convert to RGB array
         fig.canvas.draw()
-        frame_data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-        frame_data = frame_data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+        # Use buffer_rgba() and discard alpha channel (modern matplotlib API)
+        frame_data = np.asarray(fig.canvas.buffer_rgba())
+        frame_data = frame_data[:, :, :3]  # Keep only RGB, discard alpha
         plt.close(fig)
 
         self.frame_buffers[field_name].append(frame_data)

@@ -11,6 +11,7 @@ from pde_sim.core.output import (
     OutputManager,
     create_metadata,
     PNGHandler,
+    MP4Handler,
     NumpyHandler,
     create_output_handler,
 )
@@ -47,6 +48,12 @@ class TestOutputHandler:
         """Test creating Numpy handler."""
         handler = create_output_handler("numpy")
         assert isinstance(handler, NumpyHandler)
+
+    def test_create_mp4_handler(self):
+        """Test creating MP4 handler."""
+        handler = create_output_handler("mp4", fps=30)
+        assert isinstance(handler, MP4Handler)
+        assert handler.fps == 30
 
     def test_invalid_format(self):
         """Test that invalid format raises error."""
@@ -164,6 +171,88 @@ class TestNumpyHandler:
         metadata = handler.finalize()
 
         assert metadata["fieldOrder"] == ["X", "Y"]
+
+
+class TestMP4Handler:
+    """Tests for MP4Handler."""
+
+    def test_initialization(self, tmp_output):
+        """Test MP4 handler initializes correctly."""
+        handler = MP4Handler(fps=24)
+        handler.initialize(
+            tmp_output,
+            field_configs=[("u", "viridis"), ("v", "plasma")],
+            dpi=64,
+            figsize=(4, 4),
+        )
+
+        assert handler.fps == 24
+        assert handler.output_dir == tmp_output
+        assert "u" in handler.frame_buffers
+        assert "v" in handler.frame_buffers
+
+    def test_frame_buffering(self, tmp_output):
+        """Test frames are accumulated in buffer."""
+        handler = MP4Handler(fps=30)
+        handler.initialize(
+            tmp_output,
+            field_configs=[("u", "viridis")],
+            dpi=32,
+            figsize=(2, 2),
+        )
+
+        data = np.random.rand(16, 16)
+        for i in range(3):
+            handler.save_frame(data, "u", i, i * 0.1, 0.0, 1.0, "viridis")
+
+        assert len(handler.frame_buffers["u"]) == 3
+        # Each frame should be RGB array
+        assert handler.frame_buffers["u"][0].ndim == 3
+        assert handler.frame_buffers["u"][0].shape[2] == 3  # RGB channels
+
+    def test_creates_video_file(self, tmp_output):
+        """Test finalize creates MP4 video files."""
+        handler = MP4Handler(fps=30)
+        handler.initialize(
+            tmp_output,
+            field_configs=[("u", "viridis")],
+            dpi=32,
+            figsize=(2, 2),
+        )
+
+        data = np.random.rand(16, 16)
+        for i in range(5):
+            handler.save_frame(data * (i + 1) / 5, "u", i, i * 0.1, 0.0, 1.0, "viridis")
+
+        metadata = handler.finalize()
+
+        assert (tmp_output / "u.mp4").exists()
+        assert metadata["format"] == "mp4"
+        assert metadata["fps"] == 30
+        assert "u" in metadata["videos"]
+        assert metadata["videos"]["u"] == "u.mp4"
+
+    def test_multi_field_videos(self, tmp_output):
+        """Test creating videos for multiple fields."""
+        handler = MP4Handler(fps=24)
+        handler.initialize(
+            tmp_output,
+            field_configs=[("u", "viridis"), ("v", "plasma")],
+            dpi=32,
+            figsize=(2, 2),
+        )
+
+        for i in range(3):
+            data_u = np.random.rand(16, 16)
+            data_v = np.random.rand(16, 16)
+            handler.save_frame(data_u, "u", i, i * 0.1, 0.0, 1.0, "viridis")
+            handler.save_frame(data_v, "v", i, i * 0.1, 0.0, 1.0, "plasma")
+
+        metadata = handler.finalize()
+
+        assert (tmp_output / "u.mp4").exists()
+        assert (tmp_output / "v.mp4").exists()
+        assert len(metadata["videos"]) == 2
 
 
 class TestOutputManager:
@@ -331,6 +420,45 @@ class TestOutputManager:
 
         trajectory = np.load(manager.output_dir / "trajectory.npy")
         assert trajectory.shape == (3, 16, 16, 2)
+
+    def test_mp4_format_saves_videos(self, tmp_output, small_grid):
+        """Test mp4 format saves video files correctly."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-mp4",
+            field_configs=[("u", "viridis"), ("v", "plasma")],
+            output_format="mp4",
+            fps=24,
+        )
+
+        states = []
+        for i in range(5):
+            u = ScalarField(small_grid, np.ones(small_grid.shape) * i)
+            u.label = "u"
+            v = ScalarField(small_grid, np.ones(small_grid.shape) * (i + 0.5))
+            v.label = "v"
+            states.append(FieldCollection([u, v]))
+
+        manager.compute_range_for_field(states, "u")
+        manager.compute_range_for_field(states, "v")
+
+        for i, state in enumerate(states):
+            manager.save_all_fields(state, i, i * 0.1)
+
+        # Finalize should be called via save_metadata
+        metadata_path = manager.save_metadata({"test": "data"})
+
+        # Check videos were saved
+        assert (manager.output_dir / "u.mp4").exists()
+        assert (manager.output_dir / "v.mp4").exists()
+
+        # Check metadata
+        with open(metadata_path) as f:
+            saved = json.load(f)
+        assert saved["output"]["format"] == "mp4"
+        assert saved["output"]["fps"] == 24
+        assert "u" in saved["output"]["videos"]
+        assert "v" in saved["output"]["videos"]
 
 
 class TestCreateMetadata:
