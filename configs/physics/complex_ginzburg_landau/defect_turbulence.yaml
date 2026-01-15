@@ -5,8 +5,8 @@ parameters:
   a_r: 1.0
   a_i: 1.0
   b_r: -1.0
-  b_i: -5.0  # Strong negative - triggers defect chaos and phase turbulence
-  n: 5       # Lower mode number for larger initial structures
+  b_i: -5.0
+  n: 5
   m: 5
 init:
   type: default
@@ -16,16 +16,11 @@ solver: euler
 backend: numba
 adaptive: false
 dt: 0.001
-t_end: 30.0  # Longer time to observe turbulence development
+t_end: 30.0
 resolution: 128
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 15
-seed: 2024
 domain_size: 100

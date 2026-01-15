@@ -1,6 +1,3 @@
-# Circular orbit: source orbits in a circle in its half-space
-# Image orbits symmetrically in the opposite half-space
-# Creates swirling potential patterns with method of images symmetry
 preset: potential-flow-images
 parameters:
   strength: 400.0
@@ -30,10 +27,5 @@ bc:
       x+: dirichlet:0
       y-: dirichlet:0
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 30
-seed: 5120
 domain_size: 40.0
 t_end: 10.0

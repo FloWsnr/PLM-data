@@ -4,8 +4,8 @@ parameters:
   a: 0.0
   b: -1.0
   c: -1.0
-  V: 3.0         # strong advection - may destabilize patterns
-  theta: 0.785   # 45 degrees (pi/4) - diagonal flow
+  V: 3.0
+  theta: 0.785
   D: 1.0
 init:
   type: random-uniform
@@ -14,7 +14,7 @@ init:
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.0005       # smaller dt for stability with strong flow
+dt: 0.0005
 t_end: 80.0
 resolution: 128
 bc:
@@ -22,9 +22,4 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 999
 domain_size: 120

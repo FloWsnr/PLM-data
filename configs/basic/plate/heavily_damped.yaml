@@ -1,8 +1,8 @@
 preset: plate
 parameters:
   D: 10.0
-  Q: 0.003    # Gravity load
-  C: 1.5      # Heavy damping - overdamped response
+  Q: 0.003
+  C: 1.5
   D_c: 0.1
 init:
   type: constant
@@ -18,10 +18,5 @@ bc:
   x+: dirichlet:0
   y-: dirichlet:0
   y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 1041
 domain_size: 100.0
 t_end: 20.0

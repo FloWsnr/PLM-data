@@ -5,13 +5,13 @@ parameters:
   n: 3
   m: 3
   potential_type: sinusoidal
-  V_strength: 5.0       # Strength of potential wells
-  pot_n: 8              # Number of potential wells in x
-  pot_m: 8              # Number of potential wells in y
+  V_strength: 5.0
+  pot_n: 8
+  pot_m: 8
 init:
   type: localized
   params:
-    power: 10           # Localization power
+    power: 10
 solver: rk4
 backend: numba
 adaptive: true
@@ -22,10 +22,5 @@ bc:
   x+: dirichlet:0
   y-: dirichlet:0
   y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 30
-seed: 3002
 domain_size: 100.0
 t_end: 25.0

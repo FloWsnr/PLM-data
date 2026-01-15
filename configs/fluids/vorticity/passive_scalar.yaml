@@ -1,10 +1,8 @@
-# Passive scalar visualization of vortex dynamics
-# Shows fluid mixing and transport using the passive scalar field S
 preset: vorticity
 parameters:
-  nu: 0.01       # Low viscosity for persistent vortices
+  nu: 0.01
   epsilon: 0.02
-  D: 0.005       # Very low scalar diffusion to show advection clearly
+  D: 0.005
 init:
   type: vortex-pair
   params:
@@ -28,10 +26,5 @@ bc:
     S:
       x-: neumann:0
       x+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 5075
 domain_size: 20.0
 t_end: 60.0

@@ -23,12 +23,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u1:plasma
-seed: 3072
 domain_size: 100.0
 t_end: 10.0

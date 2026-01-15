@@ -15,7 +15,6 @@ init:
 solver: euler
 dt: 0.005
 resolution: 200
-seed: 4001
 domain_size: 100.0
 t_end: 40.0
 timesteps: 100
@@ -24,10 +23,3 @@ bc:
   x+: dirichlet:0
   y-: dirichlet:0
   y+: dirichlet:0
-output:
-  format: mp4
-  frames: true
-  metadata: true
-  num_frames: 10
-  fields:
-    - T:magma

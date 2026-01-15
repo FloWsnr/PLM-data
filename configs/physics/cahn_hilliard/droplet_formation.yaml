@@ -1,15 +1,15 @@
 preset: cahn-hilliard
 parameters:
-  r: 0.05   # Moderate speed to see droplet evolution
-  a: 1.5    # Moderate interfacial width for clear droplets
+  r: 0.05
+  a: 1.5
   D: 1.0
 init:
   type: gaussian-blobs
   params:
-    num_blobs: 15        # Multiple droplets
-    amplitude: 2.0       # Peaks reach +1 (background -1 + amplitude 2)
-    width: 0.06          # Droplet size relative to domain
-    background: -1.0     # Matrix phase (u=-1)
+    num_blobs: 15
+    amplitude: 2.0
+    width: 0.06
+    background: -1.0
     random_amplitude: true
     seed: 9999
 solver: euler
@@ -22,10 +22,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 5678
 domain_size: 100.0
 t_end: 80.0

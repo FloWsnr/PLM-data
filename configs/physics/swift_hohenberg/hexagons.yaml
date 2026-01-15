@@ -1,6 +1,3 @@
-# Swift-Hohenberg: Hexagon-dominant patterns
-# Higher a (quadratic coefficient) breaks up-down symmetry, favoring hexagons
-# Larger domain shows cleaner hexagonal arrangement
 preset: swift-hohenberg
 parameters:
   r: 0.15
@@ -23,10 +20,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 789
 domain_size: 80.0
 t_end: 60.0

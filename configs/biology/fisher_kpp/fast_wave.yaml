@@ -1,5 +1,3 @@
-# Fast traveling wave: higher r and D for faster propagation
-# Wave speed c = 2*sqrt(r*D) = 2*sqrt(3*3) = 6 (3x faster than default)
 preset: fisher-kpp
 parameters:
   D: 3.0
@@ -22,10 +20,5 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 1055
 domain_size: 150.0
 t_end: 30.0

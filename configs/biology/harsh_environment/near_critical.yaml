@@ -6,7 +6,9 @@ parameters:
 init:
   type: single-blob
   params:
-    center: [5.0, 5.0]
+    center:
+    - 5.0
+    - 5.0
     radius: 2.0
     amplitude: 1.0
 solver: euler
@@ -19,10 +21,5 @@ bc:
   x+: dirichlet:0
   y-: dirichlet:0
   y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 3033
 domain_size: 10.0
 t_end: 75.0

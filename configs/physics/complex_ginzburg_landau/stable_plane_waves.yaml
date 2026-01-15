@@ -5,8 +5,8 @@ parameters:
   a_r: 1.0
   a_i: 1.0
   b_r: -1.0
-  b_i: 2.0   # Positive - stable plane wave regime, low turbulence
-  n: 2       # Low mode for coherent wave structure
+  b_i: 2.0
+  n: 2
   m: 2
 init:
   type: default
@@ -23,9 +23,4 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 15
-seed: 4242
 domain_size: 100

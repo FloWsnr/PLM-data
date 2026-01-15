@@ -21,14 +21,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:turbo
-    - v:RdYlBu
-    - w:Spectral
-seed: 5055
 domain_size: 150.0
 t_end: 60.0

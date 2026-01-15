@@ -9,10 +9,10 @@ parameters:
   a_z: -0.1
 init:
   type: default
-  amplitude: 8.0     # Stronger initial pulse
-  width: 0.05        # Narrower Gaussian
-  m: 8               # Higher mode - finer initial cosine pattern
-  noise: 0.01        # Small random perturbation
+  amplitude: 8.0
+  width: 0.05
+  m: 8
+  noise: 0.01
 solver: euler
 backend: numba
 adaptive: false
@@ -23,14 +23,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - w:hot          # Show the slow pattern-forming variable
-    - u:YlGnBu
-    - v:PuRd
-seed: 2024
 domain_size: 280.0
 t_end: 50.0

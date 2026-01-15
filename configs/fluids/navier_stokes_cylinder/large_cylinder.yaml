@@ -1,15 +1,15 @@
 preset: navier-stokes-cylinder
 parameters:
-  nu: 0.2              # Higher viscosity for stability with large cylinder
-  M: 0.4               # Mach number parameter
-  U: 0.6               # Inflow velocity
-  cylinder_radius: 0.12  # Large cylinder for strong blockage
+  nu: 0.2
+  M: 0.4
+  U: 0.6
+  cylinder_radius: 0.12
 init:
   type: cylinder-flow
   params:
     U: 0.6
     cylinder_radius: 0.12
-    cylinder_x: 0.3      # Cylinder slightly further from inlet
+    cylinder_x: 0.3
     cylinder_y: 0.5
 solver: rk4
 backend: numba
@@ -17,8 +17,8 @@ adaptive: true
 dt: 0.03
 resolution: 256
 bc:
-  x-: dirichlet:0.6    # u = U at inlet
-  x+: dirichlet:0.6    # u = U at outlet
+  x-: dirichlet:0.6
+  x+: dirichlet:0.6
   y-: periodic
   y+: periodic
   fields:
@@ -33,12 +33,5 @@ bc:
       x+: dirichlet:0
       y-: dirichlet:0
       y+: dirichlet:0
-output:
-  format: png
-  path: ./output
-  num_frames: 100
-  fields:
-    - u:BrBG
-seed: 1900
 domain_size: 128.0
 t_end: 80.0

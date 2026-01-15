@@ -1,34 +1,21 @@
-# Inviscid Burgers' Equation - Rarefaction Wave (Wide Pulse)
-# Wider, lower amplitude pulse emphasizes rarefaction fan expansion
-# Showcases gradual spreading on left side vs shock steepening on right
 preset: inviscid-burgers
 parameters:
-  epsilon: 0.005     # minimal regularization
-
+  epsilon: 0.005
 init:
   type: default
   params:
-    offset: 0.02     # low baseline
-    amplitude: 0.5   # lower amplitude for slower dynamics
-    width_coeff: 0.00005  # very wide pulse (same as Visual PDE default)
-
+    offset: 0.02
+    amplitude: 0.5
+    width_coeff: 5.0e-05
 solver: rk4
 backend: numba
 adaptive: true
 dt: 0.005
 resolution: 256
-domain_size: 120.0   # larger domain for wide pulse
-t_end: 40.0          # time for wave to develop
-
+domain_size: 120.0
+t_end: 40.0
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-
-output:
-  format: mp4
-  path: ./output
-  num_frames: 12
-
-seed: 5678

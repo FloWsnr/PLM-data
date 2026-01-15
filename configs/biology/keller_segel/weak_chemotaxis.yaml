@@ -1,6 +1,6 @@
 preset: keller-segel
 parameters:
-  c: 3.5         # Near instability boundary (3.3-3.6 range)
+  c: 3.5
   D: 1.0
   a: 0.1
 init:
@@ -18,12 +18,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:inferno
-seed: 2024
 domain_size: 100.0
-t_end: 80.0       # Longer time to observe slower dynamics
+t_end: 80.0

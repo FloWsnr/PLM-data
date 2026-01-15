@@ -1,7 +1,7 @@
 preset: wave
 parameters:
-  D: 2.0  # Faster wave speed
-  C: 0.008  # Light damping
+  D: 2.0
+  C: 0.008
 init:
   type: gaussian-blobs
   params:
@@ -20,10 +20,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 4001
 domain_size: 100.0
 t_end: 40.0

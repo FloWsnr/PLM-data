@@ -1,17 +1,17 @@
 preset: plate
 parameters:
   D: 10.0
-  Q: 0.0      # No gravity - pure wave propagation
-  C: 0.05     # Light damping
+  Q: 0.0
+  C: 0.05
   D_c: 0.1
 init:
   type: single-blob
   params:
-    amplitude: -3.0      # Negative = depression (like pushing down)
-    width: 0.08          # Narrow, localized impact
-    center_x: 0.35       # Off-center for asymmetric patterns
+    amplitude: -3.0
+    width: 0.08
+    center_x: 0.35
     center_y: 0.35
-    background: 0.0      # Flat plate otherwise
+    background: 0.0
 solver: scipy
 backend: numpy
 adaptive: true
@@ -22,10 +22,5 @@ bc:
   x+: dirichlet:0
   y-: dirichlet:0
   y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 1040
 domain_size: 100.0
 t_end: 15.0

@@ -23,12 +23,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u1:inferno
-seed: 4096
 domain_size: 40.0
 t_end: 5.0

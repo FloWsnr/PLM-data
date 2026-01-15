@@ -1,8 +1,8 @@
 preset: fitzhugh-nagumo-3
 parameters:
-  Dv: 20.0       # Lower Dv
-  Dw: 400.0      # Higher Dw - larger wavelength patterns
-  a_v: 0.25      # Intermediate - some pattern stability
+  Dv: 20.0
+  Dw: 400.0
+  a_v: 0.25
   e_v: 0.2
   e_w: 1.0
   a_w: 0.5
@@ -19,14 +19,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:turbo
-    - v:cividis
-    - w:magma
-seed: 1055
 domain_size: 280.0
 t_end: 50.0

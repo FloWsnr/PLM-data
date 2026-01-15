@@ -1,9 +1,9 @@
 preset: fitzhugh-nagumo
 parameters:
-  Dv: 20.0       # Same as default
-  e_v: 0.5       # Same as default
-  a_v: 1.0       # Same as default
-  a_z: -0.1      # Same as default
+  Dv: 20.0
+  e_v: 0.5
+  a_v: 1.0
+  a_z: -0.1
 init:
   type: random-gaussian
   params:
@@ -19,13 +19,5 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:cividis
-    - v:inferno
-seed: 7777
 domain_size: 280.0
 t_end: 100.0

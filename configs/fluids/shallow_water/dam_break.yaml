@@ -2,10 +2,10 @@ preset: shallow-water
 parameters:
   H_e: 1.0
   g: 9.81
-  f: 0.0       # No Coriolis - pure dam break
+  f: 0.0
   k: 0.001
-  nu: 0.1      # Lower viscosity for sharper fronts
-  epsilon: 0.01  # Match Visual PDE dam break
+  nu: 0.1
+  epsilon: 0.01
 init:
   type: dam-break
   params:
@@ -21,12 +21,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - h:Blues
-seed: 2024
 domain_size: 400.0
 t_end: 40.0

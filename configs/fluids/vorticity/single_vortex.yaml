@@ -1,8 +1,6 @@
-# Single rotating vortex simulation
-# Shows isolated vortex diffusion without interaction dynamics
 preset: vorticity
 parameters:
-  nu: 0.02       # Low viscosity to observe slow diffusion
+  nu: 0.02
   epsilon: 0.02
   D: 0.02
 init:
@@ -10,7 +8,7 @@ init:
   params:
     x0: 0.5
     y0: 0.5
-    strength: 40.0   # Strong single vortex
+    strength: 40.0
     radius: 0.1
 solver: euler
 backend: numpy
@@ -26,10 +24,5 @@ bc:
     S:
       x-: neumann:0
       x+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 2042
 domain_size: 20.0
 t_end: 60.0

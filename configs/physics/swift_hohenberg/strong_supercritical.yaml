@@ -1,6 +1,3 @@
-# Swift-Hohenberg: Strong supercritical regime
-# High r value (far above threshold) gives rapid, strong pattern formation
-# Patterns emerge quickly with high contrast
 preset: swift-hohenberg
 parameters:
   r: 0.5
@@ -23,10 +20,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 456
 domain_size: 100.0
 t_end: 30.0

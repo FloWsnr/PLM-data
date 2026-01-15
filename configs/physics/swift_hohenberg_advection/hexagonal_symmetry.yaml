@@ -1,17 +1,17 @@
 preset: swift-hohenberg-advection
 parameters:
   r: 0.2
-  a: 0.5         # quadratic term to favor hexagons over stripes
+  a: 0.5
   b: -1.0
   c: -1.0
-  V: 0.4         # slow advection to see pattern drift
-  theta: 1.57    # vertical flow (pi/2)
+  V: 0.4
+  theta: 1.57
   D: 1.0
 init:
   type: swift-hohenberg-advection-default
   params:
     amplitude: 0.6
-    P: 2         # D6 hexagonal symmetry
+    P: 2
 solver: euler
 backend: numba
 adaptive: false
@@ -23,9 +23,4 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 314
 domain_size: 150

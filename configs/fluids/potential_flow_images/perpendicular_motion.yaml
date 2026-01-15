@@ -1,6 +1,3 @@
-# Perpendicular motion: source oscillates toward/away from wall
-# When source approaches wall, image approaches from the other side
-# Creates pulsing potential patterns with varying source-image separation
 preset: potential-flow-images
 parameters:
   strength: 350.0
@@ -30,10 +27,5 @@ bc:
       x+: dirichlet:0
       y-: dirichlet:0
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 30
-seed: 6144
 domain_size: 40.0
 t_end: 10.0

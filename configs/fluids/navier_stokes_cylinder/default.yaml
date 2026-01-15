@@ -1,24 +1,24 @@
 preset: navier-stokes-cylinder
 parameters:
-  nu: 0.1              # Kinematic viscosity (matches reference)
-  M: 0.5               # Mach number parameter (matches reference)
-  U: 0.7               # Inflow velocity (matches reference)
-  cylinder_radius: 0.05  # Cylinder radius fraction (matches reference a=0.05)
+  nu: 0.1
+  M: 0.5
+  U: 0.7
+  cylinder_radius: 0.05
 init:
   type: cylinder-flow
   params:
     U: 0.7
     cylinder_radius: 0.05
-    cylinder_x: 0.25     # Cylinder at 1/4 from left
+    cylinder_x: 0.25
     cylinder_y: 0.5
 solver: rk4
 backend: numba
 adaptive: true
-dt: 0.03               # Matches reference dt
+dt: 0.03
 resolution: 256
 bc:
-  x-: dirichlet:0.7    # u = U at inlet
-  x+: dirichlet:0.7    # u = U at outlet
+  x-: dirichlet:0.7
+  x+: dirichlet:0.7
   y-: periodic
   y+: periodic
   fields:
@@ -33,10 +33,5 @@ bc:
       x+: dirichlet:0
       y-: dirichlet:0
       y+: dirichlet:0
-output:
-  format: png
-  path: ./output
-  num_frames: 100
-seed: 1912
 domain_size: 128.0
 t_end: 100.0

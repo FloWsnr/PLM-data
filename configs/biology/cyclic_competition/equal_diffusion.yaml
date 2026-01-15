@@ -20,14 +20,5 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:magma
-    - v:cividis
-    - w:twilight
-seed: 3033
 domain_size: 200.0
 t_end: 80.0

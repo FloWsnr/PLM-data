@@ -7,11 +7,11 @@ parameters:
 init:
   type: wave-packet
   params:
-    x0: 0.3          # Start off-center
+    x0: 0.3
     y0: 0.3
-    sigma: 0.08      # Slightly larger packet
-    kx: 0.8          # Higher momentum in x direction
-    ky: 0.5          # Higher momentum in y direction
+    sigma: 0.08
+    kx: 0.8
+    ky: 0.5
 solver: rk4
 backend: numba
 adaptive: true
@@ -22,10 +22,5 @@ bc:
   x+: dirichlet:0
   y-: dirichlet:0
   y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 30
-seed: 2002
 domain_size: 100.0
 t_end: 20.0

@@ -27,13 +27,5 @@ bc:
       x+: dirichlet:0
       y-: dirichlet:0
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:turbo
-    - v:turbo
-seed: 1059
 domain_size: 100.0
 t_end: 50.0

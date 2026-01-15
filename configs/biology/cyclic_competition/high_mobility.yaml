@@ -23,14 +23,5 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:hot
-    - v:cool
-    - w:copper
-seed: 4044
 domain_size: 300.0
 t_end: 60.0

@@ -11,11 +11,10 @@ init:
     num_blobs: 4
     amplitude: 1.0
     width: 0.08
-    seed: 999  # Different seed from diffusion blobs (seed=42)
+    seed: 999
 solver: euler
 dt: 0.005
 resolution: 200
-seed: 1007
 domain_size: 100.0
 t_end: 60.0
 timesteps: 100
@@ -24,10 +23,3 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  frames: true
-  metadata: true
-  num_frames: 10
-  fields:
-    - T:turbo

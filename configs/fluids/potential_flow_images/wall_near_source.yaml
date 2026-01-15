@@ -1,6 +1,3 @@
-# Wall near source: wall_x = 0.65, bringing image closer to source
-# Creates stronger interaction between source and image
-# Source at 3/4 = 0.75, image reflected about wall at 0.65 -> image at 0.55
 preset: potential-flow-images
 parameters:
   strength: 50.0
@@ -26,10 +23,5 @@ bc:
       x+: dirichlet:0
       y-: dirichlet:0
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 3072
 domain_size: 40.0
 t_end: 5.0

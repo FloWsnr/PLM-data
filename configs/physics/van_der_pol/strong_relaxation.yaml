@@ -1,8 +1,8 @@
 preset: van-der-pol
 parameters:
   D: 1.0
-  mu: 20.0         # Large mu -> strong relaxation oscillations with slow-fast dynamics
-  epsilon: 0.008   # Slightly higher for stability at large mu
+  mu: 20.0
+  epsilon: 0.008
 init:
   type: default
   params:
@@ -10,17 +10,12 @@ init:
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.001          # Smaller dt for stability with fast transitions
-t_end: 100.0       # Longer time (period ~ 1.6*mu ~ 32)
+dt: 0.001
+t_end: 100.0
 resolution: 128
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 3333
 domain_size: 50

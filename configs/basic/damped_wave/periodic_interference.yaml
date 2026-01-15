@@ -1,19 +1,18 @@
 preset: damped-wave
 parameters:
-  D: 15.0   # Higher wave speed for more dynamic interference
+  D: 15.0
   C: 0.01
-  d: 0.02  # Light damping to observe interference patterns
+  d: 0.02
 init:
   type: sine
   params:
-    kx: 3        # 3 wave periods in x direction
-    ky: 2        # 2 wave periods in y direction
+    kx: 3
+    ky: 2
     amplitude: 1.0
     offset: 0.0
 solver: euler
 dt: 0.002
 resolution: 200
-seed: 1013
 domain_size: 100.0
 t_end: 60.0
 timesteps: 100
@@ -22,10 +21,3 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  frames: true
-  metadata: true
-  num_frames: 10
-  fields:
-    - u:coolwarm

@@ -1,33 +1,20 @@
-# Inviscid Burgers' Equation - Shock Interaction
-# Multiple Gaussians of different heights that form shocks and merge
-# Taller shocks travel faster and overtake shorter ones
 preset: inviscid-burgers
 parameters:
-  epsilon: 0.01      # small regularization for numerical stability
-
+  epsilon: 0.01
 init:
   type: shock-interaction
   params:
-    offset: 0.05     # baseline value
-    width_coeff: 0.0008  # sharper pulses for clearer shocks
-
+    offset: 0.05
+    width_coeff: 0.0008
 solver: rk4
 backend: numba
 adaptive: true
 dt: 0.005
 resolution: 256
-domain_size: 80.0    # domain size for shocks to interact
-t_end: 35.0          # longer time to see shock merging
-
+domain_size: 80.0
+t_end: 35.0
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-
-output:
-  format: mp4
-  path: ./output
-  num_frames: 12
-
-seed: 2024

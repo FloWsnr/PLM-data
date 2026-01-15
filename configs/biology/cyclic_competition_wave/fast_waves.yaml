@@ -1,10 +1,8 @@
-# Fast waves variant - Higher diffusion for faster invasion
-# D = 1.0 leads to faster wave propagation and quicker chaotic mixing
 preset: cyclic-competition-wave
 parameters:
   a: 0.8
   b: 1.9
-  D: 1.0       # Higher diffusion - faster waves
+  D: 1.0
 init:
   type: default
   params:
@@ -13,19 +11,12 @@ init:
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.005      # Smaller timestep for stability with larger D
+dt: 0.005
 resolution: 128
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:inferno
-seed: 2048
 domain_size: 200.0
-t_end: 100.0   # Shorter time since waves are faster
+t_end: 100.0

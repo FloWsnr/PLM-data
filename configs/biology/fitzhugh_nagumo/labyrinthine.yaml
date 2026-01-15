@@ -22,10 +22,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 42
 domain_size: 280.0
 t_end: 160.0

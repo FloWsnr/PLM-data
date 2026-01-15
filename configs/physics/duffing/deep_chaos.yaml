@@ -1,11 +1,11 @@
 preset: duffing
 parameters:
-  D: 0.3          # Moderate diffusion coupling
-  alpha: -3.0     # Deep double-well potential (stronger bistability)
-  beta: 0.5       # Strong cubic nonlinearity
-  delta: 0.05     # Low damping promotes chaos
-  gamma: 4.0      # Strong forcing amplitude
-  omega: 1.2      # Slightly detuned from natural frequency
+  D: 0.3
+  alpha: -3.0
+  beta: 0.5
+  delta: 0.05
+  gamma: 4.0
+  omega: 1.2
   epsilon: 0.01
 init:
   type: default
@@ -22,9 +22,4 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 5555
 domain_size: 50

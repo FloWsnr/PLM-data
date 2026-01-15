@@ -1,7 +1,7 @@
 preset: bistable-allen-cahn
 parameters:
   D: 1.0
-  a: 0.7  # Above 0.5 = waves contract (u=0 invades u=1)
+  a: 0.7
 init:
   type: step
   params:
@@ -16,10 +16,5 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 3048
 domain_size: 100.0
 t_end: 200.0

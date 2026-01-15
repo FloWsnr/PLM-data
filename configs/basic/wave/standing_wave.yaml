@@ -1,7 +1,7 @@
 preset: wave
 parameters:
   D: 1.0
-  C: 0.0  # No damping - pure wave equation
+  C: 0.0
 init:
   type: sine
   params:
@@ -9,7 +9,7 @@ init:
     ky: 3
     amplitude: 1.0
     offset: 0.0
-    phase_x: 1.5708  # pi/2 for cosine-like pattern
+    phase_x: 1.5708
     phase_y: 1.5708
 solver: euler
 backend: numba
@@ -21,10 +21,5 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 2001
 domain_size: 100.0
 t_end: 80.0

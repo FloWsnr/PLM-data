@@ -1,39 +1,26 @@
-# Bistable Advection - Circular Invasion Front
-# A localized population blob expands/contracts based on parameters
-# Shows radially symmetric invasion dynamics with flow asymmetry
 preset: bistable-advection
 parameters:
-  D: 0.15      # moderate diffusion
-  a: 0.35      # Allee threshold (favors invasion)
-  theta: 1.047  # flow direction (pi/3 = 60 degrees)
-  V: 0.2       # gentle flow to create asymmetry
-
+  D: 0.15
+  a: 0.35
+  theta: 1.047
+  V: 0.2
 init:
-  type: single-blob    # Circular Gaussian blob
+  type: single-blob
   params:
-    amplitude: 1.0     # peak value at center
-    width: 0.12        # blob width relative to domain
-    center_x: 0.5      # centered horizontally
-    center_y: 0.5      # centered vertically
-    background: 0.0    # uninvaded background
-
+    amplitude: 1.0
+    width: 0.12
+    center_x: 0.5
+    center_y: 0.5
+    background: 0.0
 solver: rk4
 backend: numba
 adaptive: true
 dt: 0.01
 resolution: 256
-domain_size: 60.0     # larger domain to see full expansion
-t_end: 120.0          # longer time for radial expansion
-
+domain_size: 60.0
+t_end: 120.0
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-
-seed: 6144

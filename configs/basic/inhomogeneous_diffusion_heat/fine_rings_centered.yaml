@@ -1,19 +1,18 @@
 preset: inhomogeneous-diffusion-heat
 parameters:
-  D: 1.5      # Faster diffusion
-  E: 0.99     # Maximum contrast for visible rings
-  n: 45       # Many fine rings
+  D: 1.5
+  E: 0.99
+  n: 45
 init:
   type: single-blob
   params:
-    center_x: 0.5  # Centered
+    center_x: 0.5
     center_y: 0.5
     sigma: 0.15
     amplitude: 1.0
 solver: euler
 dt: 0.005
 resolution: 200
-seed: 1024
 domain_size: 100.0
 t_end: 40.0
 timesteps: 100
@@ -22,10 +21,3 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  frames: true
-  metadata: true
-  num_frames: 10
-  fields:
-    - T:magma

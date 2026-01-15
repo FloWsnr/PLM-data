@@ -1,10 +1,8 @@
-# Slow waves variant - Lower diffusion for slower invasion and localized dynamics
-# D = 0.1 leads to more localized wave fronts and sharper boundaries
 preset: cyclic-competition-wave
 parameters:
   a: 0.8
   b: 1.9
-  D: 0.1       # Lower diffusion - slower waves, more localized
+  D: 0.1
 init:
   type: default
   params:
@@ -20,12 +18,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:plasma
-seed: 3072
 domain_size: 200.0
-t_end: 400.0   # Longer time since waves are slower
+t_end: 400.0

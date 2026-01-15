@@ -1,6 +1,3 @@
-# Swift-Hohenberg: Spot-dominated pattern with sine wave IC
-# Very high a (quadratic) strongly breaks symmetry to favor spots/hexagons
-# Sine initial condition breaks isotropy to explore different pattern selection
 preset: swift-hohenberg
 parameters:
   r: 0.2
@@ -26,10 +23,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 321
 domain_size: 100.0
 t_end: 80.0

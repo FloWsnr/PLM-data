@@ -1,6 +1,3 @@
-# Source-only configuration: single source without its image
-# Demonstrates asymmetric flow without method of images
-# Compare with default to see how image source enforces no-flux BC
 preset: potential-flow-images
 parameters:
   strength: 50.0
@@ -26,10 +23,5 @@ bc:
       x+: dirichlet:0
       y-: dirichlet:0
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 2048
 domain_size: 40.0
 t_end: 5.0

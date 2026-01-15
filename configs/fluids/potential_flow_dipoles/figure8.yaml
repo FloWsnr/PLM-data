@@ -19,10 +19,5 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 20
-seed: 1069
 domain_size: 40.0
 t_end: 15.7

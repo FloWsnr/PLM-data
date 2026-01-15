@@ -1,7 +1,6 @@
 preset: vorticity-bounded
 solver: euler
 dt: 0.001
-seed: 1072
 t_end: 80.0
 resolution: 128
 domain_size: 100.0
@@ -26,6 +25,3 @@ init:
   type: default
   params:
     k: 8
-output:
-  format: mp4
-  num_frames: 10

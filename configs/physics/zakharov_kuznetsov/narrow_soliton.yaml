@@ -1,6 +1,3 @@
-# Narrow soliton Zakharov-Kuznetsov: tighter localized wave packet
-# Larger 'a' parameter creates a narrower, more concentrated soliton
-# This shows faster dynamics and potentially more dispersive radiation
 preset: zakharov-kuznetsov
 parameters:
   b: 0.001
@@ -19,9 +16,4 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 1089
 domain_size: 100

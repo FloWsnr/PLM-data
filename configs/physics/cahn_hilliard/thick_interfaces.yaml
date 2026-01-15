@@ -1,7 +1,7 @@
 preset: cahn-hilliard
 parameters:
-  r: 0.05  # Moderate speed
-  a: 5.0   # Higher value for wider, more diffuse interfaces
+  r: 0.05
+  a: 5.0
   D: 1.0
 init:
   type: cahn-hilliard-default
@@ -16,10 +16,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 3141
 domain_size: 100.0
 t_end: 50.0

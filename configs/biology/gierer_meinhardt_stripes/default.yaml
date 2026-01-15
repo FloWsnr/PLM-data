@@ -14,7 +14,6 @@ init:
 solver: euler
 dt: 0.0003
 resolution: 128
-seed: 1057
 domain_size: 200.0
 t_end: 100.0
 timesteps: 200
@@ -23,8 +22,3 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  frames: true
-  metadata: true
-  num_frames: 10

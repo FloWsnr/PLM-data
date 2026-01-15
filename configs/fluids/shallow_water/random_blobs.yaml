@@ -2,9 +2,9 @@ preset: shallow-water
 parameters:
   H_e: 1.0
   g: 9.81
-  f: 0.05      # Small Coriolis for slight rotation
+  f: 0.05
   k: 0.0005
-  nu: 0.15     # Moderate viscosity
+  nu: 0.15
   epsilon: 0.0001
 init:
   type: asymmetric-blobs
@@ -32,12 +32,5 @@ bc:
     v:
       y-: dirichlet:0
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - h:ocean
-seed: 7890
 domain_size: 400.0
 t_end: 45.0

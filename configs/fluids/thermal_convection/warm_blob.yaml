@@ -1,16 +1,14 @@
-# Warm blob convection - localized thermal perturbation
-# A warm region in the lower part of the domain rises due to buoyancy
 preset: thermal-convection
 parameters:
   nu: 1.0
   epsilon: 0.05
   kappa: 0.35
-  T_b: 0.02      # Weak background heating
+  T_b: 0.02
 init:
   type: warm-blob
   params:
-    x0: 0.5       # Center x (normalized 0-1)
-    y0: 0.25      # Center y (normalized 0-1) - lower quarter
+    x0: 0.5
+    y0: 0.25
     amplitude: 0.8
     radius: 0.12
     noise: 0.005
@@ -34,10 +32,5 @@ bc:
     b:
       y-: neumann:0.02
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 50
-seed: 3141
 domain_size: 500.0
 t_end: 600.0

@@ -4,8 +4,8 @@ parameters:
   a: 1.0
   b: 1.5
   c: 6.1
-  A: 0.5   # Production gradient: larger patterns on left side
-  B: 1.5   # Decay gradient: spikes migrate leftward
+  A: 0.5
+  B: 1.5
 init:
   type: random-gaussian
   params:
@@ -27,13 +27,5 @@ bc:
       x+: dirichlet:0
       y-: dirichlet:0
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:magma
-    - v:viridis
-seed: 4096
 domain_size: 100.0
 t_end: 50.0

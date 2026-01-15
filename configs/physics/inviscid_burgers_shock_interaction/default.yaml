@@ -1,33 +1,21 @@
-# Inviscid Burgers' Equation - Shock formation from single pulse
-# Single tall Gaussian that steepens into a shock
 preset: inviscid-burgers
 parameters:
-  epsilon: 0.01      # small regularization for numerical stability
-
+  epsilon: 0.01
 init:
   type: default
   params:
-    offset: 0.05     # baseline value
-    amplitude: 1.5   # tall pulse for fast propagation
-    width_coeff: 0.001  # moderate width
-
+    offset: 0.05
+    amplitude: 1.5
+    width_coeff: 0.001
 solver: rk4
 backend: numba
 adaptive: true
 dt: 0.005
 resolution: 256
-domain_size: 80.0    # domain size for pulse to travel
-t_end: 25.0          # time for shock to form and propagate
-
+domain_size: 80.0
+t_end: 25.0
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-
-seed: 1079

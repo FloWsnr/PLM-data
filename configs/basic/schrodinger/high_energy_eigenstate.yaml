@@ -1,9 +1,9 @@
 preset: schrodinger
 parameters:
   D: 1.0
-  C: 0.003            # Slightly lower stabilization
-  n: 5                # 5 nodes in x
-  m: 6                # 6 nodes in y
+  C: 0.003
+  n: 5
+  m: 6
 init:
   type: eigenstate
   params:
@@ -19,10 +19,5 @@ bc:
   x+: dirichlet:0
   y-: dirichlet:0
   y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 20
-seed: 5001
 domain_size: 100.0
 t_end: 8.0

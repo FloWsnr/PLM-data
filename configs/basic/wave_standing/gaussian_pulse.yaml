@@ -12,7 +12,6 @@ init:
 solver: euler
 dt: 0.002
 resolution: 128
-seed: 5270
 domain_size: 100.0
 t_end: 60.0
 timesteps: 200
@@ -21,10 +20,3 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  frames: true
-  metadata: true
-  num_frames: 10
-  fields:
-    - u:PRGn

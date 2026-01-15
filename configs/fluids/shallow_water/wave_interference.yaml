@@ -2,9 +2,9 @@ preset: shallow-water
 parameters:
   H_e: 1.0
   g: 9.81
-  f: 0.0       # No Coriolis - pure wave interference
-  k: 0.0005    # Lower drag for longer propagation
-  nu: 0.3      # Moderate viscosity
+  f: 0.0
+  k: 0.0005
+  nu: 0.3
   epsilon: 0.0001
 init:
   type: ripple
@@ -28,12 +28,5 @@ bc:
     v:
       y-: dirichlet:0
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - h:seismic
-seed: 4567
 domain_size: 400.0
 t_end: 40.0

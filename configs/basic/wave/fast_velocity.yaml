@@ -1,11 +1,11 @@
 preset: wave
 parameters:
-  D: 5.0  # Faster wave speed (c = sqrt(5) ≈ 2.24)
-  C: 0.015  # Light damping
+  D: 5.0
+  C: 0.015
 init:
   type: step
   params:
-    position: 0.3  # Step at 30% of domain
+    position: 0.3
     direction: x
     value_low: 0.0
     value_high: 1.0
@@ -19,10 +19,5 @@ bc:
   x+: neumann:0
   y-: dirichlet:0
   y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 5002
 domain_size: 100.0
 t_end: 30.0

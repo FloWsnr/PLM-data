@@ -1,9 +1,9 @@
 preset: fitzhugh-nagumo
 parameters:
-  Dv: 0.5        # Small inhibitor diffusion for wave support
-  e_v: 0.05      # Timescale separation for excitable regime
-  a_v: 0.8       # Recovery slope
-  a_z: -0.05     # Small offset for excitability threshold
+  Dv: 0.5
+  e_v: 0.05
+  a_v: 0.8
+  a_z: -0.05
 init:
   type: spiral-seed
   params: {}
@@ -17,12 +17,5 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:RdBu_r
-seed: 2024
 domain_size: 100.0
 t_end: 500.0

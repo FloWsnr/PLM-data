@@ -1,35 +1,20 @@
 preset: kuramoto-sivashinsky
-
-# Strong damping variant
-# Higher damping coefficient reduces chaotic behavior
-# Produces more regular patterns and faster approach to attractor
-# Good for studying transition to chaos
-
 parameters:
-  a: 0.1  # Strong damping - reduces chaos
-
+  a: 0.1
 init:
   type: random-gaussian
   params:
     mean: 0.0
-    std: 0.15  # Slightly higher initial amplitude
-
+    std: 0.15
 solver: scipy
 backend: numba
 adaptive: true
 dt: 0.1
 resolution: 64
 domain_size: 150
-t_end: 30.0  # Longer time to see stabilization
-seed: 1080
-
+t_end: 30.0
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10

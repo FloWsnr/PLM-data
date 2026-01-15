@@ -1,13 +1,13 @@
 preset: bistable-allen-cahn
 parameters:
   D: 1.0
-  a: 0.25  # Strong expansion - populations will merge and grow
+  a: 0.25
 init:
   type: gaussian-blobs
   params:
     num_blobs: 6
     amplitude: 1.0
-    width: 0.12  # Moderate size - some will merge, showing coarsening
+    width: 0.12
     seed: 602
 solver: euler
 backend: numba
@@ -19,10 +19,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 6049
 domain_size: 100.0
 t_end: 100.0

@@ -1,9 +1,9 @@
 preset: fitzhugh-nagumo
 parameters:
-  Dv: 25.0       # Slightly higher diffusion - may favor stripes
-  e_v: 0.5       # Keep recovery timescale same as default
-  a_v: 1.0       # Keep recovery slope same as default
-  a_z: -0.1      # Keep offset same as default
+  Dv: 25.0
+  e_v: 0.5
+  a_v: 1.0
+  a_z: -0.1
 init:
   type: stripes
   params:
@@ -20,12 +20,5 @@ bc:
   x+: neumann:0
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:magma
-seed: 5678
 domain_size: 280.0
 t_end: 150.0

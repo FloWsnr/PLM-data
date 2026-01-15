@@ -1,33 +1,21 @@
-# Burgers' Equation - Shock wave steepening and propagation
-# Higher amplitude pulse with moderate viscosity for visible dynamics
 preset: burgers
 parameters:
-  epsilon: 0.5       # moderate viscosity (lower = sharper shock, higher = smoother)
-
+  epsilon: 0.5
 init:
   type: default
   params:
-    amplitude: 2.0   # higher amplitude for faster propagation and clearer shock
-    width: 0.08      # narrower initial pulse
-
+    amplitude: 2.0
+    width: 0.08
 solver: rk4
 backend: numba
 adaptive: true
 dt: 0.005
 resolution: 256
 dimension: 1
-
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: periodic
   y+: periodic
-
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-
-seed: 1074
-domain_size: 100.0   # smaller domain to see dynamics clearly
-t_end: 30.0          # shorter time - shock moves faster with higher amplitude
+domain_size: 100.0
+t_end: 30.0

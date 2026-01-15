@@ -1,13 +1,13 @@
 preset: bistable-allen-cahn
 parameters:
   D: 1.0
-  a: 0.35  # Expansion favored, but small patches may still fail
+  a: 0.35
 init:
   type: gaussian-blobs
   params:
     num_blobs: 5
     amplitude: 1.0
-    width: 0.03  # Very small patches - may fail to establish
+    width: 0.03
     seed: 401
 solver: euler
 backend: numba
@@ -19,10 +19,5 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 4048
 domain_size: 100.0
 t_end: 100.0

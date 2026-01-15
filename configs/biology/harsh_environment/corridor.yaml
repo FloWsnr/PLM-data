@@ -20,10 +20,5 @@ bc:
   x+: periodic
   y-: dirichlet:0
   y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 6066
 domain_size: 10.0
 t_end: 80.0

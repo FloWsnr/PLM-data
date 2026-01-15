@@ -1,18 +1,18 @@
 preset: klausmeier-topography
 parameters:
-  a: 1.0        # Rainfall rate - lower for pattern formation
-  m: 0.45       # Plant mortality
-  V: 80.0       # Moderate topography effect
-  Dn: 1.0       # Plant diffusion
-  Dw: 2.0       # Water diffusion
+  a: 1.0
+  m: 0.45
+  V: 80.0
+  Dn: 1.0
+  Dw: 2.0
 init:
   type: custom
   params:
-    topography: hills     # Sinusoidal - periodic compatible
-    amplitude: 5.0        # Moderate terrain variation
+    topography: hills
+    amplitude: 5.0
     n_hills_x: 2
     n_hills_y: 2
-    n_mean: 0.5           # Gaussian IC for vegetation
+    n_mean: 0.5
     n_std: 0.1
 solver: euler
 backend: numba
@@ -20,16 +20,9 @@ adaptive: false
 dt: 0.001
 resolution: 128
 bc:
-  x-: periodic            # Sinusoidal hills are periodic-compatible
+  x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 100
-  fields:
-    - n:YlGn
-seed: 1064
 domain_size: 100.0
 t_end: 500.0

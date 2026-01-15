@@ -1,34 +1,21 @@
-# Inviscid Burgers' Equation - Regularized (Smooth Shocks)
-# Higher epsilon creates viscous-like smoothing of shock fronts
-# Shocks have finite width and don't steepen as sharply
 preset: inviscid-burgers
 parameters:
-  epsilon: 0.1       # larger viscosity for smooth shock fronts
-
+  epsilon: 0.1
 init:
   type: default
   params:
-    offset: 0.05     # baseline value
-    amplitude: 1.2   # moderate pulse
-    width_coeff: 0.0008  # narrower initial pulse
-
+    offset: 0.05
+    amplitude: 1.2
+    width_coeff: 0.0008
 solver: rk4
 backend: numba
 adaptive: true
 dt: 0.005
 resolution: 256
 domain_size: 80.0
-t_end: 30.0          # time for smoothed shock propagation
-
+t_end: 30.0
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-
-output:
-  format: mp4
-  path: ./output
-  num_frames: 12
-
-seed: 3456

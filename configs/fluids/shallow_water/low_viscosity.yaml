@@ -2,10 +2,10 @@ preset: shallow-water
 parameters:
   H_e: 1.0
   g: 9.81
-  f: 0.01      # Small Coriolis
-  k: 0.0001    # Very low drag
-  nu: 0.05     # Low viscosity for sharp waves
-  epsilon: 0.00001  # Minimal height dissipation
+  f: 0.01
+  k: 0.0001
+  nu: 0.05
+  epsilon: 1.0e-05
 init:
   type: drop
   params:
@@ -30,12 +30,5 @@ bc:
     v:
       y-: dirichlet:0
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - h:turbo
-seed: 5678
 domain_size: 400.0
 t_end: 60.0

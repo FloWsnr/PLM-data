@@ -2,7 +2,7 @@ preset: inhomogeneous-diffusion-heat
 parameters:
   D: 1.0
   E: 0.9
-  n: 5  # Few, wide bands (vs 20 in default)
+  n: 5
 init:
   type: gaussian-blobs
   params:
@@ -17,7 +17,6 @@ init:
 solver: euler
 dt: 0.005
 resolution: 200
-seed: 1021
 domain_size: 100.0
 t_end: 50.0
 timesteps: 100
@@ -26,10 +25,3 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  frames: true
-  metadata: true
-  num_frames: 10
-  fields:
-    - T:inferno

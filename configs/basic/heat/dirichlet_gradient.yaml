@@ -15,10 +15,5 @@ bc:
   x+: dirichlet:0.0
   y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 1016
 domain_size: 320.0
 t_end: 800.0

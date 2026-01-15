@@ -1,7 +1,7 @@
 preset: navier-stokes
 parameters:
-  nu: 0.015  # Slightly lower viscosity
-  M: 0.2  # Lower Mach number - faster pressure relaxation
+  nu: 0.015
+  M: 0.2
   D: 0.001
 init:
   type: shear-layer
@@ -18,12 +18,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - p:twilight_shifted
-seed: 2024
 domain_size: 5.0
 t_end: 12.0

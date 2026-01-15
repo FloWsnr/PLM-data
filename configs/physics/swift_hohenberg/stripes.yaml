@@ -1,6 +1,3 @@
-# Swift-Hohenberg: Pure stripe patterns (no hexagons)
-# Setting a=0 enforces up-down symmetry, producing only roll/stripe patterns
-# This gives clean labyrinthine stripes without hexagonal spots
 preset: swift-hohenberg
 parameters:
   r: 0.3
@@ -23,10 +20,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 123
 domain_size: 100.0
 t_end: 50.0

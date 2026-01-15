@@ -1,11 +1,11 @@
 preset: duffing
 parameters:
-  D: 0.6          # Moderate diffusion
-  alpha: -1.5     # Double-well
-  beta: 0.35      # Cubic nonlinearity
-  delta: 0.08     # Moderate damping
-  gamma: 2.5      # Moderate forcing
-  omega: 2.5      # Moderate frequency
+  D: 0.6
+  alpha: -1.5
+  beta: 0.35
+  delta: 0.08
+  gamma: 2.5
+  omega: 2.5
   epsilon: 0.01
 init:
   type: default
@@ -22,11 +22,4 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - Y:twilight_shifted
-seed: 4444
 domain_size: 50

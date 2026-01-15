@@ -4,7 +4,7 @@ parameters:
   a: 1.0
   b: 1.5
   c: 6.1
-  A: -0.5  # Production gradient: larger patterns on right side
+  A: -0.5
   B: 0.0
 init:
   type: random-gaussian
@@ -27,13 +27,5 @@ bc:
       x+: dirichlet:0
       y-: dirichlet:0
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:inferno
-    - v:viridis
-seed: 2048
 domain_size: 100.0
 t_end: 50.0

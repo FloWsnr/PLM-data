@@ -23,10 +23,3 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 100
-  fields:
-    - Z:coolwarm
-seed: 321

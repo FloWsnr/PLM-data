@@ -1,5 +1,3 @@
-# Periodic boundaries: waves wrap around domain edges
-# Single blob at corner to show wraparound behavior
 preset: fisher-kpp
 parameters:
   D: 1.0
@@ -22,10 +20,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 1058
 domain_size: 100.0
 t_end: 60.0

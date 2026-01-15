@@ -1,36 +1,28 @@
-# Burgers' Equation - Shock Interaction (Multiple Pulses)
-# Demonstrates faster (taller) shocks overtaking slower (shorter) ones
-# Key phenomenon: shock merging as higher amplitude waves catch up
 preset: burgers
 parameters:
-  epsilon: 0.03      # low viscosity for sharp shock fronts
-
+  epsilon: 0.03
 init:
   type: multi-pulse
   params:
-    # Taller pulses behind shorter ones - taller travels faster
-    positions: [0.1, 0.25, 0.4]     # normalized x positions (left to right)
-    amplitudes: [2.5, 1.5, 0.8]     # decreasing amplitudes (tall catches short)
-    width: 0.04                      # narrow pulses
-
+    positions:
+    - 0.1
+    - 0.25
+    - 0.4
+    amplitudes:
+    - 2.5
+    - 1.5
+    - 0.8
+    width: 0.04
 solver: rk4
 backend: numba
 adaptive: true
 dt: 0.005
 resolution: 256
 dimension: 1
-
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: periodic
   y+: periodic
-
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-
-seed: 4096
 domain_size: 100.0
-t_end: 35.0       # time to observe merging
+t_end: 35.0

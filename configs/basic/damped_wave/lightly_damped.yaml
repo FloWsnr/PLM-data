@@ -2,7 +2,7 @@ preset: damped-wave
 parameters:
   D: 10.0
   C: 0.01
-  d: 0.01  # Light damping - slow amplitude decay, many oscillations visible
+  d: 0.01
 init:
   type: gaussian-blobs
   params:
@@ -17,19 +17,11 @@ init:
 solver: euler
 dt: 0.002
 resolution: 200
-seed: 1011
 domain_size: 100.0
-t_end: 80.0  # Longer time to observe sustained oscillations
+t_end: 80.0
 timesteps: 100
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  frames: true
-  metadata: true
-  num_frames: 10
-  fields:
-    - u:viridis

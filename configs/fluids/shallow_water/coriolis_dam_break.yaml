@@ -2,9 +2,9 @@ preset: shallow-water
 parameters:
   H_e: 1.0
   g: 9.81
-  f: 0.4       # Moderate Coriolis - stabilizes dam break fronts
+  f: 0.4
   k: 0.001
-  nu: 0.2      # Moderate viscosity
+  nu: 0.2
   epsilon: 0.01
 init:
   type: dam-break
@@ -21,12 +21,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - h:viridis
-seed: 6789
 domain_size: 400.0
 t_end: 50.0

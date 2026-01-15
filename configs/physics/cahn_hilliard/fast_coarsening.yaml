@@ -1,6 +1,6 @@
 preset: cahn-hilliard
 parameters:
-  r: 0.1  # 10x faster dynamics to observe advanced coarsening
+  r: 0.1
   a: 1.0
   D: 1.0
 init:
@@ -16,10 +16,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 1075
 domain_size: 100.0
 t_end: 50.0

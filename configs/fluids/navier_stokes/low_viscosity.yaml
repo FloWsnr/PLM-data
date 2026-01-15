@@ -1,12 +1,12 @@
 preset: navier-stokes
 parameters:
-  nu: 0.005  # Low viscosity - more turbulent dynamics
+  nu: 0.005
   M: 0.3
-  D: 0.001  # Low diffusion to preserve fine structures
+  D: 0.001
 init:
   type: shear-layer
   params:
-    shear_width: 0.02  # Thinner shear layer
+    shear_width: 0.02
     amplitude: 1.5
 solver: euler
 backend: numpy
@@ -18,10 +18,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 1066
 domain_size: 5.0
 t_end: 10.0

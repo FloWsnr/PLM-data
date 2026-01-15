@@ -1,15 +1,13 @@
-# Oscillatory vorticity field simulation
-# Shows decay and reorganization of complex multi-scale vorticity patterns
 preset: vorticity
 parameters:
-  nu: 0.05       # Moderate viscosity for visible decay
+  nu: 0.05
   epsilon: 0.02
   D: 0.05
 init:
   type: oscillatory
   params:
-    k: 6           # Wavenumber - controls number of vortex cells
-    amplitude: 0.5  # Initial amplitude (overrides default formula)
+    k: 6
+    amplitude: 0.5
 solver: euler
 backend: numpy
 adaptive: true
@@ -24,10 +22,5 @@ bc:
     S:
       x-: neumann:0
       x+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 3053
 domain_size: 20.0
 t_end: 10.0

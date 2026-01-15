@@ -1,28 +1,20 @@
 preset: inhomogeneous-diffusion-heat
 parameters:
   D: 1.0
-  E: 0.95  # Strong contrast for pronounced banding
-  n: 30    # Many rings to see banding clearly
+  E: 0.95
+  n: 30
 init:
   type: constant
   params:
-    value: 1.0  # Uniform starting temperature
+    value: 1.0
 solver: euler
 dt: 0.005
 resolution: 200
-seed: 1023
 domain_size: 100.0
-t_end: 80.0  # Longer time to see full draining with ring structure
+t_end: 80.0
 timesteps: 100
 bc:
   x-: dirichlet:0
   x+: dirichlet:0
   y-: dirichlet:0
   y+: dirichlet:0
-output:
-  format: mp4
-  frames: true
-  metadata: true
-  num_frames: 10
-  fields:
-    - T:viridis

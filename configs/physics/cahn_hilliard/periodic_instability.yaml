@@ -1,15 +1,15 @@
 preset: cahn-hilliard
 parameters:
-  r: 0.05   # Moderate speed
+  r: 0.05
   a: 1.0
   D: 1.0
 init:
   type: sine
   params:
-    kx: 4              # 4 complete waves in x
-    ky: 4              # 4 complete waves in y
-    amplitude: 0.9     # Almost full amplitude, near ±1
-    offset: 0.0        # Centered at zero
+    kx: 4
+    ky: 4
+    amplitude: 0.9
+    offset: 0.0
 solver: euler
 backend: numba
 adaptive: false
@@ -20,10 +20,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 4242
 domain_size: 100.0
 t_end: 60.0

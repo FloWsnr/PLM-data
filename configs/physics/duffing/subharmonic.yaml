@@ -1,11 +1,11 @@
 preset: duffing
 parameters:
-  D: 1.0          # Strong diffusion for larger spatial structures
-  alpha: -2.0     # Moderate double-well
-  beta: 0.4       # Moderate nonlinearity
-  delta: 0.03     # Very low damping for subharmonic response
-  gamma: 2.5      # Moderate forcing
-  omega: 1.0      # Low frequency - promotes period-doubling
+  D: 1.0
+  alpha: -2.0
+  beta: 0.4
+  delta: 0.03
+  gamma: 2.5
+  omega: 1.0
   epsilon: 0.02
 init:
   type: default
@@ -22,9 +22,4 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 9999
 domain_size: 50

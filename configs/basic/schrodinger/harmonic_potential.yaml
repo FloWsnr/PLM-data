@@ -5,16 +5,16 @@ parameters:
   n: 3
   m: 3
   potential_type: harmonic
-  V_strength: 0.01       # Strength of parabolic potential
-  pot_n: 1               # Not used for harmonic
-  pot_m: 1               # Not used for harmonic
+  V_strength: 0.01
+  pot_n: 1
+  pot_m: 1
 init:
   type: wave-packet
   params:
-    x0: 0.3              # Start off-center
-    y0: 0.5              # Centered in y
+    x0: 0.3
+    y0: 0.5
     sigma: 0.08
-    kx: 0.0              # No initial momentum
+    kx: 0.0
     ky: 0.0
 solver: rk4
 backend: numba
@@ -26,10 +26,5 @@ bc:
   x+: dirichlet:0
   y-: dirichlet:0
   y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 30
-seed: 4001
 domain_size: 100.0
 t_end: 30.0

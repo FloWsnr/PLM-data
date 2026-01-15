@@ -1,10 +1,7 @@
-# Vertical propagation Zakharov-Kuznetsov: soliton propagates upward (+y)
-# Uses theta=pi/2 to rotate propagation from +x to +y direction
-# Shows ZK dynamics in vertical direction
 preset: zakharov-kuznetsov
 parameters:
   b: 0.0001
-  theta: 1.5708  # pi/2 radians = 90 degrees (+y direction)
+  theta: 1.5708
 init:
   type: offset-soliton
   params:
@@ -22,9 +19,4 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 1089
 domain_size: 100

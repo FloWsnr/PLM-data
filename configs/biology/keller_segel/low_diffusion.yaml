@@ -1,7 +1,7 @@
 preset: keller-segel
 parameters:
-  c: 5.0         # Moderate-strong chemotaxis
-  D: 0.2         # Low chemical diffusion - sharper gradients
+  c: 5.0
+  D: 0.2
   a: 0.1
 init:
   type: random-uniform
@@ -11,19 +11,12 @@ init:
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.003        # Smaller timestep for stability
+dt: 0.003
 resolution: 128
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:viridis
-seed: 4096
 domain_size: 100.0
 t_end: 60.0

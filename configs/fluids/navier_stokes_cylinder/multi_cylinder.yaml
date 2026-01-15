@@ -1,9 +1,9 @@
 preset: navier-stokes-cylinder
 parameters:
-  nu: 0.15             # Moderate viscosity for stability with two cylinders
-  M: 0.4               # Mach number parameter
-  U: 0.5               # Inflow velocity
-  cylinder_radius: 0.04  # Smaller cylinders for multi-cylinder setup
+  nu: 0.15
+  M: 0.4
+  U: 0.5
+  cylinder_radius: 0.04
 init:
   type: multi-cylinder
   params:
@@ -11,16 +11,18 @@ init:
     cylinder_radius: 0.04
     n_cylinders: 2
     positions:
-      - [0.25, 0.35]   # Upper cylinder
-      - [0.25, 0.65]   # Lower cylinder
+    - - 0.25
+      - 0.35
+    - - 0.25
+      - 0.65
 solver: rk4
 backend: numba
 adaptive: true
 dt: 0.03
 resolution: 256
 bc:
-  x-: dirichlet:0.5    # u = U at inlet
-  x+: dirichlet:0.5    # u = U at outlet
+  x-: dirichlet:0.5
+  x+: dirichlet:0.5
   y-: periodic
   y+: periodic
   fields:
@@ -35,12 +37,5 @@ bc:
       x+: dirichlet:0
       y-: dirichlet:0
       y+: dirichlet:0
-output:
-  format: png
-  path: ./output
-  num_frames: 100
-  fields:
-    - p:twilight
-seed: 2025
 domain_size: 128.0
 t_end: 100.0

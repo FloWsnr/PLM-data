@@ -1,10 +1,8 @@
-# High viscosity vorticity simulation
-# Shows rapid diffusion and damping of vortex structures
 preset: vorticity
 parameters:
-  nu: 0.5        # High viscosity - rapid diffusion
+  nu: 0.5
   epsilon: 0.02
-  D: 0.1         # Higher passive scalar diffusion too
+  D: 0.1
 init:
   type: vortex-pair
   params:
@@ -12,7 +10,7 @@ init:
     y1: 0.45
     x2: 0.6
     y2: 0.55
-    strength: 50.0   # Stronger initial vortices to see more decay
+    strength: 50.0
     radius: 0.08
 solver: euler
 backend: numpy
@@ -28,10 +26,5 @@ bc:
     S:
       x-: neumann:0
       x+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 1071
 domain_size: 20.0
-t_end: 7.5   # Shorter time since diffusion is fast
+t_end: 7.5

@@ -1,18 +1,18 @@
 preset: immunotherapy
 parameters:
-  Du: 10.0         # Keep Turing-promoting ratio
+  Du: 10.0
   Dv: 0.1
   Dw: 10.0
-  c: 0.03          # Low tumor-induced effector recruitment
-  mu: 0.3          # Higher effector decay
-  p_u: 0.4         # Lower effector proliferation
+  c: 0.03
+  mu: 0.3
+  p_u: 0.4
   g_v: 0.1
-  p_v: 0.5         # Reduced killing rate
+  p_v: 0.5
   p_w: 2.5
   g_w: 0.001
   nu: 55.56
-  s_u: 0.0         # No effector source
-  s_w: 0.1         # Minimal cytokine source
+  s_u: 0.0
+  s_w: 0.1
 init:
   type: default
   params:
@@ -27,12 +27,5 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - v:magma
-seed: 1061
 domain_size: 50.0
 t_end: 5.0

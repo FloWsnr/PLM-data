@@ -1,11 +1,11 @@
 preset: heterogeneous-gierer-meinhardt
 parameters:
-  D: 25.0   # Lower diffusion ratio - smaller pattern wavelength
+  D: 25.0
   a: 1.0
   b: 1.5
   c: 6.1
-  A: -0.3   # Mild production gradient
-  B: 1.0    # Mild decay gradient
+  A: -0.3
+  B: 1.0
 init:
   type: random-gaussian
   params:
@@ -27,13 +27,5 @@ bc:
       x+: dirichlet:0
       y-: dirichlet:0
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:twilight_shifted
-    - v:twilight
-seed: 6144
 domain_size: 100.0
 t_end: 50.0

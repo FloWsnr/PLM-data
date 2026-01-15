@@ -1,40 +1,27 @@
-# Bistable Advection - Strong Invasion with Diagonal Flow
-# Very low Allee threshold (a near 0) creates aggressive invasion
-# Diagonal flow creates tilted front propagation
 preset: bistable-advection
 parameters:
-  D: 0.05      # lower diffusion for sharper front
-  a: 0.1       # Very low Allee threshold - STRONG invasion tendency
-  theta: 2.356  # flow direction (3*pi/4 = 135 degrees, diagonal upper-left)
-  V: 0.25      # moderate flow
-
+  D: 0.05
+  a: 0.1
+  theta: 2.356
+  V: 0.25
 init:
   type: default
   params:
-    direction: y         # VERTICAL front (different from other configs)
-    step_position: 0.4   # front at 40% from bottom
-    value_low: 0.0       # bottom uninvaded
-    value_high: 1.0      # top invaded
+    direction: y
+    step_position: 0.4
+    value_low: 0.0
+    value_high: 1.0
     smooth: true
     width: 0.03
-
 solver: rk4
 backend: numba
 adaptive: true
 dt: 0.01
 resolution: 256
-domain_size: 40.0    # smaller domain
-t_end: 50.0          # shorter time (fast invasion)
-
+domain_size: 40.0
+t_end: 50.0
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-
-seed: 5120

@@ -1,12 +1,9 @@
-# Low Prandtl number convection - fast thermal diffusion
-# Pr = nu/kappa < 1, characteristic of liquid metals
-# Heat diffuses faster than momentum, creating broader plumes
 preset: thermal-convection
 parameters:
-  nu: 0.5        # Moderate viscosity
+  nu: 0.5
   epsilon: 0.05
-  kappa: 1.5     # High thermal diffusivity (Pr = 0.33)
-  T_b: 0.2       # Strong heating to compensate fast diffusion
+  kappa: 1.5
+  T_b: 0.2
 init:
   type: default
   params:
@@ -31,10 +28,5 @@ bc:
     b:
       y-: neumann:0.2
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 50
-seed: 4242
 domain_size: 500.0
 t_end: 300.0

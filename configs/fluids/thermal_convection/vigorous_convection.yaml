@@ -1,15 +1,13 @@
-# Vigorous thermal convection - stronger instabilities
-# Lower viscosity and higher boundary heating produce more turbulent flow
 preset: thermal-convection
 parameters:
-  nu: 0.8        # Lower viscosity for more vigorous flow
+  nu: 0.8
   epsilon: 0.05
-  kappa: 0.3     # Lower thermal diffusivity
-  T_b: 0.15      # Stronger bottom heating
+  kappa: 0.3
+  T_b: 0.15
 init:
   type: default
   params:
-    noise: 0.02   # Higher initial noise for faster instability development
+    noise: 0.02
 solver: euler
 backend: auto
 adaptive: true
@@ -30,10 +28,5 @@ bc:
     b:
       y-: neumann:0.15
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 50
-seed: 2048
 domain_size: 500.0
 t_end: 400.0

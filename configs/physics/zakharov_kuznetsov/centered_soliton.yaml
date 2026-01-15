@@ -1,6 +1,3 @@
-# Centered vortical soliton - shows radially symmetric expansion pattern
-# Soliton starts at center and propagates in +x direction
-# Higher resolution captures fine dispersive wave details
 preset: zakharov-kuznetsov
 parameters:
   b: 0.0001
@@ -19,9 +16,4 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 1089
 domain_size: 100

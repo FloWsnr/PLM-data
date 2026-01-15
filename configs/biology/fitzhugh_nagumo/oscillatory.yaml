@@ -1,9 +1,9 @@
 preset: fitzhugh-nagumo
 parameters:
-  Dv: 26.0       # Modified diffusion for Turing-Hopf regime
-  e_v: 0.2       # Recovery timescale
-  a_v: 0.01      # Very small recovery slope
-  a_z: -0.1      # Recovery offset
+  Dv: 26.0
+  e_v: 0.2
+  a_v: 0.01
+  a_z: -0.1
 init:
   type: spots
   params:
@@ -21,13 +21,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - u:viridis
-    - v:plasma
-seed: 3042
 domain_size: 280.0
 t_end: 150.0

@@ -1,6 +1,6 @@
 preset: immunotherapy
 parameters:
-  Du: 10.0         # Turing-promoting diffusion ratio
+  Du: 10.0
   Dv: 0.1
   Dw: 10.0
   c: 0.07
@@ -11,8 +11,8 @@ parameters:
   p_w: 2.5
   g_w: 0.001
   nu: 55.56
-  s_u: 0.0         # No internal source - treatment from boundaries
-  s_w: 0.0         # No internal source - treatment from boundaries
+  s_u: 0.0
+  s_w: 0.0
 init:
   type: default
   params:
@@ -28,17 +28,10 @@ bc:
   y-: neumann:0
   y+: neumann:0
   fields:
-    w:              # Cytokine delivered from boundaries
+    w:
       x-: dirichlet:0.05
       x+: dirichlet:0.05
       y-: dirichlet:0.05
       y+: dirichlet:0.05
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - v:plasma
-seed: 1061
 domain_size: 50.0
 t_end: 10.0

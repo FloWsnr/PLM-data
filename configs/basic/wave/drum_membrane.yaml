@@ -1,7 +1,7 @@
 preset: wave
 parameters:
   D: 1.0
-  C: 0.005  # Light damping
+  C: 0.005
 init:
   type: gaussian-blobs
   params:
@@ -10,7 +10,7 @@ init:
     width: 0.08
     background: 0.0
     seed: 303
-    center_x: 0.5  # Center of domain
+    center_x: 0.5
     center_y: 0.5
 solver: euler
 backend: numba
@@ -22,10 +22,5 @@ bc:
   x+: dirichlet:0
   y-: dirichlet:0
   y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-seed: 3001
 domain_size: 100.0
 t_end: 60.0

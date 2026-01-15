@@ -1,15 +1,15 @@
 preset: klausmeier-topography
 parameters:
-  a: 0.9        # Lower rainfall - drought conditions
-  m: 0.45       # Plant mortality
-  V: 80.0       # Topography effect
-  Dn: 1.0       # Plant diffusion
-  Dw: 2.0       # Water diffusion
+  a: 0.9
+  m: 0.45
+  V: 80.0
+  Dn: 1.0
+  Dw: 2.0
 init:
   type: custom
   params:
-    topography: ridge     # Central ridge - water flows to edges
-    amplitude: 5.0        # Height scale
+    topography: ridge
+    amplitude: 5.0
     n_mean: 0.5
     n_std: 0.1
 solver: euler
@@ -18,16 +18,9 @@ adaptive: false
 dt: 0.001
 resolution: 128
 bc:
-  x-: periodic            # Periodic in x (ridge runs along x)
+  x-: periodic
   x+: periodic
-  y-: neumann:0           # Neumann in y for water accumulation at edges
+  y-: neumann:0
   y+: neumann:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 100
-  fields:
-    - n:YlOrBr            # Yellow-Orange-Brown for drought/arid aesthetic
-seed: 6789
 domain_size: 100.0
 t_end: 500.0

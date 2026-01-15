@@ -1,9 +1,9 @@
 preset: thermal-convection
 parameters:
-  nu: 1.2        # Kinematic viscosity (moderate for stability)
-  epsilon: 0.05  # Relaxation parameter for stream function
-  kappa: 0.4     # Thermal diffusivity
-  T_b: 0.08      # Bottom boundary temperature flux
+  nu: 1.2
+  epsilon: 0.05
+  kappa: 0.4
+  T_b: 0.08
 init:
   type: default
   params:
@@ -28,10 +28,5 @@ bc:
     b:
       y-: neumann:0.08
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 50
-seed: 1070
 domain_size: 500.0
 t_end: 500.0

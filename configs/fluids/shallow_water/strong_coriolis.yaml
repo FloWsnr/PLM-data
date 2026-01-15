@@ -2,10 +2,10 @@ preset: shallow-water
 parameters:
   H_e: 1.0
   g: 9.81
-  f: 0.15      # Moderate Coriolis - visible rotation effects
+  f: 0.15
   k: 0.0005
-  nu: 0.1      # Low viscosity for more dynamics
-  epsilon: 0.00005
+  nu: 0.1
+  epsilon: 5.0e-05
 init:
   type: ripple
   params:
@@ -28,12 +28,5 @@ bc:
     v:
       y-: dirichlet:0
       y+: dirichlet:0
-output:
-  format: mp4
-  path: ./output
-  num_frames: 10
-  fields:
-    - h:RdBu_r
-seed: 3142
 domain_size: 400.0
 t_end: 40.0
