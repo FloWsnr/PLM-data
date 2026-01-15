@@ -1,0 +1,10 @@
+# Master configuration - applied to all simulations
+# Individual configs override these values
+
+output:
+  format: mp4
+  path: ./output
+  num_frames: 100
+  fps: 30
+
+seed: 42

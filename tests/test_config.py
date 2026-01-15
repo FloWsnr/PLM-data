@@ -12,6 +12,7 @@ from pde_sim.core.config import (
     InitialConditionConfig,
     load_config,
     config_to_dict,
+    _deep_merge,
 )
 
 
@@ -286,3 +287,155 @@ class TestOutputConfig:
         assert output.num_frames == 50
         assert output.format == "mp4"
         assert output.fps == 60
+
+
+class TestDeepMerge:
+    """Tests for _deep_merge function."""
+
+    def test_simple_merge(self):
+        """Test merging flat dictionaries."""
+        base = {"a": 1, "b": 2}
+        override = {"b": 3, "c": 4}
+        result = _deep_merge(base, override)
+        assert result == {"a": 1, "b": 3, "c": 4}
+
+    def test_nested_merge(self):
+        """Test merging nested dictionaries."""
+        base = {"output": {"format": "png", "num_frames": 100}, "seed": 42}
+        override = {"output": {"num_frames": 10}, "preset": "heat"}
+        result = _deep_merge(base, override)
+        assert result["output"]["format"] == "png"  # From base
+        assert result["output"]["num_frames"] == 10  # From override
+        assert result["seed"] == 42  # From base
+        assert result["preset"] == "heat"  # From override
+
+    def test_override_takes_precedence(self):
+        """Test that override values always take precedence."""
+        base = {"seed": 42}
+        override = {"seed": 123}
+        result = _deep_merge(base, override)
+        assert result["seed"] == 123
+
+    def test_base_not_modified(self):
+        """Test that original base dict is not modified."""
+        base = {"a": 1, "nested": {"b": 2}}
+        override = {"a": 10, "nested": {"c": 3}}
+        _deep_merge(base, override)
+        assert base == {"a": 1, "nested": {"b": 2}}
+
+
+class TestMasterConfig:
+    """Tests for master config loading and merging."""
+
+    def test_master_config_provides_defaults(self, tmp_path):
+        """Test that master config values are used as defaults."""
+        # Create master config
+        master_config = {
+            "output": {"format": "mp4", "num_frames": 200, "fps": 60},
+            "seed": 999,
+        }
+        master_path = tmp_path / "master.yaml"
+        with open(master_path, "w") as f:
+            yaml.dump(master_config, f)
+
+        # Create individual config without output or seed
+        individual_config = {
+            "preset": "heat",
+            "init": {"type": "random-uniform"},
+            "t_end": 0.1,
+            "dt": 0.001,
+            "resolution": 64,
+        }
+        config_path = tmp_path / "individual.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(individual_config, f)
+
+        config = load_config(config_path)
+
+        # Master config values should be applied
+        assert config.output.format == "mp4"
+        assert config.output.num_frames == 200
+        assert config.output.fps == 60
+        assert config.seed == 999
+
+    def test_individual_config_overrides_master(self, tmp_path):
+        """Test that individual config values override master config."""
+        # Create master config
+        master_config = {
+            "output": {"format": "mp4", "num_frames": 200},
+            "seed": 999,
+        }
+        master_path = tmp_path / "master.yaml"
+        with open(master_path, "w") as f:
+            yaml.dump(master_config, f)
+
+        # Create individual config with different values
+        individual_config = {
+            "preset": "heat",
+            "init": {"type": "random-uniform"},
+            "t_end": 0.1,
+            "dt": 0.001,
+            "resolution": 64,
+            "output": {"num_frames": 50},  # Override just num_frames
+            "seed": 123,  # Override seed
+        }
+        config_path = tmp_path / "individual.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(individual_config, f)
+
+        config = load_config(config_path)
+
+        # Individual values should override master
+        assert config.output.format == "mp4"  # From master
+        assert config.output.num_frames == 50  # From individual (override)
+        assert config.seed == 123  # From individual (override)
+
+    def test_no_master_config(self, tmp_path):
+        """Test that configs work without master config."""
+        # Create individual config without master
+        individual_config = {
+            "preset": "heat",
+            "init": {"type": "random-uniform"},
+            "t_end": 0.1,
+            "dt": 0.001,
+            "resolution": 64,
+        }
+        config_path = tmp_path / "individual.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(individual_config, f)
+
+        config = load_config(config_path)
+
+        # Should use default values
+        assert config.output.format == "png"  # Default
+        assert config.output.num_frames == 100  # Default
+        assert config.seed is None  # Default
+
+    def test_master_config_in_parent_directory(self, tmp_path):
+        """Test that master config is found in parent directory."""
+        # Create nested directory structure
+        nested_dir = tmp_path / "configs" / "biology" / "test"
+        nested_dir.mkdir(parents=True)
+
+        # Create master config in configs/
+        master_config = {"seed": 777}
+        master_path = tmp_path / "configs" / "master.yaml"
+        with open(master_path, "w") as f:
+            yaml.dump(master_config, f)
+
+        # Create individual config in nested directory
+        individual_config = {
+            "preset": "heat",
+            "init": {"type": "random-uniform"},
+            "t_end": 0.1,
+            "dt": 0.001,
+            "resolution": 64,
+        }
+        config_path = nested_dir / "individual.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(individual_config, f)
+
+        config = load_config(config_path)
+
+        # Master config should be found and applied
+        assert config.seed == 777

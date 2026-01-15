@@ -137,6 +137,17 @@ def _parse_bc_config(bc_raw: dict) -> BoundaryConfig:
     )
 
 
+def _deep_merge(base: dict, override: dict) -> dict:
+    """Deep merge override into base. Override values take precedence."""
+    result = base.copy()
+    for key, value in override.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
 def load_config(path: Path | str) -> SimulationConfig:
     """Load and validate a YAML configuration file.
 
@@ -155,6 +166,23 @@ def load_config(path: Path | str) -> SimulationConfig:
 
     with open(path) as f:
         raw = yaml.safe_load(f)
+
+    # Try to find master config relative to config file
+    # e.g., configs/biology/bacteria_advection/default.yaml -> configs/master.yaml
+    config_dir = path.parent
+    master_path = None
+    for _ in range(5):  # Walk up to 5 levels
+        candidate = config_dir / "master.yaml"
+        if candidate.exists():
+            master_path = candidate
+            break
+        config_dir = config_dir.parent
+
+    # Merge master config if found
+    if master_path:
+        with open(master_path) as f:
+            master_raw = yaml.safe_load(f) or {}
+        raw = _deep_merge(master_raw, raw)
 
     # Parse nested configs
     init_config = InitialConditionConfig(
