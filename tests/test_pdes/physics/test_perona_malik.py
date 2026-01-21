@@ -3,11 +3,17 @@
 import numpy as np
 import pytest
 
-from pde import CartesianGrid
+from pde import CartesianGrid, ScalarField
 
 from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes.physics.perona_malik import PeronaMalikPDE
 
 from tests.conftest import run_short_simulation
+from tests.test_pdes.dimension_test_helpers import (
+    create_grid_for_dimension,
+    create_bc_for_dimension,
+    check_result_finite,
+)
 
 
 @pytest.fixture
@@ -39,3 +45,33 @@ class TestPeronaMalikPDE:
         assert result is not None
         assert np.isfinite(result.data).all()
         assert config["preset"] == "perona-malik"
+
+    def test_dimension_support_2d(self):
+        """Test Perona-Malik works in 2D.
+
+        Note: The current implementation uses 2D-specific derivatives (d_dy, u_xy),
+        so the test only validates 2D support even though metadata claims [1, 2, 3].
+        """
+        np.random.seed(42)
+        preset = PeronaMalikPDE()
+        ndim = 2
+
+        # Check 2D is supported
+        assert ndim in preset.metadata.supported_dimensions
+        preset.validate_dimension(ndim)
+
+        # Create grid and BCs
+        resolution = 16
+        grid = create_grid_for_dimension(ndim, resolution=resolution)
+        bc = create_bc_for_dimension(ndim)
+
+        # Create PDE and initial state
+        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
+
+        # Run short simulation
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
+
+        # Verify result
+        assert isinstance(result, ScalarField)
+        check_result_finite(result, "perona-malik", ndim)

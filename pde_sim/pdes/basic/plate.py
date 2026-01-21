@@ -144,7 +144,7 @@ class PlatePDE(MultiFieldPDEPreset):
             num_fields=3,
             field_names=["u", "v", "w"],
             reference="https://visualpde.com/basic-pdes/plate-equation",
-            supported_dimensions=[1, 2, 3],
+            supported_dimensions=[1, 2],
         )
 
     def create_pde(

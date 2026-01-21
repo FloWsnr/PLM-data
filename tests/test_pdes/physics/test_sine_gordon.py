@@ -6,8 +6,14 @@ import pytest
 from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes.physics.sine_gordon import SineGordonPDE
 
 from tests.conftest import run_short_simulation
+from tests.test_pdes.dimension_test_helpers import (
+    create_grid_for_dimension,
+    create_bc_for_dimension,
+    check_result_finite,
+)
 
 
 @pytest.fixture
@@ -196,3 +202,40 @@ class TestSineGordonPDE:
         # phi should remain bounded (not blow up)
         assert np.abs(phi).max() < 100, "phi values grew too large"
         assert np.abs(psi).max() < 100, "psi values grew too large"
+
+    def test_dimension_support_2d_only(self):
+        """Test Sine-Gordon equation only supports 2D."""
+        np.random.seed(42)
+        preset = SineGordonPDE()
+
+        # Check only 2D is supported
+        assert preset.metadata.supported_dimensions == [2]
+
+        # Should accept 2D
+        preset.validate_dimension(2)
+
+        # Should reject 1D and 3D
+        with pytest.raises(ValueError):
+            preset.validate_dimension(1)
+        with pytest.raises(ValueError):
+            preset.validate_dimension(3)
+
+    def test_dimension_2d_simulation(self):
+        """Test Sine-Gordon simulation in 2D."""
+        np.random.seed(42)
+        preset = SineGordonPDE()
+
+        # Create 2D grid and BCs
+        grid = create_grid_for_dimension(2, resolution=16)
+        bc = create_bc_for_dimension(2)
+
+        # Create PDE and initial state
+        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        state = preset.create_initial_state(grid, "random", {"amplitude": 0.5})
+
+        # Run short simulation
+        result = pde.solve(state, t_range=0.1, dt=0.01, solver="euler", tracker=None)
+
+        # Verify result
+        assert isinstance(result, FieldCollection)
+        check_result_finite(result, "sine-gordon", 2)

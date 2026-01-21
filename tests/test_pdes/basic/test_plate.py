@@ -9,6 +9,11 @@ from pde_sim.pdes import get_pde_preset, list_presets
 from pde_sim.pdes.basic.plate import PlatePDE
 
 from tests.conftest import run_short_simulation
+from tests.test_pdes.dimension_test_helpers import (
+    create_grid_for_dimension,
+    create_bc_for_dimension,
+    check_result_finite,
+)
 
 
 class TestPlatePDE:
@@ -82,3 +87,37 @@ class TestPlatePDE:
         assert np.isfinite(result[1].data).all()
         assert np.isfinite(result[2].data).all()
         assert config["preset"] == "plate"
+
+    @pytest.mark.parametrize("ndim", [1, 2])
+    def test_dimension_support(self, ndim: int):
+        """Test plate equation works in supported dimensions (1D and 2D)."""
+        np.random.seed(42)
+        preset = PlatePDE()
+
+        # Check dimension is supported
+        assert ndim in preset.metadata.supported_dimensions
+        preset.validate_dimension(ndim)
+
+        # Create grid and BCs - use non-periodic for plate equation
+        resolution = 16
+        grid = create_grid_for_dimension(ndim, resolution=resolution, periodic=False)
+        bc = create_bc_for_dimension(ndim, periodic=False)
+
+        # Create PDE and initial state
+        params = preset.get_default_parameters()
+        pde = preset.create_pde(params, bc, grid)
+        state = preset.create_initial_state(grid, "constant", {"value": -4.0}, parameters=params, bc=bc)
+
+        # Run short simulation
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
+
+        # Verify result
+        assert isinstance(result, FieldCollection)
+        check_result_finite(result, "plate", ndim)
+
+    def test_dimension_3d_not_supported(self):
+        """Test that plate rejects 3D (BC conversion issue)."""
+        preset = PlatePDE()
+        assert 3 not in preset.metadata.supported_dimensions
+        with pytest.raises(ValueError, match="does not support"):
+            preset.validate_dimension(3)

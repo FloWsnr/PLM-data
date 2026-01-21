@@ -75,3 +75,19 @@ class TestPotentialFlowDipolesPDE:
         for field in result:
             assert np.isfinite(field.data).all()
         assert config["preset"] == "potential-flow-dipoles"
+
+    def test_dimension_support_2d_only(self):
+        """Test that potential-flow-dipoles only supports 2D."""
+        preset = get_pde_preset("potential-flow-dipoles")
+
+        # Verify only 2D is supported
+        assert preset.metadata.supported_dimensions == [2]
+
+        # Should accept 2D
+        preset.validate_dimension(2)
+
+        # Should reject 1D and 3D
+        with pytest.raises(ValueError, match="does not support"):
+            preset.validate_dimension(1)
+        with pytest.raises(ValueError, match="does not support"):
+            preset.validate_dimension(3)

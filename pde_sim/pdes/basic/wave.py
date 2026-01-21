@@ -181,6 +181,7 @@ class InhomogeneousWavePDE(MultiFieldPDEPreset):
             num_fields=2,
             field_names=["u", "v"],
             reference="https://visualpde.com/basic-pdes/inhomogeneous-wave-equation",
+            supported_dimensions=[2],
         )
 
     def create_pde(

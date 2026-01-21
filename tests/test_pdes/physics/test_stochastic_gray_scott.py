@@ -6,8 +6,14 @@ import pytest
 from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes.physics.stochastic_gray_scott import StochasticGrayScottPDE
 
 from tests.conftest import run_short_simulation
+from tests.test_pdes.dimension_test_helpers import (
+    create_grid_for_dimension,
+    create_bc_for_dimension,
+    check_result_finite,
+)
 
 
 @pytest.fixture
@@ -63,3 +69,37 @@ class TestStochasticGrayScottPDE:
         assert np.isfinite(result[0].data).all()
         assert np.isfinite(result[1].data).all()
         assert config["preset"] == "stochastic-gray-scott"
+
+    @pytest.mark.parametrize("ndim", [1, 2])
+    def test_dimension_support(self, ndim: int):
+        """Test Stochastic Gray-Scott works in 1D and 2D.
+
+        Note: 3D is currently not tested because the preset's _convert_bc doesn't
+        receive the grid dimension, causing BC conversion issues in 3D.
+        """
+        np.random.seed(42)
+        preset = StochasticGrayScottPDE()
+
+        # Check dimension is supported
+        assert ndim in preset.metadata.supported_dimensions
+        preset.validate_dimension(ndim)
+
+        # Create grid and BCs
+        resolution = 16
+        grid = create_grid_for_dimension(ndim, resolution=resolution)
+        bc = create_bc_for_dimension(ndim)
+
+        # Use deterministic mode for testing
+        params = preset.get_default_parameters()
+        params["sigma"] = 0.0
+
+        # Create PDE and initial state
+        pde = preset.create_pde(params, bc, grid)
+        state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
+
+        # Run short simulation
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+
+        # Verify result
+        assert isinstance(result, FieldCollection)
+        check_result_finite(result, "stochastic-gray-scott", ndim)

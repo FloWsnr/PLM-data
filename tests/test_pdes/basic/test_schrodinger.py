@@ -10,6 +10,11 @@ from pde_sim.core.config import BoundaryConfig
 from pde_sim.pdes.basic.schrodinger import SchrodingerPDE
 
 from tests.conftest import run_short_simulation
+from tests.test_pdes.dimension_test_helpers import (
+    create_grid_for_dimension,
+    create_bc_for_dimension,
+    check_result_finite,
+)
 
 
 class TestSchrodingerPDE:
@@ -230,3 +235,29 @@ class TestSchrodingerPDE:
         assert "V" not in equations["u"]
         assert "V" not in equations["v"]
         assert "V(x,y)" not in equations
+
+    @pytest.mark.parametrize("ndim", [1, 2, 3])
+    def test_dimension_support(self, ndim: int):
+        """Test Schrodinger equation works in all supported dimensions."""
+        np.random.seed(42)
+        preset = SchrodingerPDE()
+
+        # Check dimension is supported
+        assert ndim in preset.metadata.supported_dimensions
+        preset.validate_dimension(ndim)
+
+        # Create grid and BCs - use non-periodic for Schrodinger (box)
+        resolution = 8 if ndim == 3 else 16
+        grid = create_grid_for_dimension(ndim, resolution=resolution, periodic=False)
+        bc = create_bc_for_dimension(ndim, periodic=False)
+
+        # Create PDE and initial state using random-uniform (works in all dimensions)
+        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
+
+        # Run short simulation
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
+
+        # Verify result
+        assert isinstance(result, FieldCollection)
+        check_result_finite(result, "schrodinger", ndim)

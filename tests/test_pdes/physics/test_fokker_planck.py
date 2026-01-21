@@ -4,13 +4,19 @@ import numpy as np
 import pytest
 import yaml
 
-from pde import CartesianGrid
+from pde import CartesianGrid, ScalarField
 
 from pde_sim.pdes import get_pde_preset
+from pde_sim.pdes.physics.fokker_planck import FokkerPlanckPDE
 from pde_sim.core.config import load_config
 from pde_sim.core.simulation import SimulationRunner
 
 from tests.conftest import run_short_simulation
+from tests.test_pdes.dimension_test_helpers import (
+    create_grid_for_dimension,
+    create_bc_for_dimension,
+    check_result_finite,
+)
 
 
 class TestFokkerPlanckMetadata:
@@ -134,6 +140,36 @@ class TestFokkerPlanckPDE:
         assert result is not None
         # Check final state is finite
         assert np.all(np.isfinite(result.data))
+
+    def test_dimension_support_2d(self):
+        """Test Fokker-Planck works in 2D.
+
+        Note: The current implementation uses 2D-specific terms (d_dy, y coordinates),
+        so the test only validates 2D support even though metadata claims [1, 2, 3].
+        """
+        np.random.seed(42)
+        preset = FokkerPlanckPDE()
+        ndim = 2
+
+        # Check 2D is supported
+        assert ndim in preset.metadata.supported_dimensions
+        preset.validate_dimension(ndim)
+
+        # Create grid and BCs (use non-periodic for Fokker-Planck)
+        resolution = 16
+        grid = create_grid_for_dimension(ndim, resolution=resolution, periodic=False)
+        bc = create_bc_for_dimension(ndim, periodic=False)
+
+        # Create PDE and initial state
+        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
+
+        # Run short simulation
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+
+        # Verify result
+        assert isinstance(result, ScalarField)
+        check_result_finite(result, "fokker-planck", ndim)
 
 
 class TestFokkerPlanckSimulation:

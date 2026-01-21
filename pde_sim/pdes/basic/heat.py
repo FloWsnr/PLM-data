@@ -132,6 +132,7 @@ class InhomogeneousHeatPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["T"],
             reference="https://visualpde.com/basic-pdes/inhomogeneous-heat-equation",
+            supported_dimensions=[2],
         )
 
     def create_pde(
@@ -237,6 +238,7 @@ class InhomogeneousDiffusionHeatPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["T"],
             reference="https://visualpde.com/basic-pdes/inhomogeneous-diffusion",
+            supported_dimensions=[2],
         )
 
     def create_pde(
@@ -392,6 +394,7 @@ class BlobDiffusionHeatPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["T"],
             reference="https://visualpde.com/basic-pdes/inhomogeneous-diffusion",
+            supported_dimensions=[2],
         )
 
     def create_pde(
