@@ -1,6 +1,6 @@
 # PDE Simulation Dataset Generator
 
-A modular Python framework for generating 2D PDE simulation trajectories using [py-pde](https://py-pde.readthedocs.io/), designed for training vision-language models.
+A modular Python framework for generating 1D/2D/3D PDE simulation trajectories using [py-pde](https://py-pde.readthedocs.io/), designed for training vision-language models.
 
 ## Features
 
@@ -74,25 +74,27 @@ init:                       # Initial condition
     width: 0.03
 
 solver: euler               # euler or rk4
-timesteps: 10000            # Number of timesteps
+t_end: 10000.0              # End time
 dt: 1.0                     # Time step size
-resolution: 128             # Grid resolution (128x128)
+resolution: [128, 128]      # Grid resolution (must be array)
+domain_size: [2.5, 2.5]     # Physical domain size (must be array)
 
-bc:                         # Boundary conditions
-  x: periodic
-  y: periodic
+bc:                         # Boundary conditions (use x-, x+, y-, y+)
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
 
 # Per-field boundary conditions (for multi-field PDEs)
 # bc:
-#   x: periodic             # Default for all fields
-#   y: periodic
+#   x-: periodic
+#   x+: periodic
+#   y-: neumann:0
+#   y+: neumann:0
 #   fields:                 # Per-field overrides
 #     omega:
-#       top: dirichlet:0
-#       bottom: dirichlet:0
-#     b:
-#       top: dirichlet:0
-#       bottom: neumann:0.08
+#       y-: dirichlet:0
+#       y+: dirichlet:0
 
 output:
   path: ./output            # Output directory
@@ -100,11 +102,9 @@ output:
   fields:                   # Fields to output with colormaps
     - u:viridis             # Field u with viridis colormap
     - v:plasma              # Field v with plasma colormap
-# Files are named: u_000000.png, v_000000.png, u_000001.png, ...
 # If fields is omitted, all fields are output with default colormap (turbo)
 
 seed: 123                   # Random seed (optional)
-domain_size: 2.5            # Physical domain size
 ```
 
 ## Available PDEs
@@ -213,6 +213,7 @@ class MyPDE(ScalarPDEPreset):
             ],
             num_fields=1,
             field_names=["u"],
+            supported_dimensions=[1, 2, 3],  # Required: which dimensions this PDE supports
         )
 
     def create_pde(self, parameters, bc, grid):
@@ -224,7 +225,9 @@ class MyPDE(ScalarPDEPreset):
 ```
 
 2. Import in the category's `__init__.py`
-3. Run `python -m pde_sim list` to verify
+3. Create a description file in `pde_sim/descriptions/{name}.md`
+4. Add tests in `tests/test_pdes/test_{category}.py`
+5. Run `python -m pde_sim list` to verify
 
 ## Testing
 

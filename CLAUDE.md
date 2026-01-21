@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PDE Simulation Dataset Generator - A modular Python framework for generating 2D PDE simulation trajectories using the `py-pde` library. Generates PNG frame sequences with JSON metadata for training vision-language models.
+PDE Simulation Dataset Generator - A modular Python framework for generating 1D/2D/3D PDE simulation trajectories using the `py-pde` library. Generates PNG frame sequences with JSON metadata for training vision-language models.
 
 ## Commands
 
@@ -88,12 +88,16 @@ class MyPDEPreset(ScalarPDEPreset):
     def metadata(self) -> PDEMetadata:
         return PDEMetadata(
             name="My PDE",
-            equation="∂u/∂t = ...",
-            parameters=[PDEParameter("D", "diffusion", 0.01, 1.0, 0.1)],
+            category="physics",
+            description="My custom PDE",
+            equations={"u": "D * laplace(u)"},
+            parameters=[PDEParameter("D", 1.0, "diffusion coefficient", 0.01, 10.0)],
+            num_fields=1,
             field_names=["u"],
+            supported_dimensions=[1, 2, 3],  # Required: specify which dimensions are supported
         )
 
-    def create_pde(self, parameters: dict, grid):
+    def create_pde(self, parameters: dict, bc, grid):
         # Return py-pde PDE instance
         ...
 ```
@@ -104,12 +108,32 @@ The result should be finite and not NaN or Inf.
 
 ## Configuration Format
 
-YAML configs include: `preset`, `parameters`, `init` (initial conditions), `solver` (euler/rk4), `timesteps`, `dt`, `resolution`, `bc` (boundary conditions), `output` settings.
+YAML configs include: `preset`, `parameters`, `init` (initial conditions), `solver` (euler/rk4), `t_end`, `dt`, `resolution`, `domain_size`, `bc` (boundary conditions), `output` settings.
+
+### Resolution and Domain Size
+
+Resolution and domain_size must be arrays matching the simulation dimensionality:
+
+```yaml
+# 1D simulation
+resolution: [128]
+domain_size: [10.0]
+
+# 2D simulation
+resolution: [128, 128]
+domain_size: [10.0, 10.0]
+
+# 3D simulation
+resolution: [64, 64, 64]
+domain_size: [10.0, 10.0, 10.0]
+```
 
 ### Boundary Conditions
 
-Always specify all 4 boundaries using py-pde notation:
-- `x-` (left), `x+` (right), `y-` (bottom), `y+` (top)
+Specify boundaries using py-pde notation. The required boundaries depend on dimensionality:
+- **1D**: `x-` (left), `x+` (right)
+- **2D**: `x-` (left), `x+` (right), `y-` (bottom), `y+` (top)
+- **3D**: `x-`, `x+`, `y-`, `y+`, `z-` (back), `z+` (front)
 
 Simple boundary conditions (same for all fields):
 ```yaml
