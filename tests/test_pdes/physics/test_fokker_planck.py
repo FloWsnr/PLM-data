@@ -219,6 +219,7 @@ class TestFokkerPlanckSimulation:
         final_state = trajectory[-1]  # Last frame
         assert np.all(np.isfinite(final_state))
 
+    @pytest.mark.filterwarnings("ignore:.*_make_error_synchronizer.*:DeprecationWarning")
     def test_probability_conservation(self, tmp_path):
         """Test that probability is approximately conserved during simulation.
 
@@ -276,6 +277,7 @@ class TestFokkerPlanckSimulation:
         relative_change = abs(final_total - initial_total) / max(initial_total, 1e-10)
         assert relative_change < 0.5  # Allow up to 50% change due to source term in equation
 
+    @pytest.mark.filterwarnings("ignore:.*_make_error_synchronizer.*:DeprecationWarning")
     def test_relaxation_toward_center(self, tmp_path):
         """Test that probability distribution moves toward potential center."""
         domain_size = 10.0
