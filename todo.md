@@ -1,71 +1,273 @@
-# Basic PDEs Analysis Status
+# PDE Systems and Configurations TODO
 
-| PDE | Config | Status | Notes |
-|-----|--------|--------|-------|
-| heat | basic/heat.yaml | OK | Diffusion of heat spots visible |
-| wave | basic/wave.yaml | GOOD | Clear wave propagation with expanding circular ripples |
-| wave-standing | basic/wave_standing.yaml | GOOD | Beautiful standing wave grid pattern with clear oscillations |
-| advection | basic/advection.yaml | GOOD | Blobs clearly moving/advecting across domain |
-| plate | basic/plate.yaml | OK | Starts nearly uniform, develops interesting vibration patterns (Chladni figures) |
-| schrodinger | basic/schrodinger.yaml | OK | Quantum grid pattern visible, stationary (expected behavior) |
-| inhomogeneous-heat | basic/inhomogeneous_heat.yaml | GOOD | Interesting checkerboard pattern evolving from heat sources |
-| inhomogeneous-wave | basic/inhomogeneous_wave.yaml | GOOD | Nice wave interference patterns with variable wave speed |
-| damped-wave | basic/damped_wave.yaml | GOOD | Waves propagate then damp nicely, visible dynamics |
-| inhomogeneous-diffusion-heat | basic/inhomogeneous_diffusion_heat.yaml | GOOD | Interesting spiral/radial diffusion patterns from varying diffusion |
+This document tracks PDE systems and parameter combinations that are mentioned in descriptions but not yet implemented, as well as completely new PDEs to consider.
 
-# Fluid PDEs Analysis Status
+---
 
-| PDE | Config | Status | Notes |
-|-----|--------|--------|-------|
-| navier-stokes | fluids/navier_stokes.yaml | GOOD | Kelvin-Helmholtz instability - shear layer rollup into cat's eye vortices, beautiful spiral mixing (shear-layer IC, domain=5, Re~375) |
-| potential-flow-dipoles | fluids/potential_flow_dipoles.yaml | GOOD | Clean dipole potential field (coolwarm) - blue sink (left), red source (right). Relaxes to steady state quickly. (domain=40, strength=2000, d=10, t_end=5, plot phi) |
-| potential-flow-images | fluids/potential_flow_images.yaml | GOOD | Symmetric sink pair (method of images) - two sinks visible with coolwarm colormap showing potential wells. (domain=40, strength=50, wall_x=0.5, t_end=5, plot phi) |
-| shallow-water | fluids/shallow_water.yaml | GOOD | Nice circular wave propagation from central perturbation |
-| thermal-convection | fluids/thermal_convection.yaml | GOOD | Custom PDEBase class enables per-field BCs. Heat flux at bottom creates rising thermal plumes - beautiful Rayleigh-Benard convection cells developing over time. (domain=500, nu=0.2, kappa=0.5, T_b=0.08, noise IC, t_end=300) |
-| vorticity | fluids/vorticity.yaml | OK | Vortex pair orbital dynamics - counter-rotating vortices orbit each other (domain_size=20, nu=0.01, offset y positions for rotation) |
-| vorticity-bounded | fluids/vorticity_bounded.yaml | GOOD | Oscillatory vorticity decay - checkerboard pattern (k=8) gradually fades over time showing viscous diffusion (nu=0.15, t_end=80) |
+## Part 1: Parameter Regimes & Configs Missing (Mentioned in Descriptions)
 
-# Biology PDEs Analysis Status
+### Gray-Scott (Currently 12 configs, but 13+ regimes exist)
+The descriptions mention many more behavioral regimes:
+- [ ] **U-skate world** - Complex glider-like patterns
+- [ ] **Pulsating spots** - Oscillating localized structures (partially covered)
+- [ ] **Finger patterns** - Elongated growth structures
+- [ ] **Wave-dominated** regimes with different wavelengths
+- [ ] **Mitosis** - Self-replicating spots
 
-| PDE | Config | Status | Notes |
-|-----|--------|--------|-------|
-| bacteria-advection | biology/bacteria_advection.yaml | WEAK | Advection visible at edges but mostly uniform - needs stronger initial condition |
-| bistable-allen-cahn | biology/bistable_allen_cahn.yaml | GOOD | Three localized spots sharpening over time - bistable/Allee effect visible |
-| brusselator | biology/brusselator.yaml | GOOD | Beautiful Turing patterns - spots from noise |
-| cross-diffusion-schnakenberg | biology/cross_diffusion_schnakenberg.yaml | GOOD | Beautiful labyrinthine Turing patterns - b=1 enables pattern formation (b=2.5 was stable/uniform) |
-| cyclic-competition | biology/cyclic_competition.yaml | GOOD | Beautiful spiral wave patterns from noise - rock-paper-scissors dynamics |
-| cyclic-competition-wave | biology/cyclic_competition_wave.yaml | GOOD | Edge invasion front with chaotic wave dynamics spreading |
-| fisher-kpp | biology/fisher_kpp.yaml | OK | Population wave spreads correctly but ends uniform (expected saturation) |
-| fitzhugh-nagumo | biology/fitzhugh_nagumo.yaml | GOOD | Excellent Turing spot patterns evolving from noise to organized squares |
-| fitzhugh-nagumo-3 | biology/fitzhugh_nagumo_3.yaml | GOOD | Beautiful tile/grid pattern from seed - pattern-oscillation competition |
-| gierer-meinhardt | biology/gierer_meinhardt.yaml | GOOD | Beautiful spot patterns forming quasi-hexagonal lattice |
-| gierer-meinhardt-stripes | biology/gierer_meinhardt_stripes.yaml | GOOD | Labyrinthine stripe patterns (different from spot pattern) |
-| harsh-environment | biology/harsh_environment.yaml | OK | Population spreads from seeds with harsh corner boundary - ends uniform |
-| heterogeneous-gierer-meinhardt | biology/heterogeneous_gierer_meinhardt.yaml | GOOD | Beautiful spot/stripe patterns from spatial heterogeneity |
-| hyperbolic-brusselator | biology/hyperbolic_brusselator.yaml | GOOD | Beautiful Turing wave patterns - labyrinthine spots/stripes. Fixed Dv=1 (was 8) to achieve Du>Dv required for Turing wave instability |
-| immunotherapy | biology/immunotherapy.yaml | GOOD | Beautiful Turing labyrinthine patterns - tumor islands (teal) with cleared regions (purple). Used Visual PDE params: Du=10, Dv=0.1 (100:1 ratio), domain=50, s_u=0.02, noise=0.3. Shows spatial tumor heterogeneity from immune-mediated Turing instability |
-| keller-segel | biology/keller_segel.yaml | GOOD | Chemotaxis aggregation - spots and labyrinthine patterns |
-| klausmeier | biology/klausmeier.yaml | GOOD | Beautiful banded vegetation patterns (tiger bush stripes) |
-| klausmeier-topography | biology/klausmeier_topography.yaml | OK | Vegetation modulated by hills topography - higher vegetation in valleys (water accumulation), lower at peaks. Model differs from standard Klausmeier - shows terrain-following rather than stripe patterns. (V=30, amplitude=0.8, a=1.2, m=0.45, 2x2 hills), still not super big differences |
-| schnakenberg | biology/schnakenberg.yaml | GOOD | Beautiful hexagonal spot patterns from Turing instability |
+### Gierer-Meinhardt
+- [ ] Higher saturation constant K > 0.003 (explore intermediate K values)
+- [ ] Stripe-to-spot transition systematic exploration
+- [ ] **GM with source term** - External morphogen production
 
-# Physics PDEs Analysis Status
+### FitzHugh-Nagumo
+- [ ] **Driven/forced variants** - Periodic stimulation
+- [ ] **Turing-Hopf boundary** - Systematic exploration
+- [ ] **Excitable vs oscillatory** transition configs
 
-| PDE | Config | Status | Notes |
-|-----|--------|--------|-------|
-| bistable-advection | physics/bistable_advection.yaml | GOOD | Clear invasion front propagation - yellow (invaded) expands across domain. Flow-assisted invasion with a=0.3, V=0.3, D=0.1 |
-| burgers | physics/burgers.yaml | GOOD | Visible wave steepening and shock propagation - asymmetric profile with steep front, diffuse back (amplitude=2.0, epsilon=0.5) |
-| cahn-hilliard | physics/cahn_hilliard.yaml | GOOD | Beautiful phase separation from noise to meandering domains |
-| complex-ginzburg-landau | physics/complex_ginzburg_landau.yaml | GOOD | Excellent spiral wave chaos and defect dynamics |
-| duffing | physics/duffing.yaml | GOOD | Coupled oscillator domain formation from noise |
-| gray-scott | physics/gray_scott.yaml | GOOD | Beautiful labyrinthine pattern growth from single seed - classic self-replication |
-| inviscid-burgers | physics/inviscid_burgers_shock_interaction.yaml | GOOD | Sharp shock formation from Gaussian pulse - front steepens into discontinuity, stretched tail behind (amplitude=1.5, epsilon=0.01) |
-| kuramoto-sivashinsky | physics/kuramoto_sivashinsky.yaml | OK | Chaotic evolution but low resolution (64x64), looks noisy |
-| lorenz | physics/lorenz.yaml | GOOD | Coupled Lorenz oscillators - synchronized arrow dynamics evolving |
-| nonlinear-schrodinger | physics/nonlinear_schrodinger.yaml | GOOD | Soliton propagation maintaining shape across domain |
-| perona-malik | physics/perona_malik.yaml | GOOD | Edge-preserving diffusion - checkerboard smoothing with sharp boundaries |
-| stochastic-gray-scott | physics/stochastic_gray_scott.yaml | GOOD | Stochastic effects visible - noisy irregular boundaries from multiplicative noise |
-| superlattice | physics/superlattice.yaml | GOOD | Beautiful coupled spot patterns - red cores with white halos on blue |
-| swift-hohenberg | physics/swift_hohenberg.yaml | GOOD | Stunning labyrinthine stripe patterns from noise |
-| swift-hohenberg-advection | physics/swift_hohenberg_advection.yaml | GOOD | Beautiful labyrinthine stripes evolving under advection (r=0.3 supercritical, a=0 stripes, V=0.6 diagonal flow) |
-| van-der-pol | physics/van_der_pol.yaml | GOOD | Beautiful domain coarsening from noise - chaotic phase patterns |
+### Schnakenberg
+- [ ] **Turing-Hopf coexistence** boundary exploration
+- [ ] Gradient-driven Schnakenberg (like heterogeneous GM)
+
+### Cahn-Hilliard
+- [ ] Faster dynamics with r increased by 1-2 orders of magnitude
+- [ ] **Nucleation dynamics** - Crystal formation scenarios
+- [ ] **Grain boundary motion** configurations
+
+### Bistable Allen-Cahn
+- [ ] Critical a=0.5 wave direction reversal systematic study
+- [ ] **Allee effect** spatial structure exploration
+
+### Keller-Segel
+- [ ] Chemotaxis-driven blow-up vs saturation regimes
+- [ ] Population heterogeneity configurations
+
+### Complex Ginzburg-Landau
+- [ ] **Benjamin-Feir instability** systematic exploration
+- [ ] Stable vs unstable wave regime transitions
+- [ ] More dispersive regimes
+
+### Nonlinear Schrodinger
+- [ ] **Dark solitons** (defocusing, kappa<0) - currently only bright solitons
+- [ ] **Two-soliton collision** dynamics
+- [ ] **Multi-soliton interactions** and soliton fusion
+
+### Swift-Hohenberg
+- [ ] **Snaking diagrams** - Localised structure bifurcations
+- [ ] **Multi-bump localised solutions**
+- [ ] **Breathing/pulsating** localised patterns
+- [ ] Hexagon/square/stripe selection via parameter variation
+
+### Kuramoto-Sivashinsky
+- [ ] **Period-doubling route to chaos** systematic exploration
+- [ ] Domain size effects on attractor dimension
+
+### Burgers/Inviscid Burgers
+- [ ] **Transonic** (mixed subsonic-supersonic) configurations
+- [ ] External forcing or periodic driving terms
+- [ ] Gap between inviscid shocks and smooth viscous waves
+
+### Duffing
+- [ ] **Softening springs** (beta < 0) - only hardening/double-well explored
+- [ ] **Forced-damped variants**
+- [ ] Bifurcation cascades systematic study
+
+### Lorenz
+- [ ] **Rho parameter transitions** through chaos
+- [ ] Different initial condition basins of attraction
+
+### Shallow Water
+- [ ] **Rossby number** systematic studies
+- [ ] **Tsunami/bore propagation** with realistic topography
+- [ ] **Wind stress forcing**
+- [ ] Geostrophic balance (high Coriolis) exploration
+
+### Navier-Stokes
+- [ ] **High-Re turbulent regime** configurations
+- [ ] **Temperature-dependent viscosity** (thermal effects)
+- [ ] Other obstacle geometries: airfoil, multiple cylinders
+- [ ] **Poiseuille flow** pressure-driven channel (mentioned but limited)
+
+### Thermal Convection
+- [ ] **Ra above/below critical** (~1707) systematic exploration
+- [ ] **Durham convection** variant with stochastic forcing
+
+### Vorticity-Bounded (only 1 config!)
+- [ ] Different boundary geometries
+- [ ] Viscosity range exploration
+- [ ] Rotation rate variations
+- [ ] Wavenumber studies
+
+---
+
+## Part 2: Related Systems Mentioned But Not Implemented
+
+### Integrable Systems / Soliton Equations
+- [x] **Korteweg-de Vries (KdV)** - Classic 1D soliton equation ✅ IMPLEMENTED
+- [x] **Sine-Gordon equation** - Topological kink solitons ✅ IMPLEMENTED
+- [ ] **Modified KdV** - Cubic nonlinearity variant
+
+### Ecology / Epidemiology
+- [x] **SIR spatial epidemic model** - Reaction-diffusion epidemic ✅ IMPLEMENTED
+- [x] **Lotka-Volterra predator-prey** (2-species with diffusion) ✅ IMPLEMENTED
+- [ ] **4+ species competition** - Extended rock-paper-scissors
+  - More complex cyclic competition dynamics
+
+### Stochastic/Statistical PDEs
+- [x] **Fokker-Planck equation** - Probability diffusion ✅ IMPLEMENTED
+- [ ] **Stochastic reaction-diffusion** (beyond Gray-Scott)
+  - Noise-driven pattern formation for other systems
+  - Stochastic Turing patterns
+
+### Materials Science / Mechanics
+- [ ] **Viscoelastic wave equation** - Memory effects in materials
+  - Kelvin-Voigt or Maxwell models
+  - Frequency-dependent attenuation
+
+- [ ] **Porous medium equation** - Nonlinear diffusion
+  - du/dt = Laplacian(u^m), m > 1
+  - Gas flow through porous media
+  - Finite propagation speed (unlike heat equation)
+  - References: [Wikipedia](https://en.wikipedia.org/wiki/Porous_medium_equation)
+
+### Quantum Systems
+- [ ] **Gross-Pitaevskii equation** - Bose-Einstein condensates
+  - Similar to NLS but with trap potential
+  - Vortex lattice formation
+  - References: [COMSOL Model](https://www.comsol.com/model/grosspitaevskii-equation-for-boseeinstein-condensation-52221)
+
+- [ ] **Finite potential well** - Schrodinger with barriers
+  - Quantum tunneling configurations
+  - Multiple well systems
+
+### Fluid Mechanics Extensions
+- [ ] **Boussinesq equations** (water waves version)
+  - 2D shallow water with dispersion
+  - Soliton interactions
+  - References: [Cambridge Paper](https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/abs/twodimensional-boussinesq-equation-for-water-waves-and-some-of-its-solutions/7B7EB11441FA5169186D3E2204891BD7)
+
+- [ ] **Compressible Navier-Stokes**
+  - Shock dynamics
+  - Aerodynamics applications
+
+- [ ] **Kelvin-Helmholtz instability** - Shear layer roll-up
+
+- [ ] **Rayleigh-Taylor instability** - Density stratification
+
+### Coupled Systems
+- [ ] **Coupled CGL** - Cross-phase modulation
+- [ ] **Coupled NLS** - Multi-component waves (fiber optics)
+- [ ] **Coupled Brusselator** - Multiple oscillating systems
+- [ ] **Three-way pattern coupling** - Beyond superlattice
+
+### Image Processing / Computer Vision
+- [ ] **Total Variation (TV) denoising** - ROF model
+- [ ] **Level-set methods** - Interface tracking
+- [ ] **Active contours** - Segmentation PDEs
+
+---
+
+## Part 3: New PDEs from Literature & Benchmarks
+
+### From PDEBench (NeurIPS 2022)
+Standard benchmark PDEs for ML:
+- [x] Diffusion-reaction (have as various reaction-diffusion)
+- [x] Compressible Navier-Stokes (partially - have incompressible)
+- [x] Shallow water (have)
+- [ ] **Darcy flow** - Porous media flow
+  - -div(K grad p) = f
+  - Used in groundwater modeling
+
+### From APEBench (2024)
+Autoregressive emulator benchmarks:
+- [x] Most basic PDEs covered
+
+### From "The Well" (NeurIPS 2024)
+Large-scale physics simulation collection - check for gaps
+
+### Classic PDEs Still Missing
+- [ ] **Biharmonic equation** - Laplacian^2 u = f
+  - Plate bending statics (have dynamic plate)
+  - Stokes stream function
+
+- [ ] **Eikonal equation** - |grad u| = f
+  - Wave front propagation
+  - Fast marching methods
+
+- [ ] **Helmholtz equation** - Laplacian u + k^2 u = f
+  - Acoustic/electromagnetic waves
+  - Scattering problems
+
+- [ ] **Poisson-Boltzmann** - Electrostatics in solution
+  - Biomolecular applications
+
+- [ ] **Phase-field crystal** - Atomic-scale pattern formation
+  - Crystallization dynamics
+  - Grain boundaries
+
+- [ ] **Convective Cahn-Hilliard** - Phase separation with flow
+  - Spinodal decomposition in moving fluid
+
+---
+
+## Part 4: Priority Implementation List
+
+### High Priority (Fundamental/Commonly Requested)
+✅ All high priority PDEs implemented:
+- [x] **KdV equation** - Canonical soliton system
+- [x] **Sine-Gordon** - Topological solitons
+- [x] **SIR epidemic** - High practical relevance
+- [x] **Lotka-Volterra predator-prey** - Fundamental ecology
+- [x] **Fokker-Planck** - Stochastic processes
+
+### Medium Priority (Extends Coverage)
+6. **Porous medium equation** - Nonlinear diffusion
+7. **Gross-Pitaevskii** - Quantum systems
+8. **Darcy flow** - Porous media (PDEBench)
+9. **Helmholtz equation** - Wave scattering
+10. **Phase-field crystal** - Materials
+
+### Lower Priority (Specialized)
+11. **Boussinesq water waves**
+12. **Viscoelastic wave**
+13. **Compressible NS**
+14. **Coupled CGL/NLS**
+15. **TV denoising / Level sets**
+
+---
+
+## Part 5: Config Expansion for Existing PDEs
+
+### Presets with Minimal Coverage (< 4 configs)
+| Preset | Current Configs | Suggested Additions |
+|--------|-----------------|---------------------|
+| vorticity-bounded | 1 | +5 (viscosity sweep, rotation, wavenumbers) |
+
+### Well-Covered but Could Expand
+| Preset | Current Configs | Gap Areas |
+|--------|-----------------|-----------|
+| gray-scott | 12 | U-skate, mitosis, more chaos regimes |
+| nonlinear-schrodinger | 6 | Dark solitons, multi-soliton |
+| swift-hohenberg | 5 | Localised structures, snaking |
+| complex-ginzburg-landau | 5 | Benjamin-Feir, more chaos |
+
+---
+
+## References
+
+### Benchmark Datasets
+- [PDEBench](https://github.com/pdebench/PDEBench) - NeurIPS 2022 benchmark
+- [APEBench](https://github.com/tum-pbs/apebench) - JAX-based autoregressive benchmark
+- [The Well](https://arxiv.org/abs/2410.01108) - NeurIPS 2024 large-scale collection
+
+### Interactive Tools
+- [VisualPDE](https://visualpde.com/) - Browser-based PDE explorer
+- [COMSOL Models](https://www.comsol.com/models) - Application library
+
+### Key Papers
+- Turing patterns: [Science 2010](https://www.science.org/doi/10.1126/science.1179047)
+- Reaction-diffusion review: [ScienceDirect 2024](https://www.sciencedirect.com/science/article/pii/S1571064524001465)
+- Epidemic PDEs: [PMC Review](https://pmc.ncbi.nlm.nih.gov/articles/PMC8671691/)
+
+---
+
+*Last updated: 2026-01-21*

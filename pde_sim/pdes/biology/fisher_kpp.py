@@ -70,6 +70,7 @@ class FisherKPPPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["u"],
             reference="Fisher (1937), Kolmogorov et al. (1937)",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

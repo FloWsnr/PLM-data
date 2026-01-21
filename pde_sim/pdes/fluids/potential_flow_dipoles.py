@@ -87,6 +87,7 @@ class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
             num_fields=1,
             field_names=["phi"],
             reference="Potential flow theory with time-dependent sources",
+            supported_dimensions=[2],
         )
 
     def create_pde(

@@ -19,7 +19,7 @@ solver: euler
 backend: numpy
 adaptive: true
 dt: 0.005
-resolution: 128
+resolution: [128, 128]
 bc:
   x-: neumann:0
   x+: neumann:0
@@ -32,5 +32,5 @@ bc:
     v:
       y-: dirichlet:0
       y+: dirichlet:0
-domain_size: 400.0
+domain_size: [400.0, 400.0]
 t_end: 45.0

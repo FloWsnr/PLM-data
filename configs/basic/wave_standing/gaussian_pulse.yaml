@@ -11,8 +11,8 @@ init:
     background: 0.0
 solver: euler
 dt: 0.002
-resolution: 128
-domain_size: 100.0
+resolution: [128, 128]
+domain_size: [100.0, 100.0]
 t_end: 60.0
 timesteps: 200
 bc:

@@ -13,11 +13,11 @@ solver: rk4
 backend: numba
 adaptive: true
 dt: 0.0001
-resolution: 200
+resolution: [200, 200]
 bc:
   x-: dirichlet:0
   x+: dirichlet:0
   y-: dirichlet:0
   y+: dirichlet:0
-domain_size: 100.0
+domain_size: [100.0, 100.0]
 t_end: 12.0

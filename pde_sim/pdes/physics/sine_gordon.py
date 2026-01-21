@@ -80,6 +80,7 @@ class SineGordonPDE(MultiFieldPDEPreset):
             num_fields=2,
             field_names=["phi", "psi"],
             reference="Perring & Skyrme (1962), Scott (1969)",
+            supported_dimensions=[2],
         )
 
     def create_pde(

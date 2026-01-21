@@ -29,7 +29,9 @@ class TestLoadConfig:
         assert config.solver == "euler"
         assert config.t_end == 0.01  # 100 * 0.0001
         assert config.dt == 0.0001
-        assert config.resolution == 32
+        # Resolution is now always a list
+        assert config.resolution == [32, 32]
+        assert config.ndim == 2
         assert config.bc.x_minus == "periodic"
         assert config.bc.y_minus == "periodic"
         assert config.seed == 42
@@ -41,7 +43,7 @@ class TestLoadConfig:
             "init": {"type": "random-uniform"},
             "t_end": 0.1,  # 100 * 0.001
             "dt": 0.001,
-            "resolution": 64,
+            "resolution": [64, 64],
         }
 
         config_path = tmp_path / "minimal.yaml"
@@ -54,9 +56,10 @@ class TestLoadConfig:
         assert config.parameters == {}
         assert config.solver == "euler"
         assert config.bc.x_minus == "periodic"
-        assert config.bc.y_minus == "periodic"
+        assert config.bc.y_minus == "periodic"  # Default for 2D
         assert config.seed is None
-        assert config.domain_size == 1.0
+        assert config.domain_size == [1.0, 1.0]  # Now a list
+        assert config.resolution == [64, 64]
 
     def test_load_config_file_not_found(self, tmp_path):
         """Test that FileNotFoundError is raised for missing file."""
@@ -92,7 +95,7 @@ class TestConfigToDict:
         assert config_dict["init"]["type"] == "gaussian-blobs"
         assert config_dict["solver"] == "euler"
         assert config_dict["t_end"] == 0.01  # 100 * 0.0001
-        assert config_dict["resolution"] == 32
+        assert config_dict["resolution"] == [32, 32]  # Now a list
 
 
 class TestSimulationConfig:
@@ -107,7 +110,7 @@ class TestSimulationConfig:
             solver="euler",
             t_end=0.1,  # 100 * 0.001
             dt=0.001,
-            resolution=64,
+            resolution=[64, 64],  # Now a list
             bc=BoundaryConfig(
                 x_minus="periodic",
                 x_plus="periodic",
@@ -118,7 +121,8 @@ class TestSimulationConfig:
         )
 
         assert config.preset == "heat"
-        assert config.resolution == 64
+        assert config.resolution == [64, 64]
+        assert config.ndim == 2
         assert config.seed is None
 
 
@@ -126,12 +130,18 @@ class TestBoundaryConfig:
     """Tests for BoundaryConfig dataclass."""
 
     def test_default_values(self):
-        """Test that BoundaryConfig has correct defaults."""
+        """Test that BoundaryConfig has correct defaults.
+
+        Note: y and z boundaries default to None because they're only
+        required for 2D+ and 3D simulations respectively.
+        """
         bc = BoundaryConfig()
         assert bc.x_minus == "periodic"
         assert bc.x_plus == "periodic"
-        assert bc.y_minus == "periodic"
-        assert bc.y_plus == "periodic"
+        assert bc.y_minus is None  # Not required for 1D
+        assert bc.y_plus is None
+        assert bc.z_minus is None  # Not required for 1D/2D
+        assert bc.z_plus is None
 
     def test_custom_values(self):
         """Test BoundaryConfig with custom values."""
@@ -206,7 +216,7 @@ class TestPerFieldBCConfigParsing:
             "init": {"type": "default"},
             "t_end": 0.1,
             "dt": 0.001,
-            "resolution": 32,
+            "resolution": [32, 32],
             "bc": {
                 "x-": "periodic",
                 "x+": "periodic",
@@ -241,7 +251,7 @@ class TestPerFieldBCConfigParsing:
             "init": {"type": "default"},
             "t_end": 0.1,
             "dt": 0.001,
-            "resolution": 32,
+            "resolution": [32, 32],
             "bc": {
                 "x-": "periodic",
                 "x+": "periodic",
@@ -344,7 +354,7 @@ class TestMasterConfig:
             "init": {"type": "random-uniform"},
             "t_end": 0.1,
             "dt": 0.001,
-            "resolution": 64,
+            "resolution": [64, 64],
         }
         config_path = tmp_path / "individual.yaml"
         with open(config_path, "w") as f:
@@ -375,7 +385,7 @@ class TestMasterConfig:
             "init": {"type": "random-uniform"},
             "t_end": 0.1,
             "dt": 0.001,
-            "resolution": 64,
+            "resolution": [64, 64],
             "output": {"num_frames": 50},  # Override just num_frames
             "seed": 123,  # Override seed
         }
@@ -398,7 +408,7 @@ class TestMasterConfig:
             "init": {"type": "random-uniform"},
             "t_end": 0.1,
             "dt": 0.001,
-            "resolution": 64,
+            "resolution": [64, 64],
         }
         config_path = tmp_path / "individual.yaml"
         with open(config_path, "w") as f:
@@ -429,7 +439,7 @@ class TestMasterConfig:
             "init": {"type": "random-uniform"},
             "t_end": 0.1,
             "dt": 0.001,
-            "resolution": 64,
+            "resolution": [64, 64],
         }
         config_path = nested_dir / "individual.yaml"
         with open(config_path, "w") as f:

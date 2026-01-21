@@ -14,8 +14,8 @@ init:
     seed: 777
 solver: euler
 dt: 0.005
-resolution: 200
-domain_size: 100.0
+resolution: [200, 200]
+domain_size: [100.0, 100.0]
 t_end: 40.0
 timesteps: 100
 bc:

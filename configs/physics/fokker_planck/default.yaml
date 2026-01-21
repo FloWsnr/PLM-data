@@ -19,7 +19,7 @@ solver: rk4
 backend: numba
 adaptive: true
 dt: 0.005
-resolution: 128
+resolution: [128, 128]
 dimension: 2
 
 bc:
@@ -28,5 +28,5 @@ bc:
   y-: neumann:0
   y+: neumann:0
 
-domain_size: 10.0
+domain_size: [10.0, 10.0]
 t_end: 20.0

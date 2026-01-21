@@ -72,28 +72,50 @@ def run_short_simulation(
     # Get preset
     pde_preset = get_pde_preset(preset_name)
 
-    # Create grid with reduced resolution
-    domain_size = config.get("domain_size", 1.0)
+    # Get domain size - can be scalar or list
+    domain_size_raw = config.get("domain_size", 1.0)
+
+    # Get resolution from config to determine dimensionality
+    config_resolution = config.get("resolution", [32, 32])
+    if isinstance(config_resolution, int):
+        config_resolution = [config_resolution, config_resolution]
+    ndim = len(config_resolution)
+
+    # Handle domain_size
+    if isinstance(domain_size_raw, (int, float)):
+        domain_size = [float(domain_size_raw)] * ndim
+    else:
+        domain_size = [float(d) for d in domain_size_raw]
+
     bc_raw = config.get("bc", {})
 
     # Parse BC config to determine periodicity
     bc_config = BoundaryConfig(
         x_minus=bc_raw.get("x-", "periodic"),
         x_plus=bc_raw.get("x+", "periodic"),
-        y_minus=bc_raw.get("y-", "periodic"),
-        y_plus=bc_raw.get("y+", "periodic"),
+        y_minus=bc_raw.get("y-") if ndim >= 2 else None,
+        y_plus=bc_raw.get("y+") if ndim >= 2 else None,
         fields=bc_raw.get("fields"),
     )
 
     # Determine if grid should be periodic based on BC
     periodic_x = bc_config.x_minus == "periodic" and bc_config.x_plus == "periodic"
-    periodic_y = bc_config.y_minus == "periodic" and bc_config.y_plus == "periodic"
 
-    grid = CartesianGrid(
-        bounds=[[0, domain_size], [0, domain_size]],
-        shape=[resolution, resolution],
-        periodic=[periodic_x, periodic_y],
-    )
+    if ndim == 1:
+        # 1D grid
+        grid = CartesianGrid(
+            bounds=[[0, domain_size[0]]],
+            shape=[resolution],
+            periodic=[periodic_x],
+        )
+    else:
+        # 2D grid
+        periodic_y = bc_config.y_minus == "periodic" and bc_config.y_plus == "periodic"
+        grid = CartesianGrid(
+            bounds=[[0, domain_size[0]], [0, domain_size[1]]],
+            shape=[resolution, resolution],
+            periodic=[periodic_x, periodic_y],
+        )
 
     # Get parameters from config
     params = config.get("parameters", pde_preset.get_default_parameters())
@@ -202,7 +224,7 @@ def sample_config_dict():
         "solver": "euler",
         "t_end": 0.01,  # 100 * 0.0001
         "dt": 0.0001,
-        "resolution": 32,
+        "resolution": [32, 32],
         "bc": {
             "x-": "periodic",
             "x+": "periodic",
@@ -214,7 +236,7 @@ def sample_config_dict():
             "num_frames": 10,
         },
         "seed": 42,
-        "domain_size": 1.0,
+        "domain_size": [1.0, 1.0],
     }
 
 

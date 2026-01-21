@@ -115,6 +115,7 @@ class SuperlatticePDE(MultiFieldPDEPreset):
             num_fields=4,
             field_names=["u1", "v1", "u2", "v2"],
             reference="De Wit et al. (1999) Simple and superlattice Turing patterns",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

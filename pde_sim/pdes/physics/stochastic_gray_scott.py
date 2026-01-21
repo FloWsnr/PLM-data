@@ -257,6 +257,7 @@ class StochasticGrayScottPDE(MultiFieldPDEPreset):
             num_fields=2,
             field_names=["u", "v"],
             reference="Biancalani et al. (2010) Stochastic Turing patterns",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

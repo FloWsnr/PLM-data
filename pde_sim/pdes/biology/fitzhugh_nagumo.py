@@ -78,6 +78,7 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
             num_fields=2,
             field_names=["u", "v"],
             reference="FitzHugh (1961), Nagumo et al. (1962)",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

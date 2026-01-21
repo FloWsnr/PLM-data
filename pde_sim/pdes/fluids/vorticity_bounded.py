@@ -85,6 +85,7 @@ class VorticityBoundedPDE(MultiFieldPDEPreset):
             num_fields=3,
             field_names=["omega", "psi", "S"],
             reference="VisualPDE NavierStokesVorticityBounded",
+            supported_dimensions=[2],
         )
 
     def get_default_bc(self) -> BoundaryConfig:

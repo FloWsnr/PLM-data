@@ -12,11 +12,11 @@ solver: euler
 backend: numba
 adaptive: true
 dt: 0.01
-resolution: 213
+resolution: [213, 213]
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-domain_size: 320.0
+domain_size: [320.0, 320.0]
 t_end: 200.0

@@ -10,10 +10,10 @@ backend: numba
 adaptive: false
 dt: 0.001
 t_end: 60.0
-resolution: 192
+resolution: [192, 192]
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: 100
+domain_size: [100, 100]

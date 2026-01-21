@@ -2,8 +2,8 @@ preset: vorticity-bounded
 solver: euler
 dt: 0.001
 t_end: 80.0
-resolution: 128
-domain_size: 100.0
+resolution: [128, 128]
+domain_size: [100.0, 100.0]
 bc:
   x-: periodic
   x+: periodic

@@ -97,6 +97,7 @@ class LotkaVolterraPDE(MultiFieldPDEPreset):
             num_fields=2,
             field_names=["u", "v"],
             reference="Lotka (1925), Volterra (1926), Murray (2002)",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

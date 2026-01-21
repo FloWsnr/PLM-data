@@ -96,6 +96,7 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
             num_fields=3,
             field_names=["h", "u", "v"],
             reference="Shallow water equations (Saint-Venant)",
+            supported_dimensions=[2],
         )
 
     def create_pde(

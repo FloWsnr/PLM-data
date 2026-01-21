@@ -74,6 +74,7 @@ class NonlinearSchrodingerPDE(MultiFieldPDEPreset):
             num_fields=2,
             field_names=["u", "v"],
             reference="Zakharov & Shabat (1972)",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

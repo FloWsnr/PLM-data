@@ -10,8 +10,8 @@ solver: scipy
 backend: numba
 adaptive: true
 dt: 0.1
-resolution: 64
-domain_size: 150
+resolution: [64, 64]
+domain_size: [150, 150]
 t_end: 30.0
 bc:
   x-: periodic

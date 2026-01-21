@@ -152,7 +152,7 @@ class TestFokkerPlanckSimulation:
             "backend": "numpy",
             "t_end": 1.0,
             "dt": 0.01,
-            "resolution": 32,
+            "resolution": [32, 32],
             "bc": {
                 "x-": "neumann:0",
                 "x+": "neumann:0",
@@ -161,7 +161,7 @@ class TestFokkerPlanckSimulation:
             },
             "output": {"path": str(tmp_path), "num_frames": 11, "format": "numpy"},
             "seed": 42,
-            "domain_size": 10.0,
+            "domain_size": [10.0, 10.0],
         }
 
         config_path = tmp_path / "config.yaml"
@@ -201,7 +201,7 @@ class TestFokkerPlanckSimulation:
             "backend": "numpy",
             "t_end": 2.0,
             "dt": 0.005,
-            "resolution": 64,
+            "resolution": [64, 64],
             "bc": {
                 "x-": "neumann:0",
                 "x+": "neumann:0",
@@ -210,7 +210,7 @@ class TestFokkerPlanckSimulation:
             },
             "output": {"path": str(tmp_path), "num_frames": 5, "format": "numpy"},
             "seed": 42,
-            "domain_size": 20.0,  # Larger domain to keep probability away from boundaries
+            "domain_size": [20.0, 20.0],  # Larger domain to keep probability away from boundaries
         }
 
         config_path = tmp_path / "config.yaml"
@@ -256,7 +256,7 @@ class TestFokkerPlanckSimulation:
             "backend": "numpy",
             "t_end": 5.0,
             "dt": 0.005,
-            "resolution": resolution,
+            "resolution": [resolution, resolution],
             "bc": {
                 "x-": "neumann:0",
                 "x+": "neumann:0",
@@ -265,7 +265,7 @@ class TestFokkerPlanckSimulation:
             },
             "output": {"path": str(tmp_path), "num_frames": 3, "format": "numpy"},
             "seed": 42,
-            "domain_size": domain_size,
+            "domain_size": [domain_size, domain_size],
         }
 
         config_path = tmp_path / "config.yaml"

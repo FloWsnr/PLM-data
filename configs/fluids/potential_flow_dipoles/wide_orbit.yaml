@@ -13,11 +13,11 @@ solver: euler
 backend: numpy
 adaptive: true
 dt: 0.01
-resolution: 256
+resolution: [256, 256]
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: 50.0
+domain_size: [50.0, 50.0]
 t_end: 20.94

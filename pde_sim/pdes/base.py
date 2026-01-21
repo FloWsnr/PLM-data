@@ -45,6 +45,8 @@ class PDEMetadata:
         num_fields: Number of fields in the system.
         field_names: Names of the fields.
         reference: Optional reference to literature or documentation.
+        supported_dimensions: List of supported spatial dimensions (1, 2, 3).
+            Must be explicitly set by each PDE preset.
     """
 
     name: str
@@ -55,6 +57,7 @@ class PDEMetadata:
     num_fields: int
     field_names: list[str]
     reference: str | None = None
+    supported_dimensions: list[int] = field(default_factory=list)  # Must be explicitly set
 
 
 class PDEPreset(ABC):
@@ -135,6 +138,27 @@ class PDEPreset(ABC):
                 if p.max_value is not None and val > p.max_value:
                     raise ValueError(f"{p.name} must be <= {p.max_value}, got {val}")
 
+    def validate_dimension(self, ndim: int) -> None:
+        """Validate that the PDE supports the given number of dimensions.
+
+        Args:
+            ndim: Number of spatial dimensions (1, 2, or 3).
+
+        Raises:
+            ValueError: If the PDE does not support this dimensionality.
+        """
+        if not self.metadata.supported_dimensions:
+            raise ValueError(
+                f"PDE '{self.metadata.name}' has no supported_dimensions defined. "
+                "Each PDE must explicitly specify supported_dimensions in its metadata."
+            )
+        if ndim not in self.metadata.supported_dimensions:
+            supported_str = ", ".join(f"{d}D" for d in self.metadata.supported_dimensions)
+            raise ValueError(
+                f"PDE '{self.metadata.name}' does not support {ndim}D simulations. "
+                f"Supported: {supported_str}"
+            )
+
     def get_equations_for_metadata(
         self, parameters: dict[str, float]
     ) -> dict[str, str]:
@@ -150,32 +174,34 @@ class PDEPreset(ABC):
         # Subclasses can override to provide filled-in versions
         return self.metadata.equations.copy()
 
-    def _convert_bc(self, bc: Any) -> dict[str, Any]:
+    def _convert_bc(self, bc: Any, ndim: int = 2) -> dict[str, Any]:
         """Convert boundary condition config to py-pde format.
 
         Args:
             bc: BoundaryConfig object.
+            ndim: Number of spatial dimensions.
 
         Returns:
-            BC specs in py-pde format with x-, x+, y-, y+ keys.
+            BC specs in py-pde format.
         """
         from pde_sim.core.config import BoundaryConfig
 
         if isinstance(bc, BoundaryConfig):
-            return BoundaryConditionFactory.convert_config(bc)
-        # Handle dict (should have x-, x+, y-, y+ keys)
-        return BoundaryConditionFactory.convert_config(bc)
+            return BoundaryConditionFactory.convert_config(bc, ndim)
+        # Handle dict
+        return BoundaryConditionFactory.convert_config(bc, ndim)
 
-    def _get_pde_bc_kwargs(self, bc: Any) -> dict:
+    def _get_pde_bc_kwargs(self, bc: Any, ndim: int = 2) -> dict:
         """Get bc kwargs for PDE constructor.
 
         Args:
             bc: Boundary condition configuration (BoundaryConfig)
+            ndim: Number of spatial dimensions.
 
         Returns:
             Dictionary with {'bc': ...}
         """
-        return {"bc": self._convert_bc(bc)}
+        return {"bc": self._convert_bc(bc, ndim)}
 
 
 class ScalarPDEPreset(PDEPreset):

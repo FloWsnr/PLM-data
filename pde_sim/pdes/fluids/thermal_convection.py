@@ -160,6 +160,7 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
             num_fields=3,
             field_names=["omega", "psi", "b"],
             reference="Rayleigh-Benard convection (Boussinesq, Oberbeck)",
+            supported_dimensions=[2],
         )
 
     def _get_field_bc(self, bc: Any, field_name: str) -> Any:

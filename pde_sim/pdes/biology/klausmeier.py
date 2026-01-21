@@ -86,6 +86,7 @@ class KlausmeierPDE(MultiFieldPDEPreset):
             num_fields=2,
             field_names=["n", "w"],
             reference="Klausmeier (1999)",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

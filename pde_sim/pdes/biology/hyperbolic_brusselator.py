@@ -97,6 +97,7 @@ class HyperbolicBrusselatorPDE(MultiFieldPDEPreset):
             num_fields=4,
             field_names=["u", "v", "w", "q"],
             reference="Zemskov et al. (2022)",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

@@ -91,6 +91,7 @@ class SIRPDEPreset(MultiFieldPDEPreset):
             num_fields=3,
             field_names=["S", "I", "R"],
             reference="Kermack & McKendrick (1927), Murray (2002)",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

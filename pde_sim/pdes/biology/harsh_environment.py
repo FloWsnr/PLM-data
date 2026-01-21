@@ -70,6 +70,7 @@ class HarshEnvironmentPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["u"],
             reference="Skellam (1951), Kierstead & Slobodkin (1953)",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

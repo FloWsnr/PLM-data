@@ -43,6 +43,7 @@ class HeatPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["T"],
             reference="https://visualpde.com/basic-pdes/heat-equation",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

@@ -65,6 +65,7 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["u"],
             reference="Zakharov & Kuznetsov (1974)",
+            supported_dimensions=[2],
         )
 
     def create_pde(

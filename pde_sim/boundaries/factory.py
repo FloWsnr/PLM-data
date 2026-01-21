@@ -55,84 +55,139 @@ class BoundaryConditionFactory:
             )
 
     @classmethod
-    def convert_config(cls, bc_config: BoundaryConfig | dict[str, str]) -> dict[str, Any]:
+    def convert_config(
+        cls, bc_config: BoundaryConfig | dict[str, str], ndim: int = 2
+    ) -> dict[str, Any]:
         """Convert BC config to py-pde format.
 
         Args:
-            bc_config: BoundaryConfig object or dict with x-, x+, y-, y+ keys.
+            bc_config: BoundaryConfig object or dict with boundary keys.
+            ndim: Number of spatial dimensions.
 
         Returns:
             Dictionary with side-keyed BC specs for py-pde.
-            Format: {"x-": bc, "x+": bc, "y-": bc, "y+": bc}
+            1D: {"x-": bc, "x+": bc}
+            2D: {"x-": bc, "x+": bc, "y-": bc, "y+": bc}
+            3D: {"x-": bc, "x+": bc, "y-": bc, "y+": bc, "z-": bc, "z+": bc}
         """
         if hasattr(bc_config, "x_minus"):
             # BoundaryConfig object
-            return {
+            result = {
                 "x-": cls.convert(bc_config.x_minus),
                 "x+": cls.convert(bc_config.x_plus),
-                "y-": cls.convert(bc_config.y_minus),
-                "y+": cls.convert(bc_config.y_plus),
             }
+            if ndim >= 2 and bc_config.y_minus is not None:
+                result["y-"] = cls.convert(bc_config.y_minus)
+                result["y+"] = cls.convert(bc_config.y_plus)
+            if ndim >= 3 and bc_config.z_minus is not None:
+                result["z-"] = cls.convert(bc_config.z_minus)
+                result["z+"] = cls.convert(bc_config.z_plus)
+            return result
         else:
-            # Dict with x-, x+, y-, y+ keys
-            return {
+            # Dict with boundary keys
+            result = {
                 "x-": cls.convert(bc_config.get("x-", "periodic")),
                 "x+": cls.convert(bc_config.get("x+", "periodic")),
-                "y-": cls.convert(bc_config.get("y-", "periodic")),
-                "y+": cls.convert(bc_config.get("y+", "periodic")),
             }
+            if ndim >= 2:
+                result["y-"] = cls.convert(bc_config.get("y-", "periodic"))
+                result["y+"] = cls.convert(bc_config.get("y+", "periodic"))
+            if ndim >= 3:
+                result["z-"] = cls.convert(bc_config.get("z-", "periodic"))
+                result["z+"] = cls.convert(bc_config.get("z+", "periodic"))
+            return result
 
     @classmethod
-    def convert_field_bc(cls, field_bc: dict[str, str]) -> dict[str, Any]:
+    def convert_field_bc(cls, field_bc: dict[str, str], ndim: int = 2) -> dict[str, Any]:
         """Convert field-specific BC dict to py-pde format.
 
         Args:
-            field_bc: Dict with x-, x+, y-, y+ keys (already merged with defaults).
+            field_bc: Dict with boundary keys (already merged with defaults).
+            ndim: Number of spatial dimensions.
 
         Returns:
             BC specification in py-pde format.
         """
-        return {
+        result = {
             "x-": cls.convert(field_bc["x-"]),
             "x+": cls.convert(field_bc["x+"]),
-            "y-": cls.convert(field_bc["y-"]),
-            "y+": cls.convert(field_bc["y+"]),
         }
+        if ndim >= 2 and "y-" in field_bc:
+            result["y-"] = cls.convert(field_bc["y-"])
+            result["y+"] = cls.convert(field_bc["y+"])
+        if ndim >= 3 and "z-" in field_bc:
+            result["z-"] = cls.convert(field_bc["z-"])
+            result["z+"] = cls.convert(field_bc["z+"])
+        return result
 
     @classmethod
-    def get_periodic_flags(cls, bc_config: BoundaryConfig) -> list[bool]:
+    def get_periodic_flags(cls, bc_config: BoundaryConfig, ndim: int = 2) -> list[bool]:
         """Get periodic flags for each axis.
 
         Args:
             bc_config: Boundary configuration.
+            ndim: Number of spatial dimensions (1, 2, or 3).
 
         Returns:
-            List of boolean flags [x_periodic, y_periodic].
+            List of boolean flags for each axis.
+            1D: [x_periodic]
+            2D: [x_periodic, y_periodic]
+            3D: [x_periodic, y_periodic, z_periodic]
         """
         x_periodic = bc_config.x_minus == "periodic" and bc_config.x_plus == "periodic"
-        y_periodic = bc_config.y_minus == "periodic" and bc_config.y_plus == "periodic"
-        return [x_periodic, y_periodic]
+        flags = [x_periodic]
+
+        if ndim >= 2:
+            y_periodic = (
+                bc_config.y_minus is not None
+                and bc_config.y_minus == "periodic"
+                and bc_config.y_plus == "periodic"
+            )
+            flags.append(y_periodic)
+
+        if ndim >= 3:
+            z_periodic = (
+                bc_config.z_minus is not None
+                and bc_config.z_minus == "periodic"
+                and bc_config.z_plus == "periodic"
+            )
+            flags.append(z_periodic)
+
+        return flags
 
 
 def create_grid_with_bc(
-    resolution: int,
-    domain_size: float,
+    resolution: list[int],
+    domain_size: list[float],
     bc_config: BoundaryConfig,
 ) -> CartesianGrid:
     """Create a CartesianGrid with appropriate periodicity.
 
     Args:
-        resolution: Number of grid points in each dimension.
-        domain_size: Physical size of the domain.
+        resolution: Number of grid points for each dimension [nx], [nx, ny], or [nx, ny, nz].
+        domain_size: Physical size for each dimension, matching resolution length.
         bc_config: Boundary configuration.
 
     Returns:
         Configured CartesianGrid.
     """
-    periodic = BoundaryConditionFactory.get_periodic_flags(bc_config)
+    ndim = len(resolution)
+    if len(domain_size) != ndim:
+        raise ValueError(
+            f"resolution has {ndim} dimensions but domain_size has {len(domain_size)}"
+        )
+
+    # Validate boundary conditions for this dimension
+    bc_config.validate_for_ndim(ndim)
+
+    # Get periodic flags for each axis
+    periodic = BoundaryConditionFactory.get_periodic_flags(bc_config, ndim)
+
+    # Build bounds: [[0, Lx]] for 1D, [[0, Lx], [0, Ly]] for 2D, etc.
+    bounds = [[0.0, domain_size[i]] for i in range(ndim)]
 
     return CartesianGrid(
-        bounds=[[0, domain_size], [0, domain_size]],
-        shape=[resolution, resolution],
+        bounds=bounds,
+        shape=resolution,
         periodic=periodic,
     )

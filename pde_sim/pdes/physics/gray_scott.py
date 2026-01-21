@@ -74,6 +74,7 @@ class GrayScottPDE(MultiFieldPDEPreset):
             num_fields=2,
             field_names=["u", "v"],
             reference="Pearson (1993) Complex patterns in a simple system",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

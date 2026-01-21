@@ -59,6 +59,7 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["u"],
             reference="Kuramoto (1978), Sivashinsky (1977)",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

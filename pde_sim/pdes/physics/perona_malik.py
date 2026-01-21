@@ -79,6 +79,7 @@ class PeronaMalikPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["u"],
             reference="Perona & Malik (1990) Scale-space and edge detection",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

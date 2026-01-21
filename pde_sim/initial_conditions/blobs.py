@@ -10,6 +10,7 @@ class GaussianBlobs(InitialConditionGenerator):
     """Multiple Gaussian blobs initial condition.
 
     Creates a field with multiple Gaussian-shaped bumps at random positions.
+    Supports 1D, 2D, and 3D grids.
     """
 
     def generate(
@@ -26,7 +27,7 @@ class GaussianBlobs(InitialConditionGenerator):
         """Generate Gaussian blobs initial condition.
 
         Args:
-            grid: The computational grid.
+            grid: The computational grid (1D, 2D, or 3D).
             num_blobs: Number of Gaussian blobs to create.
             amplitude: Peak amplitude of each blob (or max if random_amplitude).
             width: Width of blobs relative to domain size.
@@ -40,38 +41,61 @@ class GaussianBlobs(InitialConditionGenerator):
         """
         rng = np.random.default_rng(seed)
         data = np.full(grid.shape, background, dtype=float)
+        ndim = len(grid.shape)
 
-        # Get domain bounds
-        x_bounds = grid.axes_bounds[0]
-        y_bounds = grid.axes_bounds[1]
-        Lx = x_bounds[1] - x_bounds[0]
-        Ly = y_bounds[1] - y_bounds[0]
+        # Get domain info
+        bounds = grid.axes_bounds
+        sizes = [b[1] - b[0] for b in bounds]
 
-        # Create coordinate arrays
-        x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-        y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-        X, Y = np.meshgrid(x, y, indexing="ij")
-
-        for _ in range(num_blobs):
-            # Random center
-            cx = rng.uniform(x_bounds[0], x_bounds[1])
-            cy = rng.uniform(y_bounds[0], y_bounds[1])
-
-            # Blob amplitude
-            if random_amplitude:
-                amp = rng.uniform(0.5 * amplitude, amplitude)
-            else:
-                amp = amplitude
-
-            # Width in physical units
+        if ndim == 1:
+            x_bounds = bounds[0]
+            Lx = sizes[0]
+            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
             sigma_x = width * Lx
-            sigma_y = width * Ly
 
-            # Add Gaussian blob
-            blob = amp * np.exp(
-                -((X - cx) ** 2 / (2 * sigma_x**2) + (Y - cy) ** 2 / (2 * sigma_y**2))
-            )
-            data += blob
+            for _ in range(num_blobs):
+                cx = rng.uniform(x_bounds[0], x_bounds[1])
+                amp = rng.uniform(0.5 * amplitude, amplitude) if random_amplitude else amplitude
+                blob = amp * np.exp(-((x - cx) ** 2) / (2 * sigma_x**2))
+                data += blob
+
+        elif ndim == 2:
+            x_bounds, y_bounds = bounds[0], bounds[1]
+            Lx, Ly = sizes[0], sizes[1]
+            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+            y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
+            X, Y = np.meshgrid(x, y, indexing="ij")
+            sigma_x, sigma_y = width * Lx, width * Ly
+
+            for _ in range(num_blobs):
+                cx = rng.uniform(x_bounds[0], x_bounds[1])
+                cy = rng.uniform(y_bounds[0], y_bounds[1])
+                amp = rng.uniform(0.5 * amplitude, amplitude) if random_amplitude else amplitude
+                blob = amp * np.exp(
+                    -((X - cx) ** 2 / (2 * sigma_x**2) + (Y - cy) ** 2 / (2 * sigma_y**2))
+                )
+                data += blob
+
+        else:  # 3D
+            x_bounds, y_bounds, z_bounds = bounds[0], bounds[1], bounds[2]
+            Lx, Ly, Lz = sizes[0], sizes[1], sizes[2]
+            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+            y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
+            z = np.linspace(z_bounds[0], z_bounds[1], grid.shape[2])
+            X, Y, Z = np.meshgrid(x, y, z, indexing="ij")
+            sigma_x, sigma_y, sigma_z = width * Lx, width * Ly, width * Lz
+
+            for _ in range(num_blobs):
+                cx = rng.uniform(x_bounds[0], x_bounds[1])
+                cy = rng.uniform(y_bounds[0], y_bounds[1])
+                cz = rng.uniform(z_bounds[0], z_bounds[1])
+                amp = rng.uniform(0.5 * amplitude, amplitude) if random_amplitude else amplitude
+                blob = amp * np.exp(
+                    -((X - cx) ** 2 / (2 * sigma_x**2)
+                      + (Y - cy) ** 2 / (2 * sigma_y**2)
+                      + (Z - cz) ** 2 / (2 * sigma_z**2))
+                )
+                data += blob
 
         return ScalarField(grid, data)
 

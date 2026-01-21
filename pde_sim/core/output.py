@@ -70,8 +70,166 @@ class OutputHandler(ABC):
         pass
 
 
+class Output1DHandler(OutputHandler):
+    """Handles 1D output as space-time diagrams.
+
+    For 1D simulations, instead of saving individual frames, we accumulate
+    all time slices and create a single space-time diagram where:
+    - X-axis represents space
+    - Y-axis represents time
+    - Color represents field value
+
+    This shows wave propagation as diagonal lines.
+    """
+
+    def __init__(self, output_format: str = "png", fps: int = 30) -> None:
+        self.output_format = output_format
+        self.fps = fps
+        self.output_dir: Path | None = None
+        self.spacetime_data: dict[str, list[np.ndarray]] = {}
+        self.times: list[float] = []
+        self.field_colormaps: dict[str, str] = {}
+        self.dpi: int = 128
+        self.figsize: tuple[int, int] = (10, 8)
+        self._times_recorded: set[int] = set()
+
+    def initialize(
+        self,
+        output_dir: Path,
+        field_configs: list[tuple[str, str]],
+        dpi: int,
+        figsize: tuple[int, int],
+    ) -> None:
+        self.output_dir = output_dir
+        self.dpi = dpi
+        self.figsize = figsize
+
+        for field_name, colormap in field_configs:
+            self.spacetime_data[field_name] = []
+            self.field_colormaps[field_name] = colormap
+
+    def save_frame(
+        self,
+        data: np.ndarray,
+        field_name: str,
+        frame_index: int,
+        simulation_time: float,
+        vmin: float,
+        vmax: float,
+        colormap: str,
+    ) -> None:
+        """Accumulate 1D data for space-time diagram."""
+        if field_name not in self.spacetime_data:
+            self.spacetime_data[field_name] = []
+
+        # data shape: (X,) for 1D
+        self.spacetime_data[field_name].append(data.copy())
+
+        # Track time only once per frame index
+        if frame_index not in self._times_recorded:
+            self.times.append(simulation_time)
+            self._times_recorded.add(frame_index)
+
+    def finalize(self) -> dict[str, Any]:
+        """Generate space-time diagrams."""
+        if not self.spacetime_data:
+            return {"format": self.output_format, "error": "No data to save"}
+
+        output_files: dict[str, str] = {}
+
+        for field_name, frames in self.spacetime_data.items():
+            if not frames:
+                continue
+
+            # Stack frames to create space-time diagram: (T, X)
+            spacetime = np.array(frames)  # Shape: (T, X)
+
+            # Compute range
+            vmin = float(np.min(spacetime))
+            vmax = float(np.max(spacetime))
+
+            colormap = self.field_colormaps.get(field_name, "viridis")
+
+            if self.output_format == "png":
+                # Save as single PNG image
+                fig, ax = plt.subplots(figsize=self.figsize, dpi=self.dpi)
+                im = ax.imshow(
+                    spacetime,
+                    aspect="auto",
+                    origin="lower",
+                    cmap=colormap,
+                    vmin=vmin,
+                    vmax=vmax,
+                    extent=[0, spacetime.shape[1], 0, self.times[-1] if self.times else 1],
+                )
+                ax.set_xlabel("Space (x)")
+                ax.set_ylabel("Time (t)")
+                ax.set_title(f"{field_name} - Space-Time Diagram")
+                plt.colorbar(im, ax=ax, label=field_name)
+
+                filename = f"{field_name}_spacetime.png"
+                fig.savefig(self.output_dir / filename, bbox_inches="tight")
+                plt.close(fig)
+                output_files[field_name] = filename
+
+            elif self.output_format == "mp4":
+                # For MP4, animate the 1D profile over time
+                import imageio
+
+                frames_rgb = []
+                for i, frame_data in enumerate(frames):
+                    fig, ax = plt.subplots(figsize=self.figsize, dpi=self.dpi)
+                    ax.plot(frame_data)
+                    ax.set_ylim(vmin - 0.1 * abs(vmax - vmin), vmax + 0.1 * abs(vmax - vmin))
+                    ax.set_xlabel("Space (x)")
+                    ax.set_ylabel(field_name)
+                    ax.set_title(f"t = {self.times[i]:.4f}" if i < len(self.times) else "")
+
+                    fig.canvas.draw()
+                    frame_rgb = np.asarray(fig.canvas.buffer_rgba())[:, :, :3]
+                    frames_rgb.append(frame_rgb)
+                    plt.close(fig)
+
+                filename = f"{field_name}.mp4"
+                imageio.mimwrite(
+                    self.output_dir / filename,
+                    frames_rgb,
+                    fps=self.fps,
+                    codec="libx264",
+                    output_params=["-pix_fmt", "yuv420p"],
+                )
+                output_files[field_name] = filename
+
+                # Also save the space-time diagram as PNG
+                fig, ax = plt.subplots(figsize=self.figsize, dpi=self.dpi)
+                im = ax.imshow(
+                    spacetime,
+                    aspect="auto",
+                    origin="lower",
+                    cmap=colormap,
+                    vmin=vmin,
+                    vmax=vmax,
+                    extent=[0, spacetime.shape[1], 0, self.times[-1] if self.times else 1],
+                )
+                ax.set_xlabel("Space (x)")
+                ax.set_ylabel("Time (t)")
+                ax.set_title(f"{field_name} - Space-Time Diagram")
+                plt.colorbar(im, ax=ax, label=field_name)
+
+                st_filename = f"{field_name}_spacetime.png"
+                fig.savefig(self.output_dir / st_filename, bbox_inches="tight")
+                plt.close(fig)
+                output_files[f"{field_name}_spacetime"] = st_filename
+
+        return {
+            "format": self.output_format,
+            "type": "1D_spacetime",
+            "files": output_files,
+        }
+
+
 class PNGHandler(OutputHandler):
-    """Saves PNG frames to per-field subdirectories."""
+    """Saves PNG frames to per-field subdirectories (2D only)."""
 
     def __init__(self) -> None:
         self.output_dir: Path | None = None
@@ -223,7 +381,13 @@ class MP4Handler(OutputHandler):
 
 
 class NumpyHandler(OutputHandler):
-    """Collects all field data into a single (T, H, W, F) array."""
+    """Collects all field data into a single array.
+
+    Shape depends on dimensionality:
+    - 1D: (T, X, F)
+    - 2D: (T, H, W, F)
+    - 3D: (T, D, H, W, F)
+    """
 
     def __init__(self) -> None:
         self.output_dir: Path | None = None
@@ -271,15 +435,19 @@ class NumpyHandler(OutputHandler):
 
         T = len(self.times)
         first_field_data = self.trajectory_data[self.field_order[0]]
-        H, W = first_field_data[0].shape
+        spatial_shape = first_field_data[0].shape  # (X,) for 1D, (H, W) for 2D, (D, H, W) for 3D
         F = len(self.field_order)
+        ndim = len(spatial_shape)
 
-        # Create combined array with shape (T, H, W, F)
-        array = np.zeros((T, H, W, F), dtype=np.float64)
+        # Create combined array with shape (T, *spatial_shape, F)
+        array_shape = (T,) + spatial_shape + (F,)
+        array = np.zeros(array_shape, dtype=np.float64)
+
         for f_idx, field_name in enumerate(self.field_order):
             field_frames = self.trajectory_data[field_name]
             for t_idx, data in enumerate(field_frames):
-                array[t_idx, :, :, f_idx] = data
+                # Use ellipsis to handle variable spatial dimensions
+                array[(t_idx, ..., f_idx)] = data
 
         # Save trajectory and times
         np.save(self.output_dir / "trajectory.npy", array)
@@ -288,61 +456,100 @@ class NumpyHandler(OutputHandler):
         # Compute field ranges for metadata
         field_ranges = {}
         for f_idx, field_name in enumerate(self.field_order):
-            field_data = array[:, :, :, f_idx]
+            # Slice to get all data for this field across time and space
+            field_data = array[..., f_idx]
             field_ranges[field_name] = {
                 "min": float(np.min(field_data)),
                 "max": float(np.max(field_data)),
             }
+
+        # Shape description
+        if ndim == 1:
+            shape_desc = "(T, X, F)"
+        elif ndim == 2:
+            shape_desc = "(T, H, W, F)"
+        else:
+            shape_desc = "(T, D, H, W, F)"
 
         return {
             "format": "numpy",
             "trajectoryFile": "trajectory.npy",
             "timesFile": "times.npy",
             "shape": list(array.shape),
+            "shapeDescription": shape_desc,
+            "ndim": ndim,
             "fieldOrder": self.field_order,
             "fieldRanges": field_ranges,
             "dtype": str(array.dtype),
         }
 
 
-def create_output_handler(output_format: str, fps: int = 30) -> OutputHandler:
+def create_output_handler(
+    output_format: str, fps: int = 30, ndim: int = 2
+) -> OutputHandler:
     """Factory function to create appropriate output handler.
 
     Args:
         output_format: Output format ("png", "mp4", or "numpy").
         fps: Frame rate for MP4 output.
+        ndim: Number of spatial dimensions (1, 2, or 3).
 
     Returns:
         Appropriate OutputHandler instance.
 
     Raises:
-        ValueError: If format is not recognized.
+        ValueError: If format is not recognized or unsupported for the dimension.
     """
-    handlers = {
-        "png": PNGHandler,
-        "mp4": lambda: MP4Handler(fps=fps),
-        "numpy": NumpyHandler,
-    }
+    if ndim == 1:
+        # 1D: space-time diagrams for png/mp4, standard array for numpy
+        if output_format in ("png", "mp4"):
+            return Output1DHandler(output_format=output_format, fps=fps)
+        elif output_format == "numpy":
+            return NumpyHandler()
+        else:
+            raise ValueError(f"Unknown output format: {output_format}")
 
-    if output_format not in handlers:
-        raise ValueError(
-            f"Unknown output format: {output_format}. "
-            f"Valid formats: {list(handlers.keys())}"
-        )
+    elif ndim == 2:
+        # 2D: standard handlers
+        handlers = {
+            "png": PNGHandler,
+            "mp4": lambda: MP4Handler(fps=fps),
+            "numpy": NumpyHandler,
+        }
 
-    handler_class = handlers[output_format]
-    if callable(handler_class) and not isinstance(handler_class, type):
+        if output_format not in handlers:
+            raise ValueError(
+                f"Unknown output format: {output_format}. "
+                f"Valid formats: {list(handlers.keys())}"
+            )
+
+        handler_class = handlers[output_format]
+        if callable(handler_class) and not isinstance(handler_class, type):
+            return handler_class()
         return handler_class()
-    return handler_class()
+
+    elif ndim == 3:
+        # 3D: only numpy output is supported (deferred visualization)
+        if output_format in ("png", "mp4"):
+            raise ValueError(
+                f"3D visualization not yet supported. Use format: 'numpy' instead of '{output_format}'"
+            )
+        elif output_format == "numpy":
+            return NumpyHandler()
+        else:
+            raise ValueError(f"Unknown output format: {output_format}")
+
+    else:
+        raise ValueError(f"Unsupported dimensionality: {ndim}D. Must be 1, 2, or 3.")
 
 
 class OutputManager:
     """Manages simulation output (frames and metadata).
 
     Uses the strategy pattern to support multiple output formats:
-    - png: PNG images in per-field subdirectories
-    - mp4: MP4 videos per field
-    - numpy: Single numpy array with shape (T, H, W, F)
+    - 1D: Space-time diagrams (PNG/MP4) or numpy array (T, X, F)
+    - 2D: PNG images / MP4 videos per field or numpy array (T, H, W, F)
+    - 3D: Numpy array only (T, D, H, W, F) - visualization deferred
     """
 
     def __init__(
@@ -355,6 +562,7 @@ class OutputManager:
         figsize: tuple[int, int] = (8, 8),
         output_format: str = "png",
         fps: int = 30,
+        ndim: int = 2,
     ):
         """Initialize the output manager.
 
@@ -367,6 +575,7 @@ class OutputManager:
             figsize: Figure size in inches.
             output_format: Output format ("png", "mp4", or "numpy").
             fps: Frame rate for MP4 output.
+            ndim: Number of spatial dimensions (1, 2, or 3).
         """
         self.base_path = Path(base_path)
         self.folder_name = folder_name
@@ -375,6 +584,7 @@ class OutputManager:
         self.figsize = figsize
         self.output_format = output_format
         self.fps = fps
+        self.ndim = ndim
 
         # Field configurations: [(field_name, colormap), ...]
         self.field_configs = field_configs or []
@@ -391,8 +601,8 @@ class OutputManager:
         self.output_dir = self.base_path / self.folder_name
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create appropriate handler
-        self.handler = create_output_handler(output_format, fps=fps)
+        # Create appropriate handler based on format and dimensionality
+        self.handler = create_output_handler(output_format, fps=fps, ndim=ndim)
         self.handler.initialize(self.output_dir, self.field_configs, dpi, figsize)
 
         # Track saved frames
@@ -568,11 +778,12 @@ class OutputManager:
         return self.saved_frames.copy()
 
 
-def _bc_to_metadata(bc: Any) -> dict[str, Any]:
+def _bc_to_metadata(bc: Any, ndim: int = 2) -> dict[str, Any]:
     """Convert BoundaryConfig to metadata dictionary.
 
     Args:
         bc: BoundaryConfig object
+        ndim: Number of spatial dimensions.
 
     Returns:
         Dictionary with boundary condition information for metadata.
@@ -580,9 +791,15 @@ def _bc_to_metadata(bc: Any) -> dict[str, Any]:
     result: dict[str, Any] = {
         "x-": bc.x_minus,
         "x+": bc.x_plus,
-        "y-": bc.y_minus,
-        "y+": bc.y_plus,
     }
+
+    if ndim >= 2 and bc.y_minus is not None:
+        result["y-"] = bc.y_minus
+        result["y+"] = bc.y_plus
+
+    if ndim >= 3 and bc.z_minus is not None:
+        result["z-"] = bc.z_minus
+        result["z+"] = bc.z_plus
 
     if bc.fields:
         result["fields"] = bc.fields
@@ -648,6 +865,12 @@ def create_metadata(
     # Load detailed description from markdown file
     description = get_description(preset_name)
 
+    # Compute spatial step per dimension
+    spatial_steps = [
+        config.domain_size[i] / config.resolution[i]
+        for i in range(config.ndim)
+    ]
+
     return {
         "id": sim_id,
         "preset": preset_name,
@@ -655,13 +878,13 @@ def create_metadata(
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "generatorVersion": "1.0.0",
         "equations": preset_metadata.equations,
-        "boundaryConditions": _bc_to_metadata(config.bc),
+        "boundaryConditions": _bc_to_metadata(config.bc, config.ndim),
         "initialConditions": config.init.type,
         "parameters": {
             "kinetic": config.parameters,
             "dt": config.dt,
-            "spatialStep": config.domain_size / config.resolution,
-            "domainScale": str(config.domain_size),
+            "spatialStep": spatial_steps,
+            "domainSize": config.domain_size,
             "timesteppingScheme": config.solver.title(),
             "numSpecies": preset_metadata.num_fields,
             "backend": config.backend,
@@ -673,7 +896,8 @@ def create_metadata(
             "numFrames": config.output.num_frames,
             "totalTime": total_time,
             "wallClockDuration": wall_clock_duration,
-            "resolution": [config.resolution, config.resolution],
+            "ndim": config.ndim,
+            "resolution": config.resolution,
             "dtStatistics": dt_stats,
         },
         "visualization": _create_visualization_metadata(config, preset_metadata),

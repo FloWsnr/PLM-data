@@ -13,8 +13,12 @@ class TestBoundaryConditions:
     def test_convert_bc_periodic(self):
         """Test periodic BC conversion."""
         preset = get_pde_preset("heat")
-        bc = BoundaryConfig()  # Default is all periodic
-        result = preset._convert_bc(bc)
+        # For 2D, explicitly set y boundaries (they default to None for 1D support)
+        bc = BoundaryConfig(
+            x_minus="periodic", x_plus="periodic",
+            y_minus="periodic", y_plus="periodic"
+        )
+        result = preset._convert_bc(bc, ndim=2)
         assert result == {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"}
 
     def test_convert_bc_no_flux(self):

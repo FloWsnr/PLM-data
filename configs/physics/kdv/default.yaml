@@ -1,4 +1,4 @@
-# KdV equation - two-soliton collision demonstrating elastic soliton interaction
+# KdV equation - two-soliton collision demonstrating elastic soliton interaction (1D)
 preset: kdv
 parameters:
   b: 0.0001  # Small biharmonic dissipation for numerical stability
@@ -16,12 +16,10 @@ backend: numba
 adaptive: false
 dt: 0.001
 t_end: 60.0
-resolution: 128
+resolution: [256]  # 1D resolution
 
 bc:
   x-: periodic
   x+: periodic
-  y-: periodic
-  y+: periodic
 
-domain_size: 100
+domain_size: [100.0]  # 1D domain

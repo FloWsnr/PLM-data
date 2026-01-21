@@ -483,11 +483,14 @@ class TestCreateMetadata:
             solver="euler",
             t_end=100,
             dt=0.01,
-            resolution=64,
-            bc=BoundaryConfig(),
+            resolution=[64, 64],  # Now a list for 2D
+            bc=BoundaryConfig(
+                x_minus="periodic", x_plus="periodic",
+                y_minus="periodic", y_plus="periodic"
+            ),
             output=OutputConfig(path=Path("./output")),
             seed=42,
-            domain_size=1.0,
+            domain_size=[1.0, 1.0],  # Now a list for 2D
         )
 
         frame_annotations = [
@@ -508,6 +511,7 @@ class TestCreateMetadata:
         assert metadata["preset"] == "test-pde"
         assert metadata["equations"] == {"u": "laplace(u)"}
         assert metadata["simulation"]["resolution"] == [64, 64]
+        assert metadata["simulation"]["ndim"] == 2
         assert len(metadata["frameAnnotations"]) == 2
 
     def test_create_metadata_with_description(self):
@@ -529,11 +533,14 @@ class TestCreateMetadata:
             solver="euler",
             t_end=100,
             dt=0.01,
-            resolution=64,
-            bc=BoundaryConfig(),
+            resolution=[64, 64],  # Now a list for 2D
+            bc=BoundaryConfig(
+                x_minus="periodic", x_plus="periodic",
+                y_minus="periodic", y_plus="periodic"
+            ),
             output=OutputConfig(path=Path("./output")),
             seed=42,
-            domain_size=1.0,
+            domain_size=[1.0, 1.0],  # Now a list for 2D
         )
 
         metadata = create_metadata(

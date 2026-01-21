@@ -76,6 +76,7 @@ class VorticityPDE(MultiFieldPDEPreset):
             num_fields=3,
             field_names=["omega", "psi", "S"],
             reference="Vorticity-streamfunction formulation (Chemin)",
+            supported_dimensions=[2],
         )
 
     def create_pde(

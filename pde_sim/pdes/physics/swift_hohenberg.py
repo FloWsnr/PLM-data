@@ -86,6 +86,7 @@ class SwiftHohenbergPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["u"],
             reference="Swift & Hohenberg (1977) Hydrodynamic fluctuations",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

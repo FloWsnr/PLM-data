@@ -92,6 +92,7 @@ class PotentialFlowImagesPDE(MultiFieldPDEPreset):
             num_fields=2,
             field_names=["phi", "s"],
             reference="Method of images for wall-bounded potential flow",
+            supported_dimensions=[2],
         )
 
     def create_pde(

@@ -11,8 +11,8 @@ solver: rk4
 backend: numba
 adaptive: true
 dt: 0.005
-resolution: 256
-domain_size: 80.0
+resolution: [256, 256]
+domain_size: [80.0, 80.0]
 t_end: 25.0
 bc:
   x-: neumann:0

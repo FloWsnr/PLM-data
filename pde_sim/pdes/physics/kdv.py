@@ -17,7 +17,7 @@ class KdVPDE(ScalarPDEPreset):
 
     The KdV equation:
 
-        du/dt = -d³u/dx³ - 6*u*du/dx - b*∇⁴u
+        du/dt = -d³u/dx³ - 6*u*du/dx - b*d⁴u/dx⁴
 
     This is the foundational equation of soliton theory, describing weakly
     nonlinear shallow water waves, ion-acoustic waves in plasmas, and
@@ -29,10 +29,8 @@ class KdVPDE(ScalarPDEPreset):
         - Balance of dispersion (u_xxx) and nonlinearity (u*u_x)
         - Soliton amplitude determines speed: taller = faster
 
-    The implementation uses a pseudo-2D approach where the KdV dynamics
-    evolve along the x-axis, with periodic boundaries in y to allow
-    2D visualization. An optional biharmonic dissipation term helps
-    reduce numerical artifacts.
+    This is a true 1D equation. The optional biharmonic dissipation term
+    helps reduce numerical artifacts.
 
     Initial conditions:
         - Single soliton: sech²(k(x-x0)) with amplitude 2k²
@@ -49,7 +47,7 @@ class KdVPDE(ScalarPDEPreset):
             category="physics",
             description="Korteweg-de Vries equation for soliton dynamics",
             equations={
-                "u": "-d_dxdxdx(u) - 6 * u * d_dx(u) - b * laplace(laplace(u))",
+                "u": "-d_dx(d_dx(d_dx(u))) - 6 * u * d_dx(u) - b * d_dx(d_dx(d_dx(d_dx(u))))",
             },
             parameters=[
                 PDEParameter(
@@ -63,6 +61,7 @@ class KdVPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["u"],
             reference="Korteweg & de Vries (1895), Gardner et al. (1967)",
+            supported_dimensions=[1],  # KdV is a true 1D equation
         )
 
     def create_pde(
@@ -76,7 +75,7 @@ class KdVPDE(ScalarPDEPreset):
         Args:
             parameters: Dictionary with dissipation coefficient b.
             bc: Boundary condition specification.
-            grid: The computational grid.
+            grid: The computational grid (must be 1D).
 
         Returns:
             Configured PDE instance.
@@ -84,15 +83,18 @@ class KdVPDE(ScalarPDEPreset):
         b = parameters.get("b", 0.0001)
 
         # KdV equation with optional biharmonic dissipation:
-        # du/dt = -d³u/dx³ - 6*u*du/dx - b*∇⁴u
+        # du/dt = -d³u/dx³ - 6*u*du/dx - b*d⁴u/dx⁴
         #
         # Using py-pde's d_dx operator for derivatives.
-        # The third derivative d³u/dx³ = d_dx(d_dx(d_dx(u)))
-        rhs = f"-d_dx(d_dx(d_dx(u))) - 6 * u * d_dx(u) - {b} * laplace(laplace(u))"
+        # For 1D, we use d_dx operators (fourth derivative for dissipation)
+        if b > 0:
+            rhs = f"-d_dx(d_dx(d_dx(u))) - 6 * u * d_dx(u) - {b} * d_dx(d_dx(d_dx(d_dx(u))))"
+        else:
+            rhs = "-d_dx(d_dx(d_dx(u))) - 6 * u * d_dx(u)"
 
         return PDE(
             rhs={"u": rhs},
-            bc=self._convert_bc(bc),
+            bc=self._convert_bc(bc, ndim=1),
         )
 
     def create_initial_state(
@@ -102,7 +104,7 @@ class KdVPDE(ScalarPDEPreset):
         ic_params: dict[str, Any],
         **kwargs,
     ) -> ScalarField:
-        """Create initial state for KdV equation.
+        """Create initial state for KdV equation (1D only).
 
         Supported initial conditions:
             - default/soliton: Single sech² soliton
@@ -113,16 +115,8 @@ class KdVPDE(ScalarPDEPreset):
         x_bounds = grid.axes_bounds[0]
         Lx = x_bounds[1] - x_bounds[0]
 
+        # 1D grid coordinates
         x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-
-        # Handle 2D grid
-        if len(grid.shape) > 1:
-            y_bounds = grid.axes_bounds[1]
-            y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-            X, Y = np.meshgrid(x, y, indexing="ij")
-            x_coord = X  # Use X for 2D
-        else:
-            x_coord = x
 
         if ic_type in ("kdv-default", "default", "soliton"):
             # Single soliton: u = 2k² sech²(k(x-x0))
@@ -131,7 +125,7 @@ class KdVPDE(ScalarPDEPreset):
             x0 = ic_params.get("x0", x_bounds[0] + Lx * 0.25)  # Start at left quarter
 
             amplitude = 2 * k**2
-            data = amplitude / np.cosh(k * (x_coord - x0)) ** 2
+            data = amplitude / np.cosh(k * (x - x0)) ** 2
 
             return ScalarField(grid, data)
 
@@ -146,8 +140,8 @@ class KdVPDE(ScalarPDEPreset):
             amp1 = 2 * k1**2
             amp2 = 2 * k2**2
 
-            soliton1 = amp1 / np.cosh(k1 * (x_coord - x1)) ** 2
-            soliton2 = amp2 / np.cosh(k2 * (x_coord - x2)) ** 2
+            soliton1 = amp1 / np.cosh(k1 * (x - x1)) ** 2
+            soliton2 = amp2 / np.cosh(k2 * (x - x2)) ** 2
 
             data = soliton1 + soliton2
 
@@ -161,7 +155,7 @@ class KdVPDE(ScalarPDEPreset):
             x0 = ic_params.get("x0", x_bounds[0] + Lx * 0.2)
 
             # Gaussian bump
-            data = amplitude * np.exp(-((x_coord - x0) ** 2) / (2 * width**2))
+            data = amplitude * np.exp(-((x - x0) ** 2) / (2 * width**2))
 
             return ScalarField(grid, data)
 
@@ -171,7 +165,7 @@ class KdVPDE(ScalarPDEPreset):
             x0 = ic_params.get("x0", x_bounds[0] + Lx * 0.2)
 
             amplitude = 2 * k**2
-            data = amplitude / np.cosh(k * (x_coord - x0)) ** 2
+            data = amplitude / np.cosh(k * (x - x0)) ** 2
 
             return ScalarField(grid, data)
 
@@ -187,17 +181,14 @@ class KdVPDE(ScalarPDEPreset):
 
             x_range = (x_bounds[0] + margin * Lx, x_bounds[0] + (1 - margin) * Lx * 0.5)
 
-            if len(grid.shape) > 1:
-                data = np.zeros_like(X)
-            else:
-                data = np.zeros_like(x)
+            data = np.zeros_like(x)
 
             for _ in range(n):
                 xi = rng.uniform(x_range[0], x_range[1])
                 ki = rng.uniform(k_min, k_max)
                 ampi = 2 * ki**2
 
-                data += ampi / np.cosh(ki * (x_coord - xi)) ** 2
+                data += ampi / np.cosh(ki * (x - xi)) ** 2
 
             return ScalarField(grid, data)
 
@@ -212,9 +203,9 @@ class KdVPDE(ScalarPDEPreset):
 
         if b > 0:
             return {
-                "u": f"-d_dxdxdx(u) - 6 * u * d_dx(u) - {b} * laplace(laplace(u))",
+                "u": f"-d³u/dx³ - 6*u*(du/dx) - {b}*d⁴u/dx⁴",
             }
         else:
             return {
-                "u": "-d_dxdxdx(u) - 6 * u * d_dx(u)",
+                "u": "-d³u/dx³ - 6*u*(du/dx)",
             }

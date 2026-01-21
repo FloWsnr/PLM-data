@@ -60,6 +60,7 @@ class WavePDE(MultiFieldPDEPreset):
             num_fields=2,
             field_names=["u", "v"],
             reference="https://visualpde.com/basic-pdes/wave-equation",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

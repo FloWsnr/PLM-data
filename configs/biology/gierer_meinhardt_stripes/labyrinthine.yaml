@@ -13,8 +13,8 @@ init:
     seed: 789
 solver: euler
 dt: 0.0003
-resolution: 128
-domain_size: 200.0
+resolution: [128, 128]
+domain_size: [200.0, 200.0]
 t_end: 150.0
 timesteps: 200
 bc:

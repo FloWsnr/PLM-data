@@ -75,6 +75,7 @@ class NavierStokesPDE(MultiFieldPDEPreset):
             num_fields=4,
             field_names=["u", "v", "p", "S"],
             reference="Navier-Stokes equations (Stokes/Navier, 1800s)",
+            supported_dimensions=[2],
         )
 
     def create_pde(

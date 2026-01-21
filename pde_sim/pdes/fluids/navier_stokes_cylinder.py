@@ -85,6 +85,7 @@ class NavierStokesCylinderPDE(MultiFieldPDEPreset):
             num_fields=4,
             field_names=["u", "v", "p", "S"],
             reference="Von Kármán vortex street (1911)",
+            supported_dimensions=[2],
         )
 
     def create_pde(

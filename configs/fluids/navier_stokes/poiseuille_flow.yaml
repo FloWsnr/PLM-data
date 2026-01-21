@@ -12,7 +12,7 @@ solver: euler
 backend: numpy
 adaptive: true
 dt: 0.001
-resolution: 128
+resolution: [128, 128]
 bc:
   x-: periodic
   x+: periodic
@@ -22,5 +22,5 @@ bc:
     p:
       x-: dirichlet:0
       x+: dirichlet:0.05
-domain_size: 5.0
+domain_size: [5.0, 5.0]
 t_end: 5.0

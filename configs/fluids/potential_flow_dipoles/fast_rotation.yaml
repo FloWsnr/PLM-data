@@ -13,11 +13,11 @@ solver: euler
 backend: numpy
 adaptive: true
 dt: 0.01
-resolution: 256
+resolution: [256, 256]
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-domain_size: 40.0
+domain_size: [40.0, 40.0]
 t_end: 8.38

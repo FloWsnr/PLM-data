@@ -41,7 +41,9 @@ class BoundaryConfig:
     """Boundary condition configuration.
 
     Uses py-pde notation for sides:
-    - x- (left), x+ (right), y- (bottom), y+ (top)
+    - 1D: x- (left), x+ (right)
+    - 2D: x- (left), x+ (right), y- (bottom), y+ (top)
+    - 3D: x- (left), x+ (right), y- (bottom), y+ (top), z- (back), z+ (front)
 
     BC types:
     - `periodic` - periodic boundary
@@ -53,29 +55,57 @@ class BoundaryConfig:
 
     x_minus: str = "periodic"  # left
     x_plus: str = "periodic"  # right
-    y_minus: str = "periodic"  # bottom
-    y_plus: str = "periodic"  # top
+    y_minus: str | None = None  # bottom (required for 2D+)
+    y_plus: str | None = None  # top (required for 2D+)
+    z_minus: str | None = None  # back (required for 3D)
+    z_plus: str | None = None  # front (required for 3D)
     fields: dict[str, dict[str, str]] | None = None  # field -> {side: bc}
 
     def is_simple(self) -> bool:
         """Check if this is a simple (non-per-field) BC config."""
         return self.fields is None or len(self.fields) == 0
 
-    def get_field_bc(self, field_name: str) -> dict[str, str]:
+    def validate_for_ndim(self, ndim: int) -> None:
+        """Validate boundaries are specified for given dimension.
+
+        Args:
+            ndim: Number of spatial dimensions (1, 2, or 3).
+
+        Raises:
+            ValueError: If required boundaries are not specified.
+        """
+        if ndim >= 2:
+            if self.y_minus is None or self.y_plus is None:
+                raise ValueError(
+                    f"{ndim}D simulation requires y- and y+ boundary conditions"
+                )
+        if ndim >= 3:
+            if self.z_minus is None or self.z_plus is None:
+                raise ValueError(
+                    "3D simulation requires z- and z+ boundary conditions"
+                )
+
+    def get_field_bc(self, field_name: str, ndim: int = 2) -> dict[str, str]:
         """Get BC dict for a field, merging with defaults.
 
         Args:
             field_name: Name of the field.
+            ndim: Number of spatial dimensions.
 
         Returns:
-            Dict with x-, x+, y-, y+ keys containing BC strings.
+            Dict with boundary keys containing BC strings.
         """
-        default = {
+        default: dict[str, str] = {
             "x-": self.x_minus,
             "x+": self.x_plus,
-            "y-": self.y_minus,
-            "y+": self.y_plus,
         }
+        if ndim >= 2 and self.y_minus is not None and self.y_plus is not None:
+            default["y-"] = self.y_minus
+            default["y+"] = self.y_plus
+        if ndim >= 3 and self.z_minus is not None and self.z_plus is not None:
+            default["z-"] = self.z_minus
+            default["z+"] = self.z_plus
+
         if self.fields and field_name in self.fields:
             default.update(self.fields[field_name])
         return default
@@ -99,20 +129,32 @@ class SimulationConfig:
     solver: str
     t_end: float
     dt: float
-    resolution: int
+    resolution: list[int]  # [nx] for 1D, [nx, ny] for 2D, [nx, ny, nz] for 3D
     bc: BoundaryConfig
     output: OutputConfig
     seed: int | None = None
-    domain_size: float = 1.0  # Physical size of the domain
+    domain_size: list[float] = field(default_factory=lambda: [1.0, 1.0])  # Matching dimensions
     backend: str = "auto"  # Options: "auto", "numpy", "numba"
     adaptive: bool = True  # Enable adaptive time-stepping
     tolerance: float = 1e-4  # Error tolerance for adaptive stepping
 
+    @property
+    def ndim(self) -> int:
+        """Number of spatial dimensions."""
+        return len(self.resolution)
 
-def _parse_bc_config(bc_raw: dict) -> BoundaryConfig:
+
+def _parse_bc_config(bc_raw: dict, ndim: int = 2) -> BoundaryConfig:
     """Parse boundary condition configuration from raw dict.
 
-    Expected format:
+    Expected format for 1D:
+    ```yaml
+    bc:
+      x-: periodic
+      x+: periodic
+    ```
+
+    Expected format for 2D:
     ```yaml
     bc:
       x-: periodic
@@ -124,15 +166,37 @@ def _parse_bc_config(bc_raw: dict) -> BoundaryConfig:
           y-: dirichlet:0
           y+: dirichlet:0
     ```
+
+    Expected format for 3D:
+    ```yaml
+    bc:
+      x-: periodic
+      x+: periodic
+      y-: neumann:0
+      y+: neumann:0
+      z-: neumann:0
+      z+: neumann:0
+    ```
     """
     if not bc_raw:
-        return BoundaryConfig()
+        # Return defaults based on dimension
+        if ndim == 1:
+            return BoundaryConfig()
+        elif ndim == 2:
+            return BoundaryConfig(y_minus="periodic", y_plus="periodic")
+        else:  # 3D
+            return BoundaryConfig(
+                y_minus="periodic", y_plus="periodic",
+                z_minus="periodic", z_plus="periodic"
+            )
 
     return BoundaryConfig(
         x_minus=bc_raw.get("x-", "periodic"),
         x_plus=bc_raw.get("x+", "periodic"),
-        y_minus=bc_raw.get("y-", "periodic"),
-        y_plus=bc_raw.get("y+", "periodic"),
+        y_minus=bc_raw.get("y-"),  # None for 1D
+        y_plus=bc_raw.get("y+"),  # None for 1D
+        z_minus=bc_raw.get("z-"),  # None for 1D/2D
+        z_plus=bc_raw.get("z+"),  # None for 1D/2D
         fields=bc_raw.get("fields"),
     )
 
@@ -190,7 +254,36 @@ def load_config(path: Path | str) -> SimulationConfig:
         params=raw["init"].get("params", {}),
     )
 
-    bc_config = _parse_bc_config(raw.get("bc", {}))
+    # Parse resolution as list (supports 1D, 2D, 3D)
+    resolution_raw = raw["resolution"]
+    if not isinstance(resolution_raw, list):
+        raise ValueError(
+            f"resolution must be a list like [128, 128], got {type(resolution_raw).__name__}: {resolution_raw}"
+        )
+    resolution = [int(r) for r in resolution_raw]
+
+    ndim = len(resolution)
+    if ndim not in (1, 2, 3):
+        raise ValueError(f"resolution must have 1, 2, or 3 elements, got {ndim}")
+
+    # Parse domain_size as list (must match resolution dimensions)
+    domain_size_raw = raw.get("domain_size")
+    if domain_size_raw is None:
+        # Default to unit size in each dimension
+        domain_size = [1.0] * ndim
+    elif not isinstance(domain_size_raw, list):
+        raise ValueError(
+            f"domain_size must be a list like [10.0, 10.0], got {type(domain_size_raw).__name__}: {domain_size_raw}"
+        )
+    else:
+        domain_size = [float(d) for d in domain_size_raw]
+        if len(domain_size) != ndim:
+            raise ValueError(
+                f"domain_size has {len(domain_size)} elements but resolution has {ndim}"
+            )
+
+    # Parse boundary config with dimension awareness
+    bc_config = _parse_bc_config(raw.get("bc", {}), ndim)
 
     output_raw = raw.get("output", {})
 
@@ -208,25 +301,39 @@ def load_config(path: Path | str) -> SimulationConfig:
         solver=raw.get("solver", "euler"),
         t_end=raw["t_end"],
         dt=raw["dt"],
-        resolution=raw["resolution"],
+        resolution=resolution,
         bc=bc_config,
         output=output_config,
         seed=raw.get("seed"),
-        domain_size=raw.get("domain_size", 1.0),
+        domain_size=domain_size,
         backend=raw.get("backend", "numba"),
         adaptive=raw.get("adaptive", True),
         tolerance=raw.get("tolerance", 1e-4),
     )
 
 
-def _bc_config_to_dict(bc: BoundaryConfig) -> dict[str, Any]:
-    """Convert BoundaryConfig to dictionary for serialization."""
+def _bc_config_to_dict(bc: BoundaryConfig, ndim: int = 2) -> dict[str, Any]:
+    """Convert BoundaryConfig to dictionary for serialization.
+
+    Args:
+        bc: BoundaryConfig object.
+        ndim: Number of spatial dimensions.
+
+    Returns:
+        Dictionary representation of boundary conditions.
+    """
     bc_dict: dict[str, Any] = {
         "x-": bc.x_minus,
         "x+": bc.x_plus,
-        "y-": bc.y_minus,
-        "y+": bc.y_plus,
     }
+
+    if ndim >= 2 and bc.y_minus is not None:
+        bc_dict["y-"] = bc.y_minus
+        bc_dict["y+"] = bc.y_plus
+
+    if ndim >= 3 and bc.z_minus is not None:
+        bc_dict["z-"] = bc.z_minus
+        bc_dict["z+"] = bc.z_plus
 
     if bc.fields:
         bc_dict["fields"] = bc.fields
@@ -247,7 +354,7 @@ def config_to_dict(config: SimulationConfig) -> dict[str, Any]:
         "t_end": config.t_end,
         "dt": config.dt,
         "resolution": config.resolution,
-        "bc": _bc_config_to_dict(config.bc),
+        "bc": _bc_config_to_dict(config.bc, config.ndim),
         "output": {
             "path": str(config.output.path),
             "num_frames": config.output.num_frames,

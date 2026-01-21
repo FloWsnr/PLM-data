@@ -12,8 +12,8 @@ from tests.conftest import run_short_simulation
 
 @pytest.fixture
 def small_grid():
-    """Create a small grid for fast tests."""
-    return CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
+    """Create a small 1D grid for fast tests (KdV is a 1D equation)."""
+    return CartesianGrid([[0, 10]], [64], periodic=True)
 
 
 class TestKdVPDE:
@@ -46,7 +46,7 @@ class TestKdVPDE:
         """Test PDE creation."""
         preset = get_pde_preset("kdv")
         params = preset.get_default_parameters()
-        bc = {"x": "periodic", "y": "periodic"}
+        bc = {"x-": "periodic", "x+": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
         assert pde is not None
@@ -113,6 +113,7 @@ class TestKdVPDE:
         equations = preset.get_equations_for_metadata(params)
 
         assert "u" in equations
-        assert "d_dx" in equations["u"]
-        # Should contain the nonlinear term
-        assert "u" in equations["u"]
+        # Should contain derivative terms (now uses mathematical notation)
+        assert "dx" in equations["u"]
+        # Should contain the nonlinear term (6*u)
+        assert "6*u" in equations["u"]

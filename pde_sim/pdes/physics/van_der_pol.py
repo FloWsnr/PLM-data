@@ -77,6 +77,7 @@ class VanDerPolPDE(MultiFieldPDEPreset):
             num_fields=2,
             field_names=["X", "Y"],
             reference="Van der Pol (1926) On relaxation oscillations",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

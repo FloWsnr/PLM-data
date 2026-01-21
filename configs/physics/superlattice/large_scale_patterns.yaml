@@ -17,11 +17,11 @@ solver: scipy
 backend: numba
 adaptive: true
 dt: 0.1
-resolution: 128
+resolution: [128, 128]
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: 100.0
+domain_size: [100.0, 100.0]
 t_end: 10.0

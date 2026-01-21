@@ -49,8 +49,8 @@ class TestSimulationRunner:
             "solver": "euler",
             "t_end": 0.005,  # 50 * 0.0001
             "dt": 0.0001,
-            "resolution": 16,
-            "bc": {"x": "periodic", "y": "periodic"},
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
             "output": {"path": str(tmp_path), "num_frames": 6},
             "seed": 42,
         }
@@ -90,8 +90,8 @@ class TestSimulationRunner:
                 "solver": solver,
                 "t_end": 0.001,
                 "dt": 0.0001,
-                "resolution": 16,
-                "bc": {"x": "periodic", "y": "periodic"},
+                "resolution": [16, 16],
+                "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
                 "output": {"path": str(tmp_path), "num_frames": 3},
                 "seed": 42,
             }
@@ -120,8 +120,8 @@ class TestRunFromConfig:
             "solver": "euler",
             "t_end": 0.002,  # 20 * 0.0001
             "dt": 0.0001,
-            "resolution": 16,
-            "bc": {"x": "periodic", "y": "periodic"},
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
             "output": {"path": str(tmp_path), "num_frames": 6},
             "seed": 123,
         }
@@ -144,8 +144,8 @@ class TestRunFromConfig:
             "solver": "euler",
             "t_end": 0.001,  # 10 * 0.0001
             "dt": 0.0001,
-            "resolution": 16,
-            "bc": {"x": "periodic", "y": "periodic"},
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
             "output": {"path": str(tmp_path), "num_frames": 3},
             "seed": 42,
         }
@@ -172,14 +172,14 @@ class TestGrayScottSimulation:
             "backend": "numpy",
             "t_end": 1.0,  # 100 * 0.01
             "dt": 0.01,  # Reduced for CFL stability (was 0.5)
-            "resolution": 32,
-            "bc": {"x": "periodic", "y": "periodic"},
+            "resolution": [32, 32],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
             "output": {
                 "path": str(tmp_path),
                 "num_frames": 11,
             },
             "seed": 42,
-            "domain_size": 2.5,
+            "domain_size": [2.5, 2.5],
         }
 
         config_path = tmp_path / "config.yaml"
@@ -211,8 +211,8 @@ class TestBackend:
             "solver": "euler",
             "t_end": 0.0005,  # 10 * 0.0001
             "dt": 0.0001,
-            "resolution": 16,
-            "bc": {"x": "periodic", "y": "periodic"},
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
             "output": {"path": str(tmp_path), "num_frames": 3},
             "seed": 42,
             "backend": backend,
@@ -238,8 +238,8 @@ class TestBackend:
             "solver": "euler",
             "t_end": 0.0005,  # 5 * 0.0001
             "dt": 0.0001,
-            "resolution": 16,
-            "bc": {"x": "periodic", "y": "periodic"},
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
             "output": {"path": str(tmp_path), "num_frames": 3},
             "seed": 42,
             "backend": "invalid_backend",
@@ -266,8 +266,8 @@ class TestAdaptiveTimeStepping:
             "solver": "euler",
             "t_end": 0.0005,  # 5 * 0.0001
             "dt": 0.0001,
-            "resolution": 16,
-            "bc": {"x": "periodic", "y": "periodic"},
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
             "output": {"path": str(tmp_path), "num_frames": 3},
             "seed": 42,
             "adaptive": True,
@@ -291,8 +291,8 @@ class TestAdaptiveTimeStepping:
             "solver": "euler",
             "t_end": 0.0005,  # 5 * 0.0001
             "dt": 0.0001,
-            "resolution": 16,
-            "bc": {"x": "periodic", "y": "periodic"},
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
             "output": {"path": str(tmp_path), "num_frames": 6},
             "seed": 42,
             "adaptive": True,
@@ -327,8 +327,8 @@ class TestUnusedParameterWarning:
             "solver": "euler",
             "t_end": 0.0005,
             "dt": 0.0001,
-            "resolution": 16,
-            "bc": {"x": "periodic", "y": "periodic"},
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
             "output": {"path": str(tmp_path), "num_frames": 3},
             "seed": 42,
         }
@@ -362,8 +362,8 @@ class TestUnusedParameterWarning:
             "solver": "euler",
             "t_end": 0.001,
             "dt": 0.0001,
-            "resolution": 16,
-            "bc": {"x": "periodic", "y": "periodic"},
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
             "output": {"path": str(tmp_path), "num_frames": 3},
             "seed": 42,
         }
@@ -392,8 +392,8 @@ class TestUnusedParameterWarning:
             "solver": "euler",
             "t_end": 0.001,
             "dt": 0.0001,
-            "resolution": 16,
-            "bc": {"x": "periodic", "y": "periodic"},
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
             "output": {"path": str(tmp_path), "num_frames": 3},
             "seed": 42,
         }

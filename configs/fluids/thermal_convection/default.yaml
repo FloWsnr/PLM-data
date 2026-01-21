@@ -12,7 +12,7 @@ solver: euler
 backend: auto
 adaptive: true
 dt: 0.001
-resolution: 128
+resolution: [128, 128]
 bc:
   x-: periodic
   x+: periodic
@@ -28,5 +28,5 @@ bc:
     b:
       y-: neumann:0.08
       y+: dirichlet:0
-domain_size: 500.0
+domain_size: [500.0, 500.0]
 t_end: 500.0

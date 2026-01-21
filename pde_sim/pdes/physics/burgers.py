@@ -53,6 +53,7 @@ class BurgersPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["u"],
             reference="Burgers (1948) Mathematical model for turbulence",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

@@ -66,6 +66,7 @@ class InviscidBurgersPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["u"],
             reference="Burgers (1948), Lax (1957) entropy conditions",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

@@ -78,6 +78,7 @@ class CahnHilliardPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["u"],
             reference="Cahn & Hilliard (1958) Free Energy of a Nonuniform System",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

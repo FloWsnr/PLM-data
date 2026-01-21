@@ -13,10 +13,10 @@ adaptive: false
 dt: 2.0e-05
 t_end: 2.0
 dimension: 1
-resolution: 300
+resolution: [300, 300]
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: 30
+domain_size: [30, 30]

@@ -85,6 +85,7 @@ class CyclicCompetitionPDE(MultiFieldPDEPreset):
             num_fields=3,
             field_names=["u", "v", "w"],
             reference="May & Leonard (1975), Reichenbach et al. (2007)",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

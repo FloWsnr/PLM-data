@@ -80,6 +80,7 @@ class LorenzPDE(MultiFieldPDEPreset):
             num_fields=3,
             field_names=["X", "Y", "Z"],
             reference="Lorenz (1963) Deterministic nonperiodic flow",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

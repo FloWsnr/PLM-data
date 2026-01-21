@@ -70,6 +70,7 @@ class BrusselatorPDE(MultiFieldPDEPreset):
             num_fields=2,
             field_names=["u", "v"],
             reference="Prigogine & Lefever (1968)",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

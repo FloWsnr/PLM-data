@@ -126,6 +126,9 @@ class SimulationRunner:
         # Initialize components
         self.preset = get_pde_preset(config.preset)
 
+        # Validate that this PDE supports the requested dimensionality
+        self.preset.validate_dimension(config.ndim)
+
         # Create grid with appropriate boundary conditions
         self.grid = create_grid_with_bc(
             resolution=config.resolution,
@@ -190,6 +193,7 @@ class SimulationRunner:
             field_configs=field_configs,
             output_format=config.output.format,
             fps=config.output.fps,
+            ndim=config.ndim,
         )
 
     def _get_solver_name(self) -> str:
@@ -222,8 +226,10 @@ class SimulationRunner:
         save_interval = self.config.t_end / (num_frames - 1)
 
         if verbose:
+            resolution_str = "x".join(str(r) for r in self.config.resolution)
             print(f"Starting simulation: {self.config.preset}")
-            print(f"  Resolution: {self.config.resolution}x{self.config.resolution}")
+            print(f"  Dimensions: {self.config.ndim}D")
+            print(f"  Resolution: {resolution_str}")
             print(f"  Final time: {self.config.t_end}, dt: {self.config.dt}")
             print(f"  Frames: {num_frames} (interval: {save_interval:.4f})")
             print(f"  Solver: {self.config.solver}")

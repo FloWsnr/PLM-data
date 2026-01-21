@@ -12,11 +12,11 @@ solver: scipy
 backend: numpy
 adaptive: true
 dt: 0.0001
-resolution: 200
+resolution: [200, 200]
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-domain_size: 100.0
+domain_size: [100.0, 100.0]
 t_end: 20.0

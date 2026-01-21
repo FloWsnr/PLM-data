@@ -102,6 +102,7 @@ class SchrodingerPDE(MultiFieldPDEPreset):
             num_fields=2,
             field_names=["u", "v"],
             reference="https://visualpde.com/basic-pdes/stabilised-schrodinger",
+            supported_dimensions=[1, 2, 3],
         )
 
     def _compute_potential(

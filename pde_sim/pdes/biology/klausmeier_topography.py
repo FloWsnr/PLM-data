@@ -88,6 +88,7 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
             num_fields=3,
             field_names=["n", "w", "T"],
             reference="Klausmeier (1999), Saco et al. (2007)",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(

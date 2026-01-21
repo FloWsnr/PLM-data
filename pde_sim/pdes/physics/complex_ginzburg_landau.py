@@ -109,6 +109,7 @@ class ComplexGinzburgLandauPDE(MultiFieldPDEPreset):
             num_fields=2,
             field_names=["u", "v"],
             reference="Aranson & Kramer (2002) World of the CGL equation",
+            supported_dimensions=[1, 2, 3],
         )
 
     def create_pde(
