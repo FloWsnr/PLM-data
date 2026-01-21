@@ -101,7 +101,7 @@ class FitzHughNagumo3PDE(MultiFieldPDEPreset):
             num_fields=3,
             field_names=["u", "v", "w"],
             reference="VisualPDE FitzHugh-Nagumo-3",
-            supported_dimensions=[1, 2, 3],
+            supported_dimensions=[2],  # Currently 2D only (IC uses 2D meshgrid)
         )
 
     def create_pde(

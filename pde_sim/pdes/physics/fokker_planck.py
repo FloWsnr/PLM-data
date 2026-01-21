@@ -86,7 +86,7 @@ class FokkerPlanckPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["p"],
             reference="Risken (1996) The Fokker-Planck Equation",
-            supported_dimensions=[1, 2, 3],
+            supported_dimensions=[2],  # Currently 2D only (uses d_dy, y0 param)
         )
 
     def create_pde(

@@ -83,7 +83,7 @@ class BistableAdvectionPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["u"],
             reference="https://visualpde.com/reaction-diffusion/bistable-advection",
-            supported_dimensions=[1, 2, 3],
+            supported_dimensions=[2],  # Currently 2D only (uses d_dy for advection)
         )
 
     def create_pde(

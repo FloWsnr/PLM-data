@@ -94,7 +94,7 @@ class SwiftHohenbergAdvectionPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["u"],
             reference="Cross & Hohenberg (1993) Pattern formation outside equilibrium",
-            supported_dimensions=[1, 2, 3],
+            supported_dimensions=[2],  # Currently 2D only (uses theta angle for 2D advection)
         )
 
     def create_pde(
