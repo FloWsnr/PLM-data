@@ -1,0 +1,25 @@
+preset: sir
+parameters:
+  beta: 0.5     # Transmission rate (R0 = beta/gamma = 5)
+  gamma: 0.1    # Recovery rate
+  D_S: 0.1      # Susceptible diffusion
+  D_I: 0.1      # Infected diffusion
+  D_R: 0.1      # Recovered diffusion
+init:
+  type: wave
+  params:
+    S0: 0.99
+    I0: 0.01
+    seed_radius: 5.0
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+domain_size: 100.0
+t_end: 200.0

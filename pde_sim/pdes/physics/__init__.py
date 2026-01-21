@@ -12,6 +12,8 @@ from .superlattice import SuperlatticePDE
 # Wave and soliton equations
 from .burgers import BurgersPDE
 from .inviscid_burgers import InviscidBurgersPDE
+from .kdv import KdVPDE
+from .sine_gordon import SineGordonPDE
 from .zakharov_kuznetsov import ZakharovKuznetsovPDE
 from .kuramoto_sivashinsky import KuramotoSivashinskyPDE
 from .nonlinear_schrodinger import NonlinearSchrodingerPDE
@@ -27,6 +29,9 @@ from .perona_malik import PeronaMalikPDE
 from .van_der_pol import VanDerPolPDE
 from .duffing import DuffingPDE
 
+# Stochastic/Statistical
+from .fokker_planck import FokkerPlanckPDE
+
 __all__ = [
     # Pattern formation
     "GrayScottPDE",
@@ -39,6 +44,8 @@ __all__ = [
     # Waves and solitons
     "BurgersPDE",
     "InviscidBurgersPDE",
+    "KdVPDE",
+    "SineGordonPDE",
     "ZakharovKuznetsovPDE",
     "KuramotoSivashinskyPDE",
     "NonlinearSchrodingerPDE",
@@ -50,4 +57,6 @@ __all__ = [
     # Oscillators
     "VanDerPolPDE",
     "DuffingPDE",
+    # Stochastic/Statistical
+    "FokkerPlanckPDE",
 ]

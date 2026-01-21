@@ -1,0 +1,28 @@
+# KdV equation - multiple random solitons
+# Shows complex multi-soliton dynamics with varied amplitudes
+preset: kdv
+parameters:
+  b: 0.0001
+
+init:
+  type: random-solitons
+  params:
+    n: 4          # Number of solitons
+    k_min: 0.35   # Minimum width parameter
+    k_max: 0.65   # Maximum width parameter
+    margin: 0.1   # Margin from domain edges
+
+solver: rk4
+backend: numba
+adaptive: false
+dt: 0.001
+t_end: 80.0
+resolution: 128
+
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+
+domain_size: 100

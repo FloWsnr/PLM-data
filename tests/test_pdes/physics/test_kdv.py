@@ -1,0 +1,118 @@
+"""Tests for Korteweg-de Vries (KdV) equation PDE."""
+
+import numpy as np
+import pytest
+
+from pde import CartesianGrid, ScalarField
+
+from pde_sim.pdes import get_pde_preset, list_presets
+
+from tests.conftest import run_short_simulation
+
+
+@pytest.fixture
+def small_grid():
+    """Create a small grid for fast tests."""
+    return CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
+
+
+class TestKdVPDE:
+    """Tests for Korteweg-de Vries equation."""
+
+    def test_registered(self):
+        """Test that kdv is registered."""
+        assert "kdv" in list_presets()
+
+    def test_metadata(self):
+        """Test metadata."""
+        preset = get_pde_preset("kdv")
+        meta = preset.metadata
+
+        assert meta.name == "kdv"
+        assert meta.category == "physics"
+        assert meta.num_fields == 1
+        assert "u" in meta.field_names
+        assert "Korteweg" in meta.reference or "KdV" in meta.description
+
+    def test_get_default_parameters(self):
+        """Test default parameters."""
+        preset = get_pde_preset("kdv")
+        params = preset.get_default_parameters()
+
+        assert "b" in params
+        assert params["b"] == 0.0001
+
+    def test_create_pde(self, small_grid):
+        """Test PDE creation."""
+        preset = get_pde_preset("kdv")
+        params = preset.get_default_parameters()
+        bc = {"x": "periodic", "y": "periodic"}
+
+        pde = preset.create_pde(params, bc, small_grid)
+        assert pde is not None
+
+    def test_create_initial_state_soliton(self, small_grid):
+        """Test creating initial state with single soliton."""
+        preset = get_pde_preset("kdv")
+        state = preset.create_initial_state(
+            small_grid, "soliton", {"k": 0.5, "x0": 5.0}
+        )
+
+        assert state is not None
+        assert isinstance(state, ScalarField)
+        assert np.isfinite(state.data).all()
+        # Soliton should have positive values
+        assert state.data.max() > 0
+
+    def test_create_initial_state_two_solitons(self, small_grid):
+        """Test creating initial state with two solitons."""
+        preset = get_pde_preset("kdv")
+        state = preset.create_initial_state(
+            small_grid, "two-solitons", {"k1": 0.6, "k2": 0.4}
+        )
+
+        assert state is not None
+        assert isinstance(state, ScalarField)
+        assert np.isfinite(state.data).all()
+
+    def test_create_initial_state_n_wave(self, small_grid):
+        """Test creating initial state with n-wave."""
+        preset = get_pde_preset("kdv")
+        state = preset.create_initial_state(
+            small_grid, "n-wave", {"amplitude": 1.0, "width": 0.1}
+        )
+
+        assert state is not None
+        assert isinstance(state, ScalarField)
+        assert np.isfinite(state.data).all()
+
+    def test_soliton_amplitude_width_relation(self, small_grid):
+        """Test that soliton amplitude follows u = 2k^2."""
+        preset = get_pde_preset("kdv")
+        k = 0.5
+        state = preset.create_initial_state(
+            small_grid, "soliton", {"k": k, "x0": 5.0}
+        )
+
+        expected_amplitude = 2 * k**2
+        # Max value should be close to expected amplitude
+        assert abs(state.data.max() - expected_amplitude) < 0.1 * expected_amplitude
+
+    def test_short_simulation(self):
+        """Test running a short simulation using default config."""
+        result, config = run_short_simulation("kdv", "physics", t_end=0.001)
+
+        assert isinstance(result, ScalarField)
+        assert np.isfinite(result.data).all()
+        assert config["preset"] == "kdv"
+
+    def test_equations_for_metadata(self):
+        """Test that equations are properly formatted."""
+        preset = get_pde_preset("kdv")
+        params = {"b": 0.0001}
+        equations = preset.get_equations_for_metadata(params)
+
+        assert "u" in equations
+        assert "d_dx" in equations["u"]
+        # Should contain the nonlinear term
+        assert "u" in equations["u"]

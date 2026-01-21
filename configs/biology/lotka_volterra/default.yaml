@@ -1,0 +1,25 @@
+preset: lotka-volterra
+parameters:
+  Du: 1.0       # Prey diffusion coefficient
+  Dv: 0.5       # Predator diffusion coefficient (slower than prey)
+  alpha: 1.0    # Prey growth rate
+  beta: 0.1     # Predation rate
+  delta: 0.075  # Predator reproduction efficiency
+  gamma: 0.5    # Predator death rate
+init:
+  type: random-uniform
+  params:
+    low: 5.0
+    high: 10.0
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.01
+resolution: 128
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+domain_size: 100.0
+t_end: 50.0

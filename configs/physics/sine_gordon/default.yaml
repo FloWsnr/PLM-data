@@ -1,0 +1,22 @@
+preset: sine-gordon
+parameters:
+  c: 1.0
+  gamma: 0.01
+init:
+  type: kink-antikink
+  params:
+    width: 2.0
+    v_kink: 0.3
+    v_antikink: -0.3
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.01
+t_end: 100.0
+resolution: 128
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+domain_size: 50

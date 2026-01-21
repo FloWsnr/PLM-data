@@ -1,0 +1,27 @@
+# KdV equation - N-wave breaking into soliton train
+# An initial bump evolves into a train of solitons ordered by height
+preset: kdv
+parameters:
+  b: 0.0001
+
+init:
+  type: n-wave
+  params:
+    amplitude: 1.5   # Initial bump amplitude
+    width: 0.08      # Bump width (fraction of domain)
+    x0: 20           # Bump center position
+
+solver: rk4
+backend: numba
+adaptive: false
+dt: 0.001
+t_end: 100.0
+resolution: 128
+
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+
+domain_size: 100

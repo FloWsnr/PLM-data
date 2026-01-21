@@ -18,6 +18,8 @@ from .cyclic_competition_wave import CyclicCompetitionWavePDE
 from .immunotherapy import ImmunotherapyPDE
 from .harsh_environment import HarshEnvironmentPDE
 from .bacteria_advection import BacteriaAdvectionPDE
+from .lotka_volterra import LotkaVolterraPDE
+from .sir import SIRPDEPreset
 
 __all__ = [
     "SchnakenbergPDE",
@@ -38,4 +40,6 @@ __all__ = [
     "ImmunotherapyPDE",
     "HarshEnvironmentPDE",
     "BacteriaAdvectionPDE",
+    "LotkaVolterraPDE",
+    "SIRPDEPreset",
 ]

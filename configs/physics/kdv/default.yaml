@@ -1,0 +1,27 @@
+# KdV equation - two-soliton collision demonstrating elastic soliton interaction
+preset: kdv
+parameters:
+  b: 0.0001  # Small biharmonic dissipation for numerical stability
+
+init:
+  type: two-solitons
+  params:
+    k1: 0.6    # Taller, faster soliton
+    k2: 0.4    # Shorter, slower soliton
+    x1: 15     # Starting position (behind)
+    x2: 35     # Starting position (ahead)
+
+solver: rk4
+backend: numba
+adaptive: false
+dt: 0.001
+t_end: 60.0
+resolution: 128
+
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+
+domain_size: 100

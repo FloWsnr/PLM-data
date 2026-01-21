@@ -1,0 +1,25 @@
+# KdV equation - single soliton propagation
+preset: kdv
+parameters:
+  b: 0.0001
+
+init:
+  type: soliton
+  params:
+    k: 0.5       # Width parameter (amplitude = 2k^2 = 0.5)
+    x0: 20       # Start on left side
+
+solver: rk4
+backend: numba
+adaptive: false
+dt: 0.001
+t_end: 80.0
+resolution: 128
+
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+
+domain_size: 100

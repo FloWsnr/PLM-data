@@ -1,0 +1,32 @@
+# Fokker-Planck equation: probability density relaxation to equilibrium
+# Demonstrates evolution under drift (harmonic potential) and diffusion
+preset: fokker-planck
+
+parameters:
+  D: 0.1       # Diffusion coefficient
+  gamma: 0.5   # Drift strength (harmonic potential)
+  x0: 0.0      # Potential center x (relative to domain center)
+  y0: 0.0      # Potential center y (relative to domain center)
+
+init:
+  type: default
+  params:
+    sigma: 0.15          # Initial Gaussian width (relative to domain)
+    init_x_offset: 0.3   # Initial x offset from domain center
+    init_y_offset: 0.3   # Initial y offset from domain center
+
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.005
+resolution: 128
+dimension: 2
+
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+
+domain_size: 10.0
+t_end: 20.0
