@@ -95,7 +95,7 @@ class MyPDEPreset(ScalarPDEPreset):
             category="physics",
             description="My custom PDE",
             equations={"u": "D * laplace(u)"},
-            parameters=[PDEParameter("D", 1.0, "diffusion coefficient", 0.01, 10.0)],
+            parameters=[PDEParameter(name="D", description="diffusion coefficient")],
             num_fields=1,
             field_names=["u"],
             supported_dimensions=[1, 2, 3],  # Required: specify which dimensions are supported
@@ -178,9 +178,6 @@ output:
   num_frames: 100
   format: png           # "png", "mp4", or "numpy"
   fps: 30               # Frame rate for MP4 (default: 30)
-  fields:
-    - u:viridis
-    - v:plasma
 ```
 
 **Format options:**
@@ -188,7 +185,7 @@ output:
 - `mp4`: One MP4 video per field
 - `numpy`: Single numpy array with shape `(Time, Height, Width, Fields)`
 
-If no `fields` list is specified, all fields are output using the default colormap (`turbo`).
+All fields from the PDE are always output. Colormaps are auto-assigned from a cycle (viridis, plasma, inferno, magma, cividis) based on field order.
 
 ## Output Structure
 
