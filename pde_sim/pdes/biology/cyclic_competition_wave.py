@@ -106,6 +106,10 @@ class CyclicCompetitionWavePDE(MultiFieldPDEPreset):
         Species present only in left 10% of domain, simulating invasion.
         Matches Visual PDE: u = H(0.1-x/L_x)*(1+0.001*RANDN)
         """
+        # For standard IC types, use parent class implementation
+        if ic_type not in ("default",):
+            return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
+
         np.random.seed(ic_params.get("seed"))
         noise = ic_params.get("noise", 0.001)
         edge_fraction = ic_params.get("edge_fraction", 0.1)

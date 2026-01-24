@@ -11,6 +11,7 @@ from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
     check_result_finite,
+    check_dimension_variation,
 )
 
 
@@ -150,9 +151,9 @@ class TestSIRPDE:
         grid = create_grid_for_dimension(ndim, resolution=resolution)
         bc = create_bc_for_dimension(ndim)
 
-        # Create PDE and initial state using default IC
+        # Create PDE and initial state (use random-uniform for variation testing)
         pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
-        state = preset.create_initial_state(grid, "default", {"seed": 42})
+        state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
         result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
@@ -160,3 +161,4 @@ class TestSIRPDE:
         # Verify result
         assert isinstance(result, FieldCollection)
         check_result_finite(result, "sir", ndim)
+        check_dimension_variation(result, ndim, "sir")

@@ -122,3 +122,148 @@ def check_result_finite(result: ScalarField | FieldCollection, preset_name: str,
     else:
         for i, field in enumerate(result):
             assert np.isfinite(field.data).all(), f"{preset_name} in {ndim}D field {i} produced non-finite values"
+
+
+def _compute_axis_variation(data: np.ndarray, axis: int) -> float:
+    """Compute mean standard deviation along an axis.
+
+    Args:
+        data: The data array to analyze.
+        axis: The axis along which to compute standard deviation.
+
+    Returns:
+        Mean standard deviation across slices perpendicular to the axis.
+    """
+    return float(np.mean(np.std(data, axis=axis)))
+
+
+def _check_field_dimension_variation(
+    data: np.ndarray,
+    field_name: str,
+    expected_ndim: int,
+    preset_name: str,
+    relative_tol: float = 1e-6,
+    absolute_tol: float = 1e-14,
+) -> None:
+    """Check that a single field has variation in all expected dimensions.
+
+    Args:
+        data: The field data array.
+        field_name: Name of the field (for error message).
+        expected_ndim: Expected number of spatial dimensions.
+        preset_name: Name of the PDE preset (for error message).
+        relative_tol: Relative tolerance for variation threshold.
+        absolute_tol: Absolute tolerance floor for variation threshold.
+
+    Raises:
+        AssertionError: If the field lacks variation in any dimension.
+    """
+    data_range = data.max() - data.min()
+    threshold = max(data_range * relative_tol, absolute_tol)
+
+    axis_names = ["x", "y", "z"][:expected_ndim]
+
+    for axis in range(expected_ndim):
+        variation = _compute_axis_variation(data, axis)
+        if variation < threshold:
+            raise AssertionError(
+                f"{preset_name} {field_name} in {expected_ndim}D: "
+                f"No variation along {axis_names[axis]}-axis (std={variation:.2e}). "
+                f"This suggests broadcasting of lower-dimensional data."
+            )
+
+
+def check_dimension_variation(
+    result: ScalarField | FieldCollection,
+    expected_ndim: int,
+    preset_name: str,
+    relative_tol: float = 1e-6,
+    absolute_tol: float = 1e-14,
+) -> None:
+    """Assert simulation result varies in all expected dimensions.
+
+    Catches PDEs that claim multi-D support but broadcast lower-D data.
+
+    Args:
+        result: The simulation result.
+        expected_ndim: Expected number of spatial dimensions.
+        preset_name: Name of the PDE preset (for error message).
+        relative_tol: Relative tolerance for variation threshold.
+        absolute_tol: Absolute tolerance floor for variation threshold.
+
+    Raises:
+        AssertionError: If result lacks variation in any dimension.
+    """
+    if isinstance(result, ScalarField):
+        _check_field_dimension_variation(
+            result.data,
+            result.label or "field",
+            expected_ndim,
+            preset_name,
+            relative_tol,
+            absolute_tol,
+        )
+    else:
+        for i, field in enumerate(result):
+            _check_field_dimension_variation(
+                field.data,
+                field.label or f"field_{i}",
+                expected_ndim,
+                preset_name,
+                relative_tol,
+                absolute_tol,
+            )
+
+
+def check_result_dimensions(
+    result: ScalarField | FieldCollection,
+    expected_ndim: int,
+    expected_resolution: int | list[int],
+    preset_name: str,
+) -> None:
+    """Assert that simulation result has the correct dimensions and shape.
+
+    This verifies that:
+    1. The grid has the expected number of dimensions
+    2. The data array has the expected shape
+    3. Each field (for multi-field PDEs) has consistent dimensions
+
+    Args:
+        result: The simulation result.
+        expected_ndim: Expected number of spatial dimensions (1, 2, or 3).
+        expected_resolution: Expected resolution per dimension.
+        preset_name: Name of the PDE preset (for error message).
+
+    Raises:
+        AssertionError: If dimensions don't match expected values.
+    """
+    # Normalize resolution to list
+    if isinstance(expected_resolution, int):
+        expected_shape = tuple([expected_resolution] * expected_ndim)
+    else:
+        expected_shape = tuple(expected_resolution)
+
+    if isinstance(result, ScalarField):
+        # Check grid dimensionality
+        assert result.grid.dim == expected_ndim, (
+            f"{preset_name}: grid.dim={result.grid.dim}, expected {expected_ndim}"
+        )
+        # Check data shape matches expected dimensions
+        assert result.data.ndim == expected_ndim, (
+            f"{preset_name}: data.ndim={result.data.ndim}, expected {expected_ndim}"
+        )
+        assert result.data.shape == expected_shape, (
+            f"{preset_name}: data.shape={result.data.shape}, expected {expected_shape}"
+        )
+    else:
+        # FieldCollection - check each field
+        for i, field in enumerate(result):
+            assert field.grid.dim == expected_ndim, (
+                f"{preset_name} field {i}: grid.dim={field.grid.dim}, expected {expected_ndim}"
+            )
+            assert field.data.ndim == expected_ndim, (
+                f"{preset_name} field {i}: data.ndim={field.data.ndim}, expected {expected_ndim}"
+            )
+            assert field.data.shape == expected_shape, (
+                f"{preset_name} field {i}: data.shape={field.data.shape}, expected {expected_shape}"
+            )

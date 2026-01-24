@@ -139,6 +139,10 @@ class HeterogeneousGiererMeinhardtPDE(MultiFieldPDEPreset):
         Includes a static X field containing normalized x-coordinates (x/L)
         for implementing spatial heterogeneity.
         """
+        # For standard IC types, use parent class implementation
+        if ic_type not in ("default",):
+            return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
+
         noise = ic_params.get("noise", 0.01)
 
         # Initial values near steady state (approximate)

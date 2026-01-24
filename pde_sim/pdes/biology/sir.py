@@ -131,7 +131,7 @@ class SIRPDEPreset(MultiFieldPDEPreset):
 
         Parameters:
             grid: Computational grid
-            ic_type: Type of initial condition ("default" or "wave")
+            ic_type: Type of initial condition ("default", "wave", or standard IC types)
             ic_params: Parameters including:
                 - S0: Initial susceptible fraction (default 0.99)
                 - I0: Initial infected fraction in seed region (default 0.01)
@@ -139,6 +139,10 @@ class SIRPDEPreset(MultiFieldPDEPreset):
                 - noise: Noise amplitude (default 0.0)
                 - seed: Random seed
         """
+        # For standard IC types, use parent class implementation
+        if ic_type not in ("default", "wave"):
+            return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
+
         np.random.seed(ic_params.get("seed"))
         noise = ic_params.get("noise", 0.0)
 

@@ -12,6 +12,7 @@ from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
     check_result_finite,
+    check_dimension_variation,
 )
 
 
@@ -118,3 +119,4 @@ class TestFitzHughNagumo3PDE:
 
         assert isinstance(result, FieldCollection)
         check_result_finite(result, "fitzhugh-nagumo-3", 2)
+        check_dimension_variation(result, 2, "fitzhugh-nagumo-3")

@@ -13,6 +13,7 @@ from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
     check_result_finite,
+    check_dimension_variation,
 )
 
 
@@ -74,3 +75,4 @@ class TestNonlinearSchrodingerPDE:
         # Verify result
         assert isinstance(result, FieldCollection)
         check_result_finite(result, "nonlinear-schrodinger", ndim)
+        check_dimension_variation(result, ndim, "nonlinear-schrodinger")

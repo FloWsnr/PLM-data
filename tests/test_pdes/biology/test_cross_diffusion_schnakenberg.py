@@ -11,6 +11,7 @@ from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
     check_result_finite,
+    check_dimension_variation,
 )
 
 
@@ -68,3 +69,4 @@ class TestCrossDiffusionSchnakenbergPDE:
         # Verify result
         assert isinstance(result, FieldCollection)
         check_result_finite(result, "cross-diffusion-schnakenberg", ndim)
+        check_dimension_variation(result, ndim, "cross-diffusion-schnakenberg")

@@ -13,6 +13,7 @@ from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
     check_result_finite,
+    check_dimension_variation,
 )
 
 
@@ -72,20 +73,18 @@ class TestAdvectionPDE:
         assert np.isfinite(result.data).all()
         assert config["preset"] == "advection"
 
-    @pytest.mark.parametrize("ndim", [2, 3])
-    def test_dimension_support(self, ndim: int):
-        """Test advection equation works in supported dimensions (2D and 3D)."""
+    def test_dimension_2d_support(self):
+        """Test advection equation works in 2D."""
         np.random.seed(42)
         preset = AdvectionPDE()
 
         # Check dimension is supported
-        assert ndim in preset.metadata.supported_dimensions
-        preset.validate_dimension(ndim)
+        assert 2 in preset.metadata.supported_dimensions
+        preset.validate_dimension(2)
 
         # Create grid and BCs
-        resolution = 8 if ndim == 3 else 16
-        grid = create_grid_for_dimension(ndim, resolution=resolution)
-        bc = create_bc_for_dimension(ndim)
+        grid = create_grid_for_dimension(2, resolution=16)
+        bc = create_bc_for_dimension(2)
 
         # Create PDE and initial state
         pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
@@ -96,11 +95,19 @@ class TestAdvectionPDE:
 
         # Verify result
         assert isinstance(result, ScalarField)
-        check_result_finite(result, "advection", ndim)
+        check_result_finite(result, "advection", 2)
+        check_dimension_variation(result, 2, "advection")
 
     def test_dimension_1d_not_supported(self):
-        """Test that advection rejects 1D (implementation requires 2D+ for rotational mode)."""
+        """Test that advection rejects 1D (uses d_dy, L_y)."""
         preset = AdvectionPDE()
         assert 1 not in preset.metadata.supported_dimensions
         with pytest.raises(ValueError, match="does not support"):
             preset.validate_dimension(1)
+
+    def test_dimension_3d_not_supported(self):
+        """Test that advection rejects 3D (uses theta angle for 2D, no d_dz)."""
+        preset = AdvectionPDE()
+        assert 3 not in preset.metadata.supported_dimensions
+        with pytest.raises(ValueError, match="does not support"):
+            preset.validate_dimension(3)

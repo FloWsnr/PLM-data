@@ -130,6 +130,10 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
             - "ridge": Central ridge with valleys on sides
             - "random": Random smooth terrain (sum of sinusoids)
         """
+        # For standard IC types, use parent class implementation
+        if ic_type not in ("default", "custom"):
+            return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
+
         np.random.seed(ic_params.get("seed"))
 
         # Initial water: constant (similar to visual-pde initCond_2: "1")

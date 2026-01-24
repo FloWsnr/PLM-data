@@ -13,6 +13,7 @@ from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
     check_result_finite,
+    check_dimension_variation,
 )
 
 
@@ -103,10 +104,10 @@ class TestPlatePDE:
         grid = create_grid_for_dimension(ndim, resolution=resolution, periodic=False)
         bc = create_bc_for_dimension(ndim, periodic=False)
 
-        # Create PDE and initial state
+        # Create PDE and initial state (use random-uniform for variation testing)
         params = preset.get_default_parameters()
         pde = preset.create_pde(params, bc, grid)
-        state = preset.create_initial_state(grid, "constant", {"value": -4.0}, parameters=params, bc=bc)
+        state = preset.create_initial_state(grid, "random-uniform", {"low": -5.0, "high": -3.0})
 
         # Run short simulation
         result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
@@ -114,6 +115,7 @@ class TestPlatePDE:
         # Verify result
         assert isinstance(result, FieldCollection)
         check_result_finite(result, "plate", ndim)
+        check_dimension_variation(result, ndim, "plate")
 
     def test_dimension_3d_not_supported(self):
         """Test that plate rejects 3D (BC conversion issue)."""
