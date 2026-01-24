@@ -1,7 +1,6 @@
 """Tests for different compute backends."""
 
 import numpy as np
-import pytest
 
 from pde_sim.pdes import get_pde_preset
 

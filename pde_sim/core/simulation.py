@@ -10,7 +10,7 @@ from typing import Any
 import numpy as np
 from pde import MemoryStorage
 
-from .config import SimulationConfig, load_config
+from .config import COLORMAP_CYCLE, SimulationConfig, load_config
 from .output import OutputManager, create_metadata
 from ..boundaries import create_grid_with_bc
 from ..pdes import get_pde_preset
@@ -177,8 +177,6 @@ class SimulationRunner:
 
         # Determine field configurations for output
         # Auto-assign colormaps from COLORMAP_CYCLE based on field order
-        from .config import COLORMAP_CYCLE
-
         field_names = self.preset.metadata.field_names
         field_configs = [
             (name, COLORMAP_CYCLE[i % len(COLORMAP_CYCLE)])
