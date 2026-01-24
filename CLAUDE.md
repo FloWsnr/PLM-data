@@ -227,3 +227,9 @@ uv run python -m pde_sim run configs/biology/immunotherapy/high_effector_diffusi
 # Creates: output/biology/immunotherapy/high_effector_diffusion_001/
 # Next run: output/biology/immunotherapy/high_effector_diffusion_002/
 ```
+
+
+## New Code Rules
+
+- Don't account for backwards compatibility
+- Don't use default values, i.e. dict.get(key, default) or in functions if not actually necessary. The code should fail if values are not provided.
