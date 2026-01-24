@@ -1,16 +1,14 @@
-preset: advection
+preset: advection-rotational
 parameters:
   D: 5.0
-  V: 0.05
-  theta: 0.0
-  mode: 0
+  omega: 0.05
 init:
-  type: single-blob
+  type: gaussian-blobs
   params:
+    num_blobs: 1
+    positions: [[0.3, 0.5]]
     amplitude: 1.0
     width: 0.05
-    center_x: 0.3
-    center_y: 0.5
     background: 0.0
 solver: euler
 backend: numba

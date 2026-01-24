@@ -1,9 +1,7 @@
-preset: advection
+preset: advection-rotational
 parameters:
   D: 0.8
-  V: -0.5
-  theta: 0.0
-  mode: 0
+  omega: -0.5
 init:
   type: gaussian-blobs
   params:

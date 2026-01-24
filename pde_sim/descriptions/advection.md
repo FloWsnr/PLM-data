@@ -1,6 +1,6 @@
-# Advection-Diffusion Equation (Convection-Diffusion)
+# Advection-Diffusion Equation (Uniform Flow)
 
-The advection-diffusion equation combines diffusive spreading with transport by a velocity field, describing how substances move through flowing media.
+The advection-diffusion equation combines diffusive spreading with transport by a uniform velocity field, describing how substances move through flowing media.
 
 ## Description
 
@@ -28,96 +28,61 @@ The **Peclet number** (Pe = vL/D) characterizes which mechanism dominates:
 - Low Pe: Diffusion dominates, advection negligible
 - High Pe: Advection dominates, concentration "rides" with the flow
 
-### Velocity Field Types
-
-Two velocity fields are supported (matching visual-pde):
-
-1. **Rotational flow**: Counterclockwise rotation about domain center for positive V
-2. **Unidirectional flow**: Directed transport controlled by angle θ and magnitude V
-
 ## Equations
 
-The advection-diffusion equation as implemented (matching visual-pde convention):
+The advection-diffusion equation with uniform velocity field:
 
-$$\frac{\partial u}{\partial t} = D \nabla^2 u + \text{advection term}$$
+$$\frac{\partial u}{\partial t} = D \nabla^2 u + v_x \frac{\partial u}{\partial x} + v_y \frac{\partial u}{\partial y}$$
 
 where:
 - $u(x, y, t)$ is the concentration field
 - $D$ is the diffusion coefficient
+- $v_x$ is the x-component of velocity
+- $v_y$ is the y-component of velocity
 
-**Rotational mode** (counterclockwise rotation for positive V):
-$$\frac{\partial u}{\partial t} = D \nabla^2 u + V\left((y - L_y/2) \frac{\partial u}{\partial x} - (x - L_x/2) \frac{\partial u}{\partial y}\right)$$
+Note: This matches the visual-pde sign convention where the advection term is added (not subtracted) from the diffusion term.
 
-**Directed mode** (transport opposite to angle θ):
-$$\frac{\partial u}{\partial t} = D \nabla^2 u + V\left(\cos\theta \frac{\partial u}{\partial x} + \sin\theta \frac{\partial u}{\partial y}\right)$$
+## Parameters
 
-Note: This matches the visual-pde sign convention where the "advection term" is added (not subtracted) from the diffusion term. This differs from the standard textbook form $\partial_t u = D\nabla^2 u - \mathbf{v}\cdot\nabla u$.
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| D | 1.0 | [0, 10] | Diffusion coefficient |
+| vx | 5.0 | [-10, 10] | x-component of velocity |
+| vy | 0.0 | [-10, 10] | y-component of velocity |
 
 ## Default Config
 
-### Rotational Advection
 ```yaml
-solver: euler
-dt: 0.002
-dx: 1.25
-domain_size: 320
-
-boundary_x: dirichlet
-boundary_y: dirichlet
-
+preset: advection
 parameters:
-  V: 0.10    # range: [-5, 5], step: 0.01 - rotation speed
-
-species:
-  - name: u
-    diffusion: 1.0
+  D: 0.5
+  vx: 5.0
+  vy: 0.0
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
 ```
 
-### Directed Advection
-```yaml
-solver: euler
-dt: 0.002
-dx: 1.25
-domain_size: 320
+### Typical Usage
 
-boundary_x: periodic
-boundary_y: periodic
+- **Horizontal flow**: `vx > 0, vy = 0` - flow to the right
+- **Vertical flow**: `vx = 0, vy > 0` - flow upward
+- **Diagonal flow**: `vx > 0, vy > 0` - flow diagonally
 
-parameters:
-  V: 6.0       # range: [0, 10], step: 0.01 - flow speed
-  theta: -2.0  # range: [-6.4, 6.4], step: 0.01 - flow direction (radians)
-
-species:
-  - name: u
-    diffusion: 1.0
-```
-
-## Parameter Variants
-
-### AdvectionEquationRotational
-Rotational (vortex) velocity field:
-- Velocity: $\mathbf{v} = V(y - L_y/2, -(x - L_x/2))$
-- Dirichlet boundary conditions (concentration absorbed at boundaries)
-- Parameter: `V = 0.10` in range `[-5, 5]`
-- Positive V: counterclockwise rotation
-- Negative V: clockwise rotation
-- Mass is not conserved due to Dirichlet boundaries
-
-### AdvectionEquationDirected
-Uniform directional velocity field:
-- Velocity: $\mathbf{v} = V(\cos\theta, \sin\theta)$
-- Periodic boundary conditions (concentration wraps around)
-- Parameters: `V = 6` in `[0, 10]`, `theta = -2` in `[-6.4, 6.4]`
-- Changing $\theta$ rotates the flow direction
-- Mass is conserved with periodic boundaries
+With periodic boundary conditions, mass is conserved as the concentration wraps around.
 
 ## Numerical Notes
 
 First-order spatial derivatives (advection terms) are numerically challenging:
 - Sharp gradients can cause spurious oscillations
 - High Peclet numbers require special upwind schemes
-- The preset uses smoothed brush application to reduce oscillations
-- Large V values may produce unstable or inaccurate solutions
+- Large velocity values may produce unstable or inaccurate solutions
+
+## See Also
+
+- `advection-rotational`: For rotational (vortex) velocity fields
 
 ## References
 

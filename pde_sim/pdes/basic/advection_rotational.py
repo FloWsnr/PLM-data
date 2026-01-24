@@ -1,4 +1,4 @@
-"""Advection-diffusion equation with uniform flow."""
+"""Advection-diffusion equation with rotational (vortex) flow."""
 
 from typing import Any
 
@@ -10,31 +10,33 @@ from ..base import ScalarPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
 
 
-@register_pde("advection")
-class AdvectionPDE(ScalarPDEPreset):
-    """Advection-diffusion equation with uniform velocity field.
+@register_pde("advection-rotational")
+class AdvectionRotationalPDE(ScalarPDEPreset):
+    """Advection-diffusion equation with rotational velocity field.
 
     Based on visualpde.com advection equation:
 
-        du/dt = D * laplace(u) + vx * d_dx(u) + vy * d_dy(u)
+        du/dt = D * laplace(u) + omega * ((y - L_y/2) * d_dx(u) - (x - L_x/2) * d_dy(u))
 
-    The velocity field (vx, vy) is uniform across the domain.
-    Typically used with periodic boundary conditions.
+    The velocity field rotates around the domain center:
+    - Positive omega: counterclockwise rotation
+    - Negative omega: clockwise rotation
+
+    Typically used with Dirichlet boundary conditions (absorbing edges).
 
     Parameters:
         D: Diffusion coefficient
-        vx: x-component of velocity
-        vy: y-component of velocity
+        omega: Angular velocity (positive = counterclockwise)
     """
 
     @property
     def metadata(self) -> PDEMetadata:
         return PDEMetadata(
-            name="advection",
+            name="advection-rotational",
             category="basic",
-            description="Advection-diffusion equation with uniform flow",
+            description="Advection-diffusion equation with rotational (vortex) flow",
             equations={
-                "u": "D * laplace(u) + vx * d_dx(u) + vy * d_dy(u)",
+                "u": "D * laplace(u) + omega * ((y - L_y/2) * d_dx(u) - (x - L_x/2) * d_dy(u))",
             },
             parameters=[
                 PDEParameter(
@@ -45,24 +47,17 @@ class AdvectionPDE(ScalarPDEPreset):
                     max_value=10.0,
                 ),
                 PDEParameter(
-                    name="vx",
-                    default=5.0,
-                    description="x-component of velocity",
-                    min_value=-10.0,
-                    max_value=10.0,
-                ),
-                PDEParameter(
-                    name="vy",
-                    default=0.0,
-                    description="y-component of velocity",
-                    min_value=-10.0,
-                    max_value=10.0,
+                    name="omega",
+                    default=0.1,
+                    description="Angular velocity (positive = counterclockwise)",
+                    min_value=-5.0,
+                    max_value=5.0,
                 ),
             ],
             num_fields=1,
             field_names=["u"],
             reference="https://visualpde.com/basic-pdes/advection-equation",
-            supported_dimensions=[2],  # 2D only: uses d_dy
+            supported_dimensions=[2],  # 2D only: uses x, y coordinates
         )
 
     def create_pde(
@@ -72,13 +67,18 @@ class AdvectionPDE(ScalarPDEPreset):
         grid: CartesianGrid,
     ) -> PDE:
         D = parameters.get("D", 1.0)
-        vx = parameters.get("vx", 5.0)
-        vy = parameters.get("vy", 0.0)
+        omega = parameters.get("omega", 0.1)
+
+        # Get domain center
+        L_x = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
+        L_y = grid.axes_bounds[1][1] - grid.axes_bounds[1][0]
+        half_x = L_x / 2
+        half_y = L_y / 2
 
         bc_spec = self._convert_bc(bc)
 
-        # Build advection term
-        advection = f"{vx} * d_dx(u) + {vy} * d_dy(u)"
+        # Rotational velocity field (counterclockwise for positive omega)
+        advection = f"{omega} * ((y - {half_y}) * d_dx(u) - (x - {half_x}) * d_dy(u))"
 
         # Build equation string
         if D > 0:
