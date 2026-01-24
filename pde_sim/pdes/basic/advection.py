@@ -72,7 +72,7 @@ class AdvectionPDE(ScalarPDEPreset):
             num_fields=1,
             field_names=["u"],
             reference="https://visualpde.com/basic-pdes/advection-equation",
-            supported_dimensions=[2, 3],
+            supported_dimensions=[2],  # 2D only: uses d_dy, L_y, and theta angle
         )
 
     def create_pde(
