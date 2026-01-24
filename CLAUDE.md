@@ -13,28 +13,28 @@ PDE Simulation Dataset Generator - A modular Python framework for generating 1D/
 uv sync
 
 # Run all tests (uses 6 parallel workers by default via pytest-xdist)
-pytest tests/ -v
+uv run pytest tests/ -v
 
 # Run specific test file
-pytest tests/test_pdes/test_basic.py -v
+uv run pytest tests/test_pdes/test_basic.py -v
 
 # Run single test (disable parallelism for single tests)
-pytest tests/test_pdes/test_basic.py::test_heat_metadata -v -n 0
+uv run pytest tests/test_pdes/test_basic.py::test_heat_metadata -v -n 0
 
 # Run with different worker count
-pytest tests/ -v -n auto  # auto-detect CPU cores
-pytest tests/ -v -n 0     # disable parallelism
+uv run pytest tests/ -v -n auto  # auto-detect CPU cores
+uv run pytest tests/ -v -n 0     # disable parallelism
 
 # List all available PDEs
-python -m pde_sim list
-python -m pde_sim list --category biology
+uv run python -m pde_sim list
+uv run python -m pde_sim list --category biology
 
 # Show PDE preset info
-python -m pde_sim info gray-scott
+uv run python -m pde_sim info gray-scott
 
 # Run a simulation
-python -m pde_sim run configs/physics/gray_scott/default.yaml
-python -m pde_sim run config.yaml --output-dir ./my_output --seed 42
+uv run python -m pde_sim run configs/physics/gray_scott/default.yaml
+uv run python -m pde_sim run config.yaml --output-dir ./my_output --seed 42
 ```
 
 ## Architecture
@@ -225,7 +225,7 @@ output/{preset-name}/{config-name}_{run-number}/
 
 With explicit `--output-dir`, numbered folders are placed directly in the specified directory:
 ```bash
-python -m pde_sim run configs/biology/immunotherapy/high_effector_diffusion.yaml \
+uv run python -m pde_sim run configs/biology/immunotherapy/high_effector_diffusion.yaml \
     --output-dir output/biology/immunotherapy
 # Creates: output/biology/immunotherapy/high_effector_diffusion_001/
 # Next run: output/biology/immunotherapy/high_effector_diffusion_002/
