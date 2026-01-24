@@ -107,7 +107,7 @@ class TestKdVPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("kdv", "physics", t_end=0.001)
+        result, config = run_short_simulation("kdv", "physics")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()

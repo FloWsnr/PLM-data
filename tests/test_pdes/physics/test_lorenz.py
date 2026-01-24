@@ -60,7 +60,7 @@ class TestLorenzPDE:
         Field names have been changed from (x, y, z) to (X, Y, Z) to avoid
         collision with 2D grid coordinate names.
         """
-        result, config = run_short_simulation("lorenz", "physics", t_end=0.001)
+        result, config = run_short_simulation("lorenz", "physics")
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 3

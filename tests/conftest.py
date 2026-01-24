@@ -48,16 +48,16 @@ def load_config(preset_name: str, category: str) -> dict:
 def run_short_simulation(
     preset_name: str,
     category: str,
-    t_end: float = 0.01,
+    num_steps: int = 5,
     resolution: int = 32,
     seed: int = 42,
 ) -> tuple:
-    """Run a short simulation using the default config but with reduced t_end and resolution.
+    """Run a short simulation using the default config but with reduced steps and resolution.
 
     Args:
         preset_name: Name of the preset (e.g., "heat", "gray-scott")
         category: Category folder (e.g., "basic", "physics", "biology", "fluids")
-        t_end: End time for the simulation (default 0.01 for speed)
+        num_steps: Number of time steps to run (default 5 for speed)
         resolution: Grid resolution (default 32 for speed)
         seed: Random seed for reproducibility
 
@@ -88,11 +88,25 @@ def run_short_simulation(
         domain_size = [float(d) for d in domain_size_raw]
 
     bc_raw = config.get("bc", {})
+    if not bc_raw:
+        raise ValueError(
+            f"Boundary conditions (bc) must be specified in config for {preset_name}."
+        )
+
+    # Validate required BC keys
+    required_bc = ["x-", "x+"]
+    if ndim >= 2:
+        required_bc.extend(["y-", "y+"])
+    missing_bc = [k for k in required_bc if k not in bc_raw]
+    if missing_bc:
+        raise ValueError(
+            f"Missing required boundary condition(s) for {preset_name}: {', '.join(missing_bc)}"
+        )
 
     # Parse BC config to determine periodicity
     bc_config = BoundaryConfig(
-        x_minus=bc_raw.get("x-", "periodic"),
-        x_plus=bc_raw.get("x+", "periodic"),
+        x_minus=bc_raw["x-"],
+        x_plus=bc_raw["x+"],
         y_minus=bc_raw.get("y-") if ndim >= 2 else None,
         y_plus=bc_raw.get("y+") if ndim >= 2 else None,
         fields=bc_raw.get("fields"),
@@ -149,11 +163,8 @@ def run_short_simulation(
     solver = solver_map.get(solver, solver)
     dt = config.get("dt", 0.001)
 
-    # Adjust dt if needed for the short simulation
-    # Make sure we don't have more steps than needed
-    num_steps = t_end / dt
-    if num_steps < 1:
-        dt = t_end / 2  # At least 2 steps
+    # Compute t_end based on number of steps
+    t_end = num_steps * dt
 
     # Run simulation
     result = pde.solve(
@@ -222,6 +233,8 @@ def sample_config_dict():
             "params": {"num_blobs": 2, "amplitude": 1.0},
         },
         "solver": "euler",
+        "backend": "numba",
+        "adaptive": False,
         "t_end": 0.01,  # 100 * 0.0001
         "dt": 0.0001,
         "resolution": [32, 32],

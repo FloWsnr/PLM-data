@@ -76,7 +76,7 @@ class TestSwiftHohenbergPDE:
         Swift-Hohenberg has 4th order terms making it numerically stiff.
         """
         # Run a very short simulation (fourth-order PDE is stiff)
-        result, config = run_short_simulation("swift-hohenberg", "physics", t_end=0.001)
+        result, config = run_short_simulation("swift-hohenberg", "physics")
 
         # Check that result is finite and valid
         assert result is not None

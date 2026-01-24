@@ -41,7 +41,7 @@ class TestPeronaMalikPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("perona-malik", "physics", t_end=0.001)
+        result, config = run_short_simulation("perona-malik", "physics")
 
         assert result is not None
         assert np.isfinite(result.data).all()

@@ -76,7 +76,7 @@ class TestSuperlatticePDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("superlattice", "physics", t_end=0.001)
+        result, config = run_short_simulation("superlattice", "physics")
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 4

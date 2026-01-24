@@ -36,7 +36,7 @@ class TestKlausmeierTopographyPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("klausmeier-topography", "biology", t_end=0.1)
+        result, config = run_short_simulation("klausmeier-topography", "biology")
 
         # Check result type and finite values
         assert result is not None

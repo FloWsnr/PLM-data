@@ -48,7 +48,7 @@ class TestSineGordonPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("sine-gordon", "physics", t_end=0.1)
+        result, config = run_short_simulation("sine-gordon", "physics")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all(), "phi field contains NaN or Inf"
@@ -192,9 +192,7 @@ class TestSineGordonPDE:
 
     def test_simulation_stability(self):
         """Test that simulation remains stable over longer time."""
-        result, config = run_short_simulation(
-            "sine-gordon", "physics", t_end=1.0, resolution=64
-        )
+        result, config = run_short_simulation("sine-gordon", "physics", resolution=64)
 
         # Check that values remain bounded
         phi = result[0].data

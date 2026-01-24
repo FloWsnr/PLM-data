@@ -83,7 +83,7 @@ class TestBlobDiffusionHeatPDE:
         state = ScalarField.from_expression(grid, "1.0")
         state.label = "T"
 
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()

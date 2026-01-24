@@ -81,7 +81,7 @@ class TestPlatePDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("plate", "basic", t_end=0.001)
+        result, config = run_short_simulation("plate", "basic")
 
         assert result is not None
         assert np.isfinite(result[0].data).all()

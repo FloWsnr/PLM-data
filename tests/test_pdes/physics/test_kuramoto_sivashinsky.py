@@ -52,7 +52,7 @@ class TestKuramotoSivashinskyPDE:
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
         # KS equation is fourth-order and very stiff - use tiny t_end
-        result, config = run_short_simulation("kuramoto-sivashinsky", "physics", t_end=0.001)
+        result, config = run_short_simulation("kuramoto-sivashinsky", "physics")
 
         # Check that result is finite and valid
         assert result is not None

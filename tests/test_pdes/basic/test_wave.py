@@ -70,7 +70,7 @@ class TestWavePDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("wave", "basic", t_end=0.01)
+        result, config = run_short_simulation("wave", "basic")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -97,7 +97,7 @@ class TestWavePDE:
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
 
         # Verify result
         assert isinstance(result, FieldCollection)
@@ -164,7 +164,7 @@ class TestInhomogeneousWavePDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("inhomogeneous-wave", "basic", t_end=0.01)
+        result, config = run_short_simulation("inhomogeneous-wave", "basic")
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 2

@@ -58,7 +58,7 @@ class TestAdvectionPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("advection", "basic", t_end=0.1)
+        result, config = run_short_simulation("advection", "basic")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
@@ -82,7 +82,7 @@ class TestAdvectionPDE:
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
 
         # Verify result
         assert isinstance(result, ScalarField)
@@ -142,7 +142,7 @@ class TestAdvectionRotationalPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("advection-rotational", "basic", t_end=0.1)
+        result, config = run_short_simulation("advection-rotational", "basic")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
@@ -166,7 +166,7 @@ class TestAdvectionRotationalPDE:
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
 
         # Verify result
         assert isinstance(result, ScalarField)

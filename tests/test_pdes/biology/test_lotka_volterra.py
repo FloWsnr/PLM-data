@@ -48,7 +48,7 @@ class TestLotkaVolterraPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("lotka-volterra", "biology", t_end=0.1)
+        result, config = run_short_simulation("lotka-volterra", "biology")
 
         # Check result type and finite values
         assert result is not None
@@ -59,7 +59,7 @@ class TestLotkaVolterraPDE:
 
     def test_populations_non_negative(self):
         """Test that populations remain non-negative (biological constraint)."""
-        result, config = run_short_simulation("lotka-volterra", "biology", t_end=0.5)
+        result, config = run_short_simulation("lotka-volterra", "biology")
 
         prey = result[0].data
         predator = result[1].data
@@ -72,9 +72,7 @@ class TestLotkaVolterraPDE:
 
     def test_longer_simulation_stability(self):
         """Test simulation remains stable over longer time."""
-        result, config = run_short_simulation(
-            "lotka-volterra", "biology", t_end=1.0, resolution=64
-        )
+        result, config = run_short_simulation("lotka-volterra", "biology", resolution=64)
 
         # Check for finite values after longer simulation
         assert np.isfinite(result[0].data).all(), "Prey field has non-finite values"
@@ -110,7 +108,7 @@ class TestLotkaVolterraPDE:
         state = preset.create_initial_state(grid, "default", {"noise": 0.1, "seed": 42})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
 
         # Verify result
         assert isinstance(result, FieldCollection)

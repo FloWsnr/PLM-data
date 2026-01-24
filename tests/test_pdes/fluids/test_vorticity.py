@@ -72,7 +72,7 @@ class TestVorticityPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("vorticity", "fluids", t_end=0.01)
+        result, config = run_short_simulation("vorticity", "fluids")
 
         # Check result type and finite values
         assert result is not None

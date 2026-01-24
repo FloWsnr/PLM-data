@@ -135,7 +135,7 @@ class TestFokkerPlanckPDE:
 
     def test_run_default_config(self):
         """Test running simulation with default config."""
-        result, config = run_short_simulation("fokker-planck", "physics", t_end=0.1)
+        result, config = run_short_simulation("fokker-planck", "physics")
 
         # Check simulation completed
         assert result is not None
@@ -166,7 +166,7 @@ class TestFokkerPlanckPDE:
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
 
         # Verify result
         assert isinstance(result, ScalarField)

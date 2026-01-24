@@ -74,7 +74,7 @@ class TestCahnHilliardPDE:
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
         # Cahn-Hilliard has 4th order terms, use very short time
-        result, config = run_short_simulation("cahn-hilliard", "physics", t_end=0.0001)
+        result, config = run_short_simulation("cahn-hilliard", "physics")
 
         assert result is not None
         assert np.isfinite(result.data).all()

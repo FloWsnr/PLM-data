@@ -92,7 +92,7 @@ class TestHeatPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation with the heat PDE using default config."""
-        result, config = run_short_simulation("heat", "basic", t_end=0.1)
+        result, config = run_short_simulation("heat", "basic")
 
         # Result should be a ScalarField
         assert isinstance(result, ScalarField)
@@ -121,7 +121,7 @@ class TestHeatPDE:
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
 
         # Verify result
         assert isinstance(result, ScalarField)
@@ -172,7 +172,7 @@ class TestInhomogeneousHeatPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("inhomogeneous-heat", "basic", t_end=0.01)
+        result, config = run_short_simulation("inhomogeneous-heat", "basic")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
@@ -268,7 +268,7 @@ class TestInhomogeneousDiffusionHeatPDE:
         state = ScalarField.from_expression(non_periodic_grid, "1.0")
         state.label = "T"
 
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()

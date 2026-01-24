@@ -32,7 +32,7 @@ class TestBrusselatorPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("brusselator", "biology", t_end=0.001)
+        result, config = run_short_simulation("brusselator", "biology")
 
         # Check result type and finite values
         assert result is not None

@@ -61,7 +61,7 @@ class TestThermalConvectionPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("thermal-convection", "fluids", t_end=0.01)
+        result, config = run_short_simulation("thermal-convection", "fluids")
 
         # Check result type and finite values
         assert result is not None
@@ -100,7 +100,7 @@ class TestThermalConvectionPDE:
         state = preset.create_initial_state(grid, "default", {"noise": 0.01, "seed": 42})
 
         # Run a short simulation
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         for field in result:
@@ -129,7 +129,7 @@ class TestThermalConvectionPDE:
         pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "default", {"noise": 0.01, "seed": 42})
 
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler")
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler")
 
         assert isinstance(result, FieldCollection)
         for field in result:

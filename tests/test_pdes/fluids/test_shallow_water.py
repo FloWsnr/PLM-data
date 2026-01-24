@@ -90,7 +90,7 @@ class TestShallowWaterPDE:
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
         # shallow-water needs shorter time due to stability
-        result, config = run_short_simulation("shallow-water", "fluids", t_end=0.001)
+        result, config = run_short_simulation("shallow-water", "fluids")
 
         # Check result type and finite values
         assert result is not None

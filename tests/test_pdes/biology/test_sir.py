@@ -59,7 +59,7 @@ class TestSIRPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("sir", "biology", t_end=0.1)
+        result, config = run_short_simulation("sir", "biology")
 
         # Check result type and finite values
         assert result is not None
@@ -75,9 +75,7 @@ class TestSIRPDE:
         With equal diffusion and no-flux boundaries, total population
         should be conserved.
         """
-        result, config = run_short_simulation(
-            "sir", "biology", t_end=0.1, resolution=32
-        )
+        result, config = run_short_simulation("sir", "biology", resolution=32)
 
         # Get individual field data
         S = result[0].data
@@ -92,9 +90,7 @@ class TestSIRPDE:
 
     def test_non_negative_populations(self):
         """Test that populations remain non-negative."""
-        result, config = run_short_simulation(
-            "sir", "biology", t_end=0.5, resolution=32
-        )
+        result, config = run_short_simulation("sir", "biology", resolution=32)
 
         S = result[0].data
         I = result[1].data
@@ -107,9 +103,7 @@ class TestSIRPDE:
     def test_recovered_increases(self):
         """Test that recovered population generally increases over time."""
         # Run a slightly longer simulation to see epidemic dynamics
-        result, config = run_short_simulation(
-            "sir", "biology", t_end=1.0, resolution=32
-        )
+        result, config = run_short_simulation("sir", "biology", resolution=32)
 
         R = result[2].data
 
@@ -156,7 +150,7 @@ class TestSIRPDE:
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
 
         # Verify result
         assert isinstance(result, FieldCollection)

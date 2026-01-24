@@ -52,8 +52,8 @@ def create_bc_for_dimension(ndim: int, periodic: bool = True) -> BoundaryConfig:
 def run_dimension_test(
     preset,
     ndim: int,
-    t_end: float = 0.001,
-    dt: float = 0.0001,
+    num_steps: int = 5,
+    dt: float = 0.001,
     resolution: int | None = None,
     ic_type: str = "random-uniform",
     ic_params: dict | None = None,
@@ -65,7 +65,7 @@ def run_dimension_test(
     Args:
         preset: The PDE preset instance.
         ndim: Number of dimensions to test.
-        t_end: Simulation end time.
+        num_steps: Number of time steps to run (default 5 for speed).
         dt: Time step.
         resolution: Grid resolution (defaults to 32 for 1D, 16 for 2D, 8 for 3D).
         ic_type: Initial condition type.
@@ -94,6 +94,9 @@ def run_dimension_test(
     pde = preset.create_pde(params, bc, grid)
 
     state = preset.create_initial_state(grid=grid, ic_type=ic_type, ic_params=ic_params)
+
+    # Compute t_end based on number of steps
+    t_end = num_steps * dt
 
     result = pde.solve(state, t_range=t_end, dt=dt, solver="euler", tracker=None)
 

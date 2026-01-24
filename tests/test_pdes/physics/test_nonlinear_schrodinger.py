@@ -43,7 +43,7 @@ class TestNonlinearSchrodingerPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("nonlinear-schrodinger", "physics", t_end=0.0001)
+        result, config = run_short_simulation("nonlinear-schrodinger", "physics")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()

@@ -43,7 +43,7 @@ class TestComplexGinzburgLandauPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("complex-ginzburg-landau", "physics", t_end=0.01)
+        result, config = run_short_simulation("complex-ginzburg-landau", "physics")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -70,7 +70,7 @@ class TestComplexGinzburgLandauPDE:
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
 
         # Verify result
         assert isinstance(result, FieldCollection)

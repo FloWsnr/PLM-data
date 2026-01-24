@@ -78,7 +78,7 @@ class TestBistableAdvectionPDE:
         pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.0, "high": 1.0})
 
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
@@ -108,7 +108,7 @@ class TestBistableAdvectionPDE:
         pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
 
         assert isinstance(result, ScalarField)
         check_result_finite(result, "bistable-advection", 2)

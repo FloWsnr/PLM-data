@@ -42,7 +42,7 @@ class TestSwiftHohenbergAdvectionPDE:
 
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
-        result, config = run_short_simulation("swift-hohenberg-advection", "physics", t_end=0.01)
+        result, config = run_short_simulation("swift-hohenberg-advection", "physics")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()

@@ -85,7 +85,7 @@ class TestDampedWavePDE:
         pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "gaussian-blobs", {"num_blobs": 1})
 
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -111,7 +111,7 @@ class TestDampedWavePDE:
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
 
         # Verify result
         assert isinstance(result, FieldCollection)

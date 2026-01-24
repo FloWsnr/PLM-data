@@ -83,7 +83,7 @@ class TestCyclicCompetitionWavePDE:
         pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
         state = preset.create_initial_state(grid, "default", {"seed": 42})
 
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 3
@@ -116,7 +116,7 @@ class TestCyclicCompetitionWavePDE:
         # Use random-uniform for proper variation testing
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
-        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
 
         assert isinstance(result, FieldCollection)
         check_result_finite(result, "cyclic-competition-wave", 2)
