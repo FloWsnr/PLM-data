@@ -33,6 +33,10 @@ build-backend = "hatchling.build"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-n 6"
+filterwarnings = [
+    # Ignore deprecation warning from py-pde internal code (upstream issue)
+    "ignore:`_make_error_synchronizer` is deprecated:DeprecationWarning",
+]
 
 [dependency-groups]
 dev = [
