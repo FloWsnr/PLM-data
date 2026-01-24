@@ -35,24 +35,10 @@ class TestThermalConvectionPDE:
         assert "psi" in meta.field_names
         assert "b" in meta.field_names
 
-    def test_default_parameters(self):
-        """Test default parameters match reference."""
-        preset = get_pde_preset("thermal-convection")
-        params = preset.get_default_parameters()
-
-        assert "nu" in params
-        assert "epsilon" in params
-        assert "kappa" in params
-        assert "T_b" in params
-        assert params["nu"] == 0.2
-        assert params["epsilon"] == 0.05
-        assert params["kappa"] == 0.5
-        assert params["T_b"] == 0.08
-
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("thermal-convection")
-        params = preset.get_default_parameters()
+        params = {"nu": 0.01, "epsilon": 0.1, "kappa": 0.01, "T_b": 1.0}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
@@ -81,7 +67,7 @@ class TestThermalConvectionPDE:
         grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=[True, False])
 
         preset = get_pde_preset("thermal-convection")
-        params = preset.get_default_parameters()
+        params = {"nu": 0.01, "epsilon": 0.1, "kappa": 0.01, "T_b": 1.0}
 
         # Per-field BC configuration
         bc = BoundaryConfig(
@@ -100,7 +86,7 @@ class TestThermalConvectionPDE:
         state = preset.create_initial_state(grid, "default", {"noise": 0.01, "seed": 42})
 
         # Run a short simulation
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler")
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", backend="numpy")
 
         assert isinstance(result, FieldCollection)
         for field in result:
@@ -111,7 +97,7 @@ class TestThermalConvectionPDE:
         grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=[True, False])
 
         preset = get_pde_preset("thermal-convection")
-        params = preset.get_default_parameters()
+        params = {"nu": 0.01, "epsilon": 0.1, "kappa": 0.01, "T_b": 1.0}
 
         # Dict format (as would come from YAML parsing)
         bc = {
@@ -129,7 +115,7 @@ class TestThermalConvectionPDE:
         pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "default", {"noise": 0.01, "seed": 42})
 
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler")
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", backend="numpy")
 
         assert isinstance(result, FieldCollection)
         for field in result:

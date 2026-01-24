@@ -41,18 +41,10 @@ class TestKdVPDE:
         assert "u" in meta.field_names
         assert "Korteweg" in meta.reference or "KdV" in meta.description
 
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("kdv")
-        params = preset.get_default_parameters()
-
-        assert "b" in params
-        assert params["b"] == 0.0001
-
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("kdv")
-        params = preset.get_default_parameters()
+        params = {"c": 6.0}
         bc = {"x-": "periodic", "x+": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
@@ -152,11 +144,12 @@ class TestKdVPDE:
         bc = create_bc_for_dimension(1)
 
         # Create PDE and initial state
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"c": 6.0}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation (3rd order derivative - can be stiff)
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, ScalarField)

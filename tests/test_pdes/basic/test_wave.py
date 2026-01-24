@@ -31,16 +31,6 @@ class TestWavePDE:
         assert "u" in meta.field_names
         assert "v" in meta.field_names
 
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("wave")
-        params = preset.get_default_parameters()
-
-        assert "D" in params
-        assert "C" in params
-        assert params["D"] == 1.0
-        assert params["C"] == 0.01
-
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("wave")
@@ -93,11 +83,12 @@ class TestWavePDE:
         bc = create_bc_for_dimension(ndim)
 
         # Create PDE and initial state
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"D": 1.0, "C": 0.0}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, FieldCollection)
@@ -123,26 +114,10 @@ class TestInhomogeneousWavePDE:
         assert "u" in meta.field_names  # displacement
         assert "v" in meta.field_names  # velocity
 
-    def test_get_default_parameters(self):
-        """Test default parameters retrieval."""
-        preset = get_pde_preset("inhomogeneous-wave")
-        params = preset.get_default_parameters()
-
-        assert "D" in params  # base diffusivity (wave speed squared)
-        assert "E" in params  # amplitude of spatial variation
-        assert "m" in params  # spatial mode x
-        assert "n" in params  # spatial mode y
-        assert "C" in params  # damping
-        assert params["D"] == 1.0
-        assert params["E"] == 0.97
-        assert params["m"] == 9
-        assert params["n"] == 9
-        assert params["C"] == 0.01
-
     def test_create_pde(self, non_periodic_grid):
         """Test PDE creation."""
         preset = get_pde_preset("inhomogeneous-wave")
-        params = preset.get_default_parameters()
+        params = {"D": 1.0, "E": 0.5, "m": 4, "n": 4, "C": 0.0}
         bc = {"x": "neumann", "y": "neumann"}
 
         pde = preset.create_pde(params, bc, non_periodic_grid)

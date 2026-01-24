@@ -79,6 +79,6 @@ class TestBoundaryConditions:
             non_periodic_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
         )
 
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", backend="numpy")
 
         assert np.all(np.isfinite(result.data))

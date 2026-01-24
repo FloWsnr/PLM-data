@@ -42,13 +42,7 @@ class BurgersPDE(ScalarPDEPreset):
                 "u": "-u * d_dx(u) + epsilon * laplace(u)",
             },
             parameters=[
-                PDEParameter(
-                    name="epsilon",
-                    default=0.05,
-                    description="Viscosity coefficient",
-                    min_value=0.0,
-                    max_value=1.0,
-                ),
+                PDEParameter("epsilon", "Viscosity coefficient"),
             ],
             num_fields=1,
             field_names=["u"],

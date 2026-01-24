@@ -39,20 +39,8 @@ class AdvectionRotationalPDE(ScalarPDEPreset):
                 "u": "D * laplace(u) + omega * ((y - L_y/2) * d_dx(u) - (x - L_x/2) * d_dy(u))",
             },
             parameters=[
-                PDEParameter(
-                    name="D",
-                    default=1.0,
-                    description="Diffusion coefficient",
-                    min_value=0.0,
-                    max_value=10.0,
-                ),
-                PDEParameter(
-                    name="omega",
-                    default=0.1,
-                    description="Angular velocity (positive = counterclockwise)",
-                    min_value=-5.0,
-                    max_value=5.0,
-                ),
+                PDEParameter("D", "Diffusion coefficient"),
+                PDEParameter("omega", "Angular velocity (positive = counterclockwise)"),
             ],
             num_fields=1,
             field_names=["u"],

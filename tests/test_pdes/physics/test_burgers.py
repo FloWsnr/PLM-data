@@ -40,19 +40,10 @@ class TestBurgersPDE:
         assert meta.num_fields == 1
         assert "u" in meta.field_names
 
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("burgers")
-        params = preset.get_default_parameters()
-
-        # New parameter name from reference
-        assert "epsilon" in params
-        assert params["epsilon"] == 0.05
-
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("burgers")
-        params = preset.get_default_parameters()
+        params = {"nu": 0.1}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
@@ -92,11 +83,12 @@ class TestBurgersPDE:
         bc = create_bc_for_dimension(ndim)
 
         # Create PDE and initial state
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"nu": 0.1}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, ScalarField)

@@ -31,18 +31,6 @@ class TestAdvectionPDE:
         assert meta.num_fields == 1
         assert "u" in meta.field_names
 
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("advection")
-        params = preset.get_default_parameters()
-
-        assert "D" in params
-        assert "vx" in params
-        assert "vy" in params
-        assert params["D"] == 1.0
-        assert params["vx"] == 5.0
-        assert params["vy"] == 0.0
-
     def test_create_pde(self, small_grid):
         """Test PDE creation with velocity components."""
         preset = get_pde_preset("advection")
@@ -78,11 +66,12 @@ class TestAdvectionPDE:
         bc = create_bc_for_dimension(2)
 
         # Create PDE and initial state
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"D": 0.0, "vx": 1.0, "vy": 0.5}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, ScalarField)
@@ -116,16 +105,6 @@ class TestAdvectionRotationalPDE:
         assert meta.category == "basic"
         assert meta.num_fields == 1
         assert "u" in meta.field_names
-
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("advection-rotational")
-        params = preset.get_default_parameters()
-
-        assert "D" in params
-        assert "omega" in params
-        assert params["D"] == 1.0
-        assert params["omega"] == 0.1
 
     def test_create_pde(self, small_grid):
         """Test PDE creation with angular velocity."""
@@ -162,11 +141,12 @@ class TestAdvectionRotationalPDE:
         bc = create_bc_for_dimension(2, periodic=False)
 
         # Create PDE and initial state
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"D": 0.0, "omega": 1.0}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, ScalarField)

@@ -35,24 +35,10 @@ class TestNavierStokesCylinderPDE:
         assert "p" in meta.field_names
         assert "S" in meta.field_names
 
-    def test_default_parameters(self):
-        """Test default parameters match reference."""
-        preset = get_pde_preset("navier-stokes-cylinder")
-        params = preset.get_default_parameters()
-
-        assert "nu" in params
-        assert "M" in params
-        assert "U" in params
-        assert "cylinder_radius" in params
-        assert params["nu"] == 0.1
-        assert params["M"] == 0.5
-        assert params["U"] == 0.7
-        assert params["cylinder_radius"] == 0.05
-
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("navier-stokes-cylinder")
-        params = preset.get_default_parameters()
+        params = {"nu": 0.01, "M": 0.1, "U": 1.0, "cylinder_radius": 0.5}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)

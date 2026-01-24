@@ -165,13 +165,7 @@ def show_preset_info(args):
 
     print("Parameters:")
     for param in meta.parameters:
-        bounds = ""
-        if param.min_value is not None or param.max_value is not None:
-            lo = param.min_value if param.min_value is not None else "-inf"
-            hi = param.max_value if param.max_value is not None else "inf"
-            bounds = f" [{lo}, {hi}]"
-        print(f"  {param.name}: {param.default}{bounds}")
-        print(f"      {param.description}")
+        print(f"  {param.name}: {param.description}")
     print()
 
     if meta.reference:

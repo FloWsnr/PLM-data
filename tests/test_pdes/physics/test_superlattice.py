@@ -43,26 +43,10 @@ class TestSuperlatticePDE:
         assert "u2" in meta.field_names
         assert "v2" in meta.field_names
 
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("superlattice")
-        params = preset.get_default_parameters()
-
-        assert "a" in params
-        assert "b" in params
-        assert "c" in params
-        assert "d" in params
-        assert "alpha" in params
-        # New parameter names with underscores
-        assert "D_uone" in params
-        assert "D_utwo" in params
-        assert "D_uthree" in params
-        assert "D_ufour" in params
-
     def test_create_and_initial_state(self, small_grid):
         """Test that PDE and initial state can be created."""
         preset = get_pde_preset("superlattice")
-        params = preset.get_default_parameters()
+        params = {"D": 1.0, "a": -0.1, "b": 1.0, "v": 0.5, "c0": 1.0, "g": 1.0, "g_v": 0.0, "wx": 1.0, "wy": 1.0}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
@@ -99,11 +83,12 @@ class TestSuperlatticePDE:
         bc = create_bc_for_dimension(ndim)
 
         # Create PDE and initial state
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"D": 1.0, "a": -0.1, "b": 1.0, "v": 0.5, "c0": 1.0, "g": 1.0, "g_v": 0.0, "wx": 1.0, "wy": 1.0}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, FieldCollection)

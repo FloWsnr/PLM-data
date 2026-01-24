@@ -35,27 +35,12 @@ class TestFitzHughNagumo3PDE:
         assert "v" in meta.field_names
         assert "w" in meta.field_names
 
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("fitzhugh-nagumo-3")
-        params = preset.get_default_parameters()
-
-        assert "Dv" in params
-        assert "Dw" in params
-        assert "a_v" in params
-        assert "e_v" in params
-        assert "e_w" in params
-        assert "a_w" in params
-        assert "a_z" in params
-        assert params["Dv"] == 40.0
-        assert params["Dw"] == 200.0
-
     def test_create_pde(self):
         """Test PDE creation."""
         preset = get_pde_preset("fitzhugh-nagumo-3")
         grid = create_grid_for_dimension(2, resolution=16)
         bc = create_bc_for_dimension(2)
-        params = preset.get_default_parameters()
+        params = {"epsilon": 0.01, "gamma": 2.0, "a": 0.1, "D_v": 1.0, "D_w": 1.0, "delta": 0.1, "tau": 1.0}
 
         pde = preset.create_pde(params, bc, grid)
         assert pde is not None
@@ -80,10 +65,10 @@ class TestFitzHughNagumo3PDE:
         grid = create_grid_for_dimension(2, resolution=16)
         bc = create_bc_for_dimension(2)
 
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        pde = preset.create_pde({"epsilon": 0.01, "gamma": 2.0, "a": 0.1, "D_v": 1.0, "D_w": 1.0, "delta": 0.1, "tau": 1.0}, bc, grid)
         state = preset.create_initial_state(grid, "default", {"seed": 42})
 
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None, backend="numpy")
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 3
@@ -112,10 +97,10 @@ class TestFitzHughNagumo3PDE:
         grid = create_grid_for_dimension(2, resolution=16)
         bc = create_bc_for_dimension(2)
 
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        pde = preset.create_pde({"epsilon": 0.01, "gamma": 2.0, "a": 0.1, "D_v": 1.0, "D_w": 1.0, "delta": 0.1, "tau": 1.0}, bc, grid)
         state = preset.create_initial_state(grid, "default", {"seed": 42})
 
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None, backend="numpy")
 
         assert isinstance(result, FieldCollection)
         check_result_finite(result, "fitzhugh-nagumo-3", 2)

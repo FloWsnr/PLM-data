@@ -50,13 +50,7 @@ class KdVPDE(ScalarPDEPreset):
                 "u": "-d_dx(d_dx(d_dx(u))) - 6 * u * d_dx(u) - b * d_dx(d_dx(d_dx(d_dx(u))))",
             },
             parameters=[
-                PDEParameter(
-                    name="b",
-                    default=0.0001,
-                    description="Biharmonic dissipation coefficient (stabilization)",
-                    min_value=0.0,
-                    max_value=0.1,
-                ),
+                PDEParameter("b", "Biharmonic dissipation coefficient (stabilization)"),
             ],
             num_fields=1,
             field_names=["u"],

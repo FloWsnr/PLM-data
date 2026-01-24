@@ -39,28 +39,6 @@ class TestGrayScottPDE:
         # New parameters: a, b, D (3 parameters)
         assert len(meta.parameters) == 3
 
-    def test_get_default_parameters(self):
-        """Test getting default parameters."""
-        pde = GrayScottPDE()
-        defaults = pde.get_default_parameters()
-
-        # New parameter names from reference
-        assert "a" in defaults
-        assert "b" in defaults
-        assert "D" in defaults
-
-    def test_validate_parameters_valid(self):
-        """Test parameter validation with valid params."""
-        pde = GrayScottPDE()
-        # Should not raise with new parameter names
-        pde.validate_parameters({"a": 0.037, "b": 0.06})
-
-    def test_validate_parameters_invalid(self):
-        """Test parameter validation with invalid params."""
-        pde = GrayScottPDE()
-        with pytest.raises(ValueError, match="a must be <="):
-            pde.validate_parameters({"a": 0.5})  # a max is 0.1
-
     def test_create_pde(self, small_grid):
         """Test creating the PDE object."""
         pde_preset = GrayScottPDE()
@@ -154,11 +132,11 @@ class TestGrayScottPDE:
         bc = create_bc_for_dimension(ndim)
 
         # Create PDE and initial state
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        pde = preset.create_pde({"a": 0.037, "b": 0.06, "D": 2.0}, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, FieldCollection)

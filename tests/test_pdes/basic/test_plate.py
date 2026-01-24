@@ -35,24 +35,10 @@ class TestPlatePDE:
         desc_lower = meta.description.lower()
         assert "biharmonic" in desc_lower or "vibration" in desc_lower or "wave" in desc_lower
 
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("plate")
-        params = preset.get_default_parameters()
-
-        assert "D" in params
-        assert "Q" in params
-        assert "C" in params
-        assert "D_c" in params
-        assert params["D"] == 10.0
-        assert params["Q"] == 0.003
-        assert params["C"] == 0.1
-        assert params["D_c"] == 0.1
-
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("plate")
-        params = preset.get_default_parameters()
+        params = {"D": 1.0, "Q": 10.0, "C": 0.1, "D_c": 0.1}
         bc = {"x": "dirichlet", "y": "dirichlet"}
 
         pde = preset.create_pde(params, bc, small_grid)
@@ -105,12 +91,12 @@ class TestPlatePDE:
         bc = create_bc_for_dimension(ndim, periodic=False)
 
         # Create PDE and initial state (use random-uniform for variation testing)
-        params = preset.get_default_parameters()
+        params = {"D": 1.0, "Q": 10.0, "C": 0.1, "D_c": 0.1}
         pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": -5.0, "high": -3.0})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, FieldCollection)

@@ -61,11 +61,12 @@ class TestHeterogeneousGiererMeinhardtPDE:
         bc = create_bc_for_dimension(ndim)
 
         # Create PDE and initial state (use random-uniform for variation testing)
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"rho": 0.001, "mu": 0.02, "D_a": 0.1, "D_h": 10.0, "gamma_a": 0.5, "gamma_h": 0.0}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, FieldCollection)

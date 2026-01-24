@@ -55,13 +55,7 @@ class InviscidBurgersPDE(ScalarPDEPreset):
                 "u": "-u * d_dx(u)",
             },
             parameters=[
-                PDEParameter(
-                    name="epsilon",
-                    default=0.0,
-                    description="Viscosity (0 for truly inviscid, small for regularization)",
-                    min_value=0.0,
-                    max_value=0.1,
-                ),
+                PDEParameter("epsilon", "Viscosity (0 for truly inviscid, small for regularization)"),
             ],
             num_fields=1,
             field_names=["u"],

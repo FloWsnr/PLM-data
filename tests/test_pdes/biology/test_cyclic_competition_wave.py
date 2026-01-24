@@ -35,24 +35,12 @@ class TestCyclicCompetitionWavePDE:
         assert "v" in meta.field_names
         assert "w" in meta.field_names
 
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("cyclic-competition-wave")
-        params = preset.get_default_parameters()
-
-        assert "a" in params
-        assert "b" in params
-        assert "D" in params
-        assert params["a"] == 0.8
-        assert params["b"] == 1.9
-        assert params["D"] == 0.3
-
     def test_create_pde(self):
         """Test PDE creation."""
         preset = get_pde_preset("cyclic-competition-wave")
         grid = create_grid_for_dimension(2, resolution=16)
         bc = create_bc_for_dimension(2)
-        params = preset.get_default_parameters()
+        params = {"sigma": 1.0, "D": 0.1, "tau": 0.1}
 
         pde = preset.create_pde(params, bc, grid)
         assert pde is not None
@@ -80,10 +68,10 @@ class TestCyclicCompetitionWavePDE:
         grid = create_grid_for_dimension(2, resolution=16)
         bc = create_bc_for_dimension(2)
 
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        pde = preset.create_pde({"sigma": 1.0, "D": 0.1, "tau": 0.1}, bc, grid)
         state = preset.create_initial_state(grid, "default", {"seed": 42})
 
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 3
@@ -112,11 +100,11 @@ class TestCyclicCompetitionWavePDE:
         grid = create_grid_for_dimension(2, resolution=16)
         bc = create_bc_for_dimension(2)
 
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        pde = preset.create_pde({"sigma": 1.0, "D": 0.1, "tau": 0.1}, bc, grid)
         # Use random-uniform for proper variation testing
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         assert isinstance(result, FieldCollection)
         check_result_finite(result, "cyclic-competition-wave", 2)

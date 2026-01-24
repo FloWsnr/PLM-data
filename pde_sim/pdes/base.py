@@ -19,17 +19,11 @@ class PDEParameter:
 
     Attributes:
         name: Parameter name (used in equations and config).
-        default: Default value for the parameter.
         description: Human-readable description.
-        min_value: Optional minimum allowed value.
-        max_value: Optional maximum allowed value.
     """
 
     name: str
-    default: float
     description: str
-    min_value: float | None = None
-    max_value: float | None = None
 
 
 @dataclass
@@ -112,31 +106,6 @@ class PDEPreset(ABC):
             Initial field state.
         """
         pass
-
-    def get_default_parameters(self) -> dict[str, float]:
-        """Return default parameter values.
-
-        Returns:
-            Dictionary mapping parameter names to default values.
-        """
-        return {p.name: p.default for p in self.metadata.parameters}
-
-    def validate_parameters(self, params: dict[str, float]) -> None:
-        """Validate parameter values are within bounds.
-
-        Args:
-            params: Dictionary of parameter values to validate.
-
-        Raises:
-            ValueError: If a parameter is outside its allowed range.
-        """
-        for p in self.metadata.parameters:
-            if p.name in params:
-                val = params[p.name]
-                if p.min_value is not None and val < p.min_value:
-                    raise ValueError(f"{p.name} must be >= {p.min_value}, got {val}")
-                if p.max_value is not None and val > p.max_value:
-                    raise ValueError(f"{p.name} must be <= {p.max_value}, got {val}")
 
     def validate_dimension(self, ndim: int) -> None:
         """Validate that the PDE supports the given number of dimensions.

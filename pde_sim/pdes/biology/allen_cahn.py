@@ -45,20 +45,8 @@ class BistableAllenCahnPDE(ScalarPDEPreset):
                 "u": "D * laplace(u) + u * (u - a) * (1 - u)",
             },
             parameters=[
-                PDEParameter(
-                    name="D",
-                    default=1.0,
-                    description="Diffusion coefficient",
-                    min_value=0.01,
-                    max_value=10.0,
-                ),
-                PDEParameter(
-                    name="a",
-                    default=0.5,
-                    description="Allee threshold (0 < a < 1)",
-                    min_value=0.0,
-                    max_value=1.0,
-                ),
+                PDEParameter("D", "Diffusion coefficient"),
+                PDEParameter("a", "Allee threshold (0 < a < 1)"),
             ],
             num_fields=1,
             field_names=["u"],

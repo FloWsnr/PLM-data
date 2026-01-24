@@ -33,20 +33,12 @@ class TestInviscidBurgersPDE:
         assert meta.num_fields == 1
         assert "u" in meta.field_names
 
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("inviscid-burgers")
-        params = preset.get_default_parameters()
-
-        assert "epsilon" in params
-        assert params["epsilon"] == 0.0  # truly inviscid by default
-
     def test_create_pde_inviscid(self):
         """Test PDE creation with zero viscosity."""
         preset = get_pde_preset("inviscid-burgers")
         grid = create_grid_for_dimension(1, resolution=32)
         bc = create_bc_for_dimension(1)
-        params = {"epsilon": 0.0}
+        params = {"c": 1.0}
 
         pde = preset.create_pde(params, bc, grid)
         assert pde is not None
@@ -56,7 +48,7 @@ class TestInviscidBurgersPDE:
         preset = get_pde_preset("inviscid-burgers")
         grid = create_grid_for_dimension(1, resolution=32)
         bc = create_bc_for_dimension(1)
-        params = {"epsilon": 0.001}
+        params = {"c": 1.0}
 
         pde = preset.create_pde(params, bc, grid)
         assert pde is not None
@@ -91,12 +83,12 @@ class TestInviscidBurgersPDE:
         grid = create_grid_for_dimension(1, resolution=32)
         bc = create_bc_for_dimension(1)
 
-        # Use small viscosity for numerical stability
-        params = {"epsilon": 0.01}
+        # Use default parameters
+        params = {"c": 1.0}
         pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "default", {"seed": 42})
 
-        result = pde.solve(state, t_range=0.01, dt=0.0001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.01, dt=0.0001, solver="euler", tracker=None, backend="numpy")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
@@ -116,13 +108,13 @@ class TestInviscidBurgersPDE:
         grid = create_grid_for_dimension(ndim, resolution=resolution)
         bc = create_bc_for_dimension(ndim)
 
-        # Use small viscosity for stability
-        params = {"epsilon": 0.01}
+        # Use default parameters
+        params = {"c": 1.0}
         pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.5})
 
         # Run short simulation with small timestep (hyperbolic PDE)
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, ScalarField)

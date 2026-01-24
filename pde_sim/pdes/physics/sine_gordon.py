@@ -62,20 +62,8 @@ class SineGordonPDE(MultiFieldPDEPreset):
                 "psi": "c^2 * laplace(phi) - sin(phi)",
             },
             parameters=[
-                PDEParameter(
-                    name="c",
-                    default=1.0,
-                    description="Wave speed",
-                    min_value=0.1,
-                    max_value=10.0,
-                ),
-                PDEParameter(
-                    name="gamma",
-                    default=0.01,
-                    description="Damping/stabilization coefficient",
-                    min_value=0.0,
-                    max_value=1.0,
-                ),
+                PDEParameter("c", "Wave speed"),
+                PDEParameter("gamma", "Damping/stabilization coefficient"),
             ],
             num_fields=2,
             field_names=["phi", "psi"],

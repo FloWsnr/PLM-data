@@ -35,22 +35,10 @@ class TestNavierStokesPDE:
         assert "p" in meta.field_names
         assert "S" in meta.field_names
 
-    def test_default_parameters(self):
-        """Test default parameters match reference."""
-        preset = get_pde_preset("navier-stokes")
-        params = preset.get_default_parameters()
-
-        assert "nu" in params
-        assert "M" in params
-        assert "D" in params
-        assert params["nu"] == 0.02
-        assert params["M"] == 0.5
-        assert params["D"] == 0.05
-
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("navier-stokes")
-        params = preset.get_default_parameters()
+        params = {"nu": 0.01, "M": 0.1, "D": 0.0}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)

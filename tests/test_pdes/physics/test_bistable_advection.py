@@ -33,24 +33,12 @@ class TestBistableAdvectionPDE:
         assert meta.num_fields == 1
         assert "u" in meta.field_names
 
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("bistable-advection")
-        params = preset.get_default_parameters()
-
-        assert "D" in params
-        assert "a" in params
-        assert "theta" in params
-        assert "V" in params
-        assert params["D"] == 0.02
-        assert params["a"] == 0.48
-
     def test_create_pde(self):
         """Test PDE creation."""
         preset = get_pde_preset("bistable-advection")
         grid = create_grid_for_dimension(2, resolution=16)
         bc = create_bc_for_dimension(2)
-        params = preset.get_default_parameters()
+        params = {"D": 0.1, "epsilon": 0.01, "vx": 1.0, "vy": 0.0}
 
         pde = preset.create_pde(params, bc, grid)
         assert pde is not None
@@ -75,10 +63,10 @@ class TestBistableAdvectionPDE:
         grid = create_grid_for_dimension(2, resolution=16)
         bc = create_bc_for_dimension(2)
 
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        pde = preset.create_pde({"D": 0.1, "epsilon": 0.01, "vx": 1.0, "vy": 0.0}, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.0, "high": 1.0})
 
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()
@@ -105,10 +93,10 @@ class TestBistableAdvectionPDE:
         grid = create_grid_for_dimension(2, resolution=16)
         bc = create_bc_for_dimension(2)
 
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        pde = preset.create_pde({"D": 0.1, "epsilon": 0.01, "vx": 1.0, "vy": 0.0}, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         assert isinstance(result, ScalarField)
         check_result_finite(result, "bistable-advection", 2)

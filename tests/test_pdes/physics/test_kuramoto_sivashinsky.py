@@ -39,7 +39,7 @@ class TestKuramotoSivashinskyPDE:
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("kuramoto-sivashinsky")
-        params = preset.get_default_parameters()
+        params = {"nu": 1.0}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
@@ -75,11 +75,12 @@ class TestKuramotoSivashinskyPDE:
         bc = create_bc_for_dimension(ndim)
 
         # Create PDE and initial state
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"nu": 1.0}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": -0.1, "high": 0.1})
 
         # Run very short simulation (4th order PDE is numerically stiff)
-        result = pde.solve(state, t_range=0.0001, dt=0.00001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.0001, dt=0.00001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, ScalarField)

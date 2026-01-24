@@ -34,24 +34,12 @@ class TestDampedWavePDE:
         assert "u" in meta.field_names
         assert "v" in meta.field_names
 
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("damped-wave")
-        params = preset.get_default_parameters()
-
-        assert "D" in params
-        assert "C" in params
-        assert "d" in params
-        assert params["D"] == 1.0
-        assert params["C"] == 0.01
-        assert params["d"] == 0.0
-
     def test_create_pde(self):
         """Test PDE creation."""
         preset = get_pde_preset("damped-wave")
         grid = create_grid_for_dimension(2, resolution=16)
         bc = create_bc_for_dimension(2)
-        params = preset.get_default_parameters()
+        params = {"D": 1.0, "C": 0.1, "d": 0.5}
 
         pde = preset.create_pde(params, bc, grid)
         assert pde is not None
@@ -79,13 +67,12 @@ class TestDampedWavePDE:
         grid = create_grid_for_dimension(2, resolution=16)
         bc = create_bc_for_dimension(2)
 
-        params = preset.get_default_parameters()
-        params["d"] = 0.1  # Add some damping
+        params = {"D": 1.0, "C": 0.1, "d": 0.5}
 
         pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "gaussian-blobs", {"num_blobs": 1})
 
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         assert isinstance(result, FieldCollection)
         assert np.isfinite(result[0].data).all()
@@ -107,11 +94,12 @@ class TestDampedWavePDE:
         bc = create_bc_for_dimension(ndim)
 
         # Create PDE and initial state
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"D": 1.0, "C": 0.1, "d": 0.5}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, FieldCollection)

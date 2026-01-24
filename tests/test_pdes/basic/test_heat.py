@@ -37,26 +37,6 @@ class TestHeatPDE:
         assert len(meta.parameters) == 1
         assert meta.parameters[0].name == "D_T"
 
-    def test_get_default_parameters(self):
-        """Test getting default parameters."""
-        pde = HeatPDE()
-        defaults = pde.get_default_parameters()
-
-        assert "D_T" in defaults
-        assert defaults["D_T"] == 1.0  # Updated default from reference
-
-    def test_validate_parameters_valid(self):
-        """Test parameter validation with valid params."""
-        pde = HeatPDE()
-        # Should not raise
-        pde.validate_parameters({"D_T": 5.0})
-
-    def test_validate_parameters_invalid(self):
-        """Test parameter validation with invalid params."""
-        pde = HeatPDE()
-        with pytest.raises(ValueError, match="D_T must be >="):
-            pde.validate_parameters({"D_T": 0.001})
-
     def test_create_pde(self, small_grid):
         """Test creating the PDE object."""
         pde_preset = HeatPDE()
@@ -117,11 +97,11 @@ class TestHeatPDE:
         bc = create_bc_for_dimension(ndim)
 
         # Create PDE and initial state
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        pde = preset.create_pde({"D_T": 1.0}, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, ScalarField)
@@ -146,18 +126,6 @@ class TestInhomogeneousHeatPDE:
         """Test that inhomogeneous-heat PDE is registered."""
         presets = list_presets()
         assert "inhomogeneous-heat" in presets
-
-    def test_get_default_parameters(self):
-        """Test default parameters retrieval."""
-        preset = get_pde_preset("inhomogeneous-heat")
-        params = preset.get_default_parameters()
-
-        assert "D" in params  # diffusion coefficient
-        assert "n" in params  # spatial mode x
-        assert "m" in params  # spatial mode y
-        assert params["D"] == 1.0
-        assert params["n"] == 4
-        assert params["m"] == 4
 
     def test_create_with_source(self, non_periodic_grid):
         """Test creating PDE with spatial source term."""
@@ -211,18 +179,6 @@ class TestInhomogeneousDiffusionHeatPDE:
         presets = list_presets()
         assert "inhomogeneous-diffusion-heat" in presets
 
-    def test_get_default_parameters(self):
-        """Test default parameters retrieval."""
-        preset = get_pde_preset("inhomogeneous-diffusion-heat")
-        params = preset.get_default_parameters()
-
-        assert "D" in params
-        assert "E" in params
-        assert "n" in params
-        assert params["D"] == 1.0
-        assert params["E"] == 0.99
-        assert params["n"] == 40
-
     def test_create_pde_with_varying_diffusion(self, non_periodic_grid):
         """Test creating PDE with spatially varying diffusion."""
         preset = get_pde_preset("inhomogeneous-diffusion-heat")
@@ -268,7 +224,7 @@ class TestInhomogeneousDiffusionHeatPDE:
         state = ScalarField.from_expression(non_periodic_grid, "1.0")
         state.label = "T"
 
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler")
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", backend="numpy")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()

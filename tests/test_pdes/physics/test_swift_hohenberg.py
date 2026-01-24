@@ -40,21 +40,10 @@ class TestSwiftHohenbergPDE:
         assert meta.num_fields == 1
         assert "u" in meta.field_names
 
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("swift-hohenberg")
-        params = preset.get_default_parameters()
-
-        assert "r" in params
-        assert "a" in params
-        assert "b" in params
-        assert "c" in params
-        assert "D" in params
-
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("swift-hohenberg")
-        params = preset.get_default_parameters()
+        params = {"r": 0.5, "g1": 0.5, "g2": 0.0, "D": 1.0, "k0": 1.0}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
@@ -101,7 +90,7 @@ class TestSwiftHohenbergPDE:
         )
 
         # Run a very short simulation with tiny timestep (fourth-order PDE is stiff)
-        result = pde.solve(state, t_range=0.001, dt=1e-6)
+        result = pde.solve(state, t_range=0.001, dt=1e-6, backend="numpy")
 
         # Check that result is finite and valid
         assert result is not None
@@ -123,19 +112,15 @@ class TestSwiftHohenbergPDE:
         bc = create_bc_for_dimension(ndim)
 
         # Create PDE with conservative parameters for testing
-        params = preset.get_default_parameters()
         # Use supercritical parameters with positive quintic stabilization
-        params["r"] = 0.1  # Small positive (supercritical)
-        params["a"] = 0.1  # Small quadratic
-        params["b"] = 1.0  # Positive cubic
-        params["c"] = 0.1  # Positive quintic for stability
+        params = {"r": 0.1, "g1": 0.1, "g2": 0.1, "D": 1.0, "k0": 1.0}
         pde = preset.create_pde(params, bc, grid)
 
         # Use very small initial perturbations for stability
         state = preset.create_initial_state(grid, "random-uniform", {"low": -0.01, "high": 0.01})
 
         # Run very short simulation (4th order PDE is numerically stiff)
-        result = pde.solve(state, t_range=0.00001, dt=0.000001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.00001, dt=0.000001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, ScalarField)

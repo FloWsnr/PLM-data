@@ -44,13 +44,7 @@ class StandingWavePDE(MultiFieldPDEPreset):
                 "v": "D * laplace(u)",
             },
             parameters=[
-                PDEParameter(
-                    name="D",
-                    default=1.0,
-                    description="Wave speed squared (c^2)",
-                    min_value=0.1,
-                    max_value=100.0,
-                ),
+                PDEParameter("D", "Wave speed squared (c^2)"),
             ],
             num_fields=2,
             field_names=["u", "v"],

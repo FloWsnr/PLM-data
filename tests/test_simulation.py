@@ -47,6 +47,7 @@ class TestSimulationRunner:
             "parameters": {"D_T": 0.01},
             "init": {"type": "random-uniform", "params": {"low": 0.0, "high": 1.0}},
             "solver": "euler",
+            "backend": "numpy",
             "t_end": 0.005,  # 50 * 0.0001
             "dt": 0.0001,
             "resolution": [16, 16],
@@ -88,6 +89,7 @@ class TestSimulationRunner:
                 "parameters": {"D_T": 0.01},
                 "init": {"type": "random-uniform", "params": {}},
                 "solver": solver,
+                "backend": "numpy",
                 "t_end": 0.001,
                 "dt": 0.0001,
                 "resolution": [16, 16],
@@ -118,6 +120,7 @@ class TestRunFromConfig:
             "parameters": {"D_T": 0.01},
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
+            "backend": "numpy",
             "t_end": 0.002,  # 20 * 0.0001
             "dt": 0.0001,
             "resolution": [16, 16],
@@ -142,6 +145,7 @@ class TestRunFromConfig:
             "parameters": {"D_T": 0.01},
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
+            "backend": "numpy",
             "t_end": 0.001,  # 10 * 0.0001
             "dt": 0.0001,
             "resolution": [16, 16],
@@ -289,6 +293,7 @@ class TestAdaptiveTimeStepping:
             "parameters": {"D_T": 0.01},
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
+            "backend": "numpy",
             "t_end": 0.0005,  # 5 * 0.0001
             "dt": 0.0001,
             "resolution": [16, 16],
@@ -325,6 +330,7 @@ class TestUnusedParameterWarning:
             },
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
+            "backend": "numpy",
             "t_end": 0.0005,
             "dt": 0.0001,
             "resolution": [16, 16],
@@ -360,6 +366,7 @@ class TestUnusedParameterWarning:
             },
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
+            "backend": "numpy",
             "t_end": 0.001,
             "dt": 0.0001,
             "resolution": [16, 16],
@@ -390,6 +397,7 @@ class TestUnusedParameterWarning:
             "parameters": {"D_T": 0.01},  # Only known parameter
             "init": {"type": "random-uniform", "params": {}},
             "solver": "euler",
+            "backend": "numpy",
             "t_end": 0.001,
             "dt": 0.0001,
             "resolution": [16, 16],
@@ -410,3 +418,59 @@ class TestUnusedParameterWarning:
 
             # No warning should be raised
             assert len(w) == 0
+
+
+class TestMissingParameterValidation:
+    """Tests for missing parameter validation."""
+
+    def test_missing_required_parameter(self, tmp_path):
+        """Test that missing parameters raise a clear error."""
+        config_dict = {
+            "preset": "heat",
+            "parameters": {},  # Missing required D_T parameter
+            "init": {"type": "random-uniform", "params": {}},
+            "solver": "euler",
+            "backend": "numba",
+            "adaptive": False,
+            "t_end": 0.001,
+            "dt": 0.0001,
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
+            "output": {"path": str(tmp_path), "num_frames": 3},
+            "seed": 42,
+        }
+
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config = load_config(config_path)
+
+        with pytest.raises(ValueError, match="Missing required parameters.*D_T"):
+            SimulationRunner(config, output_dir=tmp_path)
+
+    def test_missing_multiple_parameters(self, tmp_path):
+        """Test that missing parameters error includes all missing params."""
+        config_dict = {
+            "preset": "gray-scott",
+            "parameters": {"a": 0.037},  # Missing b and D parameters
+            "init": {"type": "gaussian-blobs", "params": {"num_blobs": 2}},
+            "solver": "euler",
+            "backend": "numpy",
+            "adaptive": False,
+            "t_end": 0.1,
+            "dt": 0.01,
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
+            "output": {"path": str(tmp_path), "num_frames": 3},
+            "seed": 42,
+        }
+
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config = load_config(config_path)
+
+        with pytest.raises(ValueError, match="Missing required parameters.*gray-scott"):
+            SimulationRunner(config, output_dir=tmp_path)

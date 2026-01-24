@@ -35,21 +35,10 @@ class TestGiererMeinhardtPDE:
         assert "u" in meta.field_names
         assert "v" in meta.field_names
 
-    def test_get_default_parameters(self):
-        """Test default parameters retrieval."""
-        preset = get_pde_preset("gierer-meinhardt")
-        params = preset.get_default_parameters()
-
-        assert "D" in params  # Now uses single D for inhibitor diffusion ratio
-        assert "a" in params  # basal production
-        assert "b" in params  # decay rate
-        assert "c" in params  # inhibitor decay
-        assert params["D"] > 1  # D > 1 required for pattern formation
-
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("gierer-meinhardt")
-        params = preset.get_default_parameters()
+        params = {"rho": 0.001, "mu": 0.02, "D_a": 0.1, "D_h": 10.0, "kappa": 0.0}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)
@@ -101,11 +90,12 @@ class TestGiererMeinhardtPDE:
         bc = create_bc_for_dimension(ndim)
 
         # Create PDE and initial state
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"rho": 0.001, "mu": 0.02, "D_a": 0.1, "D_h": 10.0, "kappa": 0.0}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, FieldCollection)

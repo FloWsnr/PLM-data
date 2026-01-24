@@ -137,18 +137,23 @@ class SimulationRunner:
         )
 
         # Create PDE
-        params = self.preset.get_default_parameters()
-        params.update(config.parameters)
-        self.preset.validate_parameters(params)
+        params = config.parameters
+
+        # Validate all required parameters are provided
+        required_params = {p.name for p in self.preset.metadata.parameters}
+        provided_params = set(params.keys())
+        missing = required_params - provided_params
+        if missing:
+            raise ValueError(
+                f"Missing required parameters for '{config.preset}': {sorted(missing)}"
+            )
 
         # Warn about unused parameters in config
-        known_param_names = {p.name for p in self.preset.metadata.parameters}
-        provided_param_names = set(config.parameters.keys())
-        unused_params = provided_param_names - known_param_names
+        unused_params = provided_params - required_params
         if unused_params:
             warnings.warn(
                 f"Unused parameters in config for '{config.preset}': {sorted(unused_params)}. "
-                f"Known parameters are: {sorted(known_param_names)}",
+                f"Known parameters are: {sorted(required_params)}",
                 UserWarning,
                 stacklevel=2,
             )

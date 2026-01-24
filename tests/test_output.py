@@ -471,7 +471,7 @@ class TestCreateMetadata:
             category="test",
             description="Test PDE",
             equations={"u": "laplace(u)"},
-            parameters=[PDEParameter("D", 0.1, "diffusion")],
+            parameters=[PDEParameter("D", "diffusion")],
             num_fields=1,
             field_names=["u"],
         )
@@ -521,7 +521,7 @@ class TestCreateMetadata:
             category="physics",
             description="Gray-Scott model",
             equations={"u": "D_u*laplace(u)", "v": "D_v*laplace(v)"},
-            parameters=[PDEParameter("D_u", 0.2, "U diffusion")],
+            parameters=[PDEParameter("D_u", "U diffusion")],
             num_fields=2,
             field_names=["u", "v"],
         )

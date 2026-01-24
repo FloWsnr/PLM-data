@@ -34,26 +34,12 @@ class TestVorticityBoundedPDE:
         assert "psi" in meta.field_names
         assert "S" in meta.field_names
 
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("vorticity-bounded")
-        params = preset.get_default_parameters()
-
-        assert "nu" in params
-        assert "epsilon" in params
-        assert "D" in params
-        assert "k" in params
-        assert params["nu"] == 0.1
-        assert params["epsilon"] == 0.05
-        assert params["D"] == 0.05
-        assert params["k"] == 51
-
     def test_create_pde(self):
         """Test PDE creation."""
         preset = get_pde_preset("vorticity-bounded")
         grid = create_grid_for_dimension(2, resolution=16)
         bc = preset.get_default_bc()
-        params = preset.get_default_parameters()
+        params = {"nu": 0.01, "epsilon": 0.1, "D": 0.0, "k": 0.1}
 
         pde = preset.create_pde(params, bc, grid)
         assert pde is not None
@@ -90,13 +76,12 @@ class TestVorticityBoundedPDE:
         bc = preset.get_default_bc()
 
         # Use smaller k for test stability
-        params = preset.get_default_parameters()
-        params["k"] = 4
+        params = {"nu": 0.01, "epsilon": 0.1, "D": 0.0, "k": 4}
 
         pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "default", {"k": 4})
 
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None, backend="numpy")
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 3
@@ -125,13 +110,12 @@ class TestVorticityBoundedPDE:
         grid = create_grid_for_dimension(2, resolution=16)
         bc = preset.get_default_bc()
 
-        params = preset.get_default_parameters()
-        params["k"] = 4  # Use smaller k for stability
+        params = {"nu": 0.01, "epsilon": 0.1, "D": 0.0, "k": 4}  # Use smaller k for stability
 
         pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "default", {"k": 4})
 
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None, backend="numpy")
 
         assert isinstance(result, FieldCollection)
         check_result_finite(result, "vorticity-bounded", 2)

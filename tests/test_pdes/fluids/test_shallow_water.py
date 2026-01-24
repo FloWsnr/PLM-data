@@ -32,7 +32,7 @@ class TestShallowWaterPDE:
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("shallow-water")
-        params = preset.get_default_parameters()
+        params = {"H_e": 1.0, "g": 9.81, "f": 0.0001, "k": 0.01, "nu": 0.001, "epsilon": 0.1}
         bc = {"x": "periodic", "y": "periodic"}
 
         pde = preset.create_pde(params, bc, small_grid)

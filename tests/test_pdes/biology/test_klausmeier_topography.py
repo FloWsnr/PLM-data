@@ -64,11 +64,12 @@ class TestKlausmeierTopographyPDE:
         bc = create_bc_for_dimension(ndim)
 
         # Create PDE and initial state (use random-uniform for variation testing)
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"a": 0.45, "b": 0.45, "v": 182.5, "D_w": 500.0, "D_n": 1.0}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation with smaller timestep for stability
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, FieldCollection)

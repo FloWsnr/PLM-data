@@ -31,23 +31,12 @@ class TestBlobDiffusionHeatPDE:
         assert meta.num_fields == 1
         assert "T" in meta.field_names
 
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("blob-diffusion-heat")
-        params = preset.get_default_parameters()
-
-        assert "D_min" in params
-        assert "D_max" in params
-        assert "n_blobs" in params
-        assert "sigma" in params
-        assert "seed" in params
-
     def test_create_pde(self):
         """Test PDE creation with blob-based diffusion."""
         preset = get_pde_preset("blob-diffusion-heat")
         grid = create_grid_for_dimension(2, resolution=16, periodic=False)
         bc = create_bc_for_dimension(2, periodic=False)
-        params = preset.get_default_parameters()
+        params = {"D_min": 0.1, "D_max": 1.0, "n_blobs": 5, "sigma": 0.1, "seed": 42}
 
         pde = preset.create_pde(params, bc, grid)
         assert pde is not None
@@ -83,7 +72,7 @@ class TestBlobDiffusionHeatPDE:
         state = ScalarField.from_expression(grid, "1.0")
         state.label = "T"
 
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         assert isinstance(result, ScalarField)
         assert np.isfinite(result.data).all()

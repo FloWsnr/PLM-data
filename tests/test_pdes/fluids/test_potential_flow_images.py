@@ -33,20 +33,10 @@ class TestPotentialFlowImagesPDE:
         assert "phi" in meta.field_names
         assert "s" in meta.field_names
 
-    def test_default_parameters(self):
-        """Test default parameters match reference."""
-        preset = get_pde_preset("potential-flow-images")
-        params = preset.get_default_parameters()
-
-        assert "strength" in params
-        assert "wall_x" in params
-        assert params["strength"] == 10.0
-        assert params["wall_x"] == 0.5
-
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("potential-flow-images")
-        params = preset.get_default_parameters()
+        params = {"strength": 1.0, "wall_x": -2.0, "sigma": 0.5, "omega": 0.5, "amplitude": 0.5}
         bc = {"x": "neumann", "y": "neumann"}
 
         pde = preset.create_pde(params, bc, small_grid)

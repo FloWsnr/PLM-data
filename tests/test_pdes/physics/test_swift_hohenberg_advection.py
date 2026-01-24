@@ -68,20 +68,15 @@ class TestSwiftHohenbergAdvectionPDE:
         bc = create_bc_for_dimension(ndim)
 
         # Create PDE with conservative parameters for testing
-        params = preset.get_default_parameters()
         # Use supercritical parameters with positive quintic stabilization
-        params["r"] = 0.1  # Small positive (supercritical)
-        params["a"] = 0.1  # Small quadratic
-        params["b"] = 1.0  # Positive cubic
-        params["c"] = 0.1  # Positive quintic for stability
-        params["V"] = 0.1  # Small advection velocity
+        params = {"r": 0.1, "g1": 0.1, "g2": 0.1, "D": 1.0, "k0": 1.0, "vx": 0.1, "vy": 0.0}
         pde = preset.create_pde(params, bc, grid)
 
         # Use very small initial perturbations for stability
         state = preset.create_initial_state(grid, "random-uniform", {"low": -0.01, "high": 0.01})
 
         # Run very short simulation (4th order PDE is numerically stiff)
-        result = pde.solve(state, t_range=0.00001, dt=0.000001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.00001, dt=0.000001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, ScalarField)

@@ -131,8 +131,8 @@ def run_short_simulation(
             periodic=[periodic_x, periodic_y],
         )
 
-    # Get parameters from config
-    params = config.get("parameters", pde_preset.get_default_parameters())
+    # Get parameters from config (required - no defaults)
+    params = config.get("parameters", {})
 
     # Create PDE - pass bc_config directly
     pde = pde_preset.create_pde(
@@ -173,6 +173,7 @@ def run_short_simulation(
         dt=dt,
         solver=solver,
         tracker=None,
+        backend="numpy",
     )
 
     return result, config
@@ -233,7 +234,7 @@ def sample_config_dict():
             "params": {"num_blobs": 2, "amplitude": 1.0},
         },
         "solver": "euler",
-        "backend": "numba",
+        "backend": "numpy",
         "adaptive": False,
         "t_end": 0.01,  # 100 * 0.0001
         "dt": 0.0001,

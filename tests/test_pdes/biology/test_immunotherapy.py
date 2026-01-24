@@ -62,11 +62,12 @@ class TestImmunotherapyPDE:
         bc = create_bc_for_dimension(ndim)
 
         # Create PDE and initial state
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"D_T": 0.001, "D_E": 0.01, "D_I": 0.05, "r_T": 0.1, "K": 1.0, "a": 1.0, "d_T": 0.1, "r_E": 0.1, "d_E": 0.1, "s": 0.05, "alpha": 0.1, "d_I": 0.1, "m": 0.01}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, FieldCollection)

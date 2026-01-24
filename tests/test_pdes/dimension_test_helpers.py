@@ -52,6 +52,7 @@ def create_bc_for_dimension(ndim: int, periodic: bool = True) -> BoundaryConfig:
 def run_dimension_test(
     preset,
     ndim: int,
+    params: dict,
     num_steps: int = 5,
     dt: float = 0.001,
     resolution: int | None = None,
@@ -65,6 +66,7 @@ def run_dimension_test(
     Args:
         preset: The PDE preset instance.
         ndim: Number of dimensions to test.
+        params: Dictionary of PDE parameters.
         num_steps: Number of time steps to run (default 5 for speed).
         dt: Time step.
         resolution: Grid resolution (defaults to 32 for 1D, 16 for 2D, 8 for 3D).
@@ -90,7 +92,6 @@ def run_dimension_test(
     grid = create_grid_for_dimension(ndim, resolution=resolution, periodic=periodic)
     bc = create_bc_for_dimension(ndim, periodic=periodic)
 
-    params = preset.get_default_parameters()
     pde = preset.create_pde(params, bc, grid)
 
     state = preset.create_initial_state(grid=grid, ic_type=ic_type, ic_params=ic_params)
@@ -98,7 +99,7 @@ def run_dimension_test(
     # Compute t_end based on number of steps
     t_end = num_steps * dt
 
-    result = pde.solve(state, t_range=t_end, dt=dt, solver="euler", tracker=None)
+    result = pde.solve(state, t_range=t_end, dt=dt, solver="euler", tracker=None, backend="numpy")
 
     # Check if result is finite
     if isinstance(result, ScalarField):

@@ -61,20 +61,8 @@ class PeronaMalikPDE(ScalarPDEPreset):
                 "u": "div(exp(-D * |grad(u)|^2) * grad(u))",
             },
             parameters=[
-                PDEParameter(
-                    name="D",
-                    default=5.0,
-                    description="Edge sensitivity (higher = more edge preservation)",
-                    min_value=0.1,
-                    max_value=20.0,
-                ),
-                PDEParameter(
-                    name="sigma",
-                    default=1.0,
-                    description="Initial noise level (for initial condition)",
-                    min_value=0.0,
-                    max_value=2.0,
-                ),
+                PDEParameter("D", "Edge sensitivity (higher = more edge preservation)"),
+                PDEParameter("sigma", "Initial noise level (for initial condition)"),
             ],
             num_fields=1,
             field_names=["u"],

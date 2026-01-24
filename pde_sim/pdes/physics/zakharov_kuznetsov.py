@@ -47,20 +47,8 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
                 "u": "-d_dx(laplace(u)) - u * d_dx(u) - b * laplace(laplace(u))",
             },
             parameters=[
-                PDEParameter(
-                    name="b",
-                    default=0.008,
-                    description="Biharmonic dissipation coefficient",
-                    min_value=0.0,
-                    max_value=0.1,
-                ),
-                PDEParameter(
-                    name="theta",
-                    default=0.0,
-                    description="Propagation angle in radians (0 = +x direction)",
-                    min_value=-np.pi,
-                    max_value=np.pi,
-                ),
+                PDEParameter("b", "Biharmonic dissipation coefficient"),
+                PDEParameter("theta", "Propagation angle in radians (0 = +x direction)"),
             ],
             num_fields=1,
             field_names=["u"],

@@ -48,13 +48,7 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
                 "u": "-laplace(u) - laplace(laplace(u)) - gradient_squared(u)",
             },
             parameters=[
-                PDEParameter(
-                    name="a",
-                    default=0.03,
-                    description="Damping coefficient (for numerical stability)",
-                    min_value=0.0,
-                    max_value=0.5,
-                ),
+                PDEParameter("a", "Damping coefficient (for numerical stability)"),
             ],
             num_fields=1,
             field_names=["u"],

@@ -32,24 +32,10 @@ class TestSchrodingerPDE:
         assert "u" in meta.field_names
         assert "v" in meta.field_names
 
-    def test_get_default_parameters(self):
-        """Test default parameters."""
-        preset = get_pde_preset("schrodinger")
-        params = preset.get_default_parameters()
-
-        assert "D" in params
-        assert "C" in params
-        assert "n" in params
-        assert "m" in params
-        assert params["D"] == 1.0
-        assert params["C"] == 0.004
-        assert params["n"] == 3
-        assert params["m"] == 3
-
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("schrodinger")
-        params = preset.get_default_parameters()
+        params = {"D": 1.0, "C": 1.0, "n": 1, "m": 1, "V_strength": 0.0, "pot_n": 2, "pot_m": 2}
         bc = BoundaryConfig(
             x_minus="dirichlet:0", x_plus="dirichlet:0",
             y_minus="dirichlet:0", y_plus="dirichlet:0"
@@ -97,16 +83,6 @@ class TestSchrodingerPDE:
         assert np.isfinite(result[0].data).all()
         assert np.isfinite(result[1].data).all()
         assert config["preset"] == "schrodinger"
-
-    def test_potential_parameters_in_metadata(self):
-        """Test that potential parameters are in metadata."""
-        preset = get_pde_preset("schrodinger")
-        params = preset.get_default_parameters()
-
-        assert "V_strength" in params
-        assert "pot_n" in params
-        assert "pot_m" in params
-        assert params["V_strength"] == 0.0  # Default: no potential
 
     def test_create_pde_with_sinusoidal_potential(self, non_periodic_grid):
         """Test PDE creation with sinusoidal potential."""
@@ -190,7 +166,7 @@ class TestSchrodingerPDE:
             non_periodic_grid, "eigenstate", {"n": 2, "m": 2}
         )
 
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler")
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", backend="numpy")
 
         assert result is not None
         assert np.isfinite(result[0].data).all()
@@ -253,11 +229,12 @@ class TestSchrodingerPDE:
         bc = create_bc_for_dimension(ndim, periodic=False)
 
         # Create PDE and initial state using random-uniform (works in all dimensions)
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"D": 1.0, "C": 1.0, "n": 1, "m": 1, "V_strength": 0.0, "pot_n": 2, "pot_m": 2}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, FieldCollection)

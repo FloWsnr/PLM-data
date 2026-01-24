@@ -32,20 +32,10 @@ class TestPotentialFlowDipolesPDE:
         assert meta.num_fields == 1  # Only phi field
         assert "phi" in meta.field_names
 
-    def test_default_parameters(self):
-        """Test default parameters match reference."""
-        preset = get_pde_preset("potential-flow-dipoles")
-        params = preset.get_default_parameters()
-
-        assert "separation" in params
-        assert "strength" in params
-        assert params["separation"] == 3.0
-        assert params["strength"] == 500.0
-
     def test_create_pde(self, small_grid):
         """Test PDE creation."""
         preset = get_pde_preset("potential-flow-dipoles")
-        params = preset.get_default_parameters()
+        params = {"strength": 1.0, "separation": 0.5, "sigma": 0.2, "omega": 1.0, "orbit_radius": 1.0}
         bc = {"x": "neumann", "y": "neumann"}
 
         pde = preset.create_pde(params, bc, small_grid)

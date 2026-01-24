@@ -104,11 +104,12 @@ class TestLotkaVolterraPDE:
         bc = create_bc_for_dimension(ndim)
 
         # Create PDE and initial state using default IC
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"D_u": 0.1, "D_v": 0.1, "alpha": 1.0, "beta": 0.5, "gamma": 0.5, "delta": 0.5}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "default", {"noise": 0.1, "seed": 42})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, FieldCollection)

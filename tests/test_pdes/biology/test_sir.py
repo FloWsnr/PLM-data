@@ -42,21 +42,6 @@ class TestSIRPDE:
         assert "D_I" in param_names
         assert "D_R" in param_names
 
-    def test_default_parameters(self):
-        """Test default parameter values."""
-        preset = get_pde_preset("sir")
-        defaults = preset.get_default_parameters()
-
-        assert defaults["beta"] == 0.5
-        assert defaults["gamma"] == 0.1
-        assert defaults["D_S"] == 0.1
-        assert defaults["D_I"] == 0.1
-        assert defaults["D_R"] == 0.1
-
-        # Check R0 > 1 for epidemic behavior
-        R0 = defaults["beta"] / defaults["gamma"]
-        assert R0 > 1, f"R0 = {R0} should be > 1 for epidemic"
-
     def test_short_simulation(self):
         """Test running a short simulation using default config."""
         result, config = run_short_simulation("sir", "biology")
@@ -146,11 +131,12 @@ class TestSIRPDE:
         bc = create_bc_for_dimension(ndim)
 
         # Create PDE and initial state (use random-uniform for variation testing)
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"beta": 0.3, "gamma": 0.1, "D_S": 0.1, "D_I": 0.1, "D_R": 0.1}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, FieldCollection)

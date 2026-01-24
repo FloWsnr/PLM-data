@@ -49,15 +49,6 @@ class TestFokkerPlanckMetadata:
         assert "x0" in param_names
         assert "y0" in param_names
 
-    def test_default_parameters(self):
-        """Test default parameter values."""
-        preset = get_pde_preset("fokker-planck")
-        defaults = preset.get_default_parameters()
-
-        assert defaults["D"] == 0.1
-        assert defaults["gamma"] == 0.5
-        assert defaults["x0"] == 0.0
-        assert defaults["y0"] == 0.0
 
 
 class TestFokkerPlanckPDE:
@@ -162,11 +153,12 @@ class TestFokkerPlanckPDE:
         bc = create_bc_for_dimension(ndim, periodic=False)
 
         # Create PDE and initial state
-        pde = preset.create_pde(preset.get_default_parameters(), bc, grid)
+        params = {"gamma": 1.0, "D": 1.0, "k": 1.0, "T": 1.0}
+        pde = preset.create_pde(params, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         # Run short simulation
-        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         # Verify result
         assert isinstance(result, ScalarField)
