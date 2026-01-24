@@ -171,7 +171,7 @@ class TestGrayScottSimulation:
         config_dict = {
             "preset": "gray-scott",
             "parameters": {"a": 0.037, "b": 0.06, "D": 2.0},
-            "init": {"type": "gaussian-blobs", "params": {"num_blobs": 2}},
+            "init": {"type": "gaussian-blob", "params": {"num_blobs": 2}},
             "solver": "euler",
             "backend": "numpy",
             "t_end": 1.0,  # 100 * 0.01
@@ -454,7 +454,7 @@ class TestMissingParameterValidation:
         config_dict = {
             "preset": "gray-scott",
             "parameters": {"a": 0.037},  # Missing b and D parameters
-            "init": {"type": "gaussian-blobs", "params": {"num_blobs": 2}},
+            "init": {"type": "gaussian-blob", "params": {"num_blobs": 2}},
             "solver": "euler",
             "backend": "numpy",
             "adaptive": False,

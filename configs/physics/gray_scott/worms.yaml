@@ -4,7 +4,7 @@ parameters:
   b: 0.061
   D: 2.0
 init:
-  type: asymmetric-blobs
+  type: gaussian-blob
   params:
     num_blobs: 20
     width: 0.012

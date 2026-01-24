@@ -68,7 +68,7 @@ parameters:                 # PDE-specific parameters
   Dv: 0.08                  # Diffusion of v
 
 init:                       # Initial condition
-  type: gaussian-blobs      # IC type
+  type: gaussian-blob       # IC type
   params:                   # IC parameters
     num_blobs: 10
     width: 0.03
@@ -133,7 +133,7 @@ seed: 123                   # Random seed (optional)
 Available initial condition types:
 - `random-uniform` - Uniform random values
 - `random-gaussian` - Gaussian random values
-- `gaussian-blobs` - Multiple Gaussian bumps
+- `gaussian-blob` - Gaussian blob(s) with optional aspect ratio for asymmetric shapes
 - `sine` - Sinusoidal patterns
 - `step` - Step functions
 

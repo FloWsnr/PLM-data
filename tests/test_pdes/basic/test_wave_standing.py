@@ -50,7 +50,7 @@ class TestStandingWavePDE:
         grid = create_grid_for_dimension(2, resolution=16)
 
         state = preset.create_initial_state(
-            grid, "gaussian-blobs", {"num_blobs": 1, "seed": 42}
+            grid, "gaussian-blob", {"num_blobs": 1, "seed": 42}
         )
 
         assert isinstance(state, FieldCollection)
@@ -69,7 +69,7 @@ class TestStandingWavePDE:
 
         params = {"D": 1.0}
         pde = preset.create_pde(params, bc, grid)
-        state = preset.create_initial_state(grid, "gaussian-blobs", {"num_blobs": 1})
+        state = preset.create_initial_state(grid, "gaussian-blob", {"num_blobs": 1})
 
         result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 

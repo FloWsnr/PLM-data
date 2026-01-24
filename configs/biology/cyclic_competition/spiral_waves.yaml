@@ -6,12 +6,11 @@ parameters:
   Dv: 0.5
   Dw: 0.5
 init:
-  type: single-blob
+  type: gaussian-blob
   params:
+    num_blobs: 1
     amplitude: 0.8
     sigma: 15.0
-    center_x: 0.5
-    center_y: 0.5
     background: 0.1
 solver: euler
 backend: numba

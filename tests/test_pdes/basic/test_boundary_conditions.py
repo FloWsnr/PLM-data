@@ -76,7 +76,7 @@ class TestBoundaryConditions:
 
         pde = preset.create_pde(params, bc, non_periodic_grid)
         state = preset.create_initial_state(
-            non_periodic_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
+            non_periodic_grid, "gaussian-blob", {"num_blobs": 1, "amplitude": 1.0}
         )
 
         result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", backend="numpy")

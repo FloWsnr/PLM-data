@@ -236,7 +236,7 @@ class MultiFieldPDEPreset(PDEPreset):
 
         Notes:
             ic_params can specify per-field ICs using field names as keys.
-            Example: {"u": {"type": "gaussian-blobs", "params": {...}}}
+            Example: {"u": {"type": "gaussian-blob", "params": {...}}}
         """
         fields = []
         field_names = self.metadata.field_names

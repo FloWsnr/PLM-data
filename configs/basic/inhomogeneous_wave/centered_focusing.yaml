@@ -6,11 +6,9 @@ parameters:
   n: 4
   C: 0.01
 init:
-  type: single-blob
+  type: gaussian-blob
   params:
-    position:
-    - 0.5
-    - 0.5
+    num_blobs: 1
     amplitude: 1.0
     sigma: 0.05
     background: 0.0

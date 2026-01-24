@@ -78,7 +78,7 @@ class BistableAllenCahnPDE(ScalarPDEPreset):
         """Create initial state for bistable Allen-Cahn.
 
         Supports:
-        - gaussian-blobs: Localized population patches
+        - gaussian-blob: Localized population patches
         - step: Step function (left=0, right=1)
         - random-uniform: Random values in [0, 1]
         """

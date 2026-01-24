@@ -25,7 +25,7 @@ class TestLoadConfig:
 
         assert config.preset == "heat"
         assert config.parameters["D_T"] == 0.1
-        assert config.init.type == "gaussian-blobs"
+        assert config.init.type == "gaussian-blob"
         assert config.solver == "euler"
         assert config.t_end == 0.01  # 100 * 0.0001
         assert config.dt == 0.0001
@@ -92,7 +92,7 @@ class TestConfigToDict:
         # Check essential fields
         assert config_dict["preset"] == "heat"
         assert config_dict["parameters"]["D_T"] == 0.1
-        assert config_dict["init"]["type"] == "gaussian-blobs"
+        assert config_dict["init"]["type"] == "gaussian-blob"
         assert config_dict["solver"] == "euler"
         assert config_dict["t_end"] == 0.01  # 100 * 0.0001
         assert config_dict["resolution"] == [32, 32]  # Now a list

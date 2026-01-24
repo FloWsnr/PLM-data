@@ -4,10 +4,9 @@ parameters:
   E: 0.99
   n: 45
 init:
-  type: single-blob
+  type: gaussian-blob
   params:
-    center_x: 0.5
-    center_y: 0.5
+    num_blobs: 1
     sigma: 0.15
     amplitude: 1.0
 solver: euler

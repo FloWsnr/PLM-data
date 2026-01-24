@@ -5,7 +5,7 @@ parameters:
   theta: 0.785
   V: 0.15
 init:
-  type: gaussian-blobs
+  type: gaussian-blob
   params:
     num_blobs: 6
     amplitude: 1.0

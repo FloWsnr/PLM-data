@@ -99,7 +99,7 @@ class DampedWavePDE(MultiFieldPDEPreset):
         """Create initial state for damped wave equation."""
         # Handle default IC type
         if ic_type in ("default", "damped-wave-default"):
-            ic_type = "gaussian-blobs"
+            ic_type = "gaussian-blob"
             ic_params = {
                 "num_blobs": ic_params.get("num_blobs", 1),
                 "amplitude": ic_params.get("amplitude", 1.0),

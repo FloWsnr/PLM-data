@@ -131,8 +131,8 @@ class GrayScottPDE(MultiFieldPDEPreset):
 
             return FieldCollection([u, v])
 
-        # For gaussian-blobs, create localized seeds
-        if ic_type == "gaussian-blobs":
+        # For gaussian-blob, create localized seeds
+        if ic_type == "gaussian-blob":
             return self._blob_gray_scott_init(grid, ic_params)
 
         # Fallback to parent implementation

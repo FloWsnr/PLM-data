@@ -56,7 +56,7 @@ class TestGrayScottPDE:
         pde = GrayScottPDE()
         state = pde.create_initial_state(
             grid=small_grid,
-            ic_type="gaussian-blobs",
+            ic_type="gaussian-blob",
             ic_params={"num_blobs": 3},
         )
 

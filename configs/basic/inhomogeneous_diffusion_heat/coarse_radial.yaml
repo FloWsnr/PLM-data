@@ -4,7 +4,7 @@ parameters:
   E: 0.9
   n: 5
 init:
-  type: gaussian-blobs
+  type: gaussian-blob
   params:
     n_blobs: 5
     sigma_range:

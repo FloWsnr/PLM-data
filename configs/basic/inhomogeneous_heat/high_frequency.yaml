@@ -4,7 +4,7 @@ parameters:
   n: 8
   m: 8
 init:
-  type: gaussian-blobs
+  type: gaussian-blob
   params:
     num_blobs: 6
     amplitude: 0.6

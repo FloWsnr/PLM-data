@@ -99,7 +99,7 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
         L_x = x_max - x_min
         L_y = y_max - y_min
 
-        if ic_type in ("shallow-water-default", "drop", "gaussian-blobs"):
+        if ic_type in ("shallow-water-default", "drop", "gaussian-blob"):
             # Water drop (Gaussian perturbation) - height only
             x0 = ic_params.get("x0", 0.5)
             y0 = ic_params.get("y0", 0.5)

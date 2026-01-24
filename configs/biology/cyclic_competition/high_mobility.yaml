@@ -6,7 +6,7 @@ parameters:
   Dv: 8.0
   Dw: 8.0
 init:
-  type: gaussian-blobs
+  type: gaussian-blob
   params:
     num_blobs: 6
     min_amplitude: 0.3

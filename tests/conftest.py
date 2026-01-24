@@ -230,7 +230,7 @@ def sample_config_dict():
         "preset": "heat",
         "parameters": {"D_T": 0.1},
         "init": {
-            "type": "gaussian-blobs",
+            "type": "gaussian-blob",
             "params": {"num_blobs": 2, "amplitude": 1.0},
         },
         "solver": "euler",

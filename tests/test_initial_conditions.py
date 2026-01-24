@@ -2,18 +2,17 @@
 
 import numpy as np
 import pytest
-
-from pde import ScalarField
+from pde import CartesianGrid, ScalarField
 
 from pde_sim.initial_conditions import (
-    create_initial_condition,
-    list_initial_conditions,
-    RandomUniform,
+    GaussianBlob,
     RandomGaussian,
-    GaussianBlobs,
+    RandomUniform,
+    RectangleGrid,
     SinePattern,
     StepFunction,
-    RectangleGrid,
+    create_initial_condition,
+    list_initial_conditions,
 )
 
 
@@ -26,7 +25,7 @@ class TestInitialConditionRegistry:
 
         assert "random-uniform" in ic_types
         assert "random-gaussian" in ic_types
-        assert "gaussian-blobs" in ic_types
+        assert "gaussian-blob" in ic_types
         assert "sine" in ic_types
         assert "step" in ic_types
         assert "rectangle-grid" in ic_types
@@ -97,14 +96,13 @@ class TestRandomGaussian:
         assert np.all(field.data <= 1.0)
 
 
-class TestGaussianBlobs:
-    """Tests for GaussianBlobs IC generator."""
+class TestGaussianBlob:
+    """Tests for GaussianBlob IC generator."""
 
     def test_generate_default(self, small_grid):
         """Test generating with default parameters."""
-        np.random.seed(42)
-        ic = GaussianBlobs()
-        field = ic.generate(small_grid)
+        ic = GaussianBlob()
+        field = ic.generate(small_grid, seed=42)
 
         assert isinstance(field, ScalarField)
         assert field.data.shape == (32, 32)
@@ -113,21 +111,116 @@ class TestGaussianBlobs:
 
     def test_generate_single_blob(self, small_grid):
         """Test generating a single blob."""
-        np.random.seed(42)
-        ic = GaussianBlobs()
-        field = ic.generate(small_grid, num_blobs=1, amplitude=1.0, width=0.1)
+        ic = GaussianBlob()
+        field = ic.generate(small_grid, num_blobs=1, amplitude=1.0, width=0.1, seed=42)
 
         # Maximum should be close to amplitude
         assert np.max(field.data) > 0.5
 
+    def test_generate_multiple_blobs(self, small_grid):
+        """Test generating multiple blobs."""
+        ic = GaussianBlob()
+        field = ic.generate(small_grid, num_blobs=5, amplitude=1.0, width=0.1, seed=42)
+
+        assert isinstance(field, ScalarField)
+        # Should have some variation from multiple blobs
+        assert np.std(field.data) > 0
+
     def test_generate_with_background(self, small_grid):
         """Test generating with non-zero background."""
-        np.random.seed(42)
-        ic = GaussianBlobs()
-        field = ic.generate(small_grid, num_blobs=1, background=0.5)
+        ic = GaussianBlob()
+        field = ic.generate(small_grid, num_blobs=1, background=0.5, seed=42)
 
         # Minimum should be at least the background
         assert np.min(field.data) >= 0.5 - 0.01  # Allow small numerical tolerance
+
+    def test_generate_random_amplitude(self, small_grid):
+        """Test generating with random amplitudes."""
+        ic = GaussianBlob()
+        field = ic.generate(
+            small_grid, num_blobs=3, amplitude=1.0, random_amplitude=True, seed=42
+        )
+
+        assert isinstance(field, ScalarField)
+        assert np.std(field.data) > 0
+
+    def test_generate_asymmetric_2d(self, small_grid):
+        """Test generating asymmetric (elliptical) blobs in 2D."""
+        ic = GaussianBlob()
+        field = ic.generate(
+            small_grid, num_blobs=3, amplitude=1.0, width=0.05, aspect_ratio=3.0, seed=42
+        )
+
+        assert isinstance(field, ScalarField)
+        assert np.std(field.data) > 0
+
+    def test_generate_asymmetric_random_aspect(self, small_grid):
+        """Test generating asymmetric blobs with random aspect ratios."""
+        ic = GaussianBlob()
+        field = ic.generate(
+            small_grid,
+            num_blobs=5,
+            amplitude=1.0,
+            width=0.05,
+            aspect_ratio=4.0,
+            random_aspect=True,
+            seed=42,
+        )
+
+        assert isinstance(field, ScalarField)
+        assert np.std(field.data) > 0
+
+    def test_generate_1d_blobs(self):
+        """Test generating blobs on a 1D grid."""
+        grid_1d = CartesianGrid(bounds=[[0, 10]], shape=[64], periodic=[True])
+        ic = GaussianBlob()
+        field = ic.generate(grid_1d, num_blobs=3, amplitude=1.0, width=0.1, seed=42)
+
+        assert isinstance(field, ScalarField)
+        assert field.data.shape == (64,)
+        assert np.std(field.data) > 0
+
+    def test_generate_3d_symmetric(self):
+        """Test generating symmetric blobs on a 3D grid."""
+        grid_3d = CartesianGrid(
+            bounds=[[0, 1], [0, 1], [0, 1]], shape=[16, 16, 16], periodic=[True, True, True]
+        )
+        ic = GaussianBlob()
+        field = ic.generate(grid_3d, num_blobs=2, amplitude=1.0, width=0.15, seed=42)
+
+        assert isinstance(field, ScalarField)
+        assert field.data.shape == (16, 16, 16)
+        assert np.std(field.data) > 0
+
+    def test_generate_3d_asymmetric(self):
+        """Test generating asymmetric (ellipsoidal) blobs on a 3D grid."""
+        grid_3d = CartesianGrid(
+            bounds=[[0, 1], [0, 1], [0, 1]], shape=[16, 16, 16], periodic=[True, True, True]
+        )
+        ic = GaussianBlob()
+        field = ic.generate(
+            grid_3d, num_blobs=2, amplitude=1.0, width=0.1, aspect_ratio=2.5, seed=42
+        )
+
+        assert isinstance(field, ScalarField)
+        assert field.data.shape == (16, 16, 16)
+        assert np.std(field.data) > 0
+
+    def test_via_factory(self, small_grid):
+        """Test creating via factory function."""
+        field = create_initial_condition(
+            small_grid, "gaussian-blob", {"num_blobs": 2, "amplitude": 1.0, "seed": 42}
+        )
+
+        assert isinstance(field, ScalarField)
+
+    def test_seed_reproducibility(self, small_grid):
+        """Test that seed produces reproducible results."""
+        ic = GaussianBlob()
+        field1 = ic.generate(small_grid, num_blobs=3, seed=123)
+        field2 = ic.generate(small_grid, num_blobs=3, seed=123)
+
+        np.testing.assert_array_equal(field1.data, field2.data)
 
 
 class TestSinePattern:

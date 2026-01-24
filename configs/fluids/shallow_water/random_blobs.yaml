@@ -7,7 +7,7 @@ parameters:
   nu: 0.15
   epsilon: 0.0001
 init:
-  type: asymmetric-blobs
+  type: gaussian-blob
   params:
     num_blobs: 6
     amplitude: 0.2

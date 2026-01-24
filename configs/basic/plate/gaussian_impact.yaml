@@ -5,12 +5,11 @@ parameters:
   C: 0.05
   D_c: 0.1
 init:
-  type: single-blob
+  type: gaussian-blob
   params:
+    num_blobs: 1
     amplitude: -3.0
     width: 0.08
-    center_x: 0.35
-    center_y: 0.35
     background: 0.0
 solver: scipy
 backend: numpy

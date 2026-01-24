@@ -6,11 +6,10 @@ parameters:
   sigma: 0.2
   seed: 999
 init:
-  type: single-blob
+  type: gaussian-blob
   params:
+    num_blobs: 1
     amplitude: 1.0
-    center_x: 0.5
-    center_y: 0.5
     width: 0.15
 solver: euler
 dt: 0.005

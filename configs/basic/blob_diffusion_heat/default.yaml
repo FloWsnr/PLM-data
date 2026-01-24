@@ -6,7 +6,7 @@ parameters:
   sigma: 0.12
   seed: 42
 init:
-  type: gaussian-blobs
+  type: gaussian-blob
   params:
     num_blobs: 4
     amplitude: 1.0

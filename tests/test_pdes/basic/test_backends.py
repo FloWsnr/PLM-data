@@ -16,7 +16,7 @@ class TestBackends:
 
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(
-            small_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
+            small_grid, "gaussian-blob", {"num_blobs": 1, "amplitude": 1.0}
         )
 
         # Test with numba backend
@@ -32,7 +32,7 @@ class TestBackends:
 
         pde = preset.create_pde(params, bc, small_grid)
         state = preset.create_initial_state(
-            small_grid, "gaussian-blobs", {"num_blobs": 1, "amplitude": 1.0}
+            small_grid, "gaussian-blob", {"num_blobs": 1, "amplitude": 1.0}
         )
 
         # Test with numpy backend

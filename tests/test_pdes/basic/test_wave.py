@@ -44,7 +44,7 @@ class TestWavePDE:
         """Test initial state creation."""
         preset = get_pde_preset("wave")
         state = preset.create_initial_state(
-            small_grid, "gaussian-blobs", {"num_blobs": 1}
+            small_grid, "gaussian-blob", {"num_blobs": 1}
         )
 
         assert isinstance(state, FieldCollection)
@@ -127,7 +127,7 @@ class TestInhomogeneousWavePDE:
         """Test initial state creation."""
         preset = get_pde_preset("inhomogeneous-wave")
         state = preset.create_initial_state(
-            non_periodic_grid, "gaussian-blobs", {"num_blobs": 1}
+            non_periodic_grid, "gaussian-blob", {"num_blobs": 1}
         )
 
         assert isinstance(state, FieldCollection)

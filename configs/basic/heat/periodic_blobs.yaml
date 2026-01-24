@@ -2,7 +2,7 @@ preset: heat
 parameters:
   D_T: 3.0
 init:
-  type: gaussian-blobs
+  type: gaussian-blob
   params:
     num_blobs: 8
     amplitude: 1.5

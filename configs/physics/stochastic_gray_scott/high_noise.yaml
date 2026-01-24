@@ -5,10 +5,9 @@ parameters:
   D: 4.0
   sigma: 0.28
 init:
-  type: single-blob
+  type: gaussian-blob
   params:
-    center_x: 0.5
-    center_y: 0.5
+    num_blobs: 1
     width: 0.08
 solver: euler
 backend: numpy

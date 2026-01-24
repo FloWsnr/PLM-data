@@ -5,7 +5,7 @@ parameters:
   D: 4.0
   sigma: 0.18
 init:
-  type: gaussian-blobs
+  type: gaussian-blob
   params:
     num_blobs: 5
     width: 0.04

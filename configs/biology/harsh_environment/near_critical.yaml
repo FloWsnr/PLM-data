@@ -4,11 +4,9 @@ parameters:
   r: 1.0
   K: 1.0
 init:
-  type: single-blob
+  type: gaussian-blob
   params:
-    center:
-    - 5.0
-    - 5.0
+    num_blobs: 1
     radius: 2.0
     amplitude: 1.0
 solver: euler
