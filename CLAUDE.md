@@ -12,14 +12,18 @@ PDE Simulation Dataset Generator - A modular Python framework for generating 1D/
 # Install dependencies
 uv sync
 
-# Run all tests
+# Run all tests (uses 6 parallel workers by default via pytest-xdist)
 pytest tests/ -v
 
 # Run specific test file
 pytest tests/test_pdes/test_basic.py -v
 
-# Run single test
-pytest tests/test_pdes/test_basic.py::test_heat_metadata -v
+# Run single test (disable parallelism for single tests)
+pytest tests/test_pdes/test_basic.py::test_heat_metadata -v -n 0
+
+# Run with different worker count
+pytest tests/ -v -n auto  # auto-detect CPU cores
+pytest tests/ -v -n 0     # disable parallelism
 
 # List all available PDEs
 python -m pde_sim list
