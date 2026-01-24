@@ -16,10 +16,10 @@ uv sync
 uv run pytest tests/ -v
 
 # Run specific test file
-uv run pytest tests/test_pdes/test_basic.py -v
+uv run pytest tests/test_pdes/basic/test_heat.py -v
 
 # Run single test (disable parallelism for single tests)
-uv run pytest tests/test_pdes/test_basic.py::test_heat_metadata -v -n 0
+uv run pytest tests/test_pdes/basic/test_heat.py::TestHeatPDE::test_metadata -v -n 0
 
 # Run with different worker count
 uv run pytest tests/ -v -n auto  # auto-detect CPU cores
@@ -79,7 +79,7 @@ When adding a new PDE, create a corresponding `.md` file in `pde_sim/description
 4. Use `@register_pde("name")` decorator
 5. Import in `pde_sim/pdes/{category}/__init__.py`
 6. Create description file in `pde_sim/descriptions/{name}.md`
-7. Add tests in `tests/test_pdes/test_{category}.py`
+7. Add tests in `tests/test_pdes/{category}/test_{name}.py`
 
 Example:
 ```python

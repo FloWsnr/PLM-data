@@ -4,7 +4,7 @@ A modular Python framework for generating 1D/2D/3D PDE simulation trajectories u
 
 ## Features
 
-- **14+ PDE presets** across 4 categories (basic, biology, physics, fluids)
+- **60+ PDE presets** across 4 categories (basic, biology, physics, fluids)
 - **YAML-based configuration** for easy parameter sweeps
 - **Modular architecture** for adding new PDEs
 - **PNG frame output** with JSON metadata
@@ -62,10 +62,9 @@ Simulations are configured via YAML files:
 preset: gray-scott          # PDE preset name
 
 parameters:                 # PDE-specific parameters
-  F: 0.04                   # Feed rate
-  k: 0.06                   # Kill rate
-  Du: 0.16                  # Diffusion of u
-  Dv: 0.08                  # Diffusion of v
+  a: 0.037                  # Feed rate
+  b: 0.06                   # Kill rate
+  D: 2.0                    # Diffusion ratio (v diffuses D times faster than u)
 
 init:                       # Initial condition
   type: gaussian-blob       # IC type
@@ -77,7 +76,7 @@ solver: euler               # euler or rk4
 t_end: 10000.0              # End time
 dt: 1.0                     # Time step size
 resolution: [128, 128]      # Grid resolution (must be array)
-domain_size: [2.5, 2.5]     # Physical domain size (must be array)
+domain_size: [1000, 1000]   # Physical domain size (must be array)
 
 bc:                         # Boundary conditions (use x-, x+, y-, y+)
   x-: periodic
@@ -99,34 +98,33 @@ bc:                         # Boundary conditions (use x-, x+, y-, y+)
 output:
   path: ./output            # Output directory
   num_frames: 100           # Total number of frames to save
-  fields:                   # Fields to output with colormaps
-    - u:viridis             # Field u with viridis colormap
-    - v:plasma              # Field v with plasma colormap
-# If fields is omitted, all fields are output with default colormap (turbo)
+  format: png               # "png", "mp4", or "numpy"
+  fps: 30                   # Frame rate for MP4 (default: 30)
+# All fields are automatically output with auto-assigned colormaps
 
 seed: 123                   # Random seed (optional)
 ```
 
 ## Available PDEs
 
-### Basic (4)
-- `heat` - Heat diffusion equation
-- `inhomogeneous-heat` - Heat with source term
-- `wave` - Wave equation
-- `advection` - Advection-diffusion equation
+Run `python -m pde_sim list` to see all 60+ presets. Examples by category:
 
-### Mathematical Biology (5)
-- `schnakenberg` - Turing pattern formation
-- `brusselator` - Oscillating reaction-diffusion
-- `fisher-kpp` - Population dynamics with traveling waves
-- `fitzhugh-nagumo` - Excitable media (spirals, waves)
-- `allen-cahn` - Bistable fronts
+### Basic (12)
+- `heat`, `wave`, `advection`, `plate`, `schrodinger`
+- `inhomogeneous-heat`, `inhomogeneous-wave`, `damped-wave`
 
-### Nonlinear Physics (4)
-- `gray-scott` - Complex pattern formation
-- `cahn-hilliard` - Phase separation
-- `swift-hohenberg` - Pattern formation
-- `burgers` - Shock wave formation
+### Mathematical Biology (20)
+- `brusselator`, `schnakenberg`, `gierer-meinhardt`, `lotka-volterra`
+- `fisher-kpp`, `fitzhugh-nagumo`, `allen-cahn`, `keller-segel`
+- `klausmeier`, `sir`, `immunotherapy`, `cyclic-competition`
+
+### Nonlinear Physics (20)
+- `gray-scott`, `cahn-hilliard`, `swift-hohenberg`, `kuramoto-sivashinsky`
+- `burgers`, `kdv`, `sine-gordon`, `complex-ginzburg-landau`
+- `lorenz`, `duffing`, `van-der-pol`, `fokker-planck`
+
+### Fluids (8)
+- `navier-stokes`, `vorticity`, `shallow-water`, `thermal-convection`
 
 ## Initial Conditions
 
@@ -143,11 +141,14 @@ Each simulation creates a directory. Default output (no `--output-dir`):
 ```
 output/{preset-name}/{config-name}_{run-number}/
 ├── frames/
-│   ├── u_000000.png
-│   ├── v_000000.png
-│   ├── u_000001.png
-│   ├── v_000001.png
-│   └── ...
+│   ├── u/
+│   │   ├── 000000.png
+│   │   ├── 000001.png
+│   │   └── ...
+│   └── v/
+│       ├── 000000.png
+│       ├── 000001.png
+│       └── ...
 └── metadata.json
 ```
 
@@ -209,7 +210,7 @@ class MyPDE(ScalarPDEPreset):
             description="My custom PDE",
             equations={"u": "D * laplace(u) + f(u)"},
             parameters=[
-                PDEParameter("D", 1.0, "Diffusion coefficient"),
+                PDEParameter(name="D", description="Diffusion coefficient"),
             ],
             num_fields=1,
             field_names=["u"],
@@ -226,7 +227,7 @@ class MyPDE(ScalarPDEPreset):
 
 2. Import in the category's `__init__.py`
 3. Create a description file in `pde_sim/descriptions/{name}.md`
-4. Add tests in `tests/test_pdes/test_{category}.py`
+4. Add tests in `tests/test_pdes/{category}/test_{name}.py`
 5. Run `python -m pde_sim list` to verify
 
 ## Testing
@@ -236,7 +237,7 @@ class MyPDE(ScalarPDEPreset):
 pytest tests/ -v
 
 # Run specific test file
-pytest tests/test_pdes/test_basic.py -v
+pytest tests/test_pdes/basic/test_heat.py -v
 ```
 
 ## Project Structure
@@ -254,7 +255,7 @@ pde_sim/
 │   ├── basic/           # Heat, wave, advection
 │   ├── biology/         # Reaction-diffusion, excitable
 │   ├── physics/         # Gray-Scott, Cahn-Hilliard
-│   └── fluids/          # (placeholder for future)
+│   └── fluids/          # Navier-Stokes, vorticity, shallow water
 ├── initial_conditions/  # IC generators
 └── boundaries/          # BC handling
 ```
