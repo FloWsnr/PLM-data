@@ -98,9 +98,10 @@ bc:                         # Boundary conditions (use x-, x+, y-, y+)
 output:
   path: ./output            # Output directory
   num_frames: 100           # Total number of frames to save
-  format: png               # "png", "mp4", or "numpy"
+  formats: [png]            # List of formats: "png", "mp4", "numpy" (can combine)
   fps: 30                   # Frame rate for MP4 (default: 30)
 # All fields are automatically output with auto-assigned colormaps
+# Multiple formats example: formats: [png, numpy]
 
 seed: 123                   # Random seed (optional)
 ```

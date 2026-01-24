@@ -2,7 +2,7 @@
 # Individual configs override these values
 
 output:
-  format: mp4
+  formats: [mp4]
   path: ./output
   num_frames: 100
   fps: 30

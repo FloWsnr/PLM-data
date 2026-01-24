@@ -44,6 +44,10 @@ class TestLoadConfig:
             "t_end": 0.1,  # 100 * 0.001
             "dt": 0.001,
             "resolution": [64, 64],
+            "output": {
+                "num_frames": 10,
+                "formats": ["png"],
+            },
         }
 
         config_path = tmp_path / "minimal.yaml"
@@ -117,7 +121,7 @@ class TestSimulationConfig:
                 y_minus="periodic",
                 y_plus="periodic",
             ),
-            output=OutputConfig(path=Path("./output")),
+            output=OutputConfig(path=Path("./output"), num_frames=100, formats=["png"]),
         )
 
         assert config.preset == "heat"
@@ -227,6 +231,10 @@ class TestPerFieldBCConfigParsing:
                     "b": {"y-": "neumann:0.08", "y+": "dirichlet:0"},
                 },
             },
+            "output": {
+                "num_frames": 10,
+                "formats": ["png"],
+            },
         }
 
         config_path = tmp_path / "per_field_bc.yaml"
@@ -261,6 +269,10 @@ class TestPerFieldBCConfigParsing:
                     "b": {"y-": "neumann:0.08", "y+": "dirichlet:0"},
                 },
             },
+            "output": {
+                "num_frames": 10,
+                "formats": ["png"],
+            },
         }
 
         config_path = tmp_path / "per_field_bc.yaml"
@@ -279,23 +291,23 @@ class TestPerFieldBCConfigParsing:
 class TestOutputConfig:
     """Tests for OutputConfig dataclass."""
 
-    def test_default_values(self):
-        """Test that OutputConfig has correct defaults."""
-        output = OutputConfig(path=Path("./test"))
+    def test_required_fields(self):
+        """Test that OutputConfig requires num_frames and formats."""
+        output = OutputConfig(path=Path("./test"), num_frames=100, formats=["png"])
         assert output.num_frames == 100
-        assert output.format == "png"
-        assert output.fps == 30
+        assert output.formats == ["png"]
+        assert output.fps == 30  # fps has a default
 
     def test_custom_values(self):
         """Test OutputConfig with custom values."""
         output = OutputConfig(
             path=Path("./custom"),
             num_frames=50,
-            format="mp4",
+            formats=["mp4", "numpy"],
             fps=60,
         )
         assert output.num_frames == 50
-        assert output.format == "mp4"
+        assert output.formats == ["mp4", "numpy"]
         assert output.fps == 60
 
 
@@ -311,10 +323,10 @@ class TestDeepMerge:
 
     def test_nested_merge(self):
         """Test merging nested dictionaries."""
-        base = {"output": {"format": "png", "num_frames": 100}, "seed": 42}
+        base = {"output": {"formats": ["png"], "num_frames": 100}, "seed": 42}
         override = {"output": {"num_frames": 10}, "preset": "heat"}
         result = _deep_merge(base, override)
-        assert result["output"]["format"] == "png"  # From base
+        assert result["output"]["formats"] == ["png"]  # From base
         assert result["output"]["num_frames"] == 10  # From override
         assert result["seed"] == 42  # From base
         assert result["preset"] == "heat"  # From override
@@ -341,7 +353,7 @@ class TestMasterConfig:
         """Test that master config values are used as defaults."""
         # Create master config
         master_config = {
-            "output": {"format": "mp4", "num_frames": 200, "fps": 60},
+            "output": {"formats": ["mp4"], "num_frames": 200, "fps": 60},
             "seed": 999,
         }
         master_path = tmp_path / "master.yaml"
@@ -363,7 +375,7 @@ class TestMasterConfig:
         config = load_config(config_path)
 
         # Master config values should be applied
-        assert config.output.format == "mp4"
+        assert config.output.formats == ["mp4"]
         assert config.output.num_frames == 200
         assert config.output.fps == 60
         assert config.seed == 999
@@ -372,7 +384,7 @@ class TestMasterConfig:
         """Test that individual config values override master config."""
         # Create master config
         master_config = {
-            "output": {"format": "mp4", "num_frames": 200},
+            "output": {"formats": ["mp4"], "num_frames": 200},
             "seed": 999,
         }
         master_path = tmp_path / "master.yaml"
@@ -396,19 +408,23 @@ class TestMasterConfig:
         config = load_config(config_path)
 
         # Individual values should override master
-        assert config.output.format == "mp4"  # From master
+        assert config.output.formats == ["mp4"]  # From master
         assert config.output.num_frames == 50  # From individual (override)
         assert config.seed == 123  # From individual (override)
 
     def test_no_master_config(self, tmp_path):
-        """Test that configs work without master config."""
-        # Create individual config without master
+        """Test that configs work without master config but output section required."""
+        # Create individual config without master - output is now required
         individual_config = {
             "preset": "heat",
             "init": {"type": "random-uniform"},
             "t_end": 0.1,
             "dt": 0.001,
             "resolution": [64, 64],
+            "output": {
+                "num_frames": 100,
+                "formats": ["png"],
+            },
         }
         config_path = tmp_path / "individual.yaml"
         with open(config_path, "w") as f:
@@ -416,9 +432,9 @@ class TestMasterConfig:
 
         config = load_config(config_path)
 
-        # Should use default values
-        assert config.output.format == "png"  # Default
-        assert config.output.num_frames == 100  # Default
+        # Should use values from config
+        assert config.output.formats == ["png"]
+        assert config.output.num_frames == 100
         assert config.seed is None  # Default
 
     def test_master_config_in_parent_directory(self, tmp_path):
@@ -427,8 +443,14 @@ class TestMasterConfig:
         nested_dir = tmp_path / "configs" / "biology" / "test"
         nested_dir.mkdir(parents=True)
 
-        # Create master config in configs/
-        master_config = {"seed": 777}
+        # Create master config in configs/ with required output fields
+        master_config = {
+            "seed": 777,
+            "output": {
+                "num_frames": 100,
+                "formats": ["mp4"],
+            },
+        }
         master_path = tmp_path / "configs" / "master.yaml"
         with open(master_path, "w") as f:
             yaml.dump(master_config, f)

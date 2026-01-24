@@ -546,7 +546,7 @@ def create_output_handler(
 class OutputManager:
     """Manages simulation output (frames and metadata).
 
-    Uses the strategy pattern to support multiple output formats:
+    Uses the strategy pattern to support multiple output formats simultaneously:
     - 1D: Space-time diagrams (PNG/MP4) or numpy array (T, X, F)
     - 2D: PNG images / MP4 videos per field or numpy array (T, H, W, F)
     - 3D: Numpy array only (T, D, H, W, F) - visualization deferred
@@ -560,7 +560,7 @@ class OutputManager:
         field_configs: list[tuple[str, str]] | None = None,
         dpi: int = 128,
         figsize: tuple[int, int] = (8, 8),
-        output_format: str = "png",
+        output_formats: list[str] | None = None,
         fps: int = 30,
         ndim: int = 2,
     ):
@@ -573,7 +573,7 @@ class OutputManager:
             field_configs: List of (field_name, colormap) tuples for output.
             dpi: DPI for saved images.
             figsize: Figure size in inches.
-            output_format: Output format ("png", "mp4", or "numpy").
+            output_formats: List of output formats (any combination of "png", "mp4", "numpy").
             fps: Frame rate for MP4 output.
             ndim: Number of spatial dimensions (1, 2, or 3).
         """
@@ -582,7 +582,7 @@ class OutputManager:
         self.colormap = colormap
         self.dpi = dpi
         self.figsize = figsize
-        self.output_format = output_format
+        self.output_formats = output_formats if output_formats is not None else ["png"]
         self.fps = fps
         self.ndim = ndim
 
@@ -601,9 +601,12 @@ class OutputManager:
         self.output_dir = self.base_path / self.folder_name
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create appropriate handler based on format and dimensionality
-        self.handler = create_output_handler(output_format, fps=fps, ndim=ndim)
-        self.handler.initialize(self.output_dir, self.field_configs, dpi, figsize)
+        # Create handlers for each output format
+        self.handlers: list[OutputHandler] = []
+        for fmt in self.output_formats:
+            handler = create_output_handler(fmt, fps=fps, ndim=ndim)
+            handler.initialize(self.output_dir, self.field_configs, dpi, figsize)
+            self.handlers.append(handler)
 
         # Track saved frames
         self.saved_frames: list[dict[str, Any]] = []
@@ -704,9 +707,11 @@ class OutputManager:
         colormap = self.field_colormaps.get(field_name, self.colormap)
         vmin, vmax = self.field_ranges.get(field_name, (None, None))
 
-        self.handler.save_frame(
-            data, field_name, frame_index, simulation_time, vmin, vmax, colormap
-        )
+        # Save to all handlers
+        for handler in self.handlers:
+            handler.save_frame(
+                data, field_name, frame_index, simulation_time, vmin, vmax, colormap
+            )
 
     def save_all_fields(
         self,
@@ -731,12 +736,22 @@ class OutputManager:
         })
 
     def finalize(self) -> dict[str, Any]:
-        """Finalize output and return format-specific metadata.
+        """Finalize all outputs and return combined format-specific metadata.
 
         Returns:
-            Dictionary with format-specific metadata.
+            Dictionary with format-specific metadata for all output formats.
         """
-        return self.handler.finalize()
+        result: dict[str, Any] = {
+            "formats": self.output_formats,
+        }
+
+        # Collect metadata from each handler
+        for handler in self.handlers:
+            handler_metadata = handler.finalize()
+            fmt = handler_metadata.get("format", "unknown")
+            result[fmt] = handler_metadata
+
+        return result
 
     def save_metadata(self, metadata: dict[str, Any]) -> Path:
         """Save metadata JSON.

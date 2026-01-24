@@ -170,18 +170,29 @@ Supported BC types:
 
 ### Output Configuration
 
-Output supports three formats: PNG images, MP4 videos, or numpy arrays.
+Output supports three formats: PNG images, MP4 videos, or numpy arrays. You can specify one or more formats simultaneously.
 
 ```yaml
 output:
   path: ./output
   num_frames: 100
-  format: png           # "png", "mp4", or "numpy"
+  formats: [png]        # Required: list of formats ("png", "mp4", "numpy")
   fps: 30               # Frame rate for MP4 (default: 30)
 ```
 
+**Multiple formats example:**
+```yaml
+output:
+  formats: [png, numpy]  # Generates both PNG frames and numpy arrays
+  # or
+  formats:
+    - png
+    - mp4
+    - numpy
+```
+
 **Format options:**
-- `png` (default): PNG images per field in subdirectories
+- `png`: PNG images per field in subdirectories
 - `mp4`: One MP4 video per field
 - `numpy`: Single numpy array with shape `(Time, Height, Width, Fields)`
 
@@ -217,6 +228,20 @@ output/{preset-name}/{config-name}_{run-number}/
 output/{preset-name}/{config-name}_{run-number}/
 ├── trajectory.npy    # Shape: (T, H, W, F)
 ├── times.npy         # Shape: (T,)
+└── metadata.json
+```
+
+### Multiple Formats
+When using `formats: [png, numpy]`:
+```
+output/{preset-name}/{config-name}_{run-number}/
+├── frames/
+│   ├── u/
+│   │   └── *.png
+│   └── v/
+│       └── *.png
+├── trajectory.npy
+├── times.npy
 └── metadata.json
 ```
 

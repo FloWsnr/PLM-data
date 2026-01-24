@@ -248,6 +248,7 @@ def sample_config_dict():
         "output": {
             "path": "./output",
             "num_frames": 10,
+            "formats": ["png"],
         },
         "seed": 42,
         "domain_size": [1.0, 1.0],

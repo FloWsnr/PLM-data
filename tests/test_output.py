@@ -268,19 +268,20 @@ class TestOutputManager:
 
         assert manager.folder_name == "heat_2024-01-15"
         assert manager.output_dir == tmp_output / "heat_2024-01-15"
-        assert manager.output_format == "png"
+        assert manager.output_formats == ["png"]
 
-    def test_initialization_with_format(self, tmp_output):
-        """Test OutputManager initialization with format."""
+    def test_initialization_with_formats(self, tmp_output):
+        """Test OutputManager initialization with formats."""
         manager = OutputManager(
             base_path=tmp_output,
             folder_name="test_numpy",
             field_configs=[("u", "viridis")],
-            output_format="numpy",
+            output_formats=["numpy"],
         )
 
-        assert manager.output_format == "numpy"
-        assert isinstance(manager.handler, NumpyHandler)
+        assert manager.output_formats == ["numpy"]
+        assert len(manager.handlers) == 1
+        assert isinstance(manager.handlers[0], NumpyHandler)
 
     def test_save_scalar_frame_png(self, tmp_output, small_grid):
         """Test saving a scalar field frame with PNG format."""
@@ -288,7 +289,7 @@ class TestOutputManager:
             base_path=tmp_output,
             folder_name="test-scalar_2024-01-15",
             field_configs=[("u", "turbo")],
-            output_format="png",
+            output_formats=["png"],
         )
 
         field = ScalarField.random_uniform(small_grid)
@@ -386,7 +387,8 @@ class TestOutputManager:
         assert "u" in saved["visualization"]["fields"]
         # Check output format metadata
         assert "output" in saved
-        assert saved["output"]["format"] == "png"
+        assert saved["output"]["formats"] == ["png"]
+        assert "png" in saved["output"]
 
     def test_numpy_format_saves_trajectory(self, tmp_output, small_grid):
         """Test numpy format saves trajectory correctly."""
@@ -394,7 +396,7 @@ class TestOutputManager:
             base_path=tmp_output,
             folder_name="test-numpy",
             field_configs=[("u", "viridis"), ("v", "plasma")],
-            output_format="numpy",
+            output_formats=["numpy"],
         )
 
         states = []
@@ -427,7 +429,7 @@ class TestOutputManager:
             base_path=tmp_output,
             folder_name="test-mp4",
             field_configs=[("u", "viridis"), ("v", "plasma")],
-            output_format="mp4",
+            output_formats=["mp4"],
             fps=24,
         )
 
@@ -455,10 +457,57 @@ class TestOutputManager:
         # Check metadata
         with open(metadata_path) as f:
             saved = json.load(f)
-        assert saved["output"]["format"] == "mp4"
-        assert saved["output"]["fps"] == 24
-        assert "u" in saved["output"]["videos"]
-        assert "v" in saved["output"]["videos"]
+        assert saved["output"]["formats"] == ["mp4"]
+        assert "mp4" in saved["output"]
+        assert saved["output"]["mp4"]["fps"] == 24
+        assert "u" in saved["output"]["mp4"]["videos"]
+        assert "v" in saved["output"]["mp4"]["videos"]
+
+    def test_multiple_formats_simultaneously(self, tmp_output, small_grid):
+        """Test saving with multiple formats at once (png + numpy)."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-multi-format",
+            field_configs=[("u", "viridis"), ("v", "plasma")],
+            output_formats=["png", "numpy"],
+        )
+
+        states = []
+        for i in range(3):
+            u = ScalarField(small_grid, np.ones(small_grid.shape) * i)
+            u.label = "u"
+            v = ScalarField(small_grid, np.ones(small_grid.shape) * (i + 0.5))
+            v.label = "v"
+            states.append(FieldCollection([u, v]))
+
+        manager.compute_range_for_field(states, "u")
+        manager.compute_range_for_field(states, "v")
+
+        for i, state in enumerate(states):
+            manager.save_all_fields(state, i, i * 0.1)
+
+        # Finalize via save_metadata
+        metadata_path = manager.save_metadata({"test": "data"})
+
+        # Check PNG files were created
+        assert (manager.output_dir / "frames" / "u" / "000000.png").exists()
+        assert (manager.output_dir / "frames" / "v" / "000002.png").exists()
+
+        # Check numpy files were created
+        assert (manager.output_dir / "trajectory.npy").exists()
+        assert (manager.output_dir / "times.npy").exists()
+
+        trajectory = np.load(manager.output_dir / "trajectory.npy")
+        assert trajectory.shape == (3, 16, 16, 2)
+
+        # Check metadata contains both formats
+        with open(metadata_path) as f:
+            saved = json.load(f)
+        assert saved["output"]["formats"] == ["png", "numpy"]
+        assert "png" in saved["output"]
+        assert "numpy" in saved["output"]
+        assert saved["output"]["png"]["framesDirectory"] == "frames/"
+        assert saved["output"]["numpy"]["trajectoryFile"] == "trajectory.npy"
 
 
 class TestCreateMetadata:
@@ -488,7 +537,7 @@ class TestCreateMetadata:
                 x_minus="periodic", x_plus="periodic",
                 y_minus="periodic", y_plus="periodic"
             ),
-            output=OutputConfig(path=Path("./output")),
+            output=OutputConfig(path=Path("./output"), num_frames=100, formats=["png"]),
             seed=42,
             domain_size=[1.0, 1.0],  # Now a list for 2D
         )
@@ -538,7 +587,7 @@ class TestCreateMetadata:
                 x_minus="periodic", x_plus="periodic",
                 y_minus="periodic", y_plus="periodic"
             ),
-            output=OutputConfig(path=Path("./output")),
+            output=OutputConfig(path=Path("./output"), num_frames=100, formats=["png"]),
             seed=42,
             domain_size=[1.0, 1.0],  # Now a list for 2D
         )

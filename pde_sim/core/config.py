@@ -31,8 +31,8 @@ class OutputConfig:
     """
 
     path: Path
-    num_frames: int = 100  # Total number of frames to save
-    format: str = "png"  # Output format: "png", "mp4", or "numpy"
+    num_frames: int
+    formats: list[str]  # Output formats: any combination of "png", "mp4", "numpy"
     fps: int = 30  # Frame rate for MP4 output
 
 
@@ -285,12 +285,12 @@ def load_config(path: Path | str) -> SimulationConfig:
     # Parse boundary config with dimension awareness
     bc_config = _parse_bc_config(raw.get("bc", {}), ndim)
 
-    output_raw = raw.get("output", {})
+    output_raw = raw["output"]  # Required section
 
     output_config = OutputConfig(
         path=Path(output_raw.get("path", "./output")),
-        num_frames=output_raw.get("num_frames", 100),
-        format=output_raw.get("format", "png"),
+        num_frames=output_raw["num_frames"],  # Required
+        formats=output_raw["formats"],  # Required - list of format strings
         fps=output_raw.get("fps", 30),
     )
 
@@ -358,7 +358,7 @@ def config_to_dict(config: SimulationConfig) -> dict[str, Any]:
         "output": {
             "path": str(config.output.path),
             "num_frames": config.output.num_frames,
-            "format": config.output.format,
+            "formats": config.output.formats,
             "fps": config.output.fps,
         },
         "seed": config.seed,

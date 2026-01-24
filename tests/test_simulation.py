@@ -52,7 +52,7 @@ class TestSimulationRunner:
             "dt": 0.0001,
             "resolution": [16, 16],
             "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
-            "output": {"path": str(tmp_path), "num_frames": 6},
+            "output": {"path": str(tmp_path), "num_frames": 6, "formats": ["png"]},
             "seed": 42,
         }
 
@@ -94,7 +94,7 @@ class TestSimulationRunner:
                 "dt": 0.0001,
                 "resolution": [16, 16],
                 "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
-                "output": {"path": str(tmp_path), "num_frames": 3},
+                "output": {"path": str(tmp_path), "num_frames": 3, "formats": ["png"]},
                 "seed": 42,
             }
 
@@ -125,7 +125,7 @@ class TestRunFromConfig:
             "dt": 0.0001,
             "resolution": [16, 16],
             "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
-            "output": {"path": str(tmp_path), "num_frames": 6},
+            "output": {"path": str(tmp_path), "num_frames": 6, "formats": ["png"]},
             "seed": 123,
         }
 
@@ -150,7 +150,7 @@ class TestRunFromConfig:
             "dt": 0.0001,
             "resolution": [16, 16],
             "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
-            "output": {"path": str(tmp_path), "num_frames": 3},
+            "output": {"path": str(tmp_path), "num_frames": 3, "formats": ["png"]},
             "seed": 42,
         }
 
@@ -181,6 +181,7 @@ class TestGrayScottSimulation:
             "output": {
                 "path": str(tmp_path),
                 "num_frames": 11,
+                "formats": ["png"],
             },
             "seed": 42,
             "domain_size": [2.5, 2.5],
@@ -217,7 +218,7 @@ class TestBackend:
             "dt": 0.0001,
             "resolution": [16, 16],
             "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
-            "output": {"path": str(tmp_path), "num_frames": 3},
+            "output": {"path": str(tmp_path), "num_frames": 3, "formats": ["png"]},
             "seed": 42,
             "backend": backend,
         }
@@ -244,7 +245,7 @@ class TestBackend:
             "dt": 0.0001,
             "resolution": [16, 16],
             "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
-            "output": {"path": str(tmp_path), "num_frames": 3},
+            "output": {"path": str(tmp_path), "num_frames": 3, "formats": ["png"]},
             "seed": 42,
             "backend": "invalid_backend",
         }
@@ -272,7 +273,7 @@ class TestAdaptiveTimeStepping:
             "dt": 0.0001,
             "resolution": [16, 16],
             "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
-            "output": {"path": str(tmp_path), "num_frames": 3},
+            "output": {"path": str(tmp_path), "num_frames": 3, "formats": ["png"]},
             "seed": 42,
             "adaptive": True,
             "tolerance": 1e-5,
@@ -298,7 +299,7 @@ class TestAdaptiveTimeStepping:
             "dt": 0.0001,
             "resolution": [16, 16],
             "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
-            "output": {"path": str(tmp_path), "num_frames": 6},
+            "output": {"path": str(tmp_path), "num_frames": 6, "formats": ["png"]},
             "seed": 42,
             "adaptive": True,
             "tolerance": 1e-4,
@@ -335,7 +336,7 @@ class TestUnusedParameterWarning:
             "dt": 0.0001,
             "resolution": [16, 16],
             "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
-            "output": {"path": str(tmp_path), "num_frames": 3},
+            "output": {"path": str(tmp_path), "num_frames": 3, "formats": ["png"]},
             "seed": 42,
         }
 
@@ -371,7 +372,7 @@ class TestUnusedParameterWarning:
             "dt": 0.0001,
             "resolution": [16, 16],
             "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
-            "output": {"path": str(tmp_path), "num_frames": 3},
+            "output": {"path": str(tmp_path), "num_frames": 3, "formats": ["png"]},
             "seed": 42,
         }
 
@@ -402,7 +403,7 @@ class TestUnusedParameterWarning:
             "dt": 0.0001,
             "resolution": [16, 16],
             "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
-            "output": {"path": str(tmp_path), "num_frames": 3},
+            "output": {"path": str(tmp_path), "num_frames": 3, "formats": ["png"]},
             "seed": 42,
         }
 
@@ -436,7 +437,7 @@ class TestMissingParameterValidation:
             "dt": 0.0001,
             "resolution": [16, 16],
             "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
-            "output": {"path": str(tmp_path), "num_frames": 3},
+            "output": {"path": str(tmp_path), "num_frames": 3, "formats": ["png"]},
             "seed": 42,
         }
 
@@ -462,7 +463,7 @@ class TestMissingParameterValidation:
             "dt": 0.01,
             "resolution": [16, 16],
             "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
-            "output": {"path": str(tmp_path), "num_frames": 3},
+            "output": {"path": str(tmp_path), "num_frames": 3, "formats": ["png"]},
             "seed": 42,
         }
 

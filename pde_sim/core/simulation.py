@@ -194,7 +194,7 @@ class SimulationRunner:
             folder_name=self.folder_name,
             colormap=COLORMAP_CYCLE[0],  # Default colormap
             field_configs=field_configs,
-            output_format=config.output.format,
+            output_formats=config.output.formats,
             fps=config.output.fps,
             ndim=config.ndim,
         )
@@ -241,7 +241,7 @@ class SimulationRunner:
             if self._get_solver_name() != "implicit" and self.config.adaptive:
                 print(f"  Adaptive: True (tolerance: {self.config.tolerance})")
             print(f"  Output: {self.output_manager.output_dir}")
-            print(f"  Format: {self.config.output.format}")
+            print(f"  Formats: {', '.join(self.config.output.formats)}")
 
         # Create storage for capturing frames
         storage = MemoryStorage()
