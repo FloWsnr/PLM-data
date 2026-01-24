@@ -1,4 +1,4 @@
-"""Tests for potential flow dipoles PDE."""
+"""Tests for Potential Flow Dipoles PDE."""
 
 import numpy as np
 import pytest
@@ -6,77 +6,71 @@ import pytest
 from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
-from tests.conftest import run_short_simulation
-
-
-@pytest.fixture
-def small_grid():
-    """Create a small grid for fast tests."""
-    return CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=False)
+from tests.test_pdes.dimension_test_helpers import (
+    create_grid_for_dimension,
+    create_bc_for_dimension,
+    check_result_finite,
+    check_dimension_variation,
+)
 
 
 class TestPotentialFlowDipolesPDE:
-    """Tests for potential flow dipoles."""
+    """Tests for Potential Flow Dipoles PDE."""
 
     def test_registered(self):
-        """Test that potential-flow-dipoles is registered."""
+        """Test that PDE is registered."""
         assert "potential-flow-dipoles" in list_presets()
 
     def test_metadata(self):
-        """Test metadata."""
+        """Test that metadata is correctly defined."""
         preset = get_pde_preset("potential-flow-dipoles")
         meta = preset.metadata
 
         assert meta.name == "potential-flow-dipoles"
         assert meta.category == "fluids"
-        assert meta.num_fields == 1  # Only phi field
+        assert meta.num_fields == 1
         assert "phi" in meta.field_names
+        assert meta.supported_dimensions == [2]
 
-    def test_create_pde(self, small_grid):
+    def test_create_pde(self):
         """Test PDE creation."""
+        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=False)
         preset = get_pde_preset("potential-flow-dipoles")
         params = {"strength": 1.0, "separation": 0.5, "sigma": 0.2, "omega": 1.0, "orbit_radius": 1.0}
         bc = {"x": "neumann", "y": "neumann"}
 
-        pde = preset.create_pde(params, bc, small_grid)
+        pde = preset.create_pde(params, bc, grid)
 
         assert pde is not None
 
-    def test_create_initial_state(self, small_grid):
-        """Test dipole initial condition."""
+    @pytest.mark.parametrize("ndim", [2])
+    def test_short_simulation(self, ndim: int):
+        """Test running a short simulation."""
+        np.random.seed(42)
         preset = get_pde_preset("potential-flow-dipoles")
-        state = preset.create_initial_state(
-            small_grid, "default", {}
-        )
 
-        assert isinstance(state, FieldCollection)
-        assert len(state) == 1  # Only phi field
-        phi = state[0]
-        # Potential starts at 0 (evolves as sources move)
-        assert np.isfinite(phi.data).all()
+        assert ndim in preset.metadata.supported_dimensions
+        preset.validate_dimension(ndim)
 
-    def test_short_simulation(self):
-        """Test running a short simulation using default config."""
-        result, config = run_short_simulation("potential-flow-dipoles", "fluids")
+        resolution = 16
+        grid = create_grid_for_dimension(ndim, resolution=resolution, periodic=False)
+        bc = create_bc_for_dimension(ndim, periodic=False)
 
-        # Check result type and finite values
-        assert result is not None
+        params = {"strength": 1.0, "separation": 0.2, "sigma": 0.1, "omega": 1.0, "orbit_radius": 0.2}
+        pde = preset.create_pde(params, bc, grid, init_params={"motion": "circular"})
+
+        state = preset.create_initial_state(grid, "default", {})
+
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None, backend="numpy")
+
         assert isinstance(result, FieldCollection)
-        for field in result:
-            assert np.isfinite(field.data).all()
-        assert config["preset"] == "potential-flow-dipoles"
+        check_result_finite(result, "potential-flow-dipoles", ndim)
+        check_dimension_variation(result, ndim, "potential-flow-dipoles")
 
-    def test_dimension_support_2d_only(self):
+    def test_unsupported_dimensions(self):
         """Test that potential-flow-dipoles only supports 2D."""
         preset = get_pde_preset("potential-flow-dipoles")
 
-        # Verify only 2D is supported
-        assert preset.metadata.supported_dimensions == [2]
-
-        # Should accept 2D
-        preset.validate_dimension(2)
-
-        # Should reject 1D and 3D
         with pytest.raises(ValueError, match="does not support"):
             preset.validate_dimension(1)
         with pytest.raises(ValueError, match="does not support"):

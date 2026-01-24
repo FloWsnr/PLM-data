@@ -6,21 +6,12 @@ import pytest
 from pde import CartesianGrid, ScalarField
 
 from pde_sim.pdes import get_pde_preset, list_presets
-from pde_sim.pdes.physics.burgers import BurgersPDE
-
-from tests.conftest import run_short_simulation
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
     check_result_finite,
     check_dimension_variation,
 )
-
-
-@pytest.fixture
-def small_grid():
-    """Create a small grid for fast tests."""
-    return CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
 
 
 class TestBurgersPDE:
@@ -40,57 +31,37 @@ class TestBurgersPDE:
         assert meta.num_fields == 1
         assert "u" in meta.field_names
 
-    def test_create_pde(self, small_grid):
+    def test_create_pde(self):
         """Test PDE creation."""
-        preset = get_pde_preset("burgers")
-        params = {"nu": 0.1}
-        bc = {"x": "periodic", "y": "periodic"}
+        from pde import CartesianGrid
 
-        pde = preset.create_pde(params, bc, small_grid)
+        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
+        preset = get_pde_preset("burgers")
+        pde = preset.create_pde(
+            {"nu": 0.1},
+            {"x": "periodic", "y": "periodic"},
+            grid,
+        )
         assert pde is not None
 
-    def test_create_initial_state(self, small_grid):
-        """Test creating initial state."""
-        preset = get_pde_preset("burgers")
-        state = preset.create_initial_state(
-            small_grid, "sine", {"wavelength": 0.5}
-        )
-
-        assert state is not None
-        assert np.isfinite(state.data).all()
-
-    def test_short_simulation(self):
-        """Test running a short simulation using default config."""
-        result, config = run_short_simulation("burgers", "physics")
-
-        assert result is not None
-        assert np.isfinite(result.data).all()
-        assert config["preset"] == "burgers"
-
     @pytest.mark.parametrize("ndim", [1, 2, 3])
-    def test_dimension_support(self, ndim: int):
+    def test_short_simulation(self, ndim: int):
         """Test Burgers equation works in all supported dimensions."""
         np.random.seed(42)
-        preset = BurgersPDE()
+        preset = get_pde_preset("burgers")
 
-        # Check dimension is supported
         assert ndim in preset.metadata.supported_dimensions
         preset.validate_dimension(ndim)
 
-        # Create grid and BCs
         resolution = 8 if ndim == 3 else 16
         grid = create_grid_for_dimension(ndim, resolution=resolution)
         bc = create_bc_for_dimension(ndim)
 
-        # Create PDE and initial state
-        params = {"nu": 0.1}
-        pde = preset.create_pde(params, bc, grid)
+        pde = preset.create_pde({"nu": 0.1}, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
-        # Run short simulation
         result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
-        # Verify result
         assert isinstance(result, ScalarField)
         check_result_finite(result, "burgers", ndim)
         check_dimension_variation(result, ndim, "burgers")

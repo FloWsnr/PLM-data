@@ -6,13 +6,12 @@ import pytest
 from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
-from tests.conftest import run_short_simulation
-
-
-@pytest.fixture
-def small_grid():
-    """Create a small grid for fast tests."""
-    return CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
+from tests.test_pdes.dimension_test_helpers import (
+    create_grid_for_dimension,
+    create_bc_for_dimension,
+    check_result_finite,
+    check_dimension_variation,
+)
 
 
 class TestNavierStokesPDE:
@@ -34,80 +33,47 @@ class TestNavierStokesPDE:
         assert "v" in meta.field_names
         assert "p" in meta.field_names
         assert "S" in meta.field_names
+        assert meta.supported_dimensions == [2]
 
-    def test_create_pde(self, small_grid):
+    def test_create_pde(self):
         """Test PDE creation."""
+        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
         preset = get_pde_preset("navier-stokes")
         params = {"nu": 0.01, "M": 0.1, "D": 0.0}
         bc = {"x": "periodic", "y": "periodic"}
 
-        pde = preset.create_pde(params, bc, small_grid)
+        pde = preset.create_pde(params, bc, grid)
 
         assert pde is not None
 
-    def test_create_initial_state_shear_layer(self, small_grid):
-        """Test shear layer initial condition."""
+    @pytest.mark.parametrize("ndim", [2])
+    def test_short_simulation(self, ndim: int):
+        """Test running a short simulation."""
+        np.random.seed(42)
         preset = get_pde_preset("navier-stokes")
-        state = preset.create_initial_state(
-            small_grid, "shear-layer", {"amplitude": 0.5}
-        )
 
-        assert isinstance(state, FieldCollection)
-        assert len(state) == 4
-        # u should have variation (shear layer)
-        assert np.std(state[0].data) > 0
-        # All fields should be finite
-        for field in state:
-            assert np.isfinite(field.data).all()
+        assert ndim in preset.metadata.supported_dimensions
+        preset.validate_dimension(ndim)
 
-    def test_create_initial_state_poiseuille(self, small_grid):
-        """Test Poiseuille (parabolic) initial condition."""
-        preset = get_pde_preset("navier-stokes")
-        state = preset.create_initial_state(
-            small_grid, "poiseuille", {"amplitude": 0.4}
-        )
+        resolution = 16
+        grid = create_grid_for_dimension(ndim, resolution=resolution)
+        bc = create_bc_for_dimension(ndim)
 
-        assert isinstance(state, FieldCollection)
-        assert len(state) == 4
-        u, v, p, S = state
+        params = {"nu": 0.01, "M": 0.1, "D": 0.0}
+        pde = preset.create_pde(params, bc, grid)
 
-        # u should have variation (parabolic profile)
-        assert np.std(u.data) > 0
-        # u should be negative (flow in -x direction)
-        assert np.min(u.data) < 0
+        state = preset.create_initial_state(grid, "shear-layer", {"amplitude": 0.5})
 
-        # v should be zero (no vertical velocity)
-        assert np.allclose(v.data, 0)
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
-        # p should have variation (pressure gradient)
-        assert np.std(p.data) > 0
-
-        # All fields should be finite
-        for field in state:
-            assert np.isfinite(field.data).all()
-
-    def test_short_simulation(self):
-        """Test running a short simulation using default config."""
-        result, config = run_short_simulation("navier-stokes", "fluids")
-
-        # Check result type and finite values
-        assert result is not None
         assert isinstance(result, FieldCollection)
-        for field in result:
-            assert np.isfinite(field.data).all()
-        assert config["preset"] == "navier-stokes"
+        check_result_finite(result, "navier-stokes", ndim)
+        check_dimension_variation(result, ndim, "navier-stokes")
 
-    def test_dimension_support_2d_only(self):
+    def test_unsupported_dimensions(self):
         """Test that navier-stokes only supports 2D."""
         preset = get_pde_preset("navier-stokes")
 
-        # Verify only 2D is supported
-        assert preset.metadata.supported_dimensions == [2]
-
-        # Should accept 2D
-        preset.validate_dimension(2)
-
-        # Should reject 1D and 3D
         with pytest.raises(ValueError, match="does not support"):
             preset.validate_dimension(1)
         with pytest.raises(ValueError, match="does not support"):

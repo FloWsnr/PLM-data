@@ -6,21 +6,12 @@ import pytest
 from pde import CartesianGrid, ScalarField
 
 from pde_sim.pdes import get_pde_preset, list_presets
-from pde_sim.pdes.physics.swift_hohenberg_advection import SwiftHohenbergAdvectionPDE
-
-from tests.conftest import run_short_simulation
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
     check_result_finite,
     check_dimension_variation,
 )
-
-
-@pytest.fixture
-def small_grid():
-    """Create a small grid for fast tests."""
-    return CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
 
 
 class TestSwiftHohenbergAdvectionPDE:
@@ -40,45 +31,53 @@ class TestSwiftHohenbergAdvectionPDE:
         assert meta.num_fields == 1
         assert "u" in meta.field_names
 
-    def test_short_simulation(self):
-        """Test running a short simulation using default config."""
-        result, config = run_short_simulation("swift-hohenberg-advection", "physics")
+    def test_create_pde(self):
+        """Test PDE creation."""
+        from pde import CartesianGrid
 
-        assert isinstance(result, ScalarField)
-        assert np.isfinite(result.data).all()
-        assert config["preset"] == "swift-hohenberg-advection"
+        grid = CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
+        preset = get_pde_preset("swift-hohenberg-advection")
+        pde = preset.create_pde(
+            {"r": 0.1, "g1": 0.1, "g2": 0.1, "D": 1.0, "k0": 1.0, "vx": 0.1, "vy": 0.0},
+            {"x": "periodic", "y": "periodic"},
+            grid,
+        )
+        assert pde is not None
 
-    def test_dimension_support_2d(self):
-        """Test Swift-Hohenberg with Advection works in 2D.
-
-        Note: The current implementation uses 2D-specific advection terms (d_dy),
-        so the test only validates 2D support even though metadata claims [1, 2, 3].
-        """
+    @pytest.mark.parametrize("ndim", [2])
+    def test_short_simulation(self, ndim: int):
+        """Test Swift-Hohenberg with Advection works in 2D."""
         np.random.seed(42)
-        preset = SwiftHohenbergAdvectionPDE()
-        ndim = 2
+        preset = get_pde_preset("swift-hohenberg-advection")
 
-        # Check 2D is supported
         assert ndim in preset.metadata.supported_dimensions
         preset.validate_dimension(ndim)
 
-        # Create grid and BCs
         resolution = 16
         grid = create_grid_for_dimension(ndim, resolution=resolution)
         bc = create_bc_for_dimension(ndim)
 
-        # Create PDE with conservative parameters for testing
-        # Use supercritical parameters with positive quintic stabilization
-        params = {"r": 0.1, "g1": 0.1, "g2": 0.1, "D": 1.0, "k0": 1.0, "vx": 0.1, "vy": 0.0}
-        pde = preset.create_pde(params, bc, grid)
-
+        # Use conservative parameters with positive quintic stabilization
+        pde = preset.create_pde(
+            {"r": 0.1, "g1": 0.1, "g2": 0.1, "D": 1.0, "k0": 1.0, "vx": 0.1, "vy": 0.0},
+            bc,
+            grid,
+        )
         # Use very small initial perturbations for stability
         state = preset.create_initial_state(grid, "random-uniform", {"low": -0.01, "high": 0.01})
 
         # Run very short simulation (4th order PDE is numerically stiff)
         result = pde.solve(state, t_range=0.00001, dt=0.000001, solver="euler", tracker=None, backend="numpy")
 
-        # Verify result
         assert isinstance(result, ScalarField)
         check_result_finite(result, "swift-hohenberg-advection", ndim)
         check_dimension_variation(result, ndim, "swift-hohenberg-advection")
+
+    def test_unsupported_dimensions(self):
+        """Test that swift-hohenberg-advection only supports 2D."""
+        preset = get_pde_preset("swift-hohenberg-advection")
+
+        with pytest.raises(ValueError, match="does not support"):
+            preset.validate_dimension(1)
+        with pytest.raises(ValueError, match="does not support"):
+            preset.validate_dimension(3)

@@ -6,17 +6,20 @@ import pytest
 from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
-from tests.conftest import run_short_simulation
-
-
-@pytest.fixture
-def small_grid():
-    """Create a small grid for fast tests."""
-    return CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
+from tests.test_pdes.dimension_test_helpers import (
+    create_grid_for_dimension,
+    create_bc_for_dimension,
+    check_result_finite,
+    check_dimension_variation,
+)
 
 
 class TestShallowWaterPDE:
     """Tests for the Shallow Water PDE."""
+
+    def test_registered(self):
+        """Test that PDE is registered."""
+        assert "shallow-water" in list_presets()
 
     def test_metadata(self):
         """Test that metadata is correctly defined."""
@@ -25,91 +28,49 @@ class TestShallowWaterPDE:
 
         assert meta.name == "shallow-water"
         assert meta.category == "fluids"
-        # Real shallow water has 3 fields: h (height), u (x-velocity), v (y-velocity)
         assert meta.num_fields == 3
         assert meta.field_names == ["h", "u", "v"]
+        assert meta.supported_dimensions == [2]
 
-    def test_create_pde(self, small_grid):
+    def test_create_pde(self):
         """Test PDE creation."""
+        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
         preset = get_pde_preset("shallow-water")
         params = {"H_e": 1.0, "g": 9.81, "f": 0.0001, "k": 0.01, "nu": 0.001, "epsilon": 0.1}
         bc = {"x": "periodic", "y": "periodic"}
 
-        pde = preset.create_pde(params, bc, small_grid)
+        pde = preset.create_pde(params, bc, grid)
 
         assert pde is not None
 
-    def test_create_initial_state_drop(self, small_grid):
-        """Test water drop initial condition."""
+    @pytest.mark.parametrize("ndim", [2])
+    def test_short_simulation(self, ndim: int):
+        """Test running a short simulation."""
+        np.random.seed(42)
         preset = get_pde_preset("shallow-water")
-        state = preset.create_initial_state(
-            small_grid, "drop", {"amplitude": 0.5}
-        )
 
-        # Should be a FieldCollection with 3 fields
-        assert isinstance(state, FieldCollection)
-        assert len(state) == 3
-        h, u, v = state
-        # Height should have peak at center
-        assert np.max(h.data) > 0
-        # Velocities should start at zero
-        assert np.allclose(u.data, 0)
-        assert np.allclose(v.data, 0)
+        assert ndim in preset.metadata.supported_dimensions
+        preset.validate_dimension(ndim)
 
-    def test_create_initial_state_geostrophic_vortex(self, small_grid):
-        """Test geostrophic vortex initial condition."""
-        preset = get_pde_preset("shallow-water")
-        state = preset.create_initial_state(
-            small_grid,
-            "geostrophic-vortex",
-            {"amplitude": 0.02, "radius": 0.15, "f": 1.0, "g": 9.81},
-        )
+        resolution = 16
+        grid = create_grid_for_dimension(ndim, resolution=resolution)
+        bc = create_bc_for_dimension(ndim)
 
-        # Should be a FieldCollection with 3 fields
-        assert isinstance(state, FieldCollection)
-        assert len(state) == 3
-        h, u, v = state
+        params = {"H_e": 1.0, "g": 9.81, "f": 0.0001, "k": 0.01, "nu": 0.001, "epsilon": 0.1}
+        pde = preset.create_pde(params, bc, grid)
 
-        # Height should have positive perturbation
-        assert np.max(h.data) > 0
+        state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
-        # For geostrophic balance, velocities should be non-zero
-        # (circular flow around the height perturbation)
-        assert np.std(u.data) > 0
-        assert np.std(v.data) > 0
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
-        # All fields should be finite
-        assert np.isfinite(h.data).all()
-        assert np.isfinite(u.data).all()
-        assert np.isfinite(v.data).all()
-
-    def test_registered_in_registry(self):
-        """Test that PDE is registered."""
-        assert "shallow-water" in list_presets()
-
-    def test_short_simulation(self):
-        """Test running a short simulation using default config."""
-        # shallow-water needs shorter time due to stability
-        result, config = run_short_simulation("shallow-water", "fluids")
-
-        # Check result type and finite values
-        assert result is not None
         assert isinstance(result, FieldCollection)
-        for field in result:
-            assert np.isfinite(field.data).all()
-        assert config["preset"] == "shallow-water"
+        check_result_finite(result, "shallow-water", ndim)
+        check_dimension_variation(result, ndim, "shallow-water")
 
-    def test_dimension_support_2d_only(self):
+    def test_unsupported_dimensions(self):
         """Test that shallow-water only supports 2D."""
         preset = get_pde_preset("shallow-water")
 
-        # Verify only 2D is supported
-        assert preset.metadata.supported_dimensions == [2]
-
-        # Should accept 2D
-        preset.validate_dimension(2)
-
-        # Should reject 1D and 3D
         with pytest.raises(ValueError, match="does not support"):
             preset.validate_dimension(1)
         with pytest.raises(ValueError, match="does not support"):

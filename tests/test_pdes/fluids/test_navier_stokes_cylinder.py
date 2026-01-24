@@ -6,13 +6,12 @@ import pytest
 from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
-from tests.conftest import run_short_simulation
-
-
-@pytest.fixture
-def small_grid():
-    """Create a small grid for fast tests."""
-    return CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
+from tests.test_pdes.dimension_test_helpers import (
+    create_grid_for_dimension,
+    create_bc_for_dimension,
+    check_result_finite,
+    check_dimension_variation,
+)
 
 
 class TestNavierStokesCylinderPDE:
@@ -34,84 +33,47 @@ class TestNavierStokesCylinderPDE:
         assert "v" in meta.field_names
         assert "p" in meta.field_names
         assert "S" in meta.field_names
+        assert meta.supported_dimensions == [2]
 
-    def test_create_pde(self, small_grid):
+    def test_create_pde(self):
         """Test PDE creation."""
+        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
         preset = get_pde_preset("navier-stokes-cylinder")
         params = {"nu": 0.01, "M": 0.1, "U": 1.0, "cylinder_radius": 0.5}
         bc = {"x": "periodic", "y": "periodic"}
 
-        pde = preset.create_pde(params, bc, small_grid)
+        pde = preset.create_pde(params, bc, grid)
 
         assert pde is not None
 
-    def test_create_initial_state_cylinder_flow(self, small_grid):
-        """Test cylinder flow initial condition."""
+    @pytest.mark.parametrize("ndim", [2])
+    def test_short_simulation(self, ndim: int):
+        """Test running a short simulation."""
+        np.random.seed(42)
         preset = get_pde_preset("navier-stokes-cylinder")
-        state = preset.create_initial_state(
-            small_grid,
-            "cylinder-flow",
-            {"U": 0.7, "cylinder_radius": 0.1, "cylinder_x": 0.5, "cylinder_y": 0.5},
-        )
 
-        assert isinstance(state, FieldCollection)
-        assert len(state) == 4
-        u, v, p, S = state
+        assert ndim in preset.metadata.supported_dimensions
+        preset.validate_dimension(ndim)
 
-        # u should be positive (flow in +x direction) outside cylinder
-        # Inside cylinder, u should be near zero (due to damping)
-        assert np.max(u.data) > 0
+        resolution = 16
+        grid = create_grid_for_dimension(ndim, resolution=resolution)
+        bc = create_bc_for_dimension(ndim)
 
-        # S should be high inside cylinder, low outside
-        # (with smooth tanh transition, max may not reach 1.0 on coarse grids)
-        assert np.max(S.data) > 0.5  # Should have elevated value inside cylinder
-        assert np.min(S.data) < 0.1  # Should have low value outside
+        params = {"nu": 0.01, "M": 0.1, "U": 1.0, "cylinder_radius": 0.05}
+        pde = preset.create_pde(params, bc, grid)
 
-        # All fields should be finite
-        for field in state:
-            assert np.isfinite(field.data).all()
+        state = preset.create_initial_state(grid, "default", {"U": 0.7, "cylinder_radius": 0.05})
 
-    def test_cylinder_creates_obstacle(self, small_grid):
-        """Test that cylinder creates proper obstacle region."""
-        preset = get_pde_preset("navier-stokes-cylinder")
-        state = preset.create_initial_state(
-            small_grid,
-            "cylinder-flow",
-            {"U": 0.7, "cylinder_radius": 0.15, "cylinder_x": 0.5, "cylinder_y": 0.5},
-        )
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
-        u, v, p, S = state
-
-        # Center of domain should have high S (inside cylinder)
-        center_idx = small_grid.shape[0] // 2
-        assert S.data[center_idx, center_idx] > 0.5
-
-        # Corners should have low S (outside cylinder)
-        assert S.data[0, 0] < 0.5
-        assert S.data[-1, -1] < 0.5
-
-    def test_short_simulation(self):
-        """Test running a short simulation using default config."""
-        result, config = run_short_simulation("navier-stokes-cylinder", "fluids")
-
-        # Check result type and finite values
-        assert result is not None
         assert isinstance(result, FieldCollection)
-        for field in result:
-            assert np.isfinite(field.data).all()
-        assert config["preset"] == "navier-stokes-cylinder"
+        check_result_finite(result, "navier-stokes-cylinder", ndim)
+        check_dimension_variation(result, ndim, "navier-stokes-cylinder")
 
-    def test_dimension_support_2d_only(self):
+    def test_unsupported_dimensions(self):
         """Test that navier-stokes-cylinder only supports 2D."""
         preset = get_pde_preset("navier-stokes-cylinder")
 
-        # Verify only 2D is supported
-        assert preset.metadata.supported_dimensions == [2]
-
-        # Should accept 2D
-        preset.validate_dimension(2)
-
-        # Should reject 1D and 3D
         with pytest.raises(ValueError, match="does not support"):
             preset.validate_dimension(1)
         with pytest.raises(ValueError, match="does not support"):

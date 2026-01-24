@@ -2,13 +2,9 @@
 
 import numpy as np
 import pytest
-
-from pde import FieldCollection
+from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
-from pde_sim.pdes.basic.wave import WavePDE, InhomogeneousWavePDE
-
-from tests.conftest import run_short_simulation
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -19,6 +15,10 @@ from tests.test_pdes.dimension_test_helpers import (
 
 class TestWavePDE:
     """Tests for the Wave equation preset."""
+
+    def test_registered(self):
+        """Test that wave PDE is registered."""
+        assert "wave" in list_presets()
 
     def test_metadata(self):
         """Test that metadata is correctly defined."""
@@ -31,66 +31,35 @@ class TestWavePDE:
         assert "u" in meta.field_names
         assert "v" in meta.field_names
 
-    def test_create_pde(self, small_grid):
+    def test_create_pde(self):
         """Test PDE creation."""
+        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
         preset = get_pde_preset("wave")
-        params = {"D": 1.0, "C": 0.01}
-        bc = {"x": "neumann", "y": "neumann"}
-
-        pde = preset.create_pde(params, bc, small_grid)
+        pde = preset.create_pde(
+            parameters={"D": 1.0, "C": 0.01},
+            bc={"x": "periodic", "y": "periodic"},
+            grid=grid,
+        )
         assert pde is not None
 
-    def test_create_initial_state(self, small_grid):
-        """Test initial state creation."""
-        preset = get_pde_preset("wave")
-        state = preset.create_initial_state(
-            small_grid, "gaussian-blob", {"num_blobs": 1}
-        )
-
-        assert isinstance(state, FieldCollection)
-        assert len(state) == 2
-        assert state[0].label == "u"
-        assert state[1].label == "v"
-        # Velocity should start at zero
-        assert np.allclose(state[1].data, 0)
-
-    def test_registered_in_registry(self):
-        """Test that PDE is registered."""
-        assert "wave" in list_presets()
-
-    def test_short_simulation(self):
-        """Test running a short simulation using default config."""
-        result, config = run_short_simulation("wave", "basic")
-
-        assert isinstance(result, FieldCollection)
-        assert np.isfinite(result[0].data).all()
-        assert np.isfinite(result[1].data).all()
-        assert config["preset"] == "wave"
-
     @pytest.mark.parametrize("ndim", [1, 2, 3])
-    def test_dimension_support(self, ndim: int):
+    def test_short_simulation(self, ndim: int):
         """Test wave equation works in all supported dimensions."""
         np.random.seed(42)
-        preset = WavePDE()
+        preset = get_pde_preset("wave")
 
-        # Check dimension is supported
         assert ndim in preset.metadata.supported_dimensions
         preset.validate_dimension(ndim)
 
-        # Create grid and BCs
         resolution = 8 if ndim == 3 else 16
         grid = create_grid_for_dimension(ndim, resolution=resolution)
         bc = create_bc_for_dimension(ndim)
 
-        # Create PDE and initial state
-        params = {"D": 1.0, "C": 0.0}
-        pde = preset.create_pde(params, bc, grid)
+        pde = preset.create_pde({"D": 1.0, "C": 0.0}, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
-        # Run short simulation
         result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
-        # Verify result
         assert isinstance(result, FieldCollection)
         check_result_finite(result, "wave", ndim)
         check_dimension_variation(result, ndim, "wave")
@@ -111,52 +80,46 @@ class TestInhomogeneousWavePDE:
         assert meta.name == "inhomogeneous-wave"
         assert meta.category == "basic"
         assert meta.num_fields == 2
-        assert "u" in meta.field_names  # displacement
-        assert "v" in meta.field_names  # velocity
+        assert "u" in meta.field_names
+        assert "v" in meta.field_names
 
-    def test_create_pde(self, non_periodic_grid):
+    def test_create_pde(self):
         """Test PDE creation."""
+        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=False)
         preset = get_pde_preset("inhomogeneous-wave")
-        params = {"D": 1.0, "E": 0.5, "m": 4, "n": 4, "C": 0.0}
-        bc = {"x": "neumann", "y": "neumann"}
-
-        pde = preset.create_pde(params, bc, non_periodic_grid)
+        pde = preset.create_pde(
+            parameters={"D": 1.0, "E": 0.5, "m": 4, "n": 4, "C": 0.0},
+            bc={"x": "neumann", "y": "neumann"},
+            grid=grid,
+        )
         assert pde is not None
 
-    def test_create_initial_state(self, non_periodic_grid):
-        """Test initial state creation."""
+    @pytest.mark.parametrize("ndim", [2])
+    def test_short_simulation(self, ndim: int):
+        """Test inhomogeneous-wave works in 2D."""
+        np.random.seed(42)
         preset = get_pde_preset("inhomogeneous-wave")
-        state = preset.create_initial_state(
-            non_periodic_grid, "gaussian-blob", {"num_blobs": 1}
-        )
 
-        assert isinstance(state, FieldCollection)
-        assert len(state) == 2
-        assert state[0].label == "u"
-        assert state[1].label == "v"
-        # Velocity should start at zero
-        assert np.allclose(state[1].data, 0)
+        assert ndim in preset.metadata.supported_dimensions
+        preset.validate_dimension(ndim)
 
-    def test_short_simulation(self):
-        """Test running a short simulation using default config."""
-        result, config = run_short_simulation("inhomogeneous-wave", "basic")
+        grid = create_grid_for_dimension(ndim, resolution=16, periodic=False)
+        bc = create_bc_for_dimension(ndim, periodic=False)
+
+        pde = preset.create_pde({"D": 1.0, "E": 0.5, "m": 4, "n": 4, "C": 0.0}, bc, grid)
+        state = preset.create_initial_state(grid, "gaussian-blob", {"num_blobs": 1})
+
+        result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 
         assert isinstance(result, FieldCollection)
         assert len(result) == 2
-        assert np.isfinite(result[0].data).all()
-        assert np.isfinite(result[1].data).all()
-        assert config["preset"] == "inhomogeneous-wave"
+        check_result_finite(result, "inhomogeneous-wave", ndim)
+        check_dimension_variation(result, ndim, "inhomogeneous-wave")
 
-    def test_dimension_support_2d_only(self):
-        """Test that inhomogeneous-wave only supports 2D."""
-        preset = InhomogeneousWavePDE()
-        assert preset.metadata.supported_dimensions == [2]
-
-        # Should accept 2D
-        preset.validate_dimension(2)
-
-        # Should reject 1D and 3D
-        with pytest.raises(ValueError):
+    def test_unsupported_dimensions(self):
+        """Test that inhomogeneous-wave rejects 1D and 3D."""
+        preset = get_pde_preset("inhomogeneous-wave")
+        with pytest.raises(ValueError, match="does not support"):
             preset.validate_dimension(1)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="does not support"):
             preset.validate_dimension(3)

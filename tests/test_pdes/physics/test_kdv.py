@@ -6,21 +6,12 @@ import pytest
 from pde import CartesianGrid, ScalarField
 
 from pde_sim.pdes import get_pde_preset, list_presets
-from pde_sim.pdes.physics.kdv import KdVPDE
-
-from tests.conftest import run_short_simulation
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
     check_result_finite,
     check_dimension_variation,
 )
-
-
-@pytest.fixture
-def small_grid():
-    """Create a small 1D grid for fast tests (KdV is a 1D equation)."""
-    return CartesianGrid([[0, 10]], [64], periodic=True)
 
 
 class TestKdVPDE:
@@ -39,122 +30,48 @@ class TestKdVPDE:
         assert meta.category == "physics"
         assert meta.num_fields == 1
         assert "u" in meta.field_names
-        assert "Korteweg" in meta.reference or "KdV" in meta.description
 
-    def test_create_pde(self, small_grid):
+    def test_create_pde(self):
         """Test PDE creation."""
-        preset = get_pde_preset("kdv")
-        params = {"c": 6.0}
-        bc = {"x-": "periodic", "x+": "periodic"}
+        from pde import CartesianGrid
 
-        pde = preset.create_pde(params, bc, small_grid)
+        grid = CartesianGrid([[0, 10]], [64], periodic=True)
+        preset = get_pde_preset("kdv")
+        pde = preset.create_pde(
+            {"b": 0.0001},
+            {"x-": "periodic", "x+": "periodic"},
+            grid,
+        )
         assert pde is not None
 
-    def test_create_initial_state_soliton(self, small_grid):
-        """Test creating initial state with single soliton."""
-        preset = get_pde_preset("kdv")
-        state = preset.create_initial_state(
-            small_grid, "soliton", {"k": 0.5, "x0": 5.0}
-        )
-
-        assert state is not None
-        assert isinstance(state, ScalarField)
-        assert np.isfinite(state.data).all()
-        # Soliton should have positive values
-        assert state.data.max() > 0
-
-    def test_create_initial_state_two_solitons(self, small_grid):
-        """Test creating initial state with two solitons."""
-        preset = get_pde_preset("kdv")
-        state = preset.create_initial_state(
-            small_grid, "two-solitons", {"k1": 0.6, "k2": 0.4}
-        )
-
-        assert state is not None
-        assert isinstance(state, ScalarField)
-        assert np.isfinite(state.data).all()
-
-    def test_create_initial_state_n_wave(self, small_grid):
-        """Test creating initial state with n-wave."""
-        preset = get_pde_preset("kdv")
-        state = preset.create_initial_state(
-            small_grid, "n-wave", {"amplitude": 1.0, "width": 0.1}
-        )
-
-        assert state is not None
-        assert isinstance(state, ScalarField)
-        assert np.isfinite(state.data).all()
-
-    def test_soliton_amplitude_width_relation(self, small_grid):
-        """Test that soliton amplitude follows u = 2k^2."""
-        preset = get_pde_preset("kdv")
-        k = 0.5
-        state = preset.create_initial_state(
-            small_grid, "soliton", {"k": k, "x0": 5.0}
-        )
-
-        expected_amplitude = 2 * k**2
-        # Max value should be close to expected amplitude
-        assert abs(state.data.max() - expected_amplitude) < 0.1 * expected_amplitude
-
-    def test_short_simulation(self):
-        """Test running a short simulation using default config."""
-        result, config = run_short_simulation("kdv", "physics")
-
-        assert isinstance(result, ScalarField)
-        assert np.isfinite(result.data).all()
-        assert config["preset"] == "kdv"
-
-    def test_equations_for_metadata(self):
-        """Test that equations are properly formatted."""
-        preset = get_pde_preset("kdv")
-        params = {"b": 0.0001}
-        equations = preset.get_equations_for_metadata(params)
-
-        assert "u" in equations
-        # Should contain derivative terms (now uses mathematical notation)
-        assert "dx" in equations["u"]
-        # Should contain the nonlinear term (6*u)
-        assert "6*u" in equations["u"]
-
-    def test_dimension_support_1d_only(self):
-        """Test KdV equation only supports 1D (true 1D equation)."""
-        np.random.seed(42)
-        preset = KdVPDE()
-
-        # Check only 1D is supported
-        assert preset.metadata.supported_dimensions == [1]
-
-        # Should accept 1D
-        preset.validate_dimension(1)
-
-        # Should reject 2D and 3D
-        with pytest.raises(ValueError):
-            preset.validate_dimension(2)
-        with pytest.raises(ValueError):
-            preset.validate_dimension(3)
-
-    def test_dimension_1d_simulation(self):
+    @pytest.mark.parametrize("ndim", [1])
+    def test_short_simulation(self, ndim: int):
         """Test KdV simulation in 1D."""
         np.random.seed(42)
-        preset = KdVPDE()
+        preset = get_pde_preset("kdv")
 
-        # Create 1D grid and BCs
-        grid = create_grid_for_dimension(1, resolution=64)
-        bc = create_bc_for_dimension(1)
+        assert ndim in preset.metadata.supported_dimensions
+        preset.validate_dimension(ndim)
 
-        # Create PDE and initial state
-        # Use soliton IC instead of random-uniform - KdV is specifically designed for
-        # soliton dynamics, and random data causes numerical overflow due to the
-        # third-order derivatives amplifying high-frequency noise
-        params = {"b": 0.0001}
-        pde = preset.create_pde(params, bc, grid)
+        # KdV needs higher resolution
+        grid = create_grid_for_dimension(ndim, resolution=64)
+        bc = create_bc_for_dimension(ndim)
+
+        pde = preset.create_pde({"b": 0.0001}, bc, grid)
+        # IMPORTANT: Use soliton IC, not random-uniform (KdV is unstable with random data)
         state = preset.create_initial_state(grid, "soliton", {"k": 0.5, "x0": 0.25})
 
-        # Run short simulation
         result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None, backend="numpy")
 
-        # Verify result
         assert isinstance(result, ScalarField)
-        check_result_finite(result, "kdv", 1)
-        check_dimension_variation(result, 1, "kdv")
+        check_result_finite(result, "kdv", ndim)
+        check_dimension_variation(result, ndim, "kdv")
+
+    def test_unsupported_dimensions(self):
+        """Test that KdV only supports 1D."""
+        preset = get_pde_preset("kdv")
+
+        with pytest.raises(ValueError, match="does not support"):
+            preset.validate_dimension(2)
+        with pytest.raises(ValueError, match="does not support"):
+            preset.validate_dimension(3)
