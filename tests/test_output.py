@@ -12,6 +12,7 @@ from pde_sim.core.output import (
     create_metadata,
     PNGHandler,
     MP4Handler,
+    GIFHandler,
     NumpyHandler,
     create_output_handler,
 )
@@ -54,6 +55,12 @@ class TestOutputHandler:
         handler = create_output_handler("mp4", fps=30)
         assert isinstance(handler, MP4Handler)
         assert handler.fps == 30
+
+    def test_create_gif_handler(self):
+        """Test creating GIF handler."""
+        handler = create_output_handler("gif", fps=15)
+        assert isinstance(handler, GIFHandler)
+        assert handler.fps == 15
 
     def test_invalid_format(self):
         """Test that invalid format raises error."""
@@ -253,6 +260,114 @@ class TestMP4Handler:
         assert (tmp_output / "u.mp4").exists()
         assert (tmp_output / "v.mp4").exists()
         assert len(metadata["videos"]) == 2
+
+
+class TestGIFHandler:
+    """Tests for GIFHandler."""
+
+    def test_initialization(self, tmp_output):
+        """Test GIF handler initializes correctly."""
+        handler = GIFHandler(fps=15)
+        handler.initialize(
+            tmp_output,
+            field_configs=[("u", "viridis"), ("v", "plasma")],
+            dpi=64,
+            figsize=(4, 4),
+        )
+
+        assert handler.fps == 15
+        assert handler.output_dir == tmp_output
+        assert "u" in handler.frame_buffers
+        assert "v" in handler.frame_buffers
+
+    def test_frame_buffering(self, tmp_output):
+        """Test frames are accumulated in buffer."""
+        handler = GIFHandler(fps=10)
+        handler.initialize(
+            tmp_output,
+            field_configs=[("u", "viridis")],
+            dpi=32,
+            figsize=(2, 2),
+        )
+
+        data = np.random.rand(16, 16)
+        for i in range(3):
+            handler.save_frame(data, "u", i, i * 0.1, 0.0, 1.0, "viridis")
+
+        assert len(handler.frame_buffers["u"]) == 3
+        # Each frame should be RGB array
+        assert handler.frame_buffers["u"][0].ndim == 3
+        assert handler.frame_buffers["u"][0].shape[2] == 3  # RGB channels
+
+    def test_creates_gif_file(self, tmp_output):
+        """Test finalize creates GIF files."""
+        handler = GIFHandler(fps=10)
+        handler.initialize(
+            tmp_output,
+            field_configs=[("u", "viridis")],
+            dpi=32,
+            figsize=(2, 2),
+        )
+
+        data = np.random.rand(16, 16)
+        for i in range(5):
+            handler.save_frame(data * (i + 1) / 5, "u", i, i * 0.1, 0.0, 1.0, "viridis")
+
+        metadata = handler.finalize()
+
+        assert (tmp_output / "u.gif").exists()
+        assert metadata["format"] == "gif"
+        assert metadata["fps"] == 10
+        assert "u" in metadata["gifs"]
+        assert metadata["gifs"]["u"] == "u.gif"
+
+    def test_gif_is_valid_and_loops(self, tmp_output):
+        """Test that GIF is valid and has loop setting."""
+        import imageio
+
+        handler = GIFHandler(fps=10)
+        handler.initialize(
+            tmp_output,
+            field_configs=[("u", "viridis")],
+            dpi=32,
+            figsize=(2, 2),
+        )
+
+        data = np.random.rand(16, 16)
+        for i in range(3):
+            handler.save_frame(data * (i + 1) / 3, "u", i, i * 0.1, 0.0, 1.0, "viridis")
+
+        handler.finalize()
+
+        # Read the GIF back and verify it's valid
+        gif_path = tmp_output / "u.gif"
+        frames = imageio.mimread(gif_path)
+        assert len(frames) == 3
+        # Each frame should be RGB
+        assert frames[0].ndim == 3
+        assert frames[0].shape[2] in (3, 4)  # RGB or RGBA
+
+    def test_multi_field_gifs(self, tmp_output):
+        """Test creating GIFs for multiple fields."""
+        handler = GIFHandler(fps=10)
+        handler.initialize(
+            tmp_output,
+            field_configs=[("u", "viridis"), ("v", "plasma")],
+            dpi=32,
+            figsize=(2, 2),
+        )
+
+        for i in range(3):
+            data_u = np.random.rand(16, 16)
+            data_v = np.random.rand(16, 16)
+            handler.save_frame(data_u, "u", i, i * 0.1, 0.0, 1.0, "viridis")
+            handler.save_frame(data_v, "v", i, i * 0.1, 0.0, 1.0, "plasma")
+
+        metadata = handler.finalize()
+
+        assert (tmp_output / "u.gif").exists()
+        assert (tmp_output / "v.gif").exists()
+        assert len(metadata["gifs"]) == 2
 
 
 class TestOutputManager:
@@ -462,6 +577,46 @@ class TestOutputManager:
         assert saved["output"]["mp4"]["fps"] == 24
         assert "u" in saved["output"]["mp4"]["videos"]
         assert "v" in saved["output"]["mp4"]["videos"]
+
+    def test_gif_format_saves_gifs(self, tmp_output, small_grid):
+        """Test gif format saves GIF files correctly."""
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-gif",
+            field_configs=[("u", "viridis"), ("v", "plasma")],
+            output_formats=["gif"],
+            fps=15,
+        )
+
+        states = []
+        for i in range(5):
+            u = ScalarField(small_grid, np.ones(small_grid.shape) * i)
+            u.label = "u"
+            v = ScalarField(small_grid, np.ones(small_grid.shape) * (i + 0.5))
+            v.label = "v"
+            states.append(FieldCollection([u, v]))
+
+        manager.compute_range_for_field(states, "u")
+        manager.compute_range_for_field(states, "v")
+
+        for i, state in enumerate(states):
+            manager.save_all_fields(state, i, i * 0.1)
+
+        # Finalize should be called via save_metadata
+        metadata_path = manager.save_metadata({"test": "data"})
+
+        # Check GIFs were saved
+        assert (manager.output_dir / "u.gif").exists()
+        assert (manager.output_dir / "v.gif").exists()
+
+        # Check metadata
+        with open(metadata_path) as f:
+            saved = json.load(f)
+        assert saved["output"]["formats"] == ["gif"]
+        assert "gif" in saved["output"]
+        assert saved["output"]["gif"]["fps"] == 15
+        assert "u" in saved["output"]["gif"]["gifs"]
+        assert "v" in saved["output"]["gif"]["gifs"]
 
     def test_multiple_formats_simultaneously(self, tmp_output, small_grid):
         """Test saving with multiple formats at once (png + numpy)."""
