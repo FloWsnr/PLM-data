@@ -172,8 +172,8 @@ class Output1DHandler(OutputHandler):
                 plt.close(fig)
                 output_files[field_name] = filename
 
-            elif self.output_format == "mp4":
-                # For MP4, animate the 1D profile over time
+            elif self.output_format in ("mp4", "gif"):
+                # For MP4/GIF, animate the 1D profile over time
                 import imageio
 
                 frames_rgb = []
@@ -190,14 +190,24 @@ class Output1DHandler(OutputHandler):
                     frames_rgb.append(frame_rgb)
                     plt.close(fig)
 
-                filename = f"{field_name}.mp4"
-                imageio.mimwrite(
-                    self.output_dir / filename,
-                    frames_rgb,
-                    fps=self.fps,
-                    codec="libx264",
-                    output_params=["-pix_fmt", "yuv420p"],
-                )
+                if self.output_format == "mp4":
+                    filename = f"{field_name}.mp4"
+                    imageio.mimwrite(
+                        self.output_dir / filename,
+                        frames_rgb,
+                        fps=self.fps,
+                        codec="libx264",
+                        output_params=["-pix_fmt", "yuv420p"],
+                    )
+                else:  # gif
+                    filename = f"{field_name}.gif"
+                    duration = 1.0 / self.fps
+                    imageio.mimwrite(
+                        self.output_dir / filename,
+                        frames_rgb,
+                        duration=duration,
+                        loop=0,  # 0 means infinite loop
+                    )
                 output_files[field_name] = filename
 
                 # Also save the space-time diagram as PNG
@@ -380,6 +390,90 @@ class MP4Handler(OutputHandler):
         }
 
 
+class GIFHandler(OutputHandler):
+    """Accumulates frames and encodes looping GIF animations per field."""
+
+    def __init__(self, fps: int = 30) -> None:
+        self.fps = fps
+        self.output_dir: Path | None = None
+        self.frame_buffers: dict[str, list[np.ndarray]] = {}
+        self.dpi: int = 128
+        self.figsize: tuple[int, int] = (8, 8)
+        self.field_colormaps: dict[str, str] = {}
+
+    def initialize(
+        self,
+        output_dir: Path,
+        field_configs: list[tuple[str, str]],
+        dpi: int,
+        figsize: tuple[int, int],
+    ) -> None:
+        self.output_dir = output_dir
+        self.dpi = dpi
+        self.figsize = figsize
+
+        for field_name, colormap in field_configs:
+            self.frame_buffers[field_name] = []
+            self.field_colormaps[field_name] = colormap
+
+    def save_frame(
+        self,
+        data: np.ndarray,
+        field_name: str,
+        frame_index: int,
+        simulation_time: float,
+        vmin: float,
+        vmax: float,
+        colormap: str,
+    ) -> None:
+        if field_name not in self.frame_buffers:
+            self.frame_buffers[field_name] = []
+
+        # Render frame to numpy array (RGB)
+        fig, ax = plt.subplots(figsize=self.figsize, dpi=self.dpi)
+        ax.imshow(
+            data.T,
+            origin="lower",
+            cmap=colormap,
+            vmin=vmin,
+            vmax=vmax,
+            aspect="equal",
+        )
+        ax.axis("off")
+
+        # Draw canvas and convert to RGB array
+        fig.canvas.draw()
+        # Use buffer_rgba() and discard alpha channel (modern matplotlib API)
+        frame_data = np.asarray(fig.canvas.buffer_rgba())
+        frame_data = frame_data[:, :, :3]  # Keep only RGB, discard alpha
+        plt.close(fig)
+
+        self.frame_buffers[field_name].append(frame_data)
+
+    def finalize(self) -> dict[str, Any]:
+        import imageio
+
+        gif_files: dict[str, str] = {}
+        duration = 1.0 / self.fps  # Duration per frame in seconds
+
+        for field_name, frames in self.frame_buffers.items():
+            if frames:
+                gif_path = self.output_dir / f"{field_name}.gif"
+                imageio.mimwrite(
+                    gif_path,
+                    frames,
+                    duration=duration,
+                    loop=0,  # 0 means infinite loop
+                )
+                gif_files[field_name] = f"{field_name}.gif"
+
+        return {
+            "format": "gif",
+            "fps": self.fps,
+            "gifs": gif_files,
+        }
+
+
 class NumpyHandler(OutputHandler):
     """Collects all field data into a single array.
 
@@ -490,8 +584,8 @@ def create_output_handler(
     """Factory function to create appropriate output handler.
 
     Args:
-        output_format: Output format ("png", "mp4", or "numpy").
-        fps: Frame rate for MP4 output.
+        output_format: Output format ("png", "mp4", "gif", or "numpy").
+        fps: Frame rate for MP4/GIF output.
         ndim: Number of spatial dimensions (1, 2, or 3).
 
     Returns:
@@ -501,8 +595,8 @@ def create_output_handler(
         ValueError: If format is not recognized or unsupported for the dimension.
     """
     if ndim == 1:
-        # 1D: space-time diagrams for png/mp4, standard array for numpy
-        if output_format in ("png", "mp4"):
+        # 1D: space-time diagrams for png/mp4/gif, standard array for numpy
+        if output_format in ("png", "mp4", "gif"):
             return Output1DHandler(output_format=output_format, fps=fps)
         elif output_format == "numpy":
             return NumpyHandler()
@@ -514,6 +608,7 @@ def create_output_handler(
         handlers = {
             "png": PNGHandler,
             "mp4": lambda: MP4Handler(fps=fps),
+            "gif": lambda: GIFHandler(fps=fps),
             "numpy": NumpyHandler,
         }
 
@@ -530,7 +625,7 @@ def create_output_handler(
 
     elif ndim == 3:
         # 3D: only numpy output is supported (deferred visualization)
-        if output_format in ("png", "mp4"):
+        if output_format in ("png", "mp4", "gif"):
             raise ValueError(
                 f"3D visualization not yet supported. Use format: 'numpy' instead of '{output_format}'"
             )

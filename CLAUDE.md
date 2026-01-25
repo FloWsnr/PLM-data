@@ -170,14 +170,14 @@ Supported BC types:
 
 ### Output Configuration
 
-Output supports three formats: PNG images, MP4 videos, or numpy arrays. You can specify one or more formats simultaneously.
+Output supports four formats: PNG images, MP4 videos, GIF animations, or numpy arrays. You can specify one or more formats simultaneously.
 
 ```yaml
 output:
   path: ./output
   num_frames: 100
-  formats: [png]        # Required: list of formats ("png", "mp4", "numpy")
-  fps: 30               # Frame rate for MP4 (default: 30)
+  formats: [png]        # Required: list of formats ("png", "mp4", "gif", "numpy")
+  fps: 30               # Frame rate for MP4/GIF (default: 30)
 ```
 
 **Multiple formats example:**
@@ -188,12 +188,14 @@ output:
   formats:
     - png
     - mp4
+    - gif
     - numpy
 ```
 
 **Format options:**
 - `png`: PNG images per field in subdirectories
 - `mp4`: One MP4 video per field
+- `gif`: One looping GIF animation per field
 - `numpy`: Single numpy array with shape `(Time, Height, Width, Fields)`
 
 All fields from the PDE are always output. Colormaps are auto-assigned from a cycle (viridis, plasma, inferno, magma, cividis) based on field order.
@@ -220,6 +222,14 @@ output/{preset-name}/{config-name}_{run-number}/
 output/{preset-name}/{config-name}_{run-number}/
 ├── u.mp4
 ├── v.mp4
+└── metadata.json
+```
+
+### GIF Format
+```
+output/{preset-name}/{config-name}_{run-number}/
+├── u.gif
+├── v.gif
 └── metadata.json
 ```
 
