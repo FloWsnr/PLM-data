@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from pde_sim.core.logging import restore_stdout, setup_logging
+from pde_sim.core.overview import generate_overview
 from pde_sim.core.simulation import run_from_config
 from pde_sim.pdes import get_pde_preset, get_presets_by_category
 
@@ -69,6 +70,27 @@ def main():
         help="Name of the preset",
     )
 
+    # Overview command
+    overview_parser = subparsers.add_parser(
+        "overview", help="Generate HTML overview of GIF simulations"
+    )
+    overview_parser.add_argument(
+        "output_dir",
+        type=Path,
+        help="Directory containing simulation outputs to scan",
+    )
+    overview_parser.add_argument(
+        "--html",
+        type=Path,
+        help="Path for output HTML file (default: output_dir/overview.html)",
+    )
+    overview_parser.add_argument(
+        "--title",
+        type=str,
+        default="Simulation Overview",
+        help="Title for the HTML document",
+    )
+
     args = parser.parse_args()
 
     if args.command == "run":
@@ -77,6 +99,8 @@ def main():
         list_presets(args)
     elif args.command == "info":
         show_preset_info(args)
+    elif args.command == "overview":
+        create_overview(args)
     else:
         parser.print_help()
         sys.exit(1)
@@ -170,6 +194,28 @@ def show_preset_info(args):
 
     if meta.reference:
         print(f"Reference: {meta.reference}")
+
+
+def create_overview(args):
+    """Generate HTML overview of GIF simulations."""
+    if not args.output_dir.exists():
+        print(f"Error: Directory not found: {args.output_dir}")
+        sys.exit(1)
+
+    # Default HTML path is inside the output directory
+    html_path = args.html if args.html else args.output_dir / "overview.html"
+
+    count = generate_overview(
+        output_dir=args.output_dir,
+        html_path=html_path,
+        title=args.title,
+    )
+
+    if count == 0:
+        print("No simulations with GIF files found.")
+        sys.exit(1)
+
+    print(f"Generated overview with {count} simulations: {html_path}")
 
 
 if __name__ == "__main__":
