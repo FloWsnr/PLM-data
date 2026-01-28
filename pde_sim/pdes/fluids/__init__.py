@@ -1,5 +1,6 @@
 """Fluid Dynamics PDEs: Navier-Stokes, Shallow Water, etc."""
 
+from .darcy import DarcyPDE
 from .vorticity import VorticityPDE
 from .vorticity_bounded import VorticityBoundedPDE
 from .shallow_water import ShallowWaterPDE
@@ -10,6 +11,7 @@ from .potential_flow_dipoles import PotentialFlowDipolesPDE
 from .potential_flow_images import PotentialFlowImagesPDE
 
 __all__ = [
+    "DarcyPDE",
     "VorticityPDE",
     "VorticityBoundedPDE",
     "ShallowWaterPDE",
