@@ -34,8 +34,6 @@ class TestGrayScottPDE:
 
     def test_create_pde(self):
         """Test creating the PDE object."""
-        from pde import CartesianGrid
-
         grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
         preset = get_pde_preset("gray-scott")
         pde = preset.create_pde(

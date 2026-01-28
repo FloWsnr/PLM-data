@@ -32,8 +32,6 @@ class TestPeronaMalikPDE:
 
     def test_create_pde(self):
         """Test PDE creation."""
-        from pde import CartesianGrid
-
         grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
         preset = get_pde_preset("perona-malik")
         pde = preset.create_pde(

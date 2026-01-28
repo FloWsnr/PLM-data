@@ -33,8 +33,6 @@ class TestFokkerPlanckPDE:
 
     def test_create_pde(self):
         """Test PDE creation."""
-        from pde import CartesianGrid
-
         grid = CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=False)
         preset = get_pde_preset("fokker-planck")
         pde = preset.create_pde(

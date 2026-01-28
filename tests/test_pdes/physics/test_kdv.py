@@ -33,8 +33,6 @@ class TestKdVPDE:
 
     def test_create_pde(self):
         """Test PDE creation."""
-        from pde import CartesianGrid
-
         grid = CartesianGrid([[0, 10]], [64], periodic=True)
         preset = get_pde_preset("kdv")
         pde = preset.create_pde(

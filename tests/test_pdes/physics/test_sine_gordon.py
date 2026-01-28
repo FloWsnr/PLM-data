@@ -34,8 +34,6 @@ class TestSineGordonPDE:
 
     def test_create_pde(self):
         """Test PDE creation."""
-        from pde import CartesianGrid
-
         grid = CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
         preset = get_pde_preset("sine-gordon")
         pde = preset.create_pde(

@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from pde import CartesianGrid, FieldCollection, ScalarField
+from pde import CartesianGrid, FieldCollection
 
 from pde_sim.pdes import get_pde_preset, list_presets
 from pde_sim.initial_conditions import create_initial_condition
