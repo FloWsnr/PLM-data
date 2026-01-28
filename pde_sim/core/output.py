@@ -245,8 +245,6 @@ class PNGHandler(OutputHandler):
         self.output_dir: Path | None = None
         self.frames_dir: Path | None = None
         self.field_dirs: dict[str, Path] = {}
-        self.dpi: int = 128
-        self.figsize: tuple[int, int] = (8, 8)
 
     def initialize(
         self,
@@ -257,8 +255,6 @@ class PNGHandler(OutputHandler):
     ) -> None:
         self.output_dir = output_dir
         self.frames_dir = output_dir / "frames"
-        self.dpi = dpi
-        self.figsize = figsize
 
         # Create per-field subdirectories
         for field_name, _ in field_configs:
@@ -276,28 +272,28 @@ class PNGHandler(OutputHandler):
         vmax: float,
         colormap: str,
     ) -> None:
+        import imageio
+
         if field_name not in self.field_dirs:
             # Create directory for unexpected field
             field_dir = self.frames_dir / field_name
             field_dir.mkdir(parents=True, exist_ok=True)
             self.field_dirs[field_name] = field_dir
 
-        # Create figure
-        fig, ax = plt.subplots(figsize=self.figsize, dpi=self.dpi)
-        ax.imshow(
-            data.T,  # Transpose for correct orientation
-            origin="lower",
-            cmap=colormap,
-            vmin=vmin,
-            vmax=vmax,
-            aspect="equal",
-        )
-        ax.axis("off")
+        # Directly apply colormap without matplotlib figure (no borders)
+        cmap = plt.get_cmap(colormap)
+
+        # Normalize data to [0, 1] range
+        normalized = (data.T - vmin) / (vmax - vmin)
+        normalized = np.clip(normalized, 0, 1)
+
+        # Apply colormap and convert to uint8 RGB (flip for origin="lower" equivalent)
+        rgba = cmap(normalized)
+        frame_data = (rgba[::-1, :, :3] * 255).astype(np.uint8)
 
         # Save to field subdirectory: frames/{field}/{frame:06d}.png
         frame_path = self.field_dirs[field_name] / f"{frame_index:06d}.png"
-        fig.savefig(frame_path, bbox_inches="tight", pad_inches=0)
-        plt.close(fig)
+        imageio.imwrite(frame_path, frame_data)
 
     def finalize(self) -> dict[str, Any]:
         return {
@@ -314,8 +310,6 @@ class MP4Handler(OutputHandler):
         self.fps = fps
         self.output_dir: Path | None = None
         self.frame_buffers: dict[str, list[np.ndarray]] = {}
-        self.dpi: int = 128
-        self.figsize: tuple[int, int] = (8, 8)
         self.field_colormaps: dict[str, str] = {}
 
     def initialize(
@@ -326,8 +320,6 @@ class MP4Handler(OutputHandler):
         figsize: tuple[int, int],
     ) -> None:
         self.output_dir = output_dir
-        self.dpi = dpi
-        self.figsize = figsize
 
         for field_name, colormap in field_configs:
             self.frame_buffers[field_name] = []
@@ -346,24 +338,16 @@ class MP4Handler(OutputHandler):
         if field_name not in self.frame_buffers:
             self.frame_buffers[field_name] = []
 
-        # Render frame to numpy array (RGB)
-        fig, ax = plt.subplots(figsize=self.figsize, dpi=self.dpi)
-        ax.imshow(
-            data.T,
-            origin="lower",
-            cmap=colormap,
-            vmin=vmin,
-            vmax=vmax,
-            aspect="equal",
-        )
-        ax.axis("off")
+        # Directly apply colormap without matplotlib figure (no borders)
+        cmap = plt.get_cmap(colormap)
 
-        # Draw canvas and convert to RGB array
-        fig.canvas.draw()
-        # Use buffer_rgba() and discard alpha channel (modern matplotlib API)
-        frame_data = np.asarray(fig.canvas.buffer_rgba())
-        frame_data = frame_data[:, :, :3]  # Keep only RGB, discard alpha
-        plt.close(fig)
+        # Normalize data to [0, 1] range
+        normalized = (data.T - vmin) / (vmax - vmin)
+        normalized = np.clip(normalized, 0, 1)
+
+        # Apply colormap and convert to uint8 RGB (flip for origin="lower" equivalent)
+        rgba = cmap(normalized)
+        frame_data = (rgba[::-1, :, :3] * 255).astype(np.uint8)
 
         self.frame_buffers[field_name].append(frame_data)
 
@@ -397,8 +381,6 @@ class GIFHandler(OutputHandler):
         self.fps = fps
         self.output_dir: Path | None = None
         self.frame_buffers: dict[str, list[np.ndarray]] = {}
-        self.dpi: int = 128
-        self.figsize: tuple[int, int] = (8, 8)
         self.field_colormaps: dict[str, str] = {}
 
     def initialize(
@@ -409,8 +391,6 @@ class GIFHandler(OutputHandler):
         figsize: tuple[int, int],
     ) -> None:
         self.output_dir = output_dir
-        self.dpi = dpi
-        self.figsize = figsize
 
         for field_name, colormap in field_configs:
             self.frame_buffers[field_name] = []
@@ -429,24 +409,16 @@ class GIFHandler(OutputHandler):
         if field_name not in self.frame_buffers:
             self.frame_buffers[field_name] = []
 
-        # Render frame to numpy array (RGB)
-        fig, ax = plt.subplots(figsize=self.figsize, dpi=self.dpi)
-        ax.imshow(
-            data.T,
-            origin="lower",
-            cmap=colormap,
-            vmin=vmin,
-            vmax=vmax,
-            aspect="equal",
-        )
-        ax.axis("off")
+        # Directly apply colormap without matplotlib figure (no borders)
+        cmap = plt.get_cmap(colormap)
 
-        # Draw canvas and convert to RGB array
-        fig.canvas.draw()
-        # Use buffer_rgba() and discard alpha channel (modern matplotlib API)
-        frame_data = np.asarray(fig.canvas.buffer_rgba())
-        frame_data = frame_data[:, :, :3]  # Keep only RGB, discard alpha
-        plt.close(fig)
+        # Normalize data to [0, 1] range
+        normalized = (data.T - vmin) / (vmax - vmin)
+        normalized = np.clip(normalized, 0, 1)
+
+        # Apply colormap and convert to uint8 RGB (flip for origin="lower" equivalent)
+        rgba = cmap(normalized)
+        frame_data = (rgba[::-1, :, :3] * 255).astype(np.uint8)
 
         self.frame_buffers[field_name].append(frame_data)
 
