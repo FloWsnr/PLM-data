@@ -31,6 +31,7 @@ def run_batch(
     unique_suffix: bool | None = True,
     overwrite: bool = False,
     continue_on_error: bool = True,
+    randomize_positions: bool = False,
 ) -> tuple[int, int]:
     """Run a batch of simulations from a directory of YAML configs."""
     logger = setup_logging(
@@ -83,6 +84,7 @@ def run_batch(
                 storage=storage,
                 keep_storage=keep_storage,
                 unique_suffix=unique_suffix,
+                randomize_positions=randomize_positions,
             )
             logger.info("Output: %s", metadata.get("folder_name"))
             ok += 1

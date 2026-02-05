@@ -154,6 +154,11 @@ class ComplexGinzburgLandauPDE(MultiFieldPDEPreset):
         v.label = "v"
         return FieldCollection([u, v])
 
+    def get_position_params(self, ic_type: str) -> set[str]:
+        if ic_type in ("complex-ginzburg-landau-default", "default"):
+            return {"phase_x", "phase_y"}
+        return super().get_position_params(ic_type)
+
     def resolve_ic_params(
         self,
         grid: CartesianGrid,

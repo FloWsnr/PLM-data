@@ -191,6 +191,19 @@ class KdVPDE(ScalarPDEPreset):
         # Fall back to generic initial condition
         return create_initial_condition(grid, ic_type, ic_params)
 
+    def get_position_params(self, ic_type: str) -> set[str]:
+        if ic_type in ("kdv-default", "default", "soliton"):
+            return {"x0"}
+        if ic_type == "two-solitons":
+            return {"x1", "x2"}
+        if ic_type == "n-wave":
+            return {"x0"}
+        if ic_type == "offset-soliton":
+            return {"x0"}
+        if ic_type == "random-solitons":
+            return {"positions"}
+        return super().get_position_params(ic_type)
+
     def resolve_ic_params(
         self,
         grid: CartesianGrid,

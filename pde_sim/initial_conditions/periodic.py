@@ -93,6 +93,11 @@ class SinePattern(InitialConditionGenerator):
         return ScalarField(grid, data)
 
     @classmethod
+    def get_position_params(cls) -> set[str]:
+        """Return names of parameters that represent spatial phases."""
+        return {"phase_x", "phase_y", "phase_z"}
+
+    @classmethod
     def resolve_random_params(
         cls,
         grid: CartesianGrid,
@@ -211,6 +216,11 @@ class CosinePattern(InitialConditionGenerator):
             )
 
         return ScalarField(grid, data)
+
+    @classmethod
+    def get_position_params(cls) -> set[str]:
+        """Return names of parameters that represent spatial phases."""
+        return {"phase_x", "phase_y", "phase_z"}
 
     @classmethod
     def resolve_random_params(

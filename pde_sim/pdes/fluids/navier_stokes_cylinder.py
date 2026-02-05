@@ -199,6 +199,13 @@ class NavierStokesCylinderPDE(MultiFieldPDEPreset):
 
         return FieldCollection([u, v, p, S])
 
+    def get_position_params(self, ic_type: str) -> set[str]:
+        if ic_type in ("cylinder-flow", "default", "navier-stokes-cylinder-default"):
+            return {"cylinder_x", "cylinder_y"}
+        if ic_type == "multi-cylinder":
+            return {"positions"}
+        return super().get_position_params(ic_type)
+
     def resolve_ic_params(
         self,
         grid: CartesianGrid,

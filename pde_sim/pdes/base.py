@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 from pde import CartesianGrid, FieldCollection, PDE, ScalarField
 
 from pde_sim.boundaries import BoundaryConditionFactory
-from pde_sim.initial_conditions import create_initial_condition, list_initial_conditions, resolve_initial_condition_params
+from pde_sim.initial_conditions import create_initial_condition, get_ic_position_params, list_initial_conditions, resolve_initial_condition_params
 
 
 @dataclass
@@ -106,6 +106,23 @@ class PDEPreset(ABC):
             Initial field state.
         """
         pass
+
+    def get_position_params(self, ic_type: str) -> set[str]:
+        """Return IC param names that are spatial positions for this IC type.
+
+        Subclasses should override this to declare position params for
+        PDE-specific IC types. For generic IC types, delegates to the
+        IC registry.
+
+        Args:
+            ic_type: Type of initial condition.
+
+        Returns:
+            Set of parameter names that represent spatial positions/phases.
+        """
+        if ic_type in list_initial_conditions():
+            return get_ic_position_params(ic_type)
+        return set()
 
     def resolve_ic_params(
         self,

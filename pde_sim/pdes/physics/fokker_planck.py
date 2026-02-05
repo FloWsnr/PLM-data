@@ -256,6 +256,11 @@ class FokkerPlanckPDE(ScalarPDEPreset):
 
         return create_initial_condition(grid, ic_type, ic_params)
 
+    def get_position_params(self, ic_type: str) -> set[str]:
+        if ic_type in ("fokker-planck-default", "default"):
+            return {"init_x_offset", "init_y_offset"}
+        return super().get_position_params(ic_type)
+
     def resolve_ic_params(
         self,
         grid: CartesianGrid,

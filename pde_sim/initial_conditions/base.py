@@ -26,6 +26,11 @@ class InitialConditionGenerator(ABC):
         pass
 
     @classmethod
+    def get_position_params(cls) -> set[str]:
+        """Return names of parameters that represent spatial positions/phases."""
+        return set()
+
+    @classmethod
     def resolve_random_params(
         cls,
         grid: CartesianGrid,

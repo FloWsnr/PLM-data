@@ -65,6 +65,11 @@ def main():
         help="Keep intermediate py-pde storage file when using --storage=file",
     )
     run_parser.add_argument(
+        "--randomize-positions",
+        action="store_true",
+        help="Replace explicit IC position values with random, so the same config produces diverse spatial layouts",
+    )
+    run_parser.add_argument(
         "--log-file",
         type=Path,
         help="Path to log file. If provided, all output is logged to this file.",
@@ -171,6 +176,11 @@ def main():
         action="store_true",
         help="Overwrite the last numbered output folder instead of creating a new one",
     )
+    batch_parser.add_argument(
+        "--randomize-positions",
+        action="store_true",
+        help="Replace explicit IC position values with random, so configs produce diverse spatial layouts",
+    )
 
     args = parser.parse_args()
 
@@ -214,6 +224,7 @@ def run_simulation(args):
             storage=args.storage,
             keep_storage=True if args.keep_storage else None,
             unique_suffix=True if args.unique_suffix else None,
+            randomize_positions=args.randomize_positions,
         )
 
         if not args.quiet:
@@ -322,6 +333,7 @@ def run_batch_command(args) -> None:
         keep_storage=True if args.keep_storage else None,
         unique_suffix=(not args.no_unique_suffix),
         overwrite=args.overwrite,
+        randomize_positions=args.randomize_positions,
     )
 
     sys.exit(1 if failed > 0 else 0)

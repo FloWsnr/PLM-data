@@ -201,6 +201,13 @@ class SimulationRunner:
         ic_params = config.init.params.copy()
         if config.seed is not None and "seed" not in ic_params:
             ic_params["seed"] = config.seed
+        # Replace explicit position values with "random" so resolve_ic_params
+        # will re-randomize them using the current seed.
+        if config.randomize_positions:
+            pos_params = self.preset.get_position_params(config.init.type)
+            for name in pos_params:
+                if name in ic_params:
+                    ic_params[name] = "random"
         ic_params = self.preset.resolve_ic_params(
             grid=self.grid,
             ic_type=config.init.type,
@@ -489,6 +496,7 @@ def run_from_config(
     storage: str | None = None,
     keep_storage: bool | None = None,
     unique_suffix: bool | None = None,
+    randomize_positions: bool = False,
 ) -> dict[str, Any]:
     """Run a simulation from a config file.
 
@@ -501,6 +509,7 @@ def run_from_config(
         storage: Override for output.storage ("memory" or "file").
         keep_storage: Override for output.keep_storage.
         unique_suffix: Override for output.unique_suffix.
+        randomize_positions: If True, replace IC position values with "random".
 
     Returns:
         Simulation metadata dictionary.
@@ -520,6 +529,8 @@ def run_from_config(
         config.output.keep_storage = keep_storage
     if unique_suffix is not None:
         config.output.unique_suffix = unique_suffix
+    if randomize_positions:
+        config.randomize_positions = True
 
     runner = SimulationRunner(
         config,

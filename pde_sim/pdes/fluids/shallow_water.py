@@ -248,6 +248,17 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
 
         return FieldCollection([h, u, v])
 
+    def get_position_params(self, ic_type: str) -> set[str]:
+        if ic_type in ("shallow-water-default", "drop", "gaussian-blob"):
+            return {"x0", "y0"}
+        if ic_type == "dam-break":
+            return {"dam_position"}
+        if ic_type == "ripple":
+            return {"x1", "y1", "x2", "y2"}
+        if ic_type == "geostrophic-vortex":
+            return {"x0", "y0"}
+        return super().get_position_params(ic_type)
+
     def resolve_ic_params(
         self,
         grid: CartesianGrid,

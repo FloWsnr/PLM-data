@@ -99,6 +99,11 @@ class StepFunction(InitialConditionGenerator):
         return ScalarField(grid, data.astype(float))
 
     @classmethod
+    def get_position_params(cls) -> set[str]:
+        """Return names of parameters that represent spatial positions."""
+        return {"position"}
+
+    @classmethod
     def resolve_random_params(
         cls,
         grid: CartesianGrid,
@@ -267,6 +272,11 @@ class DoubleStep(InitialConditionGenerator):
             data = np.where(inside, value_inside, value_outside)
 
         return ScalarField(grid, data.astype(float))
+
+    @classmethod
+    def get_position_params(cls) -> set[str]:
+        """Return names of parameters that represent spatial positions."""
+        return {"position1", "position2"}
 
     @classmethod
     def resolve_random_params(

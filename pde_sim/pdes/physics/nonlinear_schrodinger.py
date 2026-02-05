@@ -193,6 +193,13 @@ class NonlinearSchrodingerPDE(MultiFieldPDEPreset):
         # For other IC types
         return super().create_initial_state(grid, ic_type, ic_params)
 
+    def get_position_params(self, ic_type: str) -> set[str]:
+        if ic_type in ("nonlinear-schrodinger-default", "default", "soliton"):
+            return {"x0_frac"}
+        if ic_type == "two_soliton":
+            return {"x1_frac", "x2_frac"}
+        return super().get_position_params(ic_type)
+
     def resolve_ic_params(
         self,
         grid: CartesianGrid,

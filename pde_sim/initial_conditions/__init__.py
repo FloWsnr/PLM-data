@@ -124,6 +124,25 @@ def resolve_initial_condition_params(
     return resolved
 
 
+def get_ic_position_params(ic_type: str) -> set[str]:
+    """Return position parameter names for an initial condition type.
+
+    Args:
+        ic_type: Type of initial condition.
+
+    Returns:
+        Set of parameter names that represent spatial positions/phases.
+
+    Raises:
+        ValueError: If ic_type is not recognized.
+    """
+    if ic_type not in _IC_REGISTRY:
+        available = ", ".join(sorted(_IC_REGISTRY.keys()))
+        raise ValueError(f"Unknown IC type: {ic_type}. Available: {available}")
+
+    return _IC_REGISTRY[ic_type].get_position_params()
+
+
 def list_initial_conditions() -> list[str]:
     """List all available initial condition types.
 
@@ -164,6 +183,7 @@ __all__ = [
     "create_initial_condition",
     "resolve_random_params",
     "resolve_initial_condition_params",
+    "get_ic_position_params",
     "list_initial_conditions",
     "register_initial_condition",
 ]

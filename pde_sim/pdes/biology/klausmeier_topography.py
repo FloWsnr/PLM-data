@@ -216,6 +216,11 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
 
         return FieldCollection([n, w, T])
 
+    def get_position_params(self, ic_type: str) -> set[str]:
+        if ic_type == "gaussian_blobs":
+            return {"blob_positions"}
+        return super().get_position_params(ic_type)
+
     def resolve_ic_params(
         self,
         grid: CartesianGrid,

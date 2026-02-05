@@ -277,6 +277,19 @@ class SineGordonPDE(MultiFieldPDEPreset):
 
         return FieldCollection([phi_field, psi_field])
 
+    def get_position_params(self, ic_type: str) -> set[str]:
+        if ic_type in ("default", "kink"):
+            return {"x0"}
+        if ic_type == "antikink":
+            return {"x0"}
+        if ic_type == "kink-antikink":
+            return {"x0_kink", "x0_antikink"}
+        if ic_type == "breather":
+            return {"x0"}
+        if ic_type == "ring":
+            return {"x_center", "y_center"}
+        return super().get_position_params(ic_type)
+
     def resolve_ic_params(
         self,
         grid: CartesianGrid,

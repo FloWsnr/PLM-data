@@ -256,6 +256,11 @@ class GrayScottPDE(MultiFieldPDEPreset):
 
         return FieldCollection([u, v])
 
+    def get_position_params(self, ic_type: str) -> set[str]:
+        if ic_type in ("gray-scott-default", "default"):
+            return {"cx", "cy"}
+        return super().get_position_params(ic_type)
+
     def resolve_ic_params(
         self,
         grid: CartesianGrid,

@@ -209,6 +209,13 @@ class PeronaMalikPDE(ScalarPDEPreset):
 
         return create_initial_condition(grid, ic_type, ic_params)
 
+    def get_position_params(self, ic_type: str) -> set[str]:
+        if ic_type in ("perona-malik-default", "default"):
+            return {"step1", "step2", "y_step"}
+        if ic_type == "text-image":
+            return {"phase_x", "phase_y"}
+        return super().get_position_params(ic_type)
+
     def resolve_ic_params(
         self,
         grid: CartesianGrid,

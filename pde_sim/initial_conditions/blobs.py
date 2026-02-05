@@ -123,6 +123,11 @@ class GaussianBlob(InitialConditionGenerator):
         return ScalarField(grid, data)
 
     @classmethod
+    def get_position_params(cls) -> set[str]:
+        """Return names of parameters that represent spatial positions."""
+        return {"positions"}
+
+    @classmethod
     def resolve_random_params(
         cls,
         grid: CartesianGrid,

@@ -222,6 +222,13 @@ class NavierStokesPDE(MultiFieldPDEPreset):
 
         return FieldCollection([u, v, p, S])
 
+    def get_position_params(self, ic_type: str) -> set[str]:
+        if ic_type in ("navier-stokes-default", "default", "shear-layer"):
+            return {"shear_y"}
+        if ic_type == "vortex-pair":
+            return {"x1", "y1", "x2", "y2"}
+        return super().get_position_params(ic_type)
+
     def resolve_ic_params(
         self,
         grid: CartesianGrid,

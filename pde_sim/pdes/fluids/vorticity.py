@@ -233,6 +233,13 @@ class VorticityPDE(MultiFieldPDEPreset):
 
         return FieldCollection([omega, psi, S])
 
+    def get_position_params(self, ic_type: str) -> set[str]:
+        if ic_type in ("vorticity-default", "vortex-pair"):
+            return {"x1", "y1", "x2", "y2"}
+        if ic_type == "single-vortex":
+            return {"x0", "y0"}
+        return super().get_position_params(ic_type)
+
     def resolve_ic_params(
         self,
         grid: CartesianGrid,

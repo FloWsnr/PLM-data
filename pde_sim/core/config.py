@@ -140,6 +140,7 @@ class SimulationConfig:
     backend: str = "auto"  # Options: "auto", "numpy", "numba"
     adaptive: bool = True  # Enable adaptive time-stepping
     tolerance: float = 1e-4  # Error tolerance for adaptive stepping
+    randomize_positions: bool = False  # Replace IC position values with "random"
 
     @property
     def ndim(self) -> int:

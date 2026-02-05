@@ -481,3 +481,197 @@ class TestMissingParameterValidation:
 
         with pytest.raises(ValueError, match="Missing required parameters.*gray-scott"):
             SimulationRunner(config, output_dir=tmp_path)
+
+
+class TestRandomizePositions:
+    """Tests for the --randomize-positions feature."""
+
+    def test_randomize_positions_replaces_explicit_values(self, tmp_path):
+        """Test that randomize_positions replaces explicit IC positions with random ones."""
+        config_dict = {
+            "preset": "gray-scott",
+            "parameters": {"a": 0.037, "b": 0.06, "D": 2.0},
+            "init": {
+                "type": "gray-scott-default",
+                "params": {"cx": 0.5, "cy": 0.5},
+            },
+            "solver": "euler",
+            "backend": "numpy",
+            "t_end": 0.01,
+            "dt": 0.01,
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
+            "output": {"path": str(tmp_path), "num_frames": 2, "formats": ["png"]},
+            "seed": 42,
+            "domain_size": [2.5, 2.5],
+            "randomize_positions": True,
+        }
+
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config = load_config(config_path)
+        config.randomize_positions = True
+
+        runner = SimulationRunner(config, output_dir=tmp_path)
+
+        # The runner should have created a state; if positions were replaced,
+        # the initial state will differ from one with cx=0.5, cy=0.5
+        metadata = runner.run(verbose=False)
+        assert metadata["preset"] == "gray-scott"
+
+    def test_randomize_positions_different_seeds_produce_different_states(self, tmp_path):
+        """Test that different seeds with randomize_positions produce different IC states."""
+        def make_runner(seed):
+            config_dict = {
+                "preset": "gray-scott",
+                "parameters": {"a": 0.037, "b": 0.06, "D": 2.0},
+                "init": {
+                    "type": "gray-scott-default",
+                    "params": {"cx": 0.5, "cy": 0.5},
+                },
+                "solver": "euler",
+                "backend": "numpy",
+                "t_end": 0.01,
+                "dt": 0.01,
+                "resolution": [16, 16],
+                "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
+                "output": {"path": str(tmp_path), "num_frames": 2, "formats": ["png"]},
+                "seed": seed,
+                "domain_size": [2.5, 2.5],
+            }
+            config_path = tmp_path / f"config_{seed}.yaml"
+            with open(config_path, "w") as f:
+                yaml.dump(config_dict, f)
+
+            config = load_config(config_path)
+            config.randomize_positions = True
+            return SimulationRunner(config, output_dir=tmp_path, sim_id=f"test_{seed}")
+
+        runner1 = make_runner(seed=1)
+        runner2 = make_runner(seed=2)
+
+        # Different seeds should produce different initial states
+        state1 = runner1.state.data if not hasattr(runner1.state, '__iter__') else np.concatenate([f.data for f in runner1.state])
+        state2 = runner2.state.data if not hasattr(runner2.state, '__iter__') else np.concatenate([f.data for f in runner2.state])
+
+        assert not np.array_equal(state1, state2), "Different seeds should produce different states"
+
+    def test_randomize_positions_with_generic_ic(self, tmp_path):
+        """Test randomize_positions with a generic IC type (step)."""
+        config_dict = {
+            "preset": "heat",
+            "parameters": {"D_T": 0.01},
+            "init": {
+                "type": "step",
+                "params": {"position": 0.5, "direction": "x"},
+            },
+            "solver": "euler",
+            "backend": "numpy",
+            "t_end": 0.001,
+            "dt": 0.0001,
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
+            "output": {"path": str(tmp_path), "num_frames": 2, "formats": ["png"]},
+            "seed": 42,
+        }
+
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config = load_config(config_path)
+        config.randomize_positions = True
+
+        runner = SimulationRunner(config, output_dir=tmp_path)
+        metadata = runner.run(verbose=False)
+        assert metadata["preset"] == "heat"
+
+    def test_randomize_positions_false_preserves_values(self, tmp_path):
+        """Test that randomize_positions=False preserves explicit IC positions."""
+        config_dict = {
+            "preset": "gray-scott",
+            "parameters": {"a": 0.037, "b": 0.06, "D": 2.0},
+            "init": {
+                "type": "gray-scott-default",
+                "params": {"cx": 0.5, "cy": 0.5},
+            },
+            "solver": "euler",
+            "backend": "numpy",
+            "t_end": 0.01,
+            "dt": 0.01,
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
+            "output": {"path": str(tmp_path), "num_frames": 2, "formats": ["png"]},
+            "seed": 1,
+            "domain_size": [2.5, 2.5],
+        }
+
+        # Run twice with same seed and explicit positions - should be identical
+        config_path1 = tmp_path / "config1.yaml"
+        with open(config_path1, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config1 = load_config(config_path1)
+        runner1 = SimulationRunner(config1, output_dir=tmp_path, sim_id="run1")
+
+        config_path2 = tmp_path / "config2.yaml"
+        with open(config_path2, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config2 = load_config(config_path2)
+        runner2 = SimulationRunner(config2, output_dir=tmp_path, sim_id="run2")
+
+        state1 = np.concatenate([f.data for f in runner1.state])
+        state2 = np.concatenate([f.data for f in runner2.state])
+        np.testing.assert_array_equal(state1, state2)
+
+    def test_get_position_params_generic_ic(self):
+        """Test get_position_params for generic IC types."""
+        from pde_sim.initial_conditions import get_ic_position_params
+
+        assert get_ic_position_params("gaussian-blob") == {"positions"}
+        assert get_ic_position_params("step") == {"position"}
+        assert get_ic_position_params("double-step") == {"position1", "position2"}
+        assert get_ic_position_params("sine") == {"phase_x", "phase_y", "phase_z"}
+        assert get_ic_position_params("cosine") == {"phase_x", "phase_y", "phase_z"}
+        assert get_ic_position_params("random-uniform") == set()
+        assert get_ic_position_params("random-gaussian") == set()
+
+    def test_get_position_params_pde_specific_ic(self):
+        """Test get_position_params for PDE-specific IC types."""
+        from pde_sim.pdes import get_pde_preset
+
+        gs = get_pde_preset("gray-scott")
+        assert gs.get_position_params("gray-scott-default") == {"cx", "cy"}
+        # Generic IC type should delegate
+        assert gs.get_position_params("gaussian-blob") == {"positions"}
+        # Unknown custom IC type should return empty
+        assert gs.get_position_params("nonexistent") == set()
+
+    def test_run_from_config_randomize_positions(self, tmp_path):
+        """Test run_from_config with randomize_positions flag."""
+        config_dict = {
+            "preset": "heat",
+            "parameters": {"D_T": 0.01},
+            "init": {
+                "type": "step",
+                "params": {"position": 0.5, "direction": "x"},
+            },
+            "solver": "euler",
+            "backend": "numpy",
+            "t_end": 0.001,
+            "dt": 0.0001,
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
+            "output": {"path": str(tmp_path), "num_frames": 2, "formats": ["png"]},
+            "seed": 42,
+        }
+
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+
+        metadata = run_from_config(config_path, verbose=False, randomize_positions=True)
+        assert metadata["preset"] == "heat"

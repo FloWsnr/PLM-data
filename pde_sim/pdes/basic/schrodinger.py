@@ -284,6 +284,11 @@ class SchrodingerPDE(MultiFieldPDEPreset):
         # Fall back to parent implementation for standard IC types
         return super().create_initial_state(grid, ic_type, ic_params)
 
+    def get_position_params(self, ic_type: str) -> set[str]:
+        if ic_type == "wave-packet":
+            return {"x0", "y0"}
+        return super().get_position_params(ic_type)
+
     def resolve_ic_params(
         self,
         grid: CartesianGrid,
