@@ -286,6 +286,24 @@ class SimulationRunner:
         for field_name, _ in self.output_manager.field_configs:
             self.output_manager.compute_range_for_field(all_fields, field_name)
 
+        # Check for stagnant/boring trajectories
+        from .diagnostics import check_trajectory_stagnation
+
+        stagnation = check_trajectory_stagnation(
+            all_fields=all_fields,
+            field_names=[name for name, _ in self.output_manager.field_configs],
+            extract_field_fn=self.output_manager._extract_field_data,
+        )
+
+        if verbose and stagnation["stagnant_fields"]:
+            for field_name in stagnation["stagnant_fields"]:
+                info = stagnation["fields"][field_name]
+                if info["field_range"] == 0:
+                    print(f"  WARNING: Field '{field_name}' is completely constant")
+                else:
+                    print(f"  WARNING: Field '{field_name}' appears stagnant from frame {info['stagnant_from_frame']} "
+                          f"({info['trailing_stagnant_frames']} frames with no significant change)")
+
         # 2. Save frames with the pre-computed range
         for frame_index, (t, field) in enumerate(storage.items()):
             self.output_manager.save_all_fields(field, frame_index, t)
@@ -303,6 +321,9 @@ class SimulationRunner:
             solver_diagnostics=solver_diagnostics,
             wall_clock_duration=wall_clock_duration,
         )
+
+        # Add stagnation diagnostics to metadata
+        metadata["diagnostics"] = {"stagnation": stagnation}
 
         self.output_manager.save_metadata(metadata)
 
