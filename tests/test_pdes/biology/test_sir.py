@@ -2,9 +2,9 @@
 
 import numpy as np
 import pytest
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -15,10 +15,6 @@ from tests.test_pdes.dimension_test_helpers import (
 
 class TestSIRPDE:
     """Tests for SIR epidemic model."""
-
-    def test_registered(self):
-        """Test that SIR is registered."""
-        assert "sir" in list_presets()
 
     def test_metadata(self):
         """Test metadata."""
@@ -31,17 +27,6 @@ class TestSIRPDE:
         assert "S" in meta.field_names
         assert "I" in meta.field_names
         assert "R" in meta.field_names
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
-        preset = get_pde_preset("sir")
-        pde = preset.create_pde(
-            {"beta": 0.5, "gamma": 0.1, "D_S": 0.1, "D_I": 0.1, "D_R": 0.1},
-            {"x": "periodic", "y": "periodic"},
-            grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1, 2, 3])
     def test_short_simulation(self, ndim: int):

@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 
-from pde import CartesianGrid, ScalarField
+from pde import ScalarField
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -17,10 +17,6 @@ from tests.test_pdes.dimension_test_helpers import (
 class TestSwiftHohenbergPDE:
     """Tests for Swift-Hohenberg pattern formation."""
 
-    def test_registered(self):
-        """Test that swift-hohenberg is registered."""
-        assert "swift-hohenberg" in list_presets()
-
     def test_metadata(self):
         """Test metadata."""
         preset = get_pde_preset("swift-hohenberg")
@@ -30,17 +26,6 @@ class TestSwiftHohenbergPDE:
         assert meta.category == "physics"
         assert meta.num_fields == 1
         assert "u" in meta.field_names
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
-        preset = get_pde_preset("swift-hohenberg")
-        pde = preset.create_pde(
-            {"r": 0.5, "g1": 0.5, "g2": 0.0, "D": 1.0, "k0": 1.0},
-            {"x": "periodic", "y": "periodic"},
-            grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1, 2, 3])
     def test_short_simulation(self, ndim: int):

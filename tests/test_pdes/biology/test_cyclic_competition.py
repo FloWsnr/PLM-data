@@ -2,9 +2,9 @@
 
 import numpy as np
 import pytest
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from pde_sim.initial_conditions import create_initial_condition
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
@@ -31,10 +31,6 @@ def _create_multifield_initial_state(grid, preset, ic_params):
 class TestCyclicCompetitionPDE:
     """Tests for cyclic competition (rock-paper-scissors) model."""
 
-    def test_registered(self):
-        """Test that cyclic-competition is registered."""
-        assert "cyclic-competition" in list_presets()
-
     def test_metadata(self):
         """Test metadata."""
         preset = get_pde_preset("cyclic-competition")
@@ -44,17 +40,6 @@ class TestCyclicCompetitionPDE:
         assert meta.category == "biology"
         assert meta.num_fields == 3
         assert set(meta.field_names) == {"u", "v", "w"}
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
-        preset = get_pde_preset("cyclic-competition")
-        pde = preset.create_pde(
-            {"a": 0.8, "b": 1.9, "Du": 2.0, "Dv": 0.5, "Dw": 0.5},
-            {"x": "periodic", "y": "periodic"},
-            grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1, 2, 3])
     def test_short_simulation(self, ndim: int):

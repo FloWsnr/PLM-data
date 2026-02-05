@@ -2,9 +2,9 @@
 
 import numpy as np
 import pytest
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -15,10 +15,6 @@ from tests.test_pdes.dimension_test_helpers import (
 
 class TestImmunotherapyPDE:
     """Tests for tumor-immune interaction model."""
-
-    def test_registered(self):
-        """Test that immunotherapy is registered."""
-        assert "immunotherapy" in list_presets()
 
     def test_metadata(self):
         """Test metadata."""
@@ -31,31 +27,6 @@ class TestImmunotherapyPDE:
         assert "u" in meta.field_names
         assert "v" in meta.field_names
         assert "w" in meta.field_names
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
-        preset = get_pde_preset("immunotherapy")
-        pde = preset.create_pde(
-            {
-                "Du": 0.5,
-                "Dv": 0.008,
-                "Dw": 4.0,
-                "c": 0.3,
-                "mu": 0.167,
-                "p_u": 0.69167,
-                "g_v": 0.1,
-                "p_v": 1.0,
-                "p_w": 27.778,
-                "g_w": 0.001,
-                "nu": 55.55556,
-                "s_u": 0.0,
-                "s_w": 10.0,
-            },
-            {"x": "periodic", "y": "periodic"},
-            grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1, 2, 3])
     def test_short_simulation(self, ndim: int):

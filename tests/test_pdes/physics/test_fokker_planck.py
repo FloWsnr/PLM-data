@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 
-from pde import CartesianGrid, ScalarField
+from pde import ScalarField
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -17,10 +17,6 @@ from tests.test_pdes.dimension_test_helpers import (
 class TestFokkerPlanckPDE:
     """Tests for Fokker-Planck PDE."""
 
-    def test_registered(self):
-        """Test that fokker-planck is registered."""
-        assert "fokker-planck" in list_presets()
-
     def test_metadata(self):
         """Test metadata."""
         preset = get_pde_preset("fokker-planck")
@@ -30,17 +26,6 @@ class TestFokkerPlanckPDE:
         assert meta.category == "physics"
         assert meta.num_fields == 1
         assert "p" in meta.field_names
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=False)
-        preset = get_pde_preset("fokker-planck")
-        pde = preset.create_pde(
-            {"gamma": 1.0, "D": 1.0, "k": 1.0, "T": 1.0},
-            {"x-": "neumann:0", "x+": "neumann:0", "y-": "neumann:0", "y+": "neumann:0"},
-            grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [2])
     def test_short_simulation(self, ndim: int):

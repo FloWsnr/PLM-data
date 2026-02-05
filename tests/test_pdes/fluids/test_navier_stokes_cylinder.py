@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -16,10 +16,6 @@ from tests.test_pdes.dimension_test_helpers import (
 
 class TestNavierStokesCylinderPDE:
     """Tests for Navier-Stokes cylinder flow equations."""
-
-    def test_registered(self):
-        """Test that navier-stokes-cylinder is registered."""
-        assert "navier-stokes-cylinder" in list_presets()
 
     def test_metadata(self):
         """Test metadata."""
@@ -34,17 +30,6 @@ class TestNavierStokesCylinderPDE:
         assert "p" in meta.field_names
         assert "S" in meta.field_names
         assert meta.supported_dimensions == [2]
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
-        preset = get_pde_preset("navier-stokes-cylinder")
-        params = {"nu": 0.01, "M": 0.1, "U": 1.0, "cylinder_radius": 0.5}
-        bc = {"x": "periodic", "y": "periodic"}
-
-        pde = preset.create_pde(params, bc, grid)
-
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [2])
     def test_short_simulation(self, ndim: int):

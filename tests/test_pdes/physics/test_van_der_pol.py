@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -17,10 +17,6 @@ from tests.test_pdes.dimension_test_helpers import (
 class TestVanDerPolPDE:
     """Tests for Van der Pol Oscillator PDE."""
 
-    def test_registered(self):
-        """Test that van-der-pol is registered."""
-        assert "van-der-pol" in list_presets()
-
     def test_metadata(self):
         """Test metadata."""
         preset = get_pde_preset("van-der-pol")
@@ -31,17 +27,6 @@ class TestVanDerPolPDE:
         assert meta.num_fields == 2
         assert "X" in meta.field_names
         assert "Y" in meta.field_names
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
-        preset = get_pde_preset("van-der-pol")
-        pde = preset.create_pde(
-            {"epsilon": 1.0, "mu": 0.1, "D": 0.01},
-            {"x": "periodic", "y": "periodic"},
-            grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1, 2, 3])
     def test_short_simulation(self, ndim: int):

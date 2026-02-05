@@ -2,9 +2,9 @@
 
 import numpy as np
 import pytest
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -15,10 +15,6 @@ from tests.test_pdes.dimension_test_helpers import (
 
 class TestPlatePDE:
     """Tests for the plate vibration equation preset."""
-
-    def test_registered(self):
-        """Test that plate PDE is registered."""
-        assert "plate" in list_presets()
 
     def test_metadata(self):
         """Test that metadata is correctly defined."""
@@ -31,17 +27,6 @@ class TestPlatePDE:
         assert "u" in meta.field_names
         assert "v" in meta.field_names
         assert "w" in meta.field_names
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=False)
-        preset = get_pde_preset("plate")
-        pde = preset.create_pde(
-            parameters={"D": 1.0, "Q": 10.0, "C": 0.1, "D_c": 0.1},
-            bc={"x": "neumann", "y": "neumann"},
-            grid=grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1, 2])
     def test_short_simulation(self, ndim: int):

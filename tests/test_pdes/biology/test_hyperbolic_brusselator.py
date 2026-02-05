@@ -2,9 +2,9 @@
 
 import numpy as np
 import pytest
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -15,10 +15,6 @@ from tests.test_pdes.dimension_test_helpers import (
 
 class TestHyperbolicBrusselatorPDE:
     """Tests for Hyperbolic Brusselator PDE."""
-
-    def test_registered(self):
-        """Test that hyperbolic-brusselator is registered."""
-        assert "hyperbolic-brusselator" in list_presets()
 
     def test_metadata(self):
         """Test metadata."""
@@ -32,17 +28,6 @@ class TestHyperbolicBrusselatorPDE:
         assert "v" in meta.field_names
         assert "w" in meta.field_names
         assert "q" in meta.field_names
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
-        preset = get_pde_preset("hyperbolic-brusselator")
-        pde = preset.create_pde(
-            {"tau": 1.0, "Du": 2.0, "Dv": 1.0, "a": 5.0, "b": 9.0, "eps": 0.001},
-            {"x": "periodic", "y": "periodic"},
-            grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1, 2, 3])
     def test_short_simulation(self, ndim: int):

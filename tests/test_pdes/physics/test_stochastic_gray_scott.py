@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -17,10 +17,6 @@ from tests.test_pdes.dimension_test_helpers import (
 class TestStochasticGrayScottPDE:
     """Tests for Stochastic Gray-Scott PDE."""
 
-    def test_registered(self):
-        """Test that stochastic-gray-scott is registered."""
-        assert "stochastic-gray-scott" in list_presets()
-
     def test_metadata(self):
         """Test metadata."""
         preset = get_pde_preset("stochastic-gray-scott")
@@ -31,17 +27,6 @@ class TestStochasticGrayScottPDE:
         assert meta.num_fields == 2
         assert "u" in meta.field_names
         assert "v" in meta.field_names
-
-    def test_create_pde(self):
-        """Test creating the PDE object."""
-        grid = CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
-        preset = get_pde_preset("stochastic-gray-scott")
-        pde = preset.create_pde(
-            {"a": 0.037, "b": 0.06, "D": 2.0, "noise": 0.0},
-            {"x": "periodic", "y": "periodic"},
-            grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1, 2])
     def test_short_simulation(self, ndim: int):

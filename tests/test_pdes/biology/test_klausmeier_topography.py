@@ -2,9 +2,9 @@
 
 import numpy as np
 import pytest
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -15,10 +15,6 @@ from tests.test_pdes.dimension_test_helpers import (
 
 class TestKlausmeierTopographyPDE:
     """Tests for Klausmeier on topography PDE."""
-
-    def test_registered(self):
-        """Test that klausmeier-topography is registered."""
-        assert "klausmeier-topography" in list_presets()
 
     def test_metadata(self):
         """Test metadata."""
@@ -31,17 +27,6 @@ class TestKlausmeierTopographyPDE:
         assert "n" in meta.field_names
         assert "w" in meta.field_names
         assert "T" in meta.field_names
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
-        preset = get_pde_preset("klausmeier-topography")
-        pde = preset.create_pde(
-            {"a": 2.0, "m": 0.54, "V": 100.0, "Dn": 1.0, "Dw": 2.0},
-            {"x": "periodic", "y": "periodic"},
-            grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1, 2, 3])
     def test_short_simulation(self, ndim: int):

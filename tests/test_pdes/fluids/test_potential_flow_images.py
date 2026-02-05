@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -16,10 +16,6 @@ from tests.test_pdes.dimension_test_helpers import (
 
 class TestPotentialFlowImagesPDE:
     """Tests for Potential Flow Images PDE."""
-
-    def test_registered(self):
-        """Test that PDE is registered."""
-        assert "potential-flow-images" in list_presets()
 
     def test_metadata(self):
         """Test that metadata is correctly defined."""
@@ -32,17 +28,6 @@ class TestPotentialFlowImagesPDE:
         assert "phi" in meta.field_names
         assert "s" in meta.field_names
         assert meta.supported_dimensions == [2]
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=False)
-        preset = get_pde_preset("potential-flow-images")
-        params = {"strength": 1.0, "wall_x": 0.5, "sigma": 0.5, "omega": 0.5, "amplitude": 0.5}
-        bc = {"x": "neumann", "y": "neumann"}
-
-        pde = preset.create_pde(params, bc, grid)
-
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [2])
     def test_short_simulation(self, ndim: int):

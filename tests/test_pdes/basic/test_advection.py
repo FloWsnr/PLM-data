@@ -2,9 +2,9 @@
 
 import numpy as np
 import pytest
-from pde import CartesianGrid, ScalarField
+from pde import ScalarField
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -16,10 +16,6 @@ from tests.test_pdes.dimension_test_helpers import (
 class TestAdvectionPDE:
     """Tests for the uniform flow advection-diffusion equation preset."""
 
-    def test_registered(self):
-        """Test that advection PDE is registered."""
-        assert "advection" in list_presets()
-
     def test_metadata(self):
         """Test that metadata is correctly defined."""
         preset = get_pde_preset("advection")
@@ -29,17 +25,6 @@ class TestAdvectionPDE:
         assert meta.category == "basic"
         assert meta.num_fields == 1
         assert "u" in meta.field_names
-
-    def test_create_pde(self):
-        """Test PDE creation with velocity components."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
-        preset = get_pde_preset("advection")
-        pde = preset.create_pde(
-            parameters={"D": 1.0, "vx": 5.0, "vy": 2.0},
-            bc={"x": "periodic", "y": "periodic"},
-            grid=grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [2])
     def test_short_simulation(self, ndim: int):

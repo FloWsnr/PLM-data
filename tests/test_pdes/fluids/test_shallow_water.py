@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -17,10 +17,6 @@ from tests.test_pdes.dimension_test_helpers import (
 class TestShallowWaterPDE:
     """Tests for the Shallow Water PDE."""
 
-    def test_registered(self):
-        """Test that PDE is registered."""
-        assert "shallow-water" in list_presets()
-
     def test_metadata(self):
         """Test that metadata is correctly defined."""
         preset = get_pde_preset("shallow-water")
@@ -31,17 +27,6 @@ class TestShallowWaterPDE:
         assert meta.num_fields == 3
         assert meta.field_names == ["h", "u", "v"]
         assert meta.supported_dimensions == [2]
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
-        preset = get_pde_preset("shallow-water")
-        params = {"H_e": 1.0, "g": 9.81, "f": 0.0001, "k": 0.01, "nu": 0.001, "epsilon": 0.1}
-        bc = {"x": "periodic", "y": "periodic"}
-
-        pde = preset.create_pde(params, bc, grid)
-
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [2])
     def test_short_simulation(self, ndim: int):

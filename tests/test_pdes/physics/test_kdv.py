@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 
-from pde import CartesianGrid, ScalarField
+from pde import ScalarField
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -17,10 +17,6 @@ from tests.test_pdes.dimension_test_helpers import (
 class TestKdVPDE:
     """Tests for Korteweg-de Vries equation."""
 
-    def test_registered(self):
-        """Test that kdv is registered."""
-        assert "kdv" in list_presets()
-
     def test_metadata(self):
         """Test metadata."""
         preset = get_pde_preset("kdv")
@@ -30,17 +26,6 @@ class TestKdVPDE:
         assert meta.category == "physics"
         assert meta.num_fields == 1
         assert "u" in meta.field_names
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 10]], [64], periodic=True)
-        preset = get_pde_preset("kdv")
-        pde = preset.create_pde(
-            {"b": 0.0001},
-            {"x-": "periodic", "x+": "periodic"},
-            grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1])
     def test_short_simulation(self, ndim: int):

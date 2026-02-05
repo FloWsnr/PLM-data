@@ -2,9 +2,9 @@
 
 import numpy as np
 import pytest
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -16,10 +16,6 @@ from tests.test_pdes.dimension_test_helpers import (
 class TestFitzHughNagumoPDE:
     """Tests for FitzHugh-Nagumo PDE."""
 
-    def test_registered(self):
-        """Test that fitzhugh-nagumo is registered."""
-        assert "fitzhugh-nagumo" in list_presets()
-
     def test_metadata(self):
         """Test metadata."""
         preset = get_pde_preset("fitzhugh-nagumo")
@@ -30,17 +26,6 @@ class TestFitzHughNagumoPDE:
         assert meta.num_fields == 2
         assert "u" in meta.field_names
         assert "v" in meta.field_names
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
-        preset = get_pde_preset("fitzhugh-nagumo")
-        pde = preset.create_pde(
-            {"Dv": 20.0, "e_v": 0.5, "a_v": 1.0, "a_z": -0.1},
-            {"x": "periodic", "y": "periodic"},
-            grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1, 2, 3])
     def test_short_simulation(self, ndim: int):

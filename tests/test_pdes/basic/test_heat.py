@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from pde import CartesianGrid, ScalarField
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -15,10 +15,6 @@ from tests.test_pdes.dimension_test_helpers import (
 
 class TestHeatPDE:
     """Tests for the Heat equation preset."""
-
-    def test_registered(self):
-        """Test that heat PDE is registered."""
-        assert "heat" in list_presets()
 
     def test_metadata(self):
         """Test that metadata is correctly defined."""
@@ -31,17 +27,6 @@ class TestHeatPDE:
         assert "T" in meta.field_names
         assert len(meta.parameters) == 1
         assert meta.parameters[0].name == "D_T"
-
-    def test_create_pde(self):
-        """Test creating the PDE object."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
-        preset = get_pde_preset("heat")
-        pde = preset.create_pde(
-            parameters={"D_T": 1.0},
-            bc={"x": "periodic", "y": "periodic"},
-            grid=grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1, 2, 3])
     def test_short_simulation(self, ndim: int):
@@ -69,10 +54,6 @@ class TestHeatPDE:
 class TestInhomogeneousHeatPDE:
     """Tests for the Inhomogeneous Heat equation preset."""
 
-    def test_registered(self):
-        """Test that inhomogeneous-heat PDE is registered."""
-        assert "inhomogeneous-heat" in list_presets()
-
     def test_metadata(self):
         """Test that metadata is correctly defined."""
         preset = get_pde_preset("inhomogeneous-heat")
@@ -82,17 +63,6 @@ class TestInhomogeneousHeatPDE:
         assert meta.category == "basic"
         assert meta.num_fields == 1
         assert len(meta.parameters) == 3  # D, n, m
-
-    def test_create_pde(self):
-        """Test creating PDE with spatial source term."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=False)
-        preset = get_pde_preset("inhomogeneous-heat")
-        pde = preset.create_pde(
-            parameters={"D": 0.1, "n": 2, "m": 2},
-            bc={"x": "neumann", "y": "neumann"},
-            grid=grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [2])
     def test_short_simulation(self, ndim: int):
@@ -126,10 +96,6 @@ class TestInhomogeneousHeatPDE:
 
 class TestInhomogeneousDiffusionHeatPDE:
     """Tests for the Inhomogeneous Diffusion Heat equation preset."""
-
-    def test_registered(self):
-        """Test that inhomogeneous-diffusion-heat PDE is registered."""
-        assert "inhomogeneous-diffusion-heat" in list_presets()
 
     def test_metadata(self):
         """Test that metadata is correctly defined."""
@@ -189,10 +155,6 @@ class TestInhomogeneousDiffusionHeatPDE:
 
 class TestBlobDiffusionHeatPDE:
     """Tests for the blob diffusion heat equation preset."""
-
-    def test_registered(self):
-        """Test that blob-diffusion-heat is registered."""
-        assert "blob-diffusion-heat" in list_presets()
 
     def test_metadata(self):
         """Test that metadata is correctly defined."""

@@ -170,59 +170,8 @@ class TestNumpyHandler:
         assert metadata["shape"] == [3, 16, 16, 2]
         assert metadata["fieldOrder"] == ["u", "v"]
 
-    def test_field_order(self, tmp_output):
-        """Test field order matches metadata."""
-        handler = NumpyHandler()
-        handler.initialize(
-            tmp_output,
-            field_configs=[("X", "viridis"), ("Y", "plasma")],
-            dpi=64,
-            figsize=(4, 4),
-        )
-
-        handler.save_frame(np.ones((8, 8)), "X", 0, 0.0, 0.0, 1.0, "viridis")
-        handler.save_frame(np.ones((8, 8)), "Y", 0, 0.0, 0.0, 1.0, "plasma")
-
-        metadata = handler.finalize()
-
-        assert metadata["fieldOrder"] == ["X", "Y"]
-
-
 class TestMP4Handler:
     """Tests for MP4Handler."""
-
-    def test_initialization(self, tmp_output):
-        """Test MP4 handler initializes correctly."""
-        handler = MP4Handler(fps=24)
-        handler.initialize(
-            tmp_output,
-            field_configs=[("u", "viridis"), ("v", "plasma")],
-            dpi=64,
-            figsize=(4, 4),
-        )
-
-        assert handler.fps == 24
-        assert handler.output_dir == tmp_output
-        assert "u" in handler._writers
-        assert "v" in handler._writers
-
-    def test_frame_buffering(self, tmp_output):
-        """Test frames can be written without buffering in memory."""
-        handler = MP4Handler(fps=30)
-        handler.initialize(
-            tmp_output,
-            field_configs=[("u", "viridis")],
-            dpi=32,
-            figsize=(2, 2),
-        )
-
-        data = np.random.rand(16, 16)
-        for i in range(3):
-            handler.save_frame(data, "u", i, i * 0.1, 0.0, 1.0, "viridis")
-
-        metadata = handler.finalize()
-        assert (tmp_output / "u.mp4").exists()
-        assert metadata["format"] == "mp4"
 
     def test_creates_video_file(self, tmp_output):
         """Test finalize creates MP4 video files."""
@@ -271,39 +220,6 @@ class TestMP4Handler:
 
 class TestGIFHandler:
     """Tests for GIFHandler."""
-
-    def test_initialization(self, tmp_output):
-        """Test GIF handler initializes correctly."""
-        handler = GIFHandler(fps=15)
-        handler.initialize(
-            tmp_output,
-            field_configs=[("u", "viridis"), ("v", "plasma")],
-            dpi=64,
-            figsize=(4, 4),
-        )
-
-        assert handler.fps == 15
-        assert handler.output_dir == tmp_output
-        assert "u" in handler._writers
-        assert "v" in handler._writers
-
-    def test_frame_buffering(self, tmp_output):
-        """Test frames can be written without buffering in memory."""
-        handler = GIFHandler(fps=10)
-        handler.initialize(
-            tmp_output,
-            field_configs=[("u", "viridis")],
-            dpi=32,
-            figsize=(2, 2),
-        )
-
-        data = np.random.rand(16, 16)
-        for i in range(3):
-            handler.save_frame(data, "u", i, i * 0.1, 0.0, 1.0, "viridis")
-
-        metadata = handler.finalize()
-        assert (tmp_output / "u.gif").exists()
-        assert metadata["format"] == "gif"
 
     def test_creates_gif_file(self, tmp_output):
         """Test finalize creates GIF files."""
@@ -805,17 +721,6 @@ class TestCreateMetadata:
 
 class TestMultiFieldOutput:
     """Tests for multi-field output functionality."""
-
-    def test_initialization_with_field_configs(self, tmp_output):
-        """Test OutputManager initialization with field configs."""
-        manager = OutputManager(
-            base_path=tmp_output,
-            folder_name="test-multi_2024-01-15",
-            field_configs=[("u", "viridis"), ("v", "plasma")],
-        )
-
-        assert manager.field_configs == [("u", "viridis"), ("v", "plasma")]
-        assert manager.field_colormaps == {"u": "viridis", "v": "plasma"}
 
     def test_compute_range_per_field(self, tmp_output, small_grid):
         """Test computing range for each field separately."""

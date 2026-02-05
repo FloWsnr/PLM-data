@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 
-from pde import CartesianGrid, ScalarField
+from pde import ScalarField
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -17,10 +17,6 @@ from tests.test_pdes.dimension_test_helpers import (
 class TestInviscidBurgersPDE:
     """Tests for the inviscid Burgers equation preset."""
 
-    def test_registered(self):
-        """Test that inviscid-burgers is registered."""
-        assert "inviscid-burgers" in list_presets()
-
     def test_metadata(self):
         """Test that metadata is correctly defined."""
         preset = get_pde_preset("inviscid-burgers")
@@ -30,17 +26,6 @@ class TestInviscidBurgersPDE:
         assert meta.category == "physics"
         assert meta.num_fields == 1
         assert "u" in meta.field_names
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 1]], [32], periodic=True)
-        preset = get_pde_preset("inviscid-burgers")
-        pde = preset.create_pde(
-            {"c": 1.0},
-            {"x-": "periodic", "x+": "periodic"},
-            grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1, 2, 3])
     def test_short_simulation(self, ndim: int):

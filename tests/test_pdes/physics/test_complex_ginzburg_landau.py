@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -17,10 +17,6 @@ from tests.test_pdes.dimension_test_helpers import (
 class TestComplexGinzburgLandauPDE:
     """Tests for Complex Ginzburg-Landau PDE."""
 
-    def test_registered(self):
-        """Test that complex-ginzburg-landau is registered."""
-        assert "complex-ginzburg-landau" in list_presets()
-
     def test_metadata(self):
         """Test metadata."""
         preset = get_pde_preset("complex-ginzburg-landau")
@@ -31,17 +27,6 @@ class TestComplexGinzburgLandauPDE:
         assert meta.num_fields == 2
         assert "u" in meta.field_names
         assert "v" in meta.field_names
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 10], [0, 10]], [16, 16], periodic=True)
-        preset = get_pde_preset("complex-ginzburg-landau")
-        pde = preset.create_pde(
-            {"c1": 0.5, "c3": 0.5, "D": 1.0, "alpha": 0.0, "mu": 1.0, "omega": 0.0, "forcing_A": 0.0, "forcing_omega": 0.0},
-            {"x": "periodic", "y": "periodic"},
-            grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1, 2, 3])
     def test_short_simulation(self, ndim: int):

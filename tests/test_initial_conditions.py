@@ -479,43 +479,6 @@ class TestRectangleGrid:
             ic.generate(small_grid, nx=2, ny=2, values=[[1.0, 2.0, 3.0]])
 
 
-class TestStepFunctionRandomization:
-    """Tests for StepFunction seed and randomization."""
-
-    def test_explicit_position_still_works(self, small_grid):
-        """Test that providing explicit position works as before."""
-        ic = StepFunction()
-        field = ic.generate(small_grid, direction="x", position=0.5, value_low=0.0, value_high=1.0)
-        assert np.all(field.data[:16, :] == 0.0)
-        assert np.all(field.data[16:, :] == 1.0)
-
-    def test_seed_reproducibility(self, small_grid):
-        """Test that seed produces reproducible results when position is None."""
-        ic = StepFunction()
-        params1 = resolve_random_params(
-            small_grid, "step", {"position": "random", "seed": 42}
-        )
-        params2 = resolve_random_params(
-            small_grid, "step", {"position": "random", "seed": 42}
-        )
-        field1 = ic.generate(small_grid, **params1)
-        field2 = ic.generate(small_grid, **params2)
-        np.testing.assert_array_equal(field1.data, field2.data)
-
-    def test_different_seeds_differ(self, small_grid):
-        """Test that different seeds produce different results."""
-        ic = StepFunction()
-        params1 = resolve_random_params(
-            small_grid, "step", {"position": "random", "seed": 42}
-        )
-        params2 = resolve_random_params(
-            small_grid, "step", {"position": "random", "seed": 99}
-        )
-        field1 = ic.generate(small_grid, **params1)
-        field2 = ic.generate(small_grid, **params2)
-        assert not np.array_equal(field1.data, field2.data)
-
-
 class TestDoubleStep:
     """Tests for DoubleStep IC generator."""
 
@@ -546,85 +509,6 @@ class TestDoubleStep:
         unique_values = np.unique(field.data)
         assert len(unique_values) >= 2
 
-    def test_seed_reproducibility(self, small_grid):
-        """Test that seed produces reproducible results."""
-        ic = DoubleStep()
-        params1 = resolve_random_params(
-            small_grid,
-            "double-step",
-            {"position1": "random", "position2": "random", "seed": 42},
-        )
-        params2 = resolve_random_params(
-            small_grid,
-            "double-step",
-            {"position1": "random", "position2": "random", "seed": 42},
-        )
-        field1 = ic.generate(small_grid, **params1)
-        field2 = ic.generate(small_grid, **params2)
-        np.testing.assert_array_equal(field1.data, field2.data)
-
-    def test_different_seeds_differ(self, small_grid):
-        """Test that different seeds produce different results."""
-        ic = DoubleStep()
-        params1 = resolve_random_params(
-            small_grid,
-            "double-step",
-            {"position1": "random", "position2": "random", "seed": 42},
-        )
-        params2 = resolve_random_params(
-            small_grid,
-            "double-step",
-            {"position1": "random", "position2": "random", "seed": 99},
-        )
-        field1 = ic.generate(small_grid, **params1)
-        field2 = ic.generate(small_grid, **params2)
-        assert not np.array_equal(field1.data, field2.data)
-
-
-class TestSinePatternRandomization:
-    """Tests for SinePattern seed and phase randomization."""
-
-    def test_explicit_phases_still_work(self, small_grid):
-        """Test that providing explicit phases works as before."""
-        ic = SinePattern()
-        field = ic.generate(small_grid, kx=1, ky=1, phase_x=0.0, phase_y=0.0)
-        assert isinstance(field, ScalarField)
-        assert field.data.shape == (32, 32)
-
-    def test_seed_reproducibility(self, small_grid):
-        """Test that seed produces reproducible results when phases are None."""
-        ic = SinePattern()
-        params1 = resolve_random_params(
-            small_grid,
-            "sine",
-            {"phase_x": "random", "phase_y": "random", "seed": 42},
-        )
-        params2 = resolve_random_params(
-            small_grid,
-            "sine",
-            {"phase_x": "random", "phase_y": "random", "seed": 42},
-        )
-        field1 = ic.generate(small_grid, **params1)
-        field2 = ic.generate(small_grid, **params2)
-        np.testing.assert_array_equal(field1.data, field2.data)
-
-    def test_different_seeds_differ(self, small_grid):
-        """Test that different seeds produce different results."""
-        ic = SinePattern()
-        params1 = resolve_random_params(
-            small_grid,
-            "sine",
-            {"phase_x": "random", "phase_y": "random", "seed": 42},
-        )
-        params2 = resolve_random_params(
-            small_grid,
-            "sine",
-            {"phase_x": "random", "phase_y": "random", "seed": 99},
-        )
-        field1 = ic.generate(small_grid, **params1)
-        field2 = ic.generate(small_grid, **params2)
-        assert not np.array_equal(field1.data, field2.data)
-
 
 class TestCosinePattern:
     """Tests for CosinePattern IC generator."""
@@ -644,72 +528,44 @@ class TestCosinePattern:
         # With phase=0, cos starts at max → values should include amplitude
         assert np.max(field.data) > 0.5
 
-    def test_seed_reproducibility(self, small_grid):
-        """Test that seed produces reproducible results."""
-        ic = CosinePattern()
-        params1 = resolve_random_params(
-            small_grid,
-            "cosine",
-            {"phase_x": "random", "phase_y": "random", "seed": 42},
-        )
-        params2 = resolve_random_params(
-            small_grid,
-            "cosine",
-            {"phase_x": "random", "phase_y": "random", "seed": 42},
-        )
+
+class TestSeedReproducibility:
+    """Tests for seed reproducibility across all IC generators."""
+
+    SEED_TEST_CONFIGS = [
+        ("random-uniform", RandomUniform, {}, {}),
+        ("random-gaussian", RandomGaussian, {}, {}),
+        ("step", StepFunction, {"position": "random"}, {"position": "random"}),
+        ("double-step", DoubleStep, {"position1": "random", "position2": "random"}, {"position1": "random", "position2": "random"}),
+        ("sine", SinePattern, {"phase_x": "random", "phase_y": "random"}, {"phase_x": "random", "phase_y": "random"}),
+        ("cosine", CosinePattern, {"phase_x": "random", "phase_y": "random"}, {"phase_x": "random", "phase_y": "random"}),
+        ("gaussian-blob", GaussianBlob, {"num_blobs": 3, "positions": "random"}, {"num_blobs": 3, "positions": "random"}),
+    ]
+
+    @pytest.mark.parametrize(
+        "ic_name,ic_class,params_template,_",
+        SEED_TEST_CONFIGS,
+        ids=[c[0] for c in SEED_TEST_CONFIGS],
+    )
+    def test_same_seed_reproduces(self, small_grid, ic_name, ic_class, params_template, _):
+        """Test that same seed produces identical results."""
+        ic = ic_class()
+        params1 = resolve_random_params(small_grid, ic_name, {**params_template, "seed": 42})
+        params2 = resolve_random_params(small_grid, ic_name, {**params_template, "seed": 42})
         field1 = ic.generate(small_grid, **params1)
         field2 = ic.generate(small_grid, **params2)
         np.testing.assert_array_equal(field1.data, field2.data)
 
-    def test_different_seeds_differ(self, small_grid):
+    @pytest.mark.parametrize(
+        "ic_name,ic_class,params_template,_",
+        SEED_TEST_CONFIGS,
+        ids=[c[0] for c in SEED_TEST_CONFIGS],
+    )
+    def test_different_seeds_differ(self, small_grid, ic_name, ic_class, params_template, _):
         """Test that different seeds produce different results."""
-        ic = CosinePattern()
-        params1 = resolve_random_params(
-            small_grid,
-            "cosine",
-            {"phase_x": "random", "phase_y": "random", "seed": 42},
-        )
-        params2 = resolve_random_params(
-            small_grid,
-            "cosine",
-            {"phase_x": "random", "phase_y": "random", "seed": 99},
-        )
+        ic = ic_class()
+        params1 = resolve_random_params(small_grid, ic_name, {**params_template, "seed": 42})
+        params2 = resolve_random_params(small_grid, ic_name, {**params_template, "seed": 99})
         field1 = ic.generate(small_grid, **params1)
         field2 = ic.generate(small_grid, **params2)
-        assert not np.array_equal(field1.data, field2.data)
-
-
-class TestRandomUniformSeed:
-    """Tests for RandomUniform seed reproducibility."""
-
-    def test_seed_reproducibility(self, small_grid):
-        """Test that seed produces reproducible results."""
-        ic = RandomUniform()
-        field1 = ic.generate(small_grid, seed=42)
-        field2 = ic.generate(small_grid, seed=42)
-        np.testing.assert_array_equal(field1.data, field2.data)
-
-    def test_different_seeds_differ(self, small_grid):
-        """Test that different seeds produce different results."""
-        ic = RandomUniform()
-        field1 = ic.generate(small_grid, seed=42)
-        field2 = ic.generate(small_grid, seed=99)
-        assert not np.array_equal(field1.data, field2.data)
-
-
-class TestRandomGaussianSeed:
-    """Tests for RandomGaussian seed reproducibility."""
-
-    def test_seed_reproducibility(self, small_grid):
-        """Test that seed produces reproducible results."""
-        ic = RandomGaussian()
-        field1 = ic.generate(small_grid, seed=42)
-        field2 = ic.generate(small_grid, seed=42)
-        np.testing.assert_array_equal(field1.data, field2.data)
-
-    def test_different_seeds_differ(self, small_grid):
-        """Test that different seeds produce different results."""
-        ic = RandomGaussian()
-        field1 = ic.generate(small_grid, seed=42)
-        field2 = ic.generate(small_grid, seed=99)
         assert not np.array_equal(field1.data, field2.data)

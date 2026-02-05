@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -17,10 +17,6 @@ from tests.test_pdes.dimension_test_helpers import (
 class TestLorenzPDE:
     """Tests for diffusively coupled Lorenz system."""
 
-    def test_registered(self):
-        """Test that lorenz is registered."""
-        assert "lorenz" in list_presets()
-
     def test_metadata(self):
         """Test metadata."""
         preset = get_pde_preset("lorenz")
@@ -30,17 +26,6 @@ class TestLorenzPDE:
         assert meta.category == "physics"
         assert meta.num_fields == 3
         assert set(meta.field_names) == {"X", "Y", "Z"}
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
-        preset = get_pde_preset("lorenz")
-        pde = preset.create_pde(
-            {"sigma": 10.0, "rho": 28.0, "beta": 8.0/3.0, "D": 0.0},
-            {"x": "periodic", "y": "periodic"},
-            grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1, 2, 3])
     def test_short_simulation(self, ndim: int):

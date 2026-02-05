@@ -2,9 +2,9 @@
 
 import numpy as np
 import pytest
-from pde import CartesianGrid, FieldCollection
+from pde import FieldCollection
 
-from pde_sim.pdes import get_pde_preset, list_presets
+from pde_sim.pdes import get_pde_preset
 from tests.test_pdes.dimension_test_helpers import (
     create_grid_for_dimension,
     create_bc_for_dimension,
@@ -16,10 +16,6 @@ from tests.test_pdes.dimension_test_helpers import (
 class TestWavePDE:
     """Tests for the Wave equation preset."""
 
-    def test_registered(self):
-        """Test that wave PDE is registered."""
-        assert "wave" in list_presets()
-
     def test_metadata(self):
         """Test that metadata is correctly defined."""
         preset = get_pde_preset("wave")
@@ -30,17 +26,6 @@ class TestWavePDE:
         assert meta.num_fields == 2
         assert "u" in meta.field_names
         assert "v" in meta.field_names
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=True)
-        preset = get_pde_preset("wave")
-        pde = preset.create_pde(
-            parameters={"D": 1.0, "C": 0.01},
-            bc={"x": "periodic", "y": "periodic"},
-            grid=grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [1, 2, 3])
     def test_short_simulation(self, ndim: int):
@@ -68,10 +53,6 @@ class TestWavePDE:
 class TestInhomogeneousWavePDE:
     """Tests for the inhomogeneous wave equation with spatially varying wave speed."""
 
-    def test_registered(self):
-        """Test that inhomogeneous-wave is registered."""
-        assert "inhomogeneous-wave" in list_presets()
-
     def test_metadata(self):
         """Test that metadata is correctly defined."""
         preset = get_pde_preset("inhomogeneous-wave")
@@ -82,17 +63,6 @@ class TestInhomogeneousWavePDE:
         assert meta.num_fields == 2
         assert "u" in meta.field_names
         assert "v" in meta.field_names
-
-    def test_create_pde(self):
-        """Test PDE creation."""
-        grid = CartesianGrid([[0, 1], [0, 1]], [16, 16], periodic=False)
-        preset = get_pde_preset("inhomogeneous-wave")
-        pde = preset.create_pde(
-            parameters={"D": 1.0, "E": 0.5, "m": 4, "n": 4, "C": 0.0},
-            bc={"x": "neumann", "y": "neumann"},
-            grid=grid,
-        )
-        assert pde is not None
 
     @pytest.mark.parametrize("ndim", [2])
     def test_short_simulation(self, ndim: int):
