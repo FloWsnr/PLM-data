@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from pde import FileStorage, MemoryStorage
+from pde import FieldCollection, FileStorage, MemoryStorage
 
 from .config import COLORMAP_CYCLE, SimulationConfig, load_config
 from .output import OutputManager, create_metadata
@@ -268,8 +268,6 @@ class SimulationRunner:
 
         def _extract_field_data(state: Any, field_name: str) -> np.ndarray:
             """Extract numpy data for a field name from a py-pde state."""
-            from pde import FieldCollection
-
             if isinstance(state, FieldCollection):
                 for field in state:
                     if hasattr(field, "label") and field.label == field_name:

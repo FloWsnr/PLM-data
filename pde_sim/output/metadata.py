@@ -40,7 +40,7 @@ def _bc_to_metadata(bc: Any, ndim: int = 2) -> dict[str, Any]:
 
 
 def _create_visualization_metadata(config: Any, preset_metadata: Any) -> dict[str, Any]:
-    from pde_sim.core.config import COLORMAP_CYCLE
+    from pde_sim.core.config import COLORMAP_CYCLE  # avoid circular import
 
     field_names = preset_metadata.field_names
     return {

@@ -3,6 +3,8 @@
 import json
 from pathlib import Path
 
+import h5py
+import imageio
 import numpy as np
 import pytest
 from pde import ScalarField, FieldCollection, CartesianGrid
@@ -327,8 +329,6 @@ class TestGIFHandler:
 
     def test_gif_is_valid_and_loops(self, tmp_output):
         """Test that GIF is valid and has loop setting."""
-        import imageio
-
         handler = GIFHandler(fps=10)
         handler.initialize(
             tmp_output,
@@ -544,8 +544,6 @@ class TestOutputManager:
 
     def test_h5_format_saves_trajectory(self, tmp_output, small_grid):
         """Test h5 format saves trajectory correctly."""
-        import h5py
-
         manager = OutputManager(
             base_path=tmp_output,
             folder_name="test-h5",

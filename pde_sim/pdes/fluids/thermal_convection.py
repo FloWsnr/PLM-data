@@ -6,6 +6,7 @@ import numpy as np
 from pde import PDEBase, CartesianGrid, FieldCollection, ScalarField
 
 from pde_sim.boundaries import BoundaryConditionFactory
+from pde_sim.core.config import BoundaryConfig
 from pde_sim.initial_conditions import create_initial_condition
 
 from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
@@ -149,8 +150,6 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
         Returns:
             py-pde compatible BC specification
         """
-        from pde_sim.core.config import BoundaryConfig
-
         if isinstance(bc, BoundaryConfig):
             # Get field BC dict with x-, x+, y-, y+ keys (already merged with defaults)
             field_bc = bc.get_field_bc(field_name)

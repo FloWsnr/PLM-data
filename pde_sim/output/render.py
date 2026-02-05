@@ -6,6 +6,7 @@ outputs fast and headless-friendly.
 
 from __future__ import annotations
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -22,7 +23,6 @@ def render_colormap_rgb(
     - transpose (so the first axis is shown as x)
     - flip vertically to emulate `origin="lower"`
     """
-    import matplotlib.pyplot as plt
 
     if np.iscomplexobj(data):
         data = np.abs(data)

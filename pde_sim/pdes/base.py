@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 from pde import CartesianGrid, FieldCollection, PDE, ScalarField
 
 from pde_sim.boundaries import BoundaryConditionFactory
-from pde_sim.initial_conditions import create_initial_condition
+from pde_sim.initial_conditions import create_initial_condition, list_initial_conditions, resolve_initial_condition_params
 
 
 @dataclass
@@ -123,8 +123,6 @@ class PDEPreset(ABC):
         Returns:
             Parameters with any random placeholders resolved.
         """
-        from pde_sim.initial_conditions import list_initial_conditions, resolve_initial_condition_params
-
         if ic_type in list_initial_conditions():
             return resolve_initial_condition_params(
                 grid=grid,

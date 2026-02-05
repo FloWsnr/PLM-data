@@ -11,10 +11,14 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
+import h5py
+import imageio.v2 as imageio
 import matplotlib
 
 matplotlib.use("Agg")  # Headless rendering
+import matplotlib.pyplot as plt
 import numpy as np
+from numpy.lib.format import open_memmap
 
 from .render import render_colormap_rgb
 
@@ -103,8 +107,6 @@ class Output1DHandler(OutputHandler):
             self._times_recorded.add(frame_index)
 
     def finalize(self) -> dict[str, Any]:
-        import matplotlib.pyplot as plt
-
         if not self.spacetime_data or self.output_dir is None:
             return {"format": self.output_format, "error": "No data to save"}
 
@@ -147,8 +149,6 @@ class Output1DHandler(OutputHandler):
 
             # Optional animation for 1D fields
             if self.output_format in ("gif", "mp4"):
-                import imageio.v2 as imageio
-
                 filename = f"{field_name}.{self.output_format}"
                 out_path = self.output_dir / filename
                 if self.output_format == "mp4":
@@ -224,8 +224,6 @@ class PNGHandler(OutputHandler):
         vmax: float | None,
         colormap: str,
     ) -> None:
-        import imageio.v2 as imageio
-
         if self.frames_dir is None:
             raise RuntimeError("PNGHandler not initialized")
 
@@ -263,8 +261,6 @@ class MP4Handler(OutputHandler):
         *,
         expected_num_frames: int | None = None,
     ) -> None:
-        import imageio.v2 as imageio
-
         self.output_dir = output_dir
         for field_name, _cmap in field_configs:
             video_path = output_dir / f"{field_name}.mp4"
@@ -324,8 +320,6 @@ class GIFHandler(OutputHandler):
         *,
         expected_num_frames: int | None = None,
     ) -> None:
-        import imageio.v2 as imageio
-
         self.output_dir = output_dir
         duration = 1.0 / self.fps
         for field_name, _cmap in field_configs:
@@ -415,8 +409,6 @@ class NumpyHandler(OutputHandler):
             return
         if self._expected_num_frames is None:
             return  # buffering mode
-
-        from numpy.lib.format import open_memmap
 
         T = int(self._expected_num_frames)
         F = len(self.field_order)
@@ -581,8 +573,6 @@ class H5Handler(OutputHandler):
         *,
         expected_num_frames: int | None = None,
     ) -> None:
-        import h5py
-
         self.output_dir = output_dir
         self.field_order = [name for name, _ in field_configs]
         self._field_index = {name: i for i, name in enumerate(self.field_order)}
@@ -598,8 +588,6 @@ class H5Handler(OutputHandler):
         if self._h5 is None:
             raise RuntimeError("H5Handler not initialized")
 
-        import numpy as _np
-
         self._spatial_shape = spatial_shape
         F = len(self.field_order)
         chunks = (1, *spatial_shape, F)
@@ -610,14 +598,14 @@ class H5Handler(OutputHandler):
             self._traj = self._h5.create_dataset(
                 "trajectory",
                 shape=(T, *spatial_shape, F),
-                dtype=_np.float64,
+                dtype=np.float64,
                 chunks=chunks,
                 compression=compression,
             )
             self._times = self._h5.create_dataset(
                 "times",
                 shape=(T,),
-                dtype=_np.float64,
+                dtype=np.float64,
                 chunks=(min(1024, T),),
                 compression=compression,
             )
@@ -626,7 +614,7 @@ class H5Handler(OutputHandler):
                 "trajectory",
                 shape=(0, *spatial_shape, F),
                 maxshape=(None, *spatial_shape, F),
-                dtype=_np.float64,
+                dtype=np.float64,
                 chunks=chunks,
                 compression=compression,
             )
@@ -634,7 +622,7 @@ class H5Handler(OutputHandler):
                 "times",
                 shape=(0,),
                 maxshape=(None,),
-                dtype=_np.float64,
+                dtype=np.float64,
                 chunks=(1024,),
                 compression=compression,
             )
