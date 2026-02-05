@@ -292,6 +292,9 @@ class StochasticGrayScottPDE(MultiFieldPDEPreset):
         params: dict[str, Any],
     ) -> FieldCollection:
         """Create default initialization with small circular patch of u."""
+        seed = params.get("seed")
+        rng = np.random.default_rng(seed)
+
         # Get domain info
         x_bounds = grid.axes_bounds[0]
         y_bounds = grid.axes_bounds[1]
@@ -303,9 +306,17 @@ class StochasticGrayScottPDE(MultiFieldPDEPreset):
         y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
         X, Y = np.meshgrid(x, y, indexing="ij")
 
-        # Center of domain
-        cx = x_bounds[0] + Lx / 2
-        cy = y_bounds[0] + Ly / 2
+        # Perturbation center (randomize if not specified)
+        cx = params.get("cx")
+        cy = params.get("cy")
+        if cx is None:
+            cx = rng.uniform(x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx)
+        else:
+            cx = x_bounds[0] + cx * Lx
+        if cy is None:
+            cy = rng.uniform(y_bounds[0] + 0.2 * Ly, y_bounds[0] + 0.8 * Ly)
+        else:
+            cy = y_bounds[0] + cy * Ly
 
         # Small circular patch
         r = params.get("perturbation_radius", 0.05) * min(Lx, Ly)
@@ -316,13 +327,11 @@ class StochasticGrayScottPDE(MultiFieldPDEPreset):
         u_data = np.zeros(grid.shape)
         v_data = np.ones(grid.shape)
 
-        # Add small patch of u in center
+        # Add small patch of u
         u_data[mask] = 0.5
 
         # Add very small noise
         noise = params.get("noise", 0.001)
-        seed = params.get("seed")
-        rng = np.random.default_rng(seed)
         u_data += noise * rng.standard_normal(grid.shape)
         v_data += noise * rng.standard_normal(grid.shape)
 

@@ -17,6 +17,7 @@ class RandomUniform(InitialConditionGenerator):
         grid: CartesianGrid,
         low: float = 0.0,
         high: float = 1.0,
+        seed: int | None = None,
         **kwargs,
     ) -> ScalarField:
         """Generate uniform random initial condition.
@@ -25,12 +26,14 @@ class RandomUniform(InitialConditionGenerator):
             grid: The computational grid.
             low: Lower bound of the uniform distribution.
             high: Upper bound of the uniform distribution.
+            seed: Random seed for reproducibility.
             **kwargs: Additional arguments (ignored).
 
         Returns:
             ScalarField with uniform random values.
         """
-        data = np.random.uniform(low, high, grid.shape)
+        rng = np.random.default_rng(seed)
+        data = rng.uniform(low, high, grid.shape)
         return ScalarField(grid, data)
 
 
@@ -47,6 +50,7 @@ class RandomGaussian(InitialConditionGenerator):
         std: float = 1.0,
         clip_min: float | None = None,
         clip_max: float | None = None,
+        seed: int | None = None,
         **kwargs,
     ) -> ScalarField:
         """Generate Gaussian random initial condition.
@@ -57,12 +61,14 @@ class RandomGaussian(InitialConditionGenerator):
             std: Standard deviation of the normal distribution.
             clip_min: Optional minimum value to clip to.
             clip_max: Optional maximum value to clip to.
+            seed: Random seed for reproducibility.
             **kwargs: Additional arguments (ignored).
 
         Returns:
             ScalarField with Gaussian random values.
         """
-        data = np.random.normal(mean, std, grid.shape)
+        rng = np.random.default_rng(seed)
+        data = rng.normal(mean, std, grid.shape)
 
         if clip_min is not None or clip_max is not None:
             data = np.clip(data, clip_min, clip_max)

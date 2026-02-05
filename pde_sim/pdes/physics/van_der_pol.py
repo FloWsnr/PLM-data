@@ -101,12 +101,10 @@ class VanDerPolPDE(MultiFieldPDEPreset):
 
         Default: small random perturbations around zero.
         """
-        seed = ic_params.get("seed")
-        if seed is not None:
-            np.random.seed(seed)
+        rng = np.random.default_rng(ic_params.get("seed"))
         noise = ic_params.get("noise", 0.05)
 
-        x_data = noise * np.random.randn(*grid.shape)
+        x_data = noise * rng.standard_normal(grid.shape)
         y_data = np.zeros(grid.shape)  # Start at rest
 
         X_field = ScalarField(grid, x_data)

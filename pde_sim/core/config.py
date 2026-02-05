@@ -32,8 +32,11 @@ class OutputConfig:
 
     path: Path
     num_frames: int
-    formats: list[str]  # Output formats: any combination of "png", "mp4", "numpy"
+    formats: list[str]  # Output formats: any combination of "png", "gif", "mp4", "numpy", "h5"
     fps: int = 30  # Frame rate for MP4 output
+    storage: str = "memory"  # "memory" (default) or "file" to avoid keeping all frames in RAM
+    keep_storage: bool = False  # Keep intermediate storage file when storage="file"
+    unique_suffix: bool = False  # Add a short random suffix to run folder names to avoid collisions
 
 
 @dataclass
@@ -292,6 +295,9 @@ def load_config(path: Path | str) -> SimulationConfig:
         num_frames=output_raw["num_frames"],  # Required
         formats=output_raw["formats"],  # Required - list of format strings
         fps=output_raw.get("fps", 30),
+        storage=output_raw.get("storage", "memory"),
+        keep_storage=bool(output_raw.get("keep_storage", False)),
+        unique_suffix=bool(output_raw.get("unique_suffix", False)),
     )
 
     return SimulationConfig(
@@ -360,6 +366,9 @@ def config_to_dict(config: SimulationConfig) -> dict[str, Any]:
             "num_frames": config.output.num_frames,
             "formats": config.output.formats,
             "fps": config.output.fps,
+            "storage": config.output.storage,
+            "keep_storage": config.output.keep_storage,
+            "unique_suffix": config.output.unique_suffix,
         },
         "seed": config.seed,
         "domain_size": config.domain_size,

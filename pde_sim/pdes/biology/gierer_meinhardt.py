@@ -107,7 +107,7 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
         u0 = ic_params.get("u0", 1.0)
         v0 = ic_params.get("v0", 1.0)
 
-        np.random.seed(ic_params.get("seed"))
+        rng = np.random.default_rng(ic_params.get("seed"))
 
         if ic_type == "stripes":
             # Stripe initial condition for demonstrating stripe-to-spot instability
@@ -121,15 +121,20 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
             y = np.linspace(grid.axes_bounds[1][0], grid.axes_bounds[1][1], grid.shape[1])
             X, Y = np.meshgrid(x, y, indexing="ij")
 
-            # Create stripe pattern: amplitude * (1 + cos(n*pi*x/L))
-            u_data = amplitude * (1 + np.cos(n_stripes * np.pi * (X - x_bounds[0]) / Lx))
+            # Randomize stripe phase if not specified
+            phase = ic_params.get("phase")
+            if phase is None:
+                phase = rng.uniform(0, 2 * np.pi)
+
+            # Create stripe pattern: amplitude * (1 + cos(n*pi*x/L + phase))
+            u_data = amplitude * (1 + np.cos(n_stripes * np.pi * (X - x_bounds[0]) / Lx + phase))
             # Add small perturbation to trigger instability
-            u_data += noise * np.random.randn(*grid.shape)
-            v_data = v0 * np.ones(grid.shape) + noise * np.random.randn(*grid.shape)
+            u_data += noise * rng.standard_normal(grid.shape)
+            v_data = v0 * np.ones(grid.shape) + noise * rng.standard_normal(grid.shape)
         else:
             # Default: random perturbation around steady state
-            u_data = u0 * (1 + noise * np.random.randn(*grid.shape))
-            v_data = v0 * (1 + noise * np.random.randn(*grid.shape))
+            u_data = u0 * (1 + noise * rng.standard_normal(grid.shape))
+            v_data = v0 * (1 + noise * rng.standard_normal(grid.shape))
 
         # Ensure positive values
         u_data = np.maximum(u_data, 0.01)

@@ -97,6 +97,8 @@ class NavierStokesPDE(MultiFieldPDEPreset):
         L_x = x_max - x_min
         L_y = y_max - y_min
 
+        rng = np.random.default_rng(ic_params.get("seed"))
+
         if ic_type in ("navier-stokes-default", "default", "shear-layer"):
             # Shear layer initial condition
             shear_width = ic_params.get("shear_width", 0.1)
@@ -111,8 +113,13 @@ class NavierStokesPDE(MultiFieldPDEPreset):
             # Normalize y to [0, 1] range
             y_norm = (y - y_min) / L_y
 
+            # Shear layer position (randomize if not specified)
+            shear_y = ic_params.get("shear_y")
+            if shear_y is None:
+                shear_y = rng.uniform(0.3, 0.7)
+
             # Shear layer velocity profile
-            u_data = amplitude * np.tanh((y_norm - 0.5) / shear_width)
+            u_data = amplitude * np.tanh((y_norm - shear_y) / shear_width)
             v_data = 0.05 * np.sin(2 * np.pi * (x - x_min) / L_x)
             p_data = np.zeros_like(u_data)
             # Passive scalar gradient for visualization
@@ -120,8 +127,18 @@ class NavierStokesPDE(MultiFieldPDEPreset):
 
         elif ic_type == "vortex-pair":
             # Counter-rotating vortex pair
-            x0_1, y0_1 = ic_params.get("x1", 0.35), ic_params.get("y1", 0.5)
-            x0_2, y0_2 = ic_params.get("x2", 0.65), ic_params.get("y2", 0.5)
+            x0_1 = ic_params.get("x1")
+            y0_1 = ic_params.get("y1")
+            x0_2 = ic_params.get("x2")
+            y0_2 = ic_params.get("y2")
+            if x0_1 is None:
+                x0_1 = rng.uniform(0.2, 0.4)
+            if y0_1 is None:
+                y0_1 = rng.uniform(0.3, 0.7)
+            if x0_2 is None:
+                x0_2 = rng.uniform(0.6, 0.8)
+            if y0_2 is None:
+                y0_2 = rng.uniform(0.3, 0.7)
             strength = ic_params.get("strength", 1.0)
             radius = ic_params.get("radius", 0.1)
 

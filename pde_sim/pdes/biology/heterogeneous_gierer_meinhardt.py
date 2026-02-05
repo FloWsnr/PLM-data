@@ -113,9 +113,9 @@ class HeterogeneousGiererMeinhardtPDE(MultiFieldPDEPreset):
         u0 = ic_params.get("u0", 1.0)
         v0 = ic_params.get("v0", 1.0)
 
-        np.random.seed(ic_params.get("seed"))
-        u_data = u0 * (1 + noise * np.random.randn(*grid.shape))
-        v_data = v0 * (1 + noise * np.random.randn(*grid.shape))
+        rng = np.random.default_rng(ic_params.get("seed"))
+        u_data = u0 * (1 + noise * rng.standard_normal(grid.shape))
+        v_data = v0 * (1 + noise * rng.standard_normal(grid.shape))
 
         # Ensure positive values
         u_data = np.maximum(u_data, 0.01)

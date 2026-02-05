@@ -84,8 +84,8 @@ class HarshEnvironmentPDE(ScalarPDEPreset):
         """
         if ic_type in ("harsh-environment-default", "default"):
             # Sparse random nucleation sites (matches Visual PDE reference)
-            np.random.seed(ic_params.get("seed"))
-            rand_field = np.random.random(grid.shape)
+            rng = np.random.default_rng(ic_params.get("seed"))
+            rand_field = rng.random(grid.shape)
             # 0.1 * exp(-10000 * RAND) creates sparse nucleation where RAND ~ 0
             data = 0.1 * np.exp(-10000 * rand_field)
             return ScalarField(grid, data)

@@ -113,9 +113,7 @@ class ComplexGinzburgLandauPDE(MultiFieldPDEPreset):
             n = int(ic_params.get("n", 10))
             m = int(ic_params.get("m", 10))
             amplitude = ic_params.get("amplitude", 1.0)
-            seed = ic_params.get("seed")
-            if seed is not None:
-                np.random.seed(seed)
+            rng = np.random.default_rng(ic_params.get("seed"))
 
             # Get domain info
             x_bounds = grid.axes_bounds[0]
@@ -127,13 +125,21 @@ class ComplexGinzburgLandauPDE(MultiFieldPDEPreset):
             y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
             X, Y = np.meshgrid(x, y, indexing="ij")
 
-            # Sinusoidal initial condition: sin(n*pi*x/Lx) * sin(m*pi*y/Ly)
-            u_data = amplitude * np.sin(n * np.pi * (X - x_bounds[0]) / Lx) * np.sin(m * np.pi * (Y - y_bounds[0]) / Ly)
-            v_data = amplitude * np.sin(n * np.pi * (X - x_bounds[0]) / Lx) * np.sin(m * np.pi * (Y - y_bounds[0]) / Ly)
+            # Randomize phases if not specified
+            phase_x = ic_params.get("phase_x")
+            phase_y = ic_params.get("phase_y")
+            if phase_x is None:
+                phase_x = rng.uniform(0, 2 * np.pi)
+            if phase_y is None:
+                phase_y = rng.uniform(0, 2 * np.pi)
+
+            # Sinusoidal initial condition: sin(n*pi*x/Lx + phase) * sin(m*pi*y/Ly + phase)
+            u_data = amplitude * np.sin(n * np.pi * (X - x_bounds[0]) / Lx + phase_x) * np.sin(m * np.pi * (Y - y_bounds[0]) / Ly + phase_y)
+            v_data = amplitude * np.sin(n * np.pi * (X - x_bounds[0]) / Lx + phase_x) * np.sin(m * np.pi * (Y - y_bounds[0]) / Ly + phase_y)
 
             # Add small noise
-            u_data += 0.01 * np.random.randn(*grid.shape)
-            v_data += 0.01 * np.random.randn(*grid.shape)
+            u_data += 0.01 * rng.standard_normal(grid.shape)
+            v_data += 0.01 * rng.standard_normal(grid.shape)
 
             u = ScalarField(grid, u_data)
             u.label = "u"

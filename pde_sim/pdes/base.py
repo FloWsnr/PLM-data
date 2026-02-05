@@ -143,29 +143,57 @@ class PDEPreset(ABC):
         # Subclasses can override to provide filled-in versions
         return self.metadata.equations.copy()
 
-    def _convert_bc(self, bc: Any, ndim: int = 2) -> dict[str, Any]:
+    def _infer_ndim_from_bc(self, bc: Any) -> int:
+        """Infer dimensionality (1/2/3) from a BC object/dict.
+
+        Most call-sites pass a BoundaryConfig, but some presets/tests may pass a
+        raw dict. Inferring ndim here avoids accidentally dropping z-boundaries
+        when running 3D simulations.
+        """
+        # BoundaryConfig
+        if hasattr(bc, "x_minus"):
+            # Prefer explicit z/y config if present
+            z_minus = getattr(bc, "z_minus", None)
+            z_plus = getattr(bc, "z_plus", None)
+            if z_minus is not None or z_plus is not None:
+                return 3
+            y_minus = getattr(bc, "y_minus", None)
+            y_plus = getattr(bc, "y_plus", None)
+            if y_minus is not None or y_plus is not None:
+                return 2
+            return 1
+
+        # Dict-style config: look for side keys
+        if isinstance(bc, dict):
+            if "z-" in bc or "z+" in bc:
+                return 3
+            if "y-" in bc or "y+" in bc:
+                return 2
+            return 1
+
+        # Fallback: keep previous behavior
+        return 2
+
+    def _convert_bc(self, bc: Any, ndim: int | None = None) -> dict[str, Any]:
         """Convert boundary condition config to py-pde format.
 
         Args:
-            bc: BoundaryConfig object.
-            ndim: Number of spatial dimensions.
+            bc: BoundaryConfig object or a raw dict.
+            ndim: Number of spatial dimensions. If None, inferred from `bc`.
 
         Returns:
             BC specs in py-pde format.
         """
-        from pde_sim.core.config import BoundaryConfig
-
-        if isinstance(bc, BoundaryConfig):
-            return BoundaryConditionFactory.convert_config(bc, ndim)
-        # Handle dict
+        if ndim is None:
+            ndim = self._infer_ndim_from_bc(bc)
         return BoundaryConditionFactory.convert_config(bc, ndim)
 
-    def _get_pde_bc_kwargs(self, bc: Any, ndim: int = 2) -> dict:
+    def _get_pde_bc_kwargs(self, bc: Any, ndim: int | None = None) -> dict:
         """Get bc kwargs for PDE constructor.
 
         Args:
             bc: Boundary condition configuration (BoundaryConfig)
-            ndim: Number of spatial dimensions.
+            ndim: Number of spatial dimensions. If None, inferred from `bc`.
 
         Returns:
             Dictionary with {'bc': ...}

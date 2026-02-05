@@ -109,7 +109,7 @@ class ImmunotherapyPDE(MultiFieldPDEPreset):
         Reference values from Visual PDE ImmunotherapyCircleNeumann preset.
         """
         noise_frac = ic_params.get("noise", 0.2)  # Fractional noise (20% default)
-        np.random.seed(ic_params.get("seed"))
+        rng = np.random.default_rng(ic_params.get("seed"))
 
         # Near-equilibrium values (from Visual PDE reference)
         u_base = 0.299  # Effector cells
@@ -117,9 +117,9 @@ class ImmunotherapyPDE(MultiFieldPDEPreset):
         w_base = 0.022  # Cytokine
 
         # Apply multiplicative noise: base * (1 + noise_frac * randn)
-        u_data = u_base * (1 + noise_frac * np.random.randn(*grid.shape))
-        v_data = v_base * (1 + noise_frac * np.random.randn(*grid.shape))
-        w_data = w_base * (1 + noise_frac * np.random.randn(*grid.shape))
+        u_data = u_base * (1 + noise_frac * rng.standard_normal(grid.shape))
+        v_data = v_base * (1 + noise_frac * rng.standard_normal(grid.shape))
+        w_data = w_base * (1 + noise_frac * rng.standard_normal(grid.shape))
 
         # Ensure non-negative values
         u_data = np.maximum(u_data, 0.0)

@@ -6,9 +6,9 @@ from pde import CartesianGrid, ScalarField
 
 from .base import InitialConditionGenerator
 from .blobs import GaussianBlob
-from .periodic import SinePattern
+from .periodic import CosinePattern, SinePattern
 from .random import RandomGaussian, RandomUniform
-from .step import Constant, RectangleGrid, StepFunction
+from .step import Constant, DoubleStep, RectangleGrid, StepFunction
 
 # Registry of available initial condition generators
 _IC_REGISTRY: dict[str, type[InitialConditionGenerator]] = {
@@ -16,7 +16,9 @@ _IC_REGISTRY: dict[str, type[InitialConditionGenerator]] = {
     "random-gaussian": RandomGaussian,
     "gaussian-blob": GaussianBlob,
     "sine": SinePattern,
+    "cosine": CosinePattern,
     "step": StepFunction,
+    "double-step": DoubleStep,
     "rectangle-grid": RectangleGrid,
     "constant": Constant,
 }
@@ -79,7 +81,9 @@ __all__ = [
     "RandomUniform",
     "RandomGaussian",
     "GaussianBlob",
+    "CosinePattern",
     "SinePattern",
+    "DoubleStep",
     "StepFunction",
     "RectangleGrid",
     "Constant",

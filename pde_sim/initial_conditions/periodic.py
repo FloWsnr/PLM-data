@@ -20,9 +20,10 @@ class SinePattern(InitialConditionGenerator):
         kz: int = 1,
         amplitude: float = 1.0,
         offset: float = 0.0,
-        phase_x: float = 0.0,
-        phase_y: float = 0.0,
-        phase_z: float = 0.0,
+        phase_x: float | None = None,
+        phase_y: float | None = None,
+        phase_z: float | None = None,
+        seed: int | None = None,
         **kwargs,
     ) -> ScalarField:
         """Generate sinusoidal pattern initial condition.
@@ -34,14 +35,22 @@ class SinePattern(InitialConditionGenerator):
             kz: Wavenumber in z direction (3D only).
             amplitude: Amplitude of the sine wave.
             offset: Constant offset (mean value).
-            phase_x: Phase shift in x direction (in radians).
-            phase_y: Phase shift in y direction (in radians).
-            phase_z: Phase shift in z direction (in radians).
+            phase_x: Phase shift in x direction (in radians). If None, randomized.
+            phase_y: Phase shift in y direction (in radians). If None, randomized.
+            phase_z: Phase shift in z direction (in radians). If None, randomized.
+            seed: Random seed for reproducibility.
             **kwargs: Additional arguments (ignored).
 
         Returns:
             ScalarField with sinusoidal pattern.
         """
+        rng = np.random.default_rng(seed)
+        if phase_x is None:
+            phase_x = rng.uniform(0, 2 * np.pi)
+        if phase_y is None:
+            phase_y = rng.uniform(0, 2 * np.pi)
+        if phase_z is None:
+            phase_z = rng.uniform(0, 2 * np.pi)
         ndim = len(grid.shape)
 
         # Get domain bounds for x
@@ -101,6 +110,10 @@ class CosinePattern(InitialConditionGenerator):
         kz: int = 1,
         amplitude: float = 1.0,
         offset: float = 0.0,
+        phase_x: float | None = None,
+        phase_y: float | None = None,
+        phase_z: float | None = None,
+        seed: int | None = None,
         **kwargs,
     ) -> ScalarField:
         """Generate cosine pattern initial condition.
@@ -112,11 +125,23 @@ class CosinePattern(InitialConditionGenerator):
             kz: Wavenumber in z direction (3D only).
             amplitude: Amplitude of the cosine wave.
             offset: Constant offset (mean value).
+            phase_x: Phase shift in x direction (in radians). If None, randomized.
+            phase_y: Phase shift in y direction (in radians). If None, randomized.
+            phase_z: Phase shift in z direction (in radians). If None, randomized.
+            seed: Random seed for reproducibility.
             **kwargs: Additional arguments (ignored).
 
         Returns:
             ScalarField with cosine pattern.
         """
+        rng = np.random.default_rng(seed)
+        if phase_x is None:
+            phase_x = rng.uniform(0, 2 * np.pi)
+        if phase_y is None:
+            phase_y = rng.uniform(0, 2 * np.pi)
+        if phase_z is None:
+            phase_z = rng.uniform(0, 2 * np.pi)
+
         ndim = len(grid.shape)
 
         # Get domain bounds for x
@@ -125,22 +150,22 @@ class CosinePattern(InitialConditionGenerator):
         x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
 
         if ndim == 1:
-            # 1D: cos(kx * x)
+            # 1D: cos(kx * x + phase)
             data = offset + amplitude * np.cos(
-                2 * np.pi * kx * (x - x_bounds[0]) / Lx
+                2 * np.pi * kx * (x - x_bounds[0]) / Lx + phase_x
             )
         elif ndim == 2:
-            # 2D: cos(kx * x) * cos(ky * y)
+            # 2D: cos(kx * x + phase_x) * cos(ky * y + phase_y)
             y_bounds = grid.axes_bounds[1]
             Ly = y_bounds[1] - y_bounds[0]
             y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
             X, Y = np.meshgrid(x, y, indexing="ij")
 
             data = offset + amplitude * np.cos(
-                2 * np.pi * kx * (X - x_bounds[0]) / Lx
-            ) * np.cos(2 * np.pi * ky * (Y - y_bounds[0]) / Ly)
+                2 * np.pi * kx * (X - x_bounds[0]) / Lx + phase_x
+            ) * np.cos(2 * np.pi * ky * (Y - y_bounds[0]) / Ly + phase_y)
         else:
-            # 3D: cos(kx * x) * cos(ky * y) * cos(kz * z)
+            # 3D: cos(kx * x + phase_x) * cos(ky * y + phase_y) * cos(kz * z + phase_z)
             y_bounds = grid.axes_bounds[1]
             z_bounds = grid.axes_bounds[2]
             Ly = y_bounds[1] - y_bounds[0]
@@ -150,11 +175,11 @@ class CosinePattern(InitialConditionGenerator):
             X, Y, Z = np.meshgrid(x, y, z, indexing="ij")
 
             data = offset + amplitude * np.cos(
-                2 * np.pi * kx * (X - x_bounds[0]) / Lx
+                2 * np.pi * kx * (X - x_bounds[0]) / Lx + phase_x
             ) * np.cos(
-                2 * np.pi * ky * (Y - y_bounds[0]) / Ly
+                2 * np.pi * ky * (Y - y_bounds[0]) / Ly + phase_y
             ) * np.cos(
-                2 * np.pi * kz * (Z - z_bounds[0]) / Lz
+                2 * np.pi * kz * (Z - z_bounds[0]) / Lz + phase_z
             )
 
         return ScalarField(grid, data)

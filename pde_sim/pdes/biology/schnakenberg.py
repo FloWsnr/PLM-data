@@ -88,9 +88,9 @@ class SchnakenbergPDE(MultiFieldPDEPreset):
         v_ss = b / (u_ss ** 2)
 
         # Add small random perturbation
-        np.random.seed(ic_params.get("seed"))
-        u_data = u_ss + noise * np.random.randn(*grid.shape)
-        v_data = v_ss + noise * np.random.randn(*grid.shape)
+        rng = np.random.default_rng(ic_params.get("seed"))
+        u_data = u_ss + noise * rng.standard_normal(grid.shape)
+        v_data = v_ss + noise * rng.standard_normal(grid.shape)
 
         u = ScalarField(grid, u_data)
         u.label = "u"

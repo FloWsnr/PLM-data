@@ -43,10 +43,11 @@ class StepFunction(InitialConditionGenerator):
         self,
         grid: CartesianGrid,
         direction: str = "x",
-        position: float = 0.5,
+        position: float | None = None,
         value_low: float = 0.0,
         value_high: float = 1.0,
         smooth_width: float = 0.0,
+        seed: int | None = None,
         **kwargs,
     ) -> ScalarField:
         """Generate step function initial condition.
@@ -54,15 +55,19 @@ class StepFunction(InitialConditionGenerator):
         Args:
             grid: The computational grid.
             direction: Direction of the step ("x" or "y").
-            position: Position of the step (0-1 normalized).
+            position: Position of the step (0-1 normalized). If None, randomized.
             value_low: Value below/left of the step.
             value_high: Value above/right of the step.
             smooth_width: If > 0, use a smooth tanh transition.
+            seed: Random seed for reproducibility.
             **kwargs: Additional arguments (ignored).
 
         Returns:
             ScalarField with step function.
         """
+        if position is None:
+            rng = np.random.default_rng(seed)
+            position = rng.uniform(0.1, 0.9)
         # Get domain bounds
         x_bounds = grid.axes_bounds[0]
         y_bounds = grid.axes_bounds[1]
@@ -185,11 +190,12 @@ class DoubleStep(InitialConditionGenerator):
         self,
         grid: CartesianGrid,
         direction: str = "x",
-        position1: float = 0.25,
-        position2: float = 0.75,
+        position1: float | None = None,
+        position2: float | None = None,
         value_inside: float = 1.0,
         value_outside: float = 0.0,
         smooth_width: float = 0.0,
+        seed: int | None = None,
         **kwargs,
     ) -> ScalarField:
         """Generate double step function (band) initial condition.
@@ -197,16 +203,28 @@ class DoubleStep(InitialConditionGenerator):
         Args:
             grid: The computational grid.
             direction: Direction of the bands ("x" or "y").
-            position1: Position of first step (0-1 normalized).
-            position2: Position of second step (0-1 normalized).
+            position1: Position of first step (0-1 normalized). If None, randomized.
+            position2: Position of second step (0-1 normalized). If None, randomized.
             value_inside: Value inside the band.
             value_outside: Value outside the band.
             smooth_width: If > 0, use smooth tanh transitions.
+            seed: Random seed for reproducibility.
             **kwargs: Additional arguments (ignored).
 
         Returns:
             ScalarField with double step function.
         """
+        if position1 is None or position2 is None:
+            rng = np.random.default_rng(seed)
+            if position1 is None:
+                position1 = rng.uniform(0.1, 0.4)
+            if position2 is None:
+                position2 = rng.uniform(0.6, 0.9)
+            if position1 >= position2:
+                position1, position2 = position2, position1
+            # Ensure minimum gap
+            if position2 - position1 < 0.1:
+                position2 = position1 + 0.1
         # Get domain bounds
         x_bounds = grid.axes_bounds[0]
         y_bounds = grid.axes_bounds[1]

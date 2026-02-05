@@ -1,10 +1,12 @@
-"""Backward-compatible re-exports for the output subsystem.
+"""Output subsystem (frames, videos, trajectories, and metadata).
 
-Historically, output logic lived in this module. It has been moved to
-`pde_sim.output` to keep the `core` package focused on orchestration/config.
+This package contains the concrete output handlers (png/gif/mp4/numpy/h5),
+the OutputManager orchestration layer, and metadata helpers.
+
+`pde_sim.core.output` re-exports the public API for backward compatibility.
 """
 
-from pde_sim.output.handlers import (
+from .handlers import (
     GIFHandler,
     H5Handler,
     MP4Handler,
@@ -14,8 +16,8 @@ from pde_sim.output.handlers import (
     PNGHandler,
     create_output_handler,
 )
-from pde_sim.output.manager import OutputManager
-from pde_sim.output.metadata import create_metadata
+from .manager import OutputManager
+from .metadata import create_metadata
 
 __all__ = [
     "OutputHandler",

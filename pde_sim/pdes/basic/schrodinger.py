@@ -210,8 +210,13 @@ class SchrodingerPDE(MultiFieldPDEPreset):
 
         elif ic_type == "wave-packet":
             # Gaussian wave packet
-            x0 = ic_params.get("x0", 0.5)
-            y0 = ic_params.get("y0", 0.5)
+            rng = np.random.default_rng(ic_params.get("seed"))
+            x0 = ic_params.get("x0")
+            y0 = ic_params.get("y0")
+            if x0 is None:
+                x0 = rng.uniform(0.2, 0.8)
+            if y0 is None:
+                y0 = rng.uniform(0.2, 0.8)
             sigma = ic_params.get("sigma", 0.1)
             kx = ic_params.get("kx", 3.0)
             ky = ic_params.get("ky", 0.0)

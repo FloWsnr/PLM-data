@@ -7,8 +7,16 @@ A modular Python framework for generating 1D/2D/3D PDE simulation trajectories u
 - **60+ PDE presets** across 4 categories (basic, biology, physics, fluids)
 - **YAML-based configuration** for easy parameter sweeps
 - **Modular architecture** for adding new PDEs
-- **PNG frame output** with JSON metadata
+- **PNG/GIF/MP4/numpy/HDF5 output** with JSON metadata
 - **Slurm integration** for parallel batch processing
+
+## Project Layout
+
+- `pde_sim/core/` - config parsing, simulation runner, diagnostics, logging, CLI helpers
+- `pde_sim/output/` - output handlers (png/gif/mp4/numpy/h5), output manager, metadata builder
+- `pde_sim/pdes/` - PDE presets (basic/biology/physics/fluids)
+- `pde_sim/initial_conditions/` - initial condition generators
+- `pde_sim/boundaries/` - boundary/grid helpers
 
 ## Installation
 
@@ -42,6 +50,20 @@ python -m pde_sim info gray-scott
 
 ```bash
 python -m pde_sim run configs/physics/gray_scott/default.yaml
+```
+
+### Run Large Simulations (Avoid RAM Blowups)
+
+Use file-backed storage for py-pde frames (two-pass streaming output; deletes the intermediate file by default):
+
+```bash
+python -m pde_sim run configs/physics/gray_scott/default.yaml --storage file
+```
+
+### Run a Batch of Configs
+
+```bash
+python -m pde_sim batch configs/physics/gray_scott/ --log-file logs/gray_scott.log
 ```
 
 ### Run with Custom Output Directory
@@ -98,8 +120,11 @@ bc:                         # Boundary conditions (use x-, x+, y-, y+)
 output:
   path: ./output            # Output directory
   num_frames: 100           # Total number of frames to save
-  formats: [png]            # List of formats: "png", "mp4", "numpy" (can combine)
+  formats: [png]            # List of formats: "png", "gif", "mp4", "numpy", "h5" (can combine)
   fps: 30                   # Frame rate for MP4 (default: 30)
+  storage: memory           # "memory" (default) or "file" to avoid keeping all frames in RAM
+  keep_storage: false       # Keep intermediate storage file when storage: file
+  unique_suffix: false      # Append a short random suffix to run folder names (avoid collisions)
 # All fields are automatically output with auto-assigned colormaps
 # Multiple formats example: formats: [png, numpy]
 
@@ -133,8 +158,10 @@ Available initial condition types:
 - `random-uniform` - Uniform random values
 - `random-gaussian` - Gaussian random values
 - `gaussian-blob` - Gaussian blob(s) with optional aspect ratio for asymmetric shapes
-- `sine` - Sinusoidal patterns
-- `step` - Step functions
+- `sine` / `cosine` - Sinusoidal patterns
+- `step` / `double-step` - Step functions and band/stripe patterns
+- `rectangle-grid` - Piecewise-constant grid patterns
+- `constant` - Uniform field (useful with Dirichlet BCs)
 
 ## Output Format
 
@@ -150,6 +177,9 @@ output/{preset-name}/{config-name}_{run-number}/
 │       ├── 000000.png
 │       ├── 000001.png
 │       └── ...
+├── trajectory.npy          # if formats includes "numpy"
+├── times.npy               # if formats includes "numpy"
+├── trajectory.h5           # if formats includes "h5" (datasets: "trajectory", "times")
 └── metadata.json
 ```
 

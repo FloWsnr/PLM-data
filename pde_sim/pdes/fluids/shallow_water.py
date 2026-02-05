@@ -99,10 +99,16 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
         L_x = x_max - x_min
         L_y = y_max - y_min
 
+        rng = np.random.default_rng(ic_params.get("seed"))
+
         if ic_type in ("shallow-water-default", "drop", "gaussian-blob"):
             # Water drop (Gaussian perturbation) - height only
-            x0 = ic_params.get("x0", 0.5)
-            y0 = ic_params.get("y0", 0.5)
+            x0 = ic_params.get("x0")
+            y0 = ic_params.get("y0")
+            if x0 is None:
+                x0 = rng.uniform(0.2, 0.8)
+            if y0 is None:
+                y0 = rng.uniform(0.2, 0.8)
             amplitude = ic_params.get("amplitude", 0.3)
             width = ic_params.get("width", 0.15)
 
@@ -126,10 +132,8 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
 
         elif ic_type == "dam-break":
             # Dam break initial condition (step function using tanh)
-            # Reference: Visual PDE ShallowWaterEqnsDamBreaking preset
-            # Uses 0.05*(1+tanh(x-L_x/2)) - step goes UP left-to-right
             step_width = ic_params.get("step_width", 0.05)
-            amplitude = ic_params.get("amplitude", 0.05)  # Match Visual PDE default
+            amplitude = ic_params.get("amplitude", 0.05)
 
             x, y = np.meshgrid(
                 np.linspace(x_min, x_max, grid.shape[0]),
@@ -137,10 +141,13 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
                 indexing="ij",
             )
 
-            # Center coordinate
-            cx = x_min + 0.5 * L_x
+            # Center coordinate (randomize if not specified)
+            dam_position = ic_params.get("dam_position")
+            if dam_position is None:
+                dam_position = rng.uniform(0.3, 0.7)
+            cx = x_min + dam_position * L_x
 
-            # Tanh step function centered at x = L_x/2, matches Visual PDE
+            # Tanh step function
             h_data = amplitude * (1.0 + np.tanh((x - cx) / (step_width * L_x)))
             u_data = np.zeros_like(h_data)
             v_data = np.zeros_like(h_data)
@@ -158,9 +165,21 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
 
             w = width * min(L_x, L_y)
 
-            # Two drops at different positions
-            cx1, cy1 = x_min + 0.3 * L_x, y_min + 0.5 * L_y
-            cx2, cy2 = x_min + 0.7 * L_x, y_min + 0.5 * L_y
+            # Two drops at different positions (randomize if not specified)
+            x1 = ic_params.get("x1")
+            y1 = ic_params.get("y1")
+            x2 = ic_params.get("x2")
+            y2 = ic_params.get("y2")
+            if x1 is None:
+                x1 = rng.uniform(0.15, 0.4)
+            if y1 is None:
+                y1 = rng.uniform(0.3, 0.7)
+            if x2 is None:
+                x2 = rng.uniform(0.6, 0.85)
+            if y2 is None:
+                y2 = rng.uniform(0.3, 0.7)
+            cx1, cy1 = x_min + x1 * L_x, y_min + y1 * L_y
+            cx2, cy2 = x_min + x2 * L_x, y_min + y2 * L_y
 
             r1_sq = (x - cx1) ** 2 + (y - cy1) ** 2
             r2_sq = (x - cx2) ** 2 + (y - cy2) ** 2
@@ -173,10 +192,12 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
 
         elif ic_type == "geostrophic-vortex":
             # Geostrophically balanced vortex for strong Coriolis (f ~ 1)
-            # In geostrophic balance: f*v = g*dh/dx, f*u = -g*dh/dy
-            # Reference: Visual PDE ShallowWaterEqnsVorticalSolitons preset
-            x0 = ic_params.get("x0", 0.5)
-            y0 = ic_params.get("y0", 0.5)
+            x0 = ic_params.get("x0")
+            y0 = ic_params.get("y0")
+            if x0 is None:
+                x0 = rng.uniform(0.2, 0.8)
+            if y0 is None:
+                y0 = rng.uniform(0.2, 0.8)
             amplitude = ic_params.get("amplitude", 0.02)
             radius = ic_params.get("radius", 0.15)
             f = ic_params.get("f", 1.0)

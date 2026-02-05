@@ -88,16 +88,19 @@ class BurgersPDE(ScalarPDEPreset):
         Multi-pulse: Multiple Gaussian pulses at specified x positions.
         """
         if ic_type in ("burgers-default", "default"):
-            # Gaussian pulse at x = L/5
+            # Gaussian pulse
             x_bounds = grid.axes_bounds[0]
             Lx = x_bounds[1] - x_bounds[0]
-            x0 = x_bounds[0] + Lx / 5  # Pulse position
 
             amplitude = ic_params.get("amplitude", 1.0)
             width = ic_params.get("width", 0.1) * Lx
-            seed = ic_params.get("seed")
-            if seed is not None:
-                np.random.seed(seed)
+            rng = np.random.default_rng(ic_params.get("seed"))
+
+            # Pulse position (randomize if not specified)
+            position = ic_params.get("position")
+            if position is None:
+                position = rng.uniform(0.1, 0.5)
+            x0 = x_bounds[0] + position * Lx
 
             x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
             if len(grid.shape) > 1:
@@ -116,9 +119,12 @@ class BurgersPDE(ScalarPDEPreset):
             # For demonstrating shock interaction (taller = faster)
             x_bounds = grid.axes_bounds[0]
             Lx = x_bounds[1] - x_bounds[0]
+            rng = np.random.default_rng(ic_params.get("seed"))
 
             # Get pulse parameters (lists)
-            positions = ic_params.get("positions", [0.1, 0.3, 0.5])  # normalized x
+            positions = ic_params.get("positions")
+            if positions is None:
+                positions = sorted(rng.uniform(0.1, 0.6, size=3).tolist())
             amplitudes = ic_params.get("amplitudes", [2.0, 1.5, 1.0])
             width = ic_params.get("width", 0.05) * Lx
 

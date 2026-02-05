@@ -103,13 +103,11 @@ class CahnHilliardPDE(ScalarPDEPreset):
         Default: random values near +/-1 (tanh(30*(RAND-0.5)))
         """
         if ic_type in ("cahn-hilliard-default", "default"):
-            seed = ic_params.get("seed")
-            if seed is not None:
-                np.random.seed(seed)
+            rng = np.random.default_rng(ic_params.get("seed"))
 
             # Random values near +/-1 using tanh transform
             # This creates initial conditions near the two pure phases
-            rand_data = np.random.rand(*grid.shape)
+            rand_data = rng.random(grid.shape)
             data = np.tanh(30 * (rand_data - 0.5))
 
             return ScalarField(grid, data)

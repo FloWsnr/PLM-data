@@ -6,6 +6,7 @@ from pathlib import Path
 
 from pde_sim.core.logging import restore_stdout, setup_logging
 from pde_sim.core.overview import generate_overview
+from pde_sim.core.batch import run_batch
 from pde_sim.core.simulation import run_from_config
 from pde_sim.pdes import get_pde_preset, get_presets_by_category
 
@@ -46,6 +47,22 @@ def main():
         "--overwrite",
         action="store_true",
         help="Overwrite the last numbered output folder instead of creating a new one",
+    )
+    run_parser.add_argument(
+        "--unique-suffix",
+        action="store_true",
+        help="Append a short random suffix to the run folder name (helps avoid collisions)",
+    )
+    run_parser.add_argument(
+        "--storage",
+        type=str,
+        choices=["memory", "file"],
+        help="Output storage mode for py-pde frames (memory or file)",
+    )
+    run_parser.add_argument(
+        "--keep-storage",
+        action="store_true",
+        help="Keep intermediate py-pde storage file when using --storage=file",
     )
     run_parser.add_argument(
         "--log-file",
@@ -91,6 +108,70 @@ def main():
         help="Title for the HTML document",
     )
 
+    # Batch command
+    batch_parser = subparsers.add_parser(
+        "batch", help="Run all configs in a directory (optionally with logging)"
+    )
+    batch_parser.add_argument(
+        "config_dir",
+        type=Path,
+        help="Directory containing YAML config files",
+    )
+    batch_parser.add_argument(
+        "--start-index",
+        type=int,
+        default=1,
+        help="Start from config N (1-indexed). Default: 1",
+    )
+    batch_parser.add_argument(
+        "--pattern",
+        type=str,
+        default="*.yaml",
+        help="Glob pattern for matching config files. Default: *.yaml",
+    )
+    batch_parser.add_argument(
+        "--log-file",
+        type=Path,
+        help="Path to log file. If provided, all output is logged to this file.",
+    )
+    batch_parser.add_argument(
+        "--quiet",
+        "-q",
+        action="store_true",
+        help="Suppress console output (use with --log-file to only log to file)",
+    )
+    batch_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        help="Override output directory for all runs",
+    )
+    batch_parser.add_argument(
+        "--seed",
+        type=int,
+        help="Override random seed for all runs",
+    )
+    batch_parser.add_argument(
+        "--storage",
+        type=str,
+        choices=["memory", "file"],
+        help="Override output storage mode (memory or file)",
+    )
+    batch_parser.add_argument(
+        "--keep-storage",
+        action="store_true",
+        help="Keep intermediate py-pde storage file when using --storage=file",
+    )
+    batch_parser.add_argument(
+        "--no-unique-suffix",
+        action="store_true",
+        help="Disable unique run-name suffixes (default: enabled for batch)",
+    )
+    batch_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite the last numbered output folder instead of creating a new one",
+    )
+
     args = parser.parse_args()
 
     if args.command == "run":
@@ -101,6 +182,8 @@ def main():
         show_preset_info(args)
     elif args.command == "overview":
         create_overview(args)
+    elif args.command == "batch":
+        run_batch_command(args)
     else:
         parser.print_help()
         sys.exit(1)
@@ -128,6 +211,9 @@ def run_simulation(args):
             seed=args.seed,
             verbose=not args.quiet,
             overwrite=args.overwrite,
+            storage=args.storage,
+            keep_storage=True if args.keep_storage else None,
+            unique_suffix=True if args.unique_suffix else None,
         )
 
         if not args.quiet:
@@ -216,6 +302,29 @@ def create_overview(args):
         sys.exit(1)
 
     print(f"Generated overview with {count} simulations: {html_path}")
+
+
+def run_batch_command(args) -> None:
+    """Run all YAML configs in a directory."""
+    if not args.config_dir.is_dir():
+        print(f"Error: {args.config_dir} is not a directory")
+        sys.exit(1)
+
+    ok, failed = run_batch(
+        config_dir=args.config_dir,
+        start_index=args.start_index,
+        log_file=args.log_file,
+        quiet=args.quiet,
+        pattern=args.pattern,
+        output_dir=args.output_dir,
+        seed=args.seed,
+        storage=args.storage,
+        keep_storage=True if args.keep_storage else None,
+        unique_suffix=(not args.no_unique_suffix),
+        overwrite=args.overwrite,
+    )
+
+    sys.exit(1 if failed > 0 else 0)
 
 
 if __name__ == "__main__":

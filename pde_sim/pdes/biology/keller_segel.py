@@ -106,11 +106,9 @@ class KellerSegelPDE(MultiFieldPDEPreset):
         """
         # Default: small random cell population, zero chemoattractant
         if ic_type in ("keller-segel-default", "default"):
-            np.random.seed(ic_params.get("seed"))
-
             # Cells - small random values (0 to 0.01)
             u = create_initial_condition(
-                grid, "random-uniform", {"low": 0.0, "high": 0.01}
+                grid, "random-uniform", {"low": 0.0, "high": 0.01, "seed": ic_params.get("seed")}
             )
             u.label = "u"
 

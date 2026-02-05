@@ -13,13 +13,13 @@ PDE Simulation Dataset Generator - A modular Python framework for generating 1D/
 uv sync
 
 # Run all tests (uses 6 parallel workers by default via pytest-xdist)
-uv run pytest tests/ -v
+uv run pytest -q
 
-# Run specific test file
-uv run pytest tests/test_pdes/basic/test_heat.py -v
+# Run a specific test file
+uv run pytest -q tests/test_simulation.py
 
 # Run single test (disable parallelism for single tests)
-uv run pytest tests/test_pdes/basic/test_heat.py::TestHeatPDE::test_metadata -v -n 0
+uv run pytest -q tests/test_simulation.py::TestSimulationRunner::test_run_short_simulation -n 0
 
 # Run with different worker count
 uv run pytest tests/ -v -n auto  # auto-detect CPU cores
@@ -35,6 +35,12 @@ uv run python -m pde_sim info gray-scott
 # Run a simulation
 uv run python -m pde_sim run configs/physics/gray_scott/default.yaml
 uv run python -m pde_sim run config.yaml --output-dir ./my_output --seed 42
+
+# Run with file-backed frame storage (for large runs)
+uv run python -m pde_sim run config.yaml --storage file
+
+# Batch run all configs in a directory
+uv run python -m pde_sim batch configs/physics/gray_scott/ --log-file logs/gray_scott.log
 ```
 
 ## Architecture
@@ -43,7 +49,7 @@ uv run python -m pde_sim run config.yaml --output-dir ./my_output --seed 42
 All PDEs use the `@register_pde("name")` decorator for auto-registration. Retrieve with `pde_sim.pdes.get_pde_preset(name)`.
 
 ### Base Class Hierarchy
-- **PDEPreset** (abstract): Base for all PDEs - defines `metadata`, `create_pde()`, `create_initial_state()`, `get_default_parameters()`, `validate_parameters()`
+- **PDEPreset** (abstract): Base for all PDEs - defines `metadata`, `create_pde()`, `create_initial_state()`, and `supported_dimensions` validation
 - **ScalarPDEPreset**: Single-field systems (heat, wave, etc.)
 - **MultiFieldPDEPreset**: Multi-field systems (Gray-Scott u/v, FitzHugh-Nagumo, etc.)
 
@@ -54,10 +60,11 @@ All PDEs use the `@register_pde("name")` decorator for auto-registration. Retrie
 4. Create PDE object with parameters
 5. Generate initial state via IC generator
 6. Run time-stepping (py-pde solver)
-7. Save frames (PNG) and metadata (JSON) via OutputManager
+7. Stream frames to output handlers (png/gif/mp4/numpy/h5) and write metadata (JSON)
 
 ### Key Directories
-- `pde_sim/core/` - Simulation infrastructure (config, runner, output)
+- `pde_sim/core/` - Simulation infrastructure (config, runner, diagnostics, logging, batch)
+- `pde_sim/output/` - Output subsystem (handlers/manager/metadata). `pde_sim.core.output` re-exports for compatibility.
 - `pde_sim/pdes/` - PDE presets organized by category (basic, biology, physics, fluids)
 - `pde_sim/descriptions/` - Markdown description files for each PDE (see below)
 - `pde_sim/initial_conditions/` - Initial condition generators
@@ -170,14 +177,17 @@ Supported BC types:
 
 ### Output Configuration
 
-Output supports four formats: PNG images, MP4 videos, GIF animations, or numpy arrays. You can specify one or more formats simultaneously.
+Output supports: PNG images, MP4 videos, GIF animations, numpy arrays, and HDF5 trajectories. You can specify one or more formats simultaneously.
 
 ```yaml
 output:
   path: ./output
   num_frames: 100
-  formats: [png]        # Required: list of formats ("png", "mp4", "gif", "numpy")
+  formats: [png]        # Required: list of formats ("png", "mp4", "gif", "numpy", "h5")
   fps: 30               # Frame rate for MP4/GIF (default: 30)
+  storage: memory       # "memory" (default) or "file" (file-backed py-pde storage to reduce RAM use)
+  keep_storage: false   # Keep intermediate storage file when storage: file
+  unique_suffix: false  # Append a short random suffix to run folder names (avoid collisions)
 ```
 
 **Multiple formats example:**
@@ -190,13 +200,15 @@ output:
     - mp4
     - gif
     - numpy
+    - h5
 ```
 
 **Format options:**
 - `png`: PNG images per field in subdirectories
 - `mp4`: One MP4 video per field
 - `gif`: One looping GIF animation per field
-- `numpy`: Single numpy array with shape `(Time, Height, Width, Fields)`
+- `numpy`: `trajectory.npy` + `times.npy` with shape `(T, *spatial, F)`
+- `h5`: `trajectory.h5` with datasets `trajectory` and `times`
 
 All fields from the PDE are always output. Colormaps are auto-assigned from a cycle (viridis, plasma, inferno, magma, cividis) based on field order.
 

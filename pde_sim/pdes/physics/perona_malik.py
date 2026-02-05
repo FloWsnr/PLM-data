@@ -139,9 +139,7 @@ class PeronaMalikPDE(ScalarPDEPreset):
         """
         if ic_type in ("perona-malik-default", "default"):
             sigma = ic_params.get("sigma", 1.0)
-            seed = ic_params.get("seed")
-            if seed is not None:
-                np.random.seed(seed)
+            rng = np.random.default_rng(ic_params.get("seed"))
 
             x_bounds = grid.axes_bounds[0]
             y_bounds = grid.axes_bounds[1]
@@ -156,23 +154,32 @@ class PeronaMalikPDE(ScalarPDEPreset):
             X_norm = (X - x_bounds[0]) / Lx
             Y_norm = (Y - y_bounds[0]) / Ly
 
+            # Step positions (randomize if not specified)
+            step1 = ic_params.get("step1")
+            step2 = ic_params.get("step2")
+            y_step = ic_params.get("y_step")
+            if step1 is None:
+                step1 = rng.uniform(0.15, 0.4)
+            if step2 is None:
+                step2 = rng.uniform(0.6, 0.85)
+            if y_step is None:
+                y_step = rng.uniform(0.3, 0.7)
+
             # Step pattern with edges
             data = np.zeros(grid.shape)
-            data[X_norm > 0.3] = 0.5
-            data[X_norm > 0.7] = 1.0
-            data[Y_norm > 0.5] += 0.3
+            data[X_norm > step1] = 0.5
+            data[X_norm > step2] = 1.0
+            data[Y_norm > y_step] += 0.3
 
             # Add noise
-            noise = sigma * 0.3 * (np.random.rand(*grid.shape) - 0.5)
+            noise = sigma * 0.3 * (rng.random(grid.shape) - 0.5)
             data += noise
 
             return ScalarField(grid, data)
 
         if ic_type == "text-image":
             # Text-like pattern
-            seed = ic_params.get("seed")
-            if seed is not None:
-                np.random.seed(seed)
+            rng = np.random.default_rng(ic_params.get("seed"))
             sigma = ic_params.get("sigma", 1.0)
 
             # Create simple pattern
@@ -185,12 +192,20 @@ class PeronaMalikPDE(ScalarPDEPreset):
             y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
             X, Y = np.meshgrid(x, y, indexing="ij")
 
+            # Randomize phase for stripe pattern
+            phase_x = ic_params.get("phase_x")
+            phase_y = ic_params.get("phase_y")
+            if phase_x is None:
+                phase_x = rng.uniform(0, 2 * np.pi)
+            if phase_y is None:
+                phase_y = rng.uniform(0, 2 * np.pi)
+
             # Create stripes and shapes
-            data = np.sin(4 * np.pi * X / Lx) * np.sin(4 * np.pi * Y / Ly)
+            data = np.sin(4 * np.pi * X / Lx + phase_x) * np.sin(4 * np.pi * Y / Ly + phase_y)
             data = (data > 0).astype(float)
 
             # Add noise
-            data += sigma * 0.1 * np.random.randn(*grid.shape)
+            data += sigma * 0.1 * rng.standard_normal(grid.shape)
 
             return ScalarField(grid, data)
 

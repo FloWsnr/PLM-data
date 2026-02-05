@@ -14,6 +14,7 @@ from pde_sim.core.output import (
     MP4Handler,
     GIFHandler,
     NumpyHandler,
+    H5Handler,
     create_output_handler,
 )
 from pde_sim.core.config import (
@@ -49,6 +50,11 @@ class TestOutputHandler:
         """Test creating Numpy handler."""
         handler = create_output_handler("numpy")
         assert isinstance(handler, NumpyHandler)
+
+    def test_create_h5_handler(self):
+        """Test creating H5 handler."""
+        handler = create_output_handler("h5")
+        assert isinstance(handler, H5Handler)
 
     def test_create_mp4_handler(self):
         """Test creating MP4 handler."""
@@ -195,11 +201,11 @@ class TestMP4Handler:
 
         assert handler.fps == 24
         assert handler.output_dir == tmp_output
-        assert "u" in handler.frame_buffers
-        assert "v" in handler.frame_buffers
+        assert "u" in handler._writers
+        assert "v" in handler._writers
 
     def test_frame_buffering(self, tmp_output):
-        """Test frames are accumulated in buffer."""
+        """Test frames can be written without buffering in memory."""
         handler = MP4Handler(fps=30)
         handler.initialize(
             tmp_output,
@@ -212,10 +218,9 @@ class TestMP4Handler:
         for i in range(3):
             handler.save_frame(data, "u", i, i * 0.1, 0.0, 1.0, "viridis")
 
-        assert len(handler.frame_buffers["u"]) == 3
-        # Each frame should be RGB array
-        assert handler.frame_buffers["u"][0].ndim == 3
-        assert handler.frame_buffers["u"][0].shape[2] == 3  # RGB channels
+        metadata = handler.finalize()
+        assert (tmp_output / "u.mp4").exists()
+        assert metadata["format"] == "mp4"
 
     def test_creates_video_file(self, tmp_output):
         """Test finalize creates MP4 video files."""
@@ -277,11 +282,11 @@ class TestGIFHandler:
 
         assert handler.fps == 15
         assert handler.output_dir == tmp_output
-        assert "u" in handler.frame_buffers
-        assert "v" in handler.frame_buffers
+        assert "u" in handler._writers
+        assert "v" in handler._writers
 
     def test_frame_buffering(self, tmp_output):
-        """Test frames are accumulated in buffer."""
+        """Test frames can be written without buffering in memory."""
         handler = GIFHandler(fps=10)
         handler.initialize(
             tmp_output,
@@ -294,10 +299,9 @@ class TestGIFHandler:
         for i in range(3):
             handler.save_frame(data, "u", i, i * 0.1, 0.0, 1.0, "viridis")
 
-        assert len(handler.frame_buffers["u"]) == 3
-        # Each frame should be RGB array
-        assert handler.frame_buffers["u"][0].ndim == 3
-        assert handler.frame_buffers["u"][0].shape[2] == 3  # RGB channels
+        metadata = handler.finalize()
+        assert (tmp_output / "u.gif").exists()
+        assert metadata["format"] == "gif"
 
     def test_creates_gif_file(self, tmp_output):
         """Test finalize creates GIF files."""
@@ -537,6 +541,47 @@ class TestOutputManager:
 
         trajectory = np.load(manager.output_dir / "trajectory.npy")
         assert trajectory.shape == (3, 16, 16, 2)
+
+    def test_h5_format_saves_trajectory(self, tmp_output, small_grid):
+        """Test h5 format saves trajectory correctly."""
+        import h5py
+
+        manager = OutputManager(
+            base_path=tmp_output,
+            folder_name="test-h5",
+            field_configs=[("u", "viridis"), ("v", "plasma")],
+            output_formats=["h5"],
+        )
+
+        states = []
+        for i in range(4):
+            u = ScalarField(small_grid, np.ones(small_grid.shape) * i)
+            u.label = "u"
+            v = ScalarField(small_grid, np.ones(small_grid.shape) * (i + 0.5))
+            v.label = "v"
+            states.append(FieldCollection([u, v]))
+
+        manager.compute_range_for_field(states, "u")
+        manager.compute_range_for_field(states, "v")
+
+        for i, state in enumerate(states):
+            manager.save_all_fields(state, i, i * 0.1)
+
+        metadata_path = manager.save_metadata({"test": "data"})
+
+        h5_path = manager.output_dir / "trajectory.h5"
+        assert h5_path.exists()
+
+        with h5py.File(h5_path, "r") as f:
+            assert "trajectory" in f
+            assert "times" in f
+            assert f["trajectory"].shape == (4, 16, 16, 2)
+            assert f["times"].shape == (4,)
+
+        with open(metadata_path) as f:
+            saved = json.load(f)
+        assert saved["output"]["formats"] == ["h5"]
+        assert "h5" in saved["output"]
 
     def test_mp4_format_saves_videos(self, tmp_output, small_grid):
         """Test mp4 format saves video files correctly."""

@@ -217,9 +217,10 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
         # Get domain bounds from grid
         x_min, x_max = grid.axes_bounds[0]
         y_min, y_max = grid.axes_bounds[1]
+        L_x = x_max - x_min
         L_y = y_max - y_min
 
-        np.random.seed(ic_params.get("seed"))
+        rng = np.random.default_rng(ic_params.get("seed"))
         noise = ic_params.get("noise", 0.000001)  # Very small noise per Visual PDE
 
         x, y = np.meshgrid(
@@ -233,31 +234,35 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
 
         if ic_type in ("thermal-convection-default", "default", "linear-gradient"):
             # Small random perturbations (instability seeds)
-            omega_data = noise * np.random.randn(*grid.shape)
+            omega_data = noise * rng.standard_normal(grid.shape)
             psi_data = np.zeros_like(omega_data)
             # Small temperature perturbations near bottom (where heating occurs)
-            b_data = noise * np.random.randn(*grid.shape) * (1.0 - y_norm)
+            b_data = noise * rng.standard_normal(grid.shape) * (1.0 - y_norm)
 
         elif ic_type == "warm-blob":
             # Localized warm region
-            x0 = ic_params.get("x0", 0.5)
-            y0 = ic_params.get("y0", 0.2)
+            x0 = ic_params.get("x0")
+            y0 = ic_params.get("y0")
+            if x0 is None:
+                x0 = rng.uniform(0.2, 0.8)
+            if y0 is None:
+                y0 = rng.uniform(0.1, 0.4)
             amplitude = ic_params.get("amplitude", 0.5)
             radius = ic_params.get("radius", 0.1)
 
             # Normalize x coordinate
-            x_norm = (x - x_min) / (x_max - x_min)
+            x_norm = (x - x_min) / L_x
 
             r_sq = (x_norm - x0) ** 2 + (y_norm - y0) ** 2
             b_data = amplitude * np.exp(-r_sq / (2 * radius**2))
-            omega_data = noise * np.random.randn(*grid.shape)
+            omega_data = noise * rng.standard_normal(grid.shape)
             psi_data = np.zeros_like(omega_data)
 
         else:
             # Default: use standard IC generator for b, small noise for omega
             b_field = create_initial_condition(grid, ic_type, ic_params)
             b_data = b_field.data
-            omega_data = noise * np.random.randn(*grid.shape)
+            omega_data = noise * rng.standard_normal(grid.shape)
             psi_data = np.zeros_like(omega_data)
 
         omega = ScalarField(grid, omega_data)

@@ -114,10 +114,8 @@ class SwiftHohenbergPDE(ScalarPDEPreset):
         """
         if ic_type in ("swift-hohenberg-default", "default"):
             amplitude = ic_params.get("amplitude", 0.1)
-            seed = ic_params.get("seed")
-            if seed is not None:
-                np.random.seed(seed)
-            data = amplitude * np.random.randn(*grid.shape)
+            rng = np.random.default_rng(ic_params.get("seed"))
+            data = amplitude * rng.standard_normal(grid.shape)
             return ScalarField(grid, data)
 
         return create_initial_condition(grid, ic_type, ic_params)

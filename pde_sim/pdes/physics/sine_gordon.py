@@ -139,11 +139,14 @@ class SineGordonPDE(MultiFieldPDEPreset):
 
         # Get wave speed for soliton profiles
         c = kwargs.get("parameters", {}).get("c", 1.0)
+        rng = np.random.default_rng(ic_params.get("seed"))
 
         if ic_type in ("default", "kink"):
             # Single kink soliton: phi = 4 * arctan(exp((x - x0) / w))
             # This transitions from 0 to 2*pi
-            x0 = ic_params.get("x0", Lx * 0.5 + x_bounds[0])
+            x0 = ic_params.get("x0")
+            if x0 is None:
+                x0 = rng.uniform(x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx)
             width = ic_params.get("width", Lx * 0.05)
             velocity = ic_params.get("velocity", 0.0)
 
@@ -157,14 +160,14 @@ class SineGordonPDE(MultiFieldPDEPreset):
             phi_data = 4 * np.arctan(np.exp((X - x0) / (width / gamma_lorentz)))
 
             # Velocity field: psi = -velocity * d(phi)/dx for moving kink
-            # d(phi)/dx = 4 * exp((x-x0)/w) / (w * (1 + exp((x-x0)/w)^2))
-            #           = 2 / (w * cosh((x-x0)/w))
             arg = (X - x0) / (width / gamma_lorentz)
             psi_data = -velocity * 2 * gamma_lorentz / (width * np.cosh(arg))
 
         elif ic_type == "antikink":
             # Antikink: transitions from 2*pi to 0
-            x0 = ic_params.get("x0", Lx * 0.5 + x_bounds[0])
+            x0 = ic_params.get("x0")
+            if x0 is None:
+                x0 = rng.uniform(x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx)
             width = ic_params.get("width", Lx * 0.05)
             velocity = ic_params.get("velocity", 0.0)
 
@@ -181,8 +184,12 @@ class SineGordonPDE(MultiFieldPDEPreset):
 
         elif ic_type == "kink-antikink":
             # Kink-antikink pair for collision dynamics
-            x0_kink = ic_params.get("x0_kink", x_bounds[0] + Lx * 0.3)
-            x0_antikink = ic_params.get("x0_antikink", x_bounds[0] + Lx * 0.7)
+            x0_kink = ic_params.get("x0_kink")
+            x0_antikink = ic_params.get("x0_antikink")
+            if x0_kink is None:
+                x0_kink = rng.uniform(x_bounds[0] + 0.15 * Lx, x_bounds[0] + 0.4 * Lx)
+            if x0_antikink is None:
+                x0_antikink = rng.uniform(x_bounds[0] + 0.6 * Lx, x_bounds[0] + 0.85 * Lx)
             width = ic_params.get("width", Lx * 0.05)
             v_kink = ic_params.get("v_kink", 0.3)
             v_antikink = ic_params.get("v_antikink", -0.3)
@@ -213,9 +220,9 @@ class SineGordonPDE(MultiFieldPDEPreset):
 
         elif ic_type == "breather":
             # Breather solution: localized oscillating bound state
-            # Approximate breather: phi = 4 * arctan(sin(omega*t) / cosh(x/w))
-            # At t=0: phi = 0, psi depends on omega
-            x0 = ic_params.get("x0", Lx * 0.5 + x_bounds[0])
+            x0 = ic_params.get("x0")
+            if x0 is None:
+                x0 = rng.uniform(x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx)
             width = ic_params.get("width", Lx * 0.1)
             omega = ic_params.get("omega", 0.5)  # Internal frequency
 
@@ -230,9 +237,12 @@ class SineGordonPDE(MultiFieldPDEPreset):
 
         elif ic_type == "ring":
             # Ring soliton: circular wave in 2D
-            # phi ~ 4 * arctan(exp((r - R0) / w)) where r = sqrt(x^2 + y^2)
-            x_center = ic_params.get("x_center", (x_bounds[0] + x_bounds[1]) / 2)
-            y_center = ic_params.get("y_center", (y_bounds[0] + y_bounds[1]) / 2)
+            x_center = ic_params.get("x_center")
+            y_center = ic_params.get("y_center")
+            if x_center is None:
+                x_center = rng.uniform(x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx)
+            if y_center is None:
+                y_center = rng.uniform(y_bounds[0] + 0.2 * Ly, y_bounds[0] + 0.8 * Ly)
             R0 = ic_params.get("radius", min(Lx, Ly) * 0.25)
             width = ic_params.get("width", min(Lx, Ly) * 0.02)
             velocity = ic_params.get("velocity", 0.0)  # Radial velocity (expanding/contracting)
@@ -244,16 +254,12 @@ class SineGordonPDE(MultiFieldPDEPreset):
             phi_data = 4 * np.arctan(np.exp(arg))
 
             # Radial velocity field
-            # psi ~ velocity * d(phi)/dr for expanding/contracting ring
             psi_data = velocity * 2 / (width * np.cosh(arg))
 
         elif ic_type == "random":
             # Random small perturbations from phi = 0
-            seed = ic_params.get("seed")
-            if seed is not None:
-                np.random.seed(seed)
             amplitude = ic_params.get("amplitude", 0.5)
-            phi_data = amplitude * np.random.randn(*grid.shape)
+            phi_data = amplitude * rng.standard_normal(grid.shape)
             psi_data = np.zeros(grid.shape)
 
         else:

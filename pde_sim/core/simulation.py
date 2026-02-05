@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from pde import MemoryStorage
+from pde import FileStorage, MemoryStorage
 
 from .config import COLORMAP_CYCLE, SimulationConfig, load_config
 from .output import OutputManager, create_metadata
@@ -20,7 +20,11 @@ VALID_BACKENDS = ("auto", "numpy", "numba")
 
 
 def _get_next_folder_name(
-    base_path: Path, preset: str, config_name: str | None = None, overwrite: bool = False
+    base_path: Path,
+    preset: str,
+    config_name: str | None = None,
+    overwrite: bool = False,
+    unique_suffix: bool = False,
 ) -> str:
     """Find the next available folder name for a preset.
 
@@ -31,6 +35,8 @@ def _get_next_folder_name(
             folder names will be "{config_name}_{number}" (e.g., "directed_fast_001").
             If None, folder names will be just "{number}" (e.g., "001").
         overwrite: If True, return the last used number instead of incrementing.
+        unique_suffix: If True, append a short random suffix to avoid collisions when
+            running concurrently (e.g. Slurm array jobs).
 
     Returns:
         The next folder name (e.g., "directed_fast_001" or "001").
@@ -40,11 +46,12 @@ def _get_next_folder_name(
         number = "001"
         return f"{config_name}_{number}" if config_name else number
 
-    # Build regex pattern based on whether we have a config name
+    # Build regex pattern based on whether we have a config name. We allow an
+    # optional suffix so numbering still works for names like `foo_001_ab12cd`.
     if config_name:
-        pattern = re.compile(rf"^{re.escape(config_name)}_(\d+)$")
+        pattern = re.compile(rf"^{re.escape(config_name)}_(\d+)(?:_.+)?$")
     else:
-        pattern = re.compile(r"^(\d+)$")
+        pattern = re.compile(r"^(\d+)(?:_.+)?$")
 
     # Find all existing numbered folders matching the pattern
     existing_numbers = []
@@ -54,17 +61,19 @@ def _get_next_folder_name(
             if match:
                 existing_numbers.append(int(match.group(1)))
 
-    if not existing_numbers:
-        number = "001"
+    max_number = max(existing_numbers) if existing_numbers else 0
+
+    if overwrite:
+        number = f"{max_number:03d}" if max_number else "001"
         return f"{config_name}_{number}" if config_name else number
 
-    max_number = max(existing_numbers)
-    if overwrite:
-        number = f"{max_number:03d}"
-    else:
-        number = f"{max_number + 1:03d}"
-
-    return f"{config_name}_{number}" if config_name else number
+    number = f"{max_number + 1:03d}" if max_number else "001"
+    base = f"{config_name}_{number}" if config_name else number
+    if unique_suffix:
+        # Short suffix: readable and collision-resistant enough for concurrent jobs.
+        suffix = uuid.uuid4().hex[:8]
+        return f"{base}_{suffix}"
+    return base
 
 
 class SimulationRunner:
@@ -80,6 +89,7 @@ class SimulationRunner:
         sim_id: str | None = None,
         overwrite: bool = False,
         config_name: str | None = None,
+        unique_suffix: bool | None = None,
     ):
         """Initialize the simulation runner.
 
@@ -90,9 +100,12 @@ class SimulationRunner:
             overwrite: If True, overwrite the last numbered folder instead of creating a new one.
             config_name: Name of the config file (without extension). Used to prefix
                 the output folder name (e.g., "directed_fast_001").
+            unique_suffix: If True, append a short random suffix to avoid collisions.
+                If None, uses `config.output.unique_suffix`.
         """
         self.config = config
         self.sim_id = sim_id or str(uuid.uuid4())
+        self.unique_suffix = config.output.unique_suffix if unique_suffix is None else unique_suffix
 
         # Track whether output_dir was explicitly provided
         explicit_output_dir = output_dir is not None
@@ -103,14 +116,30 @@ class SimulationRunner:
         # When using default output path, add preset subdirectory
         if explicit_output_dir:
             # Look for existing runs directly in output_dir (no preset subdirectory)
-            folder_name = _get_next_folder_name(self.output_dir, ".", config_name, overwrite)
+            folder_name = _get_next_folder_name(
+                self.output_dir,
+                ".",
+                config_name,
+                overwrite,
+                unique_suffix=self.unique_suffix and not overwrite,
+            )
             self.run_name = folder_name
             self.folder_name = folder_name
         else:
-            folder_name = _get_next_folder_name(self.output_dir, config.preset, config_name, overwrite)
+            folder_name = _get_next_folder_name(
+                self.output_dir,
+                config.preset,
+                config_name,
+                overwrite,
+                unique_suffix=self.unique_suffix and not overwrite,
+            )
             self.run_name = folder_name
             # Full folder path: {preset}/{folder_name}
             self.folder_name = f"{config.preset}/{folder_name}"
+
+        # Ensure the output directory exists early so file-based storage can write into it.
+        self.full_output_dir = self.output_dir / self.folder_name
+        self.full_output_dir.mkdir(parents=True, exist_ok=True)
 
         # Validate backend
         if config.backend not in VALID_BACKENDS:
@@ -183,21 +212,10 @@ class SimulationRunner:
         # Determine field configurations for output
         # Auto-assign colormaps from COLORMAP_CYCLE based on field order
         field_names = self.preset.metadata.field_names
-        field_configs = [
+        self.field_configs = [
             (name, COLORMAP_CYCLE[i % len(COLORMAP_CYCLE)])
             for i, name in enumerate(field_names)
         ]
-
-        # Output management
-        self.output_manager = OutputManager(
-            base_path=self.output_dir,
-            folder_name=self.folder_name,
-            colormap=COLORMAP_CYCLE[0],  # Default colormap
-            field_configs=field_configs,
-            output_formats=config.output.formats,
-            fps=config.output.fps,
-            ndim=config.ndim,
-        )
 
     def _get_solver_name(self) -> str:
         """Get the solver name for py-pde."""
@@ -240,11 +258,42 @@ class SimulationRunner:
             # Only show adaptive info for solvers that support it
             if self._get_solver_name() != "implicit" and self.config.adaptive:
                 print(f"  Adaptive: True (tolerance: {self.config.tolerance})")
-            print(f"  Output: {self.output_manager.output_dir}")
+            print(f"  Output: {self.full_output_dir}")
             print(f"  Formats: {', '.join(self.config.output.formats)}")
 
-        # Create storage for capturing frames
-        storage = MemoryStorage()
+        def _extract_field_data(state: Any, field_name: str) -> np.ndarray:
+            """Extract numpy data for a field name from a py-pde state."""
+            from pde import FieldCollection
+
+            if isinstance(state, FieldCollection):
+                for field in state:
+                    if hasattr(field, "label") and field.label == field_name:
+                        data = field.data
+                        break
+                else:
+                    # Fallback to first field
+                    data = state[0].data
+            else:
+                data = state.data
+
+            data = np.asarray(data)
+            if np.iscomplexobj(data):
+                data = np.abs(data)
+            return data
+
+        # Create storage for capturing frames. For large simulations, use FileStorage
+        # to avoid holding all frames in RAM.
+        storage_mode = (self.config.output.storage or "memory").lower()
+        storage_path: Path | None = None
+        if storage_mode == "file":
+            storage_path = self.full_output_dir / "_py_pde_storage.h5"
+            storage = FileStorage(storage_path, write_mode="truncate")
+        elif storage_mode == "memory":
+            storage = MemoryStorage()
+        else:
+            raise ValueError(
+                f"Invalid output.storage '{self.config.output.storage}'. Use 'memory' or 'file'."
+            )
 
         # Run simulation using py-pde's solve method
         # interrupts parameter determines the interval for saving
@@ -268,48 +317,121 @@ class SimulationRunner:
 
         # Time the simulation
         wall_clock_start = time.perf_counter()
-        result = self.pde.solve(self.state, **solve_kwargs)
+        _result = self.pde.solve(self.state, **solve_kwargs)
         wall_clock_duration = time.perf_counter() - wall_clock_start
 
         # Capture solver diagnostics (including adaptive dt statistics)
         solver_diagnostics = getattr(self.pde, "diagnostics", {}).get("solver", {})
 
-        # Save frames from storage
+        # Save frames from storage (2-pass for consistent colorscale without loading
+        # everything into memory).
         if verbose:
             print(f"  Saving {len(storage)} frames...")
 
-        # Two-pass approach for consistent colorscale:
-        # 1. Compute global min/max across all frames per field
-        all_fields = [field for _, field in storage.items()]
-        all_times = list(storage.times)
+        field_names = [name for name, _ in self.field_configs]
+        field_ranges: dict[str, tuple[float, float]] = {
+            name: (float("inf"), float("-inf")) for name in field_names
+        }
 
-        for field_name, _ in self.output_manager.field_configs:
-            self.output_manager.compute_range_for_field(all_fields, field_name)
+        # Pass 1: compute global min/max per field
+        for _t, state in storage.items():
+            for name in field_names:
+                data = _extract_field_data(state, name)
+                vmin, vmax = field_ranges[name]
+                field_ranges[name] = (min(vmin, float(np.min(data))), max(vmax, float(np.max(data))))
 
-        # Check for stagnant/boring trajectories
-        from .diagnostics import check_trajectory_stagnation
-
-        stagnation = check_trajectory_stagnation(
-            all_fields=all_fields,
-            field_names=[name for name, _ in self.output_manager.field_configs],
-            extract_field_fn=self.output_manager._extract_field_data,
+        # Initialize output manager after solve so handlers can allocate using the
+        # actual number of frames written by py-pde.
+        actual_num_frames = len(storage)
+        self.output_manager = OutputManager(
+            base_path=self.output_dir,
+            folder_name=self.folder_name,
+            colormap=COLORMAP_CYCLE[0],
+            field_configs=self.field_configs,
+            output_formats=self.config.output.formats,
+            fps=self.config.output.fps,
+            ndim=self.config.ndim,
+            expected_num_frames=actual_num_frames,
         )
+        self.output_manager.field_ranges = field_ranges
 
-        if verbose and stagnation["stagnant_fields"]:
-            for field_name in stagnation["stagnant_fields"]:
-                info = stagnation["fields"][field_name]
+        # Pass 2: compute stagnation diagnostics and write outputs
+        rel_threshold = 1e-4
+        min_stagnant_fraction = 0.2
+
+        max_abs_diff: dict[str, float] = {name: 0.0 for name in field_names}
+        final_abs_diff: dict[str, float] = {name: 0.0 for name in field_names}
+        trailing_stagnant: dict[str, int] = {name: 0 for name in field_names}
+        prev_data: dict[str, np.ndarray] = {}
+
+        for frame_index, (t, state) in enumerate(storage.items()):
+            for name in field_names:
+                data = _extract_field_data(state, name)
+                vmin, vmax = field_ranges[name]
+                field_range = vmax - vmin
+                if field_range == 0:
+                    continue
+                if name in prev_data:
+                    abs_diff = float(np.max(np.abs(data - prev_data[name])))
+                    max_abs_diff[name] = max(max_abs_diff[name], abs_diff)
+                    final_abs_diff[name] = abs_diff
+                    if abs_diff < rel_threshold * field_range:
+                        trailing_stagnant[name] += 1
+                    else:
+                        trailing_stagnant[name] = 0
+                prev_data[name] = data.copy()
+
+            self.output_manager.save_all_fields(state, frame_index, t)
+
+        # Build stagnation report compatible with the old diagnostics structure
+        stagnant_fields: list[str] = []
+        fields_info: dict[str, dict[str, Any]] = {}
+        min_stagnant_count = max(int(min_stagnant_fraction * actual_num_frames), 2)
+        for name in field_names:
+            vmin, vmax = field_ranges[name]
+            field_range = vmax - vmin
+            if field_range == 0:
+                stagnant_fields.append(name)
+                fields_info[name] = {
+                    "stagnant": True,
+                    "stagnant_from_frame": 0,
+                    "trailing_stagnant_frames": actual_num_frames,
+                    "field_range": 0.0,
+                    "max_relative_change": 0.0,
+                    "final_relative_change": 0.0,
+                }
+                continue
+
+            trailing = trailing_stagnant[name]
+            is_stagnant = trailing >= min_stagnant_count
+            if is_stagnant:
+                stagnant_fields.append(name)
+            stagnant_from_frame = (actual_num_frames - 1 - trailing) if is_stagnant else None
+
+            fields_info[name] = {
+                "stagnant": is_stagnant,
+                "stagnant_from_frame": stagnant_from_frame,
+                "trailing_stagnant_frames": trailing,
+                "field_range": field_range,
+                "max_relative_change": max_abs_diff[name] / field_range,
+                "final_relative_change": final_abs_diff[name] / field_range,
+            }
+
+        stagnation = {"stagnant_fields": stagnant_fields, "fields": fields_info}
+
+        if verbose and stagnant_fields:
+            for name in stagnant_fields:
+                info = fields_info[name]
                 if info["field_range"] == 0:
-                    print(f"  WARNING: Field '{field_name}' is completely constant")
+                    print(f"  WARNING: Field '{name}' is completely constant")
                 else:
-                    print(f"  WARNING: Field '{field_name}' appears stagnant from frame {info['stagnant_from_frame']} "
-                          f"({info['trailing_stagnant_frames']} frames with no significant change)")
-
-        # 2. Save frames with the pre-computed range
-        for frame_index, (t, field) in enumerate(storage.items()):
-            self.output_manager.save_all_fields(field, frame_index, t)
+                    print(
+                        f"  WARNING: Field '{name}' appears stagnant from frame {info['stagnant_from_frame']} "
+                        f"({info['trailing_stagnant_frames']} frames with no significant change)"
+                    )
 
         # Generate and save metadata
-        total_time = storage.times[-1] if storage.times else self.config.t_end
+        total_time = storage.times[-1] if len(storage) > 0 else self.config.t_end
 
         metadata = create_metadata(
             sim_id=self.sim_id,
@@ -339,6 +461,19 @@ class SimulationRunner:
 
         # Add folder_name to returned metadata (for CLI use, not saved to file)
         metadata["folder_name"] = self.folder_name
+
+        # Clean up file-based intermediate storage unless requested.
+        if storage_path is not None:
+            try:
+                storage.close()
+            except Exception:
+                pass
+            if not self.config.output.keep_storage:
+                try:
+                    storage_path.unlink(missing_ok=True)
+                except Exception:
+                    pass
+
         return metadata
 
 
@@ -348,6 +483,9 @@ def run_from_config(
     seed: int | None = None,
     verbose: bool = True,
     overwrite: bool = False,
+    storage: str | None = None,
+    keep_storage: bool | None = None,
+    unique_suffix: bool | None = None,
 ) -> dict[str, Any]:
     """Run a simulation from a config file.
 
@@ -357,6 +495,9 @@ def run_from_config(
         seed: Override for random seed.
         verbose: Whether to print progress.
         overwrite: If True, overwrite the last numbered folder instead of creating a new one.
+        storage: Override for output.storage ("memory" or "file").
+        keep_storage: Override for output.keep_storage.
+        unique_suffix: Override for output.unique_suffix.
 
     Returns:
         Simulation metadata dictionary.
@@ -370,8 +511,18 @@ def run_from_config(
     # Override seed if provided
     if seed is not None:
         config.seed = seed
+    if storage is not None:
+        config.output.storage = storage
+    if keep_storage is not None:
+        config.output.keep_storage = keep_storage
+    if unique_suffix is not None:
+        config.output.unique_suffix = unique_suffix
 
     runner = SimulationRunner(
-        config, output_dir=output_dir, overwrite=overwrite, config_name=config_name
+        config,
+        output_dir=output_dir,
+        overwrite=overwrite,
+        config_name=config_name,
+        unique_suffix=unique_suffix,
     )
     return runner.run(verbose=verbose)

@@ -122,9 +122,7 @@ class SwiftHohenbergAdvectionPDE(ScalarPDEPreset):
         if ic_type in ("swift-hohenberg-advection-default", "default"):
             amplitude = ic_params.get("amplitude", 0.5)
             P = ic_params.get("P", 3)  # Pattern symmetry: 1=D4, 2=D6, 3=D12
-            seed = ic_params.get("seed")
-            if seed is not None:
-                np.random.seed(seed)
+            rng = np.random.default_rng(ic_params.get("seed"))
 
             # Get domain info
             x_bounds = grid.axes_bounds[0]
@@ -137,9 +135,17 @@ class SwiftHohenbergAdvectionPDE(ScalarPDEPreset):
             y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
             X, Y = np.meshgrid(x, y, indexing="ij")
 
-            # Center coordinates
-            cx = x_bounds[0] + Lx / 2
-            cy = y_bounds[0] + Ly / 2
+            # Pattern center (randomize if not specified)
+            cx = ic_params.get("cx")
+            cy = ic_params.get("cy")
+            if cx is None:
+                cx = rng.uniform(x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx)
+            else:
+                cx = x_bounds[0] + cx * Lx
+            if cy is None:
+                cy = rng.uniform(y_bounds[0] + 0.2 * Ly, y_bounds[0] + 0.8 * Ly)
+            else:
+                cy = y_bounds[0] + cy * Ly
             X_c = X - cx
             Y_c = Y - cy
 
@@ -158,7 +164,7 @@ class SwiftHohenbergAdvectionPDE(ScalarPDEPreset):
             data = amplitude * envelope * pattern
 
             # Add small noise
-            data += 0.01 * np.random.randn(*grid.shape)
+            data += 0.01 * rng.standard_normal(grid.shape)
 
             return ScalarField(grid, data)
 

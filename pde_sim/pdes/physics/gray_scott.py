@@ -144,6 +144,9 @@ class GrayScottPDE(MultiFieldPDEPreset):
         params: dict[str, Any],
     ) -> FieldCollection:
         """Create default Gray-Scott initialization with center perturbation."""
+        seed = params.get("seed")
+        rng = np.random.default_rng(seed)
+
         # Get domain info
         x_bounds = grid.axes_bounds[0]
         y_bounds = grid.axes_bounds[1]
@@ -155,9 +158,17 @@ class GrayScottPDE(MultiFieldPDEPreset):
         y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
         X, Y = np.meshgrid(x, y, indexing="ij")
 
-        # Center of domain
-        cx = x_bounds[0] + Lx / 2
-        cy = y_bounds[0] + Ly / 2
+        # Perturbation center (randomize if not specified)
+        cx = params.get("cx")
+        cy = params.get("cy")
+        if cx is None:
+            cx = rng.uniform(x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx)
+        else:
+            cx = x_bounds[0] + cx * Lx
+        if cy is None:
+            cy = rng.uniform(y_bounds[0] + 0.2 * Ly, y_bounds[0] + 0.8 * Ly)
+        else:
+            cy = y_bounds[0] + cy * Ly
 
         # Perturbation size
         r = params.get("perturbation_radius", 0.1) * min(Lx, Ly)
@@ -170,16 +181,13 @@ class GrayScottPDE(MultiFieldPDEPreset):
         u_data = np.zeros(grid.shape)
         v_data = np.ones(grid.shape)
 
-        # Add perturbation in center - seed with some u
+        # Add perturbation - seed with some u
         u_data[mask] = 0.5
 
         # Add small noise
         noise = params.get("noise", 0.01)
-        seed = params.get("seed")
-        if seed is not None:
-            np.random.seed(seed)
-        u_data += noise * np.random.randn(*grid.shape)
-        v_data += noise * np.random.randn(*grid.shape)
+        u_data += noise * rng.standard_normal(grid.shape)
+        v_data += noise * rng.standard_normal(grid.shape)
 
         # Clip to valid range
         u_data = np.clip(u_data, 0, 1)
@@ -198,6 +206,9 @@ class GrayScottPDE(MultiFieldPDEPreset):
         params: dict[str, Any],
     ) -> FieldCollection:
         """Create Gray-Scott init with Gaussian blob seeds."""
+        seed = params.get("seed")
+        rng = np.random.default_rng(seed)
+
         num_blobs = params.get("num_blobs", 5)
         width = params.get("width", 0.05)
 
@@ -218,20 +229,17 @@ class GrayScottPDE(MultiFieldPDEPreset):
 
         # Add Gaussian blobs as seeds
         sigma = width * min(Lx, Ly)
-        seed = params.get("seed")
-        if seed is not None:
-            np.random.seed(seed)
         for _ in range(num_blobs):
-            cx = np.random.uniform(x_bounds[0] + sigma, x_bounds[1] - sigma)
-            cy = np.random.uniform(y_bounds[0] + sigma, y_bounds[1] - sigma)
+            cx = rng.uniform(x_bounds[0] + sigma, x_bounds[1] - sigma)
+            cy = rng.uniform(y_bounds[0] + sigma, y_bounds[1] - sigma)
 
             blob = np.exp(-((X - cx) ** 2 + (Y - cy) ** 2) / (2 * sigma**2))
             u_data += 0.5 * blob
 
         # Add small noise
         noise = params.get("noise", 0.01)
-        u_data += noise * np.random.randn(*grid.shape)
-        v_data += noise * np.random.randn(*grid.shape)
+        u_data += noise * rng.standard_normal(grid.shape)
+        v_data += noise * rng.standard_normal(grid.shape)
 
         # Clip
         u_data = np.clip(u_data, 0, 1)
