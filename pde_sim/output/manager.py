@@ -1,7 +1,5 @@
 """Output orchestration (multiple formats, per-field ranges, metadata writing)."""
 
-from __future__ import annotations
-
 import json
 from pathlib import Path
 from typing import Any

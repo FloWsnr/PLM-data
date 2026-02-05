@@ -4,8 +4,6 @@ We intentionally avoid creating matplotlib figures for per-frame rendering to ke
 outputs fast and headless-friendly.
 """
 
-from __future__ import annotations
-
 import matplotlib.pyplot as plt
 import numpy as np
 

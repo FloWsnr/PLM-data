@@ -1,7 +1,5 @@
 """Boundary condition factory for py-pde."""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Any
 
 from pde import CartesianGrid
@@ -56,7 +54,7 @@ class BoundaryConditionFactory:
 
     @classmethod
     def convert_config(
-        cls, bc_config: BoundaryConfig | dict[str, str], ndim: int = 2
+        cls, bc_config: "BoundaryConfig | dict[str, str]", ndim: int = 2
     ) -> dict[str, Any]:
         """Convert BC config to py-pde format.
 
@@ -121,7 +119,7 @@ class BoundaryConditionFactory:
         return result
 
     @classmethod
-    def get_periodic_flags(cls, bc_config: BoundaryConfig, ndim: int = 2) -> list[bool]:
+    def get_periodic_flags(cls, bc_config: "BoundaryConfig", ndim: int = 2) -> list[bool]:
         """Get periodic flags for each axis.
 
         Args:
@@ -159,7 +157,7 @@ class BoundaryConditionFactory:
 def create_grid_with_bc(
     resolution: list[int],
     domain_size: list[float],
-    bc_config: BoundaryConfig,
+    bc_config: "BoundaryConfig",
 ) -> CartesianGrid:
     """Create a CartesianGrid with appropriate periodicity.
 

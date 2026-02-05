@@ -4,8 +4,6 @@ Handlers implement a small interface so the OutputManager can write multiple for
 simultaneously (e.g. png + numpy) without duplicating orchestration logic.
 """
 
-from __future__ import annotations
-
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path

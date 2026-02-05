@@ -1,7 +1,5 @@
 """Batch execution utilities (shared by CLI and scripts)."""
 
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 
