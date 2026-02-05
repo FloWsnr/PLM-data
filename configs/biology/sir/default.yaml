@@ -10,6 +10,8 @@ init:
   params:
     S0: 0.99
     I0: 0.01
+    seed_x: 10.0
+    seed_y: 50.0
     seed_radius: 5.0
 solver: euler
 backend: numba

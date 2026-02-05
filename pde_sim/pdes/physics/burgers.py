@@ -98,8 +98,8 @@ class BurgersPDE(ScalarPDEPreset):
 
             # Pulse position (randomize if not specified)
             position = ic_params.get("position")
-            if position is None:
-                position = rng.uniform(0.1, 0.5)
+            if position is None or position == "random":
+                raise ValueError("burgers default requires position (or random)")
             x0 = x_bounds[0] + position * Lx
 
             x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
@@ -123,8 +123,8 @@ class BurgersPDE(ScalarPDEPreset):
 
             # Get pulse parameters (lists)
             positions = ic_params.get("positions")
-            if positions is None:
-                positions = sorted(rng.uniform(0.1, 0.6, size=3).tolist())
+            if positions is None or positions == "random":
+                raise ValueError("burgers multi-pulse requires positions (or random)")
             amplitudes = ic_params.get("amplitudes", [2.0, 1.5, 1.0])
             width = ic_params.get("width", 0.05) * Lx
 
@@ -146,6 +146,40 @@ class BurgersPDE(ScalarPDEPreset):
             return ScalarField(grid, data)
 
         return create_initial_condition(grid, ic_type, ic_params)
+
+    def resolve_ic_params(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        if ic_type in ("burgers-default", "default"):
+            resolved = ic_params.copy()
+            if "position" not in resolved:
+                raise ValueError("burgers default requires position (or random)")
+            if resolved["position"] == "random":
+                rng = np.random.default_rng(resolved.get("seed"))
+                resolved["position"] = rng.uniform(0.1, 0.5)
+            if resolved["position"] is None:
+                raise ValueError("burgers default requires position (or random)")
+            return resolved
+        if ic_type == "multi-pulse":
+            resolved = ic_params.copy()
+            if "positions" not in resolved:
+                raise ValueError("burgers multi-pulse requires positions (or random)")
+            if resolved["positions"] == "random":
+                rng = np.random.default_rng(resolved.get("seed"))
+                if "amplitudes" in resolved:
+                    count = len(resolved["amplitudes"])
+                else:
+                    count = 3
+                resolved["positions"] = sorted(
+                    rng.uniform(0.1, 0.6, size=count).tolist()
+                )
+            if resolved["positions"] is None:
+                raise ValueError("burgers multi-pulse requires positions (or random)")
+            return resolved
+        return super().resolve_ic_params(grid, ic_type, ic_params)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

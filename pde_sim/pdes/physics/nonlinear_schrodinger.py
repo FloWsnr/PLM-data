@@ -112,14 +112,15 @@ class NonlinearSchrodingerPDE(MultiFieldPDEPreset):
             Lx = x_bounds[1] - x_bounds[0]
 
             x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+            x0_frac = ic_params.get("x0_frac")
+            if x0_frac is None or x0_frac == "random":
+                raise ValueError("nonlinear-schrodinger soliton requires x0_frac (or random)")
+            x0 = x_bounds[0] + Lx * x0_frac
 
             if len(grid.shape) > 1:
                 y_bounds = grid.axes_bounds[1]
                 y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
                 X, Y = np.meshgrid(x, y, indexing="ij")
-
-                # Soliton at x = L/3 with carrier wave
-                x0 = x_bounds[0] + Lx / 3
 
                 # sech envelope
                 envelope = amplitude / np.cosh(X - x0)
@@ -128,7 +129,6 @@ class NonlinearSchrodingerPDE(MultiFieldPDEPreset):
                 u_data = np.cos(c * X) * envelope
                 v_data = np.sin(c * X) * envelope
             else:
-                x0 = x_bounds[0] + Lx / 3
                 envelope = amplitude / np.cosh(x - x0)
                 u_data = np.cos(c * x) * envelope
                 v_data = np.sin(c * x) * envelope
@@ -145,8 +145,10 @@ class NonlinearSchrodingerPDE(MultiFieldPDEPreset):
             c1 = ic_params.get("c1", 8.0)  # velocity of first soliton
             c2 = ic_params.get("c2", -8.0)  # velocity of second soliton (opposite)
             amplitude = ic_params.get("amplitude", 1.0)
-            x1_frac = ic_params.get("x1_frac", 0.25)  # position as fraction of domain
-            x2_frac = ic_params.get("x2_frac", 0.75)  # position as fraction of domain
+            x1_frac = ic_params.get("x1_frac")
+            x2_frac = ic_params.get("x2_frac")
+            if x1_frac is None or x1_frac == "random" or x2_frac is None or x2_frac == "random":
+                raise ValueError("nonlinear-schrodinger two_soliton requires x1_frac and x2_frac (or random)")
             seed = ic_params.get("seed")
             if seed is not None:
                 np.random.seed(seed)
@@ -190,6 +192,46 @@ class NonlinearSchrodingerPDE(MultiFieldPDEPreset):
 
         # For other IC types
         return super().create_initial_state(grid, ic_type, ic_params)
+
+    def resolve_ic_params(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        if ic_type in ("nonlinear-schrodinger-default", "default", "soliton"):
+            resolved = ic_params.copy()
+            if "x0_frac" not in resolved:
+                raise ValueError("nonlinear-schrodinger soliton requires x0_frac (or random)")
+            if resolved["x0_frac"] == "random":
+                rng = np.random.default_rng(resolved.get("seed"))
+                resolved["x0_frac"] = rng.uniform(0.1, 0.9)
+            if resolved["x0_frac"] is None or resolved["x0_frac"] == "random":
+                raise ValueError("nonlinear-schrodinger soliton requires x0_frac (or random)")
+            return resolved
+
+        if ic_type == "two_soliton":
+            resolved = ic_params.copy()
+            required = ["x1_frac", "x2_frac"]
+            for key in required:
+                if key not in resolved:
+                    raise ValueError("nonlinear-schrodinger two_soliton requires x1_frac and x2_frac (or random)")
+            if any(resolved[key] == "random" for key in required):
+                rng = np.random.default_rng(resolved.get("seed"))
+                if resolved["x1_frac"] == "random" and resolved["x2_frac"] == "random":
+                    vals = rng.uniform(0.1, 0.9, size=2)
+                    vals.sort()
+                    resolved["x1_frac"], resolved["x2_frac"] = vals.tolist()
+                else:
+                    if resolved["x1_frac"] == "random":
+                        resolved["x1_frac"] = rng.uniform(0.1, 0.9)
+                    if resolved["x2_frac"] == "random":
+                        resolved["x2_frac"] = rng.uniform(0.1, 0.9)
+            if any(resolved[key] is None or resolved[key] == "random" for key in required):
+                raise ValueError("nonlinear-schrodinger two_soliton requires x1_frac and x2_frac (or random)")
+            return resolved
+
+        return super().resolve_ic_params(grid, ic_type, ic_params)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

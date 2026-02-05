@@ -145,8 +145,8 @@ class SineGordonPDE(MultiFieldPDEPreset):
             # Single kink soliton: phi = 4 * arctan(exp((x - x0) / w))
             # This transitions from 0 to 2*pi
             x0 = ic_params.get("x0")
-            if x0 is None:
-                x0 = rng.uniform(x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx)
+            if x0 is None or x0 == "random":
+                raise ValueError("sine-gordon kink requires x0 (or random)")
             width = ic_params.get("width", Lx * 0.05)
             velocity = ic_params.get("velocity", 0.0)
 
@@ -166,8 +166,8 @@ class SineGordonPDE(MultiFieldPDEPreset):
         elif ic_type == "antikink":
             # Antikink: transitions from 2*pi to 0
             x0 = ic_params.get("x0")
-            if x0 is None:
-                x0 = rng.uniform(x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx)
+            if x0 is None or x0 == "random":
+                raise ValueError("sine-gordon antikink requires x0 (or random)")
             width = ic_params.get("width", Lx * 0.05)
             velocity = ic_params.get("velocity", 0.0)
 
@@ -186,10 +186,8 @@ class SineGordonPDE(MultiFieldPDEPreset):
             # Kink-antikink pair for collision dynamics
             x0_kink = ic_params.get("x0_kink")
             x0_antikink = ic_params.get("x0_antikink")
-            if x0_kink is None:
-                x0_kink = rng.uniform(x_bounds[0] + 0.15 * Lx, x_bounds[0] + 0.4 * Lx)
-            if x0_antikink is None:
-                x0_antikink = rng.uniform(x_bounds[0] + 0.6 * Lx, x_bounds[0] + 0.85 * Lx)
+            if x0_kink is None or x0_kink == "random" or x0_antikink is None or x0_antikink == "random":
+                raise ValueError("sine-gordon kink-antikink requires x0_kink and x0_antikink (or random)")
             width = ic_params.get("width", Lx * 0.05)
             v_kink = ic_params.get("v_kink", 0.3)
             v_antikink = ic_params.get("v_antikink", -0.3)
@@ -221,8 +219,8 @@ class SineGordonPDE(MultiFieldPDEPreset):
         elif ic_type == "breather":
             # Breather solution: localized oscillating bound state
             x0 = ic_params.get("x0")
-            if x0 is None:
-                x0 = rng.uniform(x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx)
+            if x0 is None or x0 == "random":
+                raise ValueError("sine-gordon breather requires x0 (or random)")
             width = ic_params.get("width", Lx * 0.1)
             omega = ic_params.get("omega", 0.5)  # Internal frequency
 
@@ -239,10 +237,8 @@ class SineGordonPDE(MultiFieldPDEPreset):
             # Ring soliton: circular wave in 2D
             x_center = ic_params.get("x_center")
             y_center = ic_params.get("y_center")
-            if x_center is None:
-                x_center = rng.uniform(x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx)
-            if y_center is None:
-                y_center = rng.uniform(y_bounds[0] + 0.2 * Ly, y_bounds[0] + 0.8 * Ly)
+            if x_center is None or x_center == "random" or y_center is None or y_center == "random":
+                raise ValueError("sine-gordon ring requires x_center and y_center (or random)")
             R0 = ic_params.get("radius", min(Lx, Ly) * 0.25)
             width = ic_params.get("width", min(Lx, Ly) * 0.02)
             velocity = ic_params.get("velocity", 0.0)  # Radial velocity (expanding/contracting)
@@ -280,6 +276,58 @@ class SineGordonPDE(MultiFieldPDEPreset):
         psi_field.label = "psi"
 
         return FieldCollection([phi_field, psi_field])
+
+    def resolve_ic_params(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        x_bounds = grid.axes_bounds[0]
+        Lx = x_bounds[1] - x_bounds[0]
+        y_bounds = grid.axes_bounds[1] if len(grid.axes_bounds) > 1 else None
+        Ly = y_bounds[1] - y_bounds[0] if y_bounds is not None else None
+        resolved = ic_params.copy()
+
+        if ic_type in ("default", "kink", "antikink", "breather"):
+            if "x0" not in resolved:
+                raise ValueError(f"sine-gordon {ic_type} requires x0 (or random)")
+            if resolved["x0"] == "random":
+                rng = np.random.default_rng(resolved.get("seed"))
+                resolved["x0"] = rng.uniform(x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx)
+            if resolved["x0"] is None:
+                raise ValueError(f"sine-gordon {ic_type} requires x0 (or random)")
+            return resolved
+
+        if ic_type == "kink-antikink":
+            if "x0_kink" not in resolved or "x0_antikink" not in resolved:
+                raise ValueError("sine-gordon kink-antikink requires x0_kink and x0_antikink (or random)")
+            if resolved["x0_kink"] == "random" or resolved["x0_antikink"] == "random":
+                rng = np.random.default_rng(resolved.get("seed"))
+                if resolved["x0_kink"] == "random":
+                    resolved["x0_kink"] = rng.uniform(x_bounds[0] + 0.15 * Lx, x_bounds[0] + 0.4 * Lx)
+                if resolved["x0_antikink"] == "random":
+                    resolved["x0_antikink"] = rng.uniform(x_bounds[0] + 0.6 * Lx, x_bounds[0] + 0.85 * Lx)
+            if resolved["x0_kink"] is None or resolved["x0_antikink"] is None:
+                raise ValueError("sine-gordon kink-antikink requires x0_kink and x0_antikink (or random)")
+            return resolved
+
+        if ic_type == "ring":
+            if "x_center" not in resolved or "y_center" not in resolved:
+                raise ValueError("sine-gordon ring requires x_center and y_center (or random)")
+            if resolved["x_center"] == "random" or resolved["y_center"] == "random":
+                rng = np.random.default_rng(resolved.get("seed"))
+                if resolved["x_center"] == "random":
+                    resolved["x_center"] = rng.uniform(x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx)
+                if resolved["y_center"] == "random":
+                    if y_bounds is None or Ly is None:
+                        raise ValueError("sine-gordon ring requires 2D grid for y_center")
+                    resolved["y_center"] = rng.uniform(y_bounds[0] + 0.2 * Ly, y_bounds[0] + 0.8 * Ly)
+            if resolved["x_center"] is None or resolved["y_center"] is None:
+                raise ValueError("sine-gordon ring requires x_center and y_center (or random)")
+            return resolved
+
+        return super().resolve_ic_params(grid, ic_type, ic_params)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

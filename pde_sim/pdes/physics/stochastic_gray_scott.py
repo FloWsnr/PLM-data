@@ -309,14 +309,10 @@ class StochasticGrayScottPDE(MultiFieldPDEPreset):
         # Perturbation center (randomize if not specified)
         cx = params.get("cx")
         cy = params.get("cy")
-        if cx is None:
-            cx = rng.uniform(x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx)
-        else:
-            cx = x_bounds[0] + cx * Lx
-        if cy is None:
-            cy = rng.uniform(y_bounds[0] + 0.2 * Ly, y_bounds[0] + 0.8 * Ly)
-        else:
-            cy = y_bounds[0] + cy * Ly
+        if cx is None or cx == "random" or cy is None or cy == "random":
+            raise ValueError("stochastic-gray-scott default requires cx and cy (or random)")
+        cx = x_bounds[0] + cx * Lx
+        cy = y_bounds[0] + cy * Ly
 
         # Small circular patch
         r = params.get("perturbation_radius", 0.05) * min(Lx, Ly)
@@ -345,6 +341,27 @@ class StochasticGrayScottPDE(MultiFieldPDEPreset):
         v.label = "v"
 
         return FieldCollection([u, v])
+
+    def resolve_ic_params(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        if ic_type in ("stochastic-gray-scott-default", "default"):
+            resolved = ic_params.copy()
+            if "cx" not in resolved or "cy" not in resolved:
+                raise ValueError("stochastic-gray-scott default requires cx and cy (or random)")
+            if resolved["cx"] == "random" or resolved["cy"] == "random":
+                rng = np.random.default_rng(resolved.get("seed"))
+                if resolved["cx"] == "random":
+                    resolved["cx"] = rng.uniform(0.2, 0.8)
+                if resolved["cy"] == "random":
+                    resolved["cy"] = rng.uniform(0.2, 0.8)
+            if resolved["cx"] is None or resolved["cy"] is None:
+                raise ValueError("stochastic-gray-scott default requires cx and cy (or random)")
+            return resolved
+        return super().resolve_ic_params(grid, ic_type, ic_params)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

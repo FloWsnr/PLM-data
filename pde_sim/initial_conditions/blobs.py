@@ -9,7 +9,7 @@ from .base import InitialConditionGenerator
 class GaussianBlob(InitialConditionGenerator):
     """Gaussian blob initial condition generator.
 
-    Creates one or more Gaussian blobs at random positions.
+    Creates one or more Gaussian blobs at specified positions.
     Supports symmetric (circular/spherical) and asymmetric (elliptical/ellipsoidal) blobs.
     Works with 1D, 2D, and 3D grids.
     """
@@ -18,6 +18,7 @@ class GaussianBlob(InitialConditionGenerator):
         self,
         grid: CartesianGrid,
         num_blobs: int = 1,
+        positions: list | None = None,
         amplitude: float = 1.0,
         width: float = 0.1,
         background: float = 0.0,
@@ -32,6 +33,10 @@ class GaussianBlob(InitialConditionGenerator):
         Args:
             grid: The computational grid (1D, 2D, or 3D).
             num_blobs: Number of Gaussian blobs to create.
+            positions: Blob centers in normalized coordinates (0-1).
+                For 1D: [x1, x2, ...]
+                For 2D: [[x1, y1], [x2, y2], ...]
+                For 3D: [[x1, y1, z1], [x2, y2, z2], ...]
             amplitude: Peak amplitude of each blob (or max if random_amplitude).
             width: Width of blobs relative to domain size.
             background: Background value.
@@ -50,17 +55,52 @@ class GaussianBlob(InitialConditionGenerator):
         data = np.full(grid.shape, background, dtype=float)
         ndim = len(grid.shape)
 
+        if positions is None:
+            raise ValueError("positions must be provided for gaussian-blob initial conditions")
+
         bounds = grid.axes_bounds
         sizes = [b[1] - b[0] for b in bounds]
+        positions_array = np.array(positions, dtype=float)
 
         if ndim == 1:
-            self._generate_1d(data, grid, rng, num_blobs, amplitude, width, random_amplitude)
+            if positions_array.ndim != 1:
+                raise ValueError("1D gaussian-blob positions must be a list of floats")
+            positions_list = [float(x) for x in positions_array.tolist()]
+        else:
+            if positions_array.ndim != 2 or positions_array.shape[1] != ndim:
+                raise ValueError(f"{ndim}D gaussian-blob positions must be a list of {ndim}D coordinates")
+            positions_list = [list(row) for row in positions_array.tolist()]
+
+        if len(positions_list) != num_blobs:
+            raise ValueError(
+                f"num_blobs={num_blobs} does not match positions length {len(positions_list)}"
+            )
+
+        centers = []
+        for pos in positions_list:
+            if ndim == 1:
+                norm = float(pos)
+                if not 0.0 <= norm <= 1.0:
+                    raise ValueError("1D gaussian-blob position must be in [0, 1]")
+                centers.append(bounds[0][0] + norm * sizes[0])
+            else:
+                coords = []
+                for i, norm in enumerate(pos):
+                    if not 0.0 <= norm <= 1.0:
+                        raise ValueError("gaussian-blob positions must be in [0, 1]")
+                    coords.append(bounds[i][0] + norm * sizes[i])
+                centers.append(coords)
+
+        if ndim == 1:
+            self._generate_1d(
+                data, grid, rng, centers, amplitude, width, random_amplitude
+            )
         elif ndim == 2:
             self._generate_2d(
                 data,
                 grid,
                 rng,
-                num_blobs,
+                centers,
                 amplitude,
                 width,
                 random_amplitude,
@@ -72,7 +112,7 @@ class GaussianBlob(InitialConditionGenerator):
                 data,
                 grid,
                 rng,
-                num_blobs,
+                centers,
                 amplitude,
                 width,
                 random_amplitude,
@@ -82,12 +122,49 @@ class GaussianBlob(InitialConditionGenerator):
 
         return ScalarField(grid, data)
 
+    @classmethod
+    def resolve_random_params(
+        cls,
+        grid: CartesianGrid,
+        params: dict,
+    ) -> dict:
+        """Resolve random positions for gaussian-blob."""
+        resolved = params.copy()
+        if "positions" not in resolved:
+            raise ValueError("gaussian-blob requires positions or positions: random")
+        positions = resolved["positions"]
+        if positions == "random":
+            if "num_blobs" not in resolved:
+                raise ValueError("gaussian-blob random positions require num_blobs")
+            num_blobs = resolved["num_blobs"]
+            seed = resolved.get("seed")
+            rng = np.random.default_rng(seed)
+            ndim = len(grid.shape)
+            if ndim == 1:
+                resolved["positions"] = [rng.uniform(0.0, 1.0) for _ in range(num_blobs)]
+            elif ndim == 2:
+                resolved["positions"] = [
+                    [rng.uniform(0.0, 1.0), rng.uniform(0.0, 1.0)]
+                    for _ in range(num_blobs)
+                ]
+            else:
+                resolved["positions"] = [
+                    [
+                        rng.uniform(0.0, 1.0),
+                        rng.uniform(0.0, 1.0),
+                        rng.uniform(0.0, 1.0),
+                    ]
+                    for _ in range(num_blobs)
+                ]
+
+        return resolved
+
     def _generate_1d(
         self,
         data: np.ndarray,
         grid: CartesianGrid,
         rng: np.random.Generator,
-        num_blobs: int,
+        centers: list[float],
         amplitude: float,
         width: float,
         random_amplitude: bool,
@@ -98,8 +175,7 @@ class GaussianBlob(InitialConditionGenerator):
         x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
         sigma_x = width * Lx
 
-        for _ in range(num_blobs):
-            cx = rng.uniform(x_bounds[0], x_bounds[1])
+        for cx in centers:
             amp = rng.uniform(0.5 * amplitude, amplitude) if random_amplitude else amplitude
             blob = amp * np.exp(-((x - cx) ** 2) / (2 * sigma_x**2))
             data += blob
@@ -109,7 +185,7 @@ class GaussianBlob(InitialConditionGenerator):
         data: np.ndarray,
         grid: CartesianGrid,
         rng: np.random.Generator,
-        num_blobs: int,
+        centers: list[list[float]],
         amplitude: float,
         width: float,
         random_amplitude: bool,
@@ -123,9 +199,7 @@ class GaussianBlob(InitialConditionGenerator):
         y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
         X, Y = np.meshgrid(x, y, indexing="ij")
 
-        for _ in range(num_blobs):
-            cx = rng.uniform(x_bounds[0], x_bounds[1])
-            cy = rng.uniform(y_bounds[0], y_bounds[1])
+        for cx, cy in centers:
             amp = rng.uniform(0.5 * amplitude, amplitude) if random_amplitude else amplitude
 
             if aspect_ratio == 1.0 and not random_aspect:
@@ -161,7 +235,7 @@ class GaussianBlob(InitialConditionGenerator):
         data: np.ndarray,
         grid: CartesianGrid,
         rng: np.random.Generator,
-        num_blobs: int,
+        centers: list[list[float]],
         amplitude: float,
         width: float,
         random_amplitude: bool,
@@ -182,10 +256,7 @@ class GaussianBlob(InitialConditionGenerator):
         z = np.linspace(z_bounds[0], z_bounds[1], grid.shape[2])
         X, Y, Z = np.meshgrid(x, y, z, indexing="ij")
 
-        for _ in range(num_blobs):
-            cx = rng.uniform(x_bounds[0], x_bounds[1])
-            cy = rng.uniform(y_bounds[0], y_bounds[1])
-            cz = rng.uniform(z_bounds[0], z_bounds[1])
+        for cx, cy, cz in centers:
             amp = rng.uniform(0.5 * amplitude, amplitude) if random_amplitude else amplitude
 
             if aspect_ratio == 1.0 and not random_aspect:

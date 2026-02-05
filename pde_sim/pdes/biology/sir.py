@@ -130,14 +130,10 @@ class SIRPDEPreset(MultiFieldPDEPreset):
         X, Y = np.meshgrid(x, y, indexing="ij")
 
         # Seed location (default: center or left edge for wave)
-        if ic_type == "wave":
-            # Start infection on left edge for traveling wave
-            seed_x = x_bounds[0] + 0.1 * domain_width
-            seed_y = (y_bounds[0] + y_bounds[1]) / 2
-        else:
-            # Default: center of domain
-            seed_x = ic_params.get("seed_x", (x_bounds[0] + x_bounds[1]) / 2)
-            seed_y = ic_params.get("seed_y", (y_bounds[0] + y_bounds[1]) / 2)
+        seed_x = ic_params.get("seed_x")
+        seed_y = ic_params.get("seed_y")
+        if seed_x is None or seed_x == "random" or seed_y is None or seed_y == "random":
+            raise ValueError("sir requires seed_x and seed_y (or random)")
 
         seed_radius = ic_params.get("seed_radius", 0.1 * domain_width)
 
@@ -178,3 +174,29 @@ class SIRPDEPreset(MultiFieldPDEPreset):
         R.label = "R"
 
         return FieldCollection([S, I, R])
+
+    def resolve_ic_params(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        if ic_type in ("default", "wave"):
+            resolved = ic_params.copy()
+            required = ["seed_x", "seed_y"]
+            for key in required:
+                if key not in resolved:
+                    raise ValueError("sir requires seed_x and seed_y (or random)")
+            if any(resolved[key] == "random" for key in required):
+                rng = np.random.default_rng(resolved.get("seed"))
+                x_bounds = grid.axes_bounds[0]
+                y_bounds = grid.axes_bounds[1]
+                if resolved["seed_x"] == "random":
+                    resolved["seed_x"] = rng.uniform(x_bounds[0], x_bounds[1])
+                if resolved["seed_y"] == "random":
+                    resolved["seed_y"] = rng.uniform(y_bounds[0], y_bounds[1])
+            if any(resolved[key] is None or resolved[key] == "random" for key in required):
+                raise ValueError("sir requires seed_x and seed_y (or random)")
+            return resolved
+
+        return super().resolve_ic_params(grid, ic_type, ic_params)

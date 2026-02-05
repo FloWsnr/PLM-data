@@ -161,14 +161,10 @@ class GrayScottPDE(MultiFieldPDEPreset):
         # Perturbation center (randomize if not specified)
         cx = params.get("cx")
         cy = params.get("cy")
-        if cx is None:
-            cx = rng.uniform(x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx)
-        else:
-            cx = x_bounds[0] + cx * Lx
-        if cy is None:
-            cy = rng.uniform(y_bounds[0] + 0.2 * Ly, y_bounds[0] + 0.8 * Ly)
-        else:
-            cy = y_bounds[0] + cy * Ly
+        if cx is None or cx == "random" or cy is None or cy == "random":
+            raise ValueError("gray-scott default requires cx and cy (or random)")
+        cx = x_bounds[0] + cx * Lx
+        cy = y_bounds[0] + cy * Ly
 
         # Perturbation size
         r = params.get("perturbation_radius", 0.1) * min(Lx, Ly)
@@ -209,6 +205,8 @@ class GrayScottPDE(MultiFieldPDEPreset):
         seed = params.get("seed")
         rng = np.random.default_rng(seed)
 
+        if "positions" not in params:
+            raise ValueError("gray-scott gaussian-blob requires positions or positions: random")
         num_blobs = params.get("num_blobs", 5)
         width = params.get("width", 0.05)
 
@@ -227,11 +225,17 @@ class GrayScottPDE(MultiFieldPDEPreset):
         u_data = np.zeros(grid.shape)
         v_data = np.ones(grid.shape)
 
+        positions = params["positions"]
+        if len(positions) != num_blobs:
+            raise ValueError(
+                f"num_blobs={num_blobs} does not match positions length {len(positions)}"
+            )
+
         # Add Gaussian blobs as seeds
         sigma = width * min(Lx, Ly)
-        for _ in range(num_blobs):
-            cx = rng.uniform(x_bounds[0] + sigma, x_bounds[1] - sigma)
-            cy = rng.uniform(y_bounds[0] + sigma, y_bounds[1] - sigma)
+        for cx_norm, cy_norm in positions:
+            cx = x_bounds[0] + cx_norm * Lx
+            cy = y_bounds[0] + cy_norm * Ly
 
             blob = np.exp(-((X - cx) ** 2 + (Y - cy) ** 2) / (2 * sigma**2))
             u_data += 0.5 * blob
@@ -251,6 +255,27 @@ class GrayScottPDE(MultiFieldPDEPreset):
         v.label = "v"
 
         return FieldCollection([u, v])
+
+    def resolve_ic_params(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        if ic_type in ("gray-scott-default", "default"):
+            resolved = ic_params.copy()
+            if "cx" not in resolved or "cy" not in resolved:
+                raise ValueError("gray-scott default requires cx and cy (or random)")
+            if resolved["cx"] == "random" or resolved["cy"] == "random":
+                rng = np.random.default_rng(resolved.get("seed"))
+                if resolved["cx"] == "random":
+                    resolved["cx"] = rng.uniform(0.2, 0.8)
+                if resolved["cy"] == "random":
+                    resolved["cy"] = rng.uniform(0.2, 0.8)
+            if resolved["cx"] is None or resolved["cy"] is None:
+                raise ValueError("gray-scott default requires cx and cy (or random)")
+            return resolved
+        return super().resolve_ic_params(grid, ic_type, ic_params)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

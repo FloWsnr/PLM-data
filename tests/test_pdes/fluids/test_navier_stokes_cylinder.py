@@ -62,7 +62,11 @@ class TestNavierStokesCylinderPDE:
         params = {"nu": 0.01, "M": 0.1, "U": 1.0, "cylinder_radius": 0.05}
         pde = preset.create_pde(params, bc, grid)
 
-        state = preset.create_initial_state(grid, "default", {"U": 0.7, "cylinder_radius": 0.05})
+        state = preset.create_initial_state(
+            grid,
+            "default",
+            {"U": 0.7, "cylinder_radius": 0.05, "cylinder_x": 0.25, "cylinder_y": 0.5},
+        )
 
         result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 

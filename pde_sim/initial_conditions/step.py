@@ -55,19 +55,18 @@ class StepFunction(InitialConditionGenerator):
         Args:
             grid: The computational grid.
             direction: Direction of the step ("x" or "y").
-            position: Position of the step (0-1 normalized). If None, randomized.
+            position: Position of the step (0-1 normalized).
             value_low: Value below/left of the step.
             value_high: Value above/right of the step.
             smooth_width: If > 0, use a smooth tanh transition.
-            seed: Random seed for reproducibility.
+            seed: Random seed for reproducibility (used during random resolution).
             **kwargs: Additional arguments (ignored).
 
         Returns:
             ScalarField with step function.
         """
-        if position is None:
-            rng = np.random.default_rng(seed)
-            position = rng.uniform(0.1, 0.9)
+        if position is None or position == "random":
+            raise ValueError("step position must be provided (use position: random in config)")
         # Get domain bounds
         x_bounds = grid.axes_bounds[0]
         y_bounds = grid.axes_bounds[1]
@@ -98,6 +97,25 @@ class StepFunction(InitialConditionGenerator):
             data = np.where(coord < step_pos, value_low, value_high)
 
         return ScalarField(grid, data.astype(float))
+
+    @classmethod
+    def resolve_random_params(
+        cls,
+        grid: CartesianGrid,
+        params: dict,
+    ) -> dict:
+        """Resolve random position for step function."""
+        resolved = params.copy()
+        if "position" not in resolved:
+            raise ValueError("step requires position or position: random")
+        position = resolved["position"]
+        if position == "random":
+            seed = resolved.get("seed")
+            rng = np.random.default_rng(seed)
+            resolved["position"] = rng.uniform(0.1, 0.9)
+        if resolved["position"] is None:
+            raise ValueError("step requires position or position: random")
+        return resolved
 
 
 class RectangleGrid(InitialConditionGenerator):
@@ -203,28 +221,19 @@ class DoubleStep(InitialConditionGenerator):
         Args:
             grid: The computational grid.
             direction: Direction of the bands ("x" or "y").
-            position1: Position of first step (0-1 normalized). If None, randomized.
-            position2: Position of second step (0-1 normalized). If None, randomized.
+            position1: Position of first step (0-1 normalized).
+            position2: Position of second step (0-1 normalized).
             value_inside: Value inside the band.
             value_outside: Value outside the band.
             smooth_width: If > 0, use smooth tanh transitions.
-            seed: Random seed for reproducibility.
+            seed: Random seed for reproducibility (used during random resolution).
             **kwargs: Additional arguments (ignored).
 
         Returns:
             ScalarField with double step function.
         """
-        if position1 is None or position2 is None:
-            rng = np.random.default_rng(seed)
-            if position1 is None:
-                position1 = rng.uniform(0.1, 0.4)
-            if position2 is None:
-                position2 = rng.uniform(0.6, 0.9)
-            if position1 >= position2:
-                position1, position2 = position2, position1
-            # Ensure minimum gap
-            if position2 - position1 < 0.1:
-                position2 = position1 + 0.1
+        if position1 is None or position2 is None or position1 == "random" or position2 == "random":
+            raise ValueError("double-step positions must be provided (use position1/2: random in config)")
         # Get domain bounds
         x_bounds = grid.axes_bounds[0]
         y_bounds = grid.axes_bounds[1]
@@ -258,3 +267,39 @@ class DoubleStep(InitialConditionGenerator):
             data = np.where(inside, value_inside, value_outside)
 
         return ScalarField(grid, data.astype(float))
+
+    @classmethod
+    def resolve_random_params(
+        cls,
+        grid: CartesianGrid,
+        params: dict,
+    ) -> dict:
+        """Resolve random positions for double step."""
+        resolved = params.copy()
+        if "position1" not in resolved or "position2" not in resolved:
+            raise ValueError("double-step requires position1 and position2 (or random)")
+        position1 = resolved["position1"]
+        position2 = resolved["position2"]
+        randomized = False
+
+        if position1 == "random" or position2 == "random":
+            seed = resolved.get("seed")
+            rng = np.random.default_rng(seed)
+            if position1 == "random":
+                position1 = rng.uniform(0.1, 0.4)
+                randomized = True
+            if position2 == "random":
+                position2 = rng.uniform(0.6, 0.9)
+                randomized = True
+
+        if randomized:
+            if position1 >= position2:
+                position1, position2 = position2, position1
+            if position2 - position1 < 0.1:
+                position2 = position1 + 0.1
+        if position1 is None or position2 is None:
+            raise ValueError("double-step requires position1 and position2 (or random)")
+
+        resolved["position1"] = position1
+        resolved["position2"] = position2
+        return resolved

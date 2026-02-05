@@ -62,7 +62,9 @@ class TestNavierStokesPDE:
         params = {"nu": 0.01, "M": 0.1, "D": 0.0}
         pde = preset.create_pde(params, bc, grid)
 
-        state = preset.create_initial_state(grid, "shear-layer", {"amplitude": 0.5})
+        state = preset.create_initial_state(
+            grid, "shear-layer", {"amplitude": 0.5, "shear_y": 0.5}
+        )
 
         result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 

@@ -5,6 +5,8 @@ init:
   type: offset-soliton
   params:
     a: 0.005
+    x_center: 30.0
+    y_center: 50.0
 solver: rk4
 backend: numba
 adaptive: false

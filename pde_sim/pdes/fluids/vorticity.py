@@ -99,8 +99,17 @@ class VorticityPDE(MultiFieldPDEPreset):
 
         if ic_type in ("vorticity-default", "vortex-pair"):
             # Two counter-rotating vortices
-            x0_1, y0_1 = ic_params.get("x1", 0.35), ic_params.get("y1", 0.5)
-            x0_2, y0_2 = ic_params.get("x2", 0.65), ic_params.get("y2", 0.5)
+            x0_1 = ic_params.get("x1")
+            y0_1 = ic_params.get("y1")
+            x0_2 = ic_params.get("x2")
+            y0_2 = ic_params.get("y2")
+            if (
+                x0_1 is None or x0_1 == "random"
+                or y0_1 is None or y0_1 == "random"
+                or x0_2 is None or x0_2 == "random"
+                or y0_2 is None or y0_2 == "random"
+            ):
+                raise ValueError("vorticity vortex-pair requires x1, y1, x2, y2 (or random)")
             strength = ic_params.get("strength", 10.0)
             radius = ic_params.get("radius", 0.1)
 
@@ -126,8 +135,10 @@ class VorticityPDE(MultiFieldPDEPreset):
             S_data = 1.0 - x_norm
 
         elif ic_type == "single-vortex":
-            x0 = ic_params.get("x0", 0.5)
-            y0 = ic_params.get("y0", 0.5)
+            x0 = ic_params.get("x0")
+            y0 = ic_params.get("y0")
+            if x0 is None or x0 == "random" or y0 is None or y0 == "random":
+                raise ValueError("vorticity single-vortex requires x0 and y0 (or random)")
             strength = ic_params.get("strength", 10.0)
             radius = ic_params.get("radius", 0.15)
 
@@ -221,3 +232,41 @@ class VorticityPDE(MultiFieldPDEPreset):
         S.label = "S"
 
         return FieldCollection([omega, psi, S])
+
+    def resolve_ic_params(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        if ic_type in ("vorticity-default", "vortex-pair"):
+            resolved = ic_params.copy()
+            required = ["x1", "y1", "x2", "y2"]
+            for key in required:
+                if key not in resolved:
+                    raise ValueError("vorticity vortex-pair requires x1, y1, x2, y2 (or random)")
+            if any(resolved[key] == "random" for key in required):
+                rng = np.random.default_rng(resolved.get("seed"))
+                for key in required:
+                    if resolved[key] == "random":
+                        resolved[key] = rng.uniform(0.1, 0.9)
+            if any(resolved[key] is None or resolved[key] == "random" for key in required):
+                raise ValueError("vorticity vortex-pair requires x1, y1, x2, y2 (or random)")
+            return resolved
+
+        if ic_type == "single-vortex":
+            resolved = ic_params.copy()
+            required = ["x0", "y0"]
+            for key in required:
+                if key not in resolved:
+                    raise ValueError("vorticity single-vortex requires x0 and y0 (or random)")
+            if any(resolved[key] == "random" for key in required):
+                rng = np.random.default_rng(resolved.get("seed"))
+                for key in required:
+                    if resolved[key] == "random":
+                        resolved[key] = rng.uniform(0.1, 0.9)
+            if any(resolved[key] is None or resolved[key] == "random" for key in required):
+                raise ValueError("vorticity single-vortex requires x0 and y0 (or random)")
+            return resolved
+
+        return super().resolve_ic_params(grid, ic_type, ic_params)

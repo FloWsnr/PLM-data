@@ -24,3 +24,20 @@ class InitialConditionGenerator(ABC):
             A ScalarField with the initial values.
         """
         pass
+
+    @classmethod
+    def resolve_random_params(
+        cls,
+        grid: CartesianGrid,
+        params: dict,
+    ) -> dict:
+        """Resolve any "random" placeholders in parameters.
+
+        Args:
+            grid: The computational grid.
+            params: Generator-specific parameters.
+
+        Returns:
+            Parameters with any random placeholders resolved.
+        """
+        return params

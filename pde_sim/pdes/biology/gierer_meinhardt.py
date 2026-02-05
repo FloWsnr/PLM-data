@@ -123,8 +123,8 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
 
             # Randomize stripe phase if not specified
             phase = ic_params.get("phase")
-            if phase is None:
-                phase = rng.uniform(0, 2 * np.pi)
+            if phase is None or phase == "random":
+                raise ValueError("gierer-meinhardt stripes requires phase (or random)")
 
             # Create stripe pattern: amplitude * (1 + cos(n*pi*x/L + phase))
             u_data = amplitude * (1 + np.cos(n_stripes * np.pi * (X - x_bounds[0]) / Lx + phase))
@@ -146,3 +146,21 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
         v.label = "v"
 
         return FieldCollection([u, v])
+
+    def resolve_ic_params(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        if ic_type == "stripes":
+            resolved = ic_params.copy()
+            if "phase" not in resolved:
+                raise ValueError("gierer-meinhardt stripes requires phase (or random)")
+            if resolved["phase"] == "random":
+                rng = np.random.default_rng(resolved.get("seed"))
+                resolved["phase"] = rng.uniform(0, 2 * np.pi)
+            if resolved["phase"] is None:
+                raise ValueError("gierer-meinhardt stripes requires phase (or random)")
+            return resolved
+        return super().resolve_ic_params(grid, ic_type, ic_params)

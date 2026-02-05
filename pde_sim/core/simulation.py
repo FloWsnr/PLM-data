@@ -201,6 +201,11 @@ class SimulationRunner:
         ic_params = config.init.params.copy()
         if config.seed is not None and "seed" not in ic_params:
             ic_params["seed"] = config.seed
+        ic_params = self.preset.resolve_ic_params(
+            grid=self.grid,
+            ic_type=config.init.type,
+            ic_params=ic_params,
+        )
         self.state = self.preset.create_initial_state(
             grid=self.grid,
             ic_type=config.init.type,

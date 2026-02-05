@@ -107,7 +107,9 @@ class TestInhomogeneousWavePDE:
         bc = create_bc_for_dimension(ndim, periodic=False)
 
         pde = preset.create_pde({"D": 1.0, "E": 0.5, "m": 4, "n": 4, "C": 0.0}, bc, grid)
-        state = preset.create_initial_state(grid, "gaussian-blob", {"num_blobs": 1})
+        state = preset.create_initial_state(
+            grid, "gaussian-blob", {"num_blobs": 1, "positions": [[0.5, 0.5]]}
+        )
 
         result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")
 

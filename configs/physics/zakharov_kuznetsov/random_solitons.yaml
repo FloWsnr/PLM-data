@@ -4,6 +4,8 @@ parameters:
 init:
   type: random-solitons
   params:
+    positions: random
+    a_values: random
     n: 3
     a_min: 0.005
     a_max: 0.01

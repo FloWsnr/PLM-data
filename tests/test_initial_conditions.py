@@ -15,6 +15,7 @@ from pde_sim.initial_conditions import (
     StepFunction,
     create_initial_condition,
     list_initial_conditions,
+    resolve_random_params,
 )
 
 
@@ -104,7 +105,7 @@ class TestGaussianBlob:
     def test_generate_default(self, small_grid):
         """Test generating with default parameters."""
         ic = GaussianBlob()
-        field = ic.generate(small_grid, seed=42)
+        field = ic.generate(small_grid, num_blobs=1, positions=[[0.5, 0.5]])
 
         assert isinstance(field, ScalarField)
         assert field.data.shape == (32, 32)
@@ -114,7 +115,13 @@ class TestGaussianBlob:
     def test_generate_single_blob(self, small_grid):
         """Test generating a single blob."""
         ic = GaussianBlob()
-        field = ic.generate(small_grid, num_blobs=1, amplitude=1.0, width=0.1, seed=42)
+        field = ic.generate(
+            small_grid,
+            num_blobs=1,
+            positions=[[0.5, 0.5]],
+            amplitude=1.0,
+            width=0.1,
+        )
 
         # Maximum should be close to amplitude
         assert np.max(field.data) > 0.5
@@ -122,7 +129,19 @@ class TestGaussianBlob:
     def test_generate_multiple_blobs(self, small_grid):
         """Test generating multiple blobs."""
         ic = GaussianBlob()
-        field = ic.generate(small_grid, num_blobs=5, amplitude=1.0, width=0.1, seed=42)
+        field = ic.generate(
+            small_grid,
+            num_blobs=5,
+            positions=[
+                [0.2, 0.2],
+                [0.8, 0.2],
+                [0.2, 0.8],
+                [0.8, 0.8],
+                [0.5, 0.5],
+            ],
+            amplitude=1.0,
+            width=0.1,
+        )
 
         assert isinstance(field, ScalarField)
         # Should have some variation from multiple blobs
@@ -131,7 +150,9 @@ class TestGaussianBlob:
     def test_generate_with_background(self, small_grid):
         """Test generating with non-zero background."""
         ic = GaussianBlob()
-        field = ic.generate(small_grid, num_blobs=1, background=0.5, seed=42)
+        field = ic.generate(
+            small_grid, num_blobs=1, positions=[[0.5, 0.5]], background=0.5
+        )
 
         # Minimum should be at least the background
         assert np.min(field.data) >= 0.5 - 0.01  # Allow small numerical tolerance
@@ -140,7 +161,12 @@ class TestGaussianBlob:
         """Test generating with random amplitudes."""
         ic = GaussianBlob()
         field = ic.generate(
-            small_grid, num_blobs=3, amplitude=1.0, random_amplitude=True, seed=42
+            small_grid,
+            num_blobs=3,
+            positions=[[0.2, 0.3], [0.6, 0.4], [0.8, 0.7]],
+            amplitude=1.0,
+            random_amplitude=True,
+            seed=42,
         )
 
         assert isinstance(field, ScalarField)
@@ -150,7 +176,13 @@ class TestGaussianBlob:
         """Test generating asymmetric (elliptical) blobs in 2D."""
         ic = GaussianBlob()
         field = ic.generate(
-            small_grid, num_blobs=3, amplitude=1.0, width=0.05, aspect_ratio=3.0, seed=42
+            small_grid,
+            num_blobs=3,
+            positions=[[0.25, 0.25], [0.75, 0.25], [0.5, 0.75]],
+            amplitude=1.0,
+            width=0.05,
+            aspect_ratio=3.0,
+            seed=42,
         )
 
         assert isinstance(field, ScalarField)
@@ -162,6 +194,13 @@ class TestGaussianBlob:
         field = ic.generate(
             small_grid,
             num_blobs=5,
+            positions=[
+                [0.1, 0.1],
+                [0.9, 0.1],
+                [0.1, 0.9],
+                [0.9, 0.9],
+                [0.5, 0.5],
+            ],
             amplitude=1.0,
             width=0.05,
             aspect_ratio=4.0,
@@ -176,7 +215,9 @@ class TestGaussianBlob:
         """Test generating blobs on a 1D grid."""
         grid_1d = CartesianGrid(bounds=[[0, 10]], shape=[64], periodic=[True])
         ic = GaussianBlob()
-        field = ic.generate(grid_1d, num_blobs=3, amplitude=1.0, width=0.1, seed=42)
+        field = ic.generate(
+            grid_1d, num_blobs=3, positions=[0.2, 0.5, 0.8], amplitude=1.0, width=0.1
+        )
 
         assert isinstance(field, ScalarField)
         assert field.data.shape == (64,)
@@ -188,7 +229,13 @@ class TestGaussianBlob:
             bounds=[[0, 1], [0, 1], [0, 1]], shape=[16, 16, 16], periodic=[True, True, True]
         )
         ic = GaussianBlob()
-        field = ic.generate(grid_3d, num_blobs=2, amplitude=1.0, width=0.15, seed=42)
+        field = ic.generate(
+            grid_3d,
+            num_blobs=2,
+            positions=[[0.3, 0.3, 0.3], [0.7, 0.7, 0.7]],
+            amplitude=1.0,
+            width=0.15,
+        )
 
         assert isinstance(field, ScalarField)
         assert field.data.shape == (16, 16, 16)
@@ -201,7 +248,13 @@ class TestGaussianBlob:
         )
         ic = GaussianBlob()
         field = ic.generate(
-            grid_3d, num_blobs=2, amplitude=1.0, width=0.1, aspect_ratio=2.5, seed=42
+            grid_3d,
+            num_blobs=2,
+            positions=[[0.25, 0.25, 0.25], [0.75, 0.75, 0.75]],
+            amplitude=1.0,
+            width=0.1,
+            aspect_ratio=2.5,
+            seed=42,
         )
 
         assert isinstance(field, ScalarField)
@@ -211,7 +264,9 @@ class TestGaussianBlob:
     def test_via_factory(self, small_grid):
         """Test creating via factory function."""
         field = create_initial_condition(
-            small_grid, "gaussian-blob", {"num_blobs": 2, "amplitude": 1.0, "seed": 42}
+            small_grid,
+            "gaussian-blob",
+            {"num_blobs": 2, "positions": [[0.25, 0.5], [0.75, 0.5]], "amplitude": 1.0},
         )
 
         assert isinstance(field, ScalarField)
@@ -219,8 +274,18 @@ class TestGaussianBlob:
     def test_seed_reproducibility(self, small_grid):
         """Test that seed produces reproducible results."""
         ic = GaussianBlob()
-        field1 = ic.generate(small_grid, num_blobs=3, seed=123)
-        field2 = ic.generate(small_grid, num_blobs=3, seed=123)
+        params1 = resolve_random_params(
+            small_grid,
+            "gaussian-blob",
+            {"num_blobs": 3, "positions": "random", "seed": 123},
+        )
+        params2 = resolve_random_params(
+            small_grid,
+            "gaussian-blob",
+            {"num_blobs": 3, "positions": "random", "seed": 123},
+        )
+        field1 = ic.generate(small_grid, **params1)
+        field2 = ic.generate(small_grid, **params2)
 
         np.testing.assert_array_equal(field1.data, field2.data)
 
@@ -231,7 +296,7 @@ class TestSinePattern:
     def test_generate_default(self, small_grid):
         """Test generating with default parameters."""
         ic = SinePattern()
-        field = ic.generate(small_grid)
+        field = ic.generate(small_grid, phase_x=0.0, phase_y=0.0)
 
         assert isinstance(field, ScalarField)
         assert field.data.shape == (32, 32)
@@ -239,7 +304,15 @@ class TestSinePattern:
     def test_generate_single_wave(self, small_grid):
         """Test generating a single sine wave."""
         ic = SinePattern()
-        field = ic.generate(small_grid, kx=1, ky=0, amplitude=1.0, offset=0.0)
+        field = ic.generate(
+            small_grid,
+            kx=1,
+            ky=0,
+            amplitude=1.0,
+            offset=0.0,
+            phase_x=0.0,
+            phase_y=0.0,
+        )
 
         # The pattern should vary along x but be constant along y when ky=0
         # Actually with sin(0)=0, the field will be 0 everywhere if ky=0
@@ -250,7 +323,15 @@ class TestSinePattern:
     def test_generate_with_offset(self, small_grid):
         """Test generating with offset."""
         ic = SinePattern()
-        field = ic.generate(small_grid, kx=1, ky=1, amplitude=0.5, offset=1.0)
+        field = ic.generate(
+            small_grid,
+            kx=1,
+            ky=1,
+            amplitude=0.5,
+            offset=1.0,
+            phase_x=0.0,
+            phase_y=0.0,
+        )
 
         # Values should be in range [offset - amplitude, offset + amplitude]
         assert np.max(field.data) <= 1.5 + 0.01
@@ -263,7 +344,10 @@ class TestStepFunction:
     def test_generate_default(self, small_grid):
         """Test generating with default (random) parameters."""
         ic = StepFunction()
-        field = ic.generate(small_grid, seed=42)
+        params = resolve_random_params(
+            small_grid, "step", {"position": "random", "seed": 42}
+        )
+        field = ic.generate(small_grid, **params)
 
         assert isinstance(field, ScalarField)
         assert field.data.shape == (32, 32)
@@ -408,15 +492,27 @@ class TestStepFunctionRandomization:
     def test_seed_reproducibility(self, small_grid):
         """Test that seed produces reproducible results when position is None."""
         ic = StepFunction()
-        field1 = ic.generate(small_grid, seed=42)
-        field2 = ic.generate(small_grid, seed=42)
+        params1 = resolve_random_params(
+            small_grid, "step", {"position": "random", "seed": 42}
+        )
+        params2 = resolve_random_params(
+            small_grid, "step", {"position": "random", "seed": 42}
+        )
+        field1 = ic.generate(small_grid, **params1)
+        field2 = ic.generate(small_grid, **params2)
         np.testing.assert_array_equal(field1.data, field2.data)
 
     def test_different_seeds_differ(self, small_grid):
         """Test that different seeds produce different results."""
         ic = StepFunction()
-        field1 = ic.generate(small_grid, seed=42)
-        field2 = ic.generate(small_grid, seed=99)
+        params1 = resolve_random_params(
+            small_grid, "step", {"position": "random", "seed": 42}
+        )
+        params2 = resolve_random_params(
+            small_grid, "step", {"position": "random", "seed": 99}
+        )
+        field1 = ic.generate(small_grid, **params1)
+        field2 = ic.generate(small_grid, **params2)
         assert not np.array_equal(field1.data, field2.data)
 
 
@@ -439,7 +535,12 @@ class TestDoubleStep:
     def test_generate_random_positions(self, small_grid):
         """Test generating with random positions (None)."""
         ic = DoubleStep()
-        field = ic.generate(small_grid, seed=42)
+        params = resolve_random_params(
+            small_grid,
+            "double-step",
+            {"position1": "random", "position2": "random", "seed": 42},
+        )
+        field = ic.generate(small_grid, **params)
         assert isinstance(field, ScalarField)
         assert field.data.shape == (32, 32)
         unique_values = np.unique(field.data)
@@ -448,15 +549,35 @@ class TestDoubleStep:
     def test_seed_reproducibility(self, small_grid):
         """Test that seed produces reproducible results."""
         ic = DoubleStep()
-        field1 = ic.generate(small_grid, seed=42)
-        field2 = ic.generate(small_grid, seed=42)
+        params1 = resolve_random_params(
+            small_grid,
+            "double-step",
+            {"position1": "random", "position2": "random", "seed": 42},
+        )
+        params2 = resolve_random_params(
+            small_grid,
+            "double-step",
+            {"position1": "random", "position2": "random", "seed": 42},
+        )
+        field1 = ic.generate(small_grid, **params1)
+        field2 = ic.generate(small_grid, **params2)
         np.testing.assert_array_equal(field1.data, field2.data)
 
     def test_different_seeds_differ(self, small_grid):
         """Test that different seeds produce different results."""
         ic = DoubleStep()
-        field1 = ic.generate(small_grid, seed=42)
-        field2 = ic.generate(small_grid, seed=99)
+        params1 = resolve_random_params(
+            small_grid,
+            "double-step",
+            {"position1": "random", "position2": "random", "seed": 42},
+        )
+        params2 = resolve_random_params(
+            small_grid,
+            "double-step",
+            {"position1": "random", "position2": "random", "seed": 99},
+        )
+        field1 = ic.generate(small_grid, **params1)
+        field2 = ic.generate(small_grid, **params2)
         assert not np.array_equal(field1.data, field2.data)
 
 
@@ -473,15 +594,35 @@ class TestSinePatternRandomization:
     def test_seed_reproducibility(self, small_grid):
         """Test that seed produces reproducible results when phases are None."""
         ic = SinePattern()
-        field1 = ic.generate(small_grid, seed=42)
-        field2 = ic.generate(small_grid, seed=42)
+        params1 = resolve_random_params(
+            small_grid,
+            "sine",
+            {"phase_x": "random", "phase_y": "random", "seed": 42},
+        )
+        params2 = resolve_random_params(
+            small_grid,
+            "sine",
+            {"phase_x": "random", "phase_y": "random", "seed": 42},
+        )
+        field1 = ic.generate(small_grid, **params1)
+        field2 = ic.generate(small_grid, **params2)
         np.testing.assert_array_equal(field1.data, field2.data)
 
     def test_different_seeds_differ(self, small_grid):
         """Test that different seeds produce different results."""
         ic = SinePattern()
-        field1 = ic.generate(small_grid, seed=42)
-        field2 = ic.generate(small_grid, seed=99)
+        params1 = resolve_random_params(
+            small_grid,
+            "sine",
+            {"phase_x": "random", "phase_y": "random", "seed": 42},
+        )
+        params2 = resolve_random_params(
+            small_grid,
+            "sine",
+            {"phase_x": "random", "phase_y": "random", "seed": 99},
+        )
+        field1 = ic.generate(small_grid, **params1)
+        field2 = ic.generate(small_grid, **params2)
         assert not np.array_equal(field1.data, field2.data)
 
 
@@ -491,7 +632,7 @@ class TestCosinePattern:
     def test_generate_default(self, small_grid):
         """Test generating with default (random phase) parameters."""
         ic = CosinePattern()
-        field = ic.generate(small_grid, seed=42)
+        field = ic.generate(small_grid, phase_x=0.0, phase_y=0.0)
         assert isinstance(field, ScalarField)
         assert field.data.shape == (32, 32)
 
@@ -506,15 +647,35 @@ class TestCosinePattern:
     def test_seed_reproducibility(self, small_grid):
         """Test that seed produces reproducible results."""
         ic = CosinePattern()
-        field1 = ic.generate(small_grid, seed=42)
-        field2 = ic.generate(small_grid, seed=42)
+        params1 = resolve_random_params(
+            small_grid,
+            "cosine",
+            {"phase_x": "random", "phase_y": "random", "seed": 42},
+        )
+        params2 = resolve_random_params(
+            small_grid,
+            "cosine",
+            {"phase_x": "random", "phase_y": "random", "seed": 42},
+        )
+        field1 = ic.generate(small_grid, **params1)
+        field2 = ic.generate(small_grid, **params2)
         np.testing.assert_array_equal(field1.data, field2.data)
 
     def test_different_seeds_differ(self, small_grid):
         """Test that different seeds produce different results."""
         ic = CosinePattern()
-        field1 = ic.generate(small_grid, seed=42)
-        field2 = ic.generate(small_grid, seed=99)
+        params1 = resolve_random_params(
+            small_grid,
+            "cosine",
+            {"phase_x": "random", "phase_y": "random", "seed": 42},
+        )
+        params2 = resolve_random_params(
+            small_grid,
+            "cosine",
+            {"phase_x": "random", "phase_y": "random", "seed": 99},
+        )
+        field1 = ic.generate(small_grid, **params1)
+        field2 = ic.generate(small_grid, **params2)
         assert not np.array_equal(field1.data, field2.data)
 
 

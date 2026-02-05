@@ -6,6 +6,10 @@ init:
   params:
     a1: 0.008
     a2: 0.008
+    x1: 25.0
+    y1: 35.0
+    x2: 25.0
+    y2: 65.0
 solver: rk4
 backend: numba
 adaptive: false

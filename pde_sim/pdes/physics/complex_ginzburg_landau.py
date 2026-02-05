@@ -128,10 +128,8 @@ class ComplexGinzburgLandauPDE(MultiFieldPDEPreset):
             # Randomize phases if not specified
             phase_x = ic_params.get("phase_x")
             phase_y = ic_params.get("phase_y")
-            if phase_x is None:
-                phase_x = rng.uniform(0, 2 * np.pi)
-            if phase_y is None:
-                phase_y = rng.uniform(0, 2 * np.pi)
+            if phase_x is None or phase_x == "random" or phase_y is None or phase_y == "random":
+                raise ValueError("complex-ginzburg-landau requires phase_x and phase_y (or random)")
 
             # Sinusoidal initial condition: sin(n*pi*x/Lx + phase) * sin(m*pi*y/Ly + phase)
             u_data = amplitude * np.sin(n * np.pi * (X - x_bounds[0]) / Lx + phase_x) * np.sin(m * np.pi * (Y - y_bounds[0]) / Ly + phase_y)
@@ -155,6 +153,27 @@ class ComplexGinzburgLandauPDE(MultiFieldPDEPreset):
         v = ScalarField(grid, np.zeros(grid.shape))
         v.label = "v"
         return FieldCollection([u, v])
+
+    def resolve_ic_params(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        if ic_type in ("complex-ginzburg-landau-default", "default"):
+            resolved = ic_params.copy()
+            if "phase_x" not in resolved or "phase_y" not in resolved:
+                raise ValueError("complex-ginzburg-landau requires phase_x and phase_y (or random)")
+            if resolved["phase_x"] == "random" or resolved["phase_y"] == "random":
+                rng = np.random.default_rng(resolved.get("seed"))
+                if resolved["phase_x"] == "random":
+                    resolved["phase_x"] = rng.uniform(0, 2 * np.pi)
+                if resolved["phase_y"] == "random":
+                    resolved["phase_y"] = rng.uniform(0, 2 * np.pi)
+            if resolved["phase_x"] is None or resolved["phase_y"] is None:
+                raise ValueError("complex-ginzburg-landau requires phase_x and phase_y (or random)")
+            return resolved
+        return super().resolve_ic_params(grid, ic_type, ic_params)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

@@ -128,8 +128,13 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
             y_bounds = grid.axes_bounds[1]
 
             # Center the soliton (domain centered at origin in visual-pde)
-            x_center = ic_params.get("x_center", (x_bounds[0] + x_bounds[1]) / 2)
-            y_center = ic_params.get("y_center", (y_bounds[0] + y_bounds[1]) / 2)
+            x_center = ic_params.get("x_center")
+            y_center = ic_params.get("y_center")
+            if (
+                x_center is None or x_center == "random"
+                or y_center is None or y_center == "random"
+            ):
+                raise ValueError("zakharov-kuznetsov vortical-soliton requires x_center and y_center (or random)")
 
             x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
             y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
@@ -149,11 +154,14 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
 
             x_bounds = grid.axes_bounds[0]
             y_bounds = grid.axes_bounds[1]
-            Lx = x_bounds[1] - x_bounds[0]
 
-            # Offset to the left so we can see it move right
-            x_center = ic_params.get("x_center", x_bounds[0] + Lx * 0.3)
-            y_center = ic_params.get("y_center", (y_bounds[0] + y_bounds[1]) / 2)
+            x_center = ic_params.get("x_center")
+            y_center = ic_params.get("y_center")
+            if (
+                x_center is None or x_center == "random"
+                or y_center is None or y_center == "random"
+            ):
+                raise ValueError("zakharov-kuznetsov offset-soliton requires x_center and y_center (or random)")
 
             x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
             y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
@@ -171,16 +179,21 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
 
             x_bounds = grid.axes_bounds[0]
             y_bounds = grid.axes_bounds[1]
-            Lx = x_bounds[1] - x_bounds[0]
-            Ly = y_bounds[1] - y_bounds[0]
 
             # First soliton: left side
-            x1 = ic_params.get("x1", x_bounds[0] + Lx * 0.25)
-            y1 = ic_params.get("y1", y_bounds[0] + Ly * 0.35)
+            x1 = ic_params.get("x1")
+            y1 = ic_params.get("y1")
 
             # Second soliton: also left but different y position
-            x2 = ic_params.get("x2", x_bounds[0] + Lx * 0.25)
-            y2 = ic_params.get("y2", y_bounds[0] + Ly * 0.65)
+            x2 = ic_params.get("x2")
+            y2 = ic_params.get("y2")
+            if (
+                x1 is None or x1 == "random"
+                or y1 is None or y1 == "random"
+                or x2 is None or x2 == "random"
+                or y2 is None or y2 == "random"
+            ):
+                raise ValueError("zakharov-kuznetsov two-solitons requires x1, y1, x2, y2 (or random)")
 
             x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
             y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
@@ -199,11 +212,6 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
             #   n: number of solitons (default 3)
             #   a_min, a_max: range for width parameter (default 0.005-0.015)
             #   margin: fraction of domain to avoid at edges (default 0.1)
-            n = ic_params.get("n", 3)
-            a_min = ic_params.get("a_min", 0.005)
-            a_max = ic_params.get("a_max", 0.015)
-            margin = ic_params.get("margin", 0.1)
-
             x_bounds = grid.axes_bounds[0]
             y_bounds = grid.axes_bounds[1]
             Lx = x_bounds[1] - x_bounds[0]
@@ -214,26 +222,119 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
             y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
             X, Y = np.meshgrid(x, y, indexing="ij")
 
-            # Use seed from kwargs if provided
-            seed = kwargs.get("seed", None)
-            rng = np.random.default_rng(seed)
-
-            # Generate random positions and widths
-            x_range = (x_bounds[0] + margin * Lx, x_bounds[1] - margin * Lx)
-            y_range = (y_bounds[0] + margin * Ly, y_bounds[1] - margin * Ly)
+            positions = ic_params.get("positions")
+            a_values = ic_params.get("a_values")
+            if (
+                positions is None or positions == "random"
+                or a_values is None or a_values == "random"
+            ):
+                raise ValueError("zakharov-kuznetsov random-solitons requires positions and a_values (or random)")
 
             data = np.zeros_like(X)
-            for _ in range(n):
-                xi = rng.uniform(x_range[0], x_range[1])
-                yi = rng.uniform(y_range[0], y_range[1])
-                ai = rng.uniform(a_min, a_max)
-
+            for (xi, yi), ai in zip(positions, a_values):
                 r_sq = (X - xi) ** 2 + (Y - yi) ** 2
                 data += 1.0 / np.cosh(ai * r_sq) ** 2
 
             return ScalarField(grid, data)
 
         return create_initial_condition(grid, ic_type, ic_params)
+
+    def resolve_ic_params(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        if ic_type in ("zakharov-kuznetsov-default", "default", "vortical-soliton"):
+            resolved = ic_params.copy()
+            required = ["x_center", "y_center"]
+            for key in required:
+                if key not in resolved:
+                    raise ValueError("zakharov-kuznetsov vortical-soliton requires x_center and y_center (or random)")
+            if any(resolved[key] == "random" for key in required):
+                rng = np.random.default_rng(resolved.get("seed"))
+                x_bounds = grid.axes_bounds[0]
+                y_bounds = grid.axes_bounds[1]
+                if resolved["x_center"] == "random":
+                    resolved["x_center"] = rng.uniform(x_bounds[0], x_bounds[1])
+                if resolved["y_center"] == "random":
+                    resolved["y_center"] = rng.uniform(y_bounds[0], y_bounds[1])
+            if any(resolved[key] is None or resolved[key] == "random" for key in required):
+                raise ValueError("zakharov-kuznetsov vortical-soliton requires x_center and y_center (or random)")
+            return resolved
+
+        if ic_type == "offset-soliton":
+            resolved = ic_params.copy()
+            required = ["x_center", "y_center"]
+            for key in required:
+                if key not in resolved:
+                    raise ValueError("zakharov-kuznetsov offset-soliton requires x_center and y_center (or random)")
+            if any(resolved[key] == "random" for key in required):
+                rng = np.random.default_rng(resolved.get("seed"))
+                x_bounds = grid.axes_bounds[0]
+                y_bounds = grid.axes_bounds[1]
+                if resolved["x_center"] == "random":
+                    resolved["x_center"] = rng.uniform(x_bounds[0], x_bounds[1])
+                if resolved["y_center"] == "random":
+                    resolved["y_center"] = rng.uniform(y_bounds[0], y_bounds[1])
+            if any(resolved[key] is None or resolved[key] == "random" for key in required):
+                raise ValueError("zakharov-kuznetsov offset-soliton requires x_center and y_center (or random)")
+            return resolved
+
+        if ic_type == "two-solitons":
+            resolved = ic_params.copy()
+            required = ["x1", "y1", "x2", "y2"]
+            for key in required:
+                if key not in resolved:
+                    raise ValueError("zakharov-kuznetsov two-solitons requires x1, y1, x2, y2 (or random)")
+            if any(resolved[key] == "random" for key in required):
+                rng = np.random.default_rng(resolved.get("seed"))
+                x_bounds = grid.axes_bounds[0]
+                y_bounds = grid.axes_bounds[1]
+                if resolved["x1"] == "random":
+                    resolved["x1"] = rng.uniform(x_bounds[0], x_bounds[1])
+                if resolved["y1"] == "random":
+                    resolved["y1"] = rng.uniform(y_bounds[0], y_bounds[1])
+                if resolved["x2"] == "random":
+                    resolved["x2"] = rng.uniform(x_bounds[0], x_bounds[1])
+                if resolved["y2"] == "random":
+                    resolved["y2"] = rng.uniform(y_bounds[0], y_bounds[1])
+            if any(resolved[key] is None or resolved[key] == "random" for key in required):
+                raise ValueError("zakharov-kuznetsov two-solitons requires x1, y1, x2, y2 (or random)")
+            return resolved
+
+        if ic_type == "random-solitons":
+            resolved = ic_params.copy()
+            if "positions" not in resolved or "a_values" not in resolved:
+                raise ValueError("zakharov-kuznetsov random-solitons requires positions and a_values (or random)")
+            if resolved["positions"] == "random" or resolved["a_values"] == "random":
+                if "n" not in resolved or "a_min" not in resolved or "a_max" not in resolved or "margin" not in resolved:
+                    raise ValueError("zakharov-kuznetsov random-solitons random generation requires n, a_min, a_max, margin")
+                rng = np.random.default_rng(resolved.get("seed"))
+                x_bounds = grid.axes_bounds[0]
+                y_bounds = grid.axes_bounds[1]
+                Lx = x_bounds[1] - x_bounds[0]
+                Ly = y_bounds[1] - y_bounds[0]
+                x_range = (
+                    x_bounds[0] + resolved["margin"] * Lx,
+                    x_bounds[0] + (1 - resolved["margin"]) * Lx,
+                )
+                y_range = (
+                    y_bounds[0] + resolved["margin"] * Ly,
+                    y_bounds[0] + (1 - resolved["margin"]) * Ly,
+                )
+                positions = [
+                    [rng.uniform(x_range[0], x_range[1]), rng.uniform(y_range[0], y_range[1])]
+                    for _ in range(resolved["n"])
+                ]
+                a_values = [rng.uniform(resolved["a_min"], resolved["a_max"]) for _ in range(resolved["n"])]
+                resolved["positions"] = positions
+                resolved["a_values"] = a_values
+            if resolved["positions"] is None or resolved["a_values"] is None:
+                raise ValueError("zakharov-kuznetsov random-solitons requires positions and a_values (or random)")
+            return resolved
+
+        return super().resolve_ic_params(grid, ic_type, ic_params)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

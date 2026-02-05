@@ -115,8 +115,8 @@ class NavierStokesPDE(MultiFieldPDEPreset):
 
             # Shear layer position (randomize if not specified)
             shear_y = ic_params.get("shear_y")
-            if shear_y is None:
-                shear_y = rng.uniform(0.3, 0.7)
+            if shear_y is None or shear_y == "random":
+                raise ValueError("navier-stokes shear-layer requires shear_y (or random)")
 
             # Shear layer velocity profile
             u_data = amplitude * np.tanh((y_norm - shear_y) / shear_width)
@@ -131,14 +131,13 @@ class NavierStokesPDE(MultiFieldPDEPreset):
             y0_1 = ic_params.get("y1")
             x0_2 = ic_params.get("x2")
             y0_2 = ic_params.get("y2")
-            if x0_1 is None:
-                x0_1 = rng.uniform(0.2, 0.4)
-            if y0_1 is None:
-                y0_1 = rng.uniform(0.3, 0.7)
-            if x0_2 is None:
-                x0_2 = rng.uniform(0.6, 0.8)
-            if y0_2 is None:
-                y0_2 = rng.uniform(0.3, 0.7)
+            if (
+                x0_1 is None or x0_1 == "random"
+                or y0_1 is None or y0_1 == "random"
+                or x0_2 is None or x0_2 == "random"
+                or y0_2 is None or y0_2 == "random"
+            ):
+                raise ValueError("navier-stokes vortex-pair requires x1, y1, x2, y2 (or random)")
             strength = ic_params.get("strength", 1.0)
             radius = ic_params.get("radius", 0.1)
 
@@ -222,3 +221,39 @@ class NavierStokesPDE(MultiFieldPDEPreset):
         S.label = "S"
 
         return FieldCollection([u, v, p, S])
+
+    def resolve_ic_params(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        resolved = ic_params.copy()
+        if ic_type in ("navier-stokes-default", "default", "shear-layer"):
+            if "shear_y" not in resolved:
+                raise ValueError("navier-stokes shear-layer requires shear_y (or random)")
+            if resolved["shear_y"] == "random":
+                rng = np.random.default_rng(resolved.get("seed"))
+                resolved["shear_y"] = rng.uniform(0.3, 0.7)
+            if resolved["shear_y"] is None:
+                raise ValueError("navier-stokes shear-layer requires shear_y (or random)")
+            return resolved
+        if ic_type == "vortex-pair":
+            required = ("x1", "y1", "x2", "y2")
+            for key in required:
+                if key not in resolved:
+                    raise ValueError("navier-stokes vortex-pair requires x1, y1, x2, y2 (or random)")
+            if any(resolved[key] == "random" for key in required):
+                rng = np.random.default_rng(resolved.get("seed"))
+                if resolved["x1"] == "random":
+                    resolved["x1"] = rng.uniform(0.2, 0.4)
+                if resolved["y1"] == "random":
+                    resolved["y1"] = rng.uniform(0.3, 0.7)
+                if resolved["x2"] == "random":
+                    resolved["x2"] = rng.uniform(0.6, 0.8)
+                if resolved["y2"] == "random":
+                    resolved["y2"] = rng.uniform(0.3, 0.7)
+            if any(resolved[key] is None for key in required):
+                raise ValueError("navier-stokes vortex-pair requires x1, y1, x2, y2 (or random)")
+            return resolved
+        return super().resolve_ic_params(grid, ic_type, ic_params)

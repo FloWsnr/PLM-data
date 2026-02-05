@@ -243,10 +243,8 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
             # Localized warm region
             x0 = ic_params.get("x0")
             y0 = ic_params.get("y0")
-            if x0 is None:
-                x0 = rng.uniform(0.2, 0.8)
-            if y0 is None:
-                y0 = rng.uniform(0.1, 0.4)
+            if x0 is None or x0 == "random" or y0 is None or y0 == "random":
+                raise ValueError("warm-blob requires x0 and y0 (or random)")
             amplitude = ic_params.get("amplitude", 0.5)
             radius = ic_params.get("radius", 0.1)
 
@@ -273,3 +271,24 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
         b.label = "b"
 
         return FieldCollection([omega, psi, b])
+
+    def resolve_ic_params(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        if ic_type == "warm-blob":
+            resolved = ic_params.copy()
+            if "x0" not in resolved or "y0" not in resolved:
+                raise ValueError("warm-blob requires x0 and y0 (or random)")
+            if resolved["x0"] == "random" or resolved["y0"] == "random":
+                rng = np.random.default_rng(resolved.get("seed"))
+                if resolved["x0"] == "random":
+                    resolved["x0"] = rng.uniform(0.2, 0.8)
+                if resolved["y0"] == "random":
+                    resolved["y0"] = rng.uniform(0.1, 0.4)
+            if resolved["x0"] is None or resolved["y0"] is None:
+                raise ValueError("warm-blob requires x0 and y0 (or random)")
+            return resolved
+        return super().resolve_ic_params(grid, ic_type, ic_params)

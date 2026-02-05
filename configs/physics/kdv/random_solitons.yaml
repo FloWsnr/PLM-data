@@ -7,6 +7,8 @@ parameters:
 init:
   type: random-solitons
   params:
+    positions: random
+    k_values: random
     n: 4          # Number of solitons
     k_min: 0.35   # Minimum width parameter
     k_max: 0.65   # Maximum width parameter

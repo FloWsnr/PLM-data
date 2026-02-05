@@ -210,13 +210,10 @@ class SchrodingerPDE(MultiFieldPDEPreset):
 
         elif ic_type == "wave-packet":
             # Gaussian wave packet
-            rng = np.random.default_rng(ic_params.get("seed"))
             x0 = ic_params.get("x0")
             y0 = ic_params.get("y0")
-            if x0 is None:
-                x0 = rng.uniform(0.2, 0.8)
-            if y0 is None:
-                y0 = rng.uniform(0.2, 0.8)
+            if x0 is None or x0 == "random" or y0 is None or y0 == "random":
+                raise ValueError("wave-packet requires x0 and y0 (or random)")
             sigma = ic_params.get("sigma", 0.1)
             kx = ic_params.get("kx", 3.0)
             ky = ic_params.get("ky", 0.0)
@@ -286,6 +283,27 @@ class SchrodingerPDE(MultiFieldPDEPreset):
 
         # Fall back to parent implementation for standard IC types
         return super().create_initial_state(grid, ic_type, ic_params)
+
+    def resolve_ic_params(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        if ic_type == "wave-packet":
+            resolved = ic_params.copy()
+            if "x0" not in resolved or "y0" not in resolved:
+                raise ValueError("wave-packet requires x0 and y0 (or random)")
+            if resolved["x0"] == "random" or resolved["y0"] == "random":
+                rng = np.random.default_rng(resolved.get("seed"))
+                if resolved["x0"] == "random":
+                    resolved["x0"] = rng.uniform(0.2, 0.8)
+                if resolved["y0"] == "random":
+                    resolved["y0"] = rng.uniform(0.2, 0.8)
+            if resolved["x0"] is None or resolved["y0"] is None:
+                raise ValueError("wave-packet requires x0 and y0 (or random)")
+            return resolved
+        return super().resolve_ic_params(grid, ic_type, ic_params)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

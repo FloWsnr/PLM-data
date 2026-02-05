@@ -107,6 +107,33 @@ class PDEPreset(ABC):
         """
         pass
 
+    def resolve_ic_params(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Resolve any random placeholders in IC parameters.
+
+        Args:
+            grid: The computational grid.
+            ic_type: Type of initial condition.
+            ic_params: Parameters for the initial condition.
+
+        Returns:
+            Parameters with any random placeholders resolved.
+        """
+        from pde_sim.initial_conditions import list_initial_conditions, resolve_initial_condition_params
+
+        if ic_type in list_initial_conditions():
+            return resolve_initial_condition_params(
+                grid=grid,
+                ic_type=ic_type,
+                ic_params=ic_params,
+                field_names=self.metadata.field_names,
+            )
+        return ic_params
+
     def validate_dimension(self, ndim: int) -> None:
         """Validate that the PDE supports the given number of dimensions.
 
