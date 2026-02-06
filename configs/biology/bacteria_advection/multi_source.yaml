@@ -12,6 +12,7 @@ init:
     background: 0.0
     random_amplitude: true
     seed: 42
+    positions: random
 solver: euler
 backend: numba
 adaptive: false

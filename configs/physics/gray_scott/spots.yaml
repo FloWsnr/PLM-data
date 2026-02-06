@@ -9,6 +9,7 @@ init:
     num_blobs: 12
     width: 0.03
     noise: 0.02
+    positions: random
 solver: euler
 backend: numba
 adaptive: false

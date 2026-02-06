@@ -11,6 +11,7 @@ init:
     width: 0.03
     background: 0.0
     seed: 42
+    positions: random
 solver: euler
 backend: numba
 adaptive: false

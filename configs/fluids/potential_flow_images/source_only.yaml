@@ -2,6 +2,9 @@ preset: potential-flow-images
 parameters:
   strength: 50.0
   wall_x: 0.5
+  sigma: 1.0
+  omega: 0.0
+  amplitude: 0.0
 init:
   type: source-only
   params:

@@ -10,6 +10,7 @@ init:
     num_blobs: 5
     width: 0.04
     noise: 0.01
+    positions: random
 solver: euler
 backend: numpy
 adaptive: false

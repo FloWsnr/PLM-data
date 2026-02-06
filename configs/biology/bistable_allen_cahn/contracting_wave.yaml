@@ -6,6 +6,7 @@ init:
   type: step
   params:
     seed: 301
+    position: random
 solver: euler
 backend: numba
 adaptive: false

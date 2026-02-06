@@ -8,6 +8,7 @@ init:
   params:
     num_blobs: 5
     width: 0.05
+    positions: random
 solver: euler
 backend: numba
 adaptive: false

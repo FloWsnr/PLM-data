@@ -11,6 +11,7 @@ init:
     amplitude: 1.0
     width: 0.12
     background: 0.0
+    positions: random
 solver: rk4
 backend: numba
 adaptive: true

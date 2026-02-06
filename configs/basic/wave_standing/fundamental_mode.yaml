@@ -7,6 +7,8 @@ init:
     kx: 1
     ky: 1
     amplitude: 1.0
+    phase_x: random
+    phase_y: random
 solver: euler
 dt: 0.002
 resolution: [128, 128]

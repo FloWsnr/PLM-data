@@ -15,6 +15,7 @@ init:
     aspect_ratio: 1.5
     random_aspect: true
     seed: 42
+    positions: random
 solver: euler
 backend: numpy
 adaptive: true

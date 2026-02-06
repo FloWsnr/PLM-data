@@ -11,6 +11,7 @@ init:
     num_blobs: 1
     amplitude: 1.0
     width: 0.15
+    positions: random
 solver: euler
 dt: 0.005
 resolution: [200, 200]

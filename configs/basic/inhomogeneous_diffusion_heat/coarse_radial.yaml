@@ -14,6 +14,7 @@ init:
     - 0.6
     - 1.0
     seed: 106
+    positions: random
 solver: euler
 dt: 0.005
 resolution: [200, 200]

@@ -11,6 +11,7 @@ init:
     sigma: 0.08
     background: 0.0
     seed: 115
+    positions: random
 solver: euler
 backend: numba
 adaptive: true

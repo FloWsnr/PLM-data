@@ -12,6 +12,7 @@ init:
     amplitude: 1.0
     sigma: 0.05
     background: 0.0
+    positions: random
 solver: euler
 backend: numba
 adaptive: true

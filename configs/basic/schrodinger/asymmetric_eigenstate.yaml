@@ -4,6 +4,9 @@ parameters:
   C: 0.004
   n: 2
   m: 7
+  V_strength: 0.0
+  pot_n: 15
+  pot_m: 15
 init:
   type: eigenstate
   params:

@@ -12,6 +12,7 @@ init:
     amplitude: 1.0
     width: 0.08
     seed: 999
+    positions: random
 solver: euler
 dt: 0.005
 resolution: [200, 200]

@@ -10,6 +10,7 @@ init:
     amplitude: 1.0
     radius_min: 0.5
     radius_max: 1.5
+    positions: random
 solver: euler
 backend: numba
 adaptive: false

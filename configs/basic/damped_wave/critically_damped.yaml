@@ -9,6 +9,7 @@ init:
     num_blobs: 1
     sigma: 0.08
     amplitude: 1.0
+    positions: random
 solver: euler
 dt: 0.002
 resolution: [200, 200]

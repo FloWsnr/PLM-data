@@ -12,6 +12,7 @@ init:
     seed: 303
     center_x: 0.5
     center_y: 0.5
+    positions: random
 solver: euler
 backend: numba
 adaptive: true

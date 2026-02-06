@@ -4,6 +4,7 @@ parameters:
   a: 0.5
   b: 1.0
   c: 6.1
+  K: 0.0
 init:
   type: random-gaussian
   params:

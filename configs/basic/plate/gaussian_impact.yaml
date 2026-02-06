@@ -11,6 +11,7 @@ init:
     amplitude: -3.0
     width: 0.08
     background: 0.0
+    positions: random
 solver: scipy
 backend: numpy
 adaptive: true

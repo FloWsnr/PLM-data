@@ -8,6 +8,7 @@ init:
     amplitude: 2.0
     width: 0.08
     background: 0.0
+    positions: random
 solver: euler
 backend: numba
 adaptive: true

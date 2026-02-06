@@ -10,6 +10,7 @@ init:
     width: 0.06
     background: 0.0
     seed: 108
+    positions: random
 solver: euler
 backend: numba
 adaptive: true

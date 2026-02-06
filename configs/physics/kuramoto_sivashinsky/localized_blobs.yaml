@@ -9,6 +9,7 @@ init:
     width: 0.08
     background: 0.0
     random_amplitude: true
+    positions: random
 solver: scipy
 backend: numba
 adaptive: true

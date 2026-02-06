@@ -12,6 +12,7 @@ init:
     background: -1.0
     random_amplitude: true
     seed: 9999
+    positions: random
 solver: euler
 backend: numba
 adaptive: false

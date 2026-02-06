@@ -9,6 +9,7 @@ init:
     amplitude: 1.0
     width: 0.1
     seed: 101
+    positions: random
 solver: euler
 backend: numba
 adaptive: false

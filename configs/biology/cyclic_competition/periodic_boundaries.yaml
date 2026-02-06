@@ -11,6 +11,8 @@ init:
     wavelength: 0.25
     amplitude: 0.3
     offset: 0.4
+    phase_x: random
+    phase_y: random
 solver: euler
 backend: numba
 adaptive: false

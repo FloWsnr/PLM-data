@@ -13,6 +13,7 @@ init:
     max_amplitude: 0.7
     min_sigma: 10.0
     max_sigma: 25.0
+    positions: random
 solver: euler
 backend: numba
 adaptive: false

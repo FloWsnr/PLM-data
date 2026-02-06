@@ -1,6 +1,7 @@
 preset: zakharov-kuznetsov
 parameters:
   b: 0.01
+  theta: 0.0
 init:
   type: offset-soliton
   params:
