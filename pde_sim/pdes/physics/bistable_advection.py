@@ -107,14 +107,15 @@ class BistableAdvectionPDE(ScalarPDEPreset):
         if ic_type in ("default", "bistable-advection-default"):
             # Create a step function initial condition
             # Left side at 1 (invaded), right side at 0 (uninvaded)
-            ic_params = {
+            smooth = ic_params.get("smooth", True)
+            width = ic_params.get("width", 0.05)
+            mapped_params = {
                 "direction": ic_params.get("direction", "x"),
-                "step_position": ic_params.get("step_position", 0.3),
+                "position": ic_params["step_position"],
                 "value_low": ic_params.get("value_low", 0.0),
                 "value_high": ic_params.get("value_high", 1.0),
-                "smooth": ic_params.get("smooth", True),
-                "width": ic_params.get("width", 0.05),
+                "smooth_width": width if smooth else 0.0,
             }
-            return create_initial_condition(grid, "step", ic_params)
+            return create_initial_condition(grid, "step", mapped_params)
 
         return create_initial_condition(grid, ic_type, ic_params)

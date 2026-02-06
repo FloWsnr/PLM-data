@@ -12,6 +12,8 @@ init:
   type: default
   params:
     amplitude: 1.0
+    phase_x: 0.0
+    phase_y: 0.0
 solver: euler
 backend: numba
 adaptive: false

@@ -12,6 +12,8 @@ init:
     amplitude: 6.0
     n_blobs: 6
     blob_width: 0.18
+    blob_positions: random
+    blob_amplitudes: random
     n_mean: 0.5
     n_std: 0.1
 solver: euler

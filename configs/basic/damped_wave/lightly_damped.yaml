@@ -6,7 +6,7 @@ parameters:
 init:
   type: gaussian-blob
   params:
-    n_blobs: 3
+    num_blobs: 3
     sigma_range:
     - 0.04
     - 0.08

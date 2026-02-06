@@ -16,6 +16,8 @@ init:
     random_aspect: true
     seed: 42
     positions: random
+    x0: random
+    y0: random
 solver: euler
 backend: numpy
 adaptive: true

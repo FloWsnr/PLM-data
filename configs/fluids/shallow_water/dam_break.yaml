@@ -11,6 +11,7 @@ init:
   params:
     amplitude: 0.1
     step_width: 0.05
+    dam_position: 0.5
 solver: euler
 backend: numpy
 adaptive: true

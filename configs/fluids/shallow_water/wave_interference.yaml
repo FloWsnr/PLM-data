@@ -11,6 +11,10 @@ init:
   params:
     amplitude: 0.25
     width: 0.08
+    x1: 0.3
+    y1: 0.5
+    x2: 0.7
+    y2: 0.5
 solver: euler
 backend: numpy
 adaptive: true

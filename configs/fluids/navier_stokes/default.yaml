@@ -6,6 +6,7 @@ parameters:
 init:
   type: shear-layer
   params:
+    shear_y: 0.5
     shear_width: 0.03
     amplitude: 1.5
 solver: euler

@@ -5,11 +5,12 @@ parameters:
   a_v: 1.0
   a_z: -0.1
 init:
-  type: stripes
+  type: sine
   params:
-    direction: horizontal
-    num_stripes: 6
     amplitude: 0.5
+    wavenumber: 6
+    phase_x: 0.0
+    phase_y: 0.0
 solver: euler
 backend: numba
 adaptive: false

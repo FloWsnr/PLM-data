@@ -9,6 +9,8 @@ init:
   params:
     perturbation_radius: 0.05
     noise: 0.001
+    cx: 0.5
+    cy: 0.5
 solver: euler
 backend: numpy
 adaptive: false

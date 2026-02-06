@@ -12,6 +12,8 @@ init:
   params:
     amplitude: 0.6
     P: 2
+    cx: 0.5
+    cy: 0.5
 solver: euler
 backend: numba
 adaptive: false

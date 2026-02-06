@@ -4,7 +4,9 @@ parameters:
   sigma: 1.0
 init:
   type: text-image
-  params: {}
+  params:
+    phase_x: 0.0
+    phase_y: 0.0
 solver: euler
 backend: numba
 adaptive: false

@@ -12,6 +12,7 @@ init:
     amplitude: 3.0
     v0: 1.0
     noise: 0.05
+    phase: 0.0
 solver: euler
 backend: numba
 adaptive: false

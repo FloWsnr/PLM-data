@@ -4,7 +4,10 @@ parameters:
   sigma: 2.0
 init:
   type: default
-  params: {}
+  params:
+    step1: 0.25
+    step2: 0.75
+    y_step: 0.5
 solver: euler
 backend: numba
 adaptive: false

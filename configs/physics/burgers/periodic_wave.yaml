@@ -4,6 +4,7 @@ parameters:
 init:
   type: default
   params:
+    position: 0.3
     amplitude: 1.5
     width: 0.1
 solver: rk4

@@ -8,6 +8,8 @@ init:
     width: 2.0
     v_kink: 0.3
     v_antikink: -0.3
+    x0_kink: 15.0
+    x0_antikink: 35.0
 solver: euler
 backend: numba
 adaptive: false

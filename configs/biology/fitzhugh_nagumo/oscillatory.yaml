@@ -5,12 +5,13 @@ parameters:
   a_v: 0.01
   a_z: -0.1
 init:
-  type: spots
+  type: gaussian-blob
   params:
-    num_spots: 5
-    spot_radius: 15.0
-    spot_value: 1.0
-    background_value: 0.0
+    num_blobs: 5
+    amplitude: 1.0
+    width: 0.05
+    background: 0.0
+    positions: random
 solver: euler
 backend: numba
 adaptive: false
