@@ -62,11 +62,9 @@ class PlateEquationPDE(PDEBase):
         # dv/dt = -D * laplace(w) - C*v - Q
         dv_dt = -self.D * laplace_w.data - self.C * v.data - self.Q
 
-        # dw/dt = 0 (w is algebraic, but we need to return something)
-        # Actually, we set dw/dt such that w tracks D * laplace(u)
-        # To keep w = D * laplace(u), we set dw/dt = D * laplace(du/dt)
-        # But simpler: just set dw/dt = 0 and reinitialize w each step
-        dw_dt = np.zeros_like(w.data)
+        # dw/dt = D * laplace(du/dt) so that w tracks D * laplace(u) over time
+        du_dt_field = ScalarField(u.grid, du_dt)
+        dw_dt = self.D * du_dt_field.laplace(bc=self.bc).data
 
         # Create result fields
         result_u = ScalarField(u.grid, du_dt)
@@ -139,10 +137,10 @@ class PlatePDE(MultiFieldPDEPreset):
         Returns:
             Configured PDE instance with algebraic w field.
         """
-        D = parameters.get("D", 10.0)
-        Q = parameters.get("Q", 0.003)
-        C = parameters.get("C", 0.1)
-        D_c = parameters.get("D_c", 0.1)
+        D = parameters["D"]
+        Q = parameters["Q"]
+        C = parameters["C"]
+        D_c = parameters["D_c"]
 
         bc_spec = self._convert_bc(bc)
 
@@ -179,8 +177,8 @@ class PlatePDE(MultiFieldPDEPreset):
 
         # w = D * laplace(u) (algebraic constraint)
         # Initialize w correctly from u
-        D = parameters.get("D", 10.0) if parameters else 10.0
-        bc_spec = self._convert_bc(bc) if bc else "auto_periodic_neumann"
+        D = parameters["D"]
+        bc_spec = self._convert_bc(bc)
         laplace_u = u.laplace(bc=bc_spec)
         w_data = D * laplace_u.data
         w = ScalarField(grid, w_data)

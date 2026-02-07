@@ -52,6 +52,43 @@ class TestPlatePDE:
         check_result_finite(result, "plate", ndim)
         check_dimension_variation(result, ndim, "plate")
 
+    def test_w_field_evolves(self):
+        """Test that w field evolves and tracks D * laplace(u)."""
+        np.random.seed(42)
+        preset = get_pde_preset("plate")
+
+        grid = create_grid_for_dimension(2, resolution=16, periodic=False)
+        bc = create_bc_for_dimension(2, periodic=False)
+
+        params = {"D": 1.0, "Q": 10.0, "C": 0.1, "D_c": 0.1}
+        pde = preset.create_pde(params, bc, grid)
+        state = preset.create_initial_state(
+            grid, "random-uniform", {"low": -5.0, "high": -3.0},
+            parameters=params, bc=bc,
+        )
+
+        w_initial = state[2].data.copy()
+
+        result = pde.solve(
+            state, t_range=0.001, dt=0.0001, solver="euler",
+            tracker=None, backend="numpy",
+        )
+
+        u_final, v_final, w_final = result
+
+        # w should have changed from its initial value
+        assert not np.allclose(w_final.data, w_initial), (
+            "w field is stagnant — dw/dt is likely still zero"
+        )
+
+        # w should approximately equal D * laplace(u) at the final state
+        bc_spec = preset._convert_bc(bc)
+        expected_w = params["D"] * u_final.laplace(bc=bc_spec).data
+        np.testing.assert_allclose(
+            w_final.data, expected_w, rtol=0.1, atol=1e-6,
+            err_msg="w does not track D * laplace(u)",
+        )
+
     def test_unsupported_dimensions(self):
         """Test that plate rejects 3D."""
         preset = get_pde_preset("plate")
