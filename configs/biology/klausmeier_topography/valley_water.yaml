@@ -1,26 +1,33 @@
 preset: klausmeier-topography
 parameters:
   a: 1.0
-  m: 0.45
+  m: 0.54
   V: 100.0
   Dn: 1.0
   Dw: 2.0
 init:
   type: custom
   params:
-    topography: valley
-    amplitude: 6.0
+    topography: gaussian_blobs
+    amplitude: 4.0
+    blob_width: 0.14
+    blob_positions:
+      - [0.35, 0.25]
+      - [0.65, 0.4]
+      - [0.3, 0.7]
+      - [0.75, 0.8]
+    blob_amplitudes: [1.0, 0.4, 0.7, 0.9]
     n_mean: 0.5
     n_std: 0.1
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.001
-resolution: [128, 128]
+resolution: [200, 200]
 bc:
   x-: periodic
   x+: periodic
-  y-: neumann:0
-  y+: neumann:0
+  y-: periodic
+  y+: periodic
 domain_size: [100.0, 100.0]
-t_end: 500.0
+t_end: 50.0

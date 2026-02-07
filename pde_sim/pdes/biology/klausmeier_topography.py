@@ -67,19 +67,21 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
         bc: dict[str, Any],
         grid: CartesianGrid,
     ) -> PDE:
-        a = parameters.get("a", 2.0)
-        m = parameters.get("m", 0.54)
-        V = parameters.get("V", 100.0)
-        Dn = parameters.get("Dn", 1.0)
-        Dw = parameters.get("Dw", 2.0)
+        a = parameters["a"]
+        m = parameters["m"]
+        V = parameters["V"]
+        Dn = parameters["Dn"]
+        Dw = parameters["Dw"]
 
-        # The div(w*grad(T)) term implements topographic water flow
-        # = w*laplace(T) + inner(gradient(w), gradient(T))
+        # Use conservative divergence form for topographic water flow:
+        # div(w * grad(T)) is computed as a single operator for numerical stability.
+        # The expanded form w*laplace(T) + inner(grad(w), grad(T)) is unstable
+        # because laplace() and divergence(gradient()) use different stencils.
         return PDE(
             rhs={
                 "n": f"{Dn} * laplace(n) + w * n**2 - {m} * n",
-                "w": f"{Dw} * laplace(w) + {a} - w - w * n**2 + {V} * (w * laplace(T) + inner(gradient(w), gradient(T)))",
-                "T": "0",  # Topography is static
+                "w": f"{Dw} * laplace(w) + {a} - w - w * n**2 + {V} * divergence(w * gradient(T))",
+                "T": "0",
             },
             bc=self._convert_bc(bc),
         )
@@ -104,16 +106,15 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
         if ic_type not in ("default", "custom"):
             return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
-        np.random.seed(ic_params.get("seed"))
+        rng = np.random.default_rng(ic_params.get("seed"))
 
         # Initial water: constant (similar to visual-pde initCond_2: "1")
         w_data = np.ones(grid.shape)
 
         # Initial plants: random gaussian around vegetated steady state
-        # Using mean=0.5, std=0.1 works better than uniform [0,1] for pattern formation
-        n_mean = ic_params.get("n_mean", 0.5)
-        n_std = ic_params.get("n_std", 0.1)
-        n_data = np.random.normal(n_mean, n_std, grid.shape)
+        n_mean = ic_params["n_mean"]
+        n_std = ic_params["n_std"]
+        n_data = rng.normal(n_mean, n_std, grid.shape)
         n_data = np.clip(n_data, 0, None)  # Ensure non-negative
 
         # Build coordinate grids
@@ -130,77 +131,54 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
         Yn = (Y - y_bounds[0]) / Ly
 
         # Generate topography based on type
-        topo_type = ic_params.get("topography", "hills")
-        amplitude = ic_params.get("amplitude", 10.0)  # Default ~10 to match reference
-        base_slope = ic_params.get("base_slope", 0.0)  # Linear gradient strength
+        topo_type = ic_params["topography"]
+        amplitude = ic_params["amplitude"]
+        base_slope = ic_params.get("base_slope", 0.0)
 
         if topo_type == "slope":
-            # Simple linear slope in x direction
-            slope = ic_params.get("slope", 0.1)
+            slope = ic_params["slope"]
             T_data = amplitude * slope * X
 
         elif topo_type == "hills":
-            # Sinusoidal hills pattern
-            n_hills_x = ic_params.get("n_hills_x", 3)
-            n_hills_y = ic_params.get("n_hills_y", 3)
+            n_hills_x = ic_params["n_hills_x"]
+            n_hills_y = ic_params["n_hills_y"]
             T_data = amplitude * (
                 np.sin(n_hills_x * np.pi * Xn) * np.sin(n_hills_y * np.pi * Yn)
             )
 
         elif topo_type == "gaussian_blobs":
-            # Gaussian blob hills - more localized peaks than sinusoidal
-            blob_width = ic_params.get("blob_width", 0.15)  # Width as fraction of domain
+            blob_width = ic_params["blob_width"]
             T_data = np.zeros_like(X)
 
-            blob_positions = ic_params.get("blob_positions")
-            blob_amplitudes = ic_params.get("blob_amplitudes")
-            if (
-                blob_positions is None or blob_positions == "random"
-                or blob_amplitudes is None or blob_amplitudes == "random"
-            ):
-                raise ValueError("klausmeier-topography gaussian_blobs requires blob_positions and blob_amplitudes (or random)")
+            blob_positions = ic_params["blob_positions"]
+            blob_amplitudes = ic_params["blob_amplitudes"]
 
             if len(blob_positions) != len(blob_amplitudes):
                 raise ValueError("klausmeier-topography gaussian_blobs requires matching blob_positions and blob_amplitudes lengths")
 
             for (cx, cy), blob_amp in zip(blob_positions, blob_amplitudes):
-                sigma = blob_width
                 T_data += blob_amp * np.exp(
-                    -((Xn - cx) ** 2 + (Yn - cy) ** 2) / (2 * sigma**2)
+                    -((Xn - cx) ** 2 + (Yn - cy) ** 2) / (2 * blob_width**2)
                 )
-
-            # Scale to amplitude
             T_data = amplitude * T_data
 
         elif topo_type == "valley":
-            # Central valley running in x direction (low in center, high on edges)
             T_data = amplitude * (2 * Yn - 1) ** 2
 
         elif topo_type == "ridge":
-            # Central ridge running in x direction (high in center, low on edges)
             T_data = amplitude * (1 - (2 * Yn - 1) ** 2)
 
         elif topo_type == "random":
-            # Random smooth terrain from sum of sinusoids
-            modes = ic_params.get("modes")
-            if modes is None or modes == "random":
-                raise ValueError("klausmeier-topography random requires modes (or random)")
+            modes = ic_params["modes"]
             T_data = np.zeros_like(X)
             for mode in modes:
-                kx = mode["kx"]
-                ky = mode["ky"]
-                phase_x = mode["phase_x"]
-                phase_y = mode["phase_y"]
-                amp = mode["amp"]
-                T_data += amp * np.sin(kx * np.pi * Xn + phase_x) * np.sin(
-                    ky * np.pi * Yn + phase_y
-                )
-            # Normalize and scale
+                T_data += mode["amp"] * np.sin(
+                    mode["kx"] * np.pi * Xn + mode["phase_x"]
+                ) * np.sin(mode["ky"] * np.pi * Yn + mode["phase_y"])
             T_data = amplitude * T_data / len(modes)
 
         else:
-            # Default: gentle slope
-            T_data = amplitude * 0.1 * X
+            raise ValueError(f"Unknown topography type: {topo_type}")
 
         # Add base slope: base_slope * (x/Lx - 0.5)
         # This matches the reference: 20*(x/L_x-0.5)
