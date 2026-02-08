@@ -342,11 +342,17 @@ class SimulationRunner:
         field_ranges: dict[str, tuple[float, float]] = {
             name: (float("inf"), float("-inf")) for name in field_names
         }
+        has_nan: dict[str, bool] = {name: False for name in field_names}
+        has_inf: dict[str, bool] = {name: False for name in field_names}
 
-        # Pass 1: compute global min/max per field
+        # Pass 1: compute global min/max per field and check for NaN/Inf
         for _t, state in storage.items():
             for name in field_names:
                 data = _extract_field_data(state, name)
+                if not has_nan[name] and np.any(np.isnan(data)):
+                    has_nan[name] = True
+                if not has_inf[name] and np.any(np.isinf(data)):
+                    has_inf[name] = True
                 vmin, vmax = field_ranges[name]
                 field_ranges[name] = (min(vmin, float(np.min(data))), max(vmax, float(np.max(data))))
 
@@ -429,7 +435,11 @@ class SimulationRunner:
 
         stagnation = {"stagnant_fields": stagnant_fields, "fields": fields_info}
 
-        if verbose and stagnant_fields:
+        # Build numerical issues report
+        nan_fields = [name for name in field_names if has_nan[name]]
+        inf_fields = [name for name in field_names if has_inf[name]]
+
+        if verbose:
             for name in stagnant_fields:
                 info = fields_info[name]
                 if info["field_range"] == 0:
@@ -439,6 +449,10 @@ class SimulationRunner:
                         f"  WARNING: Field '{name}' appears stagnant from frame {info['stagnant_from_frame']} "
                         f"({info['trailing_stagnant_frames']} frames with no significant change)"
                     )
+            for name in nan_fields:
+                print(f"  WARNING: Field '{name}' contains NaN values")
+            for name in inf_fields:
+                print(f"  WARNING: Field '{name}' contains Inf values")
 
         # Generate and save metadata
         total_time = storage.times[-1] if len(storage) > 0 else self.config.t_end
@@ -455,7 +469,11 @@ class SimulationRunner:
         )
 
         # Add stagnation diagnostics to metadata
-        metadata["diagnostics"] = {"stagnation": stagnation}
+        metadata["diagnostics"] = {
+            "stagnation": stagnation,
+            "nan_fields": nan_fields,
+            "inf_fields": inf_fields,
+        }
 
         self.output_manager.save_metadata(metadata)
 

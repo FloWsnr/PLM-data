@@ -87,6 +87,19 @@ def run_batch(
                 randomize_positions=randomize_positions,
             )
             logger.info("Output: %s", metadata.get("folder_name"))
+
+            # Log health diagnostics
+            diagnostics = metadata["diagnostics"]
+            stagnant = diagnostics["stagnation"]["stagnant_fields"]
+            nan_fields = diagnostics["nan_fields"]
+            inf_fields = diagnostics["inf_fields"]
+            if stagnant:
+                logger.warning("Stagnant fields: %s", ", ".join(stagnant))
+            if nan_fields:
+                logger.warning("Fields with NaN: %s", ", ".join(nan_fields))
+            if inf_fields:
+                logger.warning("Fields with Inf: %s", ", ".join(inf_fields))
+
             ok += 1
         except Exception as e:
             logger.error("Simulation %d (%s) failed: %s", i, config_path.name, e)
