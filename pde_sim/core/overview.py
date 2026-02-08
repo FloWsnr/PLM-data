@@ -1,6 +1,7 @@
 """Generate HTML overview of GIF simulations."""
 
 import json
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -250,8 +251,42 @@ def _render_simulation(sim: SimulationInfo, html_dir: Path) -> str:
     return "\n".join(lines)
 
 
+def _copy_gifs(
+    simulations: list[SimulationInfo], overview_dir: Path
+) -> list[SimulationInfo]:
+    """Copy GIF files into the overview directory and return updated SimulationInfo list.
+
+    GIFs are organized as overview_dir/preset/sim_name/field.gif.
+    """
+    updated = []
+    for sim in simulations:
+        sim_dir = overview_dir / sim.preset / sim.name
+        sim_dir.mkdir(parents=True, exist_ok=True)
+
+        new_gif_files = {}
+        for field_name, gif_path in sim.gif_files.items():
+            dest = sim_dir / gif_path.name
+            shutil.copy2(gif_path, dest)
+            new_gif_files[field_name] = dest
+
+        updated.append(
+            SimulationInfo(
+                folder=sim.folder,
+                preset=sim.preset,
+                name=sim.name,
+                gif_files=new_gif_files,
+                metadata=sim.metadata,
+            )
+        )
+
+    return updated
+
+
 def generate_overview(output_dir: Path, html_path: Path, title: str) -> int:
-    """Main entry point: discover simulations and generate HTML.
+    """Main entry point: discover simulations, copy GIFs, and generate HTML.
+
+    Creates a self-contained overview/ folder inside output_dir with copied GIFs
+    and the HTML file, so it can be easily moved around.
 
     Args:
         output_dir: Directory to scan for simulations
@@ -265,6 +300,13 @@ def generate_overview(output_dir: Path, html_path: Path, title: str) -> int:
 
     if not simulations:
         return 0
+
+    # Create overview directory next to the HTML file
+    overview_dir = html_path.parent
+    overview_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy GIFs into the overview directory
+    simulations = _copy_gifs(simulations, overview_dir)
 
     generate_html(simulations, html_path, title)
     return len(simulations)

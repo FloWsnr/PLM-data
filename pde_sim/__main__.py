@@ -299,8 +299,8 @@ def create_overview(args):
         print(f"Error: Directory not found: {args.output_dir}")
         sys.exit(1)
 
-    # Default HTML path is inside the output directory
-    html_path = args.html if args.html else args.output_dir / "overview.html"
+    # Default HTML path is inside a self-contained overview/ subdirectory
+    html_path = args.html if args.html else args.output_dir / "00_overview" / "overview.html"
 
     count = generate_overview(
         output_dir=args.output_dir,
