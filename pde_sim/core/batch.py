@@ -28,7 +28,7 @@ def run_batch(
     seed: int | None = None,
     storage: str | None = None,
     keep_storage: bool | None = None,
-    unique_suffix: bool | None = True,
+    unique_suffix: bool | None = False,
     overwrite: bool = False,
     continue_on_error: bool = True,
     randomize_positions: bool = False,
