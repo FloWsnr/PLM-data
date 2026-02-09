@@ -10,14 +10,9 @@ init:
   type: gaussian-blob
   params:
     num_blobs: 6
+    positions: random
     amplitude: 0.2
     width: 0.04
-    aspect_ratio: 1.5
-    random_aspect: true
-    seed: 42
-    positions: random
-    x0: random
-    y0: random
 solver: euler
 backend: numpy
 adaptive: true

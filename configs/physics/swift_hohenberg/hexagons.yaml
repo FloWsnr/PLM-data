@@ -1,15 +1,15 @@
 preset: swift-hohenberg
 parameters:
   r: 0.15
-  a: 1.8
+  a: 1.6
   b: -1.0
-  c: 0.0
+  c: -1.0
   D: 1.0
 init:
   type: random-gaussian
   params:
     mean: 0.0
-    std: 0.05
+    std: 0.01
 solver: scipy
 backend: numba
 adaptive: true
@@ -20,5 +20,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: [80.0, 80.0]
+domain_size: [100.0, 100.0]
 t_end: 60.0

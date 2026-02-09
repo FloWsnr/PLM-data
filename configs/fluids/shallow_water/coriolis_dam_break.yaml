@@ -7,11 +7,12 @@ parameters:
   nu: 0.2
   epsilon: 0.01
 init:
-  type: dam-break
+  type: gaussian-blob
   params:
+    num_blobs: 5
+    positions: random
     amplitude: 0.1
-    step_width: 0.05
-    dam_position: 0.5
+    width: 0.06
 solver: euler
 backend: numpy
 adaptive: true

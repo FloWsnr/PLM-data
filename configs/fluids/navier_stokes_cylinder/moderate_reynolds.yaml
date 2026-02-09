@@ -1,6 +1,6 @@
 preset: navier-stokes-cylinder
 parameters:
-  nu: 0.08
+  nu: 0.12
   M: 0.5
   U: 0.7
   cylinder_radius: 0.05
@@ -34,4 +34,4 @@ bc:
       y-: dirichlet:0
       y+: dirichlet:0
 domain_size: [128.0, 128.0]
-t_end: 130.0
+t_end: 250.0

@@ -39,7 +39,7 @@ class TestZakharovKuznetsovPDE:
         grid = create_grid_for_dimension(ndim, resolution=16)
         bc = create_bc_for_dimension(ndim)
 
-        pde = preset.create_pde({"alpha": 1.0, "beta": 1.0}, bc, grid)
+        pde = preset.create_pde({"b": 0.001, "theta": 0.0}, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None, backend="numpy")

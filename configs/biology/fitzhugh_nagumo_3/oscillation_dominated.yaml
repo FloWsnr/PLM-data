@@ -2,8 +2,8 @@ preset: fitzhugh-nagumo-3
 parameters:
   Dv: 40.0
   Dw: 200.0
-  a_v: 0.1
-  e_v: 0.2
+  a_v: 0.01
+  e_v: 0.3
   e_w: 1.0
   a_w: 0.5
   a_z: -0.1
@@ -12,12 +12,12 @@ init:
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.001
-resolution: [128, 128]
+dt: 0.002
+resolution: [192, 192]
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: [280.0, 280.0]
-t_end: 200.0
+domain_size: [300.0, 300.0]
+t_end: 80.0

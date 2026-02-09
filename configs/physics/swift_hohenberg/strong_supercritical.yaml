@@ -9,7 +9,7 @@ init:
   type: random-gaussian
   params:
     mean: 0.0
-    std: 0.1
+    std: 0.01
 solver: scipy
 backend: numba
 adaptive: true

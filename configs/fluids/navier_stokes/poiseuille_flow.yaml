@@ -1,13 +1,13 @@
 preset: navier-stokes
 parameters:
-  nu: 20.0
-  M: 0.5
-  D: 0.05
+  nu: 0.02
+  M: 0.3
+  D: 0.005
 init:
   type: poiseuille
   params:
-    amplitude: 0.4
-    pressure_gradient: 1.0
+    amplitude: 1.5
+    pressure_gradient: 0.5
 solver: euler
 backend: numpy
 adaptive: true
@@ -21,6 +21,6 @@ bc:
   fields:
     p:
       x-: dirichlet:0
-      x+: dirichlet:0.05
+      x+: dirichlet:0.5
 domain_size: [5.0, 5.0]
-t_end: 5.0
+t_end: 12.0

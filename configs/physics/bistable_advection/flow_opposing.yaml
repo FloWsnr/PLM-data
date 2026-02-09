@@ -5,14 +5,14 @@ parameters:
   theta: 3.14159
   V: 0.4
 init:
-  type: default
+  type: gaussian-blob
   params:
-    direction: x
-    step_position: 0.5
-    value_low: 0.0
-    value_high: 1.0
-    smooth: true
-    width: 0.03
+    num_blobs: 5
+    amplitude: 1.0
+    width: 0.09
+    background: 0.0
+    random_amplitude: true
+    positions: random
 solver: rk4
 backend: numba
 adaptive: true

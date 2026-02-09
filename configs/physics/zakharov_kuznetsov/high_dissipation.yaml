@@ -3,16 +3,18 @@ parameters:
   b: 0.01
   theta: 0.0
 init:
-  type: offset-soliton
+  type: gaussian-blob
   params:
-    a: 0.005
-    x_center: 30.0
-    y_center: 50.0
+    num_blobs: 5
+    positions: random
+    amplitude: 1.0
+    width: 0.05
+    background: 0.0
 solver: rk4
 backend: numba
 adaptive: false
 dt: 0.001
-t_end: 60.0
+t_end: 30.0
 resolution: [128, 128]
 bc:
   x-: periodic

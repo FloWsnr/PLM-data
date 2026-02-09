@@ -1,22 +1,21 @@
 preset: schnakenberg
 parameters:
-  Dv: 8.0
-  a: 0.05
-  b: 0.5
+  Dv: 50.0
+  a: 0.1
+  b: 0.9
 init:
-  type: random-gaussian
+  type: default
   params:
-    mean: 1.0
-    std: 0.05
+    noise: 0.1
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.001
+dt: 0.0005
 resolution: [128, 128]
 bc:
-  x-: periodic
-  x+: periodic
-  y-: periodic
-  y+: periodic
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
 domain_size: [100.0, 100.0]
 t_end: 200.0

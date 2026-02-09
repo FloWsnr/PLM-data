@@ -1,18 +1,18 @@
 preset: swift-hohenberg
 parameters:
-  r: 0.2
-  a: 2.0
-  b: -1.5
-  c: -0.5
+  r: -0.1
+  a: 1.6
+  b: -1.0
+  c: -1.0
   D: 1.0
 init:
-  type: sine
+  type: gaussian-blob
   params:
-    amplitude: 0.2
-    wavelength_x: 12.5
-    wavelength_y: 12.5
-    phase_x: 0.0
-    phase_y: 0.0
+    num_blobs: 5
+    positions: random
+    amplitude: 1.5
+    width: 0.05
+    background: 0.0
 solver: scipy
 backend: numba
 adaptive: true
@@ -24,4 +24,4 @@ bc:
   y-: periodic
   y+: periodic
 domain_size: [100.0, 100.0]
-t_end: 80.0
+t_end: 60.0

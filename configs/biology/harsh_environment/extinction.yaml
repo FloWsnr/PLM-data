@@ -1,6 +1,6 @@
 preset: harsh-environment
 parameters:
-  D: 6.0
+  D: 5.5
   r: 1.0
   K: 1.0
 init:
@@ -9,7 +9,7 @@ init:
     num_blobs: 1
     radius: 3.0
     amplitude: 1.0
-    positions: random
+    positions: [[0.5, 0.5]]
 solver: euler
 backend: numba
 adaptive: false
@@ -21,4 +21,4 @@ bc:
   y-: dirichlet:0
   y+: dirichlet:0
 domain_size: [10.0, 10.0]
-t_end: 15.0
+t_end: 40.0

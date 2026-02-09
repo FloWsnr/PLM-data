@@ -7,12 +7,12 @@ parameters:
   nu: 0.05
   epsilon: 1.0e-05
 init:
-  type: drop
+  type: gaussian-blob
   params:
-    x0: 0.3
-    y0: 0.5
+    num_blobs: 4
+    positions: random
     amplitude: 0.4
-    width: 0.08
+    width: 0.06
 solver: euler
 backend: numpy
 adaptive: true

@@ -1,16 +1,16 @@
 preset: duffing
 parameters:
   D: 0.5
-  alpha: 1.0
-  beta: 0.5
+  alpha: 0.5
+  beta: 1.0
   delta: 0.05
-  gamma: 3.0
-  omega: 1.5
+  gamma: 2.0
+  omega: 2.0
   epsilon: 0.01
 init:
   type: default
   params:
-    noise: 1.5
+    noise: 1.0
 solver: euler
 backend: numba
 adaptive: false

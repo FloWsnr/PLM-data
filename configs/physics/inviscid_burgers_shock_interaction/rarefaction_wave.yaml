@@ -2,11 +2,14 @@ preset: inviscid-burgers
 parameters:
   epsilon: 0.005
 init:
-  type: default
+  type: gaussian-blob
   params:
-    offset: 0.02
+    num_blobs: 3
     amplitude: 0.5
-    width_coeff: 5.0e-05
+    width: 0.1
+    background: 0.02
+    random_amplitude: true
+    positions: random
 solver: rk4
 backend: numba
 adaptive: true

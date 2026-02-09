@@ -1,7 +1,7 @@
 preset: stochastic-gray-scott
 parameters:
-  a: 0.037
-  b: 0.04
+  a: 0.078
+  b: 0.061
   D: 4.0
   sigma: 0.0
 init:

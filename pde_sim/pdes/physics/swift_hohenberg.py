@@ -75,11 +75,11 @@ class SwiftHohenbergPDE(ScalarPDEPreset):
         Returns:
             Configured PDE instance.
         """
-        r = parameters.get("r", 0.1)
-        a = parameters.get("a", 1.0)
-        b = parameters.get("b", 1.0)
-        c = parameters.get("c", -1.0)
-        D = parameters.get("D", 1.0)
+        r = parameters["r"]
+        a = parameters["a"]
+        b = parameters["b"]
+        c = parameters["c"]
+        D = parameters["D"]
 
         # k_c = 1 (critical wavenumber)
         k_c = 1.0
@@ -113,7 +113,7 @@ class SwiftHohenbergPDE(ScalarPDEPreset):
         Default: u = 0 with small perturbations.
         """
         if ic_type in ("swift-hohenberg-default", "default"):
-            amplitude = ic_params.get("amplitude", 0.1)
+            amplitude = ic_params["amplitude"]
             rng = np.random.default_rng(ic_params.get("seed"))
             data = amplitude * rng.standard_normal(grid.shape)
             return ScalarField(grid, data)
@@ -124,10 +124,10 @@ class SwiftHohenbergPDE(ScalarPDEPreset):
         self, parameters: dict[str, float]
     ) -> dict[str, str]:
         """Get equations with parameter values substituted."""
-        r = parameters.get("r", 0.1)
-        a = parameters.get("a", 1.0)
-        b = parameters.get("b", 1.0)
-        c = parameters.get("c", -1.0)
+        r = parameters["r"]
+        a = parameters["a"]
+        b = parameters["b"]
+        c = parameters["c"]
 
         return {
             "u": f"{r}*u - (1 + laplace)**2*u + {a}*u**2 + {b}*u**3 + {c}*u**5",

@@ -1,24 +1,25 @@
 preset: fisher-kpp
 parameters:
-  D: 0.2
-  r: 1.5
+  D: 0.05
+  r: 3.0
   K: 1.0
 init:
   type: gaussian-blob
   params:
-    num_blobs: 1
+    num_blobs: 5
     amplitude: 1.0
-    width: 0.08
+    width: 0.04
+    background: 0.0
     positions: random
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.001
+dt: 0.002
 resolution: [128, 128]
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-domain_size: [60.0, 60.0]
-t_end: 50.0
+domain_size: [30.0, 30.0]
+t_end: 20.0

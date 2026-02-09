@@ -7,14 +7,12 @@ parameters:
   nu: 0.1
   epsilon: 5.0e-05
 init:
-  type: ripple
+  type: gaussian-blob
   params:
+    num_blobs: 4
+    positions: random
     amplitude: 0.3
-    width: 0.08
-    x1: 0.3
-    y1: 0.5
-    x2: 0.7
-    y2: 0.5
+    width: 0.06
 solver: euler
 backend: numpy
 adaptive: true

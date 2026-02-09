@@ -6,12 +6,11 @@ parameters:
 init:
   type: gaussian-blob
   params:
-    num_blobs: 5
-    amplitude: 0.6
-    width: 0.06
+    num_blobs: 8
+    amplitude: 0.7
+    width: 0.05
     background: 0.0
     random_amplitude: true
-    seed: 42
     positions: random
 solver: euler
 backend: numba
@@ -24,4 +23,4 @@ bc:
   y-: periodic
   y+: periodic
 domain_size: [320.0, 320.0]
-t_end: 300.0
+t_end: 120.0

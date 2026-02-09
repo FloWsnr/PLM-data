@@ -80,15 +80,15 @@ class SuperlatticePDE(MultiFieldPDEPreset):
         Returns:
             Configured PDE instance.
         """
-        a = parameters.get("a", 3.0)
-        b = parameters.get("b", 9.0)
-        c = parameters.get("c", 15.0)
-        d = parameters.get("d", 9.0)
-        alpha = parameters.get("alpha", 0.15)
-        D_uone = parameters.get("D_uone", 4.3)
-        D_utwo = parameters.get("D_utwo", 50.0)
-        D_uthree = parameters.get("D_uthree", 22.0)
-        D_ufour = parameters.get("D_ufour", 660.0)
+        a = parameters["a"]
+        b = parameters["b"]
+        c = parameters["c"]
+        d = parameters["d"]
+        alpha = parameters["alpha"]
+        D_uone = parameters["D_uone"]
+        D_utwo = parameters["D_utwo"]
+        D_uthree = parameters["D_uthree"]
+        D_ufour = parameters["D_ufour"]
 
         # Coupled Brusselator + Lengyel-Epstein system
         return PDE(
@@ -116,14 +116,15 @@ class SuperlatticePDE(MultiFieldPDEPreset):
             u2: 3 (constant)
             v2: 10 (constant)
         """
-        seed = ic_params.get("seed")
-        if seed is not None:
-            np.random.seed(seed)
-        noise = ic_params.get("noise", 0.1)
+        if ic_type not in ("superlattice-default", "default"):
+            return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
+
+        rng = np.random.default_rng(ic_params.get("seed"))
+        noise = ic_params["noise"]
 
         # Reference values from VisualPDE preset
         # Only u1 gets noise - this triggers pattern formation
-        u1_data = 3.0 + noise * np.random.randn(*grid.shape)
+        u1_data = 3.0 + noise * rng.standard_normal(grid.shape)
         v1_data = np.full(grid.shape, 3.0)
         u2_data = np.full(grid.shape, 3.0)
         v2_data = np.full(grid.shape, 10.0)
@@ -146,15 +147,15 @@ class SuperlatticePDE(MultiFieldPDEPreset):
         self, parameters: dict[str, float]
     ) -> dict[str, str]:
         """Get equations with parameter values substituted."""
-        a = parameters.get("a", 3.0)
-        b = parameters.get("b", 9.0)
-        c = parameters.get("c", 15.0)
-        d = parameters.get("d", 9.0)
-        alpha = parameters.get("alpha", 0.15)
-        D_uone = parameters.get("D_uone", 4.3)
-        D_utwo = parameters.get("D_utwo", 50.0)
-        D_uthree = parameters.get("D_uthree", 22.0)
-        D_ufour = parameters.get("D_ufour", 660.0)
+        a = parameters["a"]
+        b = parameters["b"]
+        c = parameters["c"]
+        d = parameters["d"]
+        alpha = parameters["alpha"]
+        D_uone = parameters["D_uone"]
+        D_utwo = parameters["D_utwo"]
+        D_uthree = parameters["D_uthree"]
+        D_ufour = parameters["D_ufour"]
 
         return {
             "u1": f"{D_uone}*laplace(u1) + {a} - ({b}+1)*u1 + u1**2*v1 + {alpha}*u1*u2*(u2-u1)",

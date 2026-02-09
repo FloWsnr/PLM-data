@@ -132,9 +132,9 @@ class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
             gaussian_sink = f"exp(-((x - {sink_x})**2 + (y - {sink_y})**2) / (2 * {sigma}**2))"
 
         elif motion == "figure8":
-            # Lissajous figure-8 pattern
+            # Lissajous figure-8 pattern: x = A*sin(wt), y = A*sin(2wt)
             dipole_cx = f"({cx} + {orbit_radius} * sin({omega} * t))"
-            dipole_cy = f"({cy} + {orbit_radius * 0.5} * sin({2 * omega} * t))"
+            dipole_cy = f"({cy} + {orbit_radius} * sin({2 * omega} * t))"
 
             source_x = f"({dipole_cx} + {half_sep})"
             source_y = dipole_cy

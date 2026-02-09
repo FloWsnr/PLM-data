@@ -40,9 +40,9 @@ class TestSwiftHohenbergAdvectionPDE:
         grid = create_grid_for_dimension(ndim, resolution=resolution)
         bc = create_bc_for_dimension(ndim)
 
-        # Use conservative parameters with positive quintic stabilization
+        # Use conservative parameters with quintic stabilization and advection
         pde = preset.create_pde(
-            {"r": 0.1, "g1": 0.1, "g2": 0.1, "D": 1.0, "k0": 1.0, "vx": 0.1, "vy": 0.0},
+            {"r": -0.28, "a": 1.6, "b": -1.0, "c": -1.0, "V": 0.1, "theta": 0.0, "D": 1.0},
             bc,
             grid,
         )

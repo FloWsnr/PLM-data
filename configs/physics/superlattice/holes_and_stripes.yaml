@@ -23,5 +23,5 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: [100.0, 100.0]
-t_end: 10.0
+domain_size: [300.0, 300.0]
+t_end: 15.0

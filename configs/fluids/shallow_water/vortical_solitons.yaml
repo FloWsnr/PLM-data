@@ -7,14 +7,12 @@ parameters:
   nu: 0.5
   epsilon: 0.001
 init:
-  type: geostrophic-vortex
+  type: gaussian-blob
   params:
-    x0: 0.5
-    y0: 0.5
+    num_blobs: 2
+    positions: random
     amplitude: 0.02
-    radius: 0.15
-    f: 1.0
-    g: 9.81
+    width: 0.1
 solver: euler
 backend: numpy
 adaptive: true

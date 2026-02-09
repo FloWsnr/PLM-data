@@ -53,6 +53,7 @@ class SchrodingerPDE(MultiFieldPDEPreset):
                 PDEParameter("C", "Numerical stabilization parameter"),
                 PDEParameter("n", "x wave number for initial eigenstate"),
                 PDEParameter("m", "y wave number for initial eigenstate"),
+                PDEParameter("potential_type", "Type of potential: none, sinusoidal, or harmonic"),
                 PDEParameter("V_strength", "Potential amplitude (0 = no potential)"),
                 PDEParameter("pot_n", "Potential mode number in x direction (sinusoidal)"),
                 PDEParameter("pot_m", "Potential mode number in y direction (sinusoidal)"),
@@ -127,14 +128,14 @@ class SchrodingerPDE(MultiFieldPDEPreset):
         Returns:
             Configured PDE instance.
         """
-        D = parameters.get("D", 1.0)
-        C = parameters.get("C", 0.004)
+        D = parameters["D"]
+        C = parameters["C"]
 
         # Potential parameters
-        potential_type = parameters.get("potential_type", "none")
-        V_strength = parameters.get("V_strength", 0.0)
-        pot_n = int(parameters.get("pot_n", 15))
-        pot_m = int(parameters.get("pot_m", 15))
+        potential_type = parameters["potential_type"]
+        V_strength = parameters["V_strength"]
+        pot_n = int(parameters["pot_n"])
+        pot_m = int(parameters["pot_m"])
 
         # Convert BC to py-pde format
         bc_spec = self._convert_bc(bc)
@@ -200,6 +201,39 @@ class SchrodingerPDE(MultiFieldPDEPreset):
                 m * np.pi * y_coords / L_y
             )
             v_data = np.zeros(grid.shape)  # Imaginary part starts at zero
+
+            u = ScalarField(grid, u_data)
+            u.label = "u"
+            v = ScalarField(grid, v_data)
+            v.label = "v"
+
+            return FieldCollection([u, v])
+
+        elif ic_type == "superposition":
+            # Superposition of two eigenstates for interesting beating dynamics.
+            # A single eigenstate gives stationary |psi|^2; a superposition of
+            # two modes with different energies produces time-varying density.
+            L_x = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
+            L_y = grid.axes_bounds[1][1] - grid.axes_bounds[1][0]
+
+            n1 = int(ic_params["n1"])
+            m1 = int(ic_params["m1"])
+            n2 = int(ic_params["n2"])
+            m2 = int(ic_params["m2"])
+            weight = ic_params.get("weight", 0.5)
+
+            x_coords = grid.cell_coords[..., 0]
+            y_coords = grid.cell_coords[..., 1]
+
+            mode1 = np.sin(n1 * np.pi * x_coords / L_x) * np.sin(
+                m1 * np.pi * y_coords / L_y
+            )
+            mode2 = np.sin(n2 * np.pi * x_coords / L_x) * np.sin(
+                m2 * np.pi * y_coords / L_y
+            )
+
+            u_data = (1 - weight) * mode1 + weight * mode2
+            v_data = np.zeros(grid.shape)
 
             u = ScalarField(grid, u_data)
             u.label = "u"
@@ -314,10 +348,10 @@ class SchrodingerPDE(MultiFieldPDEPreset):
         self, parameters: dict[str, float]
     ) -> dict[str, str]:
         """Get equations with parameter values substituted."""
-        D = parameters.get("D", 1.0)
-        C = parameters.get("C", 0.004)
-        V_strength = parameters.get("V_strength", 0.0)
-        potential_type = parameters.get("potential_type", "none")
+        D = parameters["D"]
+        C = parameters["C"]
+        V_strength = parameters["V_strength"]
+        potential_type = parameters["potential_type"]
 
         if C > 0:
             base_u = f"-{D} * laplace(v) + {C*D} * laplace(u)"

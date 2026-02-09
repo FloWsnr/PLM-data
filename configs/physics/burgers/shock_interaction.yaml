@@ -2,23 +2,19 @@ preset: burgers
 parameters:
   epsilon: 0.03
 init:
-  type: multi-pulse
+  type: gaussian-blob
   params:
-    positions:
-    - 0.1
-    - 0.25
-    - 0.4
-    amplitudes:
-    - 2.5
-    - 1.5
-    - 0.8
+    num_blobs: 5
+    amplitude: 2.5
     width: 0.04
+    background: 0.0
+    random_amplitude: true
+    positions: random
 solver: rk4
 backend: numba
 adaptive: true
 dt: 0.005
 resolution: [256, 256]
-dimension: 1
 bc:
   x-: neumann:0
   x+: neumann:0

@@ -72,8 +72,8 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
         Returns:
             Configured PDE instance.
         """
-        b = parameters.get("b", 0.008)
-        theta = parameters.get("theta", 0.0)
+        b = parameters["b"]
+        theta = parameters["theta"]
 
         # Zakharov-Kuznetsov equation with rotated propagation direction:
         # du/dt = -d_s(laplace(u)) - u*d_s(u) - b*∇⁴u
@@ -122,14 +122,14 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
         if ic_type in ("zakharov-kuznetsov-default", "default", "vortical-soliton"):
             # Vortical soliton: u = sech²(a * r²) where r² = x² + y²
             # From visual-pde: a = 0.06 for domain scale 350
-            a = ic_params.get("a", 0.06)
+            a = ic_params["a"]
 
             x_bounds = grid.axes_bounds[0]
             y_bounds = grid.axes_bounds[1]
 
             # Center the soliton (domain centered at origin in visual-pde)
-            x_center = ic_params.get("x_center")
-            y_center = ic_params.get("y_center")
+            x_center = ic_params["x_center"]
+            y_center = ic_params["y_center"]
             if (
                 x_center is None or x_center == "random"
                 or y_center is None or y_center == "random"
@@ -150,13 +150,13 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
 
         if ic_type == "offset-soliton":
             # Soliton offset from center to show propagation
-            a = ic_params.get("a", 0.06)
+            a = ic_params["a"]
 
             x_bounds = grid.axes_bounds[0]
             y_bounds = grid.axes_bounds[1]
 
-            x_center = ic_params.get("x_center")
-            y_center = ic_params.get("y_center")
+            x_center = ic_params["x_center"]
+            y_center = ic_params["y_center"]
             if (
                 x_center is None or x_center == "random"
                 or y_center is None or y_center == "random"
@@ -174,19 +174,19 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
 
         if ic_type == "two-solitons":
             # Two solitons to observe interaction/collision dynamics
-            a1 = ic_params.get("a1", 0.01)
-            a2 = ic_params.get("a2", 0.01)
+            a1 = ic_params["a1"]
+            a2 = ic_params["a2"]
 
             x_bounds = grid.axes_bounds[0]
             y_bounds = grid.axes_bounds[1]
 
             # First soliton: left side
-            x1 = ic_params.get("x1")
-            y1 = ic_params.get("y1")
+            x1 = ic_params["x1"]
+            y1 = ic_params["y1"]
 
             # Second soliton: also left but different y position
-            x2 = ic_params.get("x2")
-            y2 = ic_params.get("y2")
+            x2 = ic_params["x2"]
+            y2 = ic_params["y2"]
             if (
                 x1 is None or x1 == "random"
                 or y1 is None or y1 == "random"
@@ -208,10 +208,6 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
 
         if ic_type == "random-solitons":
             # N randomly placed solitons with random widths
-            # Parameters:
-            #   n: number of solitons (default 3)
-            #   a_min, a_max: range for width parameter (default 0.005-0.015)
-            #   margin: fraction of domain to avoid at edges (default 0.1)
             x_bounds = grid.axes_bounds[0]
             y_bounds = grid.axes_bounds[1]
             Lx = x_bounds[1] - x_bounds[0]
@@ -222,8 +218,8 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
             y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
             X, Y = np.meshgrid(x, y, indexing="ij")
 
-            positions = ic_params.get("positions")
-            a_values = ic_params.get("a_values")
+            positions = ic_params["positions"]
+            a_values = ic_params["a_values"]
             if (
                 positions is None or positions == "random"
                 or a_values is None or a_values == "random"
@@ -351,8 +347,8 @@ class ZakharovKuznetsovPDE(ScalarPDEPreset):
         self, parameters: dict[str, float]
     ) -> dict[str, str]:
         """Get equations with parameter values substituted."""
-        b = parameters.get("b", 0.008)
-        theta = parameters.get("theta", 0.0)
+        b = parameters["b"]
+        theta = parameters["theta"]
 
         if abs(theta) < 1e-10:
             return {

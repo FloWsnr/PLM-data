@@ -10,15 +10,15 @@ init:
   params:
     mean: 1.0
     std: 0.1
-    seed: 456
 solver: euler
+backend: numba
+adaptive: false
 dt: 0.0003
 resolution: [192, 192]
-domain_size: [300.0, 300.0]
-t_end: 150.0
-timesteps: 200
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
+domain_size: [300.0, 300.0]
+t_end: 150.0

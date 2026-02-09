@@ -194,14 +194,20 @@ class NavierStokesPDE(MultiFieldPDEPreset):
             # The factor of 6 normalizes so that the max velocity = amplitude
             u_data = -amplitude * 6.0 * y_norm * (1.0 - y_norm)
 
-            # No vertical velocity
-            v_data = np.zeros_like(u_data)
+            # Add a localized vortex perturbation at center to create dynamics
+            # Gaussian blob centered at (0.5, 0.5) creates visible transient
+            sigma = 0.08
+            cx, cy = 0.5, 0.5
+            r_sq = (x_norm - cx) ** 2 + (y_norm - cy) ** 2
+            blob = np.exp(-r_sq / (2 * sigma**2))
+            v_data = 0.3 * amplitude * (y_norm - cy) * blob
+            u_data += -0.3 * amplitude * (x_norm - cx) * blob
 
             # Linear pressure gradient driving the flow
             p_data = pressure_gradient * x_norm
 
-            # Passive scalar as x-gradient for visualization
-            S_data = x_norm
+            # Passive scalar with gradient + blob for visualization
+            S_data = y_norm + 0.5 * blob
 
         else:
             # Default: use standard IC generator for S, zeros for velocity/pressure

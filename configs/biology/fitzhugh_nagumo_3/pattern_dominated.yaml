@@ -12,12 +12,12 @@ init:
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.001
-resolution: [128, 128]
+dt: 0.002
+resolution: [192, 192]
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: [280.0, 280.0]
-t_end: 50.0
+domain_size: [300.0, 300.0]
+t_end: 80.0

@@ -1,6 +1,5 @@
 """Three-species FitzHugh-Nagumo variant with competing oscillations and patterns."""
 
-import math
 from typing import Any
 
 import numpy as np
@@ -97,48 +96,38 @@ class FitzHughNagumo3PDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
         **kwargs,
     ) -> FieldCollection:
-        """Create initial state with Gaussian u, cosine v, zero w.
+        """Create initial state with Gaussian blob for all fields.
 
         Matches Visual PDE reference:
-            u = 5*exp(-0.1*((x-Lx/2)^2 + (y-Ly/2)^2))
-            v = cos(m*x*pi/280)*cos(m*y*pi/280)
-            w = 0
+            u = v = w = amplitude*exp(-width*((x-Lx/2)^2 + (y-Ly/2)^2))
         """
-        seed = ic_params.get("seed")
-        if seed is not None:
-            np.random.seed(seed)
+        rng = np.random.default_rng(ic_params.get("seed"))
 
         x_bounds = grid.axes_bounds[0]
         y_bounds = grid.axes_bounds[1]
-        Lx = x_bounds[1] - x_bounds[0]
-        Ly = y_bounds[1] - y_bounds[0]
 
         x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
         y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
         X, Y = np.meshgrid(x, y, indexing="ij")
 
-        # u: Gaussian blob at center
+        # Gaussian blob at center (same for all three fields per reference)
         cx = (x_bounds[0] + x_bounds[1]) / 2
         cy = (y_bounds[0] + y_bounds[1]) / 2
         amplitude = ic_params.get("amplitude", 5.0)
         width = ic_params.get("width", 0.1)
         r2 = (X - cx) ** 2 + (Y - cy) ** 2
-        u_data = amplitude * np.exp(-width * r2)
+        blob = amplitude * np.exp(-width * r2)
 
-        # v: Cosine pattern
-        m = ic_params.get("m", 4)
-        # Use domain size as reference (Visual PDE uses 280)
-        v_data = np.cos(m * X * math.pi / Lx) * np.cos(m * Y * math.pi / Ly)
-
-        # w: Zero initially
-        w_data = np.zeros(grid.shape)
+        u_data = blob.copy()
+        v_data = blob.copy()
+        w_data = blob.copy()
 
         # Add small noise if requested
         noise = ic_params.get("noise", 0.0)
         if noise > 0:
-            u_data += noise * np.random.randn(*grid.shape)
-            v_data += noise * np.random.randn(*grid.shape)
-            w_data += noise * np.random.randn(*grid.shape)
+            u_data += noise * rng.standard_normal(grid.shape)
+            v_data += noise * rng.standard_normal(grid.shape)
+            w_data += noise * rng.standard_normal(grid.shape)
 
         u = ScalarField(grid, u_data)
         u.label = "u"

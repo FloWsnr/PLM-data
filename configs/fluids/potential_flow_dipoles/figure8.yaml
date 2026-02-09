@@ -3,8 +3,8 @@ parameters:
   strength: 500.0
   separation: 3.0
   sigma: 1.0
-  omega: 0.4
-  orbit_radius: 10.0
+  omega: 0.5
+  orbit_radius: 8.0
 init:
   type: default
   params:
@@ -20,4 +20,4 @@ bc:
   y-: neumann:0
   y+: neumann:0
 domain_size: [40.0, 40.0]
-t_end: 15.7
+t_end: 12.56

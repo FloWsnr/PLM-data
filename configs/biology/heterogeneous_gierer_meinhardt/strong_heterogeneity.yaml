@@ -7,10 +7,9 @@ parameters:
   A: -0.8
   B: 3.0
 init:
-  type: random-gaussian
+  type: default
   params:
-    mean: 1.0
-    std: 0.1
+    noise: 0.01
 solver: euler
 backend: numba
 adaptive: false
@@ -21,11 +20,5 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-  fields:
-    u:
-      x-: dirichlet:0
-      x+: dirichlet:0
-      y-: dirichlet:0
-      y+: dirichlet:0
 domain_size: [100.0, 100.0]
-t_end: 50.0
+t_end: 10.0

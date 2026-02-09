@@ -14,9 +14,9 @@ solver: scipy
 backend: numba
 adaptive: true
 dt: 0.1
-resolution: [64, 64]
+resolution: [192, 192]
 domain_size: [150, 150]
-t_end: 24.0
+t_end: 50.0
 bc:
   x-: periodic
   x+: periodic

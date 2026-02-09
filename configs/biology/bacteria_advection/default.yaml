@@ -4,9 +4,13 @@ parameters:
   k: 0.006
   c0: 0.77
 init:
-  type: uniform
+  type: gaussian-blob
   params:
-    value: 0.77
+    num_blobs: 3
+    amplitude: 0.8
+    width: 0.08
+    background: 0.1
+    positions: random
 solver: euler
 backend: numba
 adaptive: false

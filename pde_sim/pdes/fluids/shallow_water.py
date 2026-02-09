@@ -101,7 +101,7 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
 
         rng = np.random.default_rng(ic_params.get("seed"))
 
-        if ic_type in ("shallow-water-default", "drop", "gaussian-blob"):
+        if ic_type in ("shallow-water-default", "drop"):
             # Water drop (Gaussian perturbation) - height only
             x0 = ic_params.get("x0")
             y0 = ic_params.get("y0")
@@ -249,7 +249,7 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
         return FieldCollection([h, u, v])
 
     def get_position_params(self, ic_type: str) -> set[str]:
-        if ic_type in ("shallow-water-default", "drop", "gaussian-blob"):
+        if ic_type in ("shallow-water-default", "drop"):
             return {"x0", "y0"}
         if ic_type == "dam-break":
             return {"dam_position"}
@@ -266,7 +266,7 @@ class ShallowWaterPDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
     ) -> dict[str, Any]:
         resolved = ic_params.copy()
-        if ic_type in ("shallow-water-default", "drop", "gaussian-blob"):
+        if ic_type in ("shallow-water-default", "drop"):
             if "x0" not in resolved or "y0" not in resolved:
                 raise ValueError("drop requires x0 and y0 (or random)")
             if resolved["x0"] == "random" or resolved["y0"] == "random":

@@ -10,7 +10,7 @@ solver: scipy
 backend: numba
 adaptive: true
 dt: 0.1
-resolution: [96, 96]
+resolution: [384, 384]
 domain_size: [250, 250]
 t_end: 30.0
 bc:

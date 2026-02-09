@@ -71,13 +71,13 @@ class SwiftHohenbergAdvectionPDE(ScalarPDEPreset):
         Returns:
             Configured PDE instance.
         """
-        r = parameters.get("r", -0.28)
-        a = parameters.get("a", 1.6)
-        b = parameters.get("b", -1.0)
-        c = parameters.get("c", -1.0)
-        V = parameters.get("V", 2.0)
-        theta = parameters.get("theta", -2.0)
-        D = parameters.get("D", 1.0)
+        r = parameters["r"]
+        a = parameters["a"]
+        b = parameters["b"]
+        c = parameters["c"]
+        V = parameters["V"]
+        theta = parameters["theta"]
+        D = parameters["D"]
 
         # k_c = 1 (critical wavenumber)
         k_sq = 1.0
@@ -120,8 +120,8 @@ class SwiftHohenbergAdvectionPDE(ScalarPDEPreset):
         Default: localised structure with specific symmetry.
         """
         if ic_type in ("swift-hohenberg-advection-default", "default"):
-            amplitude = ic_params.get("amplitude", 0.5)
-            P = ic_params.get("P", 3)  # Pattern symmetry: 1=D4, 2=D6, 3=D12
+            amplitude = ic_params["amplitude"]
+            P = ic_params["P"]  # Pattern symmetry: 1=D4, 2=D6, 3=D12
             rng = np.random.default_rng(ic_params.get("seed"))
 
             # Get domain info
@@ -136,8 +136,8 @@ class SwiftHohenbergAdvectionPDE(ScalarPDEPreset):
             X, Y = np.meshgrid(x, y, indexing="ij")
 
             # Pattern center (randomize if not specified)
-            cx = ic_params.get("cx")
-            cy = ic_params.get("cy")
+            cx = ic_params["cx"]
+            cy = ic_params["cy"]
             if cx is None or cx == "random" or cy is None or cy == "random":
                 raise ValueError("swift-hohenberg-advection requires cx and cy (or random)")
             cx = x_bounds[0] + cx * Lx
@@ -196,11 +196,11 @@ class SwiftHohenbergAdvectionPDE(ScalarPDEPreset):
         self, parameters: dict[str, float]
     ) -> dict[str, str]:
         """Get equations with parameter values substituted."""
-        r = parameters.get("r", -0.28)
-        a = parameters.get("a", 1.6)
-        b = parameters.get("b", -1.0)
-        V = parameters.get("V", 2.0)
-        theta = parameters.get("theta", -2.0)
+        r = parameters["r"]
+        a = parameters["a"]
+        b = parameters["b"]
+        V = parameters["V"]
+        theta = parameters["theta"]
 
         return {
             "u": f"{r}*u - (1 + laplace)**2*u + {a}*u**2 + {b}*u**3 + {V}*(cos({theta})*d_dx(u) + sin({theta})*d_dy(u))",

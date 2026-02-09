@@ -4,14 +4,18 @@ parameters:
   C: 0.004
   n: 2
   m: 7
+  potential_type: none
   V_strength: 0.0
   pot_n: 15
   pot_m: 15
 init:
-  type: eigenstate
+  type: superposition
   params:
-    n: 2
-    m: 7
+    n1: 2
+    m1: 1
+    n2: 1
+    m2: 7
+    weight: 0.5
 solver: rk4
 backend: numba
 adaptive: true
@@ -22,5 +26,5 @@ bc:
   x+: dirichlet:0
   y-: dirichlet:0
   y+: dirichlet:0
-domain_size: [100.0, 100.0]
+domain_size: [10.0, 10.0]
 t_end: 12.0

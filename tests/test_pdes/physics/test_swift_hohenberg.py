@@ -40,8 +40,8 @@ class TestSwiftHohenbergPDE:
         grid = create_grid_for_dimension(ndim, resolution=resolution)
         bc = create_bc_for_dimension(ndim)
 
-        # Use conservative parameters with positive quintic stabilization
-        pde = preset.create_pde({"r": 0.1, "g1": 0.1, "g2": 0.1, "D": 1.0, "k0": 1.0}, bc, grid)
+        # Use conservative parameters with quintic stabilization
+        pde = preset.create_pde({"r": 0.1, "a": 0.1, "b": -1.0, "c": -1.0, "D": 1.0}, bc, grid)
         # Use very small initial perturbations for stability
         state = preset.create_initial_state(grid, "random-uniform", {"low": -0.01, "high": 0.01})
 

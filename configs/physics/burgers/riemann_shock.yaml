@@ -2,19 +2,19 @@ preset: burgers
 parameters:
   epsilon: 0.02
 init:
-  type: step
+  type: gaussian-blob
   params:
-    direction: x
-    position: 0.3
-    value_low: 1.5
-    value_high: 0.2
-    smooth_width: 0.01
+    num_blobs: 3
+    amplitude: 1.5
+    width: 0.05
+    background: 0.2
+    random_amplitude: true
+    positions: random
 solver: rk4
 backend: numba
 adaptive: true
 dt: 0.001
 resolution: [256, 256]
-dimension: 1
 bc:
   x-: neumann:0
   x+: neumann:0

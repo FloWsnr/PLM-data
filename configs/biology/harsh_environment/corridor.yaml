@@ -1,7 +1,7 @@
 preset: harsh-environment
 parameters:
-  D: 2.0
-  r: 1.0
+  D: 0.5
+  r: 0.5
   K: 1.0
 init:
   type: gaussian-blob
@@ -22,4 +22,4 @@ bc:
   y-: dirichlet:0
   y+: dirichlet:0
 domain_size: [10.0, 10.0]
-t_end: 80.0
+t_end: 30.0
