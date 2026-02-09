@@ -10,9 +10,9 @@ init:
     noise: 0.02
 solver: euler
 backend: auto
-adaptive: true
-dt: 0.001
-resolution: [128, 128]
+adaptive: false
+dt: 0.01
+resolution: [256, 256]
 bc:
   x-: periodic
   x+: periodic
