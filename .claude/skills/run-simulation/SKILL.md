@@ -19,8 +19,8 @@ To run multiple parameter combinations of the same PDE in parallel, use the ``ba
 sbatch batch_job.sh <base_config.yaml> <parameters.csv> [log_file] [start_row]
 ```
 
-In all cases, make sure you specify a log file to capture the output of the simulation. Place the log file in the logs directory.
-The output directory will contain the results of the simulation, including images and metadata.
+In all cases, make sure you specify a log file to capture the output of the simulation. Use subdirs physics/biology/basic/fluids to sort the logs.
+The output directory will contain the results of the simulation, including images and metadata. Again, use similar subdirs to separate the PDE categories.
 
 ## Analysis
 
