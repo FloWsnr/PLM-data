@@ -1,6 +1,7 @@
 preset: burgers
 parameters:
   epsilon: 0.03
+  direction: y
 init:
   type: gaussian-blob
   params:
@@ -16,9 +17,9 @@ adaptive: true
 dt: 0.005
 resolution: [256, 256]
 bc:
-  x-: neumann:0
-  x+: neumann:0
-  y-: periodic
-  y+: periodic
+  x-: periodic
+  x+: periodic
+  y-: neumann:0
+  y+: neumann:0
 domain_size: [100.0, 100.0]
 t_end: 35.0

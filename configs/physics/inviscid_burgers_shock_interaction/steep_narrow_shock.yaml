@@ -1,6 +1,7 @@
 preset: inviscid-burgers
 parameters:
   epsilon: 0.02
+  direction: x
 init:
   type: gaussian-blob
   params:

@@ -56,6 +56,7 @@ class InviscidBurgersPDE(ScalarPDEPreset):
             },
             parameters=[
                 PDEParameter("epsilon", "Viscosity (0 for truly inviscid, small for regularization)"),
+                PDEParameter("direction", "Advection axis: 'x' or 'y' (default 'x')"),
             ],
             num_fields=1,
             field_names=["u"],
@@ -75,11 +76,13 @@ class InviscidBurgersPDE(ScalarPDEPreset):
         added for numerical regularization if needed.
         """
         epsilon = parameters.get("epsilon", 0.0)
+        direction = parameters.get("direction", "x")
+        grad_op = f"d_d{direction}"
 
         if epsilon > 0:
-            rhs = f"-u * d_dx(u) + {epsilon} * laplace(u)"
+            rhs = f"-u * {grad_op}(u) + {epsilon} * laplace(u)"
         else:
-            rhs = "-u * d_dx(u)"
+            rhs = f"-u * {grad_op}(u)"
 
         return PDE(
             rhs={"u": rhs},

@@ -43,6 +43,7 @@ class BurgersPDE(ScalarPDEPreset):
             },
             parameters=[
                 PDEParameter("epsilon", "Viscosity coefficient"),
+                PDEParameter("direction", "Advection axis: 'x' or 'y' (default 'x')"),
             ],
             num_fields=1,
             field_names=["u"],
@@ -67,11 +68,13 @@ class BurgersPDE(ScalarPDEPreset):
             Configured PDE instance.
         """
         epsilon = parameters.get("epsilon", 0.05)
+        direction = parameters.get("direction", "x")
 
         # Viscous Burgers' equation:
-        # du/dt = -u * d_dx(u) + epsilon * laplace(u)
+        # du/dt = -u * d_d{direction}(u) + epsilon * laplace(u)
+        grad_op = f"d_d{direction}"
         return PDE(
-            rhs={"u": f"-u * d_dx(u) + {epsilon} * laplace(u)"},
+            rhs={"u": f"-u * {grad_op}(u) + {epsilon} * laplace(u)"},
             bc=self._convert_bc(bc),
         )
 
@@ -193,7 +196,8 @@ class BurgersPDE(ScalarPDEPreset):
     ) -> dict[str, str]:
         """Get equations with parameter values substituted."""
         epsilon = parameters.get("epsilon", 0.05)
+        direction = parameters.get("direction", "x")
 
         return {
-            "u": f"-u * d_dx(u) + {epsilon} * laplace(u)",
+            "u": f"-u * d_d{direction}(u) + {epsilon} * laplace(u)",
         }

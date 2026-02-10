@@ -1,6 +1,7 @@
 preset: burgers
 parameters:
   epsilon: 0.05
+  direction: x
 init:
   type: gaussian-blob
   params:
