@@ -3,15 +3,15 @@ parameters:
   tau: 1.0
   Du: 2.0
   Dv: 1.0
-  a: 5.0
+  a: 3.0
   b: 9.0
-  eps: 0.001
+  eps: 0.01
 init:
   type: random-gaussian
   params:
-    a: 5.0
+    a: 3.0
     b: 9.0
-    noise: 0.3
+    noise: 0.15
 solver: euler
 backend: numba
 adaptive: false
