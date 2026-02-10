@@ -98,7 +98,15 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
         grid: CartesianGrid,
         params: dict[str, Any],
     ) -> FieldCollection:
-        """Initialize with a broken wave that seeds spiral formation."""
+        """Initialize with a cross-field pattern that seeds spiral formation.
+
+        Creates orthogonal half-plane steps in u and v:
+        - u-step along x: left half excited, right half resting (wavefront)
+        - v-step along y: bottom half recovered, top half refractory (wave break)
+
+        This produces a wavefront that propagates only in the bottom half
+        (top half is refractory), with the broken end curling into a spiral.
+        """
         x_bounds = grid.axes_bounds[0]
         y_bounds = grid.axes_bounds[1]
         Lx = x_bounds[1] - x_bounds[0]
@@ -108,17 +116,18 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
         y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
         X, Y = np.meshgrid(x, y, indexing="ij")
 
-        # Create broken wavefront that will curl into spiral
-        u_data = -1.0 * np.ones(grid.shape)
-        v_data = -0.4 * np.ones(grid.shape)
+        u_rest = params["u_rest"]
+        v_rest = params["v_rest"]
+        u_excited = params["u_excited"]
+        v_refractory = params["v_refractory"]
 
-        # Left half excitation
-        mask_left = X < x_bounds[0] + Lx / 2
-        # Bottom half additional condition
-        mask_bottom = Y < y_bounds[0] + Ly / 2
+        x_center = x_bounds[0] + Lx / 2
+        y_center = y_bounds[0] + Ly / 2
 
-        u_data[mask_left & mask_bottom] = 1.0
-        v_data[mask_left & mask_bottom] = 0.0
+        # u-step along x: left half excited, right half resting
+        u_data = np.where(X < x_center, u_excited, u_rest)
+        # v-step along y: bottom half recovered, top half refractory
+        v_data = np.where(Y < y_center, v_rest, v_refractory)
 
         u = ScalarField(grid, u_data)
         u.label = "u"

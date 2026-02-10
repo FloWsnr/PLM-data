@@ -1,8 +1,8 @@
 preset: fitzhugh-nagumo
 parameters:
   Dv: 26.0
-  e_v: 0.2
-  a_v: 0.01
+  e_v: 0.15
+  a_v: 1.0
   a_z: -0.1
 init:
   type: gaussian-blob

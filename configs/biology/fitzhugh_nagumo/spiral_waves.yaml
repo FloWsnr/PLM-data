@@ -1,12 +1,16 @@
 preset: fitzhugh-nagumo
 parameters:
-  Dv: 0.5
+  Dv: 0
   e_v: 0.05
-  a_v: 0.8
-  a_z: -0.05
+  a_v: 1.5
+  a_z: -0.1
 init:
   type: spiral-seed
-  params: {}
+  params:
+    u_rest: -0.66
+    v_rest: -0.37
+    u_excited: 1.0
+    v_refractory: 0.5
 solver: euler
 backend: numba
 adaptive: false
@@ -18,4 +22,4 @@ bc:
   y-: neumann:0
   y+: neumann:0
 domain_size: [100.0, 100.0]
-t_end: 500.0
+t_end: 250.0
