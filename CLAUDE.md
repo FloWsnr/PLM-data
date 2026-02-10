@@ -41,6 +41,10 @@ uv run python -m pde_sim run config.yaml --storage file
 
 # Batch run all configs in a directory
 uv run python -m pde_sim batch configs/physics/gray_scott/ --log-file logs/gray_scott.log
+
+# Generate HTML overview of all GIF simulations
+uv run python -m pde_sim overview output/
+uv run python -m pde_sim overview output/ --html output/custom_overview.html --title "My Sims"
 ```
 
 ## Architecture
@@ -275,6 +279,20 @@ uv run python -m pde_sim run configs/biology/immunotherapy/high_effector_diffusi
 # Next run: output/biology/immunotherapy/high_effector_diffusion_002/
 ```
 
+
+### HTML Overview
+
+`pde_sim overview` scans an output directory for simulation folders containing GIF files, copies the GIFs into a self-contained `00_overview/` subdirectory, and generates an HTML page that displays all simulations grouped by preset. Each simulation row shows its name, resolution, time range, frame count, and animated GIF for every field. Requires simulations to have been run with `formats: [gif]` (or including `gif`).
+
+```
+output/00_overview/
+├── overview.html
+├── gray-scott/
+│   └── default_001/
+│       ├── u.gif
+│       └── v.gif
+└── ...
+```
 
 ## New Code Rules
 
