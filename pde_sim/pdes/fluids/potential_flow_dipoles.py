@@ -53,6 +53,7 @@ class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
                 PDEParameter("sigma", "Gaussian width for smooth sources"),
                 PDEParameter("omega", "Angular velocity (rad/time) for motion"),
                 PDEParameter("orbit_radius", "Radius of circular orbit around center"),
+                PDEParameter("motion", "Motion type: static, circular, oscillating, figure8"),
             ],
             num_fields=1,
             field_names=["phi"],
@@ -65,19 +66,15 @@ class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
         parameters: dict[str, float],
         bc: dict[str, Any],
         grid: CartesianGrid,
-        init_params: dict[str, Any] | None = None,
         **kwargs,
     ) -> PDE:
         """Create PDE with moving Gaussian sources."""
-        strength = parameters.get("strength", 500.0)
-        separation = parameters.get("separation", 3.0)
-        sigma = parameters.get("sigma", 1.0)
-        omega = parameters.get("omega", 1.0)
-        orbit_radius = parameters.get("orbit_radius", 8.0)
-
-        # Motion type comes from init_params (string parameter)
-        init_params = init_params or {}
-        motion = init_params.get("motion", "circular")
+        strength = parameters["strength"]
+        separation = parameters["separation"]
+        sigma = parameters["sigma"]
+        omega = parameters["omega"]
+        orbit_radius = parameters["orbit_radius"]
+        motion = parameters["motion"]
 
         # Get domain center
         x_min, x_max = grid.axes_bounds[0]
@@ -145,16 +142,7 @@ class PotentialFlowDipolesPDE(MultiFieldPDEPreset):
             gaussian_sink = f"exp(-((x - {sink_x})**2 + (y - {sink_y})**2) / (2 * {sigma}**2))"
 
         else:
-            # Default to circular
-            dipole_cx = f"({cx} + {orbit_radius} * cos({omega} * t))"
-            dipole_cy = f"({cy} + {orbit_radius} * sin({omega} * t))"
-            source_x = f"({dipole_cx} - {half_sep} * sin({omega} * t))"
-            source_y = f"({dipole_cy} + {half_sep} * cos({omega} * t))"
-            sink_x = f"({dipole_cx} + {half_sep} * sin({omega} * t))"
-            sink_y = f"({dipole_cy} - {half_sep} * cos({omega} * t))"
-
-            gaussian_source = f"exp(-((x - {source_x})**2 + (y - {source_y})**2) / (2 * {sigma}**2))"
-            gaussian_sink = f"exp(-((x - {sink_x})**2 + (y - {sink_y})**2) / (2 * {sigma}**2))"
+            raise ValueError(f"Unknown motion type: {motion!r}. Must be one of: static, circular, oscillating, figure8")
 
         # Normalize Gaussians and compute forcing
         norm = 1.0 / (2 * np.pi * sigma**2)

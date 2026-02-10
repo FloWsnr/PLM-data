@@ -5,10 +5,10 @@ parameters:
   sigma: 1.0
   omega: 0.5
   orbit_radius: 8.0
+  motion: figure8
 init:
   type: default
-  params:
-    motion: figure8
+  params: {}
 solver: euler
 backend: numpy
 adaptive: true

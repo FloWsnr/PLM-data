@@ -5,10 +5,10 @@ parameters:
   sigma: 0.8
   omega: 1.5
   orbit_radius: 6.0
+  motion: circular
 init:
   type: default
-  params:
-    motion: circular
+  params: {}
 solver: euler
 backend: numpy
 adaptive: true

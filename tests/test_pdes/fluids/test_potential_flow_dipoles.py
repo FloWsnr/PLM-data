@@ -41,8 +41,8 @@ class TestPotentialFlowDipolesPDE:
         grid = create_grid_for_dimension(ndim, resolution=resolution, periodic=False)
         bc = create_bc_for_dimension(ndim, periodic=False)
 
-        params = {"strength": 1.0, "separation": 0.2, "sigma": 0.1, "omega": 1.0, "orbit_radius": 0.2}
-        pde = preset.create_pde(params, bc, grid, init_params={"motion": "circular"})
+        params = {"strength": 1.0, "separation": 0.2, "sigma": 0.1, "omega": 1.0, "orbit_radius": 0.2, "motion": "circular"}
+        pde = preset.create_pde(params, bc, grid)
 
         state = preset.create_initial_state(grid, "default", {})
 
