@@ -15,9 +15,9 @@ from .. import register_pde
 class KuramotoSivashinskyPDE(ScalarPDEPreset):
     """Kuramoto-Sivashinsky equation for spatiotemporal chaos.
 
-    Based on visualpde.com formulation:
+    Standard form:
 
-        du/dt = -laplace(u) - laplace(laplace(u)) - |grad(u)|^2
+        du/dt = -u * u_x - u_xx - u_xxxx
 
     A fourth-order PDE exhibiting spatiotemporal chaos - one of the simplest
     equations known to produce turbulent-like dynamics.
@@ -29,11 +29,12 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
         - Plasma physics: edge turbulence
 
     Key features:
-        - Negative diffusion (-laplace(u)): creates short-wavelength instability
-        - Hyperdiffusion (-laplace(laplace(u))): provides large-wavenumber damping
-        - Nonlinearity (-|grad(u)|^2): transfers energy between scales
+        - Negative diffusion (-u_xx): creates short-wavelength instability
+        - Hyperdiffusion (-u_xxxx): provides large-wavenumber damping
+        - Nonlinearity (-u*u_x): conservative energy transfer between scales
 
     The balance produces chaos with characteristic wavelength - irregular but not random.
+    The conservative nonlinearity preserves the spatial mean of u.
 
     Reference: Kuramoto (1978), Sivashinsky (1977)
     """
@@ -45,16 +46,30 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
             category="physics",
             description="Kuramoto-Sivashinsky spatiotemporal chaos",
             equations={
-                "u": "-laplace(u) - laplace(laplace(u)) - gradient_squared(u)",
+                "u": "-0.5 * d_dx(u**2) - laplace(u) - laplace(laplace(u))",
             },
             parameters=[
-                PDEParameter("a", "Damping coefficient (for numerical stability)"),
+                PDEParameter("a", "Damping coefficient (optional, 0 for standard KS)"),
             ],
             num_fields=1,
             field_names=["u"],
             reference="Kuramoto (1978), Sivashinsky (1977)",
             supported_dimensions=[1, 2, 3],
         )
+
+    def _build_rhs(self, a: float, ndim: int) -> str:
+        """Build the RHS string for the KS equation.
+
+        In 1D, uses conservative form -0.5 * d_dx(u^2) which preserves the mean.
+        In 2D/3D, uses -0.5 * gradient_squared(u) = -0.5 * |grad(u)|^2.
+        """
+        if ndim == 1:
+            rhs = "-0.5 * d_dx(u**2) - laplace(u) - laplace(laplace(u))"
+        else:
+            rhs = "-0.5 * gradient_squared(u) - laplace(u) - laplace(laplace(u))"
+        if a > 0:
+            rhs += f" - {a} * u"
+        return rhs
 
     def create_pde(
         self,
@@ -64,6 +79,9 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
     ) -> PDE:
         """Create the Kuramoto-Sivashinsky equation PDE.
 
+        In 1D uses the conservative form -0.5 * d_dx(u^2) which preserves the mean.
+        In multi-D uses -0.5 * |grad(u)|^2.
+
         Args:
             parameters: Dictionary containing 'a' damping coefficient.
             bc: Boundary condition specification.
@@ -72,14 +90,8 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
         Returns:
             Configured PDE instance.
         """
-        a = parameters.get("a", 0.03)
-
-        # Kuramoto-Sivashinsky equation:
-        # du/dt = -laplace(u) - laplace(laplace(u)) - |grad(u)|^2 - a*u
-        # The small damping term -a*u helps with numerical stability
-        rhs = "-laplace(u) - laplace(laplace(u)) - gradient_squared(u)"
-        if a > 0:
-            rhs += f" - {a} * u"
+        a = parameters["a"]
+        rhs = self._build_rhs(a, grid.num_axes)
 
         return PDE(
             rhs={"u": rhs},
@@ -111,8 +123,8 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
         self, parameters: dict[str, float]
     ) -> dict[str, str]:
         """Get equations with parameter values substituted."""
-        a = parameters.get("a", 0.03)
-        rhs = "-laplace(u) - laplace(laplace(u)) - gradient_squared(u)"
+        a = parameters["a"]
+        rhs = "-0.5 * d_dx(u**2) - laplace(u) - laplace(laplace(u))"
         if a > 0:
             rhs += f" - {a} * u"
         return {"u": rhs}

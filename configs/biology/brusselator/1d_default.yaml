@@ -1,20 +1,21 @@
 preset: brusselator
 parameters:
-  Dv: 8.0
-  a: 2.0
-  b: 3.0
+  Dv: 5.0
+  a: 1.0
+  b: 3.5
 init:
-  type: random-gaussian
+  type: custom
   params:
-    mean: 2.0
-    std: 0.1
-solver: euler
+    a: 1.0
+    b: 3.5
+    noise: 0.3
+solver: rk4
 backend: numba
 adaptive: false
-dt: 0.001
-resolution: [128]
+dt: 0.0005
+resolution: [256]
 bc:
   x-: periodic
   x+: periodic
-domain_size: [100.0]
+domain_size: [50.0]
 t_end: 100.0

@@ -1,6 +1,6 @@
 preset: kuramoto-sivashinsky
 parameters:
-  a: 0.03
+  a: 0.0
 init:
   type: random-gaussian
   params:
@@ -9,10 +9,10 @@ init:
 solver: scipy
 backend: numba
 adaptive: true
-dt: 0.1
-resolution: [128]
+dt: 0.01
+resolution: [512]
 bc:
   x-: periodic
   x+: periodic
 domain_size: [150]
-t_end: 20.0
+t_end: 200.0

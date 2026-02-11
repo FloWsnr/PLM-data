@@ -40,7 +40,7 @@ class TestKuramotoSivashinskyPDE:
         grid = create_grid_for_dimension(ndim, resolution=resolution)
         bc = create_bc_for_dimension(ndim)
 
-        pde = preset.create_pde({"nu": 1.0}, bc, grid)
+        pde = preset.create_pde({"a": 0.0}, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": -0.1, "high": 0.1})
 
         # Run very short simulation (4th order PDE is numerically stiff)

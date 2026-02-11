@@ -1,20 +1,29 @@
 preset: gray-scott
 parameters:
-  a: 0.037
+  a: 0.04
   b: 0.06
   D: 2.0
 init:
-  type: gaussian-blob
+  type: constant
   params:
-    num_blobs: 5
-    width: 0.05
-    positions: random
-solver: euler
+    value: 0.0
+    u:
+      type: gaussian-blob
+      params:
+        num_blobs: 1
+        width: 0.08
+        amplitude: 1.0
+        positions: [0.5]
+    v:
+      type: constant
+      params:
+        value: 1.0
+solver: rk4
 backend: numba
 adaptive: false
 dt: 0.5
-t_end: 5000.0
-resolution: [128]
+t_end: 10000.0
+resolution: [512]
 bc:
   x-: periodic
   x+: periodic

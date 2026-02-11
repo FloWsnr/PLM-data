@@ -1,23 +1,37 @@
 preset: lotka-volterra
 parameters:
-  Du: 1.0
-  Dv: 0.5
-  alpha: 1.0
-  beta: 0.1
-  delta: 0.075
-  gamma: 0.5
+  Du: 0.5
+  Dv: 0.01
+  alpha: 1.5
+  beta: 0.15
+  delta: 0.1
+  gamma: 0.8
 init:
-  type: random-uniform
+  type: constant
   params:
-    low: 5.0
-    high: 10.0
-solver: euler
+    u:
+      type: gaussian-blob
+      params:
+        num_blobs: 1
+        positions: [0.25]
+        amplitude: 15.0
+        width: 0.04
+        background: 0.5
+    v:
+      type: gaussian-blob
+      params:
+        num_blobs: 1
+        positions: [0.75]
+        amplitude: 15.0
+        width: 0.04
+        background: 0.5
+solver: rk4
 backend: numba
 adaptive: false
-dt: 0.01
-resolution: [128]
+dt: 0.005
+resolution: [256]
 bc:
   x-: neumann:0
   x+: neumann:0
-domain_size: [100.0]
-t_end: 50.0
+domain_size: [200.0]
+t_end: 60.0

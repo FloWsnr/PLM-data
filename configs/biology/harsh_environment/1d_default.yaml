@@ -1,18 +1,23 @@
 preset: harsh-environment
 parameters:
-  D: 0.01
+  D: 0.1
   r: 1.0
   K: 1.0
 init:
-  type: default
-  params: {}
+  type: gaussian-blob
+  params:
+    num_blobs: 5
+    positions: [0.1, 0.3, 0.5, 0.7, 0.9]
+    amplitude: 0.8
+    width: 0.03
+    background: 0.01
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.0001
-resolution: [128]
+dt: 0.0005
+resolution: [256]
 bc:
-  x-: neumann:0
-  x+: neumann:0
+  x-: dirichlet:0
+  x+: dirichlet:0
 domain_size: [10.0]
-t_end: 25.0
+t_end: 3.0

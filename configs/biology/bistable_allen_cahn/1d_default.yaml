@@ -1,22 +1,21 @@
 preset: bistable-allen-cahn
 parameters:
   D: 1.0
-  a: 0.5
+  a: 0.25
 init:
-  type: gaussian-blob
+  type: step
   params:
-    num_blobs: 3
-    amplitude: 1.0
-    width: 0.1
-    seed: 101
-    positions: random
+    position: 0.1
+    value_low: 1.0
+    value_high: 0.0
+    smooth_width: 0.02
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.005
-resolution: [128]
+resolution: [256]
 bc:
   x-: neumann:0
   x+: neumann:0
-domain_size: [100.0]
+domain_size: [30.0]
 t_end: 50.0

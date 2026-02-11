@@ -1,23 +1,24 @@
 preset: bacteria-advection
 parameters:
-  u: 0.62
-  k: 0.006
-  c0: 0.77
+  u: 2.5
+  k: 0.015
+  c0: 1.0
 init:
   type: gaussian-blob
   params:
-    num_blobs: 3
-    amplitude: 0.8
-    width: 0.08
-    background: 0.1
+    num_blobs: 5
+    amplitude: 1.2
+    width: 0.03
+    background: 0.0
     positions: random
+    random_amplitude: true
 solver: euler
 backend: numba
 adaptive: false
-dt: 0.01
-resolution: [128]
+dt: 0.005
+resolution: [256]
 bc:
-  x-: dirichlet:0.77
+  x-: dirichlet:1.0
   x+: neumann:0
-domain_size: [320.0]
-t_end: 100.0
+domain_size: [200.0]
+t_end: 120.0

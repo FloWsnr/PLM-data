@@ -1,23 +1,20 @@
 preset: darcy
 parameters:
-  K: 1.0
-  f: 0.5
+  K: 0.5
+  f: 0.0
 init:
-  type: gaussian-blob
+  type: rectangle-grid
   params:
-    num_blobs: 3
-    amplitude: 1.0
-    width: 0.1
-    background: 0.0
+    nx: 16
+    value_range: [0.0, 3.0]
     seed: 201
-    positions: random
 solver: rk4
 backend: numpy
 adaptive: false
-dt: 0.005
+dt: 0.002
 resolution: [128]
 bc:
-  x-: neumann:0
-  x+: neumann:0
+  x-: dirichlet:2.0
+  x+: dirichlet:0.0
 domain_size: [10.0]
-t_end: 5.0
+t_end: 1.0

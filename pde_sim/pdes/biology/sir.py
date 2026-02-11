@@ -97,63 +97,65 @@ class SIRPDEPreset(MultiFieldPDEPreset):
 
         Default setup: Uniform susceptible population with a small
         localized infected region, simulating introduction of disease
-        at one location.
+        at one location. Works for 1D, 2D, and 3D grids.
 
         Parameters:
             grid: Computational grid
             ic_type: Type of initial condition ("default", "wave", or standard IC types)
             ic_params: Parameters including:
-                - S0: Initial susceptible fraction (default 0.99)
-                - I0: Initial infected fraction in seed region (default 0.01)
-                - seed_radius: Radius of initial infection seed (default 0.1 * domain)
+                - S0: Initial susceptible fraction
+                - I0: Initial infected fraction in seed region
+                - seed_radius: Radius of initial infection seed
                 - noise: Noise amplitude (default 0.0)
+                - seed_x: Seed location in x (required)
+                - seed_y: Seed location in y (required for 2D+)
+                - seed_z: Seed location in z (required for 3D)
                 - seed: Random seed
         """
         # For standard IC types, use parent class implementation
         if ic_type not in ("default", "wave"):
             return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
-        np.random.seed(ic_params.get("seed"))
+        rng = np.random.default_rng(ic_params.get("seed"))
         noise = ic_params.get("noise", 0.0)
 
         # Initial fractions
-        S0 = ic_params.get("S0", 0.99)
-        I0_seed = ic_params.get("I0", 0.01)
+        S0 = ic_params["S0"]
+        I0_seed = ic_params["I0"]
 
-        # Get domain info
-        x_bounds = grid.axes_bounds[0]
-        y_bounds = grid.axes_bounds[1]
-        domain_width = x_bounds[1] - x_bounds[0]
-
-        x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-        y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-        X, Y = np.meshgrid(x, y, indexing="ij")
-
-        # Seed location (default: center or left edge for wave)
-        seed_x = ic_params.get("seed_x")
-        seed_y = ic_params.get("seed_y")
-        if seed_x is None or seed_x == "random" or seed_y is None or seed_y == "random":
-            raise ValueError("sir requires seed_x and seed_y (or random)")
-
+        ndim = len(grid.shape)
+        domain_width = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
         seed_radius = ic_params.get("seed_radius", 0.1 * domain_width)
 
-        # Distance from seed point
-        r = np.sqrt((X - seed_x) ** 2 + (Y - seed_y) ** 2)
+        # Build coordinate arrays and compute distance from seed point
+        seed_keys = ["seed_x", "seed_y", "seed_z"][:ndim]
+        coords_1d = []
+        for dim in range(ndim):
+            bounds = grid.axes_bounds[dim]
+            coords_1d.append(np.linspace(bounds[0], bounds[1], grid.shape[dim]))
+
+        if ndim == 1:
+            r = np.abs(coords_1d[0] - ic_params[seed_keys[0]])
+        else:
+            grids = np.meshgrid(*coords_1d, indexing="ij")
+            r_sq = np.zeros(grid.shape, dtype=float)
+            for dim in range(ndim):
+                r_sq += (grids[dim] - ic_params[seed_keys[dim]]) ** 2
+            r = np.sqrt(r_sq)
 
         # Smooth seed using tanh profile
         I_data = I0_seed * 0.5 * (1.0 - np.tanh((r - seed_radius) / (0.1 * seed_radius)))
 
         # S starts uniformly high except where I is seeded
-        S_data = np.full(grid.shape, S0, dtype=float)
-        S_data = S_data - I_data  # Conservation: reduce S where I is added
+        S_data = np.full(grid.shape, S0, dtype=float) - I_data
 
         # R starts at zero
         R_data = np.zeros(grid.shape, dtype=float)
 
         # Add noise if requested
         if noise > 0:
-            S_data += noise * np.random.randn(*grid.shape)
-            I_data += noise * np.abs(np.random.randn(*grid.shape))
+            S_data += noise * rng.standard_normal(grid.shape)
+            I_data += noise * np.abs(rng.standard_normal(grid.shape))
 
         # Ensure non-negative and bounded
         S_data = np.clip(S_data, 0.0, 1.0)
@@ -175,9 +177,15 @@ class SIRPDEPreset(MultiFieldPDEPreset):
 
         return FieldCollection([S, I, R])
 
+    def _seed_keys_for_grid(self, grid: CartesianGrid) -> list[str]:
+        """Return the required seed position keys for the grid dimensionality."""
+        ndim = len(grid.shape)
+        return ["seed_x", "seed_y", "seed_z"][:ndim]
+
     def get_position_params(self, ic_type: str) -> set[str]:
         if ic_type in ("default", "wave"):
-            return {"seed_x", "seed_y"}
+            # Return all possible seed keys; resolve_ic_params handles dimension filtering
+            return {"seed_x", "seed_y", "seed_z"}
         return super().get_position_params(ic_type)
 
     def resolve_ic_params(
@@ -188,20 +196,20 @@ class SIRPDEPreset(MultiFieldPDEPreset):
     ) -> dict[str, Any]:
         if ic_type in ("default", "wave"):
             resolved = ic_params.copy()
-            required = ["seed_x", "seed_y"]
+            required = self._seed_keys_for_grid(grid)
             for key in required:
                 if key not in resolved:
-                    raise ValueError("sir requires seed_x and seed_y (or random)")
-            if any(resolved[key] == "random" for key in required):
+                    raise ValueError(f"sir requires {', '.join(required)}")
+            needs_random = [k for k in required if resolved[k] == "random"]
+            if needs_random:
                 rng = np.random.default_rng(resolved.get("seed"))
-                x_bounds = grid.axes_bounds[0]
-                y_bounds = grid.axes_bounds[1]
-                if resolved["seed_x"] == "random":
-                    resolved["seed_x"] = rng.uniform(x_bounds[0], x_bounds[1])
-                if resolved["seed_y"] == "random":
-                    resolved["seed_y"] = rng.uniform(y_bounds[0], y_bounds[1])
-            if any(resolved[key] is None or resolved[key] == "random" for key in required):
-                raise ValueError("sir requires seed_x and seed_y (or random)")
+                dim_map = {"seed_x": 0, "seed_y": 1, "seed_z": 2}
+                for key in needs_random:
+                    bounds = grid.axes_bounds[dim_map[key]]
+                    resolved[key] = rng.uniform(bounds[0], bounds[1])
+            for key in required:
+                if resolved[key] is None or resolved[key] == "random":
+                    raise ValueError(f"sir requires {', '.join(required)}")
             return resolved
 
         return super().resolve_ic_params(grid, ic_type, ic_params)

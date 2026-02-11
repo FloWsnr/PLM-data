@@ -1,22 +1,19 @@
 preset: heat
 parameters:
-  D_T: 5.0
+  D_T: 0.02
 init:
-  type: gaussian-blob
+  type: rectangle-grid
   params:
-    num_blobs: 3
-    amplitude: 1.0
-    width: 0.1
-    background: 0.0
+    nx: 12
+    value_range: [0.0, 1.0]
     seed: 103
-    positions: random
 solver: euler
 backend: numba
 adaptive: true
 dt: 0.01
-resolution: [128]
+resolution: [256]
 bc:
   x-: neumann:0
   x+: neumann:0
-domain_size: [320.0]
-t_end: 100.0
+domain_size: [10.0]
+t_end: 20.0
