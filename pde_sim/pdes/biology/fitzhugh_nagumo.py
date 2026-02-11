@@ -93,6 +93,51 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
         # Use base class implementation for all other IC types
         return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
+    def get_position_params(self, ic_type: str) -> set[str]:
+        if ic_type == "spiral-seed":
+            return {"x_center", "y_center"}
+        return super().get_position_params(ic_type)
+
+    def resolve_ic_params(
+        self,
+        grid: CartesianGrid,
+        ic_type: str,
+        ic_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        if ic_type == "spiral-seed":
+            resolved = ic_params.copy()
+            x_bounds = grid.axes_bounds[0]
+            Lx = x_bounds[1] - x_bounds[0]
+
+            # x_center: default to domain midpoint, "random" to randomize
+            x_center = resolved.get("x_center")
+            if x_center == "random":
+                rng = np.random.default_rng(resolved.get("seed"))
+                resolved["x_center"] = rng.uniform(
+                    x_bounds[0] + 0.2 * Lx, x_bounds[0] + 0.8 * Lx
+                )
+            elif x_center is None:
+                resolved["x_center"] = (x_bounds[0] + x_bounds[1]) / 2
+
+            # y_center: only relevant for 2D+
+            if len(grid.axes_bounds) >= 2:
+                y_bounds = grid.axes_bounds[1]
+                Ly = y_bounds[1] - y_bounds[0]
+                y_center = resolved.get("y_center")
+                if y_center == "random":
+                    rng = np.random.default_rng(resolved.get("seed"))
+                    # Advance past x_center draw to avoid correlation
+                    rng.uniform(0, 1)
+                    resolved["y_center"] = rng.uniform(
+                        y_bounds[0] + 0.2 * Ly, y_bounds[0] + 0.8 * Ly
+                    )
+                elif y_center is None:
+                    resolved["y_center"] = (y_bounds[0] + y_bounds[1]) / 2
+
+            return resolved
+
+        return super().resolve_ic_params(grid, ic_type, ic_params)
+
     def _spiral_seed_init(
         self,
         grid: CartesianGrid,
@@ -109,6 +154,10 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
 
         For 1D: u = step along x; v = constant v_rest (no y axis).
         For 2D/3D: u splits on x, v splits on y (higher dims uniform).
+
+        Params:
+            x_center: x-position of the u step (default: domain midpoint, "random" to randomize)
+            y_center: y-position of the v step (default: domain midpoint, "random" to randomize)
         """
         ndim = len(grid.shape)
 
@@ -116,10 +165,10 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
         v_rest = params["v_rest"]
         u_excited = params["u_excited"]
         v_refractory = params["v_refractory"]
+        x_center = params["x_center"]
 
         # u-step along x axis
         x_bounds = grid.axes_bounds[0]
-        x_center = (x_bounds[0] + x_bounds[1]) / 2
         x_1d = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
         shape_x = [1] * ndim
         shape_x[0] = grid.shape[0]
@@ -128,8 +177,8 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
 
         # v-step along y axis (if exists)
         if ndim >= 2:
+            y_center = params["y_center"]
             y_bounds = grid.axes_bounds[1]
-            y_center = (y_bounds[0] + y_bounds[1]) / 2
             y_1d = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
             shape_y = [1] * ndim
             shape_y[1] = grid.shape[1]
