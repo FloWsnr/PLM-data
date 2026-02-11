@@ -1,0 +1,26 @@
+preset: advection
+parameters:
+  D: 1.0
+  vx: 4.0
+  vy: -2.0
+init:
+  type: double-step
+  params:
+    direction: x
+    position1: 0.3
+    position2: 0.7
+    value_inside: 1.0
+    value_outside: 0.0
+    smooth_width: 0.03
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.002
+resolution: [256, 256]
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+domain_size: [320.0, 320.0]
+t_end: 50.0

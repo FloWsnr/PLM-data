@@ -1,0 +1,23 @@
+preset: sine-gordon
+parameters:
+  c: 1.0
+  gamma: 0.01
+init:
+  type: ring
+  params:
+    radius: 8.0
+    width: 2.0
+    x_center: 25.0
+    y_center: 25.0
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.01
+t_end: 100.0
+resolution: [128, 128]
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+domain_size: [50, 50]

@@ -1,0 +1,39 @@
+preset: lotka-volterra
+parameters:
+  Du: 0.5
+  Dv: 0.3
+  alpha: 1.5
+  beta: 0.12
+  delta: 0.08
+  gamma: 0.6
+init:
+  type: constant
+  params:
+    u:
+      type: gaussian-blob
+      params:
+        num_blobs: 1
+        positions: [[0.25, 0.5]]
+        amplitude: 15.0
+        width: 0.06
+        background: 0.5
+    v:
+      type: gaussian-blob
+      params:
+        num_blobs: 1
+        positions: [[0.75, 0.5]]
+        amplitude: 15.0
+        width: 0.06
+        background: 0.5
+solver: rk4
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: [128, 128]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+domain_size: [150.0, 150.0]
+t_end: 80.0

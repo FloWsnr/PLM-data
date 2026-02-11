@@ -1,0 +1,31 @@
+# Fokker-Planck: ring-shaped initial condition collapsing to center
+# Gaussian-ring IC with moderate drift — ring collapses inward under harmonic potential
+preset: fokker-planck
+
+parameters:
+  D: 0.08      # Moderate diffusion
+  gamma: 0.3   # Moderate drift strength
+  x0: 0.0      # Potential centered at domain center
+  y0: 0.0
+
+init:
+  type: gaussian-ring
+  params:
+    radius: 0.35    # Ring radius (relative to domain)
+    width: 0.04     # Thin ring
+
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.005
+resolution: [128, 128]
+dimension: 2
+
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+
+domain_size: [10.0, 10.0]
+t_end: 25.0

@@ -1,0 +1,31 @@
+# Fokker-Planck: two Gaussian peaks merging under off-center potential
+# Double-gaussian init drifts and merges toward an off-center potential well
+preset: fokker-planck
+
+parameters:
+  D: 0.08      # Low-moderate diffusion — peaks stay coherent longer
+  gamma: 0.4   # Moderate drift pulls peaks toward potential center
+  x0: 0.3      # Potential center offset in x (relative to domain center)
+  y0: -0.2     # Potential center offset in y
+
+init:
+  type: double-gaussian
+  params:
+    sigma: 0.1        # Narrow peaks
+    separation: 0.5   # Wide separation between peaks
+
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.005
+resolution: [128, 128]
+dimension: 2
+
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+
+domain_size: [10.0, 10.0]
+t_end: 20.0

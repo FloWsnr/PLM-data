@@ -1,0 +1,25 @@
+preset: lotka-volterra
+parameters:
+  Du: 0.1
+  Dv: 0.1
+  alpha: 2.0
+  beta: 0.2
+  delta: 0.15
+  gamma: 1.0
+init:
+  type: sine
+  params:
+    amplitude: 5.0
+    frequency: 3
+    offset: 5.0
+    phase_x: 0.0
+solver: rk4
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: [256]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [200.0]
+t_end: 50.0

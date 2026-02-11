@@ -1,0 +1,27 @@
+preset: vorticity-bounded
+solver: euler
+dt: 0.001
+t_end: 80.0
+resolution: [128, 128]
+domain_size: [100.0, 100.0]
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+  fields:
+    omega:
+      x-: dirichlet:0
+      x+: dirichlet:0
+    S:
+      x-: neumann:0
+      x+: neumann:0
+parameters:
+  nu: 0.1
+  epsilon: 0.02
+  D: 0.05
+  k: 12
+init:
+  type: default
+  params:
+    k: 12

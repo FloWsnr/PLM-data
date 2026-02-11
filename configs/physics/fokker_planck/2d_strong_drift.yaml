@@ -1,0 +1,32 @@
+# Fokker-Planck: strong drift rapidly pulls density to potential center
+# Low diffusion preserves peak shape as it's swept toward equilibrium
+preset: fokker-planck
+
+parameters:
+  D: 0.05      # Low diffusion — minimal spreading
+  gamma: 1.0   # Strong drift — rapid convergence to potential center
+  x0: 0.0      # Potential at domain center
+  y0: 0.0
+
+init:
+  type: default
+  params:
+    sigma: 0.1            # Narrow initial Gaussian
+    init_x_offset: -0.5   # Far from potential center
+    init_y_offset: 0.4    # Far from potential center
+
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.001
+resolution: [128, 128]
+dimension: 2
+
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+
+domain_size: [10.0, 10.0]
+t_end: 8.0
