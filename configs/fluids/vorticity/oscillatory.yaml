@@ -1,18 +1,18 @@
 preset: vorticity
 parameters:
   nu: 0.05
-  epsilon: 0.02
+  epsilon: 0.05
   D: 0.05
 init:
   type: oscillatory
   params:
     k: 6
     amplitude: 0.5
-solver: euler
+solver: rk4
 backend: numpy
-adaptive: true
-dt: 0.01
-resolution: [128, 128]
+adaptive: false
+dt: 0.0015
+resolution: [64, 64]
 bc:
   x-: periodic
   x+: periodic

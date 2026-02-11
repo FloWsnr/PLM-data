@@ -1,7 +1,7 @@
 preset: vorticity
 parameters:
   nu: 0.01
-  epsilon: 0.02
+  epsilon: 0.05
   D: 0.01
 init:
   type: vortex-pair
@@ -12,11 +12,11 @@ init:
     y2: 0.55
     strength: 30.0
     radius: 0.06
-solver: euler
+solver: rk4
 backend: numpy
-adaptive: true
-dt: 0.01
-resolution: [128, 128]
+adaptive: false
+dt: 0.0015
+resolution: [64, 64]
 bc:
   x-: periodic
   x+: periodic
