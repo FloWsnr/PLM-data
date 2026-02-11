@@ -24,4 +24,4 @@ bc:
   y-: periodic
   y+: periodic
 domain_size: [300.0, 300.0]
-t_end: 15.0
+t_end: 30.0
