@@ -14,6 +14,7 @@ class SimulationInfo:
     preset: str
     name: str
     gif_files: dict[str, Path]  # field_name -> gif_path
+    spacetime_files: dict[str, Path]  # field_name -> spacetime_png_path
     metadata: dict
 
 
@@ -32,9 +33,11 @@ def discover_simulations(output_dir: Path) -> list[SimulationInfo]:
     for metadata_path in output_dir.rglob("metadata.json"):
         folder = metadata_path.parent
 
-        # Check if there are GIF files in this folder
+        # Check for GIF files and spacetime PNGs
         gif_files = list(folder.glob("*.gif"))
-        if not gif_files:
+        spacetime_files = list(folder.glob("*_spacetime.png"))
+
+        if not gif_files and not spacetime_files:
             continue
 
         # Load metadata
@@ -47,6 +50,13 @@ def discover_simulations(output_dir: Path) -> list[SimulationInfo]:
             field_name = gif_path.stem  # e.g., "u.gif" -> "u"
             gif_dict[field_name] = gif_path
 
+        # Build spacetime_files dict mapping field name to path
+        spacetime_dict = {}
+        for st_path in spacetime_files:
+            # e.g., "u_spacetime.png" -> "u"
+            field_name = st_path.stem.removesuffix("_spacetime")
+            spacetime_dict[field_name] = st_path
+
         # Extract preset name and folder name
         preset = metadata.get("preset", "unknown")
         folder_name = metadata.get("folder_name", folder.name)
@@ -57,6 +67,7 @@ def discover_simulations(output_dir: Path) -> list[SimulationInfo]:
                 preset=preset,
                 name=folder_name,
                 gif_files=gif_dict,
+                spacetime_files=spacetime_dict,
                 metadata=metadata,
             )
         )
@@ -197,6 +208,9 @@ def _get_css() -> str:
       border-radius: 4px;
       border: 1px solid #3a3a5a;
     }
+    .field-cell img.spacetime {
+      max-width: 500px;
+    }
     .field-label {
       margin-top: 8px;
       font-family: 'Monaco', 'Menlo', monospace;
@@ -227,23 +241,45 @@ def _render_simulation(sim: SimulationInfo, html_dir: Path) -> str:
     lines.append("      </div>")
 
     # Fields container
+    ndim = sim.metadata.get("simulation", {}).get("ndim", 2)
+    is_1d = ndim == 1
+
     lines.append("      <div class='fields-container'>")
 
-    # Sort fields to have consistent ordering
-    for field_name in sorted(sim.gif_files.keys()):
-        gif_path = sim.gif_files[field_name]
+    # For 1D simulations, prefer spacetime diagrams over GIFs
+    if is_1d and sim.spacetime_files:
+        for field_name in sorted(sim.spacetime_files.keys()):
+            st_path = sim.spacetime_files[field_name]
 
-        # Make path relative to HTML file
-        try:
-            rel_path = gif_path.resolve().relative_to(html_dir)
-        except ValueError:
-            # If can't make relative, use absolute path
-            rel_path = gif_path.resolve()
+            try:
+                rel_path = st_path.resolve().relative_to(html_dir)
+            except ValueError:
+                rel_path = st_path.resolve()
 
-        lines.append("        <div class='field-cell'>")
-        lines.append(f"          <img src='{rel_path}' alt='{field_name}' loading='lazy'>")
-        lines.append(f"          <span class='field-label'>{field_name}</span>")
-        lines.append("        </div>")
+            lines.append("        <div class='field-cell'>")
+            lines.append(
+                f"          <img class='spacetime' src='{rel_path}' alt='{field_name} spacetime' loading='lazy'>"
+            )
+            lines.append(f"          <span class='field-label'>{field_name} (spacetime)</span>")
+            lines.append("        </div>")
+    else:
+        # Sort fields to have consistent ordering
+        for field_name in sorted(sim.gif_files.keys()):
+            gif_path = sim.gif_files[field_name]
+
+            # Make path relative to HTML file
+            try:
+                rel_path = gif_path.resolve().relative_to(html_dir)
+            except ValueError:
+                # If can't make relative, use absolute path
+                rel_path = gif_path.resolve()
+
+            lines.append("        <div class='field-cell'>")
+            lines.append(
+                f"          <img src='{rel_path}' alt='{field_name}' loading='lazy'>"
+            )
+            lines.append(f"          <span class='field-label'>{field_name}</span>")
+            lines.append("        </div>")
 
     lines.append("      </div>")
     lines.append("    </div>")
@@ -251,12 +287,12 @@ def _render_simulation(sim: SimulationInfo, html_dir: Path) -> str:
     return "\n".join(lines)
 
 
-def _copy_gifs(
+def _copy_assets(
     simulations: list[SimulationInfo], overview_dir: Path
 ) -> list[SimulationInfo]:
-    """Copy GIF files into the overview directory and return updated SimulationInfo list.
+    """Copy GIF and spacetime PNG files into the overview directory.
 
-    GIFs are organized as overview_dir/preset/sim_name/field.gif.
+    Assets are organized as overview_dir/preset/sim_name/.
     """
     updated = []
     for sim in simulations:
@@ -269,12 +305,19 @@ def _copy_gifs(
             shutil.copy2(gif_path, dest)
             new_gif_files[field_name] = dest
 
+        new_spacetime_files = {}
+        for field_name, st_path in sim.spacetime_files.items():
+            dest = sim_dir / st_path.name
+            shutil.copy2(st_path, dest)
+            new_spacetime_files[field_name] = dest
+
         updated.append(
             SimulationInfo(
                 folder=sim.folder,
                 preset=sim.preset,
                 name=sim.name,
                 gif_files=new_gif_files,
+                spacetime_files=new_spacetime_files,
                 metadata=sim.metadata,
             )
         )
@@ -305,8 +348,8 @@ def generate_overview(output_dir: Path, html_path: Path, title: str) -> int:
     overview_dir = html_path.parent
     overview_dir.mkdir(parents=True, exist_ok=True)
 
-    # Copy GIFs into the overview directory
-    simulations = _copy_gifs(simulations, overview_dir)
+    # Copy GIFs and spacetime PNGs into the overview directory
+    simulations = _copy_assets(simulations, overview_dir)
 
     generate_html(simulations, html_path, title)
     return len(simulations)
