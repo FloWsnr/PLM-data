@@ -117,18 +117,16 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
         n_data = rng.normal(n_mean, n_std, grid.shape)
         n_data = np.clip(n_data, 0, None)  # Ensure non-negative
 
-        # Build coordinate grids
-        x_bounds = grid.axes_bounds[0]
-        y_bounds = grid.axes_bounds[1]
-        Lx = x_bounds[1] - x_bounds[0]
-        Ly = y_bounds[1] - y_bounds[0]
-        x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-        y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-        X, Y = np.meshgrid(x, y, indexing="ij")
+        # Build N-D coordinate grids
+        ndim = len(grid.shape)
+        coords_1d = [np.linspace(grid.axes_bounds[i][0], grid.axes_bounds[i][1], grid.shape[i]) for i in range(ndim)]
+        coords = np.meshgrid(*coords_1d, indexing="ij")
+
+        # Domain sizes
+        L = [grid.axes_bounds[i][1] - grid.axes_bounds[i][0] for i in range(ndim)]
 
         # Normalized coordinates [0, 1]
-        Xn = (X - x_bounds[0]) / Lx
-        Yn = (Y - y_bounds[0]) / Ly
+        coords_norm = [(coords[i] - grid.axes_bounds[i][0]) / L[i] for i in range(ndim)]
 
         # Generate topography based on type
         topo_type = ic_params["topography"]
@@ -137,18 +135,20 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
 
         if topo_type == "slope":
             slope = ic_params["slope"]
-            T_data = amplitude * slope * X
+            T_data = amplitude * slope * coords[0]
 
         elif topo_type == "hills":
-            n_hills_x = ic_params["n_hills_x"]
-            n_hills_y = ic_params["n_hills_y"]
-            T_data = amplitude * (
-                np.sin(n_hills_x * np.pi * Xn) * np.sin(n_hills_y * np.pi * Yn)
+            # Product of sin across all available dimensions
+            dim_names = ["x", "y", "z"][:ndim]
+            n_hills = [ic_params[f"n_hills_{d}"] for d in dim_names]
+            T_data = amplitude * np.prod(
+                [np.sin(n_hills[i] * np.pi * coords_norm[i]) for i in range(ndim)],
+                axis=0,
             )
 
         elif topo_type == "gaussian_blobs":
             blob_width = ic_params["blob_width"]
-            T_data = np.zeros_like(X)
+            T_data = np.zeros(grid.shape)
 
             blob_positions = ic_params["blob_positions"]
             blob_amplitudes = ic_params["blob_amplitudes"]
@@ -156,25 +156,30 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
             if len(blob_positions) != len(blob_amplitudes):
                 raise ValueError("klausmeier-topography gaussian_blobs requires matching blob_positions and blob_amplitudes lengths")
 
-            for (cx, cy), blob_amp in zip(blob_positions, blob_amplitudes):
-                T_data += blob_amp * np.exp(
-                    -((Xn - cx) ** 2 + (Yn - cy) ** 2) / (2 * blob_width**2)
-                )
+            for pos, blob_amp in zip(blob_positions, blob_amplitudes):
+                r_sq = sum((coords_norm[i] - pos[i])**2 for i in range(ndim))
+                T_data += blob_amp * np.exp(-r_sq / (2 * blob_width**2))
             T_data = amplitude * T_data
 
         elif topo_type == "valley":
-            T_data = amplitude * (2 * Yn - 1) ** 2
+            # Uses second axis if available, else first axis
+            axis_idx = min(1, ndim - 1)
+            T_data = amplitude * (2 * coords_norm[axis_idx] - 1) ** 2
 
         elif topo_type == "ridge":
-            T_data = amplitude * (1 - (2 * Yn - 1) ** 2)
+            # Same as valley but inverted
+            axis_idx = min(1, ndim - 1)
+            T_data = amplitude * (1 - (2 * coords_norm[axis_idx] - 1) ** 2)
 
         elif topo_type == "random":
             modes = ic_params["modes"]
-            T_data = np.zeros_like(X)
+            dim_names = ["x", "y", "z"][:ndim]
+            T_data = np.zeros(grid.shape)
             for mode in modes:
-                T_data += mode["amp"] * np.sin(
-                    mode["kx"] * np.pi * Xn + mode["phase_x"]
-                ) * np.sin(mode["ky"] * np.pi * Yn + mode["phase_y"])
+                term = mode["amp"]
+                for i, d in enumerate(dim_names):
+                    term = term * np.sin(mode[f"k{d}"] * np.pi * coords_norm[i] + mode[f"phase_{d}"])
+                T_data += term
             T_data = amplitude * T_data / len(modes)
 
         else:
@@ -183,7 +188,7 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
         # Add base slope: base_slope * (x/Lx - 0.5)
         # This matches the reference: 20*(x/L_x-0.5)
         if base_slope != 0.0:
-            T_data += base_slope * (Xn - 0.5)
+            T_data += base_slope * (coords_norm[0] - 0.5)
 
         n = ScalarField(grid, n_data)
         n.label = "n"
@@ -213,6 +218,9 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
             return resolved
 
         topo_type = resolved["topography"]
+        ndim = len(grid.shape)
+        dim_names = ["x", "y", "z"][:ndim]
+
         if topo_type == "gaussian_blobs":
             if "blob_positions" not in resolved or "blob_amplitudes" not in resolved:
                 raise ValueError("klausmeier-topography gaussian_blobs requires blob_positions and blob_amplitudes (or random)")
@@ -221,7 +229,7 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
                     raise ValueError("klausmeier-topography gaussian_blobs random generation requires n_blobs")
                 rng = np.random.default_rng(resolved.get("seed"))
                 blob_positions = [
-                    [rng.uniform(0.1, 0.9), rng.uniform(0.1, 0.9)]
+                    [rng.uniform(0.1, 0.9) for _ in range(ndim)]
                     for _ in range(resolved["n_blobs"])
                 ]
                 blob_amplitudes = [rng.uniform(0.5, 1.0) for _ in range(resolved["n_blobs"])]
@@ -240,15 +248,11 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
                 rng = np.random.default_rng(resolved.get("seed"))
                 modes = []
                 for _ in range(resolved["n_modes"]):
-                    modes.append(
-                        {
-                            "kx": rng.uniform(1, 4),
-                            "ky": rng.uniform(1, 4),
-                            "phase_x": rng.uniform(0, 2 * np.pi),
-                            "phase_y": rng.uniform(0, 2 * np.pi),
-                            "amp": rng.uniform(0.5, 1.0),
-                        }
-                    )
+                    mode = {"amp": rng.uniform(0.5, 1.0)}
+                    for d in dim_names:
+                        mode[f"k{d}"] = rng.uniform(1, 4)
+                        mode[f"phase_{d}"] = rng.uniform(0, 2 * np.pi)
+                    modes.append(mode)
                 resolved["modes"] = modes
             if resolved["modes"] is None:
                 raise ValueError("klausmeier-topography random requires modes (or random)")

@@ -37,6 +37,7 @@ class StepFunction(InitialConditionGenerator):
     """Step function (Heaviside) initial condition.
 
     Creates a field with a sharp transition at a specified position.
+    Supports 1D, 2D, and 3D grids.
     """
 
     def generate(
@@ -53,8 +54,8 @@ class StepFunction(InitialConditionGenerator):
         """Generate step function initial condition.
 
         Args:
-            grid: The computational grid.
-            direction: Direction of the step ("x" or "y").
+            grid: The computational grid (1D, 2D, or 3D).
+            direction: Direction of the step ("x", "y", or "z").
             position: Position of the step (0-1 normalized).
             value_low: Value below/left of the step.
             value_high: Value above/right of the step.
@@ -67,34 +68,33 @@ class StepFunction(InitialConditionGenerator):
         """
         if position is None or position == "random":
             raise ValueError("step position must be provided (use position: random in config)")
-        # Get domain bounds
-        x_bounds = grid.axes_bounds[0]
-        y_bounds = grid.axes_bounds[1]
-        Lx = x_bounds[1] - x_bounds[0]
-        Ly = y_bounds[1] - y_bounds[0]
 
-        # Create coordinate arrays
-        x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-        y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-        X, Y = np.meshgrid(x, y, indexing="ij")
+        ndim = len(grid.shape)
+        dir_map = {"x": 0, "y": 1, "z": 2}
+        axis_idx = dir_map[direction.lower()]
+        if axis_idx >= ndim:
+            raise ValueError(f"direction '{direction}' invalid for {ndim}D grid")
 
-        if direction.lower() == "x":
-            step_pos = x_bounds[0] + position * Lx
-            coord = X
-            L = Lx
-        else:
-            step_pos = y_bounds[0] + position * Ly
-            coord = Y
-            L = Ly
+        bounds = grid.axes_bounds[axis_idx]
+        L = bounds[1] - bounds[0]
+        coord_1d = np.linspace(bounds[0], bounds[1], grid.shape[axis_idx])
+
+        # Reshape for broadcasting: e.g., y in 3D -> shape (1, ny, 1)
+        shape = [1] * ndim
+        shape[axis_idx] = grid.shape[axis_idx]
+        coord = coord_1d.reshape(shape)
+
+        step_pos = bounds[0] + position * L
 
         if smooth_width > 0:
-            # Smooth transition using tanh
             width = smooth_width * L
             transition = 0.5 * (1 + np.tanh((coord - step_pos) / width))
             data = value_low + (value_high - value_low) * transition
         else:
-            # Sharp step
             data = np.where(coord < step_pos, value_low, value_high)
+
+        # Broadcasting will expand to full grid shape
+        data = np.broadcast_to(data, grid.shape).copy()
 
         return ScalarField(grid, data.astype(float))
 
@@ -124,10 +124,11 @@ class StepFunction(InitialConditionGenerator):
 
 
 class RectangleGrid(InitialConditionGenerator):
-    """Grid of rectangles with different values.
+    """Grid of blocks with different values.
 
-    Divides the domain into a grid of rectangles, each assigned
-    a different value (e.g., different pressures or concentrations).
+    Divides the domain into a grid of blocks (segments in 1D, rectangles
+    in 2D, boxes in 3D), each assigned a different value (e.g., different
+    pressures or concentrations). Supports 1D, 2D, and 3D grids.
     """
 
     def generate(
@@ -135,70 +136,57 @@ class RectangleGrid(InitialConditionGenerator):
         grid: CartesianGrid,
         nx: int = 2,
         ny: int = 2,
-        values: list[list[float]] | None = None,
+        nz: int = 2,
+        values: list | np.ndarray | None = None,
         value_range: tuple[float, float] = (0.0, 1.0),
         seed: int | None = None,
         **kwargs,
     ) -> ScalarField:
-        """Generate a grid of rectangles with different values.
+        """Generate a grid of blocks with different values.
 
         Args:
-            grid: The computational grid.
-            nx: Number of rectangles in x direction.
-            ny: Number of rectangles in y direction.
-            values: Optional 2D list of values for each rectangle.
-                    Shape should be (nx, ny). If None, random values
+            grid: The computational grid (1D, 2D, or 3D).
+            nx: Number of blocks in x direction.
+            ny: Number of blocks in y direction (used for 2D/3D).
+            nz: Number of blocks in z direction (used for 3D).
+            values: Optional N-D array of values for each block.
+                    Shape should match (nx,) for 1D, (nx, ny) for 2D,
+                    or (nx, ny, nz) for 3D. If None, random values
                     are generated from value_range.
             value_range: (min, max) range for random value generation.
             seed: Random seed for reproducibility.
             **kwargs: Additional arguments (ignored).
 
         Returns:
-            ScalarField with rectangle grid pattern.
+            ScalarField with block grid pattern.
         """
-        # Get domain bounds
-        x_bounds = grid.axes_bounds[0]
-        y_bounds = grid.axes_bounds[1]
-
-        # Create coordinate arrays
-        x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-        y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-        X, Y = np.meshgrid(x, y, indexing="ij")
+        ndim = len(grid.shape)
+        divisions = [nx, ny, nz][:ndim]
 
         # Generate or validate values
         if values is None:
             rng = np.random.default_rng(seed)
-            values = rng.uniform(value_range[0], value_range[1], size=(nx, ny))
+            values = rng.uniform(value_range[0], value_range[1], size=tuple(divisions))
         else:
             values = np.array(values)
-            if values.shape != (nx, ny):
+            if values.shape != tuple(divisions):
                 raise ValueError(
-                    f"values shape {values.shape} doesn't match grid ({nx}, {ny})"
+                    f"values shape {values.shape} doesn't match grid {tuple(divisions)}"
                 )
 
-        # Calculate rectangle boundaries
-        x_edges = np.linspace(x_bounds[0], x_bounds[1], nx + 1)
-        y_edges = np.linspace(y_bounds[0], y_bounds[1], ny + 1)
+        # Build block indices per axis using digitize
+        block_indices = []
+        for i in range(ndim):
+            bounds = grid.axes_bounds[i]
+            coords = np.linspace(bounds[0], bounds[1], grid.shape[i])
+            edges = np.linspace(bounds[0], bounds[1], divisions[i] + 1)
+            idx = np.clip(np.digitize(coords, edges[1:]), 0, divisions[i] - 1)
+            shape = [1] * ndim
+            shape[i] = grid.shape[i]
+            block_indices.append(idx.reshape(shape))
 
-        # Assign values to each grid cell
-        data = np.zeros(grid.shape)
-        for i in range(nx):
-            for j in range(ny):
-                mask = (
-                    (X >= x_edges[i])
-                    & (X < x_edges[i + 1])
-                    & (Y >= y_edges[j])
-                    & (Y < y_edges[j + 1])
-                )
-                data[mask] = values[i, j]
-
-        # Handle edge case: rightmost/topmost cells (X == x_max or Y == y_max)
-        data[X == x_bounds[1]] = values[-1, :][
-            np.searchsorted(y_edges[:-1], Y[X == x_bounds[1]], side="right") - 1
-        ]
-        data[Y == y_bounds[1]] = values[:, -1][
-            np.searchsorted(x_edges[:-1], X[Y == y_bounds[1]], side="right") - 1
-        ]
+        # Use advanced indexing
+        data = values[tuple(np.broadcast_arrays(*block_indices))]
 
         return ScalarField(grid, data.astype(float))
 
@@ -207,6 +195,7 @@ class DoubleStep(InitialConditionGenerator):
     """Double step function creating a band/stripe.
 
     Creates a field with a band of one value surrounded by another.
+    Supports 1D, 2D, and 3D grids.
     """
 
     def generate(
@@ -224,8 +213,8 @@ class DoubleStep(InitialConditionGenerator):
         """Generate double step function (band) initial condition.
 
         Args:
-            grid: The computational grid.
-            direction: Direction of the bands ("x" or "y").
+            grid: The computational grid (1D, 2D, or 3D).
+            direction: Direction of the bands ("x", "y", or "z").
             position1: Position of first step (0-1 normalized).
             position2: Position of second step (0-1 normalized).
             value_inside: Value inside the band.
@@ -239,27 +228,23 @@ class DoubleStep(InitialConditionGenerator):
         """
         if position1 is None or position2 is None or position1 == "random" or position2 == "random":
             raise ValueError("double-step positions must be provided (use position1/2: random in config)")
-        # Get domain bounds
-        x_bounds = grid.axes_bounds[0]
-        y_bounds = grid.axes_bounds[1]
-        Lx = x_bounds[1] - x_bounds[0]
-        Ly = y_bounds[1] - y_bounds[0]
 
-        # Create coordinate arrays
-        x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-        y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-        X, Y = np.meshgrid(x, y, indexing="ij")
+        ndim = len(grid.shape)
+        dir_map = {"x": 0, "y": 1, "z": 2}
+        axis_idx = dir_map[direction.lower()]
+        if axis_idx >= ndim:
+            raise ValueError(f"direction '{direction}' invalid for {ndim}D grid")
 
-        if direction.lower() == "x":
-            pos1 = x_bounds[0] + position1 * Lx
-            pos2 = x_bounds[0] + position2 * Lx
-            coord = X
-            L = Lx
-        else:
-            pos1 = y_bounds[0] + position1 * Ly
-            pos2 = y_bounds[0] + position2 * Ly
-            coord = Y
-            L = Ly
+        bounds = grid.axes_bounds[axis_idx]
+        L = bounds[1] - bounds[0]
+        coord_1d = np.linspace(bounds[0], bounds[1], grid.shape[axis_idx])
+
+        shape = [1] * ndim
+        shape[axis_idx] = grid.shape[axis_idx]
+        coord = coord_1d.reshape(shape)
+
+        pos1 = bounds[0] + position1 * L
+        pos2 = bounds[0] + position2 * L
 
         if smooth_width > 0:
             width = smooth_width * L
@@ -271,6 +256,7 @@ class DoubleStep(InitialConditionGenerator):
             inside = (coord >= pos1) & (coord <= pos2)
             data = np.where(inside, value_inside, value_outside)
 
+        data = np.broadcast_to(data, grid.shape).copy()
         return ScalarField(grid, data.astype(float))
 
     @classmethod

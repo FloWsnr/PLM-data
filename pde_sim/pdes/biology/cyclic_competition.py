@@ -90,26 +90,20 @@ class CyclicCompetitionPDE(MultiFieldPDEPreset):
 
         Uses sech(r) = 1/cosh(r) profile matching Visual PDE reference.
         """
-        np.random.seed(ic_params.get("seed"))
+        rng = np.random.default_rng(ic_params.get("seed"))
         noise = ic_params.get("noise", 0.01)
 
-        x_bounds = grid.axes_bounds[0]
-        y_bounds = grid.axes_bounds[1]
-        x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-        y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-        X, Y = np.meshgrid(x, y, indexing="ij")
+        ndim = len(grid.shape)
+        coords_1d = [np.linspace(grid.axes_bounds[i][0], grid.axes_bounds[i][1], grid.shape[i]) for i in range(ndim)]
+        coords = np.meshgrid(*coords_1d, indexing="ij")
 
-        cx = (x_bounds[0] + x_bounds[1]) / 2
-        cy = (y_bounds[0] + y_bounds[1]) / 2
-
-        # sech(r) profile: 1/cosh(sqrt((x-cx)^2 + (y-cy)^2))
-        # This matches Visual PDE: 1/cosh(sqrt((x-L_x/2)^2+(y-L_y/2)^2))
-        r = np.sqrt((X - cx) ** 2 + (Y - cy) ** 2)
+        center = [(grid.axes_bounds[i][0] + grid.axes_bounds[i][1]) / 2 for i in range(ndim)]
+        r = np.sqrt(sum((c - ctr)**2 for c, ctr in zip(coords, center)))
         bump = 1.0 / np.cosh(r)
 
-        u_data = bump + noise * np.random.randn(*grid.shape)
-        v_data = bump + noise * np.random.randn(*grid.shape)
-        w_data = bump + noise * np.random.randn(*grid.shape)
+        u_data = bump + noise * rng.standard_normal(grid.shape)
+        v_data = bump + noise * rng.standard_normal(grid.shape)
+        w_data = bump + noise * rng.standard_normal(grid.shape)
 
         # Ensure non-negative
         u_data = np.clip(u_data, 0.0, None)

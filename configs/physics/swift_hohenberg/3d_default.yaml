@@ -1,0 +1,28 @@
+preset: swift-hohenberg
+parameters:
+  r: 0.1
+  a: 1.0
+  b: 1.0
+  c: -1.0
+  D: 1.0
+init:
+  type: random-gaussian
+  params:
+    mean: 0.0
+    std: 0.01
+solver: scipy
+backend: numba
+adaptive: true
+dt: 0.001
+resolution: [32, 32, 32]
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+  z-: periodic
+  z+: periodic
+domain_size: [100.0, 100.0, 100.0]
+t_end: 50.0
+output:
+  formats: [numpy]

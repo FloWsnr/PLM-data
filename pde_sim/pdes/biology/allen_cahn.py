@@ -82,19 +82,16 @@ class BistableAllenCahnPDE(ScalarPDEPreset):
         - step: Step function (left=0, right=1)
         - random-uniform: Random values in [0, 1]
         """
-        seed = ic_params.get("seed")
-        if seed is not None:
-            np.random.seed(seed)
-
         if ic_type == "step":
             # Step function: 0 on left, 1 on right
+            ndim = len(grid.shape)
             x_bounds = grid.axes_bounds[0]
-            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-            y = np.linspace(grid.axes_bounds[1][0], grid.axes_bounds[1][1], grid.shape[1])
-            X, Y = np.meshgrid(x, y, indexing="ij")
-
+            x_1d = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+            shape = [1] * ndim
+            shape[0] = grid.shape[0]
+            X = x_1d.reshape(shape)
             mid = (x_bounds[0] + x_bounds[1]) / 2
-            data = np.where(X < mid, 0.0, 1.0)
+            data = np.broadcast_to(np.where(X < mid, 0.0, 1.0), grid.shape).copy()
             return ScalarField(grid, data)
 
         # Default: use base class

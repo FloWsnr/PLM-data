@@ -117,9 +117,12 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
 
             x_bounds = grid.axes_bounds[0]
             Lx = x_bounds[1] - x_bounds[0]
-            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-            y = np.linspace(grid.axes_bounds[1][0], grid.axes_bounds[1][1], grid.shape[1])
-            X, Y = np.meshgrid(x, y, indexing="ij")
+            x_1d = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+
+            ndim = len(grid.shape)
+            shape = [1] * ndim
+            shape[0] = grid.shape[0]
+            X = x_1d.reshape(shape)
 
             # Randomize stripe phase if not specified
             phase = ic_params.get("phase")
@@ -128,6 +131,7 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
 
             # Create stripe pattern: amplitude * (1 + cos(n*pi*x/L + phase))
             u_data = amplitude * (1 + np.cos(n_stripes * np.pi * (X - x_bounds[0]) / Lx + phase))
+            u_data = np.broadcast_to(u_data, grid.shape).copy()
             # Add small perturbation to trigger instability
             u_data += noise * rng.standard_normal(grid.shape)
             v_data = v0 * np.ones(grid.shape) + noise * rng.standard_normal(grid.shape)

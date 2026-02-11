@@ -103,35 +103,28 @@ class NonlinearSchrodingerPDE(MultiFieldPDEPreset):
         if ic_type in ("nonlinear-schrodinger-default", "default", "soliton"):
             c = ic_params.get("c", 10.0)  # carrier wave velocity
             amplitude = ic_params.get("amplitude", 1.0)
-            seed = ic_params.get("seed")
-            if seed is not None:
-                np.random.seed(seed)
 
             # Get domain info
             x_bounds = grid.axes_bounds[0]
             Lx = x_bounds[1] - x_bounds[0]
 
-            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
             x0_frac = ic_params.get("x0_frac")
             if x0_frac is None or x0_frac == "random":
                 raise ValueError("nonlinear-schrodinger soliton requires x0_frac (or random)")
             x0 = x_bounds[0] + Lx * x0_frac
 
-            if len(grid.shape) > 1:
-                y_bounds = grid.axes_bounds[1]
-                y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-                X, Y = np.meshgrid(x, y, indexing="ij")
+            ndim = len(grid.shape)
+            x_1d = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+            shape = [1] * ndim
+            shape[0] = grid.shape[0]
+            X = x_1d.reshape(shape)
 
-                # sech envelope
-                envelope = amplitude / np.cosh(X - x0)
+            # sech envelope (depends only on x)
+            envelope = amplitude / np.cosh(X - x0)
 
-                # Carrier wave: cos(c*x), sin(c*x)
-                u_data = np.cos(c * X) * envelope
-                v_data = np.sin(c * X) * envelope
-            else:
-                envelope = amplitude / np.cosh(x - x0)
-                u_data = np.cos(c * x) * envelope
-                v_data = np.sin(c * x) * envelope
+            # Carrier wave: cos(c*x), sin(c*x)
+            u_data = np.broadcast_to(np.cos(c * X) * envelope, grid.shape).copy()
+            v_data = np.broadcast_to(np.sin(c * X) * envelope, grid.shape).copy()
 
             u = ScalarField(grid, u_data)
             u.label = "u"
@@ -149,39 +142,26 @@ class NonlinearSchrodingerPDE(MultiFieldPDEPreset):
             x2_frac = ic_params.get("x2_frac")
             if x1_frac is None or x1_frac == "random" or x2_frac is None or x2_frac == "random":
                 raise ValueError("nonlinear-schrodinger two_soliton requires x1_frac and x2_frac (or random)")
-            seed = ic_params.get("seed")
-            if seed is not None:
-                np.random.seed(seed)
 
             # Get domain info
             x_bounds = grid.axes_bounds[0]
             Lx = x_bounds[1] - x_bounds[0]
+            x1 = x_bounds[0] + Lx * x1_frac
+            x2 = x_bounds[0] + Lx * x2_frac
 
-            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+            ndim = len(grid.shape)
+            x_1d = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+            shape = [1] * ndim
+            shape[0] = grid.shape[0]
+            X = x_1d.reshape(shape)
 
-            if len(grid.shape) > 1:
-                y_bounds = grid.axes_bounds[1]
-                y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-                X, Y = np.meshgrid(x, y, indexing="ij")
+            # sech envelopes (depend only on x)
+            envelope1 = amplitude / np.cosh(X - x1)
+            envelope2 = amplitude / np.cosh(X - x2)
 
-                # Two solitons at different positions
-                x1 = x_bounds[0] + Lx * x1_frac
-                x2 = x_bounds[0] + Lx * x2_frac
-
-                # sech envelopes
-                envelope1 = amplitude / np.cosh(X - x1)
-                envelope2 = amplitude / np.cosh(X - x2)
-
-                # Carrier waves with different velocities
-                u_data = np.cos(c1 * X) * envelope1 + np.cos(c2 * X) * envelope2
-                v_data = np.sin(c1 * X) * envelope1 + np.sin(c2 * X) * envelope2
-            else:
-                x1 = x_bounds[0] + Lx * x1_frac
-                x2 = x_bounds[0] + Lx * x2_frac
-                envelope1 = amplitude / np.cosh(x - x1)
-                envelope2 = amplitude / np.cosh(x - x2)
-                u_data = np.cos(c1 * x) * envelope1 + np.cos(c2 * x) * envelope2
-                v_data = np.sin(c1 * x) * envelope1 + np.sin(c2 * x) * envelope2
+            # Carrier waves with different velocities
+            u_data = np.broadcast_to(np.cos(c1 * X) * envelope1 + np.cos(c2 * X) * envelope2, grid.shape).copy()
+            v_data = np.broadcast_to(np.sin(c1 * X) * envelope1 + np.sin(c2 * X) * envelope2, grid.shape).copy()
 
             u = ScalarField(grid, u_data)
             u.label = "u"

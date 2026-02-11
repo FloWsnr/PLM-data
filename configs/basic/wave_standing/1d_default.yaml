@@ -1,0 +1,18 @@
+preset: wave-standing
+parameters:
+  D: 1.0
+init:
+  type: sine
+  params:
+    kx: 4
+    amplitude: 1.0
+    phase_x: random
+solver: euler
+dt: 0.002
+resolution: [128]
+domain_size: [100.0]
+t_end: 50.0
+timesteps: 200
+bc:
+  x-: neumann:0
+  x+: neumann:0

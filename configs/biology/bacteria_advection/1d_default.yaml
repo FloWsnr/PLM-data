@@ -1,0 +1,23 @@
+preset: bacteria-advection
+parameters:
+  u: 0.62
+  k: 0.006
+  c0: 0.77
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 3
+    amplitude: 0.8
+    width: 0.08
+    background: 0.1
+    positions: random
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.01
+resolution: [128]
+bc:
+  x-: dirichlet:0.77
+  x+: neumann:0
+domain_size: [320.0]
+t_end: 100.0

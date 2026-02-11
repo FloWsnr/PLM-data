@@ -127,8 +127,11 @@ class HeterogeneousGiererMeinhardtPDE(MultiFieldPDEPreset):
         x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
         # Normalize to [0, 1]
         x_normalized = (x - x_bounds[0]) / L
-        # Broadcast to 2D grid (x varies along first axis)
-        X_data = np.broadcast_to(x_normalized[:, np.newaxis], grid.shape).copy()
+        # Broadcast to N-D grid (x varies along first axis)
+        ndim = len(grid.shape)
+        shape = [1] * ndim
+        shape[0] = grid.shape[0]
+        X_data = np.broadcast_to(x_normalized.reshape(shape), grid.shape).copy()
 
         u = ScalarField(grid, u_data)
         u.label = "u"

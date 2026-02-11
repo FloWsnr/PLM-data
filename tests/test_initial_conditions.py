@@ -401,6 +401,40 @@ class TestStepFunction:
         unique_values = np.unique(field.data)
         assert len(unique_values) > 2
 
+    def test_generate_1d_step(self):
+        """Test generating a step on a 1D grid."""
+        grid_1d = CartesianGrid(bounds=[[0, 1]], shape=[32], periodic=[True])
+        ic = StepFunction()
+        field = ic.generate(grid_1d, direction="x", position=0.5, value_low=0.0, value_high=1.0)
+        assert field.data.shape == (32,)
+        assert np.all(field.data[:16] == 0.0)
+        assert np.all(field.data[16:] == 1.0)
+
+    def test_generate_3d_step(self):
+        """Test generating a step on a 3D grid."""
+        grid_3d = CartesianGrid(bounds=[[0, 1], [0, 1], [0, 1]], shape=[16, 16, 16], periodic=[True, True, True])
+        ic = StepFunction()
+        field = ic.generate(grid_3d, direction="x", position=0.5, value_low=0.0, value_high=1.0)
+        assert field.data.shape == (16, 16, 16)
+        assert np.all(field.data[:8, :, :] == 0.0)
+        assert np.all(field.data[8:, :, :] == 1.0)
+
+    def test_generate_3d_z_step(self):
+        """Test generating a step in z direction on a 3D grid."""
+        grid_3d = CartesianGrid(bounds=[[0, 1], [0, 1], [0, 1]], shape=[16, 16, 16], periodic=[True, True, True])
+        ic = StepFunction()
+        field = ic.generate(grid_3d, direction="z", position=0.5, value_low=0.0, value_high=1.0)
+        assert field.data.shape == (16, 16, 16)
+        assert np.all(field.data[:, :, :8] == 0.0)
+        assert np.all(field.data[:, :, 8:] == 1.0)
+
+    def test_invalid_direction_1d(self):
+        """Test that invalid direction raises error for 1D grid."""
+        grid_1d = CartesianGrid(bounds=[[0, 1]], shape=[32], periodic=[True])
+        ic = StepFunction()
+        with pytest.raises(ValueError, match="direction 'y' invalid for 1D grid"):
+            ic.generate(grid_1d, direction="y", position=0.5)
+
 
 class TestRectangleGrid:
     """Tests for RectangleGrid IC generator."""
@@ -478,6 +512,32 @@ class TestRectangleGrid:
         with pytest.raises(ValueError, match="doesn't match grid"):
             ic.generate(small_grid, nx=2, ny=2, values=[[1.0, 2.0, 3.0]])
 
+    def test_generate_1d_rectangle_grid(self):
+        """Test generating a rectangle grid on a 1D grid."""
+        grid_1d = CartesianGrid(bounds=[[0, 1]], shape=[32], periodic=[True])
+        ic = RectangleGrid()
+        field = ic.generate(grid_1d, nx=4, values=[1.0, 2.0, 3.0, 4.0])
+        assert field.data.shape == (32,)
+        unique = set(np.unique(field.data))
+        assert unique == {1.0, 2.0, 3.0, 4.0}
+
+    def test_generate_3d_rectangle_grid(self):
+        """Test generating a rectangle grid on a 3D grid."""
+        grid_3d = CartesianGrid(bounds=[[0, 1], [0, 1], [0, 1]], shape=[16, 16, 16], periodic=[True, True, True])
+        ic = RectangleGrid()
+        field = ic.generate(grid_3d, nx=2, ny=2, nz=2, seed=42)
+        assert field.data.shape == (16, 16, 16)
+        assert np.std(field.data) > 0
+
+    def test_generate_1d_random_values(self):
+        """Test generating 1D rectangle grid with random values."""
+        grid_1d = CartesianGrid(bounds=[[0, 1]], shape=[64], periodic=[True])
+        ic = RectangleGrid()
+        field = ic.generate(grid_1d, nx=3, value_range=(0.0, 10.0), seed=42)
+        assert field.data.shape == (64,)
+        assert np.all(field.data >= 0.0)
+        assert np.all(field.data <= 10.0)
+
 
 class TestDoubleStep:
     """Tests for DoubleStep IC generator."""
@@ -508,6 +568,31 @@ class TestDoubleStep:
         assert field.data.shape == (32, 32)
         unique_values = np.unique(field.data)
         assert len(unique_values) >= 2
+
+    def test_generate_1d_double_step(self):
+        """Test generating a double step on a 1D grid."""
+        grid_1d = CartesianGrid(bounds=[[0, 1]], shape=[32], periodic=[True])
+        ic = DoubleStep()
+        field = ic.generate(grid_1d, direction="x", position1=0.25, position2=0.75, value_inside=1.0, value_outside=0.0)
+        assert field.data.shape == (32,)
+        assert np.any(field.data == 1.0)
+        assert np.any(field.data == 0.0)
+
+    def test_generate_3d_double_step(self):
+        """Test generating a double step on a 3D grid."""
+        grid_3d = CartesianGrid(bounds=[[0, 1], [0, 1], [0, 1]], shape=[16, 16, 16], periodic=[True, True, True])
+        ic = DoubleStep()
+        field = ic.generate(grid_3d, direction="x", position1=0.25, position2=0.75, value_inside=1.0, value_outside=0.0)
+        assert field.data.shape == (16, 16, 16)
+        assert np.any(field.data == 1.0)
+        assert np.any(field.data == 0.0)
+
+    def test_invalid_direction_1d_double_step(self):
+        """Test that invalid direction raises error for 1D grid."""
+        grid_1d = CartesianGrid(bounds=[[0, 1]], shape=[32], periodic=[True])
+        ic = DoubleStep()
+        with pytest.raises(ValueError, match="direction 'y' invalid for 1D grid"):
+            ic.generate(grid_1d, direction="y", position1=0.25, position2=0.75)
 
 
 class TestCosinePattern:

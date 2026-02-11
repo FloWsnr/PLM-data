@@ -1,0 +1,21 @@
+preset: lorenz
+parameters:
+  sigma: 10.0
+  rho: 28.0
+  beta: 2.6666666666667
+  D: 0.5
+init:
+  type: random-gaussian
+  params:
+    mean: 1.0
+    std: 0.3
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.01
+resolution: [128]
+domain_size: [50.0]
+t_end: 30.0
+bc:
+  x-: periodic
+  x+: periodic

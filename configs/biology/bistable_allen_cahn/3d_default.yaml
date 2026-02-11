@@ -1,0 +1,28 @@
+preset: bistable-allen-cahn
+parameters:
+  D: 1.0
+  a: 0.5
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 1
+    amplitude: 1.0
+    width: 0.1
+    seed: 101
+    positions: random
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: [32, 32, 32]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+  z-: neumann:0
+  z+: neumann:0
+domain_size: [100.0, 100.0, 100.0]
+t_end: 50.0
+output:
+  formats: [numpy]

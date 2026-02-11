@@ -97,6 +97,9 @@ class LotkaVolterraPDE(MultiFieldPDEPreset):
         Default creates localized predator and prey populations with noise,
         which can lead to pursuit patterns and spiral waves.
         """
+        if ic_type not in ("default", "lotka-volterra-default"):
+            return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
+
         np.random.seed(ic_params.get("seed"))
         noise = ic_params.get("noise", 0.1)
 

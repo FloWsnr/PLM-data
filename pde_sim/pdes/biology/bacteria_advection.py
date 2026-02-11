@@ -94,14 +94,15 @@ class BacteriaAdvectionPDE(ScalarPDEPreset):
             u = ic_params.get("u", 0.62)
             k = ic_params.get("k", 0.006)
 
+            ndim = len(grid.shape)
             x_bounds = grid.axes_bounds[0]
-            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+            x_1d = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
 
-            # For 2D, replicate across y
-            if len(grid.shape) > 1:
-                x = x[:, np.newaxis] * np.ones(grid.shape[1])
+            shape = [1] * ndim
+            shape[0] = grid.shape[0]
+            x_broadcast = np.broadcast_to(x_1d.reshape(shape), grid.shape)
 
-            data = c0 * np.exp(-k * x / max(u, 0.01))
+            data = c0 * np.exp(-k * x_broadcast / max(u, 0.01))
             return ScalarField(grid, data)
 
         if ic_type == "uniform":

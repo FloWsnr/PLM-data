@@ -1,0 +1,33 @@
+preset: complex-ginzburg-landau
+parameters:
+  D_r: 0.1
+  D_i: 1.0
+  a_r: 1.0
+  a_i: 1.0
+  b_r: -1.0
+  b_i: 0.0
+  n: 10
+  m: 10
+init:
+  type: default
+  params:
+    amplitude: 1.0
+    phase_x: 0.0
+    phase_y: 0.0
+    phase_z: 0.0
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.002
+t_end: 20.0
+resolution: [32, 32, 32]
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+  z-: periodic
+  z+: periodic
+domain_size: [100, 100, 100]
+output:
+  formats: [numpy]

@@ -1,0 +1,32 @@
+preset: damped-wave
+parameters:
+  D: 10.0
+  C: 0.01
+  d: 0.02
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 1
+    sigma_range:
+    - 0.05
+    - 0.1
+    amplitude_range:
+    - 0.5
+    - 1.0
+    seed: 109
+    positions: random
+solver: euler
+dt: 0.002
+resolution: [32, 32, 32]
+domain_size: [100.0, 100.0, 100.0]
+t_end: 25.0
+timesteps: 100
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+  z-: neumann:0
+  z+: neumann:0
+output:
+  formats: [numpy]

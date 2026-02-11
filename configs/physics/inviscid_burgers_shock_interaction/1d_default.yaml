@@ -1,0 +1,23 @@
+preset: inviscid-burgers
+parameters:
+  epsilon: 0.01
+  direction: x
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 4
+    amplitude: 1.5
+    width: 0.08
+    background: 0.05
+    random_amplitude: true
+    positions: random
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.005
+resolution: [128]
+domain_size: [80.0]
+t_end: 25.0
+bc:
+  x-: neumann:0
+  x+: neumann:0

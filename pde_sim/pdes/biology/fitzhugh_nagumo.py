@@ -106,28 +106,37 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
 
         This produces a wavefront that propagates only in the bottom half
         (top half is refractory), with the broken end curling into a spiral.
-        """
-        x_bounds = grid.axes_bounds[0]
-        y_bounds = grid.axes_bounds[1]
-        Lx = x_bounds[1] - x_bounds[0]
-        Ly = y_bounds[1] - y_bounds[0]
 
-        x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-        y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-        X, Y = np.meshgrid(x, y, indexing="ij")
+        For 1D: u = step along x; v = constant v_rest (no y axis).
+        For 2D/3D: u splits on x, v splits on y (higher dims uniform).
+        """
+        ndim = len(grid.shape)
 
         u_rest = params["u_rest"]
         v_rest = params["v_rest"]
         u_excited = params["u_excited"]
         v_refractory = params["v_refractory"]
 
-        x_center = x_bounds[0] + Lx / 2
-        y_center = y_bounds[0] + Ly / 2
+        # u-step along x axis
+        x_bounds = grid.axes_bounds[0]
+        x_center = (x_bounds[0] + x_bounds[1]) / 2
+        x_1d = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+        shape_x = [1] * ndim
+        shape_x[0] = grid.shape[0]
+        X = x_1d.reshape(shape_x)
+        u_data = np.broadcast_to(np.where(X < x_center, u_excited, u_rest), grid.shape).copy()
 
-        # u-step along x: left half excited, right half resting
-        u_data = np.where(X < x_center, u_excited, u_rest)
-        # v-step along y: bottom half recovered, top half refractory
-        v_data = np.where(Y < y_center, v_rest, v_refractory)
+        # v-step along y axis (if exists)
+        if ndim >= 2:
+            y_bounds = grid.axes_bounds[1]
+            y_center = (y_bounds[0] + y_bounds[1]) / 2
+            y_1d = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
+            shape_y = [1] * ndim
+            shape_y[1] = grid.shape[1]
+            Y = y_1d.reshape(shape_y)
+            v_data = np.broadcast_to(np.where(Y < y_center, v_rest, v_refractory), grid.shape).copy()
+        else:
+            v_data = np.full(grid.shape, v_rest)
 
         u = ScalarField(grid, u_data)
         u.label = "u"

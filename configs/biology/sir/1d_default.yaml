@@ -1,0 +1,22 @@
+preset: sir
+parameters:
+  beta: 0.5
+  gamma: 0.1
+  D_S: 0.1
+  D_I: 0.1
+  D_R: 0.1
+init:
+  type: random-uniform
+  params:
+    low: 0.0
+    high: 0.1
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: [128]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [100.0]
+t_end: 200.0

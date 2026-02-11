@@ -1,0 +1,22 @@
+preset: klausmeier
+parameters:
+  a: 2.0
+  m: 0.54
+  V: 50.0
+  Dn: 1.0
+  Dw: 1.0
+init:
+  type: random-gaussian
+  params:
+    mean: 0.5
+    std: 0.1
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: [128]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [100.0]
+t_end: 100.0

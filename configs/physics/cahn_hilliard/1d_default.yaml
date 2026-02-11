@@ -1,0 +1,18 @@
+preset: cahn-hilliard
+parameters:
+  r: 0.01
+  a: 1.0
+  D: 1.0
+init:
+  type: cahn-hilliard-default
+  params: {}
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0005
+resolution: [128]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [100.0]
+t_end: 50.0

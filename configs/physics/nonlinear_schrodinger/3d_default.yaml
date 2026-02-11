@@ -1,0 +1,26 @@
+preset: nonlinear-schrodinger
+parameters:
+  kappa: 1.0
+  D: 1.0
+  c: 10.0
+init:
+  type: default
+  params:
+    amplitude: 1.0
+    x0_frac: 0.333
+solver: rk4
+backend: numba
+adaptive: false
+dt: 0.002
+t_end: 2.0
+resolution: [32, 32, 32]
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+  z-: periodic
+  z+: periodic
+domain_size: [30, 30, 30]
+output:
+  formats: [numpy]

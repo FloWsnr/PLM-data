@@ -1,0 +1,30 @@
+preset: stochastic-gray-scott
+parameters:
+  a: 0.037
+  b: 0.04
+  D: 4.0
+  sigma: 0.1
+init:
+  type: default
+  params:
+    perturbation_radius: 0.05
+    noise: 0.001
+    cx: 0.5
+    cy: 0.5
+    cz: 0.5
+solver: euler
+backend: numpy
+adaptive: false
+dt: 0.02
+t_end: 500.0
+resolution: [32, 32, 32]
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+  z-: periodic
+  z+: periodic
+domain_size: [300, 300, 300]
+output:
+  formats: [numpy]

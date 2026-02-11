@@ -1,0 +1,22 @@
+preset: gierer-meinhardt
+parameters:
+  D: 100.0
+  a: 0.5
+  b: 1.0
+  c: 6.1
+  K: 0.0
+init:
+  type: random-gaussian
+  params:
+    mean: 1.0
+    std: 0.1
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0003
+resolution: [128]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [100.0]
+t_end: 100.0

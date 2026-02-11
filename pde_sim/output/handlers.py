@@ -164,18 +164,27 @@ class Output1DHandler(OutputHandler):
                         loop=0,
                     )
 
+                fig, ax = plt.subplots(figsize=(6, 4), dpi=self.dpi)
+                (line,) = ax.plot(spacetime[0])
+                ax.set_xlim(0, spacetime.shape[1] - 1)
+                ax.set_ylim(vmin, vmax)
+                ax.set_xlabel("Space (x)")
+                ax.set_ylabel(field_name)
+                title = ax.set_title(
+                    f"t = {self.times[0]:.4f}" if self.times else ""
+                )
+                fig.tight_layout()
+
                 for i in range(spacetime.shape[0]):
-                    fig, ax = plt.subplots(figsize=(6, 4), dpi=self.dpi)
-                    ax.plot(spacetime[i])
-                    ax.set_xlabel("Space (x)")
-                    ax.set_ylabel(field_name)
-                    ax.set_title(
+                    line.set_ydata(spacetime[i])
+                    title.set_text(
                         f"t = {self.times[i]:.4f}" if i < len(self.times) else ""
                     )
                     fig.canvas.draw()
                     frame_rgb = np.asarray(fig.canvas.buffer_rgba())[:, :, :3]
                     writer.append_data(frame_rgb)
-                    plt.close(fig)
+
+                plt.close(fig)
 
                 writer.close()
                 output_files[field_name] = filename
@@ -355,6 +364,136 @@ class GIFHandler(OutputHandler):
             "format": "gif",
             "fps": self.fps,
             "gifs": gif_files,
+        }
+
+
+SLICE_AXES = ("x_slice", "y_slice", "z_slice")
+
+
+class Output3DHandler(OutputHandler):
+    """Renders center slices along each axis for 3D data.
+
+    For 3D data with shape (X, Y, Z), extracts:
+    - x_slice: data[X//2, :, :] -> (Y, Z)
+    - y_slice: data[:, Y//2, :] -> (X, Z)
+    - z_slice: data[:, :, Z//2] -> (X, Y)
+
+    Supports PNG, GIF, and MP4 output formats.
+    """
+
+    def __init__(self, output_format: str = "png", fps: int = 30) -> None:
+        self.output_format = output_format
+        self.fps = fps
+        self.output_dir: Path | None = None
+        # For PNG: {(field, axis): Path}
+        self._slice_dirs: dict[tuple[str, str], Path] = {}
+        # For GIF/MP4: {(field, axis): writer}
+        self._writers: dict[tuple[str, str], Any] = {}
+
+    def initialize(
+        self,
+        output_dir: Path,
+        field_configs: list[tuple[str, str]],
+        dpi: int,
+        figsize: tuple[int, int],
+        *,
+        expected_num_frames: int | None = None,
+    ) -> None:
+        self.output_dir = output_dir
+
+        for field_name, _colormap in field_configs:
+            if self.output_format == "png":
+                for axis in SLICE_AXES:
+                    d = output_dir / "frames" / field_name / axis
+                    d.mkdir(parents=True, exist_ok=True)
+                    self._slice_dirs[(field_name, axis)] = d
+
+            elif self.output_format == "mp4":
+                for axis in SLICE_AXES:
+                    video_path = output_dir / f"{field_name}_{axis}.mp4"
+                    self._writers[(field_name, axis)] = imageio.get_writer(
+                        video_path,
+                        fps=self.fps,
+                        codec="libx264",
+                        output_params=["-pix_fmt", "yuv420p"],
+                    )
+
+            elif self.output_format == "gif":
+                duration = 1.0 / self.fps
+                for axis in SLICE_AXES:
+                    gif_path = output_dir / f"{field_name}_{axis}.gif"
+                    self._writers[(field_name, axis)] = imageio.get_writer(
+                        gif_path, mode="I", duration=duration, loop=0
+                    )
+
+    def _extract_slices(self, data: np.ndarray) -> dict[str, np.ndarray]:
+        """Extract center slices from 3D data."""
+        x_mid = data.shape[0] // 2
+        y_mid = data.shape[1] // 2
+        z_mid = data.shape[2] // 2
+        return {
+            "x_slice": data[x_mid, :, :],
+            "y_slice": data[:, y_mid, :],
+            "z_slice": data[:, :, z_mid],
+        }
+
+    def save_frame(
+        self,
+        data: np.ndarray,
+        field_name: str,
+        frame_index: int,
+        simulation_time: float,
+        vmin: float | None,
+        vmax: float | None,
+        colormap: str,
+    ) -> None:
+        slices = self._extract_slices(data)
+
+        for axis, slice_2d in slices.items():
+            frame_rgb = render_colormap_rgb(slice_2d, vmin=vmin, vmax=vmax, colormap=colormap)
+
+            if self.output_format == "png":
+                frame_path = self._slice_dirs[(field_name, axis)] / f"{frame_index:06d}.png"
+                imageio.imwrite(frame_path, frame_rgb)
+            else:
+                self._writers[(field_name, axis)].append_data(frame_rgb)
+
+    def finalize(self) -> dict[str, Any]:
+        if self.output_format == "png":
+            fields = sorted({f for f, _ in self._slice_dirs})
+            return {
+                "format": "png",
+                "type": "3D_slices",
+                "framesDirectory": "frames/",
+                "fields": fields,
+                "sliceAxes": list(SLICE_AXES),
+            }
+
+        # GIF or MP4
+        output_files: dict[str, str] = {}
+        for (field_name, axis), writer in self._writers.items():
+            try:
+                writer.close()
+            except Exception:
+                pass
+            ext = self.output_format
+            output_files[f"{field_name}_{axis}"] = f"{field_name}_{axis}.{ext}"
+
+        if self.output_format == "mp4":
+            return {
+                "format": "mp4",
+                "type": "3D_slices",
+                "fps": self.fps,
+                "videos": output_files,
+                "sliceAxes": list(SLICE_AXES),
+            }
+
+        return {
+            "format": "gif",
+            "type": "3D_slices",
+            "fps": self.fps,
+            "gifs": output_files,
+            "sliceAxes": list(SLICE_AXES),
         }
 
 
@@ -704,13 +843,12 @@ def create_output_handler(output_format: str, fps: int = 30, ndim: int = 2) -> O
         raise ValueError(f"Unknown output format: {output_format}")
 
     if ndim == 3:
-        # 3D visualization deferred; allow trajectory formats only
+        if output_format in ("png", "mp4", "gif"):
+            return Output3DHandler(output_format=output_format, fps=fps)
         if output_format == "numpy":
             return NumpyHandler()
         if output_format == "h5":
             return H5Handler()
-        raise ValueError(
-            f"3D visualization not yet supported. Use format 'numpy' or 'h5' instead of '{output_format}'"
-        )
+        raise ValueError(f"Unknown output format: {output_format}")
 
     raise ValueError(f"Unsupported dimensionality: {ndim}D. Must be 1, 2, or 3.")

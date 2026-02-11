@@ -1,0 +1,18 @@
+preset: harsh-environment
+parameters:
+  D: 0.01
+  r: 1.0
+  K: 1.0
+init:
+  type: default
+  params: {}
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0001
+resolution: [128]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [10.0]
+t_end: 25.0

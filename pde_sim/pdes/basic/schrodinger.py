@@ -72,7 +72,7 @@ class SchrodingerPDE(MultiFieldPDEPreset):
         pot_n: int,
         pot_m: int,
     ) -> ScalarField | None:
-        """Compute the potential field V(x,y).
+        """Compute the potential field V(x,y,...).
 
         Args:
             grid: The computational grid.
@@ -88,25 +88,23 @@ class SchrodingerPDE(MultiFieldPDEPreset):
         if potential_type == "none" or V_strength == 0:
             return None
 
-        # Get domain bounds
-        L_x = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
-        L_y = grid.axes_bounds[1][1] - grid.axes_bounds[1][0]
-
-        # Get coordinates
-        x_coords = grid.cell_coords[..., 0]
-        y_coords = grid.cell_coords[..., 1]
+        ndim = len(grid.shape)
+        L = [grid.axes_bounds[i][1] - grid.axes_bounds[i][0] for i in range(ndim)]
 
         if potential_type == "sinusoidal":
-            # V = V_strength * sin(pot_n*pi*x/L_x) * sin(pot_m*pi*y/L_y)
-            V_data = V_strength * np.sin(pot_n * math.pi * x_coords / L_x) * np.sin(
-                pot_m * math.pi * y_coords / L_y
+            mode_numbers = [pot_n, pot_m, 1][:ndim]
+            coords_1d = [np.linspace(grid.axes_bounds[i][0], grid.axes_bounds[i][1], grid.shape[i]) for i in range(ndim)]
+            coords = np.meshgrid(*coords_1d, indexing="ij")
+            V_data = V_strength * np.prod(
+                [np.sin(mode_numbers[i] * math.pi * coords[i] / L[i]) for i in range(ndim)],
+                axis=0,
             )
         elif potential_type == "harmonic":
-            # V = V_strength * ((x-cx)^2 + (y-cy)^2)
-            # Centered at domain center
-            cx = (grid.axes_bounds[0][0] + grid.axes_bounds[0][1]) / 2
-            cy = (grid.axes_bounds[1][0] + grid.axes_bounds[1][1]) / 2
-            V_data = V_strength * ((x_coords - cx) ** 2 + (y_coords - cy) ** 2)
+            center = [(grid.axes_bounds[i][0] + grid.axes_bounds[i][1]) / 2 for i in range(ndim)]
+            coords_1d = [np.linspace(grid.axes_bounds[i][0], grid.axes_bounds[i][1], grid.shape[i]) for i in range(ndim)]
+            coords = np.meshgrid(*coords_1d, indexing="ij")
+            r_sq = sum((coords[i] - center[i]) ** 2 for i in range(ndim))
+            V_data = V_strength * r_sq
         else:
             raise ValueError(f"Unknown potential_type: {potential_type}")
 
@@ -185,20 +183,18 @@ class SchrodingerPDE(MultiFieldPDEPreset):
         Default is an eigenstate sin(n*pi*x/L)*sin(m*pi*y/L).
         """
         if ic_type in ["eigenstate", "schrodinger-default"]:
-            # Get domain bounds
-            L_x = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
-            L_y = grid.axes_bounds[1][1] - grid.axes_bounds[1][0]
+            ndim = len(grid.shape)
+            L = [grid.axes_bounds[i][1] - grid.axes_bounds[i][0] for i in range(ndim)]
+            mode_numbers_map = {"n": int(ic_params.get("n", 3)), "m": int(ic_params.get("m", 3)), "l": int(ic_params.get("l", 3))}
+            mode_keys = ["n", "m", "l"][:ndim]
+            mode_numbers = [mode_numbers_map[k] for k in mode_keys]
 
-            n = int(ic_params.get("n", 3))
-            m = int(ic_params.get("m", 3))
+            coords_1d = [np.linspace(grid.axes_bounds[i][0], grid.axes_bounds[i][1], grid.shape[i]) for i in range(ndim)]
+            coords = np.meshgrid(*coords_1d, indexing="ij")
 
-            # Get coordinates
-            x_coords = grid.cell_coords[..., 0]
-            y_coords = grid.cell_coords[..., 1]
-
-            # Eigenstate: sin(n*pi*x/L_x)*sin(m*pi*y/L_y)
-            u_data = np.sin(n * np.pi * x_coords / L_x) * np.sin(
-                m * np.pi * y_coords / L_y
+            u_data = np.prod(
+                [np.sin(mode_numbers[i] * np.pi * coords[i] / L[i]) for i in range(ndim)],
+                axis=0,
             )
             v_data = np.zeros(grid.shape)  # Imaginary part starts at zero
 
@@ -213,23 +209,25 @@ class SchrodingerPDE(MultiFieldPDEPreset):
             # Superposition of two eigenstates for interesting beating dynamics.
             # A single eigenstate gives stationary |psi|^2; a superposition of
             # two modes with different energies produces time-varying density.
-            L_x = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
-            L_y = grid.axes_bounds[1][1] - grid.axes_bounds[1][0]
+            ndim = len(grid.shape)
+            L = [grid.axes_bounds[i][1] - grid.axes_bounds[i][0] for i in range(ndim)]
 
-            n1 = int(ic_params["n1"])
-            m1 = int(ic_params["m1"])
-            n2 = int(ic_params["n2"])
-            m2 = int(ic_params["m2"])
+            mode_keys_1 = ["n1", "m1", "l1"][:ndim]
+            mode_keys_2 = ["n2", "m2", "l2"][:ndim]
+            mode1_numbers = [int(ic_params[k]) for k in mode_keys_1]
+            mode2_numbers = [int(ic_params[k]) for k in mode_keys_2]
             weight = ic_params.get("weight", 0.5)
 
-            x_coords = grid.cell_coords[..., 0]
-            y_coords = grid.cell_coords[..., 1]
+            coords_1d = [np.linspace(grid.axes_bounds[i][0], grid.axes_bounds[i][1], grid.shape[i]) for i in range(ndim)]
+            coords = np.meshgrid(*coords_1d, indexing="ij")
 
-            mode1 = np.sin(n1 * np.pi * x_coords / L_x) * np.sin(
-                m1 * np.pi * y_coords / L_y
+            mode1 = np.prod(
+                [np.sin(mode1_numbers[i] * np.pi * coords[i] / L[i]) for i in range(ndim)],
+                axis=0,
             )
-            mode2 = np.sin(n2 * np.pi * x_coords / L_x) * np.sin(
-                m2 * np.pi * y_coords / L_y
+            mode2 = np.prod(
+                [np.sin(mode2_numbers[i] * np.pi * coords[i] / L[i]) for i in range(ndim)],
+                axis=0,
             )
 
             u_data = (1 - weight) * mode1 + weight * mode2
@@ -244,31 +242,30 @@ class SchrodingerPDE(MultiFieldPDEPreset):
 
         elif ic_type == "wave-packet":
             # Gaussian wave packet
-            x0 = ic_params.get("x0")
-            y0 = ic_params.get("y0")
-            if x0 is None or x0 == "random" or y0 is None or y0 == "random":
-                raise ValueError("wave-packet requires x0 and y0 (or random)")
+            ndim = len(grid.shape)
+            L = [grid.axes_bounds[i][1] - grid.axes_bounds[i][0] for i in range(ndim)]
+
+            # Position params: x0, y0, z0
+            pos_keys = ["x0", "y0", "z0"][:ndim]
+            for key in pos_keys:
+                val = ic_params.get(key)
+                if val is None or val == "random":
+                    raise ValueError(f"wave-packet requires {key} (or random)")
+
             sigma = ic_params.get("sigma", 0.1)
-            kx = ic_params.get("kx", 3.0)
-            ky = ic_params.get("ky", 0.0)
+            k_keys = ["kx", "ky", "kz"][:ndim]
+            k_defaults = [3.0, 0.0, 0.0]
+            k_vals = [ic_params.get(k_keys[i], k_defaults[i]) for i in range(ndim)]
 
-            # Get domain bounds for normalized coordinates
-            L_x = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
-            L_y = grid.axes_bounds[1][1] - grid.axes_bounds[1][0]
+            coords_1d = [np.linspace(grid.axes_bounds[i][0], grid.axes_bounds[i][1], grid.shape[i]) for i in range(ndim)]
+            coords = np.meshgrid(*coords_1d, indexing="ij")
 
-            # Get coordinates
-            x_coords = grid.cell_coords[..., 0]
-            y_coords = grid.cell_coords[..., 1]
+            # Centers in absolute coordinates
+            centers = [grid.axes_bounds[i][0] + ic_params[pos_keys[i]] * L[i] for i in range(ndim)]
 
-            # Center of wave packet in absolute coordinates
-            cx = grid.axes_bounds[0][0] + x0 * L_x
-            cy = grid.axes_bounds[1][0] + y0 * L_y
-
-            # Gaussian envelope with plane wave
-            # psi = exp(-(r^2)/(2*sigma^2)) * exp(i*(kx*x + ky*y))
-            r2 = (x_coords - cx) ** 2 + (y_coords - cy) ** 2
-            envelope = np.exp(-r2 / (2 * (sigma * L_x) ** 2))
-            phase = kx * x_coords + ky * y_coords
+            r2 = sum((coords[i] - centers[i]) ** 2 for i in range(ndim))
+            envelope = np.exp(-r2 / (2 * (sigma * L[0]) ** 2))
+            phase = sum(k_vals[i] * coords[i] for i in range(ndim))
 
             u_data = envelope * np.cos(phase)
             v_data = envelope * np.sin(phase)
@@ -288,19 +285,20 @@ class SchrodingerPDE(MultiFieldPDEPreset):
 
         elif ic_type == "localized":
             # Localized wave packet for use with potential
-            # (sin(pi*x/L)*sin(pi*y/L))^10 - concentrated at center
+            # Product of (sin(pi*x_i/L_i))^power - concentrated at center
             power = ic_params.get("power", 10)
 
-            L_x = grid.axes_bounds[0][1] - grid.axes_bounds[0][0]
-            L_y = grid.axes_bounds[1][1] - grid.axes_bounds[1][0]
+            ndim = len(grid.shape)
+            L = [grid.axes_bounds[i][1] - grid.axes_bounds[i][0] for i in range(ndim)]
 
-            x_coords = grid.cell_coords[..., 0]
-            y_coords = grid.cell_coords[..., 1]
+            coords_1d = [np.linspace(grid.axes_bounds[i][0], grid.axes_bounds[i][1], grid.shape[i]) for i in range(ndim)]
+            coords = np.meshgrid(*coords_1d, indexing="ij")
 
-            # Create localized state
-            sin_x = np.sin(np.pi * x_coords / L_x)
-            sin_y = np.sin(np.pi * y_coords / L_y)
-            u_data = (sin_x * sin_y) ** power
+            # Create localized state: product of sin across all dims, raised to power
+            u_data = np.prod(
+                [np.sin(np.pi * coords[i] / L[i]) for i in range(ndim)],
+                axis=0,
+            ) ** power
             v_data = np.zeros(grid.shape)
 
             # Normalize
@@ -320,7 +318,7 @@ class SchrodingerPDE(MultiFieldPDEPreset):
 
     def get_position_params(self, ic_type: str) -> set[str]:
         if ic_type == "wave-packet":
-            return {"x0", "y0"}
+            return {"x0", "y0", "z0"}
         return super().get_position_params(ic_type)
 
     def resolve_ic_params(
@@ -331,16 +329,20 @@ class SchrodingerPDE(MultiFieldPDEPreset):
     ) -> dict[str, Any]:
         if ic_type == "wave-packet":
             resolved = ic_params.copy()
-            if "x0" not in resolved or "y0" not in resolved:
-                raise ValueError("wave-packet requires x0 and y0 (or random)")
-            if resolved["x0"] == "random" or resolved["y0"] == "random":
+            ndim = len(grid.shape)
+            pos_keys = ["x0", "y0", "z0"][:ndim]
+            for key in pos_keys:
+                if key not in resolved:
+                    raise ValueError(f"wave-packet requires {key} (or random)")
+            rng_needed = any(resolved[key] == "random" for key in pos_keys)
+            if rng_needed:
                 rng = np.random.default_rng(resolved.get("seed"))
-                if resolved["x0"] == "random":
-                    resolved["x0"] = rng.uniform(0.2, 0.8)
-                if resolved["y0"] == "random":
-                    resolved["y0"] = rng.uniform(0.2, 0.8)
-            if resolved["x0"] is None or resolved["y0"] is None:
-                raise ValueError("wave-packet requires x0 and y0 (or random)")
+                for key in pos_keys:
+                    if resolved[key] == "random":
+                        resolved[key] = rng.uniform(0.2, 0.8)
+            for key in pos_keys:
+                if resolved[key] is None:
+                    raise ValueError(f"wave-packet requires {key} (or random)")
             return resolved
         return super().resolve_ic_params(grid, ic_type, ic_params)
 

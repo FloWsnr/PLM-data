@@ -1,0 +1,23 @@
+preset: duffing
+parameters:
+  D: 0.5
+  alpha: -1.0
+  beta: 0.25
+  delta: 0.1
+  gamma: 2.0
+  omega: 2.0
+  epsilon: 0.01
+init:
+  type: default
+  params:
+    noise: 1.0
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0015
+t_end: 50.0
+resolution: [128]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [50]

@@ -97,7 +97,6 @@ class BurgersPDE(ScalarPDEPreset):
 
             amplitude = ic_params.get("amplitude", 1.0)
             width = ic_params.get("width", 0.1) * Lx
-            rng = np.random.default_rng(ic_params.get("seed"))
 
             # Pulse position (randomize if not specified)
             position = ic_params.get("position")
@@ -105,15 +104,14 @@ class BurgersPDE(ScalarPDEPreset):
                 raise ValueError("burgers default requires position (or random)")
             x0 = x_bounds[0] + position * Lx
 
-            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-            if len(grid.shape) > 1:
-                y_bounds = grid.axes_bounds[1]
-                y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-                X, Y = np.meshgrid(x, y, indexing="ij")
-                # 2D: Gaussian depends only on x
-                data = amplitude * np.exp(-((X - x0) ** 2) / (2 * width**2))
-            else:
-                data = amplitude * np.exp(-((x - x0) ** 2) / (2 * width**2))
+            ndim = len(grid.shape)
+            x_1d = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+            shape = [1] * ndim
+            shape[0] = grid.shape[0]
+            X = x_1d.reshape(shape)
+
+            # Gaussian depends only on x, broadcast to full grid
+            data = np.broadcast_to(amplitude * np.exp(-((X - x0) ** 2) / (2 * width**2)), grid.shape).copy()
 
             return ScalarField(grid, data)
 
@@ -122,7 +120,6 @@ class BurgersPDE(ScalarPDEPreset):
             # For demonstrating shock interaction (taller = faster)
             x_bounds = grid.axes_bounds[0]
             Lx = x_bounds[1] - x_bounds[0]
-            rng = np.random.default_rng(ic_params.get("seed"))
 
             # Get pulse parameters (lists)
             positions = ic_params.get("positions")
@@ -131,20 +128,16 @@ class BurgersPDE(ScalarPDEPreset):
             amplitudes = ic_params.get("amplitudes", [2.0, 1.5, 1.0])
             width = ic_params.get("width", 0.05) * Lx
 
-            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-            if len(grid.shape) > 1:
-                y_bounds = grid.axes_bounds[1]
-                y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-                X, Y = np.meshgrid(x, y, indexing="ij")
-                data = np.zeros_like(X)
-                for pos, amp in zip(positions, amplitudes):
-                    x0 = x_bounds[0] + pos * Lx
-                    data += amp * np.exp(-((X - x0) ** 2) / (2 * width**2))
-            else:
-                data = np.zeros_like(x)
-                for pos, amp in zip(positions, amplitudes):
-                    x0 = x_bounds[0] + pos * Lx
-                    data += amp * np.exp(-((x - x0) ** 2) / (2 * width**2))
+            ndim = len(grid.shape)
+            x_1d = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
+            shape = [1] * ndim
+            shape[0] = grid.shape[0]
+            X = x_1d.reshape(shape)
+
+            data = np.zeros(grid.shape)
+            for pos, amp in zip(positions, amplitudes):
+                x0 = x_bounds[0] + pos * Lx
+                data += np.broadcast_to(amp * np.exp(-((X - x0) ** 2) / (2 * width**2)), grid.shape)
 
             return ScalarField(grid, data)
 

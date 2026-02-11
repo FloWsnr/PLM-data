@@ -1,0 +1,23 @@
+preset: wave
+parameters:
+  D: 1.0
+  C: 0.01
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 1
+    amplitude: 1.0
+    width: 0.05
+    background: 0.0
+    seed: 102
+    positions: random
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.002
+resolution: [128]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [100.0]
+t_end: 50.0

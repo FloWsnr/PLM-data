@@ -1,0 +1,20 @@
+preset: keller-segel
+parameters:
+  c: 4.0
+  D: 1.0
+  a: 0.1
+init:
+  type: random-uniform
+  params:
+    low: 0.0
+    high: 0.01
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: [128]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [100.0]
+t_end: 50.0

@@ -1,0 +1,32 @@
+preset: sir
+parameters:
+  beta: 0.5
+  gamma: 0.1
+  D_S: 0.1
+  D_I: 0.1
+  D_R: 0.1
+init:
+  type: wave
+  params:
+    S0: 0.99
+    I0: 0.01
+    seed_x: 10.0
+    seed_y: 50.0
+    seed_z: 50.0
+    seed_radius: 5.0
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: [32, 32, 32]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+  z-: neumann:0
+  z+: neumann:0
+domain_size: [100.0, 100.0, 100.0]
+t_end: 200.0
+output:
+  formats: [numpy]

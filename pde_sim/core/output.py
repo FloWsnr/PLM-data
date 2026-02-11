@@ -10,6 +10,7 @@ from pde_sim.output.handlers import (
     MP4Handler,
     NumpyHandler,
     Output1DHandler,
+    Output3DHandler,
     OutputHandler,
     PNGHandler,
     create_output_handler,
@@ -20,6 +21,7 @@ from pde_sim.output.metadata import create_metadata
 __all__ = [
     "OutputHandler",
     "Output1DHandler",
+    "Output3DHandler",
     "PNGHandler",
     "MP4Handler",
     "GIFHandler",

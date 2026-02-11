@@ -1,0 +1,21 @@
+preset: gray-scott
+parameters:
+  a: 0.037
+  b: 0.06
+  D: 2.0
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 5
+    width: 0.05
+    positions: random
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.5
+t_end: 5000.0
+resolution: [128]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [1000]

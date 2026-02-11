@@ -112,28 +112,33 @@ class ComplexGinzburgLandauPDE(MultiFieldPDEPreset):
         if ic_type in ("complex-ginzburg-landau-default", "default"):
             n = int(ic_params.get("n", 10))
             m = int(ic_params.get("m", 10))
+            l = int(ic_params.get("l", 10))
             amplitude = ic_params.get("amplitude", 1.0)
             rng = np.random.default_rng(ic_params.get("seed"))
 
-            # Get domain info
-            x_bounds = grid.axes_bounds[0]
-            y_bounds = grid.axes_bounds[1]
-            Lx = x_bounds[1] - x_bounds[0]
-            Ly = y_bounds[1] - y_bounds[0]
+            ndim = len(grid.shape)
+            mode_numbers = [n, m, l][:ndim]
+            phase_keys = ["phase_x", "phase_y", "phase_z"][:ndim]
 
-            x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-            y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-            X, Y = np.meshgrid(x, y, indexing="ij")
+            # Get phases
+            phases = []
+            for key in phase_keys:
+                p = ic_params.get(key)
+                if p is None or p == "random":
+                    raise ValueError(f"complex-ginzburg-landau requires {key} (or random)")
+                phases.append(p)
 
-            # Randomize phases if not specified
-            phase_x = ic_params.get("phase_x")
-            phase_y = ic_params.get("phase_y")
-            if phase_x is None or phase_x == "random" or phase_y is None or phase_y == "random":
-                raise ValueError("complex-ginzburg-landau requires phase_x and phase_y (or random)")
+            # Build product of sinusoids across all dimensions
+            coords_1d = [np.linspace(grid.axes_bounds[i][0], grid.axes_bounds[i][1], grid.shape[i]) for i in range(ndim)]
+            coords = np.meshgrid(*coords_1d, indexing="ij")
+            L = [grid.axes_bounds[i][1] - grid.axes_bounds[i][0] for i in range(ndim)]
 
-            # Sinusoidal initial condition: sin(n*pi*x/Lx + phase) * sin(m*pi*y/Ly + phase)
-            u_data = amplitude * np.sin(n * np.pi * (X - x_bounds[0]) / Lx + phase_x) * np.sin(m * np.pi * (Y - y_bounds[0]) / Ly + phase_y)
-            v_data = amplitude * np.sin(n * np.pi * (X - x_bounds[0]) / Lx + phase_x) * np.sin(m * np.pi * (Y - y_bounds[0]) / Ly + phase_y)
+            pattern = np.ones(grid.shape)
+            for i in range(ndim):
+                pattern *= np.sin(mode_numbers[i] * np.pi * (coords[i] - grid.axes_bounds[i][0]) / L[i] + phases[i])
+
+            u_data = amplitude * pattern
+            v_data = amplitude * pattern.copy()
 
             # Add small noise
             u_data += 0.01 * rng.standard_normal(grid.shape)
@@ -156,7 +161,7 @@ class ComplexGinzburgLandauPDE(MultiFieldPDEPreset):
 
     def get_position_params(self, ic_type: str) -> set[str]:
         if ic_type in ("complex-ginzburg-landau-default", "default"):
-            return {"phase_x", "phase_y"}
+            return {"phase_x", "phase_y", "phase_z"}
         return super().get_position_params(ic_type)
 
     def resolve_ic_params(
@@ -167,16 +172,20 @@ class ComplexGinzburgLandauPDE(MultiFieldPDEPreset):
     ) -> dict[str, Any]:
         if ic_type in ("complex-ginzburg-landau-default", "default"):
             resolved = ic_params.copy()
-            if "phase_x" not in resolved or "phase_y" not in resolved:
-                raise ValueError("complex-ginzburg-landau requires phase_x and phase_y (or random)")
-            if resolved["phase_x"] == "random" or resolved["phase_y"] == "random":
+            ndim = len(grid.shape)
+            phase_keys = ["phase_x", "phase_y", "phase_z"][:ndim]
+            for key in phase_keys:
+                if key not in resolved:
+                    raise ValueError(f"complex-ginzburg-landau requires {key} (or random)")
+            rng_needed = any(resolved[key] == "random" for key in phase_keys)
+            if rng_needed:
                 rng = np.random.default_rng(resolved.get("seed"))
-                if resolved["phase_x"] == "random":
-                    resolved["phase_x"] = rng.uniform(0, 2 * np.pi)
-                if resolved["phase_y"] == "random":
-                    resolved["phase_y"] = rng.uniform(0, 2 * np.pi)
-            if resolved["phase_x"] is None or resolved["phase_y"] is None:
-                raise ValueError("complex-ginzburg-landau requires phase_x and phase_y (or random)")
+                for key in phase_keys:
+                    if resolved[key] == "random":
+                        resolved[key] = rng.uniform(0, 2 * np.pi)
+            for key in phase_keys:
+                if resolved[key] is None:
+                    raise ValueError(f"complex-ginzburg-landau requires {key} (or random)")
             return resolved
         return super().resolve_ic_params(grid, ic_type, ic_params)
 

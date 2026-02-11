@@ -1,0 +1,29 @@
+preset: inviscid-burgers
+parameters:
+  epsilon: 0.01
+  direction: x
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 2
+    amplitude: 1.5
+    width: 0.08
+    background: 0.05
+    random_amplitude: true
+    positions: random
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.01
+resolution: [32, 32, 32]
+domain_size: [80.0, 80.0, 80.0]
+t_end: 25.0
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+  z-: neumann:0
+  z+: neumann:0
+output:
+  formats: [numpy]
