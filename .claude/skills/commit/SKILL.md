@@ -1,5 +1,5 @@
 ---
-name: Commit Session Changes
+name: commit Session Changes
 description: This skill should be used when the user asks to "commit", "commit changes", "make a commit", "git commit", or wants to save their work to git. Invoked via /commit.
 ---
 
