@@ -12,10 +12,10 @@ init:
     width: 0.08
     background: 0.0
     positions: random
-solver: scipy
+solver: rk4
 backend: numpy
-adaptive: False
-dt: 0.001
+adaptive: false
+dt: 0.005
 resolution: [200, 200]
 bc:
   x-: neumann:0
