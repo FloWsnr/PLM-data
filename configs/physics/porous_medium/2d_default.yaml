@@ -1,0 +1,20 @@
+preset: porous-medium
+parameters:
+  m: 2.0
+init:
+  type: porous-medium-default
+  params:
+    amplitude: 1.0
+    radius: 3.0
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: [128, 128]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: neumann:0
+  y+: neumann:0
+domain_size: [20.0, 20.0]
+t_end: 10.0

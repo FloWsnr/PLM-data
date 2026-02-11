@@ -32,6 +32,10 @@ from .duffing import DuffingPDE
 # Stochastic/Statistical
 from .fokker_planck import FokkerPlanckPDE
 
+# Nonlinear diffusion and crystallization
+from .porous_medium import PorousMediumPDE
+from .phase_field_crystal import PhaseFieldCrystalPDE
+
 __all__ = [
     # Pattern formation
     "GrayScottPDE",
@@ -59,4 +63,7 @@ __all__ = [
     "DuffingPDE",
     # Stochastic/Statistical
     "FokkerPlanckPDE",
+    # Nonlinear diffusion and crystallization
+    "PorousMediumPDE",
+    "PhaseFieldCrystalPDE",
 ]

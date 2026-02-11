@@ -2,11 +2,13 @@
 
 This document tracks PDE systems and parameter combinations that are mentioned in descriptions but not yet implemented, as well as completely new PDEs to consider.
 
+**Current inventory: 61 PDE presets, 363 configs across 4 categories (basic: 12, biology: 20, physics: 21, fluids: 8)**
+
 ---
 
 ## Part 1: Parameter Regimes & Configs Missing (Mentioned in Descriptions)
 
-### Gray-Scott (Currently 12 configs, but 13+ regimes exist)
+### Gray-Scott (Currently 13 configs)
 The descriptions mention many more behavioral regimes:
 - [ ] **U-skate world** - Complex glider-like patterns
 - [ ] **Pulsating spots** - Oscillating localized structures (partially covered)
@@ -14,80 +16,79 @@ The descriptions mention many more behavioral regimes:
 - [ ] **Wave-dominated** regimes with different wavelengths
 - [ ] **Mitosis** - Self-replicating spots
 
-### Gierer-Meinhardt
+### Gierer-Meinhardt (Currently 8 configs)
 - [ ] Higher saturation constant K > 0.003 (explore intermediate K values)
 - [ ] Stripe-to-spot transition systematic exploration
 - [ ] **GM with source term** - External morphogen production
 
-### FitzHugh-Nagumo
+### FitzHugh-Nagumo (Currently 7 configs + 6 FHN-3 configs)
 - [ ] **Driven/forced variants** - Periodic stimulation
 - [ ] **Turing-Hopf boundary** - Systematic exploration
 - [ ] **Excitable vs oscillatory** transition configs
 
-### Schnakenberg
+### Schnakenberg (Currently 5 configs + 5 cross-diffusion-schnakenberg configs)
 - [ ] **Turing-Hopf coexistence** boundary exploration
-- [ ] Gradient-driven Schnakenberg (like heterogeneous GM)
 
-### Cahn-Hilliard
+### Cahn-Hilliard (Currently 7 configs)
 - [ ] Faster dynamics with r increased by 1-2 orders of magnitude
 - [ ] **Nucleation dynamics** - Crystal formation scenarios
 - [ ] **Grain boundary motion** configurations
 
-### Bistable Allen-Cahn
+### Bistable Allen-Cahn (Currently 7 configs)
 - [ ] Critical a=0.5 wave direction reversal systematic study
 - [ ] **Allee effect** spatial structure exploration
 
-### Keller-Segel
+### Keller-Segel (Currently 6 configs)
 - [ ] Chemotaxis-driven blow-up vs saturation regimes
 - [ ] Population heterogeneity configurations
 
-### Complex Ginzburg-Landau
+### Complex Ginzburg-Landau (Currently 6 configs)
 - [ ] **Benjamin-Feir instability** systematic exploration
 - [ ] Stable vs unstable wave regime transitions
 - [ ] More dispersive regimes
 
-### Nonlinear Schrodinger
+### Nonlinear Schrodinger (Currently 7 configs)
 - [ ] **Dark solitons** (defocusing, kappa<0) - currently only bright solitons
 - [ ] **Two-soliton collision** dynamics
 - [ ] **Multi-soliton interactions** and soliton fusion
 
-### Swift-Hohenberg
+### Swift-Hohenberg (Currently 6 configs + 5 swift-hohenberg-advection configs)
 - [ ] **Snaking diagrams** - Localised structure bifurcations
 - [ ] **Multi-bump localised solutions**
 - [ ] **Breathing/pulsating** localised patterns
 - [ ] Hexagon/square/stripe selection via parameter variation
 
-### Kuramoto-Sivashinsky
+### Kuramoto-Sivashinsky (Currently 7 configs)
 - [ ] **Period-doubling route to chaos** systematic exploration
 - [ ] Domain size effects on attractor dimension
 
-### Burgers/Inviscid Burgers
+### Burgers/Inviscid Burgers (Currently 7 + 7 configs)
 - [ ] **Transonic** (mixed subsonic-supersonic) configurations
 - [ ] External forcing or periodic driving terms
 - [ ] Gap between inviscid shocks and smooth viscous waves
 
-### Duffing
+### Duffing (Currently 7 configs)
 - [ ] **Softening springs** (beta < 0) - only hardening/double-well explored
 - [ ] **Forced-damped variants**
 - [ ] Bifurcation cascades systematic study
 
-### Lorenz
+### Lorenz (Currently 6 configs)
 - [ ] **Rho parameter transitions** through chaos
 - [ ] Different initial condition basins of attraction
 
-### Shallow Water
+### Shallow Water (Currently 8 configs)
 - [ ] **Rossby number** systematic studies
 - [ ] **Tsunami/bore propagation** with realistic topography
 - [ ] **Wind stress forcing**
 - [ ] Geostrophic balance (high Coriolis) exploration
 
-### Navier-Stokes
+### Navier-Stokes (Currently 6 + 5 navier-stokes-cylinder configs)
 - [ ] **High-Re turbulent regime** configurations
 - [ ] **Temperature-dependent viscosity** (thermal effects)
 - [ ] Other obstacle geometries: airfoil, multiple cylinders
 - [ ] **Poiseuille flow** pressure-driven channel (mentioned but limited)
 
-### Thermal Convection
+### Thermal Convection (Currently 5 configs)
 - [ ] **Ra above/below critical** (~1707) systematic exploration
 - [ ] **Durham convection** variant with stochastic forcing
 
@@ -102,21 +103,26 @@ The descriptions mention many more behavioral regimes:
 ## Part 2: Related Systems Mentioned But Not Implemented
 
 ### Integrable Systems / Soliton Equations
-- [x] **Korteweg-de Vries (KdV)** - Classic 1D soliton equation ✅ IMPLEMENTED
-- [x] **Sine-Gordon equation** - Topological kink solitons ✅ IMPLEMENTED
+- [x] **Korteweg-de Vries (KdV)** - Classic 1D soliton equation ✅ (4 configs)
+- [x] **Sine-Gordon equation** - Topological kink solitons ✅ (1 config)
+- [x] **Zakharov-Kuznetsov** - 2D/3D generalization of KdV ✅ (8 configs)
 - [ ] **Modified KdV** - Cubic nonlinearity variant
 
 ### Ecology / Epidemiology
-- [x] **SIR spatial epidemic model** - Reaction-diffusion epidemic ✅ IMPLEMENTED
-- [x] **Lotka-Volterra predator-prey** (2-species with diffusion) ✅ IMPLEMENTED
-- [ ] **4+ species competition** - Extended rock-paper-scissors
-  - More complex cyclic competition dynamics
+- [x] **SIR spatial epidemic model** - Reaction-diffusion epidemic ✅ (2 configs)
+- [x] **Lotka-Volterra predator-prey** (2-species with diffusion) ✅ (2 configs)
+- [x] **Cyclic competition** - 3-species rock-paper-scissors ✅ (7 + 6 wave configs)
+- [x] **Klausmeier vegetation** - Dryland vegetation patterns ✅ (6 + 7 topography configs)
+- [x] **Bacteria advection** - Bacterial colony with chemotaxis ✅ (7 configs)
+- [x] **Immunotherapy** - Tumor-immune dynamics ✅ (6 configs)
+- [x] **Harsh environment** - Population survival under stress ✅ (7 configs)
+- [ ] **4+ species competition** - Extended beyond 3-species cyclic
 
 ### Stochastic/Statistical PDEs
-- [x] **Fokker-Planck equation** - Probability diffusion ✅ IMPLEMENTED
-- [ ] **Stochastic reaction-diffusion** (beyond Gray-Scott)
-  - Noise-driven pattern formation for other systems
-  - Stochastic Turing patterns
+- [x] **Fokker-Planck equation** - Probability diffusion ✅ (1 config)
+- [x] **Stochastic Gray-Scott** - Noise-driven pattern formation ✅ (14 configs)
+- [ ] **Stochastic reaction-diffusion** for other systems (beyond Gray-Scott)
+  - Stochastic Turing patterns in FHN, Schnakenberg, etc.
 
 ### Materials Science / Mechanics
 - [ ] **Viscoelastic wave equation** - Memory effects in materials
@@ -130,6 +136,7 @@ The descriptions mention many more behavioral regimes:
   - References: [Wikipedia](https://en.wikipedia.org/wiki/Porous_medium_equation)
 
 ### Quantum Systems
+- [x] **Schrodinger equation** - Linear quantum mechanics ✅ (7 configs)
 - [ ] **Gross-Pitaevskii equation** - Bose-Einstein condensates
   - Similar to NLS but with trap potential
   - Vortex lattice formation
@@ -140,6 +147,8 @@ The descriptions mention many more behavioral regimes:
   - Multiple well systems
 
 ### Fluid Mechanics Extensions
+- [x] **Darcy flow** - Porous media flow ✅ (2 configs)
+- [x] **Potential flow dipoles** - Inviscid irrotational flow ✅ (5 configs)
 - [ ] **Boussinesq equations** (water waves version)
   - 2D shallow water with dispersion
   - Soliton interactions
@@ -153,13 +162,16 @@ The descriptions mention many more behavioral regimes:
 
 - [ ] **Rayleigh-Taylor instability** - Density stratification
 
-### Coupled Systems
+### Coupled / Extended Systems
+- [x] **Superlattice** - Multi-pattern coupling ✅ (5 configs)
+- [x] **Hyperbolic Brusselator** - Wave-reaction coupling ✅ (7 configs)
+- [x] **Cross-diffusion Schnakenberg** - Cross-diffusion effects ✅ (5 configs)
 - [ ] **Coupled CGL** - Cross-phase modulation
 - [ ] **Coupled NLS** - Multi-component waves (fiber optics)
 - [ ] **Coupled Brusselator** - Multiple oscillating systems
-- [ ] **Three-way pattern coupling** - Beyond superlattice
 
 ### Image Processing / Computer Vision
+- [x] **Perona-Malik** - Anisotropic diffusion denoising ✅ (6 configs)
 - [ ] **Total Variation (TV) denoising** - ROF model
 - [ ] **Level-set methods** - Interface tracking
 - [ ] **Active contours** - Segmentation PDEs
@@ -167,19 +179,6 @@ The descriptions mention many more behavioral regimes:
 ---
 
 ## Part 3: New PDEs from Literature & Benchmarks
-
-### From PDEBench (NeurIPS 2022)
-Standard benchmark PDEs for ML:
-- [x] Diffusion-reaction (have as various reaction-diffusion)
-- [x] Compressible Navier-Stokes (partially - have incompressible)
-- [x] Shallow water (have)
-- [ ] **Darcy flow** - Porous media flow
-  - -div(K grad p) = f
-  - Used in groundwater modeling
-
-### From APEBench (2024)
-Autoregressive emulator benchmarks:
-- [x] Most basic PDEs covered
 
 ### From "The Well" (NeurIPS 2024)
 Large-scale physics simulation collection - check for gaps
@@ -218,20 +217,20 @@ Large-scale physics simulation collection - check for gaps
 - [x] **SIR epidemic** - High practical relevance
 - [x] **Lotka-Volterra predator-prey** - Fundamental ecology
 - [x] **Fokker-Planck** - Stochastic processes
+- [x] **Darcy flow** - Porous media (PDEBench)
 
 ### Medium Priority (Extends Coverage)
-6. **Porous medium equation** - Nonlinear diffusion
-7. **Gross-Pitaevskii** - Quantum systems
-8. **Darcy flow** - Porous media (PDEBench)
-9. **Helmholtz equation** - Wave scattering
-10. **Phase-field crystal** - Materials
+- [ ] **Porous medium equation** - Nonlinear diffusion
+- [ ] **Gross-Pitaevskii** - Quantum systems
+- [ ] **Helmholtz equation** - Wave scattering
+- [ ] **Phase-field crystal** - Materials
 
 ### Lower Priority (Specialized)
-11. **Boussinesq water waves**
-12. **Viscoelastic wave**
-13. **Compressible NS**
-14. **Coupled CGL/NLS**
-15. **TV denoising / Level sets**
+- [ ] **Boussinesq water waves**
+- [ ] **Viscoelastic wave**
+- [ ] **Compressible NS**
+- [ ] **Coupled CGL/NLS**
+- [ ] **TV denoising / Level sets**
 
 ---
 
@@ -241,14 +240,40 @@ Large-scale physics simulation collection - check for gaps
 | Preset | Current Configs | Suggested Additions |
 |--------|-----------------|---------------------|
 | vorticity-bounded | 1 | +5 (viscosity sweep, rotation, wavenumbers) |
+| fokker-planck | 1 | +4 (different potentials, drift terms, diffusion rates) |
+| sine-gordon | 1 | +4 (breather, kink-antikink collision, multi-kink) |
+| advection | 2 | +3 (different velocity fields, higher dimensions) |
+| darcy | 2 | +3 (permeability fields, source terms) |
+| sir | 2 | +3 (different R0, spatial heterogeneity, waves) |
+| lotka-volterra | 2 | +3 (coexistence, exclusion, spatial patterns) |
 
 ### Well-Covered but Could Expand
 | Preset | Current Configs | Gap Areas |
 |--------|-----------------|-----------|
-| gray-scott | 12 | U-skate, mitosis, more chaos regimes |
-| nonlinear-schrodinger | 6 | Dark solitons, multi-soliton |
-| swift-hohenberg | 5 | Localised structures, snaking |
-| complex-ginzburg-landau | 5 | Benjamin-Feir, more chaos |
+| stochastic-gray-scott | 14 | Good coverage |
+| gray-scott | 13 | U-skate, mitosis, more chaos regimes |
+| shallow-water | 8 | Rossby, wind forcing, tsunami |
+| gierer-meinhardt | 8 | Source term, stripe-spot transition |
+| zakharov-kuznetsov | 8 | Good coverage |
+| nonlinear-schrodinger | 7 | Dark solitons, multi-soliton |
+| swift-hohenberg | 6 | Localised structures, snaking |
+| complex-ginzburg-landau | 6 | Benjamin-Feir, more chaos |
+
+---
+
+## Full PDE Inventory (61 presets)
+
+### Basic (12 presets)
+advection (2), advection-rotational (4), blob-diffusion-heat (6), damped-wave (7), heat (7), inhomogeneous-diffusion-heat (6), inhomogeneous-heat (6), inhomogeneous-wave (6), plate (7), schrodinger (7), wave (6), wave-standing (7)
+
+### Biology (20 presets)
+bacteria-advection (7), bistable-allen-cahn (7), brusselator (7), cross-diffusion-schnakenberg (5), cyclic-competition (7), cyclic-competition-wave (6), fisher-kpp (7), fitzhugh-nagumo (7), fitzhugh-nagumo-3 (6), gierer-meinhardt (8), harsh-environment (7), heterogeneous-gierer-meinhardt (7), hyperbolic-brusselator (7), immunotherapy (6), keller-segel (6), klausmeier (6), klausmeier-topography (7), lotka-volterra (2), schnakenberg (5), sir (2)
+
+### Physics (21 presets)
+bistable-advection (7), burgers (7), cahn-hilliard (7), complex-ginzburg-landau (6), duffing (7), fokker-planck (1), gray-scott (13), inviscid-burgers (7), kdv (4), kuramoto-sivashinsky (7), lorenz (6), nonlinear-schrodinger (7), perona-malik (6), sine-gordon (1), stochastic-gray-scott (14), superlattice (5), swift-hohenberg (6), swift-hohenberg-advection (5), van-der-pol (7), zakharov-kuznetsov (8)
+
+### Fluids (8 presets)
+darcy (2), navier-stokes (6), navier-stokes-cylinder (5), potential-flow-dipoles (5), shallow-water (8), thermal-convection (5), vorticity (6), vorticity-bounded (1)
 
 ---
 
@@ -270,4 +295,4 @@ Large-scale physics simulation collection - check for gaps
 
 ---
 
-*Last updated: 2026-01-21*
+*Last updated: 2026-02-11*
