@@ -492,8 +492,8 @@ class TestRandomizePositions:
             "preset": "gray-scott",
             "parameters": {"a": 0.037, "b": 0.06, "D": 2.0},
             "init": {
-                "type": "gray-scott-default",
-                "params": {"cx": 0.5, "cy": 0.5},
+                "type": "gaussian-blob",
+                "params": {"positions": [[0.5, 0.5]], "widths": [0.1], "amplitudes": [1.0], "num_blobs": 1},
             },
             "solver": "euler",
             "backend": "numpy",
@@ -517,7 +517,7 @@ class TestRandomizePositions:
         runner = SimulationRunner(config, output_dir=tmp_path)
 
         # The runner should have created a state; if positions were replaced,
-        # the initial state will differ from one with cx=0.5, cy=0.5
+        # the initial state will differ from one with fixed positions
         metadata = runner.run(verbose=False)
         assert metadata["preset"] == "gray-scott"
 
@@ -528,8 +528,8 @@ class TestRandomizePositions:
                 "preset": "gray-scott",
                 "parameters": {"a": 0.037, "b": 0.06, "D": 2.0},
                 "init": {
-                    "type": "gray-scott-default",
-                    "params": {"cx": 0.5, "cy": 0.5},
+                    "type": "gaussian-blob",
+                    "params": {"positions": [[0.5, 0.5]], "widths": [0.1], "amplitudes": [1.0], "num_blobs": 1},
                 },
                 "solver": "euler",
                 "backend": "numpy",
@@ -594,8 +594,8 @@ class TestRandomizePositions:
             "preset": "gray-scott",
             "parameters": {"a": 0.037, "b": 0.06, "D": 2.0},
             "init": {
-                "type": "gray-scott-default",
-                "params": {"cx": 0.5, "cy": 0.5},
+                "type": "gaussian-blob",
+                "params": {"positions": [[0.5, 0.5]], "widths": [0.1], "amplitudes": [1.0]},
             },
             "solver": "euler",
             "backend": "numpy",
@@ -643,12 +643,12 @@ class TestRandomizePositions:
         """Test get_position_params for PDE-specific IC types."""
         from pde_sim.pdes import get_pde_preset
 
-        gs = get_pde_preset("gray-scott")
-        assert gs.get_position_params("gray-scott-default") == {"cx", "cy"}
+        sgs = get_pde_preset("stochastic-gray-scott")
+        assert sgs.get_position_params("stochastic-gray-scott-default") == {"cx", "cy"}
         # Generic IC type should delegate
-        assert gs.get_position_params("gaussian-blob") == {"positions"}
+        assert sgs.get_position_params("gaussian-blob") == {"positions"}
         # Unknown custom IC type should return empty
-        assert gs.get_position_params("nonexistent") == set()
+        assert sgs.get_position_params("nonexistent") == set()
 
     def test_run_from_config_randomize_positions(self, tmp_path):
         """Test run_from_config with randomize_positions flag."""
