@@ -4,10 +4,9 @@ parameters:
   a: 0.03
   b: 0.8
 init:
-  type: perlin
+  type: custom
   params:
-    scale: 10.0
-    amplitude: 0.5
+    noise: 0.01
 solver: euler
 backend: numba
 adaptive: false

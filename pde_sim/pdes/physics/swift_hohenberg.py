@@ -112,7 +112,7 @@ class SwiftHohenbergPDE(ScalarPDEPreset):
 
         Default: u = 0 with small perturbations.
         """
-        if ic_type in ("swift-hohenberg-default", "default"):
+        if ic_type == "custom":
             amplitude = ic_params["amplitude"]
             rng = np.random.default_rng(ic_params.get("seed"))
             data = amplitude * rng.standard_normal(grid.shape)

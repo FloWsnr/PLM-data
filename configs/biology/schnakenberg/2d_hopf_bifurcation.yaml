@@ -4,7 +4,7 @@ parameters:
   a: 0.1
   b: 0.9
 init:
-  type: default
+  type: custom
   params:
     noise: 0.1
 solver: euler

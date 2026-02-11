@@ -87,14 +87,14 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
         **kwargs,
     ) -> FieldCollection:
         """Create initial state - typically a localized perturbation."""
-        if ic_type == "spiral-seed":
+        if ic_type in ("custom", "spiral-seed"):
             return self._spiral_seed_init(grid, ic_params)
 
         # Use base class implementation for all other IC types
         return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
     def get_position_params(self, ic_type: str) -> set[str]:
-        if ic_type == "spiral-seed":
+        if ic_type in ("custom", "spiral-seed"):
             return {"x_center", "y_center"}
         return super().get_position_params(ic_type)
 
@@ -104,7 +104,7 @@ class FitzHughNagumoPDE(MultiFieldPDEPreset):
         ic_type: str,
         ic_params: dict[str, Any],
     ) -> dict[str, Any]:
-        if ic_type == "spiral-seed":
+        if ic_type in ("custom", "spiral-seed"):
             resolved = ic_params.copy()
             x_bounds = grid.axes_bounds[0]
             Lx = x_bounds[1] - x_bounds[0]

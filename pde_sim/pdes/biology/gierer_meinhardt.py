@@ -135,10 +135,12 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
             # Add small perturbation to trigger instability
             u_data += noise * rng.standard_normal(grid.shape)
             v_data = v0 * np.ones(grid.shape) + noise * rng.standard_normal(grid.shape)
-        else:
-            # Default: random perturbation around steady state
+        elif ic_type == "custom":
+            # Random perturbation around steady state
             u_data = u0 * (1 + noise * rng.standard_normal(grid.shape))
             v_data = v0 * (1 + noise * rng.standard_normal(grid.shape))
+        else:
+            return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
         # Ensure positive values
         u_data = np.maximum(u_data, 0.01)
@@ -152,7 +154,7 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
         return FieldCollection([u, v])
 
     def get_position_params(self, ic_type: str) -> set[str]:
-        if ic_type == "stripes":
+        if ic_type in ("custom", "stripes"):
             return {"phase"}
         return super().get_position_params(ic_type)
 
@@ -162,14 +164,15 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
         ic_type: str,
         ic_params: dict[str, Any],
     ) -> dict[str, Any]:
-        if ic_type == "stripes":
+        if ic_type in ("custom", "stripes"):
             resolved = ic_params.copy()
-            if "phase" not in resolved:
-                raise ValueError("gierer-meinhardt stripes requires phase (or random)")
-            if resolved["phase"] == "random":
-                rng = np.random.default_rng(resolved.get("seed"))
-                resolved["phase"] = rng.uniform(0, 2 * np.pi)
-            if resolved["phase"] is None:
-                raise ValueError("gierer-meinhardt stripes requires phase (or random)")
+            if ic_type == "stripes":
+                if "phase" not in resolved:
+                    raise ValueError("gierer-meinhardt stripes requires phase (or random)")
+                if resolved["phase"] == "random":
+                    rng = np.random.default_rng(resolved.get("seed"))
+                    resolved["phase"] = rng.uniform(0, 2 * np.pi)
+                if resolved["phase"] is None:
+                    raise ValueError("gierer-meinhardt stripes requires phase (or random)")
             return resolved
         return super().resolve_ic_params(grid, ic_type, ic_params)

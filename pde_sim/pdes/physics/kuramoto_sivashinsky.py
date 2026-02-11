@@ -109,7 +109,7 @@ class KuramotoSivashinskyPDE(ScalarPDEPreset):
 
         Default: constant value with localized perturbations.
         """
-        if ic_type in ("kuramoto-sivashinsky-default", "default"):
+        if ic_type == "custom":
             # Small random perturbations around zero
             amplitude = ic_params.get("amplitude", 0.1)
             rng = np.random.default_rng(ic_params.get("seed"))

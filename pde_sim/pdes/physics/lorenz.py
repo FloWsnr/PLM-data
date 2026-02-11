@@ -100,24 +100,25 @@ class LorenzPDE(MultiFieldPDEPreset):
 
         Default: X = 0.3*RANDN + 1, Y = 0, Z = 29.
         """
-        seed = ic_params.get("seed")
-        if seed is not None:
-            np.random.seed(seed)
-        noise = ic_params.get("noise", 0.3)
+        if ic_type == "custom":
+            rng = np.random.default_rng(ic_params.get("seed"))
+            noise = ic_params.get("noise", 0.3)
 
-        # Reference uses X = 0.3*RANDN + 1, Y = 0, Z = 29
-        x_data = noise * np.random.randn(*grid.shape) + 1.0
-        y_data = np.zeros(grid.shape)
-        z_data = np.full(grid.shape, 29.0)
+            # Reference uses X = 0.3*RANDN + 1, Y = 0, Z = 29
+            x_data = noise * rng.standard_normal(grid.shape) + 1.0
+            y_data = np.zeros(grid.shape)
+            z_data = np.full(grid.shape, 29.0)
 
-        X_field = ScalarField(grid, x_data)
-        X_field.label = "X"
-        Y_field = ScalarField(grid, y_data)
-        Y_field.label = "Y"
-        Z_field = ScalarField(grid, z_data)
-        Z_field.label = "Z"
+            X_field = ScalarField(grid, x_data)
+            X_field.label = "X"
+            Y_field = ScalarField(grid, y_data)
+            Y_field.label = "Y"
+            Z_field = ScalarField(grid, z_data)
+            Z_field.label = "Z"
 
-        return FieldCollection([X_field, Y_field, Z_field])
+            return FieldCollection([X_field, Y_field, Z_field])
+
+        return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

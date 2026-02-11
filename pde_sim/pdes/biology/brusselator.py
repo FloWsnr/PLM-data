@@ -81,21 +81,24 @@ class BrusselatorPDE(MultiFieldPDEPreset):
         **kwargs,
     ) -> FieldCollection:
         """Create initial state near homogeneous steady state."""
-        a = ic_params.get("a", 2.0)
-        b = ic_params.get("b", 3.0)
-        noise = ic_params.get("noise", 0.1)
+        if ic_type == "custom":
+            a = ic_params.get("a", 2.0)
+            b = ic_params.get("b", 3.0)
+            noise = ic_params.get("noise", 0.1)
 
-        # Steady state: u* = a, v* = b/a
-        u_ss = a
-        v_ss = b / a
+            # Steady state: u* = a, v* = b/a
+            u_ss = a
+            v_ss = b / a
 
-        np.random.seed(ic_params.get("seed"))
-        u_data = u_ss + noise * np.random.randn(*grid.shape)
-        v_data = v_ss + noise * np.random.randn(*grid.shape)
+            rng = np.random.default_rng(ic_params.get("seed"))
+            u_data = u_ss + noise * rng.standard_normal(grid.shape)
+            v_data = v_ss + noise * rng.standard_normal(grid.shape)
 
-        u = ScalarField(grid, u_data)
-        u.label = "u"
-        v = ScalarField(grid, v_data)
-        v.label = "v"
+            u = ScalarField(grid, u_data)
+            u.label = "u"
+            v = ScalarField(grid, v_data)
+            v.label = "v"
 
-        return FieldCollection([u, v])
+            return FieldCollection([u, v])
+
+        return super().create_initial_state(grid, ic_type, ic_params, **kwargs)

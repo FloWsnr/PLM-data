@@ -97,10 +97,10 @@ class LotkaVolterraPDE(MultiFieldPDEPreset):
         Default creates localized predator and prey populations with noise,
         which can lead to pursuit patterns and spiral waves.
         """
-        if ic_type not in ("default", "lotka-volterra-default"):
+        if ic_type != "custom":
             return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
-        np.random.seed(ic_params.get("seed"))
+        rng = np.random.default_rng(ic_params.get("seed"))
         noise = ic_params.get("noise", 0.1)
 
         # Get equilibrium populations (non-trivial fixed point)
@@ -135,8 +135,8 @@ class LotkaVolterraPDE(MultiFieldPDEPreset):
         pred_bump = np.exp(-((X - cx - offset)**2 + (Y - cy)**2) / (2 * width**2))
 
         # Start near equilibrium with spatial perturbation
-        u_data = u_eq * (1 + 0.5 * prey_bump) + noise * np.random.randn(*grid.shape)
-        v_data = v_eq * (1 + 0.5 * pred_bump) + noise * np.random.randn(*grid.shape)
+        u_data = u_eq * (1 + 0.5 * prey_bump) + noise * rng.standard_normal(grid.shape)
+        v_data = v_eq * (1 + 0.5 * pred_bump) + noise * rng.standard_normal(grid.shape)
 
         # Ensure non-negative (populations can't be negative)
         u_data = np.clip(u_data, 0.0, None)

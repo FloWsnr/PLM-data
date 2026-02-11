@@ -5,7 +5,7 @@ parameters:
   beta: 2.6666666666667
   D: 0.5
 init:
-  type: default
+  type: custom
   params: {}
 solver: rk4
 backend: numba

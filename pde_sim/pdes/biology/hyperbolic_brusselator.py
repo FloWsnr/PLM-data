@@ -104,28 +104,31 @@ class HyperbolicBrusselatorPDE(MultiFieldPDEPreset):
         - u, v initialized near steady state with small perturbation
         - w, q (velocity fields) initialized to 0
         """
-        a = ic_params.get("a", 5.0)
-        b = ic_params.get("b", 9.0)
-        noise = ic_params.get("noise", 0.1)
+        if ic_type == "custom":
+            a = ic_params.get("a", 5.0)
+            b = ic_params.get("b", 9.0)
+            noise = ic_params.get("noise", 0.1)
 
-        # Steady state: u* = a, v* = b/a, w* = 0, q* = 0
-        u_ss = a
-        v_ss = b / a
+            # Steady state: u* = a, v* = b/a, w* = 0, q* = 0
+            u_ss = a
+            v_ss = b / a
 
-        np.random.seed(ic_params.get("seed"))
-        u_data = u_ss + noise * np.random.randn(*grid.shape)
-        v_data = v_ss + noise * np.random.randn(*grid.shape)
-        # Velocity fields w, q start at 0 (consistent with Visual-PDE reference)
-        w_data = np.zeros(grid.shape)
-        q_data = np.zeros(grid.shape)
+            rng = np.random.default_rng(ic_params.get("seed"))
+            u_data = u_ss + noise * rng.standard_normal(grid.shape)
+            v_data = v_ss + noise * rng.standard_normal(grid.shape)
+            # Velocity fields w, q start at 0 (consistent with Visual-PDE reference)
+            w_data = np.zeros(grid.shape)
+            q_data = np.zeros(grid.shape)
 
-        u = ScalarField(grid, u_data)
-        u.label = "u"
-        v = ScalarField(grid, v_data)
-        v.label = "v"
-        w = ScalarField(grid, w_data)
-        w.label = "w"
-        q = ScalarField(grid, q_data)
-        q.label = "q"
+            u = ScalarField(grid, u_data)
+            u.label = "u"
+            v = ScalarField(grid, v_data)
+            v.label = "v"
+            w = ScalarField(grid, w_data)
+            w.label = "w"
+            q = ScalarField(grid, q_data)
+            q.label = "q"
 
-        return FieldCollection([u, v, w, q])
+            return FieldCollection([u, v, w, q])
+
+        return super().create_initial_state(grid, ic_type, ic_params, **kwargs)

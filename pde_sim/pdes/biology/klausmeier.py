@@ -87,17 +87,20 @@ class KlausmeierPDE(MultiFieldPDEPreset):
         **kwargs,
     ) -> FieldCollection:
         """Create initial state for Klausmeier model."""
-        np.random.seed(ic_params.get("seed"))
+        if ic_type == "custom":
+            rng = np.random.default_rng(ic_params.get("seed"))
 
-        # Initial plants: random uniform [0,1] (matching Visual PDE "RAND")
-        n_data = np.random.rand(*grid.shape)
+            # Initial plants: random uniform [0,1] (matching Visual PDE "RAND")
+            n_data = rng.random(grid.shape)
 
-        # Initial water: constant 1 (matching Visual PDE reference)
-        w_data = np.ones(grid.shape)
+            # Initial water: constant 1 (matching Visual PDE reference)
+            w_data = np.ones(grid.shape)
 
-        n = ScalarField(grid, n_data)
-        n.label = "n"
-        w = ScalarField(grid, w_data)
-        w.label = "w"
+            n = ScalarField(grid, n_data)
+            n.label = "n"
+            w = ScalarField(grid, w_data)
+            w.label = "w"
 
-        return FieldCollection([n, w])
+            return FieldCollection([n, w])
+
+        return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
