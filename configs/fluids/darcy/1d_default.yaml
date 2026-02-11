@@ -7,7 +7,6 @@ init:
   params:
     nx: 16
     value_range: [0.0, 3.0]
-    seed: 201
 solver: rk4
 backend: numpy
 adaptive: false

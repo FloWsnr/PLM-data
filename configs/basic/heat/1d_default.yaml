@@ -6,7 +6,6 @@ init:
   params:
     nx: 12
     value_range: [0.0, 1.0]
-    seed: 103
 solver: euler
 backend: numba
 adaptive: true

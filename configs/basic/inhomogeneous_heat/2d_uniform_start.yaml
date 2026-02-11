@@ -4,9 +4,12 @@ parameters:
   n: 3
   m: 5
 init:
-  type: constant
+  type: gaussian-blob
   params:
-    value: 0.0
+    num_blobs: 3
+    width: 0.1
+    amplitude: 1.0
+    positions: random
 solver: euler
 backend: numba
 adaptive: true

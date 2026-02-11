@@ -13,7 +13,7 @@ init:
         num_blobs: 1
         width: 0.08
         amplitude: 1.0
-        positions: [0.5]
+        positions: random
     v:
       type: constant
       params:
