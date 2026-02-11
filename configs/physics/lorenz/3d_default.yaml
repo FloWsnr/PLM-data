@@ -23,5 +23,3 @@ bc:
   y+: periodic
   z-: periodic
   z+: periodic
-output:
-  formats: [numpy]

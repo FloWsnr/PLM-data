@@ -28,5 +28,3 @@ bc:
   z+: neumann:0
 domain_size: [100.0, 100.0, 100.0]
 t_end: 200.0
-output:
-  formats: [numpy]

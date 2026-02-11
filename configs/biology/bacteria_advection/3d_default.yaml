@@ -25,5 +25,3 @@ bc:
   z+: periodic
 domain_size: [320.0, 320.0, 320.0]
 t_end: 100.0
-output:
-  formats: [numpy]

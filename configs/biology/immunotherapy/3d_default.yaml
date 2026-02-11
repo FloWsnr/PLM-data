@@ -31,5 +31,3 @@ bc:
   z+: neumann:0
 domain_size: [50.0, 50.0, 50.0]
 t_end: 150.0
-output:
-  formats: [numpy]

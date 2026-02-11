@@ -32,5 +32,3 @@ bc:
   z+: dirichlet:0
 domain_size: [10.0, 10.0, 10.0]
 t_end: 5.0
-output:
-  formats: [numpy]

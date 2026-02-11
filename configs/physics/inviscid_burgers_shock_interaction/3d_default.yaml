@@ -25,5 +25,3 @@ bc:
   y+: neumann:0
   z-: neumann:0
   z+: neumann:0
-output:
-  formats: [numpy]
