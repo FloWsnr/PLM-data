@@ -41,7 +41,7 @@ class TestSchrodingerPDE:
         grid = create_grid_for_dimension(ndim, resolution=resolution, periodic=False)
         bc = create_bc_for_dimension(ndim, periodic=False)
 
-        pde = preset.create_pde({"D": 1.0, "C": 1.0, "V_strength": 0.0}, bc, grid)
+        pde = preset.create_pde({"D": 1.0, "C": 1.0, "potential_type": "none", "V_strength": 0.0, "pot_n": 1, "pot_m": 1}, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         result = pde.solve(state, t_range=0.001, dt=0.0001, solver="euler", tracker=None, backend="numpy")

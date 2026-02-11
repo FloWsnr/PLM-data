@@ -27,21 +27,24 @@ def load_config(preset_name: str, category: str) -> dict:
         Dictionary with the config contents
     """
     # Try different file naming conventions
-    # New structure: configs/{category}/{pde_name}/default.yaml
+    # Structure: configs/{category}/{pde_name}/{dim}d_default.yaml
     possible_names = [
         preset_name,
         preset_name.replace("-", "_"),
     ]
 
     for name in possible_names:
-        config_path = CONFIGS_DIR / category / name / "default.yaml"
-        if config_path.exists():
-            with open(config_path) as f:
-                return yaml.safe_load(f)
+        pde_dir = CONFIGS_DIR / category / name
+        if pde_dir.exists():
+            # Find any *_default.yaml (e.g. 2d_default.yaml, 1d_default.yaml)
+            defaults = sorted(pde_dir.glob("*d_default.yaml"))
+            if defaults:
+                with open(defaults[0]) as f:
+                    return yaml.safe_load(f)
 
     raise FileNotFoundError(
         f"Config not found for {preset_name} in {category}. "
-        f"Tried: {[CONFIGS_DIR / category / n / 'default.yaml' for n in possible_names]}"
+        f"Tried: {[CONFIGS_DIR / category / n / '*d_default.yaml' for n in possible_names]}"
     )
 
 
