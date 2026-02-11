@@ -12,10 +12,10 @@ init:
     a: 3.0
     b: 9.0
     noise: 0.2
-solver: euler
+solver: rk4
 backend: numba
 adaptive: false
-dt: 5.0e-05
+dt: 5.0e-04
 resolution: [128, 128]
 bc:
   x-: neumann:0
