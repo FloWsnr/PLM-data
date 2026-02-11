@@ -40,7 +40,7 @@ class TestFokkerPlanckPDE:
         grid = create_grid_for_dimension(ndim, resolution=16, periodic=False)
         bc = create_bc_for_dimension(ndim, periodic=False)
 
-        pde = preset.create_pde({"gamma": 1.0, "D": 1.0, "k": 1.0, "T": 1.0}, bc, grid)
+        pde = preset.create_pde({"gamma": 1.0, "D": 1.0, "x0": 0.0, "y0": 0.0}, bc, grid)
         state = preset.create_initial_state(grid, "random-uniform", {"low": 0.1, "high": 0.9})
 
         result = pde.solve(state, t_range=0.005, dt=0.001, solver="euler", tracker=None, backend="numpy")

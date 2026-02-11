@@ -81,8 +81,8 @@ class FokkerPlanckPDE(ScalarPDEPreset):
         Returns:
             Configured PDE instance.
         """
-        D = parameters.get("D", 0.1)
-        gamma = parameters.get("gamma", 0.5)
+        D = parameters["D"]
+        gamma = parameters["gamma"]
         x0_rel = parameters.get("x0", 0.0)
         y0_rel = parameters.get("y0", 0.0)
 
@@ -98,23 +98,35 @@ class FokkerPlanckPDE(ScalarPDEPreset):
         x0 = x_center + x0_rel * Lx / 2
         y0 = y_center + y0_rel * Ly / 2
 
-        # Fokker-Planck with harmonic potential drift:
-        # mu = -gamma * (x - x0, y - y0)
-        # dp/dt = -d/dx(mu_x * p) - d/dy(mu_y * p) + D * laplace(p)
-        #       = -d/dx(-gamma * (x - x0) * p) - d/dy(-gamma * (y - y0) * p) + D * laplace(p)
-        #       = gamma * d/dx((x - x0) * p) + gamma * d/dy((y - y0) * p) + D * laplace(p)
+        # Fokker-Planck with harmonic potential drift in conservative form:
+        # dp/dt = d_dx(gamma*(x-x0)*p) + d_dy(gamma*(y-y0)*p) + D*laplace(p)
         #
-        # Using product rule: d/dx((x - x0) * p) = p + (x - x0) * d_dx(p)
-        # Similarly for y.
-        #
-        # dp/dt = gamma * (p + (x - x0) * d_dx(p)) + gamma * (p + (y - y0) * d_dy(p)) + D * laplace(p)
-        #       = 2 * gamma * p + gamma * (x - x0) * d_dx(p) + gamma * (y - y0) * d_dy(p) + D * laplace(p)
+        # The conservative form preserves probability when paired with
+        # zero-flux Robin BCs: dp/dn + gamma*(x_boundary - x0)/D * p = 0.
+        # This ensures J·n = gamma*(x-x0)*p + D*dp/dx = 0 at boundaries.
+        x_min, x_max = x_bounds
+        y_min, y_max = y_bounds
+
+        pde_bc = [
+            [
+                {"type": "mixed", "value": -gamma * (x_min - x0) / D, "const": 0},
+                {"type": "mixed", "value": gamma * (x_max - x0) / D, "const": 0},
+            ],
+            [
+                {"type": "mixed", "value": -gamma * (y_min - y0) / D, "const": 0},
+                {"type": "mixed", "value": gamma * (y_max - y0) / D, "const": 0},
+            ],
+        ]
 
         return PDE(
             rhs={
-                "p": f"2 * {gamma} * p + {gamma} * (x - {x0}) * d_dx(p) + {gamma} * (y - {y0}) * d_dy(p) + {D} * laplace(p)"
+                "p": (
+                    f"d_dx({gamma} * (x - {x0}) * p)"
+                    f" + d_dy({gamma} * (y - {y0}) * p)"
+                    f" + {D} * laplace(p)"
+                )
             },
-            bc=self._convert_bc(bc),
+            bc=pde_bc,
         )
 
     def create_initial_state(
@@ -289,11 +301,11 @@ class FokkerPlanckPDE(ScalarPDEPreset):
         self, parameters: dict[str, float]
     ) -> dict[str, str]:
         """Get equations with parameter values substituted."""
-        D = parameters.get("D", 0.1)
-        gamma = parameters.get("gamma", 0.5)
+        D = parameters["D"]
+        gamma = parameters["gamma"]
         x0 = parameters.get("x0", 0.0)
         y0 = parameters.get("y0", 0.0)
 
         return {
-            "p": f"2 * {gamma} * p + {gamma} * (x - {x0}) * d_dx(p) + {gamma} * (y - {y0}) * d_dy(p) + {D} * laplace(p)",
+            "p": f"d_dx({gamma} * (x - {x0}) * p) + d_dy({gamma} * (y - {y0}) * p) + {D} * laplace(p)",
         }
