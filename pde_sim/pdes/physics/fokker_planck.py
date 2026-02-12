@@ -107,16 +107,12 @@ class FokkerPlanckPDE(ScalarPDEPreset):
         x_min, x_max = x_bounds
         y_min, y_max = y_bounds
 
-        pde_bc = [
-            [
-                {"type": "mixed", "value": -gamma * (x_min - x0) / D, "const": 0},
-                {"type": "mixed", "value": gamma * (x_max - x0) / D, "const": 0},
-            ],
-            [
-                {"type": "mixed", "value": -gamma * (y_min - y0) / D, "const": 0},
-                {"type": "mixed", "value": gamma * (y_max - y0) / D, "const": 0},
-            ],
-        ]
+        pde_bc = {
+            "x-": {"type": "mixed", "value": -gamma * (x_min - x0) / D, "const": 0},
+            "x+": {"type": "mixed", "value": gamma * (x_max - x0) / D, "const": 0},
+            "y-": {"type": "mixed", "value": -gamma * (y_min - y0) / D, "const": 0},
+            "y+": {"type": "mixed", "value": gamma * (y_max - y0) / D, "const": 0},
+        }
 
         return PDE(
             rhs={
