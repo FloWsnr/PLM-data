@@ -11,15 +11,24 @@ init:
     width: 0.03
     noise: 0.02
     positions: random
+    amplitude: 1.0
+    background: 0.0
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: euler
 backend: numpy
 adaptive: false
 dt: 0.02
 t_end: 500.0
-resolution: [500, 500]
+resolution:
+- 500
+- 500
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: [300, 300]
+domain_size:
+- 300
+- 300

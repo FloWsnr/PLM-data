@@ -10,16 +10,20 @@ init:
   params:
     low: 0.05
     high: 0.8
+    noise: 0.01
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.005
-resolution: [256]
+resolution:
+- 256
 bc:
   x-: neumann:0
   x+: neumann:0
-domain_size: [500.0]
+domain_size:
+- 500.0
 t_end: 100.0
 output:
   num_frames: 100
-  formats: [gif]
+  formats:
+  - gif

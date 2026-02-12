@@ -11,15 +11,21 @@ init:
     background: 0.0
     random_amplitude: true
     positions: random
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: rk4
 backend: numba
 adaptive: true
 dt: 0.005
-resolution: [256, 256]
+resolution:
+- 256
+- 256
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: periodic
   y+: periodic
-domain_size: [100.0, 100.0]
+domain_size:
+- 100.0
+- 100.0
 t_end: 30.0

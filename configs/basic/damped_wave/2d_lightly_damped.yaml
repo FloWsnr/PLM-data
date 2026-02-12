@@ -15,10 +15,20 @@ init:
     - 1.0
     seed: 111
     positions: random
+    amplitude: 1.0
+    width: 0.1
+    background: 0.0
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: euler
 dt: 0.002
-resolution: [200, 200]
-domain_size: [100.0, 100.0]
+resolution:
+- 200
+- 200
+domain_size:
+- 100.0
+- 100.0
 t_end: 80.0
 timesteps: 100
 bc:

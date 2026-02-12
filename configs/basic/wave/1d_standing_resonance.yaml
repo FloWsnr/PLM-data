@@ -8,16 +8,22 @@ init:
     kx: 3
     amplitude: 1.0
     phase_x: random
+    ky: 1
+    kz: 1
+    offset: 0.0
 solver: euler
 backend: numba
 adaptive: true
 dt: 0.002
-resolution: [128]
+resolution:
+- 128
 bc:
   x-: dirichlet:0
   x+: dirichlet:0
-domain_size: [50.0]
+domain_size:
+- 50.0
 t_end: 80.0
 timesteps: 100
 output:
-  formats: [gif]
+  formats:
+  - gif

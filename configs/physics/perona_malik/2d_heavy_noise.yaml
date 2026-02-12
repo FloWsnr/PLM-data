@@ -8,15 +8,20 @@ init:
     step1: 0.25
     step2: 0.75
     y_step: 0.5
+    sigma: 1.0
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.0002
-resolution: [500, 500]
+resolution:
+- 500
+- 500
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-domain_size: [100.0, 100.0]
+domain_size:
+- 100.0
+- 100.0
 t_end: 1.0

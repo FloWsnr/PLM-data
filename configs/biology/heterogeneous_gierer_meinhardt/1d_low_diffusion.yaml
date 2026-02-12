@@ -10,16 +10,21 @@ init:
   type: default
   params:
     noise: 0.05
+    u0: 1.0
+    v0: 1.0
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.0003
-resolution: [128]
+resolution:
+- 128
 bc:
   x-: periodic
   x+: periodic
-domain_size: [80.0]
+domain_size:
+- 80.0
 t_end: 120.0
 output:
   num_frames: 100
-  formats: [gif]
+  formats:
+  - gif

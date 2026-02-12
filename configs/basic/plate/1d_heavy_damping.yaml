@@ -12,16 +12,22 @@ init:
     amplitude: 2.0
     width: 0.04
     random_amplitude: true
+    background: 0.0
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: rk4
 backend: numpy
 adaptive: false
 dt: 0.0005
-resolution: [256]
+resolution:
+- 256
 bc:
   x-: neumann:0
   x+: neumann:0
-domain_size: [30.0]
+domain_size:
+- 30.0
 t_end: 20.0
 output:
-  formats: [gif]
+  formats:
+  - gif
   num_frames: 100

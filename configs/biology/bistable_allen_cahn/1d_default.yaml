@@ -9,13 +9,16 @@ init:
     value_low: 1.0
     value_high: 0.0
     smooth_width: 0.02
+    direction: x
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.005
-resolution: [256]
+resolution:
+- 256
 bc:
   x-: neumann:0
   x+: neumann:0
-domain_size: [30.0]
+domain_size:
+- 30.0
 t_end: 50.0

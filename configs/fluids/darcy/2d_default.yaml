@@ -11,15 +11,22 @@ init:
     background: 0.0
     seed: 202
     positions: random
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: rk4
 backend: numpy
 adaptive: false
 dt: 0.005
-resolution: [64, 64]
+resolution:
+- 64
+- 64
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-domain_size: [10.0, 10.0]
+domain_size:
+- 10.0
+- 10.0
 t_end: 5.0

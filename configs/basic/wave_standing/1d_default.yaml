@@ -7,10 +7,15 @@ init:
     kx: 4
     amplitude: 1.0
     phase_x: random
+    ky: 1
+    kz: 1
+    offset: 0.0
 solver: euler
 dt: 0.002
-resolution: [128]
-domain_size: [100.0]
+resolution:
+- 128
+domain_size:
+- 100.0
 t_end: 50.0
 timesteps: 200
 bc:

@@ -13,15 +13,20 @@ init:
     v0: 1.0
     noise: 0.05
     phase: 0.0
+    u0: 1.0
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.0003
-resolution: [128, 128]
+resolution:
+- 128
+- 128
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: [100.0, 100.0]
+domain_size:
+- 100.0
+- 100.0
 t_end: 100.0

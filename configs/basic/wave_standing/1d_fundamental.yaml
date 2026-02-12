@@ -7,15 +7,23 @@ init:
     num_blobs: 1
     amplitude: 1.0
     width: 0.1
-    positions: [0.5]
+    positions:
+    - 0.5
+    background: 0.0
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: euler
 dt: 0.002
-resolution: [128]
-domain_size: [100.0]
+resolution:
+- 128
+domain_size:
+- 100.0
 t_end: 80.0
 bc:
   x-: dirichlet:0
   x+: dirichlet:0
 output:
-  formats: [gif]
+  formats:
+  - gif
   num_frames: 100

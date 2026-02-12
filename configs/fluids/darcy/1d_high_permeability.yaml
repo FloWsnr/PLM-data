@@ -9,16 +9,20 @@ init:
     value_low: 3.0
     value_high: 0.0
     smooth_width: 0.15
+    direction: x
 solver: rk4
 backend: numpy
 adaptive: false
 dt: 0.0005
-resolution: [256]
+resolution:
+- 256
 bc:
   x-: dirichlet:3.0
   x+: dirichlet:0.0
-domain_size: [10.0]
+domain_size:
+- 10.0
 t_end: 0.5
 output:
-  formats: [gif]
+  formats:
+  - gif
   num_frames: 100

@@ -16,15 +16,20 @@ init:
     blob_amplitudes: random
     n_mean: 0.5
     n_std: 0.1
+    base_slope: 0.0
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.001
-resolution: [200, 200]
+resolution:
+- 200
+- 200
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-domain_size: [100.0, 100.0]
+domain_size:
+- 100.0
+- 100.0
 t_end: 50.0

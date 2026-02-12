@@ -13,25 +13,36 @@ init:
       type: gaussian-blob
       params:
         num_blobs: 1
-        positions: [0.25]
+        positions:
+        - 0.25
         amplitude: 15.0
         width: 0.04
         background: 0.5
+        random_amplitude: false
+        aspect_ratio: 1.0
+        random_aspect: false
     v:
       type: gaussian-blob
       params:
         num_blobs: 1
-        positions: [0.75]
+        positions:
+        - 0.75
         amplitude: 15.0
         width: 0.04
         background: 0.5
+        random_amplitude: false
+        aspect_ratio: 1.0
+        random_aspect: false
+    value: 1.0
 solver: rk4
 backend: numba
 adaptive: false
 dt: 0.005
-resolution: [256]
+resolution:
+- 256
 bc:
   x-: neumann:0
   x+: neumann:0
-domain_size: [200.0]
+domain_size:
+- 200.0
 t_end: 60.0

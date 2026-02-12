@@ -1,32 +1,30 @@
-# Fokker-Planck: high diffusion dominates over weak drift
-# Rapid spreading of probability density with minimal drift influence
 preset: fokker-planck
-
 parameters:
-  D: 0.5       # High diffusion — rapid spreading
-  gamma: 0.1   # Weak drift — barely pulls toward center
-  x0: 0.0      # Potential at domain center
+  D: 0.5
+  gamma: 0.1
+  x0: 0.0
   y0: 0.0
-
 init:
   type: default
   params:
-    sigma: 0.12           # Moderately narrow initial Gaussian
-    init_x_offset: 0.5    # Large offset from center in x
-    init_y_offset: -0.4   # Large offset from center in y
-
+    sigma: 0.12
+    init_x_offset: 0.5
+    init_y_offset: -0.4
+    amplitude: 1.0
 solver: rk4
 backend: numba
 adaptive: true
 dt: 0.002
-resolution: [128, 128]
+resolution:
+- 128
+- 128
 dimension: 2
-
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-
-domain_size: [10.0, 10.0]
+domain_size:
+- 10.0
+- 10.0
 t_end: 15.0

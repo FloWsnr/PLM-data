@@ -11,15 +11,23 @@ init:
     wavenumber: 6
     phase_x: 0.0
     phase_y: 0.0
+    kx: 1
+    ky: 1
+    kz: 1
+    offset: 0.0
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.001
-resolution: [128, 128]
+resolution:
+- 128
+- 128
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: periodic
   y+: periodic
-domain_size: [280.0, 280.0]
+domain_size:
+- 280.0
+- 280.0
 t_end: 150.0

@@ -13,10 +13,18 @@ init:
     width: 0.06
     seed: 888
     positions: random
+    background: 0.0
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: euler
 dt: 0.005
-resolution: [200, 200]
-domain_size: [100.0, 100.0]
+resolution:
+- 200
+- 200
+domain_size:
+- 100.0
+- 100.0
 t_end: 150.0
 timesteps: 100
 bc:

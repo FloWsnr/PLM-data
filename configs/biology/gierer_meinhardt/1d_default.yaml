@@ -13,13 +13,21 @@ init:
     amplitude: 0.1
     width: 0.1
     background: 1.0
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
+    noise: 0.01
+    u0: 1.0
+    v0: 1.0
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.0003
-resolution: [128]
+resolution:
+- 128
 bc:
   x-: periodic
   x+: periodic
-domain_size: [100.0]
+domain_size:
+- 100.0
 t_end: 100.0

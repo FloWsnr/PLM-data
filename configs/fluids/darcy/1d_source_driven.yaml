@@ -10,16 +10,22 @@ init:
     width: 0.08
     background: 0.5
     positions: random
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: rk4
 backend: numpy
 adaptive: false
 dt: 0.002
-resolution: [256]
+resolution:
+- 256
 bc:
   x-: neumann:0
   x+: neumann:0
-domain_size: [15.0]
+domain_size:
+- 15.0
 t_end: 2.0
 output:
-  formats: [gif]
+  formats:
+  - gif
   num_frames: 100

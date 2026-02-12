@@ -7,15 +7,23 @@ init:
   params:
     seed: 201
     position: random
+    direction: x
+    value_low: 0.0
+    value_high: 1.0
+    smooth_width: 0.0
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.005
-resolution: [128, 128]
+resolution:
+- 128
+- 128
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-domain_size: [100.0, 100.0]
+domain_size:
+- 100.0
+- 100.0
 t_end: 200.0

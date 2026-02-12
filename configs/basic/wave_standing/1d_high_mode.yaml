@@ -7,11 +7,17 @@ init:
     kx: 10
     amplitude: 0.5
     phase_x: random
+    ky: 1
+    kz: 1
+    offset: 0.0
 solver: euler
 dt: 0.002
-resolution: [256]
-domain_size: [100.0]
+resolution:
+- 256
+domain_size:
+- 100.0
 t_end: 50.0
 output:
-  formats: [gif]
+  formats:
+  - gif
   num_frames: 100

@@ -13,13 +13,18 @@ init:
     amplitude: 0.01
     width: 0.1
     background: 0.0
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: scipy
 backend: numba
 adaptive: true
 dt: 0.0005
-resolution: [128]
+resolution:
+- 128
 bc:
   x-: periodic
   x+: periodic
-domain_size: [100.0]
+domain_size:
+- 100.0
 t_end: 50.0

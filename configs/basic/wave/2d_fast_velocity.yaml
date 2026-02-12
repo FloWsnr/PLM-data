@@ -9,15 +9,20 @@ init:
     direction: x
     value_low: 0.0
     value_high: 1.0
+    smooth_width: 0.0
 solver: euler
 backend: numba
 adaptive: true
 dt: 0.001
-resolution: [200, 200]
+resolution:
+- 200
+- 200
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: dirichlet:0
   y+: dirichlet:0
-domain_size: [100.0, 100.0]
+domain_size:
+- 100.0
+- 100.0
 t_end: 30.0

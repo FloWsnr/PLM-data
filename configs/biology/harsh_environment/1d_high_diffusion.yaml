@@ -11,16 +11,22 @@ init:
     amplitude: 1.0
     width: 0.05
     background: 0.01
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.0005
-resolution: [256]
+resolution:
+- 256
 bc:
   x-: dirichlet:0
   x+: dirichlet:0
-domain_size: [10.0]
+domain_size:
+- 10.0
 t_end: 5.0
 output:
   num_frames: 100
-  formats: [gif]
+  formats:
+  - gif

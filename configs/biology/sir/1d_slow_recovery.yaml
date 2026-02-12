@@ -12,16 +12,20 @@ init:
     I0: 0.03
     seed_x: random
     seed_radius: 2.0
+    noise: 0.0
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.005
-resolution: [256]
+resolution:
+- 256
 bc:
   x-: periodic
   x+: periodic
-domain_size: [200.0]
+domain_size:
+- 200.0
 t_end: 400.0
 output:
-  formats: [gif]
+  formats:
+  - gif
   num_frames: 100

@@ -10,15 +10,24 @@ init:
     width: 0.05
     noise: 0.02
     positions: random
+    amplitude: 1.0
+    background: 0.0
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.2
 t_end: 6000.0
-resolution: [333, 333]
+resolution:
+- 333
+- 333
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: [1000, 1000]
+domain_size:
+- 1000
+- 1000

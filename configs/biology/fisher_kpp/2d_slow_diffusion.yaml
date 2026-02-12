@@ -11,15 +11,22 @@ init:
     width: 0.04
     background: 0.0
     positions: random
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.002
-resolution: [128, 128]
+resolution:
+- 128
+- 128
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-domain_size: [30.0, 30.0]
+domain_size:
+- 30.0
+- 30.0
 t_end: 20.0

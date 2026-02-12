@@ -9,15 +9,20 @@ init:
     position: 0.5
     value_low: 0.0
     value_high: 1.0
+    smooth_width: 0.0
 solver: rk4
 backend: numpy
 adaptive: false
 dt: 0.005
-resolution: [64, 64]
+resolution:
+- 64
+- 64
 bc:
   x-: dirichlet:0
   x+: dirichlet:0
   y-: neumann:0
   y+: neumann:0
-domain_size: [10.0, 10.0]
+domain_size:
+- 10.0
+- 10.0
 t_end: 5.0

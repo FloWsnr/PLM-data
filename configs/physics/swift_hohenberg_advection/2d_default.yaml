@@ -11,15 +11,21 @@ init:
   type: random-uniform
   params:
     amplitude: 0.1
+    low: 0.0
+    high: 1.0
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.0008
 t_end: 120.0
-resolution: [128, 128]
+resolution:
+- 128
+- 128
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: [120, 120]
+domain_size:
+- 120
+- 120

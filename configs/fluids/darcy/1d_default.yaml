@@ -6,14 +6,20 @@ init:
   type: rectangle-grid
   params:
     nx: 16
-    value_range: [0.0, 3.0]
+    value_range:
+    - 0.0
+    - 3.0
+    ny: 2
+    nz: 2
 solver: rk4
 backend: numpy
 adaptive: false
 dt: 0.002
-resolution: [128]
+resolution:
+- 128
 bc:
   x-: dirichlet:2.0
   x+: dirichlet:0.0
-domain_size: [10.0]
+domain_size:
+- 10.0
 t_end: 1.0

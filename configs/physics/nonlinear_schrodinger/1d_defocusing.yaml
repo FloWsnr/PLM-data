@@ -1,4 +1,3 @@
-# NLS - defocusing regime with dark soliton dynamics (1D)
 preset: nonlinear-schrodinger
 parameters:
   kappa: -1.0
@@ -9,16 +8,20 @@ init:
   params:
     amplitude: 1.0
     x0_frac: 0.5
+    c: 10.0
 solver: rk4
 backend: numba
 adaptive: false
-dt: 1.0e-03
+dt: 0.001
 t_end: 3.0
-resolution: [128]
+resolution:
+- 128
 bc:
   x-: periodic
   x+: periodic
-domain_size: [30]
+domain_size:
+- 30
 output:
-  formats: [gif]
+  formats:
+  - gif
   num_frames: 100

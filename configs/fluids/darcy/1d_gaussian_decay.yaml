@@ -10,14 +10,20 @@ init:
     width: 0.1
     background: 0.0
     seed: 301
-    positions: [0.5]
+    positions:
+    - 0.5
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: rk4
 backend: numpy
 adaptive: false
 dt: 0.002
-resolution: [128]
+resolution:
+- 128
 bc:
   x-: neumann:0
   x+: neumann:0
-domain_size: [10.0]
+domain_size:
+- 10.0
 t_end: 3.0

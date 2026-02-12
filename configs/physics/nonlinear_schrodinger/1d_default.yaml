@@ -8,13 +8,16 @@ init:
   params:
     amplitude: 1.0
     x0_frac: 0.333
+    c: 10.0
 solver: rk4
 backend: numba
 adaptive: false
-dt: 1.0e-03
+dt: 0.001
 t_end: 2.0
-resolution: [128]
+resolution:
+- 128
 bc:
   x-: periodic
   x+: periodic
-domain_size: [30]
+domain_size:
+- 30

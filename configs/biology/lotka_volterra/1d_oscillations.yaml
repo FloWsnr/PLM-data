@@ -13,13 +13,18 @@ init:
     frequency: 3
     offset: 5.0
     phase_x: 0.0
+    kx: 1
+    ky: 1
+    kz: 1
 solver: rk4
 backend: numba
 adaptive: false
 dt: 0.005
-resolution: [256]
+resolution:
+- 256
 bc:
   x-: neumann:0
   x+: neumann:0
-domain_size: [200.0]
+domain_size:
+- 200.0
 t_end: 50.0

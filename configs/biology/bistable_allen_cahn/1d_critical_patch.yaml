@@ -8,18 +8,25 @@ init:
     num_blobs: 1
     amplitude: 1.0
     width: 0.1
-    positions: [0.5]
+    positions:
+    - 0.5
     background: 0.0
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.005
-resolution: [256]
+resolution:
+- 256
 bc:
   x-: neumann:0
   x+: neumann:0
-domain_size: [20.0]
+domain_size:
+- 20.0
 t_end: 80.0
 output:
   num_frames: 100
-  formats: [gif]
+  formats:
+  - gif

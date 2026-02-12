@@ -13,16 +13,22 @@ init:
   params:
     amplitude: 1.0
     phase_x: 0.0
+    n: 10
+    m: 10
+    l: 10
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.001
 t_end: 30.0
-resolution: [128]
+resolution:
+- 128
 bc:
   x-: periodic
   x+: periodic
-domain_size: [100]
+domain_size:
+- 100
 output:
-  formats: [gif]
+  formats:
+  - gif
   num_frames: 100

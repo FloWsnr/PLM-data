@@ -13,15 +13,22 @@ init:
     center_x: 0.5
     center_y: 0.5
     positions: random
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: euler
 backend: numba
 adaptive: true
 dt: 0.002
-resolution: [200, 200]
+resolution:
+- 200
+- 200
 bc:
   x-: dirichlet:0
   x+: dirichlet:0
   y-: dirichlet:0
   y+: dirichlet:0
-domain_size: [100.0, 100.0]
+domain_size:
+- 100.0
+- 100.0
 t_end: 60.0

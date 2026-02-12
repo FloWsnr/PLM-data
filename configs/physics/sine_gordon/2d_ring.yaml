@@ -9,15 +9,20 @@ init:
     width: 2.0
     x_center: 25.0
     y_center: 25.0
+    velocity: 0.0
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.01
 t_end: 100.0
-resolution: [128, 128]
+resolution:
+- 128
+- 128
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: [50, 50]
+domain_size:
+- 50
+- 50

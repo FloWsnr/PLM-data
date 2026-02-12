@@ -11,15 +11,20 @@ init:
     offset: 1.0
     phase_x: 0.0
     phase_y: 0.0
+    kz: 1
 solver: rk4
 backend: numpy
 adaptive: false
-dt: 0.00005
-resolution: [128, 128]
+dt: 5.0e-05
+resolution:
+- 128
+- 128
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-domain_size: [10.0, 10.0]
+domain_size:
+- 10.0
+- 10.0
 t_end: 1.0

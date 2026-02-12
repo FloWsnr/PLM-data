@@ -10,16 +10,20 @@ init:
     value_low: 0.8
     value_high: 0.0
     smooth_width: 0.05
+    direction: x
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.0005
-resolution: [256]
+resolution:
+- 256
 bc:
   x-: dirichlet:0
   x+: dirichlet:0
-domain_size: [15.0]
+domain_size:
+- 15.0
 t_end: 10.0
 output:
   num_frames: 100
-  formats: [gif]
+  formats:
+  - gif

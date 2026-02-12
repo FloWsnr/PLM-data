@@ -13,15 +13,23 @@ init:
     offset: 0.4
     phase_x: random
     phase_y: random
+    kx: 1
+    ky: 1
+    kz: 1
+    noise: 0.01
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.005
-resolution: [128, 128]
+resolution:
+- 128
+- 128
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: [150.0, 150.0]
+domain_size:
+- 150.0
+- 150.0
 t_end: 60.0

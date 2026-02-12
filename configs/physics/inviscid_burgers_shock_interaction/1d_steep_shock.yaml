@@ -9,16 +9,20 @@ init:
     value_low: 3.0
     value_high: 0.0
     smooth_width: 0.01
+    direction: x
 solver: rk4
 backend: numba
 adaptive: true
 dt: 0.002
-resolution: [256]
-domain_size: [50.0]
+resolution:
+- 256
+domain_size:
+- 50.0
 t_end: 15.0
 bc:
   x-: neumann:0
   x+: neumann:0
 output:
-  formats: [gif]
+  formats:
+  - gif
   num_frames: 100

@@ -10,15 +10,21 @@ init:
     min: 0.3
     max: 0.7
     noise: 0.02
+    low: 0.0
+    high: 1.0
 solver: euler
 backend: numpy
 adaptive: false
 dt: 0.02
 t_end: 500.0
-resolution: [500, 500]
+resolution:
+- 500
+- 500
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: [300, 300]
+domain_size:
+- 300
+- 300

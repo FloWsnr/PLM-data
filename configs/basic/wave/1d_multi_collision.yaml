@@ -10,16 +10,22 @@ init:
     width: 0.05
     random_amplitude: true
     positions: random
+    background: 0.0
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: euler
 backend: numba
 adaptive: true
 dt: 0.002
-resolution: [256]
+resolution:
+- 256
 bc:
   x-: periodic
   x+: periodic
-domain_size: [100.0]
+domain_size:
+- 100.0
 t_end: 50.0
 timesteps: 100
 output:
-  formats: [gif]
+  formats:
+  - gif

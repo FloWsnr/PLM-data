@@ -12,12 +12,19 @@ init:
     width: 0.12
     background: 0.0
     positions: random
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: rk4
 backend: numba
 adaptive: true
 dt: 0.01
-resolution: [256, 256]
-domain_size: [60.0, 60.0]
+resolution:
+- 256
+- 256
+domain_size:
+- 60.0
+- 60.0
 t_end: 120.0
 bc:
   x-: neumann:0

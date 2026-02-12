@@ -14,15 +14,22 @@ init:
     amplitude: 1.0
     phase_x: 0.0
     phase_y: 0.0
+    n: 10
+    m: 10
+    l: 10
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.001
 t_end: 20.0
-resolution: [128, 128]
+resolution:
+- 128
+- 128
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: [100, 100]
+domain_size:
+- 100
+- 100

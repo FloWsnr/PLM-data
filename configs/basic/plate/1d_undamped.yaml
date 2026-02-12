@@ -10,16 +10,22 @@ init:
     kx: 4
     amplitude: 3.0
     phase_x: random
+    ky: 1
+    kz: 1
+    offset: 0.0
 solver: rk4
 backend: numpy
 adaptive: false
 dt: 0.001
-resolution: [128]
+resolution:
+- 128
 bc:
   x-: dirichlet:0
   x+: dirichlet:0
-domain_size: [20.0]
+domain_size:
+- 20.0
 t_end: 30.0
 output:
-  formats: [gif]
+  formats:
+  - gif
   num_frames: 100

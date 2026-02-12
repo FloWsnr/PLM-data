@@ -1,10 +1,10 @@
 preset: sir
 parameters:
-  beta: 0.6      # Moderate transmission rate (R0 = beta/gamma = 4)
-  gamma: 0.15    # Recovery rate
-  D_S: 0.5       # High uniform diffusion
-  D_I: 0.5       # High uniform diffusion
-  D_R: 0.5       # High uniform diffusion
+  beta: 0.6
+  gamma: 0.15
+  D_S: 0.5
+  D_I: 0.5
+  D_R: 0.5
 init:
   type: wave
   params:
@@ -13,15 +13,20 @@ init:
     seed_x: 50.0
     seed_y: 50.0
     seed_radius: 5.0
+    noise: 0.0
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.001
-resolution: [128, 128]
+resolution:
+- 128
+- 128
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-domain_size: [100.0, 100.0]
+domain_size:
+- 100.0
+- 100.0
 t_end: 150.0

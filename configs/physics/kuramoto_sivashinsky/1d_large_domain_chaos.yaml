@@ -7,16 +7,22 @@ init:
     kx: 10
     amplitude: 0.1
     phase_x: random
+    ky: 1
+    kz: 1
+    offset: 0.0
 solver: scipy
 backend: numba
 adaptive: true
 dt: 0.01
-resolution: [512]
+resolution:
+- 512
 bc:
   x-: periodic
   x+: periodic
-domain_size: [300]
+domain_size:
+- 300
 t_end: 300.0
 output:
-  formats: [gif]
+  formats:
+  - gif
   num_frames: 100

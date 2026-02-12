@@ -10,15 +10,20 @@ init:
   params:
     low: 0.2
     high: 0.6
+    noise: 0.01
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.005
-resolution: [128, 128]
+resolution:
+- 128
+- 128
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-domain_size: [200.0, 200.0]
+domain_size:
+- 200.0
+- 200.0
 t_end: 80.0

@@ -8,11 +8,18 @@ init:
   params:
     nx: 4
     ny: 4
-    value_range: [0.0, 1.0]
+    value_range:
+    - 0.0
+    - 1.0
+    nz: 2
 solver: euler
 dt: 0.005
-resolution: [200, 200]
-domain_size: [100.0, 100.0]
+resolution:
+- 200
+- 200
+domain_size:
+- 100.0
+- 100.0
 t_end: 50.0
 timesteps: 100
 bc:

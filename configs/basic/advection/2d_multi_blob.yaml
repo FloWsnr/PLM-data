@@ -7,19 +7,34 @@ init:
   type: gaussian-blob
   params:
     num_blobs: 4
-    positions: [[0.2, 0.2], [0.7, 0.3], [0.4, 0.7], [0.8, 0.8]]
+    positions:
+    - - 0.2
+      - 0.2
+    - - 0.7
+      - 0.3
+    - - 0.4
+      - 0.7
+    - - 0.8
+      - 0.8
     amplitude: 1.0
     width: 0.06
     background: 0.0
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: euler
 backend: numba
 adaptive: true
 dt: 0.002
-resolution: [256, 256]
+resolution:
+- 256
+- 256
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: [320.0, 320.0]
+domain_size:
+- 320.0
+- 320.0
 t_end: 60.0

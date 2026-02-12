@@ -9,15 +9,24 @@ init:
     num_blobs: 5
     width: 0.05
     positions: random
+    amplitude: 1.0
+    background: 0.0
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.5
 t_end: 5000.0
-resolution: [256, 256]
+resolution:
+- 256
+- 256
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: [1000, 1000]
+domain_size:
+- 1000
+- 1000

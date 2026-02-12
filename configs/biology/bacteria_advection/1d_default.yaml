@@ -12,13 +12,18 @@ init:
     background: 0.0
     positions: random
     random_amplitude: true
+    aspect_ratio: 1.0
+    random_aspect: false
+    c0: 0.77
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.005
-resolution: [256]
+resolution:
+- 256
 bc:
   x-: dirichlet:1.0
   x+: neumann:0
-domain_size: [200.0]
+domain_size:
+- 200.0
 t_end: 120.0

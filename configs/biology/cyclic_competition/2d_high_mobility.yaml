@@ -14,15 +14,26 @@ init:
     min_sigma: 10.0
     max_sigma: 25.0
     positions: random
+    amplitude: 1.0
+    width: 0.1
+    background: 0.0
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
+    noise: 0.01
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.002
-resolution: [128, 128]
+resolution:
+- 128
+- 128
 bc:
   x-: neumann:0
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
-domain_size: [300.0, 300.0]
+domain_size:
+- 300.0
+- 300.0
 t_end: 60.0

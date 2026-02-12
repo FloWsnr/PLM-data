@@ -10,15 +10,24 @@ init:
     radius: 2.0
     amplitude: 1.0
     positions: random
+    width: 0.1
+    background: 0.0
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.0001
-resolution: [128, 128]
+resolution:
+- 128
+- 128
 bc:
   x-: dirichlet:0
   x+: dirichlet:0
   y-: dirichlet:0
   y+: dirichlet:0
-domain_size: [10.0, 10.0]
+domain_size:
+- 10.0
+- 10.0
 t_end: 75.0

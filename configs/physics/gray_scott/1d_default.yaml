@@ -14,6 +14,10 @@ init:
         width: 0.08
         amplitude: 1.0
         positions: random
+        background: 0.0
+        random_amplitude: false
+        aspect_ratio: 1.0
+        random_aspect: false
     v:
       type: constant
       params:
@@ -23,8 +27,10 @@ backend: numba
 adaptive: false
 dt: 0.5
 t_end: 10000.0
-resolution: [512]
+resolution:
+- 512
 bc:
   x-: periodic
   x+: periodic
-domain_size: [1000]
+domain_size:
+- 1000

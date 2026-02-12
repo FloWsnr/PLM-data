@@ -9,15 +9,23 @@ parameters:
   a_z: -0.1
 init:
   type: default
+  params:
+    amplitude: 5.0
+    width: 0.1
+    noise: 0.0
 solver: euler
 backend: numba
 adaptive: false
 dt: 0.0005
-resolution: [192, 192]
+resolution:
+- 192
+- 192
 bc:
   x-: periodic
   x+: periodic
   y-: periodic
   y+: periodic
-domain_size: [300.0, 300.0]
+domain_size:
+- 300.0
+- 300.0
 t_end: 80.0
