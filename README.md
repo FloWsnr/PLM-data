@@ -64,6 +64,9 @@ python -m pde_sim run configs/physics/gray_scott/default.yaml --storage file
 
 ```bash
 python -m pde_sim batch configs/physics/gray_scott/ --log-file logs/gray_scott.log
+
+# Run in parallel across 6 processes
+python -m pde_sim batch configs/physics/gray_scott/ -np 6
 ```
 
 ### Run with Custom Output Directory

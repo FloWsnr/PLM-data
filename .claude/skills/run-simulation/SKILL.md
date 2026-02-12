@@ -13,10 +13,10 @@ Run a single PDE simulation by invoking the ``single_job.sh`` script with the re
 python -m pde_sim run configs/physics/gray_scott/default.yaml --log-file logs/physics/gray_scott.log --overwrite
 ```
 
-To run multiple parameter combinations of the same PDE in parallel, use the ``batch_job.sh`` script, specifying the configuration file and the number of parallel jobs, e.g.,
+To run multiple parameter combinations of the same PDE in parallel, use the ``batch`` command and the number of parallel jobs, e.g.,
 
 ```bash
-sbatch batch_job.sh <base_config.yaml> <parameters.csv> [log_file] [start_row]
+python -m pde_sim batch configs/physics/gray_scott/ -np 6
 ```
 
 In all cases, make sure you specify a log file to capture the output of the simulation. Use subdirs physics/biology/basic/fluids to sort the logs.

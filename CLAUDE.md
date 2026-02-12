@@ -42,6 +42,9 @@ uv run python -m pde_sim run config.yaml --storage file
 # Batch run all configs in a directory
 uv run python -m pde_sim batch configs/physics/gray_scott/ --log-file logs/gray_scott.log
 
+# Batch run with parallel execution (6 processes)
+uv run python -m pde_sim batch configs/physics/gray_scott/ -np 6
+
 # Generate HTML overview of all GIF simulations
 uv run python -m pde_sim overview output/
 uv run python -m pde_sim overview output/ --html output/custom_overview.html --title "My Sims"
