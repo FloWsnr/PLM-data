@@ -24,6 +24,7 @@ class SinePattern(InitialConditionGenerator):
         phase_y: float | None = None,
         phase_z: float | None = None,
         seed: int | None = None,
+        randomize: bool = False,
         **kwargs,
     ) -> ScalarField:
         """Generate sinusoidal pattern initial condition.
@@ -38,19 +39,29 @@ class SinePattern(InitialConditionGenerator):
             phase_x: Phase shift in x direction (in radians).
             phase_y: Phase shift in y direction (in radians).
             phase_z: Phase shift in z direction (in radians).
-            seed: Random seed for reproducibility (used during random resolution).
+            seed: Random seed for reproducibility.
+            randomize: If True, randomize phases.
             **kwargs: Additional arguments (ignored).
 
         Returns:
             ScalarField with sinusoidal pattern.
         """
         ndim = len(grid.shape)
-        if phase_x is None or phase_x == "random":
-            raise ValueError("sine phase_x must be provided (use phase_x: random in config)")
-        if ndim >= 2 and (phase_y is None or phase_y == "random"):
-            raise ValueError("sine phase_y must be provided (use phase_y: random in config)")
-        if ndim >= 3 and (phase_z is None or phase_z == "random"):
-            raise ValueError("sine phase_z must be provided (use phase_z: random in config)")
+
+        if randomize:
+            rng = np.random.default_rng(seed)
+            phase_x = rng.uniform(0, 2 * np.pi)
+            if ndim >= 2:
+                phase_y = rng.uniform(0, 2 * np.pi)
+            if ndim >= 3:
+                phase_z = rng.uniform(0, 2 * np.pi)
+
+        if phase_x is None:
+            raise ValueError("sine phase_x must be provided")
+        if ndim >= 2 and phase_y is None:
+            raise ValueError("sine phase_y must be provided")
+        if ndim >= 3 and phase_z is None:
+            raise ValueError("sine phase_z must be provided")
 
         # Get domain bounds for x
         x_bounds = grid.axes_bounds[0]
@@ -92,42 +103,6 @@ class SinePattern(InitialConditionGenerator):
 
         return ScalarField(grid, data)
 
-    @classmethod
-    def get_position_params(cls) -> set[str]:
-        """Return names of parameters that represent spatial phases."""
-        return {"phase_x", "phase_y", "phase_z"}
-
-    @classmethod
-    def resolve_random_params(
-        cls,
-        grid: CartesianGrid,
-        params: dict,
-    ) -> dict:
-        """Resolve random phases for sine pattern."""
-        resolved = params.copy()
-        ndim = len(grid.shape)
-        phase_keys = ["phase_x"]
-        if ndim >= 2:
-            phase_keys.append("phase_y")
-        if ndim >= 3:
-            phase_keys.append("phase_z")
-
-        for key in phase_keys:
-            if key not in resolved:
-                raise ValueError(f"sine requires {key} or {key}: random")
-
-        seed = resolved.get("seed")
-        rng = None
-        for key in phase_keys:
-            if resolved[key] == "random":
-                if rng is None:
-                    rng = np.random.default_rng(seed)
-                resolved[key] = rng.uniform(0, 2 * np.pi)
-            if resolved[key] is None:
-                raise ValueError(f"sine requires {key} or {key}: random")
-
-        return resolved
-
 
 class CosinePattern(InitialConditionGenerator):
     """Cosine pattern initial condition.
@@ -149,6 +124,7 @@ class CosinePattern(InitialConditionGenerator):
         phase_y: float | None = None,
         phase_z: float | None = None,
         seed: int | None = None,
+        randomize: bool = False,
         **kwargs,
     ) -> ScalarField:
         """Generate cosine pattern initial condition.
@@ -163,19 +139,29 @@ class CosinePattern(InitialConditionGenerator):
             phase_x: Phase shift in x direction (in radians).
             phase_y: Phase shift in y direction (in radians).
             phase_z: Phase shift in z direction (in radians).
-            seed: Random seed for reproducibility (used during random resolution).
+            seed: Random seed for reproducibility.
+            randomize: If True, randomize phases.
             **kwargs: Additional arguments (ignored).
 
         Returns:
             ScalarField with cosine pattern.
         """
         ndim = len(grid.shape)
-        if phase_x is None or phase_x == "random":
-            raise ValueError("cosine phase_x must be provided (use phase_x: random in config)")
-        if ndim >= 2 and (phase_y is None or phase_y == "random"):
-            raise ValueError("cosine phase_y must be provided (use phase_y: random in config)")
-        if ndim >= 3 and (phase_z is None or phase_z == "random"):
-            raise ValueError("cosine phase_z must be provided (use phase_z: random in config)")
+
+        if randomize:
+            rng = np.random.default_rng(seed)
+            phase_x = rng.uniform(0, 2 * np.pi)
+            if ndim >= 2:
+                phase_y = rng.uniform(0, 2 * np.pi)
+            if ndim >= 3:
+                phase_z = rng.uniform(0, 2 * np.pi)
+
+        if phase_x is None:
+            raise ValueError("cosine phase_x must be provided")
+        if ndim >= 2 and phase_y is None:
+            raise ValueError("cosine phase_y must be provided")
+        if ndim >= 3 and phase_z is None:
+            raise ValueError("cosine phase_z must be provided")
 
         # Get domain bounds for x
         x_bounds = grid.axes_bounds[0]
@@ -216,39 +202,3 @@ class CosinePattern(InitialConditionGenerator):
             )
 
         return ScalarField(grid, data)
-
-    @classmethod
-    def get_position_params(cls) -> set[str]:
-        """Return names of parameters that represent spatial phases."""
-        return {"phase_x", "phase_y", "phase_z"}
-
-    @classmethod
-    def resolve_random_params(
-        cls,
-        grid: CartesianGrid,
-        params: dict,
-    ) -> dict:
-        """Resolve random phases for cosine pattern."""
-        resolved = params.copy()
-        ndim = len(grid.shape)
-        phase_keys = ["phase_x"]
-        if ndim >= 2:
-            phase_keys.append("phase_y")
-        if ndim >= 3:
-            phase_keys.append("phase_z")
-
-        for key in phase_keys:
-            if key not in resolved:
-                raise ValueError(f"cosine requires {key} or {key}: random")
-
-        seed = resolved.get("seed")
-        rng = None
-        for key in phase_keys:
-            if resolved[key] == "random":
-                if rng is None:
-                    rng = np.random.default_rng(seed)
-                resolved[key] = rng.uniform(0, 2 * np.pi)
-            if resolved[key] is None:
-                raise ValueError(f"cosine requires {key} or {key}: random")
-
-        return resolved

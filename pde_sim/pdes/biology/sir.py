@@ -116,6 +116,7 @@ class SIRPDEPreset(MultiFieldPDEPreset):
         if ic_type not in ("default", "wave"):
             return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
+        randomize = kwargs.get("randomize", False)
         rng = np.random.default_rng(ic_params.get("seed"))
         noise = ic_params.get("noise", 0.0)
 
@@ -129,6 +130,13 @@ class SIRPDEPreset(MultiFieldPDEPreset):
 
         # Build coordinate arrays and compute distance from seed point
         seed_keys = ["seed_x", "seed_y", "seed_z"][:ndim]
+
+        if randomize:
+            dim_map = {"seed_x": 0, "seed_y": 1, "seed_z": 2}
+            for key in seed_keys:
+                bounds = grid.axes_bounds[dim_map[key]]
+                ic_params[key] = rng.uniform(bounds[0], bounds[1])
+
         coords_1d = []
         for dim in range(ndim):
             bounds = grid.axes_bounds[dim]
@@ -177,39 +185,3 @@ class SIRPDEPreset(MultiFieldPDEPreset):
 
         return FieldCollection([S, I, R])
 
-    def _seed_keys_for_grid(self, grid: CartesianGrid) -> list[str]:
-        """Return the required seed position keys for the grid dimensionality."""
-        ndim = len(grid.shape)
-        return ["seed_x", "seed_y", "seed_z"][:ndim]
-
-    def get_position_params(self, ic_type: str) -> set[str]:
-        if ic_type in ("default", "wave"):
-            # Return all possible seed keys; resolve_ic_params handles dimension filtering
-            return {"seed_x", "seed_y", "seed_z"}
-        return super().get_position_params(ic_type)
-
-    def resolve_ic_params(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-    ) -> dict[str, Any]:
-        if ic_type in ("default", "wave"):
-            resolved = ic_params.copy()
-            required = self._seed_keys_for_grid(grid)
-            for key in required:
-                if key not in resolved:
-                    raise ValueError(f"sir requires {', '.join(required)}")
-            needs_random = [k for k in required if resolved[k] == "random"]
-            if needs_random:
-                rng = np.random.default_rng(resolved.get("seed"))
-                dim_map = {"seed_x": 0, "seed_y": 1, "seed_z": 2}
-                for key in needs_random:
-                    bounds = grid.axes_bounds[dim_map[key]]
-                    resolved[key] = rng.uniform(bounds[0], bounds[1])
-            for key in required:
-                if resolved[key] is None or resolved[key] == "random":
-                    raise ValueError(f"sir requires {', '.join(required)}")
-            return resolved
-
-        return super().resolve_ic_params(grid, ic_type, ic_params)

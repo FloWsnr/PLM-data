@@ -4,8 +4,6 @@ from typing import Any
 
 from pde import PDE, CartesianGrid, ScalarField
 
-from pde_sim.initial_conditions import create_initial_condition
-
 from ..base import ScalarPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
 
@@ -86,4 +84,4 @@ class AdvectionRotationalPDE(ScalarPDEPreset):
         ic_params: dict[str, Any],
         **kwargs,
     ) -> ScalarField:
-        return create_initial_condition(grid, ic_type, ic_params)
+        return super().create_initial_state(grid, ic_type, ic_params, **kwargs)

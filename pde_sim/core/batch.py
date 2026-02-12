@@ -28,7 +28,7 @@ def _run_single(
     storage: str | None,
     keep_storage: bool | None,
     unique_suffix: bool | None,
-    randomize_positions: bool,
+    randomize: bool,
 ) -> dict:
     """Run a single simulation and return result info.
 
@@ -49,7 +49,7 @@ def _run_single(
         storage=storage,
         keep_storage=keep_storage,
         unique_suffix=unique_suffix,
-        randomize_positions=randomize_positions,
+        randomize=randomize,
     )
 
     return {
@@ -71,12 +71,48 @@ def _log_result(logger, index: int, total: int, result: dict) -> None:
     stagnant = diagnostics["stagnation"]["stagnant_fields"]
     nan_fields = diagnostics["nan_fields"]
     inf_fields = diagnostics["inf_fields"]
+    _log_variability(logger, diagnostics["stagnation"])
     if stagnant:
         logger.warning("  Stagnant fields: %s", ", ".join(stagnant))
     if nan_fields:
         logger.warning("  Fields with NaN: %s", ", ".join(nan_fields))
     if inf_fields:
         logger.warning("  Fields with Inf: %s", ", ".join(inf_fields))
+
+
+def _log_variability(logger, stagnation: dict) -> None:
+    """Log per-field variability diagnostics."""
+    fields = stagnation.get("fields", {})
+    if not fields:
+        return
+
+    threshold_pct = float(stagnation.get("variability_threshold_percent", 0.0))
+    logger.info("  Field variability (%% of range):")
+    for field_name in sorted(fields):
+        info = fields[field_name]
+        variability_pct = float(
+            info.get("variability_percent", info.get("max_relative_change", 0.0) * 100.0)
+        )
+        final_variability_pct = float(
+            info.get(
+                "final_variability_percent",
+                info.get("final_relative_change", 0.0) * 100.0,
+            )
+        )
+        logger.info(
+            "    %s: %.6g%% (final: %.6g%%, threshold: %.6g%%)",
+            field_name,
+            variability_pct,
+            final_variability_pct,
+            threshold_pct,
+        )
+        if (not info.get("stagnant", False)) and info.get("variability_below_threshold", False):
+            logger.warning(
+                "  Field '%s' final variability %.6g%% is below threshold %.6g%%",
+                field_name,
+                final_variability_pct,
+                threshold_pct,
+            )
 
 
 def run_batch(
@@ -93,7 +129,7 @@ def run_batch(
     unique_suffix: bool | None = False,
     overwrite: bool = False,
     continue_on_error: bool = True,
-    randomize_positions: bool = False,
+    randomize: bool = False,
     num_processes: int = 1,
 ) -> tuple[int, int]:
     """Run a batch of simulations from a directory of YAML configs."""
@@ -138,7 +174,7 @@ def run_batch(
         storage=storage,
         keep_storage=keep_storage,
         unique_suffix=unique_suffix,
-        randomize_positions=randomize_positions,
+        randomize=randomize,
     )
 
     if num_processes > 1:
@@ -198,6 +234,7 @@ def _run_sequential(
             stagnant = diagnostics["stagnation"]["stagnant_fields"]
             nan_fields = diagnostics["nan_fields"]
             inf_fields = diagnostics["inf_fields"]
+            _log_variability(logger, diagnostics["stagnation"])
             if stagnant:
                 logger.warning("Stagnant fields: %s", ", ".join(stagnant))
             if nan_fields:

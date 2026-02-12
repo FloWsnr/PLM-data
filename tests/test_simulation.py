@@ -8,6 +8,7 @@ import yaml
 
 from pde_sim.core.config import load_config
 from pde_sim.core.simulation import SimulationRunner, run_from_config
+from pde_sim.initial_conditions.blobs import GaussianBlob
 
 
 class TestSimulationRunner:
@@ -415,7 +416,7 @@ class TestMissingParameterValidation:
             "parameters": {"a": 0.037},  # Missing b and D parameters
             "init": {
                 "type": "gaussian-blob",
-                "params": {"num_blobs": 2, "positions": "random"},
+                "params": {"num_blobs": 2, "positions": [[0.3, 0.3], [0.7, 0.7]]},
             },
             "solver": "euler",
             "backend": "numpy",
@@ -438,11 +439,11 @@ class TestMissingParameterValidation:
             SimulationRunner(config, output_dir=tmp_path)
 
 
-class TestRandomizePositions:
-    """Tests for the --randomize-positions feature."""
+class TestRandomize:
+    """Tests for the --randomize feature."""
 
-    def test_randomize_positions_replaces_explicit_values(self, tmp_path):
-        """Test that randomize_positions replaces explicit IC positions with random ones."""
+    def test_randomize_replaces_explicit_values(self, tmp_path):
+        """Test that randomize replaces explicit IC positions with random ones."""
         config_dict = {
             "preset": "gray-scott",
             "parameters": {"a": 0.037, "b": 0.06, "D": 2.0},
@@ -459,7 +460,7 @@ class TestRandomizePositions:
             "output": {"path": str(tmp_path), "num_frames": 2, "formats": ["png"]},
             "seed": 42,
             "domain_size": [2.5, 2.5],
-            "randomize_positions": True,
+            "randomize": True,
         }
 
         config_path = tmp_path / "config.yaml"
@@ -467,7 +468,6 @@ class TestRandomizePositions:
             yaml.dump(config_dict, f)
 
         config = load_config(config_path)
-        config.randomize_positions = True
 
         runner = SimulationRunner(config, output_dir=tmp_path)
 
@@ -476,8 +476,8 @@ class TestRandomizePositions:
         metadata = runner.run(verbose=False)
         assert metadata["preset"] == "gray-scott"
 
-    def test_randomize_positions_different_seeds_produce_different_states(self, tmp_path):
-        """Test that different seeds with randomize_positions produce different IC states."""
+    def test_randomize_different_seeds_produce_different_states(self, tmp_path):
+        """Test that different seeds with randomize produce different IC states."""
         def make_runner(seed):
             config_dict = {
                 "preset": "gray-scott",
@@ -495,13 +495,13 @@ class TestRandomizePositions:
                 "output": {"path": str(tmp_path), "num_frames": 2, "formats": ["png"]},
                 "seed": seed,
                 "domain_size": [2.5, 2.5],
+                "randomize": True,
             }
             config_path = tmp_path / f"config_{seed}.yaml"
             with open(config_path, "w") as f:
                 yaml.dump(config_dict, f)
 
             config = load_config(config_path)
-            config.randomize_positions = True
             return SimulationRunner(config, output_dir=tmp_path, sim_id=f"test_{seed}")
 
         runner1 = make_runner(seed=1)
@@ -513,8 +513,8 @@ class TestRandomizePositions:
 
         assert not np.array_equal(state1, state2), "Different seeds should produce different states"
 
-    def test_randomize_positions_with_generic_ic(self, tmp_path):
-        """Test randomize_positions with a generic IC type (step)."""
+    def test_randomize_with_generic_ic(self, tmp_path):
+        """Test randomize with a generic IC type (step)."""
         config_dict = {
             "preset": "heat",
             "parameters": {"D_T": 0.01},
@@ -530,6 +530,7 @@ class TestRandomizePositions:
             "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
             "output": {"path": str(tmp_path), "num_frames": 2, "formats": ["png"]},
             "seed": 42,
+            "randomize": True,
         }
 
         config_path = tmp_path / "config.yaml"
@@ -537,14 +538,13 @@ class TestRandomizePositions:
             yaml.dump(config_dict, f)
 
         config = load_config(config_path)
-        config.randomize_positions = True
 
         runner = SimulationRunner(config, output_dir=tmp_path)
         metadata = runner.run(verbose=False)
         assert metadata["preset"] == "heat"
 
-    def test_randomize_positions_false_preserves_values(self, tmp_path):
-        """Test that randomize_positions=False preserves explicit IC positions."""
+    def test_randomize_false_preserves_values(self, tmp_path):
+        """Test that randomize=False preserves explicit IC positions."""
         config_dict = {
             "preset": "gray-scott",
             "parameters": {"a": 0.037, "b": 0.06, "D": 2.0},
@@ -582,32 +582,8 @@ class TestRandomizePositions:
         state2 = np.concatenate([f.data for f in runner2.state])
         np.testing.assert_array_equal(state1, state2)
 
-    def test_get_position_params_generic_ic(self):
-        """Test get_position_params for generic IC types."""
-        from pde_sim.initial_conditions import get_ic_position_params
-
-        assert get_ic_position_params("gaussian-blob") == {"positions"}
-        assert get_ic_position_params("step") == {"position"}
-        assert get_ic_position_params("double-step") == {"position1", "position2"}
-        assert get_ic_position_params("sine") == {"phase_x", "phase_y", "phase_z"}
-        assert get_ic_position_params("cosine") == {"phase_x", "phase_y", "phase_z"}
-        assert get_ic_position_params("random-uniform") == set()
-
-    def test_get_position_params_pde_specific_ic(self):
-        """Test get_position_params for PDE-specific IC types."""
-        from pde_sim.pdes import get_pde_preset
-
-        sgs = get_pde_preset("stochastic-gray-scott")
-        assert sgs.get_position_params("stochastic-gray-scott-default") == {"cx", "cy"}
-        kt = get_pde_preset("klausmeier-topography")
-        assert kt.get_position_params("custom") == {"blob_positions"}
-        # Generic IC type should delegate
-        assert sgs.get_position_params("gaussian-blob") == {"positions"}
-        # Unknown custom IC type should return empty
-        assert sgs.get_position_params("nonexistent") == set()
-
-    def test_run_from_config_randomize_positions(self, tmp_path):
-        """Test run_from_config with randomize_positions flag."""
+    def test_run_from_config_randomize(self, tmp_path):
+        """Test run_from_config with randomize flag."""
         config_dict = {
             "preset": "heat",
             "parameters": {"D_T": 0.01},
@@ -629,10 +605,10 @@ class TestRandomizePositions:
         with open(config_path, "w") as f:
             yaml.dump(config_dict, f)
 
-        metadata = run_from_config(config_path, verbose=False, randomize_positions=True)
+        metadata = run_from_config(config_path, verbose=False, randomize=True)
         assert metadata["preset"] == "heat"
 
-    def test_randomize_positions_uses_run_seed_over_ic_seed(self, tmp_path):
+    def test_randomize_uses_run_seed_over_ic_seed(self, tmp_path):
         """Randomized positions should follow run seed even if init.params has seed."""
 
         def make_runner(seed: int) -> SimulationRunner:
@@ -658,7 +634,7 @@ class TestRandomizePositions:
                 "output": {"path": str(tmp_path), "num_frames": 2, "formats": ["png"]},
                 "seed": seed,
                 "domain_size": [2.5, 2.5],
-                "randomize_positions": True,
+                "randomize": True,
             }
             config_path = tmp_path / f"config_seed_{seed}.yaml"
             with open(config_path, "w") as f:
@@ -672,7 +648,7 @@ class TestRandomizePositions:
         state2 = np.concatenate([f.data for f in runner2.state])
         assert not np.array_equal(state1, state2)
 
-    def test_randomize_positions_per_field_overrides(self, tmp_path):
+    def test_randomize_per_field_overrides(self, tmp_path):
         """Randomization should also affect per-field IC override params."""
 
         def make_runner(seed: int) -> SimulationRunner:
@@ -722,7 +698,7 @@ class TestRandomizePositions:
                 "output": {"path": str(tmp_path), "num_frames": 2, "formats": ["png"]},
                 "seed": seed,
                 "domain_size": [200.0],
-                "randomize_positions": True,
+                "randomize": True,
             }
             config_path = tmp_path / f"lotka_{seed}.yaml"
             with open(config_path, "w") as f:
@@ -736,44 +712,16 @@ class TestRandomizePositions:
         state2 = np.concatenate([f.data for f in runner2.state])
         assert not np.array_equal(state1, state2)
 
-    def test_randomize_positions_gaussian_blob_randomizes_num_blobs(self, tmp_path, monkeypatch):
-        """Randomizing positions for gaussian-blob should randomize num_blobs too."""
-        from pde_sim.initial_conditions.blobs import GaussianBlob
-
+    def test_randomize_gaussian_blob_randomizes_num_blobs(self, tmp_path, monkeypatch):
+        """Randomizing for gaussian-blob should randomize num_blobs too."""
         counts: list[int] = []
-        original = GaussianBlob.generate
+        original_2d = GaussianBlob._generate_2d
 
-        def capture_generate(
-            self,
-            grid,
-            num_blobs=1,
-            positions=None,
-            amplitude=1.0,
-            width=0.1,
-            background=0.0,
-            seed=None,
-            random_amplitude=False,
-            aspect_ratio=1.0,
-            random_aspect=False,
-            **kwargs,
-        ):
-            counts.append(int(num_blobs))
-            return original(
-                self,
-                grid,
-                num_blobs=num_blobs,
-                positions=positions,
-                amplitude=amplitude,
-                width=width,
-                background=background,
-                seed=seed,
-                random_amplitude=random_amplitude,
-                aspect_ratio=aspect_ratio,
-                random_aspect=random_aspect,
-                **kwargs,
-            )
+        def capture_2d(self, data, grid, rng, centers, *args, **kwargs):
+            counts.append(len(centers))
+            return original_2d(self, data, grid, rng, centers, *args, **kwargs)
 
-        monkeypatch.setattr(GaussianBlob, "generate", capture_generate)
+        monkeypatch.setattr(GaussianBlob, "_generate_2d", capture_2d)
 
         def make_runner(seed: int) -> SimulationRunner:
             config_dict = {
@@ -783,6 +731,7 @@ class TestRandomizePositions:
                     "type": "gaussian-blob",
                     "params": {
                         "num_blobs": 1,
+                        "num_blobs_max": 10,
                         "positions": [[0.5, 0.5]],
                         "amplitude": 1.0,
                         "width": 0.1,
@@ -796,7 +745,7 @@ class TestRandomizePositions:
                 "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
                 "output": {"path": str(tmp_path), "num_frames": 2, "formats": ["png"]},
                 "seed": seed,
-                "randomize_positions": True,
+                "randomize": True,
             }
             config_path = tmp_path / f"blob_count_{seed}.yaml"
             with open(config_path, "w") as f:

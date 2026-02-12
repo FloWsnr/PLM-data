@@ -5,8 +5,6 @@ from typing import Any
 import numpy as np
 from pde import PDE, CartesianGrid, ScalarField
 
-from pde_sim.initial_conditions import create_initial_condition
-
 from ..base import ScalarPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
 
@@ -90,4 +88,4 @@ class HarshEnvironmentPDE(ScalarPDEPreset):
             data = 0.1 * np.exp(-10000 * rand_field)
             return ScalarField(grid, data)
 
-        return create_initial_condition(grid, ic_type, ic_params)
+        return super().create_initial_state(grid, ic_type, ic_params, **kwargs)

@@ -5,8 +5,6 @@ from typing import Any
 import numpy as np
 from pde import PDE, CartesianGrid, ScalarField
 
-from pde_sim.initial_conditions import create_initial_condition
-
 from ..base import ScalarPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
 
@@ -137,6 +135,8 @@ class PeronaMalikPDE(ScalarPDEPreset):
 
         Default: step pattern with added noise (like noisy image with edges).
         """
+        randomize = kwargs.get("randomize", False)
+
         if ic_type in ("perona-malik-default", "default"):
             sigma = ic_params.get("sigma", 1.0)
             rng = np.random.default_rng(ic_params.get("seed"))
@@ -154,16 +154,17 @@ class PeronaMalikPDE(ScalarPDEPreset):
             X_norm = (X - x_bounds[0]) / Lx
             Y_norm = (Y - y_bounds[0]) / Ly
 
-            # Step positions (randomize if not specified)
+            # Step positions (randomize if flag is set)
+            if randomize:
+                ic_params["step1"] = rng.uniform(0.15, 0.4)
+                ic_params["step2"] = rng.uniform(0.6, 0.85)
+                ic_params["y_step"] = rng.uniform(0.3, 0.7)
+
             step1 = ic_params.get("step1")
             step2 = ic_params.get("step2")
             y_step = ic_params.get("y_step")
-            if (
-                step1 is None or step1 == "random"
-                or step2 is None or step2 == "random"
-                or y_step is None or y_step == "random"
-            ):
-                raise ValueError("perona-malik default requires step1, step2, y_step (or random)")
+            if step1 is None or step2 is None or y_step is None:
+                raise ValueError("perona-malik default requires step1, step2, y_step")
 
             # Step pattern with edges
             data = np.zeros(grid.shape)
@@ -193,10 +194,14 @@ class PeronaMalikPDE(ScalarPDEPreset):
             X, Y = np.meshgrid(x, y, indexing="ij")
 
             # Randomize phase for stripe pattern
+            if randomize:
+                ic_params["phase_x"] = rng.uniform(0, 2 * np.pi)
+                ic_params["phase_y"] = rng.uniform(0, 2 * np.pi)
+
             phase_x = ic_params.get("phase_x")
             phase_y = ic_params.get("phase_y")
-            if phase_x is None or phase_x == "random" or phase_y is None or phase_y == "random":
-                raise ValueError("perona-malik text-image requires phase_x and phase_y (or random)")
+            if phase_x is None or phase_y is None:
+                raise ValueError("perona-malik text-image requires phase_x and phase_y")
 
             # Create stripes and shapes
             data = np.sin(4 * np.pi * X / Lx + phase_x) * np.sin(4 * np.pi * Y / Ly + phase_y)
@@ -207,52 +212,7 @@ class PeronaMalikPDE(ScalarPDEPreset):
 
             return ScalarField(grid, data)
 
-        return create_initial_condition(grid, ic_type, ic_params)
-
-    def get_position_params(self, ic_type: str) -> set[str]:
-        if ic_type in ("perona-malik-default", "default"):
-            return {"step1", "step2", "y_step"}
-        if ic_type == "text-image":
-            return {"phase_x", "phase_y"}
-        return super().get_position_params(ic_type)
-
-    def resolve_ic_params(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-    ) -> dict[str, Any]:
-        if ic_type in ("perona-malik-default", "default"):
-            resolved = ic_params.copy()
-            required = ("step1", "step2", "y_step")
-            for key in required:
-                if key not in resolved:
-                    raise ValueError("perona-malik default requires step1, step2, y_step (or random)")
-            if any(resolved[key] == "random" for key in required):
-                rng = np.random.default_rng(resolved.get("seed"))
-                if resolved["step1"] == "random":
-                    resolved["step1"] = rng.uniform(0.15, 0.4)
-                if resolved["step2"] == "random":
-                    resolved["step2"] = rng.uniform(0.6, 0.85)
-                if resolved["y_step"] == "random":
-                    resolved["y_step"] = rng.uniform(0.3, 0.7)
-            if any(resolved[key] is None for key in required):
-                raise ValueError("perona-malik default requires step1, step2, y_step (or random)")
-            return resolved
-        if ic_type == "text-image":
-            resolved = ic_params.copy()
-            if "phase_x" not in resolved or "phase_y" not in resolved:
-                raise ValueError("perona-malik text-image requires phase_x and phase_y (or random)")
-            if resolved["phase_x"] == "random" or resolved["phase_y"] == "random":
-                rng = np.random.default_rng(resolved.get("seed"))
-                if resolved["phase_x"] == "random":
-                    resolved["phase_x"] = rng.uniform(0, 2 * np.pi)
-                if resolved["phase_y"] == "random":
-                    resolved["phase_y"] = rng.uniform(0, 2 * np.pi)
-            if resolved["phase_x"] is None or resolved["phase_y"] is None:
-                raise ValueError("perona-malik text-image requires phase_x and phase_y (or random)")
-            return resolved
-        return super().resolve_ic_params(grid, ic_type, ic_params)
+        return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

@@ -182,6 +182,8 @@ class SchrodingerPDE(MultiFieldPDEPreset):
 
         Default is an eigenstate sin(n*pi*x/L)*sin(m*pi*y/L).
         """
+        randomize = kwargs.get("randomize", False)
+
         if ic_type in ["eigenstate", "schrodinger-default"]:
             ndim = len(grid.shape)
             L = [grid.axes_bounds[i][1] - grid.axes_bounds[i][0] for i in range(ndim)]
@@ -247,10 +249,14 @@ class SchrodingerPDE(MultiFieldPDEPreset):
 
             # Position params: x0, y0, z0
             pos_keys = ["x0", "y0", "z0"][:ndim]
+            if randomize:
+                rng = np.random.default_rng(ic_params.get("seed"))
+                for key in pos_keys:
+                    ic_params[key] = rng.uniform(0.2, 0.8)
             for key in pos_keys:
                 val = ic_params.get(key)
-                if val is None or val == "random":
-                    raise ValueError(f"wave-packet requires {key} (or random)")
+                if val is None:
+                    raise ValueError(f"wave-packet requires {key}")
 
             sigma = ic_params.get("sigma", 0.1)
             k_keys = ["kx", "ky", "kz"][:ndim]
@@ -314,37 +320,7 @@ class SchrodingerPDE(MultiFieldPDEPreset):
             return FieldCollection([u, v])
 
         # Fall back to parent implementation for standard IC types
-        return super().create_initial_state(grid, ic_type, ic_params)
-
-    def get_position_params(self, ic_type: str) -> set[str]:
-        if ic_type == "wave-packet":
-            return {"x0", "y0", "z0"}
-        return super().get_position_params(ic_type)
-
-    def resolve_ic_params(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-    ) -> dict[str, Any]:
-        if ic_type == "wave-packet":
-            resolved = ic_params.copy()
-            ndim = len(grid.shape)
-            pos_keys = ["x0", "y0", "z0"][:ndim]
-            for key in pos_keys:
-                if key not in resolved:
-                    raise ValueError(f"wave-packet requires {key} (or random)")
-            rng_needed = any(resolved[key] == "random" for key in pos_keys)
-            if rng_needed:
-                rng = np.random.default_rng(resolved.get("seed"))
-                for key in pos_keys:
-                    if resolved[key] == "random":
-                        resolved[key] = rng.uniform(0.2, 0.8)
-            for key in pos_keys:
-                if resolved[key] is None:
-                    raise ValueError(f"wave-packet requires {key} (or random)")
-            return resolved
-        return super().resolve_ic_params(grid, ic_type, ic_params)
+        return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

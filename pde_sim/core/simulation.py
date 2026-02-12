@@ -19,6 +19,36 @@ from ..pdes import get_pde_preset
 VALID_BACKENDS = ("auto", "numpy", "numba")
 
 
+def _has_random_sentinel(params: dict) -> bool:
+    """Return True if any value in *params* (or nested dicts) equals ``"random"``."""
+    for value in params.values():
+        if value == "random":
+            return True
+        if isinstance(value, dict):
+            if _has_random_sentinel(value):
+                return True
+        if isinstance(value, list):
+            for item in value:
+                if item == "random":
+                    return True
+    return False
+
+
+def _strip_random_sentinels(params: dict) -> dict:
+    """Replace ``"random"`` sentinel values with ``None`` so IC generators use defaults."""
+    result = {}
+    for key, value in params.items():
+        if value == "random":
+            result[key] = None
+        elif isinstance(value, dict):
+            result[key] = _strip_random_sentinels(value)
+        elif isinstance(value, list):
+            result[key] = [None if item == "random" else item for item in value]
+        else:
+            result[key] = value
+    return result
+
+
 def _get_next_folder_name(
     base_path: Path,
     preset: str,
@@ -197,28 +227,37 @@ class SimulationRunner:
 
         # Create initial state
         # Pass parameters and bc for PDEs that need them (e.g., plate equation)
-        # Inject global seed into IC params for reproducibility (if not already specified)
         ic_params = config.init.params.copy()
         if config.seed is not None and "seed" not in ic_params:
             ic_params["seed"] = config.seed
-        # Replace explicit position values with "random" so resolve_ic_params
-        # will re-randomize them using the current seed.
-        if config.randomize_positions:
-            pos_params = self.preset.get_position_params(config.init.type)
-            for name in pos_params:
-                if name in ic_params:
-                    ic_params[name] = "random"
-        ic_params = self.preset.resolve_ic_params(
-            grid=self.grid,
-            ic_type=config.init.type,
-            ic_params=ic_params,
-        )
+
+        # Auto-enable randomize if any IC param value is "random" (backward compat)
+        if not config.randomize and _has_random_sentinel(ic_params):
+            config.randomize = True
+
+        # Strip "random" sentinel strings so IC generators receive None defaults
+        if config.randomize:
+            ic_params = _strip_random_sentinels(ic_params)
+
+        # When randomize is enabled, override seed in IC params with the run seed
+        # so different --seed values diversify layouts.
+        if config.randomize and config.seed is not None:
+            ic_params["seed"] = config.seed
+            # Also override seed in per-field IC params
+            for field_name in self.preset.metadata.field_names:
+                field_spec = ic_params.get(field_name)
+                if isinstance(field_spec, dict):
+                    field_params = field_spec.get("params")
+                    if isinstance(field_params, dict):
+                        field_params["seed"] = config.seed
+
         self.state = self.preset.create_initial_state(
             grid=self.grid,
             ic_type=config.init.type,
             ic_params=ic_params,
             parameters=params,
             bc=config.bc,
+            randomize=config.randomize,
         )
 
         # Determine field configurations for output
@@ -403,6 +442,7 @@ class SimulationRunner:
         stagnant_fields: list[str] = []
         fields_info: dict[str, dict[str, Any]] = {}
         min_stagnant_count = max(int(min_stagnant_fraction * actual_num_frames), 2)
+        threshold_percent = rel_threshold * 100.0
         for name in field_names:
             vmin, vmax = field_ranges[name]
             field_range = vmax - vmin
@@ -415,6 +455,9 @@ class SimulationRunner:
                     "field_range": 0.0,
                     "max_relative_change": 0.0,
                     "final_relative_change": 0.0,
+                    "variability_percent": 0.0,
+                    "final_variability_percent": 0.0,
+                    "variability_below_threshold": True,
                 }
                 continue
 
@@ -431,15 +474,35 @@ class SimulationRunner:
                 "field_range": field_range,
                 "max_relative_change": max_abs_diff[name] / field_range,
                 "final_relative_change": final_abs_diff[name] / field_range,
+                "variability_percent": (max_abs_diff[name] / field_range) * 100.0,
+                "final_variability_percent": (final_abs_diff[name] / field_range) * 100.0,
+                "variability_below_threshold": (final_abs_diff[name] / field_range) < rel_threshold,
             }
 
-        stagnation = {"stagnant_fields": stagnant_fields, "fields": fields_info}
+        stagnation = {
+            "stagnant_fields": stagnant_fields,
+            "relative_threshold": rel_threshold,
+            "variability_threshold_percent": threshold_percent,
+            "fields": fields_info,
+        }
 
         # Build numerical issues report
         nan_fields = [name for name in field_names if has_nan[name]]
         inf_fields = [name for name in field_names if has_inf[name]]
 
         if verbose:
+            for name in field_names:
+                info = fields_info[name]
+                print(
+                    f"  Health: Field '{name}' variability {info['variability_percent']:.6g}% "
+                    f"(final: {info['final_variability_percent']:.6g}%, threshold: {threshold_percent:.6g}%)"
+                )
+                if not info["stagnant"] and info["variability_below_threshold"]:
+                    print(
+                        f"  WARNING: Field '{name}' final variability "
+                        f"({info['final_variability_percent']:.6g}%) is below threshold "
+                        f"({threshold_percent:.6g}%)"
+                    )
             for name in stagnant_fields:
                 info = fields_info[name]
                 if info["field_range"] == 0:
@@ -514,7 +577,7 @@ def run_from_config(
     storage: str | None = None,
     keep_storage: bool | None = None,
     unique_suffix: bool | None = None,
-    randomize_positions: bool = False,
+    randomize: bool = False,
 ) -> dict[str, Any]:
     """Run a simulation from a config file.
 
@@ -527,7 +590,7 @@ def run_from_config(
         storage: Override for output.storage ("memory" or "file").
         keep_storage: Override for output.keep_storage.
         unique_suffix: Override for output.unique_suffix.
-        randomize_positions: If True, replace IC position values with "random".
+        randomize: If True, randomize IC position/phase parameters.
 
     Returns:
         Simulation metadata dictionary.
@@ -547,8 +610,8 @@ def run_from_config(
         config.output.keep_storage = keep_storage
     if unique_suffix is not None:
         config.output.unique_suffix = unique_suffix
-    if randomize_positions:
-        config.randomize_positions = True
+    if randomize:
+        config.randomize = True
 
     runner = SimulationRunner(
         config,

@@ -153,6 +153,7 @@ class PlatePDE(MultiFieldPDEPreset):
         ic_params: dict[str, Any],
         parameters: dict[str, float] | None = None,
         bc: dict[str, Any] | None = None,
+        **kwargs,
     ) -> FieldCollection:
         """Create initial state for plate equation.
 
@@ -162,12 +163,15 @@ class PlatePDE(MultiFieldPDEPreset):
             ic_params: Parameters for the initial condition.
             parameters: PDE parameters (needed to compute w = D * laplace(u)).
             bc: Boundary conditions (needed to compute laplacian).
+            **kwargs: Additional arguments. ``randomize`` is extracted and
+                passed to the IC generator.
 
         Returns:
             FieldCollection with u (displacement), v (velocity), and w (auxiliary) fields.
         """
+        randomize = kwargs.get("randomize", False)
         # u gets the specified initial condition
-        u = create_initial_condition(grid, ic_type, ic_params)
+        u = create_initial_condition(grid, ic_type, ic_params, randomize=randomize)
         u.label = "u"
 
         # v (velocity) starts at zero

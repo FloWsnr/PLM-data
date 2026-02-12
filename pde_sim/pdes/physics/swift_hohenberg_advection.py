@@ -5,8 +5,6 @@ from typing import Any
 import numpy as np
 from pde import PDE, CartesianGrid, ScalarField
 
-from pde_sim.initial_conditions import create_initial_condition
-
 from ..base import ScalarPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
 
@@ -119,6 +117,8 @@ class SwiftHohenbergAdvectionPDE(ScalarPDEPreset):
 
         Default: localised structure with specific symmetry.
         """
+        randomize = kwargs.get("randomize", False)
+
         if ic_type in ("swift-hohenberg-advection-default", "default"):
             amplitude = ic_params["amplitude"]
             P = ic_params["P"]  # Pattern symmetry: 1=D4, 2=D6, 3=D12
@@ -135,11 +135,15 @@ class SwiftHohenbergAdvectionPDE(ScalarPDEPreset):
             y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
             X, Y = np.meshgrid(x, y, indexing="ij")
 
-            # Pattern center (randomize if not specified)
+            # Pattern center (randomize if flag is set)
+            if randomize:
+                ic_params["cx"] = rng.uniform(0.2, 0.8)
+                ic_params["cy"] = rng.uniform(0.2, 0.8)
+
             cx = ic_params["cx"]
             cy = ic_params["cy"]
-            if cx is None or cx == "random" or cy is None or cy == "random":
-                raise ValueError("swift-hohenberg-advection requires cx and cy (or random)")
+            if cx is None or cy is None:
+                raise ValueError("swift-hohenberg-advection requires cx and cy")
             cx = x_bounds[0] + cx * Lx
             cy = y_bounds[0] + cy * Ly
             X_c = X - cx
@@ -164,33 +168,7 @@ class SwiftHohenbergAdvectionPDE(ScalarPDEPreset):
 
             return ScalarField(grid, data)
 
-        return create_initial_condition(grid, ic_type, ic_params)
-
-    def get_position_params(self, ic_type: str) -> set[str]:
-        if ic_type in ("swift-hohenberg-advection-default", "default"):
-            return {"cx", "cy"}
-        return super().get_position_params(ic_type)
-
-    def resolve_ic_params(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-    ) -> dict[str, Any]:
-        if ic_type in ("swift-hohenberg-advection-default", "default"):
-            resolved = ic_params.copy()
-            if "cx" not in resolved or "cy" not in resolved:
-                raise ValueError("swift-hohenberg-advection requires cx and cy (or random)")
-            if resolved["cx"] == "random" or resolved["cy"] == "random":
-                rng = np.random.default_rng(resolved.get("seed"))
-                if resolved["cx"] == "random":
-                    resolved["cx"] = rng.uniform(0.2, 0.8)
-                if resolved["cy"] == "random":
-                    resolved["cy"] = rng.uniform(0.2, 0.8)
-            if resolved["cx"] is None or resolved["cy"] is None:
-                raise ValueError("swift-hohenberg-advection requires cx and cy (or random)")
-            return resolved
-        return super().resolve_ic_params(grid, ic_type, ic_params)
+        return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

@@ -18,7 +18,7 @@ class MultiplicativeNoiseGrayScottPDE(SDEBase):
         dv/dt = D*laplace(v) - u^2*v + a*(1-v)
 
     where dW is spatiotemporal white noise and the noise term sigma*u*dW
-    is multiplicative (Itô interpretation).
+    is multiplicative (Ito interpretation).
 
     This class extends py-pde's SDEBase to properly implement multiplicative
     noise by overriding the noise_realization method.
@@ -278,20 +278,22 @@ class StochasticGrayScottPDE(MultiFieldPDEPreset):
         """
         # Check for per-field specifications
         if "u" in ic_params and isinstance(ic_params["u"], dict):
-            return super().create_initial_state(grid, ic_type, ic_params)
+            return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
         if ic_type in ("stochastic-gray-scott-default", "default"):
-            return self._default_stochastic_init(grid, ic_params)
+            return self._default_stochastic_init(grid, ic_params, **kwargs)
 
         # Fallback to parent implementation
-        return super().create_initial_state(grid, ic_type, ic_params)
+        return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
     def _default_stochastic_init(
         self,
         grid: CartesianGrid,
         params: dict[str, Any],
+        **kwargs,
     ) -> FieldCollection:
         """Create default initialization with small circular patch of u."""
+        randomize = kwargs.get("randomize", False)
         seed = params.get("seed")
         rng = np.random.default_rng(seed)
 
@@ -306,11 +308,15 @@ class StochasticGrayScottPDE(MultiFieldPDEPreset):
         y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
         X, Y = np.meshgrid(x, y, indexing="ij")
 
-        # Perturbation center (randomize if not specified)
+        # Perturbation center (randomize if flag is set)
+        if randomize:
+            params["cx"] = rng.uniform(0.2, 0.8)
+            params["cy"] = rng.uniform(0.2, 0.8)
+
         cx = params.get("cx")
         cy = params.get("cy")
-        if cx is None or cx == "random" or cy is None or cy == "random":
-            raise ValueError("stochastic-gray-scott default requires cx and cy (or random)")
+        if cx is None or cy is None:
+            raise ValueError("stochastic-gray-scott default requires cx and cy")
         cx = x_bounds[0] + cx * Lx
         cy = y_bounds[0] + cy * Ly
 
@@ -341,32 +347,6 @@ class StochasticGrayScottPDE(MultiFieldPDEPreset):
         v.label = "v"
 
         return FieldCollection([u, v])
-
-    def get_position_params(self, ic_type: str) -> set[str]:
-        if ic_type in ("stochastic-gray-scott-default", "default"):
-            return {"cx", "cy"}
-        return super().get_position_params(ic_type)
-
-    def resolve_ic_params(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-    ) -> dict[str, Any]:
-        if ic_type in ("stochastic-gray-scott-default", "default"):
-            resolved = ic_params.copy()
-            if "cx" not in resolved or "cy" not in resolved:
-                raise ValueError("stochastic-gray-scott default requires cx and cy (or random)")
-            if resolved["cx"] == "random" or resolved["cy"] == "random":
-                rng = np.random.default_rng(resolved.get("seed"))
-                if resolved["cx"] == "random":
-                    resolved["cx"] = rng.uniform(0.2, 0.8)
-                if resolved["cy"] == "random":
-                    resolved["cy"] = rng.uniform(0.2, 0.8)
-            if resolved["cx"] is None or resolved["cy"] is None:
-                raise ValueError("stochastic-gray-scott default requires cx and cy (or random)")
-            return resolved
-        return super().resolve_ic_params(grid, ic_type, ic_params)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

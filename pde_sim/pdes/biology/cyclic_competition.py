@@ -90,6 +90,9 @@ class CyclicCompetitionPDE(MultiFieldPDEPreset):
 
         Uses sech(r) = 1/cosh(r) profile matching Visual PDE reference.
         """
+        if ic_type not in ("default",):
+            return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
+
         rng = np.random.default_rng(ic_params.get("seed"))
         noise = ic_params.get("noise", 0.01)
 

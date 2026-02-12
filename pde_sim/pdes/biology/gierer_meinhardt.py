@@ -109,6 +109,8 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
 
         rng = np.random.default_rng(ic_params.get("seed"))
 
+        randomize = kwargs.get("randomize", False)
+
         if ic_type == "stripes":
             # Stripe initial condition for demonstrating stripe-to-spot instability
             # u(0) = amplitude * (1 + cos(n*pi*x/L)), v(0) = v0
@@ -124,10 +126,11 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
             shape[0] = grid.shape[0]
             X = x_1d.reshape(shape)
 
-            # Randomize stripe phase if not specified
             phase = ic_params.get("phase")
-            if phase is None or phase == "random":
-                raise ValueError("gierer-meinhardt stripes requires phase (or random)")
+            if randomize:
+                phase = rng.uniform(0, 2 * np.pi)
+            if phase is None:
+                raise ValueError("gierer-meinhardt stripes requires phase")
 
             # Create stripe pattern: amplitude * (1 + cos(n*pi*x/L + phase))
             u_data = amplitude * (1 + np.cos(n_stripes * np.pi * (X - x_bounds[0]) / Lx + phase))
@@ -153,26 +156,3 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
 
         return FieldCollection([u, v])
 
-    def get_position_params(self, ic_type: str) -> set[str]:
-        if ic_type in ("custom", "stripes"):
-            return {"phase"}
-        return super().get_position_params(ic_type)
-
-    def resolve_ic_params(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-    ) -> dict[str, Any]:
-        if ic_type in ("custom", "stripes"):
-            resolved = ic_params.copy()
-            if ic_type == "stripes":
-                if "phase" not in resolved:
-                    raise ValueError("gierer-meinhardt stripes requires phase (or random)")
-                if resolved["phase"] == "random":
-                    rng = np.random.default_rng(resolved.get("seed"))
-                    resolved["phase"] = rng.uniform(0, 2 * np.pi)
-                if resolved["phase"] is None:
-                    raise ValueError("gierer-meinhardt stripes requires phase (or random)")
-            return resolved
-        return super().resolve_ic_params(grid, ic_type, ic_params)

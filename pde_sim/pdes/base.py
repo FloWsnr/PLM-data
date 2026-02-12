@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 from pde import CartesianGrid, FieldCollection, PDE, ScalarField
 
 from pde_sim.boundaries import BoundaryConditionFactory
-from pde_sim.initial_conditions import create_initial_condition, get_ic_position_params, list_initial_conditions, resolve_initial_condition_params
+from pde_sim.initial_conditions import create_initial_condition
 
 
 @dataclass
@@ -94,6 +94,7 @@ class PDEPreset(ABC):
         grid: CartesianGrid,
         ic_type: str,
         ic_params: dict[str, Any],
+        **kwargs,
     ) -> ScalarField | FieldCollection:
         """Create the initial field state.
 
@@ -101,53 +102,12 @@ class PDEPreset(ABC):
             grid: The computational grid.
             ic_type: Type of initial condition.
             ic_params: Parameters for the initial condition.
+            **kwargs: Additional arguments including ``randomize``.
 
         Returns:
             Initial field state.
         """
         pass
-
-    def get_position_params(self, ic_type: str) -> set[str]:
-        """Return IC param names that are spatial positions for this IC type.
-
-        Subclasses should override this to declare position params for
-        PDE-specific IC types. For generic IC types, delegates to the
-        IC registry.
-
-        Args:
-            ic_type: Type of initial condition.
-
-        Returns:
-            Set of parameter names that represent spatial positions/phases.
-        """
-        if ic_type in list_initial_conditions():
-            return get_ic_position_params(ic_type)
-        return set()
-
-    def resolve_ic_params(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-    ) -> dict[str, Any]:
-        """Resolve any random placeholders in IC parameters.
-
-        Args:
-            grid: The computational grid.
-            ic_type: Type of initial condition.
-            ic_params: Parameters for the initial condition.
-
-        Returns:
-            Parameters with any random placeholders resolved.
-        """
-        if ic_type in list_initial_conditions():
-            return resolve_initial_condition_params(
-                grid=grid,
-                ic_type=ic_type,
-                ic_params=ic_params,
-                field_names=self.metadata.field_names,
-            )
-        return ic_params
 
     def validate_dimension(self, ndim: int) -> None:
         """Validate that the PDE supports the given number of dimensions.
@@ -263,12 +223,14 @@ class ScalarPDEPreset(PDEPreset):
             grid: The computational grid.
             ic_type: Type of initial condition.
             ic_params: Parameters for the initial condition.
-            **kwargs: Additional arguments (ignored for scalar PDEs).
+            **kwargs: Additional arguments. ``randomize`` is extracted and
+                passed to the IC generator.
 
         Returns:
             Initial scalar field.
         """
-        return create_initial_condition(grid, ic_type, ic_params)
+        randomize = kwargs.get("randomize", False)
+        return create_initial_condition(grid, ic_type, ic_params, randomize=randomize)
 
 
 @dataclass
@@ -299,7 +261,8 @@ class MultiFieldPDEPreset(PDEPreset):
             grid: The computational grid.
             ic_type: Default initial condition type.
             ic_params: Parameters which may include per-field overrides.
-            **kwargs: Additional arguments (parameters, bc) for specific PDEs.
+            **kwargs: Additional arguments. ``randomize`` is extracted and
+                passed to IC generators.
 
         Returns:
             Initial field collection.
@@ -308,6 +271,7 @@ class MultiFieldPDEPreset(PDEPreset):
             ic_params can specify per-field ICs using field names as keys.
             Example: {"u": {"type": "gaussian-blob", "params": {...}}}
         """
+        randomize = kwargs.get("randomize", False)
         fields = []
         field_names = self.metadata.field_names
 
@@ -317,10 +281,10 @@ class MultiFieldPDEPreset(PDEPreset):
                 field_ic = ic_params[name]
                 field_type = field_ic.get("type", ic_type)
                 field_params = field_ic.get("params", {})
-                ic = create_initial_condition(grid, field_type, field_params)
+                ic = create_initial_condition(grid, field_type, field_params, randomize=randomize)
             else:
                 # Use global IC type with global params
-                ic = create_initial_condition(grid, ic_type, ic_params)
+                ic = create_initial_condition(grid, ic_type, ic_params, randomize=randomize)
 
             # Set field label
             ic.label = name

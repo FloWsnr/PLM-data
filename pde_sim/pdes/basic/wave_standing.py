@@ -78,8 +78,9 @@ class StandingWavePDE(MultiFieldPDEPreset):
         **kwargs,
     ) -> FieldCollection:
         """Create initial state for standing wave equation."""
+        randomize = kwargs.get("randomize", False)
         # u gets the specified initial condition
-        u = create_initial_condition(grid, ic_type, ic_params)
+        u = create_initial_condition(grid, ic_type, ic_params, randomize=randomize)
         u.label = "u"
 
         # v (velocity) starts at zero by default

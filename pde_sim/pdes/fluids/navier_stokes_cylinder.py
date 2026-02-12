@@ -126,11 +126,17 @@ class NavierStokesCylinderPDE(MultiFieldPDEPreset):
         x_norm = (x - x_min) / L_x
         y_norm = (y - y_min) / L_y
 
+        randomize = kwargs.get("randomize", False)
+
         if ic_type in ("cylinder-flow", "default", "navier-stokes-cylinder-default"):
             cx = ic_params.get("cylinder_x")
             cy = ic_params.get("cylinder_y")
-            if cx is None or cx == "random" or cy is None or cy == "random":
-                raise ValueError("navier-stokes-cylinder requires cylinder_x and cylinder_y (or random)")
+            if randomize:
+                rng = np.random.default_rng(ic_params.get("seed"))
+                cx = rng.uniform(0.0, 1.0)
+                cy = rng.uniform(0.0, 1.0)
+            if cx is None or cy is None:
+                raise ValueError("navier-stokes-cylinder requires cylinder_x and cylinder_y")
             # Uniform inflow velocity everywhere (including inside cylinder)
             # The damping term -u*S will naturally bring velocity to zero inside
             u_data = np.full_like(x, U)
@@ -150,8 +156,16 @@ class NavierStokesCylinderPDE(MultiFieldPDEPreset):
         elif ic_type == "multi-cylinder":
             # Multiple cylinders for complex vortex interactions
             positions = ic_params.get("positions")
-            if positions is None or positions == "random":
-                raise ValueError("navier-stokes-cylinder multi-cylinder requires positions (or random)")
+            if randomize:
+                if "n_cylinders" not in ic_params:
+                    raise ValueError("navier-stokes-cylinder multi-cylinder random positions require n_cylinders")
+                rng = np.random.default_rng(ic_params.get("seed"))
+                positions = [
+                    [rng.uniform(0.0, 1.0), rng.uniform(0.0, 1.0)]
+                    for _ in range(int(ic_params["n_cylinders"]))
+                ]
+            if positions is None:
+                raise ValueError("navier-stokes-cylinder multi-cylinder requires positions")
             n_cylinders = int(ic_params.get("n_cylinders")) if "n_cylinders" in ic_params else len(positions)
             if n_cylinders > len(positions):
                 raise ValueError("navier-stokes-cylinder multi-cylinder positions length must match n_cylinders")
@@ -175,8 +189,12 @@ class NavierStokesCylinderPDE(MultiFieldPDEPreset):
             # Default to single cylinder
             cx = ic_params.get("cylinder_x")
             cy = ic_params.get("cylinder_y")
-            if cx is None or cx == "random" or cy is None or cy == "random":
-                raise ValueError("navier-stokes-cylinder requires cylinder_x and cylinder_y (or random)")
+            if randomize:
+                rng = np.random.default_rng(ic_params.get("seed"))
+                cx = rng.uniform(0.0, 1.0)
+                cy = rng.uniform(0.0, 1.0)
+            if cx is None or cy is None:
+                raise ValueError("navier-stokes-cylinder requires cylinder_x and cylinder_y")
             u_data = np.full_like(x, U)
             v_data = np.zeros_like(x)
             p_data = np.zeros_like(x)
@@ -199,48 +217,3 @@ class NavierStokesCylinderPDE(MultiFieldPDEPreset):
 
         return FieldCollection([u, v, p, S])
 
-    def get_position_params(self, ic_type: str) -> set[str]:
-        if ic_type in ("cylinder-flow", "default", "navier-stokes-cylinder-default"):
-            return {"cylinder_x", "cylinder_y"}
-        if ic_type == "multi-cylinder":
-            return {"positions"}
-        return super().get_position_params(ic_type)
-
-    def resolve_ic_params(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-    ) -> dict[str, Any]:
-        if ic_type in ("cylinder-flow", "default", "navier-stokes-cylinder-default"):
-            resolved = ic_params.copy()
-            required = ["cylinder_x", "cylinder_y"]
-            for key in required:
-                if key not in resolved:
-                    raise ValueError("navier-stokes-cylinder requires cylinder_x and cylinder_y (or random)")
-            if any(resolved[key] == "random" for key in required):
-                rng = np.random.default_rng(resolved.get("seed"))
-                for key in required:
-                    if resolved[key] == "random":
-                        resolved[key] = rng.uniform(0.0, 1.0)
-            if any(resolved[key] is None or resolved[key] == "random" for key in required):
-                raise ValueError("navier-stokes-cylinder requires cylinder_x and cylinder_y (or random)")
-            return resolved
-
-        if ic_type == "multi-cylinder":
-            resolved = ic_params.copy()
-            if "positions" not in resolved:
-                raise ValueError("navier-stokes-cylinder multi-cylinder requires positions (or random)")
-            if resolved["positions"] == "random":
-                if "n_cylinders" not in resolved:
-                    raise ValueError("navier-stokes-cylinder multi-cylinder random positions require n_cylinders")
-                rng = np.random.default_rng(resolved.get("seed"))
-                resolved["positions"] = [
-                    [rng.uniform(0.0, 1.0), rng.uniform(0.0, 1.0)]
-                    for _ in range(int(resolved["n_cylinders"]))
-                ]
-            if resolved["positions"] is None or resolved["positions"] == "random":
-                raise ValueError("navier-stokes-cylinder multi-cylinder requires positions (or random)")
-            return resolved
-
-        return super().resolve_ic_params(grid, ic_type, ic_params)

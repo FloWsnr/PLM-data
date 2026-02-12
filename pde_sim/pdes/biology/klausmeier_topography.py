@@ -106,6 +106,7 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
         if ic_type not in ("default", "custom"):
             return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
+        randomize = kwargs.get("randomize", False)
         rng = np.random.default_rng(ic_params.get("seed"))
 
         # Initial water: constant (similar to visual-pde initCond_2: "1")
@@ -153,6 +154,22 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
             blob_positions = ic_params["blob_positions"]
             blob_amplitudes = ic_params["blob_amplitudes"]
 
+            if randomize:
+                n_blobs = ic_params.get("n_blobs")
+                if n_blobs is None:
+                    if isinstance(blob_positions, list):
+                        n_blobs = len(blob_positions)
+                    elif isinstance(blob_amplitudes, list):
+                        n_blobs = len(blob_amplitudes)
+                    else:
+                        raise ValueError("klausmeier-topography gaussian_blobs random generation requires n_blobs")
+                n_blobs = int(n_blobs)
+                blob_positions = [
+                    [rng.uniform(0.1, 0.9) for _ in range(ndim)]
+                    for _ in range(n_blobs)
+                ]
+                blob_amplitudes = [rng.uniform(0.5, 1.0) for _ in range(n_blobs)]
+
             if len(blob_positions) != len(blob_amplitudes):
                 raise ValueError("klausmeier-topography gaussian_blobs requires matching blob_positions and blob_amplitudes lengths")
 
@@ -174,6 +191,17 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
         elif topo_type == "random":
             modes = ic_params["modes"]
             dim_names = ["x", "y", "z"][:ndim]
+
+            if randomize:
+                if "n_modes" not in ic_params:
+                    raise ValueError("klausmeier-topography random generation requires n_modes")
+                modes = []
+                for _ in range(ic_params["n_modes"]):
+                    mode = {"amp": rng.uniform(0.5, 1.0)}
+                    for d in dim_names:
+                        mode[f"k{d}"] = rng.uniform(1, 4)
+                        mode[f"phase_{d}"] = rng.uniform(0, 2 * np.pi)
+                    modes.append(mode)
             T_data = np.zeros(grid.shape)
             for mode in modes:
                 term = mode["amp"]
@@ -199,63 +227,3 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
 
         return FieldCollection([n, w, T])
 
-    def get_position_params(self, ic_type: str) -> set[str]:
-        if ic_type == "gaussian_blobs":
-            return {"blob_positions"}
-        return super().get_position_params(ic_type)
-
-    def resolve_ic_params(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-    ) -> dict[str, Any]:
-        if ic_type not in ("default", "custom"):
-            return super().resolve_ic_params(grid, ic_type, ic_params)
-
-        resolved = ic_params.copy()
-        if "topography" not in resolved:
-            return resolved
-
-        topo_type = resolved["topography"]
-        ndim = len(grid.shape)
-        dim_names = ["x", "y", "z"][:ndim]
-
-        if topo_type == "gaussian_blobs":
-            if "blob_positions" not in resolved or "blob_amplitudes" not in resolved:
-                raise ValueError("klausmeier-topography gaussian_blobs requires blob_positions and blob_amplitudes (or random)")
-            if resolved["blob_positions"] == "random" or resolved["blob_amplitudes"] == "random":
-                if "n_blobs" not in resolved:
-                    raise ValueError("klausmeier-topography gaussian_blobs random generation requires n_blobs")
-                rng = np.random.default_rng(resolved.get("seed"))
-                blob_positions = [
-                    [rng.uniform(0.1, 0.9) for _ in range(ndim)]
-                    for _ in range(resolved["n_blobs"])
-                ]
-                blob_amplitudes = [rng.uniform(0.5, 1.0) for _ in range(resolved["n_blobs"])]
-                resolved["blob_positions"] = blob_positions
-                resolved["blob_amplitudes"] = blob_amplitudes
-            if resolved["blob_positions"] is None or resolved["blob_amplitudes"] is None:
-                raise ValueError("klausmeier-topography gaussian_blobs requires blob_positions and blob_amplitudes (or random)")
-            return resolved
-
-        if topo_type == "random":
-            if "modes" not in resolved:
-                raise ValueError("klausmeier-topography random requires modes (or random)")
-            if resolved["modes"] == "random":
-                if "n_modes" not in resolved:
-                    raise ValueError("klausmeier-topography random generation requires n_modes")
-                rng = np.random.default_rng(resolved.get("seed"))
-                modes = []
-                for _ in range(resolved["n_modes"]):
-                    mode = {"amp": rng.uniform(0.5, 1.0)}
-                    for d in dim_names:
-                        mode[f"k{d}"] = rng.uniform(1, 4)
-                        mode[f"phase_{d}"] = rng.uniform(0, 2 * np.pi)
-                    modes.append(mode)
-                resolved["modes"] = modes
-            if resolved["modes"] is None:
-                raise ValueError("klausmeier-topography random requires modes (or random)")
-            return resolved
-
-        return resolved

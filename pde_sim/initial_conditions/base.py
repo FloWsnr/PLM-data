@@ -18,31 +18,10 @@ class InitialConditionGenerator(ABC):
 
         Args:
             grid: The computational grid.
-            **params: Generator-specific parameters.
+            **params: Generator-specific parameters. May include
+                ``randomize=True`` to request position randomization.
 
         Returns:
             A ScalarField with the initial values.
         """
         pass
-
-    @classmethod
-    def get_position_params(cls) -> set[str]:
-        """Return names of parameters that represent spatial positions/phases."""
-        return set()
-
-    @classmethod
-    def resolve_random_params(
-        cls,
-        grid: CartesianGrid,
-        params: dict,
-    ) -> dict:
-        """Resolve any "random" placeholders in parameters.
-
-        Args:
-            grid: The computational grid.
-            params: Generator-specific parameters.
-
-        Returns:
-            Parameters with any random placeholders resolved.
-        """
-        return params

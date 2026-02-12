@@ -5,8 +5,6 @@ from typing import Any
 import numpy as np
 from pde import PDE, CartesianGrid, ScalarField
 
-from pde_sim.initial_conditions import create_initial_condition
-
 from ..base import ScalarPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
 
@@ -136,6 +134,8 @@ class FokkerPlanckPDE(ScalarPDEPreset):
 
         Default: Gaussian probability distribution offset from potential center.
         """
+        randomize = kwargs.get("randomize", False)
+
         if ic_type in ("fokker-planck-default", "default"):
             seed = ic_params.get("seed")
             if seed is not None:
@@ -144,14 +144,17 @@ class FokkerPlanckPDE(ScalarPDEPreset):
             # Parameters for initial Gaussian
             amplitude = ic_params.get("amplitude", 1.0)
             sigma = ic_params.get("sigma", 0.15)  # Width relative to domain
+
             # Initial center offset (relative to domain center)
+            if randomize:
+                rng = np.random.default_rng(ic_params.get("seed"))
+                ic_params["init_x_offset"] = rng.uniform(-0.5, 0.5)
+                ic_params["init_y_offset"] = rng.uniform(-0.5, 0.5)
+
             init_x_offset = ic_params.get("init_x_offset")
             init_y_offset = ic_params.get("init_y_offset")
-            if (
-                init_x_offset is None or init_x_offset == "random"
-                or init_y_offset is None or init_y_offset == "random"
-            ):
-                raise ValueError("fokker-planck default requires init_x_offset and init_y_offset (or random)")
+            if init_x_offset is None or init_y_offset is None:
+                raise ValueError("fokker-planck default requires init_x_offset and init_y_offset")
 
             # Get domain info
             x_bounds = grid.axes_bounds[0]
@@ -262,36 +265,7 @@ class FokkerPlanckPDE(ScalarPDEPreset):
 
             return ScalarField(grid, data)
 
-        return create_initial_condition(grid, ic_type, ic_params)
-
-    def get_position_params(self, ic_type: str) -> set[str]:
-        if ic_type in ("fokker-planck-default", "default"):
-            return {"init_x_offset", "init_y_offset"}
-        return super().get_position_params(ic_type)
-
-    def resolve_ic_params(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-    ) -> dict[str, Any]:
-        if ic_type in ("fokker-planck-default", "default"):
-            resolved = ic_params.copy()
-            required = ["init_x_offset", "init_y_offset"]
-            for key in required:
-                if key not in resolved:
-                    raise ValueError("fokker-planck default requires init_x_offset and init_y_offset (or random)")
-            if any(resolved[key] == "random" for key in required):
-                rng = np.random.default_rng(resolved.get("seed"))
-                if resolved["init_x_offset"] == "random":
-                    resolved["init_x_offset"] = rng.uniform(-0.5, 0.5)
-                if resolved["init_y_offset"] == "random":
-                    resolved["init_y_offset"] = rng.uniform(-0.5, 0.5)
-            if any(resolved[key] is None or resolved[key] == "random" for key in required):
-                raise ValueError("fokker-planck default requires init_x_offset and init_y_offset (or random)")
-            return resolved
-
-        return super().resolve_ic_params(grid, ic_type, ic_params)
+        return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

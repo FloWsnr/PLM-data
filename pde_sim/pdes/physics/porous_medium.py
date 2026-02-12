@@ -90,7 +90,8 @@ class PorousMediumPDE(ScalarPDEPreset):
             return ScalarField(grid, data)
 
         # For generic ICs, clip to non-negative
-        field = create_initial_condition(grid, ic_type, ic_params)
+        randomize = kwargs.get("randomize", False)
+        field = create_initial_condition(grid, ic_type, ic_params, randomize=randomize)
         field.data = np.maximum(field.data, 0.0)
         return field
 

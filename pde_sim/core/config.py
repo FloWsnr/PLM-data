@@ -140,7 +140,7 @@ class SimulationConfig:
     backend: str = "auto"  # Options: "auto", "numpy", "numba"
     adaptive: bool = True  # Enable adaptive time-stepping
     tolerance: float = 1e-4  # Error tolerance for adaptive stepping
-    randomize_positions: bool = False  # Replace IC position values with "random"
+    randomize: bool = False  # Randomize IC position/phase parameters
 
     @property
     def ndim(self) -> int:
@@ -316,6 +316,7 @@ def load_config(path: Path | str) -> SimulationConfig:
         backend=raw.get("backend", "numba"),
         adaptive=raw.get("adaptive", True),
         tolerance=raw.get("tolerance", 1e-4),
+        randomize=bool(raw.get("randomize", False)),
     )
 
 
@@ -376,4 +377,5 @@ def config_to_dict(config: SimulationConfig) -> dict[str, Any]:
         "backend": config.backend,
         "adaptive": config.adaptive,
         "tolerance": config.tolerance,
+        "randomize": config.randomize,
     }

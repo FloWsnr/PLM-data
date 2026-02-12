@@ -189,13 +189,19 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
         x_norm = (x - x_min) / L_x
         y_norm = (y - y_min) / L_y
 
+        randomize = kwargs.get("randomize", False)
+
         if ic_type in ("compressible-navier-stokes-default", "default", "acoustic-pulse"):
             # Gaussian pressure perturbation on uniform background
             amplitude = ic_params.get("amplitude", 0.1)
             x0 = ic_params.get("x0")
             y0 = ic_params.get("y0")
-            if x0 is None or x0 == "random" or y0 is None or y0 == "random":
-                raise ValueError("acoustic-pulse requires x0 and y0 (or random)")
+            if randomize:
+                rng = np.random.default_rng(ic_params.get("seed"))
+                x0 = rng.uniform(0.3, 0.7)
+                y0 = rng.uniform(0.3, 0.7)
+            if x0 is None or y0 is None:
+                raise ValueError("acoustic-pulse requires x0 and y0")
             width = ic_params.get("width", 0.05)
             rho_0 = ic_params.get("rho_0", 1.0)
             p_0 = ic_params.get("p_0", 1.0)
@@ -211,8 +217,11 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
         elif ic_type == "kelvin-helmholtz":
             # Compressible shear layer with density stratification
             shear_y = ic_params.get("shear_y")
-            if shear_y is None or shear_y == "random":
-                raise ValueError("kelvin-helmholtz requires shear_y (or random)")
+            if randomize:
+                rng = np.random.default_rng(ic_params.get("seed"))
+                shear_y = rng.uniform(0.35, 0.65)
+            if shear_y is None:
+                raise ValueError("kelvin-helmholtz requires shear_y")
             shear_width = ic_params.get("shear_width", 0.05)
             velocity_amplitude = ic_params.get("velocity_amplitude", 0.5)
             density_ratio = ic_params.get("density_ratio", 2.0)
@@ -234,8 +243,12 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
             amplitude = ic_params.get("amplitude", 0.5)
             x0 = ic_params.get("x0")
             y0 = ic_params.get("y0")
-            if x0 is None or x0 == "random" or y0 is None or y0 == "random":
-                raise ValueError("density-blob requires x0 and y0 (or random)")
+            if randomize:
+                rng = np.random.default_rng(ic_params.get("seed"))
+                x0 = rng.uniform(0.3, 0.7)
+                y0 = rng.uniform(0.3, 0.7)
+            if x0 is None or y0 is None:
+                raise ValueError("density-blob requires x0 and y0")
             width = ic_params.get("width", 0.08)
             rho_0 = ic_params.get("rho_0", 1.0)
             p_0 = ic_params.get("p_0", 1.0)
@@ -255,6 +268,9 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
             # Interface orientation: vertical (along x) or horizontal (along y)
             orientation = ic_params["orientation"]
             interface_pos = ic_params["interface_pos"]
+            if randomize:
+                rng = np.random.default_rng(ic_params.get("seed"))
+                interface_pos = rng.uniform(0.35, 0.65)
             rho_left = ic_params["rho_left"]
             rho_right = ic_params["rho_right"]
             p_left = ic_params["p_left"]
@@ -281,6 +297,9 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
         elif ic_type == "colliding-jets":
             # Two converging streams that collide at a horizontal stagnation line
             jet_y = ic_params["jet_y"]
+            if randomize:
+                rng = np.random.default_rng(ic_params.get("seed"))
+                jet_y = rng.uniform(0.35, 0.65)
             jet_width = ic_params["jet_width"]
             jet_velocity = ic_params["jet_velocity"]
             rho_0 = ic_params.get("rho_0", 1.0)
@@ -296,7 +315,7 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
 
         else:
             # Fallback: use standard IC generator for rho, zeros for velocity, uniform pressure
-            rho_field = create_initial_condition(grid, ic_type, ic_params)
+            rho_field = create_initial_condition(grid, ic_type, ic_params, randomize=randomize)
             rho_data = rho_field.data
             u_data = np.zeros_like(rho_data)
             v_data = np.zeros_like(rho_data)
@@ -313,69 +332,3 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
 
         return FieldCollection([rho, u, v, p])
 
-    def get_position_params(self, ic_type: str) -> set[str]:
-        if ic_type in ("compressible-navier-stokes-default", "default", "acoustic-pulse"):
-            return {"x0", "y0"}
-        if ic_type == "kelvin-helmholtz":
-            return {"shear_y"}
-        if ic_type == "density-blob":
-            return {"x0", "y0"}
-        if ic_type == "shock-tube":
-            return {"interface_pos"}
-        if ic_type == "colliding-jets":
-            return {"jet_y"}
-        return super().get_position_params(ic_type)
-
-    def resolve_ic_params(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-    ) -> dict[str, Any]:
-        resolved = ic_params.copy()
-        if ic_type in ("compressible-navier-stokes-default", "default", "acoustic-pulse"):
-            if "x0" not in resolved or "y0" not in resolved:
-                raise ValueError("acoustic-pulse requires x0 and y0 (or random)")
-            rng = np.random.default_rng(resolved.get("seed"))
-            if resolved["x0"] == "random":
-                resolved["x0"] = rng.uniform(0.3, 0.7)
-            if resolved["y0"] == "random":
-                resolved["y0"] = rng.uniform(0.3, 0.7)
-            if resolved["x0"] is None or resolved["y0"] is None:
-                raise ValueError("acoustic-pulse requires x0 and y0 (or random)")
-            return resolved
-        if ic_type == "kelvin-helmholtz":
-            if "shear_y" not in resolved:
-                raise ValueError("kelvin-helmholtz requires shear_y (or random)")
-            if resolved["shear_y"] == "random":
-                rng = np.random.default_rng(resolved.get("seed"))
-                resolved["shear_y"] = rng.uniform(0.35, 0.65)
-            if resolved["shear_y"] is None:
-                raise ValueError("kelvin-helmholtz requires shear_y (or random)")
-            return resolved
-        if ic_type == "density-blob":
-            if "x0" not in resolved or "y0" not in resolved:
-                raise ValueError("density-blob requires x0 and y0 (or random)")
-            rng = np.random.default_rng(resolved.get("seed"))
-            if resolved["x0"] == "random":
-                resolved["x0"] = rng.uniform(0.3, 0.7)
-            if resolved["y0"] == "random":
-                resolved["y0"] = rng.uniform(0.3, 0.7)
-            if resolved["x0"] is None or resolved["y0"] is None:
-                raise ValueError("density-blob requires x0 and y0 (or random)")
-            return resolved
-        if ic_type == "shock-tube":
-            if "interface_pos" not in resolved:
-                raise ValueError("shock-tube requires interface_pos")
-            rng = np.random.default_rng(resolved.get("seed"))
-            if resolved["interface_pos"] == "random":
-                resolved["interface_pos"] = rng.uniform(0.35, 0.65)
-            return resolved
-        if ic_type == "colliding-jets":
-            if "jet_y" not in resolved:
-                raise ValueError("colliding-jets requires jet_y")
-            rng = np.random.default_rng(resolved.get("seed"))
-            if resolved["jet_y"] == "random":
-                resolved["jet_y"] = rng.uniform(0.35, 0.65)
-            return resolved
-        return super().resolve_ic_params(grid, ic_type, ic_params)

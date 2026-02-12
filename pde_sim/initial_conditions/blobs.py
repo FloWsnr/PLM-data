@@ -26,6 +26,8 @@ class GaussianBlob(InitialConditionGenerator):
         random_amplitude: bool = False,
         aspect_ratio: float = 1.0,
         random_aspect: bool = False,
+        randomize: bool = False,
+        num_blobs_max: int | None = None,
         **kwargs,
     ) -> ScalarField:
         """Generate Gaussian blob initial condition.
@@ -46,14 +48,46 @@ class GaussianBlob(InitialConditionGenerator):
                           1.0 gives symmetric blobs; >1.0 gives elongated blobs.
                           Ignored for 1D grids.
             random_aspect: If True, randomize aspect ratio for each blob in [1.5, aspect_ratio].
+            randomize: If True, randomize num_blobs and positions.
+            num_blobs_max: Upper bound for random num_blobs (used when randomize=True).
             **kwargs: Additional arguments (ignored).
 
         Returns:
             ScalarField with Gaussian blobs.
         """
         rng = np.random.default_rng(seed)
-        data = np.full(grid.shape, background, dtype=float)
         ndim = len(grid.shape)
+
+        if randomize:
+            # Randomize num_blobs
+            if num_blobs_max is not None:
+                upper = max(int(num_blobs_max), 2)
+            else:
+                if positions is not None and isinstance(positions, list):
+                    upper = max(len(positions), 2)
+                else:
+                    upper = max(num_blobs, 2)
+            num_blobs = int(rng.integers(1, upper + 1))
+
+            # Randomize positions
+            if ndim == 1:
+                positions = [float(rng.uniform(0.0, 1.0)) for _ in range(num_blobs)]
+            elif ndim == 2:
+                positions = [
+                    [float(rng.uniform(0.0, 1.0)), float(rng.uniform(0.0, 1.0))]
+                    for _ in range(num_blobs)
+                ]
+            else:
+                positions = [
+                    [
+                        float(rng.uniform(0.0, 1.0)),
+                        float(rng.uniform(0.0, 1.0)),
+                        float(rng.uniform(0.0, 1.0)),
+                    ]
+                    for _ in range(num_blobs)
+                ]
+
+        data = np.full(grid.shape, background, dtype=float)
 
         if positions is None:
             raise ValueError("positions must be provided for gaussian-blob initial conditions")
@@ -121,48 +155,6 @@ class GaussianBlob(InitialConditionGenerator):
             )
 
         return ScalarField(grid, data)
-
-    @classmethod
-    def get_position_params(cls) -> set[str]:
-        """Return names of parameters that represent spatial positions."""
-        return {"positions"}
-
-    @classmethod
-    def resolve_random_params(
-        cls,
-        grid: CartesianGrid,
-        params: dict,
-    ) -> dict:
-        """Resolve random positions for gaussian-blob."""
-        resolved = params.copy()
-        if "positions" not in resolved:
-            raise ValueError("gaussian-blob requires positions or positions: random")
-        positions = resolved["positions"]
-        if positions == "random":
-            if "num_blobs" not in resolved:
-                raise ValueError("gaussian-blob random positions require num_blobs")
-            num_blobs = resolved["num_blobs"]
-            seed = resolved.get("seed")
-            rng = np.random.default_rng(seed)
-            ndim = len(grid.shape)
-            if ndim == 1:
-                resolved["positions"] = [rng.uniform(0.0, 1.0) for _ in range(num_blobs)]
-            elif ndim == 2:
-                resolved["positions"] = [
-                    [rng.uniform(0.0, 1.0), rng.uniform(0.0, 1.0)]
-                    for _ in range(num_blobs)
-                ]
-            else:
-                resolved["positions"] = [
-                    [
-                        rng.uniform(0.0, 1.0),
-                        rng.uniform(0.0, 1.0),
-                        rng.uniform(0.0, 1.0),
-                    ]
-                    for _ in range(num_blobs)
-                ]
-
-        return resolved
 
     def _generate_1d(
         self,
