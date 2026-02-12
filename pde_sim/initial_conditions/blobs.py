@@ -23,9 +23,7 @@ class GaussianBlob(InitialConditionGenerator):
         width: float = 0.1,
         background: float = 0.0,
         seed: int | None = None,
-        random_amplitude: bool = False,
         aspect_ratio: float = 1.0,
-        random_aspect: bool = False,
         randomize: bool = False,
         num_blobs_max: int | None = None,
         **kwargs,
@@ -39,16 +37,15 @@ class GaussianBlob(InitialConditionGenerator):
                 For 1D: [x1, x2, ...]
                 For 2D: [[x1, y1], [x2, y2], ...]
                 For 3D: [[x1, y1, z1], [x2, y2, z2], ...]
-            amplitude: Peak amplitude of each blob (or max if random_amplitude).
+            amplitude: Peak amplitude of each blob (or max if randomize=True).
             width: Width of blobs relative to domain size.
             background: Background value.
             seed: Random seed for blob placement (for reproducibility).
-            random_amplitude: If True, randomize blob amplitudes in [0.5*amplitude, amplitude].
             aspect_ratio: Ratio of major to minor axis for asymmetric blobs.
                           1.0 gives symmetric blobs; >1.0 gives elongated blobs.
                           Ignored for 1D grids.
-            random_aspect: If True, randomize aspect ratio for each blob in [1.5, aspect_ratio].
-            randomize: If True, randomize num_blobs and positions.
+            randomize: If True, randomize num_blobs, positions, amplitudes,
+                and per-blob aspect ratios.
             num_blobs_max: Upper bound for random num_blobs (used when randomize=True).
             **kwargs: Additional arguments (ignored).
 
@@ -127,7 +124,7 @@ class GaussianBlob(InitialConditionGenerator):
 
         if ndim == 1:
             self._generate_1d(
-                data, grid, rng, centers, amplitude, width, random_amplitude
+                data, grid, rng, centers, amplitude, width, randomize
             )
         elif ndim == 2:
             self._generate_2d(
@@ -137,9 +134,8 @@ class GaussianBlob(InitialConditionGenerator):
                 centers,
                 amplitude,
                 width,
-                random_amplitude,
                 aspect_ratio,
-                random_aspect,
+                randomize,
             )
         else:  # 3D
             self._generate_3d(
@@ -149,9 +145,8 @@ class GaussianBlob(InitialConditionGenerator):
                 centers,
                 amplitude,
                 width,
-                random_amplitude,
                 aspect_ratio,
-                random_aspect,
+                randomize,
             )
 
         return ScalarField(grid, data)
@@ -164,7 +159,7 @@ class GaussianBlob(InitialConditionGenerator):
         centers: list[float],
         amplitude: float,
         width: float,
-        random_amplitude: bool,
+        randomize: bool,
     ) -> None:
         """Generate 1D symmetric Gaussian blobs."""
         x_bounds = grid.axes_bounds[0]
@@ -173,7 +168,7 @@ class GaussianBlob(InitialConditionGenerator):
         sigma_x = width * Lx
 
         for cx in centers:
-            amp = rng.uniform(0.5 * amplitude, amplitude) if random_amplitude else amplitude
+            amp = rng.uniform(0.5 * amplitude, amplitude) if randomize else amplitude
             blob = amp * np.exp(-((x - cx) ** 2) / (2 * sigma_x**2))
             data += blob
 
@@ -185,9 +180,8 @@ class GaussianBlob(InitialConditionGenerator):
         centers: list[list[float]],
         amplitude: float,
         width: float,
-        random_amplitude: bool,
         aspect_ratio: float,
-        random_aspect: bool,
+        randomize: bool,
     ) -> None:
         """Generate 2D Gaussian blobs (symmetric or asymmetric)."""
         x_bounds, y_bounds = grid.axes_bounds[0], grid.axes_bounds[1]
@@ -197,9 +191,9 @@ class GaussianBlob(InitialConditionGenerator):
         X, Y = np.meshgrid(x, y, indexing="ij")
 
         for cx, cy in centers:
-            amp = rng.uniform(0.5 * amplitude, amplitude) if random_amplitude else amplitude
+            amp = rng.uniform(0.5 * amplitude, amplitude) if randomize else amplitude
 
-            if aspect_ratio == 1.0 and not random_aspect:
+            if aspect_ratio == 1.0 and not randomize:
                 # Symmetric blob
                 sigma_x, sigma_y = width * Lx, width * Ly
                 blob = amp * np.exp(
@@ -209,7 +203,7 @@ class GaussianBlob(InitialConditionGenerator):
                 # Asymmetric blob with random orientation
                 theta = rng.uniform(0, 2 * np.pi)
 
-                if random_aspect:
+                if randomize:
                     ar = rng.uniform(1.5, max(1.5, aspect_ratio))
                 else:
                     ar = aspect_ratio
@@ -235,9 +229,8 @@ class GaussianBlob(InitialConditionGenerator):
         centers: list[list[float]],
         amplitude: float,
         width: float,
-        random_amplitude: bool,
         aspect_ratio: float,
-        random_aspect: bool,
+        randomize: bool,
     ) -> None:
         """Generate 3D Gaussian blobs (symmetric or asymmetric)."""
         x_bounds, y_bounds, z_bounds = (
@@ -254,9 +247,9 @@ class GaussianBlob(InitialConditionGenerator):
         X, Y, Z = np.meshgrid(x, y, z, indexing="ij")
 
         for cx, cy, cz in centers:
-            amp = rng.uniform(0.5 * amplitude, amplitude) if random_amplitude else amplitude
+            amp = rng.uniform(0.5 * amplitude, amplitude) if randomize else amplitude
 
-            if aspect_ratio == 1.0 and not random_aspect:
+            if aspect_ratio == 1.0 and not randomize:
                 # Symmetric blob
                 sigma_x, sigma_y, sigma_z = width * Lx, width * Ly, width * Lz
                 blob = amp * np.exp(
@@ -276,7 +269,7 @@ class GaussianBlob(InitialConditionGenerator):
                     [sin_theta * np.cos(phi), sin_theta * np.sin(phi), cos_theta]
                 )
 
-                if random_aspect:
+                if randomize:
                     ar = rng.uniform(1.5, max(1.5, aspect_ratio))
                 else:
                     ar = aspect_ratio

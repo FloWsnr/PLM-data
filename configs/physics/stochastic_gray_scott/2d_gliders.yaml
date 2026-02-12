@@ -12,9 +12,7 @@ init:
     noise: 0.02
     amplitude: 1.0
     background: 0.0
-    random_amplitude: false
     aspect_ratio: 1.0
-    random_aspect: false
 solver: euler
 backend: numpy
 adaptive: false

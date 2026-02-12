@@ -8,9 +8,7 @@ init:
     amplitude: 0.5
     width: 0.08
     background: 0.0
-    random_amplitude: true
     aspect_ratio: 1.0
-    random_aspect: false
 solver: scipy
 backend: numba
 adaptive: true

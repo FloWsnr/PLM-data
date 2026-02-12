@@ -9,9 +9,7 @@ init:
     amplitude: 1.0
     width: 0.05
     background: 0.0
-    random_amplitude: false
     aspect_ratio: 1.0
-    random_aspect: false
 solver: rk4
 backend: numba
 adaptive: false

@@ -10,9 +10,7 @@ init:
     positions:
     - 0.5
     background: 0.0
-    random_amplitude: false
     aspect_ratio: 1.0
-    random_aspect: false
 solver: euler
 dt: 0.002
 resolution:

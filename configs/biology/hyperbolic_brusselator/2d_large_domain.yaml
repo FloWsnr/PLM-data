@@ -17,9 +17,7 @@ init:
         amplitude: 0.15
         width: 0.1
         background: 3.0
-        random_amplitude: false
         aspect_ratio: 1.0
-        random_aspect: false
     v:
       type: gaussian-blob
       params:
@@ -27,9 +25,7 @@ init:
         amplitude: 0.15
         width: 0.1
         background: 3.0
-        random_amplitude: false
         aspect_ratio: 1.0
-        random_aspect: false
     w:
       type: constant
       params:

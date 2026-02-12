@@ -12,9 +12,7 @@ init:
     seed: 301
     positions:
     - 0.5
-    random_amplitude: false
     aspect_ratio: 1.0
-    random_aspect: false
 solver: rk4
 backend: numpy
 adaptive: false

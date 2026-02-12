@@ -10,10 +10,8 @@ init:
     num_blobs: 5
     amplitude: 2.0
     width: 0.04
-    random_amplitude: true
     background: 0.0
     aspect_ratio: 1.0
-    random_aspect: false
 solver: rk4
 backend: numpy
 adaptive: false

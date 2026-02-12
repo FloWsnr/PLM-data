@@ -18,9 +18,7 @@ init:
         amplitude: 1.0
         width: 0.08
         background: 0.0
-        random_amplitude: true
         aspect_ratio: 1.0
-        random_aspect: false
 solver: euler
 backend: numba
 adaptive: false

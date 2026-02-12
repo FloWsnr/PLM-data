@@ -19,9 +19,7 @@ init:
         amplitude: 15.0
         width: 0.06
         background: 0.5
-        random_amplitude: false
         aspect_ratio: 1.0
-        random_aspect: false
     v:
       type: gaussian-blob
       params:
@@ -32,9 +30,7 @@ init:
         amplitude: 15.0
         width: 0.06
         background: 0.5
-        random_amplitude: false
         aspect_ratio: 1.0
-        random_aspect: false
     value: 1.0
 solver: rk4
 backend: numba

@@ -126,15 +126,16 @@ class TestGaussianBlob:
         # Minimum should be at least the background
         assert np.min(field.data) >= 0.5 - 0.01  # Allow small numerical tolerance
 
-    def test_generate_random_amplitude(self, small_grid):
-        """Test generating with random amplitudes."""
+    def test_generate_randomized_blobs(self, small_grid):
+        """Test generating randomized blobs via randomize=True."""
         ic = GaussianBlob()
         field = ic.generate(
             small_grid,
             num_blobs=3,
             positions=[[0.2, 0.3], [0.6, 0.4], [0.8, 0.7]],
             amplitude=1.0,
-            random_amplitude=True,
+            aspect_ratio=2.0,
+            randomize=True,
             seed=42,
         )
 
@@ -157,8 +158,8 @@ class TestGaussianBlob:
         assert isinstance(field, ScalarField)
         assert np.std(field.data) > 0
 
-    def test_generate_asymmetric_random_aspect(self, small_grid):
-        """Test generating asymmetric blobs with random aspect ratios."""
+    def test_generate_randomized_asymmetric(self, small_grid):
+        """Test generating asymmetric blobs with randomize=True."""
         ic = GaussianBlob()
         field = ic.generate(
             small_grid,
@@ -173,7 +174,7 @@ class TestGaussianBlob:
             amplitude=1.0,
             width=0.05,
             aspect_ratio=4.0,
-            random_aspect=True,
+            randomize=True,
             seed=42,
         )
 

@@ -63,9 +63,7 @@ init:
     amplitude: 0.1
     width: 0.1
     background: 0.0
-    random_amplitude: false
     aspect_ratio: 1.0
-    random_aspect: false
 ```
 
 **Note**: Visual-PDE uses explicit solver with `dt=0.001, dx=0.5`. Our implementation uses adaptive implicit solver which is more efficient for this stiff 4th-order equation.

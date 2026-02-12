@@ -8,10 +8,8 @@ init:
     num_blobs: 3
     amplitude: 1.5
     width: 0.05
-    random_amplitude: true
     background: 0.0
     aspect_ratio: 1.0
-    random_aspect: false
 solver: euler
 backend: numba
 adaptive: true

@@ -14,9 +14,7 @@ init:
         amplitude: 0.1
         width: 0.1
         background: 2.01
-        random_amplitude: false
         aspect_ratio: 1.0
-        random_aspect: false
     v:
       type: gaussian-blob
       params:
@@ -24,9 +22,7 @@ init:
         amplitude: 0.1
         width: 0.1
         background: 0.495
-        random_amplitude: false
         aspect_ratio: 1.0
-        random_aspect: false
 solver: euler
 backend: numba
 adaptive: false

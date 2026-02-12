@@ -9,9 +9,7 @@ init:
     width: 0.1
     background: 0.0
     seed: 103
-    random_amplitude: false
     aspect_ratio: 1.0
-    random_aspect: false
 solver: euler
 backend: numba
 adaptive: true
