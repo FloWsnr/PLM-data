@@ -7,10 +7,13 @@ parameters:
   a: 0.01
   b: 1.0
 init:
-  type: random-gaussian
+  type: gaussian-blob
   params:
-    mean: 1.0
-    std: 0.1
+    num_blobs: 3
+    positions: random
+    amplitude: 0.1
+    width: 0.1
+    background: 1.0
     noise: 0.05
 solver: euler
 backend: numba

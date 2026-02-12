@@ -2,10 +2,13 @@ preset: kuramoto-sivashinsky
 parameters:
   a: 0.1
 init:
-  type: random-gaussian
+  type: gaussian-blob
   params:
-    mean: 0.0
-    std: 0.15
+    num_blobs: 5
+    positions: random
+    amplitude: 0.15
+    width: 0.1
+    background: 0.0
 solver: scipy
 backend: numba
 adaptive: true

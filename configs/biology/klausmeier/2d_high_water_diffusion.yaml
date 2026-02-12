@@ -6,10 +6,13 @@ parameters:
   Dn: 0.5
   Dw: 5.0
 init:
-  type: random-gaussian
+  type: gaussian-blob
   params:
-    mean: 0.5
-    std: 0.1
+    num_blobs: 5
+    positions: random
+    amplitude: 0.1
+    width: 0.1
+    background: 0.5
 solver: euler
 backend: numba
 adaptive: false

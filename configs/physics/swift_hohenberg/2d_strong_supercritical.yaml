@@ -6,10 +6,13 @@ parameters:
   c: 0.0
   D: 1.0
 init:
-  type: random-gaussian
+  type: gaussian-blob
   params:
-    mean: 0.0
-    std: 0.01
+    num_blobs: 5
+    positions: random
+    amplitude: 0.01
+    width: 0.1
+    background: 0.0
 solver: scipy
 backend: numba
 adaptive: true
