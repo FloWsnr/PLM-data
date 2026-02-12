@@ -2,8 +2,7 @@
 
 from typing import Any
 
-import numpy as np
-from pde import PDE, CartesianGrid, FieldCollection, ScalarField
+from pde import PDE, CartesianGrid
 
 from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
@@ -100,48 +99,6 @@ class SuperlatticePDE(MultiFieldPDEPreset):
             },
             bc=self._convert_bc(bc),
         )
-
-    def create_initial_state(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-        **kwargs,
-    ) -> FieldCollection:
-        """Create initial state matching VisualPDE reference.
-
-        Reference initial conditions:
-            u1: 3 + 0.1*RANDN (noise only on u1 activator)
-            v1: 3 (constant)
-            u2: 3 (constant)
-            v2: 10 (constant)
-        """
-        if ic_type not in ("superlattice-default", "default"):
-            return super().create_initial_state(grid, ic_type, ic_params, **kwargs)
-
-        rng = np.random.default_rng(ic_params.get("seed"))
-        noise = ic_params["noise"]
-
-        # Reference values from VisualPDE preset
-        # Only u1 gets noise - this triggers pattern formation
-        u1_data = 3.0 + noise * rng.standard_normal(grid.shape)
-        v1_data = np.full(grid.shape, 3.0)
-        u2_data = np.full(grid.shape, 3.0)
-        v2_data = np.full(grid.shape, 10.0)
-
-        # Ensure positive values for u1
-        u1_data = np.maximum(u1_data, 0.01)
-
-        u1 = ScalarField(grid, u1_data)
-        u1.label = "u1"
-        v1 = ScalarField(grid, v1_data)
-        v1.label = "v1"
-        u2 = ScalarField(grid, u2_data)
-        u2.label = "u2"
-        v2 = ScalarField(grid, v2_data)
-        v2.label = "v2"
-
-        return FieldCollection([u1, v1, u2, v2])
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

@@ -5,9 +5,28 @@ parameters:
   beta: 2.6666666666667
   D: 0.5
 init:
-  type: custom
+  type: constant
   params:
-    noise: 0.3
+    value: 0.0
+    X:
+      type: gaussian-blob
+      params:
+        num_blobs: 1
+        positions: random
+        amplitude: 0.3
+        width: 0.1
+        background: 1.0
+        random_amplitude: false
+        aspect_ratio: 1.0
+        random_aspect: false
+    Y:
+      type: constant
+      params:
+        value: 0.0
+    Z:
+      type: constant
+      params:
+        value: 29.0
 solver: rk4
 backend: numba
 adaptive: true

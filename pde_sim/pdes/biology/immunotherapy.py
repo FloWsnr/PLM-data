@@ -2,8 +2,7 @@
 
 from typing import Any
 
-import numpy as np
-from pde import PDE, CartesianGrid, FieldCollection, ScalarField
+from pde import PDE, CartesianGrid
 
 from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
@@ -93,44 +92,3 @@ class ImmunotherapyPDE(MultiFieldPDEPreset):
             bc=self._convert_bc(bc),
         )
 
-    def create_initial_state(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-        **kwargs,
-    ) -> FieldCollection:
-        """Create near-equilibrium initial state for Turing pattern emergence.
-
-        Uses uniform values close to the coexistence equilibrium with small
-        perturbations. This allows Turing instability to develop patterns
-        rather than starting with a pre-formed tumor structure.
-
-        Reference values from Visual PDE ImmunotherapyCircleNeumann preset.
-        """
-        noise_frac = ic_params.get("noise", 0.2)  # Fractional noise (20% default)
-        rng = np.random.default_rng(ic_params.get("seed"))
-
-        # Near-equilibrium values (from Visual PDE reference)
-        u_base = 0.299  # Effector cells
-        v_base = 0.505  # Tumor cells
-        w_base = 0.022  # Cytokine
-
-        # Apply multiplicative noise: base * (1 + noise_frac * randn)
-        u_data = u_base * (1 + noise_frac * rng.standard_normal(grid.shape))
-        v_data = v_base * (1 + noise_frac * rng.standard_normal(grid.shape))
-        w_data = w_base * (1 + noise_frac * rng.standard_normal(grid.shape))
-
-        # Ensure non-negative values
-        u_data = np.maximum(u_data, 0.0)
-        v_data = np.clip(v_data, 0.0, 1.0)  # Tumor bounded by carrying capacity
-        w_data = np.maximum(w_data, 0.0)
-
-        u = ScalarField(grid, u_data)
-        u.label = "u"
-        v = ScalarField(grid, v_data)
-        v.label = "v"
-        w = ScalarField(grid, w_data)
-        w.label = "w"
-
-        return FieldCollection([u, v, w])

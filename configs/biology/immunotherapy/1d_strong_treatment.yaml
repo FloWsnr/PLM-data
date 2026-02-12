@@ -14,9 +14,42 @@ parameters:
   s_u: 0.1
   s_w: 1.5
 init:
-  type: default
+  type: constant
   params:
-    noise: 0.2
+    value: 0.0
+    u:
+      type: gaussian-blob
+      params:
+        num_blobs: 1
+        positions: random
+        amplitude: 0.06
+        width: 0.1
+        background: 0.299
+        random_amplitude: false
+        aspect_ratio: 1.0
+        random_aspect: false
+    v:
+      type: gaussian-blob
+      params:
+        num_blobs: 1
+        positions: random
+        amplitude: 0.10
+        width: 0.1
+        background: 0.505
+        random_amplitude: false
+        aspect_ratio: 1.0
+        random_aspect: false
+    w:
+      type: gaussian-blob
+      params:
+        num_blobs: 1
+        positions: random
+        amplitude: 0.004
+        width: 0.1
+        background: 0.022
+        random_amplitude: false
+        aspect_ratio: 1.0
+        random_aspect: false
 solver: euler
 backend: numba
 adaptive: false

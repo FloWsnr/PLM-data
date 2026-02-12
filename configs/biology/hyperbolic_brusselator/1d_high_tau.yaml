@@ -7,11 +7,39 @@ parameters:
   b: 9.0
   eps: 0.01
 init:
-  type: custom
+  type: constant
   params:
-    a: 3.0
-    b: 9.0
-    noise: 0.3
+    value: 0.0
+    u:
+      type: gaussian-blob
+      params:
+        num_blobs: 1
+        positions: random
+        amplitude: 0.3
+        width: 0.1
+        background: 3.0
+        random_amplitude: false
+        aspect_ratio: 1.0
+        random_aspect: false
+    v:
+      type: gaussian-blob
+      params:
+        num_blobs: 1
+        positions: random
+        amplitude: 0.3
+        width: 0.1
+        background: 3.0
+        random_amplitude: false
+        aspect_ratio: 1.0
+        random_aspect: false
+    w:
+      type: constant
+      params:
+        value: 0.0
+    q:
+      type: constant
+      params:
+        value: 0.0
 solver: rk4
 backend: numba
 adaptive: false

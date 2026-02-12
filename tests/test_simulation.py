@@ -592,7 +592,6 @@ class TestRandomizePositions:
         assert get_ic_position_params("sine") == {"phase_x", "phase_y", "phase_z"}
         assert get_ic_position_params("cosine") == {"phase_x", "phase_y", "phase_z"}
         assert get_ic_position_params("random-uniform") == set()
-        assert get_ic_position_params("random-gaussian") == set()
 
     def test_get_position_params_pde_specific_ic(self):
         """Test get_position_params for PDE-specific IC types."""
@@ -600,6 +599,8 @@ class TestRandomizePositions:
 
         sgs = get_pde_preset("stochastic-gray-scott")
         assert sgs.get_position_params("stochastic-gray-scott-default") == {"cx", "cy"}
+        kt = get_pde_preset("klausmeier-topography")
+        assert kt.get_position_params("custom") == {"blob_positions"}
         # Generic IC type should delegate
         assert sgs.get_position_params("gaussian-blob") == {"positions"}
         # Unknown custom IC type should return empty
@@ -630,3 +631,181 @@ class TestRandomizePositions:
 
         metadata = run_from_config(config_path, verbose=False, randomize_positions=True)
         assert metadata["preset"] == "heat"
+
+    def test_randomize_positions_uses_run_seed_over_ic_seed(self, tmp_path):
+        """Randomized positions should follow run seed even if init.params has seed."""
+
+        def make_runner(seed: int) -> SimulationRunner:
+            config_dict = {
+                "preset": "gray-scott",
+                "parameters": {"a": 0.037, "b": 0.06, "D": 2.0},
+                "init": {
+                    "type": "gaussian-blob",
+                    "params": {
+                        "positions": [[0.5, 0.5]],
+                        "widths": [0.1],
+                        "amplitudes": [1.0],
+                        "num_blobs": 1,
+                        "seed": 301,
+                    },
+                },
+                "solver": "euler",
+                "backend": "numpy",
+                "t_end": 0.01,
+                "dt": 0.01,
+                "resolution": [16, 16],
+                "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
+                "output": {"path": str(tmp_path), "num_frames": 2, "formats": ["png"]},
+                "seed": seed,
+                "domain_size": [2.5, 2.5],
+                "randomize_positions": True,
+            }
+            config_path = tmp_path / f"config_seed_{seed}.yaml"
+            with open(config_path, "w") as f:
+                yaml.dump(config_dict, f)
+            config = load_config(config_path)
+            return SimulationRunner(config, output_dir=tmp_path, sim_id=f"seed_{seed}")
+
+        runner1 = make_runner(seed=1)
+        runner2 = make_runner(seed=2)
+        state1 = np.concatenate([f.data for f in runner1.state])
+        state2 = np.concatenate([f.data for f in runner2.state])
+        assert not np.array_equal(state1, state2)
+
+    def test_randomize_positions_per_field_overrides(self, tmp_path):
+        """Randomization should also affect per-field IC override params."""
+
+        def make_runner(seed: int) -> SimulationRunner:
+            config_dict = {
+                "preset": "lotka-volterra",
+                "parameters": {
+                    "Du": 0.5,
+                    "Dv": 0.01,
+                    "alpha": 1.5,
+                    "beta": 0.15,
+                    "delta": 0.1,
+                    "gamma": 0.8,
+                },
+                "init": {
+                    "type": "constant",
+                    "params": {
+                        "u": {
+                            "type": "gaussian-blob",
+                            "params": {
+                                "num_blobs": 1,
+                                "positions": [0.25],
+                                "amplitude": 15.0,
+                                "width": 0.04,
+                                "background": 0.5,
+                            },
+                        },
+                        "v": {
+                            "type": "gaussian-blob",
+                            "params": {
+                                "num_blobs": 1,
+                                "positions": [0.75],
+                                "amplitude": 15.0,
+                                "width": 0.04,
+                                "background": 0.5,
+                            },
+                        },
+                        "value": 1.0,
+                    },
+                },
+                "solver": "rk4",
+                "backend": "numpy",
+                "adaptive": False,
+                "t_end": 0.01,
+                "dt": 0.005,
+                "resolution": [64],
+                "bc": {"x-": "neumann:0", "x+": "neumann:0"},
+                "output": {"path": str(tmp_path), "num_frames": 2, "formats": ["png"]},
+                "seed": seed,
+                "domain_size": [200.0],
+                "randomize_positions": True,
+            }
+            config_path = tmp_path / f"lotka_{seed}.yaml"
+            with open(config_path, "w") as f:
+                yaml.dump(config_dict, f)
+            config = load_config(config_path)
+            return SimulationRunner(config, output_dir=tmp_path, sim_id=f"lotka_{seed}")
+
+        runner1 = make_runner(seed=1)
+        runner2 = make_runner(seed=2)
+        state1 = np.concatenate([f.data for f in runner1.state])
+        state2 = np.concatenate([f.data for f in runner2.state])
+        assert not np.array_equal(state1, state2)
+
+    def test_randomize_positions_gaussian_blob_randomizes_num_blobs(self, tmp_path, monkeypatch):
+        """Randomizing positions for gaussian-blob should randomize num_blobs too."""
+        from pde_sim.initial_conditions.blobs import GaussianBlob
+
+        counts: list[int] = []
+        original = GaussianBlob.generate
+
+        def capture_generate(
+            self,
+            grid,
+            num_blobs=1,
+            positions=None,
+            amplitude=1.0,
+            width=0.1,
+            background=0.0,
+            seed=None,
+            random_amplitude=False,
+            aspect_ratio=1.0,
+            random_aspect=False,
+            **kwargs,
+        ):
+            counts.append(int(num_blobs))
+            return original(
+                self,
+                grid,
+                num_blobs=num_blobs,
+                positions=positions,
+                amplitude=amplitude,
+                width=width,
+                background=background,
+                seed=seed,
+                random_amplitude=random_amplitude,
+                aspect_ratio=aspect_ratio,
+                random_aspect=random_aspect,
+                **kwargs,
+            )
+
+        monkeypatch.setattr(GaussianBlob, "generate", capture_generate)
+
+        def make_runner(seed: int) -> SimulationRunner:
+            config_dict = {
+                "preset": "heat",
+                "parameters": {"D_T": 0.01},
+                "init": {
+                    "type": "gaussian-blob",
+                    "params": {
+                        "num_blobs": 1,
+                        "positions": [[0.5, 0.5]],
+                        "amplitude": 1.0,
+                        "width": 0.1,
+                    },
+                },
+                "solver": "euler",
+                "backend": "numpy",
+                "t_end": 0.01,
+                "dt": 0.01,
+                "resolution": [16, 16],
+                "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
+                "output": {"path": str(tmp_path), "num_frames": 2, "formats": ["png"]},
+                "seed": seed,
+                "randomize_positions": True,
+            }
+            config_path = tmp_path / f"blob_count_{seed}.yaml"
+            with open(config_path, "w") as f:
+                yaml.dump(config_dict, f)
+            config = load_config(config_path)
+            return SimulationRunner(config, output_dir=tmp_path, sim_id=f"blob_count_{seed}")
+
+        _ = make_runner(1)
+        _ = make_runner(2)
+
+        assert len(counts) == 2
+        assert counts[0] != counts[1]

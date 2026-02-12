@@ -2,8 +2,7 @@
 
 from typing import Any
 
-import numpy as np
-from pde import PDE, CartesianGrid, FieldCollection, ScalarField
+from pde import PDE, CartesianGrid
 
 from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
@@ -78,31 +77,3 @@ class CrossDiffusionSchnakenbergPDE(MultiFieldPDEPreset):
             bc=self._convert_bc(bc),
         )
 
-    def create_initial_state(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-        **kwargs,
-    ) -> FieldCollection:
-        """Create initial state near the homogeneous steady state with perturbation."""
-        if ic_type == "custom":
-            a = ic_params.get("a", 0.01)
-            b = ic_params.get("b", 2.5)
-            noise = ic_params.get("noise", 0.01)
-
-            u_ss = a + b
-            v_ss = b / (u_ss ** 2)
-
-            rng = np.random.default_rng(ic_params.get("seed"))
-            u_data = u_ss + noise * rng.standard_normal(grid.shape)
-            v_data = v_ss + noise * rng.standard_normal(grid.shape)
-
-            u = ScalarField(grid, u_data)
-            u.label = "u"
-            v = ScalarField(grid, v_data)
-            v.label = "v"
-
-            return FieldCollection([u, v])
-
-        return super().create_initial_state(grid, ic_type, ic_params, **kwargs)

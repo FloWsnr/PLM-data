@@ -2,10 +2,7 @@
 
 from typing import Any
 
-import numpy as np
-from pde import PDE, CartesianGrid, FieldCollection, ScalarField
-
-from pde_sim.initial_conditions import create_initial_condition
+from pde import PDE, CartesianGrid
 
 from ..base import PDEMetadata, PDEParameter, MultiFieldPDEPreset
 from .. import register_pde
@@ -97,97 +94,6 @@ class ComplexGinzburgLandauPDE(MultiFieldPDEPreset):
             },
             bc=self._convert_bc(bc),
         )
-
-    def create_initial_state(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-        **kwargs,
-    ) -> FieldCollection:
-        """Create initial state for CGL.
-
-        Default: sinusoidal modes in x and y.
-        """
-        if ic_type in ("complex-ginzburg-landau-default", "default"):
-            n = int(ic_params.get("n", 10))
-            m = int(ic_params.get("m", 10))
-            l = int(ic_params.get("l", 10))
-            amplitude = ic_params.get("amplitude", 1.0)
-            rng = np.random.default_rng(ic_params.get("seed"))
-
-            ndim = len(grid.shape)
-            mode_numbers = [n, m, l][:ndim]
-            phase_keys = ["phase_x", "phase_y", "phase_z"][:ndim]
-
-            # Get phases
-            phases = []
-            for key in phase_keys:
-                p = ic_params.get(key)
-                if p is None or p == "random":
-                    raise ValueError(f"complex-ginzburg-landau requires {key} (or random)")
-                phases.append(p)
-
-            # Build product of sinusoids across all dimensions
-            coords_1d = [np.linspace(grid.axes_bounds[i][0], grid.axes_bounds[i][1], grid.shape[i]) for i in range(ndim)]
-            coords = np.meshgrid(*coords_1d, indexing="ij")
-            L = [grid.axes_bounds[i][1] - grid.axes_bounds[i][0] for i in range(ndim)]
-
-            pattern = np.ones(grid.shape)
-            for i in range(ndim):
-                pattern *= np.sin(mode_numbers[i] * np.pi * (coords[i] - grid.axes_bounds[i][0]) / L[i] + phases[i])
-
-            u_data = amplitude * pattern
-            v_data = amplitude * pattern.copy()
-
-            # Add small noise
-            u_data += 0.01 * rng.standard_normal(grid.shape)
-            v_data += 0.01 * rng.standard_normal(grid.shape)
-
-            u = ScalarField(grid, u_data)
-            u.label = "u"
-            v = ScalarField(grid, v_data)
-            v.label = "v"
-
-            return FieldCollection([u, v])
-
-        # For other IC types, create the same IC for both fields
-        base = create_initial_condition(grid, ic_type, ic_params)
-        u = ScalarField(grid, base.data.copy())
-        u.label = "u"
-        v = ScalarField(grid, np.zeros(grid.shape))
-        v.label = "v"
-        return FieldCollection([u, v])
-
-    def get_position_params(self, ic_type: str) -> set[str]:
-        if ic_type in ("complex-ginzburg-landau-default", "default"):
-            return {"phase_x", "phase_y", "phase_z"}
-        return super().get_position_params(ic_type)
-
-    def resolve_ic_params(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-    ) -> dict[str, Any]:
-        if ic_type in ("complex-ginzburg-landau-default", "default"):
-            resolved = ic_params.copy()
-            ndim = len(grid.shape)
-            phase_keys = ["phase_x", "phase_y", "phase_z"][:ndim]
-            for key in phase_keys:
-                if key not in resolved:
-                    raise ValueError(f"complex-ginzburg-landau requires {key} (or random)")
-            rng_needed = any(resolved[key] == "random" for key in phase_keys)
-            if rng_needed:
-                rng = np.random.default_rng(resolved.get("seed"))
-                for key in phase_keys:
-                    if resolved[key] == "random":
-                        resolved[key] = rng.uniform(0, 2 * np.pi)
-            for key in phase_keys:
-                if resolved[key] is None:
-                    raise ValueError(f"complex-ginzburg-landau requires {key} (or random)")
-            return resolved
-        return super().resolve_ic_params(grid, ic_type, ic_params)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

@@ -9,14 +9,15 @@ parameters:
   n: 10
   m: 10
 init:
-  type: default
+  type: sine
   params:
+    kx: 5
+    ky: 5
+    kz: 1
     amplitude: 1.0
+    offset: 0.0
     phase_x: 0.0
     phase_y: 0.0
-    n: 10
-    m: 10
-    l: 10
 solver: euler
 backend: numba
 adaptive: false

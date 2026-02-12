@@ -2,8 +2,7 @@
 
 from typing import Any
 
-import numpy as np
-from pde import PDE, CartesianGrid, FieldCollection, ScalarField
+from pde import PDE, CartesianGrid
 
 from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
@@ -91,44 +90,3 @@ class HyperbolicBrusselatorPDE(MultiFieldPDEPreset):
             bc=self._convert_bc(bc),
         )
 
-    def create_initial_state(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-        **kwargs,
-    ) -> FieldCollection:
-        """Create initial state for hyperbolic Brusselator.
-
-        Following Visual-PDE reference:
-        - u, v initialized near steady state with small perturbation
-        - w, q (velocity fields) initialized to 0
-        """
-        if ic_type == "custom":
-            a = ic_params.get("a", 5.0)
-            b = ic_params.get("b", 9.0)
-            noise = ic_params.get("noise", 0.1)
-
-            # Steady state: u* = a, v* = b/a, w* = 0, q* = 0
-            u_ss = a
-            v_ss = b / a
-
-            rng = np.random.default_rng(ic_params.get("seed"))
-            u_data = u_ss + noise * rng.standard_normal(grid.shape)
-            v_data = v_ss + noise * rng.standard_normal(grid.shape)
-            # Velocity fields w, q start at 0 (consistent with Visual-PDE reference)
-            w_data = np.zeros(grid.shape)
-            q_data = np.zeros(grid.shape)
-
-            u = ScalarField(grid, u_data)
-            u.label = "u"
-            v = ScalarField(grid, v_data)
-            v.label = "v"
-            w = ScalarField(grid, w_data)
-            w.label = "w"
-            q = ScalarField(grid, q_data)
-            q.label = "q"
-
-            return FieldCollection([u, v, w, q])
-
-        return super().create_initial_state(grid, ic_type, ic_params, **kwargs)

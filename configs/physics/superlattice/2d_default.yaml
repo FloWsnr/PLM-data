@@ -10,9 +10,32 @@ parameters:
   D_uthree: 22.0
   D_ufour: 660.0
 init:
-  type: default
+  type: constant
   params:
-    noise: 0.1
+    value: 0.0
+    u1:
+      type: gaussian-blob
+      params:
+        num_blobs: 1
+        positions: random
+        amplitude: 0.1
+        width: 0.1
+        background: 3.0
+        random_amplitude: false
+        aspect_ratio: 1.0
+        random_aspect: false
+    v1:
+      type: constant
+      params:
+        value: 3.0
+    u2:
+      type: constant
+      params:
+        value: 3.0
+    v2:
+      type: constant
+      params:
+        value: 10.0
 solver: scipy
 backend: numba
 adaptive: true

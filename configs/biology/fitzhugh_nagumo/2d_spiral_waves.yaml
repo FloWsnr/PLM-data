@@ -5,12 +5,25 @@ parameters:
   a_v: 1.5
   a_z: -0.1
 init:
-  type: spiral-seed
+  type: constant
   params:
-    u_rest: -0.66
-    v_rest: -0.37
-    u_excited: 1.0
-    v_refractory: 0.5
+    value: 0.0
+    u:
+      type: step
+      params:
+        direction: x
+        position: 0.5
+        value_low: 1.0
+        value_high: -0.66
+        smooth_width: 0.0
+    v:
+      type: step
+      params:
+        direction: y
+        position: 0.5
+        value_low: -0.37
+        value_high: 0.5
+        smooth_width: 0.0
 solver: euler
 backend: numba
 adaptive: false
