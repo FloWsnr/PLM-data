@@ -8,11 +8,16 @@ parameters:
   a_w: 0.5
   a_z: -0.1
 init:
-  type: default
+  type: gaussian-blob
   params:
+    num_blobs: 1
+    positions: [[0.5, 0.5]]
     amplitude: 0.5
-    width: 0.001
-    noise: 0.5
+    width: 0.0745
+    background: 0.0
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 solver: euler
 backend: numba
 adaptive: false

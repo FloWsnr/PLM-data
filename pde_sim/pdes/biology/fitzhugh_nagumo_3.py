@@ -2,8 +2,7 @@
 
 from typing import Any
 
-import numpy as np
-from pde import PDE, CartesianGrid, FieldCollection, ScalarField
+from pde import PDE, CartesianGrid
 
 from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
@@ -89,51 +88,3 @@ class FitzHughNagumo3PDE(MultiFieldPDEPreset):
             bc=self._convert_bc(bc),
         )
 
-    def create_initial_state(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-        **kwargs,
-    ) -> FieldCollection:
-        """Create initial state with Gaussian blob for all fields.
-
-        Matches Visual PDE reference:
-            u = v = w = amplitude*exp(-width*((x-Lx/2)^2 + (y-Ly/2)^2))
-        """
-        rng = np.random.default_rng(ic_params.get("seed"))
-
-        x_bounds = grid.axes_bounds[0]
-        y_bounds = grid.axes_bounds[1]
-
-        x = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-        y = np.linspace(y_bounds[0], y_bounds[1], grid.shape[1])
-        X, Y = np.meshgrid(x, y, indexing="ij")
-
-        # Gaussian blob at center (same for all three fields per reference)
-        cx = (x_bounds[0] + x_bounds[1]) / 2
-        cy = (y_bounds[0] + y_bounds[1]) / 2
-        amplitude = ic_params.get("amplitude", 5.0)
-        width = ic_params.get("width", 0.1)
-        r2 = (X - cx) ** 2 + (Y - cy) ** 2
-        blob = amplitude * np.exp(-width * r2)
-
-        u_data = blob.copy()
-        v_data = blob.copy()
-        w_data = blob.copy()
-
-        # Add small noise if requested
-        noise = ic_params.get("noise", 0.0)
-        if noise > 0:
-            u_data += noise * rng.standard_normal(grid.shape)
-            v_data += noise * rng.standard_normal(grid.shape)
-            w_data += noise * rng.standard_normal(grid.shape)
-
-        u = ScalarField(grid, u_data)
-        u.label = "u"
-        v = ScalarField(grid, v_data)
-        v.label = "v"
-        w = ScalarField(grid, w_data)
-        w.label = "w"
-
-        return FieldCollection([u, v, w])

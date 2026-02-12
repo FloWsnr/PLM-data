@@ -2,10 +2,7 @@
 
 from typing import Any
 
-import numpy as np
-from pde import PDE, CartesianGrid, ScalarField
-
-from pde_sim.initial_conditions import create_initial_condition
+from pde import PDE, CartesianGrid
 
 from ..base import ScalarPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
@@ -100,25 +97,6 @@ class SwiftHohenbergPDE(ScalarPDEPreset):
             rhs={"u": rhs},
             bc=self._convert_bc(bc),
         )
-
-    def create_initial_state(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-        **kwargs,
-    ) -> ScalarField:
-        """Create initial state for Swift-Hohenberg.
-
-        Default: u = 0 with small perturbations.
-        """
-        if ic_type == "custom":
-            amplitude = ic_params["amplitude"]
-            rng = np.random.default_rng(ic_params.get("seed"))
-            data = amplitude * rng.standard_normal(grid.shape)
-            return ScalarField(grid, data)
-
-        return create_initial_condition(grid, ic_type, ic_params)
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

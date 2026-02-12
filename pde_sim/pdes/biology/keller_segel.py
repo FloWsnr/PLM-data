@@ -2,10 +2,7 @@
 
 from typing import Any
 
-import numpy as np
-from pde import PDE, CartesianGrid, FieldCollection, ScalarField
-
-from pde_sim.initial_conditions import create_initial_condition
+from pde import PDE, CartesianGrid
 
 from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
@@ -91,32 +88,3 @@ class KellerSegelPDE(MultiFieldPDEPreset):
             bc=self._convert_bc(bc),
         )
 
-    def create_initial_state(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-        **kwargs,
-    ) -> FieldCollection:
-        """Create initial state with small random cell density.
-
-        The default uses small random initial population (0 to 0.01) as in
-        visual-pde, which grows towards equilibrium u=1 while undergoing
-        pattern formation instability.
-        """
-        # Default: small random cell population, zero chemoattractant
-        if ic_type in ("keller-segel-default", "default"):
-            # Cells - small random values (0 to 0.01)
-            u = create_initial_condition(
-                grid, "random-uniform", {"low": 0.0, "high": 0.01, "seed": ic_params.get("seed")}
-            )
-            u.label = "u"
-
-            # Chemoattractant - start at zero
-            v = ScalarField(grid, np.zeros(grid.shape))
-            v.label = "v"
-
-            return FieldCollection([u, v])
-
-        # Use parent implementation for other IC types
-        return super().create_initial_state(grid, ic_type, ic_params)

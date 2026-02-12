@@ -2,8 +2,7 @@
 
 from typing import Any
 
-import numpy as np
-from pde import PDE, CartesianGrid, FieldCollection, ScalarField
+from pde import PDE, CartesianGrid
 
 from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
@@ -79,28 +78,3 @@ class KlausmeierPDE(MultiFieldPDEPreset):
             bc=self._convert_bc(bc),
         )
 
-    def create_initial_state(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-        **kwargs,
-    ) -> FieldCollection:
-        """Create initial state for Klausmeier model."""
-        if ic_type == "custom":
-            rng = np.random.default_rng(ic_params.get("seed"))
-
-            # Initial plants: random uniform [0,1] (matching Visual PDE "RAND")
-            n_data = rng.random(grid.shape)
-
-            # Initial water: constant 1 (matching Visual PDE reference)
-            w_data = np.ones(grid.shape)
-
-            n = ScalarField(grid, n_data)
-            n.label = "n"
-            w = ScalarField(grid, w_data)
-            w.label = "w"
-
-            return FieldCollection([n, w])
-
-        return super().create_initial_state(grid, ic_type, ic_params, **kwargs)

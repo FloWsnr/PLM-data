@@ -4,9 +4,14 @@ parameters:
   mu: 8.53
   epsilon: 0.005
 init:
-  type: default
+  type: constant
   params:
-    noise: 0.1
+    value: 0.0
+    X:
+      type: random-gaussian
+      params:
+        mean: 0.0
+        std: 0.1
 solver: euler
 backend: numba
 adaptive: false

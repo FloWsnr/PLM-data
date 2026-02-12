@@ -2,8 +2,7 @@
 
 from typing import Any
 
-import numpy as np
-from pde import PDE, CartesianGrid, FieldCollection, ScalarField
+from pde import PDE, CartesianGrid
 
 from ..base import MultiFieldPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
@@ -89,30 +88,6 @@ class VanDerPolPDE(MultiFieldPDEPreset):
             },
             bc=self._convert_bc(bc),
         )
-
-    def create_initial_state(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-        **kwargs,
-    ) -> FieldCollection:
-        """Create initial oscillator states.
-
-        Default: small random perturbations around zero.
-        """
-        rng = np.random.default_rng(ic_params.get("seed"))
-        noise = ic_params.get("noise", 0.05)
-
-        x_data = noise * rng.standard_normal(grid.shape)
-        y_data = np.zeros(grid.shape)  # Start at rest
-
-        X_field = ScalarField(grid, x_data)
-        X_field.label = "X"
-        Y_field = ScalarField(grid, y_data)
-        Y_field.label = "Y"
-
-        return FieldCollection([X_field, Y_field])
 
     def get_equations_for_metadata(
         self, parameters: dict[str, float]

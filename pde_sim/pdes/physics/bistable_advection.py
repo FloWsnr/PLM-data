@@ -3,9 +3,7 @@
 import math
 from typing import Any
 
-from pde import PDE, CartesianGrid, ScalarField
-
-from pde_sim.initial_conditions import create_initial_condition
+from pde import PDE, CartesianGrid
 
 from ..base import ScalarPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
@@ -93,29 +91,3 @@ class BistableAdvectionPDE(ScalarPDEPreset):
             bc=bc_spec,
         )
 
-    def create_initial_state(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-        **kwargs,
-    ) -> ScalarField:
-        """Create initial state for bistable-advection equation.
-
-        Default: Use step function to create an invasion front.
-        """
-        if ic_type in ("default", "bistable-advection-default"):
-            # Create a step function initial condition
-            # Left side at 1 (invaded), right side at 0 (uninvaded)
-            smooth = ic_params.get("smooth", True)
-            width = ic_params.get("width", 0.05)
-            mapped_params = {
-                "direction": ic_params.get("direction", "x"),
-                "position": ic_params["step_position"],
-                "value_low": ic_params.get("value_low", 0.0),
-                "value_high": ic_params.get("value_high", 1.0),
-                "smooth_width": width if smooth else 0.0,
-            }
-            return create_initial_condition(grid, "step", mapped_params)
-
-        return create_initial_condition(grid, ic_type, ic_params)
