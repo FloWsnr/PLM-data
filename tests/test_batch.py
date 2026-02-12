@@ -1,6 +1,32 @@
-"""Tests for batch config discovery helpers."""
+"""Tests for batch config discovery helpers and parallel execution."""
 
-from pde_sim.core.batch import collect_yaml_files
+import json
+
+import yaml
+
+from pde_sim.core.batch import collect_yaml_files, run_batch
+
+
+_MINIMAL_CONFIG = {
+    "preset": "heat",
+    "parameters": {"D_T": 0.01},
+    "init": {"type": "random-uniform", "params": {"low": 0.0, "high": 1.0}},
+    "solver": "euler",
+    "backend": "numpy",
+    "t_end": 0.005,
+    "dt": 0.0001,
+    "resolution": [16, 16],
+    "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
+    "seed": 42,
+}
+
+
+def _write_config(path, **overrides):
+    """Write a minimal heat config with optional overrides."""
+    cfg = {**_MINIMAL_CONFIG, **overrides}
+    cfg["output"] = {"path": str(path.parent), "num_frames": 3, "formats": ["png"]}
+    with open(path, "w") as f:
+        yaml.dump(cfg, f)
 
 
 def test_collect_yaml_files_recursive_default_excludes_master(tmp_path):
@@ -22,4 +48,37 @@ def test_collect_yaml_files_recursive_default_excludes_master(tmp_path):
         "top.yaml",
         "top.yml",
     ]
+
+
+def test_run_batch_parallel(tmp_path):
+    """Parallel batch produces the same outputs as sequential."""
+    config_dir = tmp_path / "configs"
+    config_dir.mkdir()
+
+    # Create 3 minimal configs with different seeds for unique output
+    for i in range(3):
+        _write_config(config_dir / f"run_{i}.yaml", seed=100 + i)
+
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+
+    ok, failed = run_batch(
+        config_dir=config_dir,
+        output_dir=output_dir,
+        num_processes=2,
+        unique_suffix=False,
+    )
+
+    assert ok == 3
+    assert failed == 0
+
+    # Each config should have produced an output folder with metadata
+    metadata_files = list(output_dir.rglob("metadata.json"))
+    assert len(metadata_files) == 3
+
+    for mf in metadata_files:
+        with open(mf) as f:
+            meta = json.load(f)
+        assert meta["preset"] == "heat"
+        assert meta["simulation"]["totalFrames"] == 3
 

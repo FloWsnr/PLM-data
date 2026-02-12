@@ -181,6 +181,13 @@ def main():
         action="store_true",
         help="Replace explicit IC position values with random, so configs produce diverse spatial layouts",
     )
+    batch_parser.add_argument(
+        "-np",
+        "--num-processes",
+        type=int,
+        default=1,
+        help="Number of parallel processes for batch execution (default: 1, sequential)",
+    )
 
     args = parser.parse_args()
 
@@ -334,6 +341,7 @@ def run_batch_command(args) -> None:
         unique_suffix=(not args.no_unique_suffix),
         overwrite=args.overwrite,
         randomize_positions=args.randomize_positions,
+        num_processes=args.num_processes,
     )
 
     sys.exit(1 if failed > 0 else 0)
