@@ -1,0 +1,25 @@
+preset: darcy
+parameters:
+  K: 0.5
+  f: 1.0
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 3
+    amplitude: 1.0
+    width: 0.08
+    background: 0.5
+    positions: random
+solver: rk4
+backend: numpy
+adaptive: false
+dt: 0.002
+resolution: [256]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [15.0]
+t_end: 2.0
+output:
+  formats: [gif]
+  num_frames: 100

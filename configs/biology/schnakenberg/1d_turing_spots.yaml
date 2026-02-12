@@ -1,0 +1,24 @@
+preset: schnakenberg
+parameters:
+  Dv: 50.0
+  a: 0.05
+  b: 1.5
+init:
+  type: custom
+  params:
+    a: 0.05
+    b: 1.5
+    noise: 0.01
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0001
+resolution: [256]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [50.0]
+t_end: 150.0
+output:
+  formats: [gif]
+  num_frames: 100

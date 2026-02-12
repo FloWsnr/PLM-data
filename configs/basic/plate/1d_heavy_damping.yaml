@@ -1,0 +1,27 @@
+preset: plate
+parameters:
+  D: 10.0
+  Q: 0.0
+  C: 0.1
+  D_c: 0.005
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 5
+    positions: random
+    amplitude: 2.0
+    width: 0.04
+    random_amplitude: true
+solver: rk4
+backend: numpy
+adaptive: false
+dt: 0.0005
+resolution: [256]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [30.0]
+t_end: 20.0
+output:
+  formats: [gif]
+  num_frames: 100

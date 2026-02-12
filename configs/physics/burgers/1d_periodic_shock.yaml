@@ -1,0 +1,23 @@
+preset: burgers
+parameters:
+  epsilon: 0.5
+  direction: x
+init:
+  type: sine
+  params:
+    kx: 3
+    amplitude: 2.0
+    phase_x: random
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.005
+resolution: [256]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [100.0]
+t_end: 25.0
+output:
+  num_frames: 100
+  formats: [gif]

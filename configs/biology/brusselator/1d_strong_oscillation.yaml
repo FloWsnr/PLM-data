@@ -1,0 +1,24 @@
+preset: brusselator
+parameters:
+  Dv: 3.0
+  a: 1.5
+  b: 4.0
+init:
+  type: custom
+  params:
+    a: 1.5
+    b: 4.0
+    noise: 0.5
+solver: rk4
+backend: numba
+adaptive: false
+dt: 0.0005
+resolution: [128]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [30.0]
+t_end: 80.0
+output:
+  formats: [gif]
+  num_frames: 100

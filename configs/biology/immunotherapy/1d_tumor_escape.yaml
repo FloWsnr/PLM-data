@@ -1,0 +1,32 @@
+preset: immunotherapy
+parameters:
+  Du: 10.0
+  Dv: 0.1
+  Dw: 10.0
+  c: 0.15
+  mu: 0.167
+  p_u: 0.692
+  g_v: 0.1
+  p_v: 0.5
+  p_w: 2.5
+  g_w: 0.001
+  nu: 55.56
+  s_u: 0.005
+  s_w: 0.2
+init:
+  type: default
+  params:
+    noise: 0.4
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0005
+resolution: [256]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [80.0]
+t_end: 100.0
+output:
+  num_frames: 100
+  formats: [gif]

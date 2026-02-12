@@ -1,0 +1,26 @@
+preset: harsh-environment
+parameters:
+  D: 0.5
+  r: 1.0
+  K: 1.0
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 3
+    positions: random
+    amplitude: 1.0
+    width: 0.05
+    background: 0.01
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0005
+resolution: [256]
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+domain_size: [10.0]
+t_end: 5.0
+output:
+  num_frames: 100
+  formats: [gif]

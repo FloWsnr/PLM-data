@@ -1,0 +1,26 @@
+preset: fisher-kpp
+parameters:
+  D: 0.1
+  r: 2.0
+  K: 1.0
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 3
+    amplitude: 0.8
+    width: 0.05
+    background: 0.0
+    positions: random
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0005
+resolution: [256]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [100.0]
+t_end: 60.0
+output:
+  formats: [gif]
+  num_frames: 100

@@ -1,0 +1,25 @@
+preset: cyclic-competition
+parameters:
+  a: 1.5
+  b: 3.0
+  Du: 2.0
+  Dv: 0.5
+  Dw: 0.5
+init:
+  type: random-uniform
+  params:
+    low: 0.05
+    high: 0.8
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: [256]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [500.0]
+t_end: 100.0
+output:
+  num_frames: 100
+  formats: [gif]

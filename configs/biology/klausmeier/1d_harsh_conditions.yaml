@@ -1,0 +1,28 @@
+preset: klausmeier
+parameters:
+  a: 1.5
+  m: 0.6
+  V: 50.0
+  Dn: 1.0
+  Dw: 2.0
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 5
+    positions: random
+    amplitude: 0.3
+    width: 0.05
+    background: 0.2
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: [128]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [100.0]
+t_end: 50.0
+timesteps: 100
+output:
+  formats: [gif]

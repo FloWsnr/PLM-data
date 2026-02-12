@@ -1,0 +1,29 @@
+# KdV equation - asymmetric two-soliton collision with offset positions (1D)
+# Tall fast soliton chases a small slow one, demonstrating elastic collision + phase shift
+preset: kdv
+parameters:
+  b: 0.01
+
+init:
+  type: two-solitons
+  params:
+    k1: 0.35
+    k2: 0.2
+    x1: 20
+    x2: 60
+
+solver: rk4
+backend: numba
+adaptive: false
+dt: 0.001
+t_end: 40.0
+resolution: [256]
+
+bc:
+  x-: periodic
+  x+: periodic
+
+domain_size: [100.0]
+output:
+  formats: [gif]
+  num_frames: 100

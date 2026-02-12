@@ -1,0 +1,25 @@
+preset: plate
+parameters:
+  D: 10.0
+  Q: 0.0
+  C: 0.001
+  D_c: 0.0
+init:
+  type: sine
+  params:
+    kx: 4
+    amplitude: 3.0
+    phase_x: random
+solver: rk4
+backend: numpy
+adaptive: false
+dt: 0.001
+resolution: [128]
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+domain_size: [20.0]
+t_end: 30.0
+output:
+  formats: [gif]
+  num_frames: 100

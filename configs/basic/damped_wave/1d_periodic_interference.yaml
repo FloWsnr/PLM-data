@@ -1,0 +1,24 @@
+preset: damped-wave
+parameters:
+  D: 5.0
+  C: 0.005
+  d: 0.005
+init:
+  type: sine
+  params:
+    kx: 5
+    amplitude: 0.8
+    phase_x: random
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.002
+resolution: [256]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [100.0]
+t_end: 100.0
+timesteps: 100
+output:
+  formats: [gif]

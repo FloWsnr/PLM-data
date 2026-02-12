@@ -1,0 +1,27 @@
+preset: sir
+parameters:
+  beta: 0.5
+  gamma: 0.05
+  D_S: 0.02
+  D_I: 0.08
+  D_R: 0.02
+init:
+  type: default
+  params:
+    S0: 0.95
+    I0: 0.03
+    seed_x: random
+    seed_radius: 2.0
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: [256]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [200.0]
+t_end: 400.0
+output:
+  formats: [gif]
+  num_frames: 100

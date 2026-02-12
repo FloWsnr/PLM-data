@@ -1,0 +1,27 @@
+# NLS - two counter-propagating solitons colliding (1D)
+preset: nonlinear-schrodinger
+parameters:
+  kappa: 1.0
+  D: 1.0
+  c: 5.0
+init:
+  type: two_soliton
+  params:
+    amplitude: 1.5
+    c1: 8.0
+    c2: -8.0
+    x1_frac: 0.25
+    x2_frac: 0.75
+solver: rk4
+backend: numba
+adaptive: false
+dt: 1.0e-03
+t_end: 5.0
+resolution: [256]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [50]
+output:
+  formats: [gif]
+  num_frames: 100

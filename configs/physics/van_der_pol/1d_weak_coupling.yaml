@@ -1,0 +1,22 @@
+preset: van-der-pol
+parameters:
+  D: 0.5
+  mu: 8.53
+  epsilon: 0.005
+init:
+  type: default
+  params:
+    noise: 0.1
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0015
+t_end: 80.0
+resolution: [256]
+domain_size: [80]
+bc:
+  x-: periodic
+  x+: periodic
+output:
+  formats: [gif]
+  num_frames: 100

@@ -1,0 +1,23 @@
+preset: keller-segel
+parameters:
+  c: 4.0
+  D: 1.0
+  a: 0.05
+init:
+  type: random-uniform
+  params:
+    low: 0.0
+    high: 0.05
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: [128]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [50.0]
+t_end: 80.0
+timesteps: 100
+output:
+  formats: [gif]

@@ -1,0 +1,27 @@
+preset: stochastic-gray-scott
+parameters:
+  a: 0.037
+  b: 0.04
+  D: 4.0
+  sigma: 0.01
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 1
+    amplitude: 0.5
+    width: 0.08
+    background: 0.0
+    positions: random
+solver: euler
+backend: numpy
+adaptive: false
+dt: 0.02
+t_end: 800.0
+resolution: [256]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [500]
+output:
+  formats: [gif]
+  num_frames: 100

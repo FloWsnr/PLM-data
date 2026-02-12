@@ -1,0 +1,29 @@
+preset: cross-diffusion-schnakenberg
+parameters:
+  Duu: 1.0
+  Duv: 3.0
+  Dvu: 0.2
+  Dvv: 1.0
+  a: 0.02
+  b: 1.5
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 5
+    positions: random
+    amplitude: 0.15
+    width: 0.05
+    background: 1.0
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: [128]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [50.0]
+t_end: 100.0
+output:
+  formats: [gif]
+  num_frames: 100

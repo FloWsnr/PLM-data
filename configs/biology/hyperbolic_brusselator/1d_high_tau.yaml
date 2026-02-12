@@ -1,0 +1,27 @@
+preset: hyperbolic-brusselator
+parameters:
+  tau: 3.0
+  Du: 2.0
+  Dv: 1.0
+  a: 3.0
+  b: 9.0
+  eps: 0.01
+init:
+  type: custom
+  params:
+    a: 3.0
+    b: 9.0
+    noise: 0.3
+solver: rk4
+backend: numba
+adaptive: false
+dt: 5.0e-04
+resolution: [256]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [20.0]
+t_end: 80.0
+output:
+  formats: [gif]
+  num_frames: 100

@@ -1,0 +1,23 @@
+preset: lorenz
+parameters:
+  sigma: 10.0
+  rho: 15.0
+  beta: 2.6666666666667
+  D: 0.01
+init:
+  type: custom
+  params:
+    noise: 0.5
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.005
+resolution: [256]
+domain_size: [50.0]
+t_end: 50.0
+bc:
+  x-: neumann:0
+  x+: neumann:0
+output:
+  formats: [gif]
+  num_frames: 100

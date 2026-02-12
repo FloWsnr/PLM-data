@@ -1,0 +1,25 @@
+preset: damped-wave
+parameters:
+  D: 10.0
+  C: 0.01
+  d: 0.15
+init:
+  type: step
+  params:
+    position: random
+    value_low: 0.0
+    value_high: 1.0
+    smooth_width: 0.05
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.002
+resolution: [256]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [80.0]
+t_end: 30.0
+timesteps: 100
+output:
+  formats: [gif]

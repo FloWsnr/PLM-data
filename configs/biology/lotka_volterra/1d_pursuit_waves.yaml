@@ -1,0 +1,29 @@
+preset: lotka-volterra
+parameters:
+  Du: 1.0
+  Dv: 0.05
+  alpha: 1.0
+  beta: 0.1
+  delta: 0.08
+  gamma: 0.6
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 2
+    positions: random
+    amplitude: 5.0
+    width: 0.05
+    background: 2.0
+solver: rk4
+backend: numba
+adaptive: false
+dt: 0.005
+resolution: [256]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [300.0]
+t_end: 80.0
+output:
+  formats: [gif]
+  num_frames: 100

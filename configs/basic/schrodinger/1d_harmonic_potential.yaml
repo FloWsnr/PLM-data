@@ -1,0 +1,31 @@
+preset: schrodinger
+parameters:
+  D: 1.0
+  C: 0.004
+  n: 3
+  m: 3
+  potential_type: harmonic
+  V_strength: 1.0
+  pot_n: 15
+  pot_m: 15
+init:
+  type: superposition
+  params:
+    n1: 2
+    m1: 2
+    n2: 4
+    m2: 4
+    weight: 0.7
+solver: rk4
+backend: numba
+adaptive: true
+dt: 0.0001
+resolution: [128]
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+domain_size: [10.0]
+t_end: 10.0
+output:
+  formats: [gif]
+  num_frames: 100

@@ -1,0 +1,27 @@
+# KdV equation - tall narrow soliton propagation (1D)
+# A tall soliton (large k) propagates faster across the domain
+preset: kdv
+parameters:
+  b: 0.01
+
+init:
+  type: offset-soliton
+  params:
+    k: 0.35
+    x0: 15
+
+solver: rk4
+backend: numba
+adaptive: false
+dt: 0.001
+t_end: 50.0
+resolution: [256]
+
+bc:
+  x-: periodic
+  x+: periodic
+
+domain_size: [100.0]
+output:
+  formats: [gif]
+  num_frames: 100

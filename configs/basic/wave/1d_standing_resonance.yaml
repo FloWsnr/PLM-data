@@ -1,0 +1,23 @@
+preset: wave
+parameters:
+  D: 1.0
+  C: 0.01
+init:
+  type: sine
+  params:
+    kx: 3
+    amplitude: 1.0
+    phase_x: random
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.002
+resolution: [128]
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+domain_size: [50.0]
+t_end: 80.0
+timesteps: 100
+output:
+  formats: [gif]

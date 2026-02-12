@@ -1,0 +1,22 @@
+preset: kuramoto-sivashinsky
+parameters:
+  a: 0.0
+init:
+  type: sine
+  params:
+    kx: 10
+    amplitude: 0.1
+    phase_x: random
+solver: scipy
+backend: numba
+adaptive: true
+dt: 0.01
+resolution: [512]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [300]
+t_end: 300.0
+output:
+  formats: [gif]
+  num_frames: 100

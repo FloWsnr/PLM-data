@@ -1,0 +1,23 @@
+preset: heat
+parameters:
+  D_T: 0.05
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 3
+    width: 0.02
+    amplitude: 2.0
+    positions: random
+solver: euler
+backend: numba
+adaptive: true
+dt: 0.005
+resolution: [256]
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+domain_size: [10.0]
+t_end: 15.0
+timesteps: 100
+output:
+  formats: [gif]

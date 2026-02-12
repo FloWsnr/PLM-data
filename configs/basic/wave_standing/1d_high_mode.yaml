@@ -1,0 +1,17 @@
+preset: wave-standing
+parameters:
+  D: 1.0
+init:
+  type: sine
+  params:
+    kx: 10
+    amplitude: 0.5
+    phase_x: random
+solver: euler
+dt: 0.002
+resolution: [256]
+domain_size: [100.0]
+t_end: 50.0
+output:
+  formats: [gif]
+  num_frames: 100

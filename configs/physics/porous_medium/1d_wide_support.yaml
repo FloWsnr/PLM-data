@@ -1,0 +1,22 @@
+# Porous Medium - wide initial support with slow spreading (1D)
+preset: porous-medium
+parameters:
+  m: 2.0
+init:
+  type: porous-medium-default
+  params:
+    amplitude: 0.5
+    radius: 5.0
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: [256]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [30.0]
+t_end: 20.0
+output:
+  formats: [gif]
+  num_frames: 100

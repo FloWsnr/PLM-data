@@ -1,0 +1,22 @@
+# Phase-Field Crystal - low density with slow crystallization (1D)
+preset: phase-field-crystal
+parameters:
+  epsilon: 0.2
+init:
+  type: phase-field-crystal-default
+  params:
+    mean_density: 0.1
+    amplitude: 0.03
+solver: scipy
+backend: numpy
+adaptive: true
+dt: 0.001
+resolution: [256]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [100.0]
+t_end: 200.0
+output:
+  formats: [gif]
+  num_frames: 100

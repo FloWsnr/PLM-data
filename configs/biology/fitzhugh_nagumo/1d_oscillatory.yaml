@@ -1,0 +1,27 @@
+preset: fitzhugh-nagumo
+parameters:
+  Dv: 20.0
+  e_v: 0.8
+  a_v: 0.5
+  a_z: 0.1
+init:
+  type: step
+  params:
+    direction: x
+    position: 0.5
+    value_low: 0.5
+    value_high: -0.5
+    smooth_width: 0.05
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.001
+resolution: [128]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [200.0]
+t_end: 150.0
+output:
+  formats: [gif]
+  num_frames: 100

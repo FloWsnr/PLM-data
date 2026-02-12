@@ -1,0 +1,25 @@
+preset: klausmeier
+parameters:
+  a: 2.0
+  m: 0.54
+  V: 80.0
+  Dn: 1.0
+  Dw: 1.0
+init:
+  type: random-uniform
+  params:
+    low: 0.1
+    high: 0.6
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0005
+resolution: [256]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [200.0]
+t_end: 100.0
+timesteps: 100
+output:
+  formats: [gif]

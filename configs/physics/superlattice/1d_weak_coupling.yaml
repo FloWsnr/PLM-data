@@ -1,0 +1,28 @@
+preset: superlattice
+parameters:
+  a: 2.0
+  b: 7.0
+  c: 12.0
+  d: 7.0
+  alpha: 0.1
+  D_uone: 4.3
+  D_utwo: 50.0
+  D_uthree: 22.0
+  D_ufour: 660.0
+init:
+  type: default
+  params:
+    noise: 0.1
+solver: scipy
+backend: numba
+adaptive: true
+dt: 0.1
+resolution: [128]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [200.0]
+t_end: 15.0
+output:
+  formats: [gif]
+  num_frames: 100

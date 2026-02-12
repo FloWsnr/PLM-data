@@ -1,0 +1,28 @@
+preset: swift-hohenberg
+parameters:
+  r: 0.05
+  a: 1.0
+  b: 2.0
+  c: -1.0
+  D: 1.0
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 5
+    positions: random
+    amplitude: 0.02
+    width: 0.05
+    background: 0.0
+solver: scipy
+backend: numba
+adaptive: true
+dt: 0.0005
+resolution: [128]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+domain_size: [100.0]
+t_end: 80.0
+output:
+  formats: [gif]
+  num_frames: 100

@@ -1,0 +1,21 @@
+preset: wave-standing
+parameters:
+  D: 1.0
+init:
+  type: gaussian-blob
+  params:
+    num_blobs: 1
+    amplitude: 1.0
+    width: 0.1
+    positions: [0.5]
+solver: euler
+dt: 0.002
+resolution: [128]
+domain_size: [100.0]
+t_end: 80.0
+bc:
+  x-: dirichlet:0
+  x+: dirichlet:0
+output:
+  formats: [gif]
+  num_frames: 100

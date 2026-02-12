@@ -1,0 +1,25 @@
+preset: heterogeneous-gierer-meinhardt
+parameters:
+  D: 30.0
+  a: 1.0
+  b: 1.5
+  c: 6.1
+  A: 0.3
+  B: 6.0
+init:
+  type: default
+  params:
+    noise: 0.05
+solver: euler
+backend: numba
+adaptive: false
+dt: 0.0003
+resolution: [128]
+bc:
+  x-: periodic
+  x+: periodic
+domain_size: [80.0]
+t_end: 120.0
+output:
+  num_frames: 100
+  formats: [gif]
