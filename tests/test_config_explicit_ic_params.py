@@ -1,4 +1,4 @@
-"""Ensure configs do not rely on hidden IC defaults."""
+"""Validate every tracked YAML config: setup pipeline and no hidden IC defaults."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ import yaml
 
 from pde_sim.boundaries import create_grid_with_bc
 from pde_sim.core.config import load_config
+from pde_sim.core.simulation import SimulationRunner
 from pde_sim.initial_conditions import _IC_REGISTRY
 from pde_sim.pdes import get_pde_preset
 
@@ -82,6 +83,13 @@ def _generic_ic_defaults(ic_type: str) -> dict[str, Any]:
             continue
         defaults[name] = _normalize(copy.deepcopy(param.default))
     return defaults
+
+
+@pytest.mark.parametrize("config_path", _tracked_config_paths())
+def test_config_valid(config_path: Path, tmp_path: Path):
+    """Validate config by running the full setup pipeline (no time stepping)."""
+    cfg = load_config(config_path)
+    SimulationRunner(cfg, output_dir=tmp_path)
 
 
 @pytest.mark.parametrize("config_path", _tracked_config_paths())

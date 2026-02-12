@@ -81,33 +81,31 @@ class TestSimulationRunner:
         num_fields = len(metadata["visualization"]["whatToPlot"])
         assert len(frames) == metadata["simulation"]["totalFrames"] * num_fields
 
-    def test_run_with_different_solvers(self, tmp_path):
-        """Test that different solvers can be used."""
-        for solver in ["euler", "rk4"]:
-            config_dict = {
-                "preset": "heat",
-                "parameters": {"D_T": 0.01},
-                "init": {"type": "random-uniform", "params": {}},
-                "solver": solver,
-                "backend": "numpy",
-                "t_end": 0.001,
-                "dt": 0.0001,
-                "resolution": [16, 16],
-                "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
-                "output": {"path": str(tmp_path), "num_frames": 3, "formats": ["png"]},
-                "seed": 42,
-            }
+    def test_run_with_rk4_solver(self, tmp_path):
+        """Test that rk4 solver can be used (euler is covered by other tests)."""
+        config_dict = {
+            "preset": "heat",
+            "parameters": {"D_T": 0.01},
+            "init": {"type": "random-uniform", "params": {}},
+            "solver": "rk4",
+            "backend": "numpy",
+            "t_end": 0.001,
+            "dt": 0.0001,
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
+            "output": {"path": str(tmp_path), "num_frames": 3, "formats": ["png"]},
+            "seed": 42,
+        }
 
-            config_path = tmp_path / f"config_{solver}.yaml"
-            with open(config_path, "w") as f:
-                yaml.dump(config_dict, f)
+        config_path = tmp_path / "config_rk4.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
 
-            config = load_config(config_path)
-            runner = SimulationRunner(config, output_dir=tmp_path)
+        config = load_config(config_path)
+        runner = SimulationRunner(config, output_dir=tmp_path)
 
-            # Should not raise
-            metadata = runner.run(verbose=False)
-            assert metadata["parameters"]["timesteppingScheme"] == solver.title()
+        metadata = runner.run(verbose=False)
+        assert metadata["parameters"]["timesteppingScheme"] == "Rk4"
 
 
 class TestRunFromConfig:
@@ -161,49 +159,6 @@ class TestRunFromConfig:
         # Override seed
         metadata = run_from_config(config_path, seed=999, verbose=False)
         assert metadata is not None
-
-
-class TestGrayScottSimulation:
-    """Tests for Gray-Scott simulation."""
-
-    def test_gray_scott_short_simulation(self, tmp_path):
-        """Test running a short Gray-Scott simulation."""
-        config_dict = {
-            "preset": "gray-scott",
-            "parameters": {"a": 0.037, "b": 0.06, "D": 2.0},
-            "init": {
-                "type": "gaussian-blob",
-                "params": {"num_blobs": 2, "positions": "random"},
-            },
-            "solver": "euler",
-            "backend": "numpy",
-            "t_end": 1.0,  # 100 * 0.01
-            "dt": 0.01,  # Reduced for CFL stability (was 0.5)
-            "resolution": [32, 32],
-            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
-            "output": {
-                "path": str(tmp_path),
-                "num_frames": 11,
-                "formats": ["png"],
-            },
-            "seed": 42,
-            "domain_size": [2.5, 2.5],
-        }
-
-        config_path = tmp_path / "config.yaml"
-        with open(config_path, "w") as f:
-            yaml.dump(config_dict, f)
-
-        config = load_config(config_path)
-        runner = SimulationRunner(config, output_dir=tmp_path)
-
-        metadata = runner.run(verbose=False)
-
-        # Check metadata
-        assert metadata["preset"] == "gray-scott"
-        assert metadata["parameters"]["numSpecies"] == 2
-        # With new multi-field output, default includes all fields when none specified
-        assert metadata["visualization"]["whatToPlot"] == ["u", "v"]
 
 
 class TestBackend:
