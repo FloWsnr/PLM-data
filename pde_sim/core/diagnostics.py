@@ -32,6 +32,7 @@ def check_trajectory_stagnation(
         Dictionary with stagnation analysis per field.
     """
     num_frames = len(all_fields)
+    threshold_percent = rel_threshold * 100.0
     stagnant_fields: list[str] = []
     fields_info: dict[str, dict[str, Any]] = {}
 
@@ -57,6 +58,9 @@ def check_trajectory_stagnation(
                 "field_range": 0.0,
                 "max_relative_change": 0.0,
                 "final_relative_change": 0.0,
+                "variability_percent": 0.0,
+                "final_variability_percent": 0.0,
+                "variability_below_threshold": True,
             }
             continue
 
@@ -96,9 +100,14 @@ def check_trajectory_stagnation(
             "field_range": field_range,
             "max_relative_change": max_relative_change,
             "final_relative_change": final_relative_change,
+            "variability_percent": max_relative_change * 100.0,
+            "final_variability_percent": final_relative_change * 100.0,
+            "variability_below_threshold": final_relative_change < rel_threshold,
         }
 
     return {
         "stagnant_fields": stagnant_fields,
+        "relative_threshold": rel_threshold,
+        "variability_threshold_percent": threshold_percent,
         "fields": fields_info,
     }

@@ -26,6 +26,8 @@ class TestCheckTrajectoryStagnation:
         )
 
         assert result["stagnant_fields"] == ["u"]
+        assert result["relative_threshold"] == pytest.approx(1e-4)
+        assert result["variability_threshold_percent"] == pytest.approx(1e-2)
         info = result["fields"]["u"]
         assert info["stagnant"] is True
         assert info["stagnant_from_frame"] == 0
@@ -33,6 +35,9 @@ class TestCheckTrajectoryStagnation:
         assert info["field_range"] == 0.0
         assert info["max_relative_change"] == 0.0
         assert info["final_relative_change"] == 0.0
+        assert info["variability_percent"] == 0.0
+        assert info["final_variability_percent"] == 0.0
+        assert info["variability_below_threshold"] is True
 
     def test_quick_convergence(self):
         """First few frames active, then flat -> warns with correct stagnant_from_frame."""
@@ -83,8 +88,12 @@ class TestCheckTrajectoryStagnation:
         )
 
         assert result["stagnant_fields"] == []
-        assert result["fields"]["u"]["stagnant"] is False
-        assert result["fields"]["u"]["stagnant_from_frame"] is None
+        info = result["fields"]["u"]
+        assert info["stagnant"] is False
+        assert info["stagnant_from_frame"] is None
+        assert info["variability_percent"] > 0.0
+        assert info["final_variability_percent"] > 0.0
+        assert info["variability_below_threshold"] is False
 
     def test_multi_field_partial_stagnation(self):
         """One field stagnates, another stays active -> only warns for stagnant field."""
@@ -103,7 +112,9 @@ class TestCheckTrajectoryStagnation:
         )
 
         assert result["stagnant_fields"] == ["u"]
-        assert result["fields"]["u"]["stagnant"] is True
+        info = result["fields"]["u"]
+        assert info["stagnant"] is True
+        assert info["variability_below_threshold"] is True
         assert result["fields"]["v"]["stagnant"] is False
 
     def test_zero_range_field(self):
