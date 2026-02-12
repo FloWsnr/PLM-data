@@ -56,10 +56,16 @@ parameters:
   a: 0.03   # damping coefficient (for numerical stability)
 
 init:
-  type: random-gaussian
+  type: gaussian-blob
   params:
-    mean: 0.0
-    std: 0.1
+    num_blobs: 5
+    positions: random
+    amplitude: 0.1
+    width: 0.1
+    background: 0.0
+    random_amplitude: false
+    aspect_ratio: 1.0
+    random_aspect: false
 ```
 
 **Note**: Visual-PDE uses explicit solver with `dt=0.001, dx=0.5`. Our implementation uses adaptive implicit solver which is more efficient for this stiff 4th-order equation.
@@ -70,7 +76,7 @@ init:
 Two-dimensional spatiotemporal chaos:
 - `domain_size = 150`
 - `a = 0.03` (slight damping for numerical stability)
-- Initial condition: random Gaussian perturbations around zero
+- Initial condition: random Gaussian blobs around zero background
 - Produces characteristic cellular/turbulent structures
 
 ### No Damping (a=0)

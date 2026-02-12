@@ -98,7 +98,7 @@ class GiererMeinhardtPDE(MultiFieldPDEPreset):
         """Create initial state near steady state with perturbation.
 
         Supports:
-            - random-gaussian: Random perturbation around steady state
+            - gaussian-blob: Localized perturbations around steady state
             - stripes: Stripe pattern in x-direction (for stripe instability demos)
         """
         noise = ic_params.get("noise", 0.01)

@@ -8,7 +8,6 @@ from pde_sim.initial_conditions import (
     CosinePattern,
     DoubleStep,
     GaussianBlob,
-    RandomGaussian,
     RandomUniform,
     RectangleGrid,
     SinePattern,
@@ -27,7 +26,6 @@ class TestInitialConditionRegistry:
         ic_types = list_initial_conditions()
 
         assert "random-uniform" in ic_types
-        assert "random-gaussian" in ic_types
         assert "gaussian-blob" in ic_types
         assert "sine" in ic_types
         assert "step" in ic_types
@@ -69,34 +67,6 @@ class TestRandomUniform:
         assert isinstance(field, ScalarField)
         assert np.all(field.data >= 0.5)
         assert np.all(field.data <= 1.5)
-
-
-class TestRandomGaussian:
-    """Tests for RandomGaussian IC generator."""
-
-    def test_generate_default(self, small_grid):
-        """Test generating with default parameters."""
-        ic = RandomGaussian()
-        field = ic.generate(small_grid)
-
-        assert isinstance(field, ScalarField)
-        assert field.data.shape == (32, 32)
-
-    def test_generate_custom_params(self, small_grid):
-        """Test generating with custom mean/std."""
-        ic = RandomGaussian()
-        field = ic.generate(small_grid, mean=10.0, std=0.1)
-
-        # Mean should be close to 10
-        assert np.abs(np.mean(field.data) - 10.0) < 1.0
-
-    def test_generate_with_clipping(self, small_grid):
-        """Test generating with value clipping."""
-        ic = RandomGaussian()
-        field = ic.generate(small_grid, mean=0.5, std=0.5, clip_min=0.0, clip_max=1.0)
-
-        assert np.all(field.data >= 0.0)
-        assert np.all(field.data <= 1.0)
 
 
 class TestGaussianBlob:
@@ -619,7 +589,6 @@ class TestSeedReproducibility:
 
     SEED_TEST_CONFIGS = [
         ("random-uniform", RandomUniform, {}, {}),
-        ("random-gaussian", RandomGaussian, {}, {}),
         ("step", StepFunction, {"position": "random"}, {"position": "random"}),
         ("double-step", DoubleStep, {"position1": "random", "position2": "random"}, {"position1": "random", "position2": "random"}),
         ("sine", SinePattern, {"phase_x": "random", "phase_y": "random"}, {"phase_x": "random", "phase_y": "random"}),

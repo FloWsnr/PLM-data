@@ -159,7 +159,6 @@ Run `python -m pde_sim list` to see all 60+ presets. Examples by category:
 
 Available initial condition types:
 - `random-uniform` - Uniform random values
-- `random-gaussian` - Gaussian random values
 - `gaussian-blob` - Gaussian blob(s) with optional aspect ratio for asymmetric shapes
 - `sine` / `cosine` - Sinusoidal patterns
 - `step` / `double-step` - Step functions and band/stripe patterns
