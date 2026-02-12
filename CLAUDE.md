@@ -298,3 +298,5 @@ output/00_overview/
 
 - Don't account for backwards compatibility
 - Don't use default values, i.e. dict.get(key, default) or in functions if not actually necessary. The code should fail if values are not provided.
+- Never delete outputs (results) without asking
+- Never revert git changes you think might be accidental before confirming with the user
