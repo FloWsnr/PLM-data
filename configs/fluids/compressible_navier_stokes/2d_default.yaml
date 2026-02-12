@@ -1,0 +1,30 @@
+preset: compressible-navier-stokes
+parameters:
+  gamma: 1.4
+  mu: 0.01
+  kappa: 0.01
+init:
+  type: acoustic-pulse
+  params:
+    x0: 0.5
+    y0: 0.5
+    amplitude: 0.1
+    width: 0.05
+    rho_0: 1.0
+    p_0: 1.0
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.0005
+resolution: [128, 128]
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+domain_size: [1.0, 1.0]
+t_end: 2.0
+output:
+  path: ./output
+  num_frames: 100
+  formats: [png]

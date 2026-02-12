@@ -8,6 +8,7 @@ from .navier_stokes import NavierStokesPDE
 from .navier_stokes_cylinder import NavierStokesCylinderPDE
 from .thermal_convection import ThermalConvectionPDE
 from .potential_flow_dipoles import PotentialFlowDipolesPDE
+from .compressible_navier_stokes import CompressibleNavierStokesPDE
 
 __all__ = [
     "DarcyPDE",
@@ -18,4 +19,5 @@ __all__ = [
     "NavierStokesCylinderPDE",
     "ThermalConvectionPDE",
     "PotentialFlowDipolesPDE",
+    "CompressibleNavierStokesPDE",
 ]
