@@ -6,7 +6,6 @@ parameters:
 init:
   type: step
   params:
-    position: random
     value_low: 0.0
     value_high: 1.0
     smooth_width: 0.05
@@ -24,6 +23,7 @@ domain_size:
 - 80.0
 t_end: 30.0
 timesteps: 100
+randomize: true
 output:
   formats:
   - gif

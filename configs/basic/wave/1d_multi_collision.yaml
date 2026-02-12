@@ -9,7 +9,6 @@ init:
     amplitude: 1.5
     width: 0.05
     random_amplitude: true
-    positions: random
     background: 0.0
     aspect_ratio: 1.0
     random_aspect: false
@@ -26,6 +25,7 @@ domain_size:
 - 100.0
 t_end: 50.0
 timesteps: 100
+randomize: true
 output:
   formats:
   - gif

@@ -52,7 +52,7 @@ def sample_config_dict():
         "parameters": {"D_T": 0.1},
         "init": {
             "type": "gaussian-blob",
-            "params": {"num_blobs": 2, "positions": "random", "amplitude": 1.0},
+            "params": {"num_blobs": 2, "positions": [[0.3, 0.3], [0.7, 0.7]], "amplitude": 1.0},
         },
         "solver": "euler",
         "backend": "numpy",

@@ -6,7 +6,6 @@ init:
   type: step
   params:
     seed: 501
-    position: random
     direction: x
     value_low: 0.0
     value_high: 1.0
@@ -27,3 +26,4 @@ domain_size:
 - 100.0
 - 100.0
 t_end: 200.0
+randomize: true

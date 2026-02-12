@@ -17,7 +17,6 @@ init:
       type: gaussian-blob
       params:
         num_blobs: 1
-        positions: random
         amplitude: 0.1
         width: 0.1
         background: 3.0
@@ -46,3 +45,4 @@ bc:
   x+: periodic
 domain_size: [200.0]
 t_end: 10.0
+randomize: true

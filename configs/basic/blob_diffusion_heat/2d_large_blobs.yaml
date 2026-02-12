@@ -11,7 +11,6 @@ init:
     num_blobs: 1
     amplitude: 1.0
     width: 0.15
-    positions: random
     background: 0.0
     random_amplitude: false
     aspect_ratio: 1.0
@@ -31,3 +30,4 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
+randomize: true

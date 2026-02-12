@@ -9,7 +9,6 @@ init:
     num_blobs: 1
     radius: 2.0
     amplitude: 1.0
-    positions: random
     width: 0.1
     background: 0.0
     random_amplitude: false
@@ -31,3 +30,4 @@ domain_size:
 - 10.0
 - 10.0
 t_end: 75.0
+randomize: true

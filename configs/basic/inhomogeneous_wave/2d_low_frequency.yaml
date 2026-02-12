@@ -13,7 +13,6 @@ init:
     sigma: 0.08
     background: 0.0
     seed: 117
-    positions: random
     width: 0.1
     random_amplitude: false
     aspect_ratio: 1.0
@@ -34,3 +33,4 @@ domain_size:
 - 100.0
 - 100.0
 t_end: 50.0
+randomize: true

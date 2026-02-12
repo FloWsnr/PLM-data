@@ -8,7 +8,6 @@ init:
   params:
     num_blobs: 5
     width: 0.05
-    positions: random
     amplitude: 1.0
     background: 0.0
     random_amplitude: false
@@ -30,3 +29,4 @@ bc:
 domain_size:
 - 1000
 - 1000
+randomize: true

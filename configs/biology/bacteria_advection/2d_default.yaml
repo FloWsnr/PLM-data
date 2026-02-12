@@ -10,7 +10,6 @@ init:
     amplitude: 0.8
     width: 0.08
     background: 0.1
-    positions: random
     random_amplitude: false
     aspect_ratio: 1.0
     random_aspect: false
@@ -31,3 +30,4 @@ domain_size:
 - 320.0
 - 320.0
 t_end: 100.0
+randomize: true

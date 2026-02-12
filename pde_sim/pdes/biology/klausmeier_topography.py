@@ -151,8 +151,8 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
             blob_width = ic_params["blob_width"]
             T_data = np.zeros(grid.shape)
 
-            blob_positions = ic_params["blob_positions"]
-            blob_amplitudes = ic_params["blob_amplitudes"]
+            blob_positions = ic_params.get("blob_positions")
+            blob_amplitudes = ic_params.get("blob_amplitudes")
 
             if randomize:
                 n_blobs = ic_params.get("n_blobs")
@@ -169,6 +169,9 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
                     for _ in range(n_blobs)
                 ]
                 blob_amplitudes = [rng.uniform(0.5, 1.0) for _ in range(n_blobs)]
+
+            if blob_positions is None or blob_amplitudes is None:
+                raise ValueError("klausmeier-topography gaussian_blobs requires blob_positions and blob_amplitudes")
 
             if len(blob_positions) != len(blob_amplitudes):
                 raise ValueError("klausmeier-topography gaussian_blobs requires matching blob_positions and blob_amplitudes lengths")
@@ -189,7 +192,7 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
             T_data = amplitude * (1 - (2 * coords_norm[axis_idx] - 1) ** 2)
 
         elif topo_type == "random":
-            modes = ic_params["modes"]
+            modes = ic_params.get("modes")
             dim_names = ["x", "y", "z"][:ndim]
 
             if randomize:
@@ -202,6 +205,9 @@ class KlausmeierTopographyPDE(MultiFieldPDEPreset):
                         mode[f"k{d}"] = rng.uniform(1, 4)
                         mode[f"phase_{d}"] = rng.uniform(0, 2 * np.pi)
                     modes.append(mode)
+
+            if modes is None:
+                raise ValueError("klausmeier-topography random topo_type requires modes")
             T_data = np.zeros(grid.shape)
             for mode in modes:
                 term = mode["amp"]

@@ -6,7 +6,6 @@ init:
   params:
     kx: 4
     amplitude: 1.0
-    phase_x: random
     ky: 1
     kz: 1
     offset: 0.0
@@ -21,3 +20,4 @@ timesteps: 200
 bc:
   x-: neumann:0
   x+: neumann:0
+randomize: true

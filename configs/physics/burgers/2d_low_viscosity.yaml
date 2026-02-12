@@ -10,7 +10,6 @@ init:
     width: 0.08
     background: 0.0
     random_amplitude: true
-    positions: random
     aspect_ratio: 1.0
     random_aspect: false
 solver: rk4
@@ -29,3 +28,4 @@ domain_size:
 - 100.0
 - 100.0
 t_end: 30.0
+randomize: true

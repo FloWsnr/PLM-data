@@ -8,7 +8,6 @@ init:
   params:
     kx: 5
     amplitude: 0.8
-    phase_x: random
     ky: 1
     kz: 1
     offset: 0.0
@@ -25,6 +24,7 @@ domain_size:
 - 100.0
 t_end: 100.0
 timesteps: 100
+randomize: true
 output:
   formats:
   - gif

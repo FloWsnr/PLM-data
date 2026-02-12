@@ -12,7 +12,6 @@ init:
     width: 0.05
     background: 0.0
     seed: 42
-    positions: random
     random_amplitude: false
     aspect_ratio: 1.0
     random_aspect: false
@@ -28,3 +27,4 @@ bc:
   x+: periodic
 domain_size:
 - 300
+randomize: true

@@ -13,7 +13,6 @@ init:
     max_amplitude: 0.8
     min_sigma: 8.0
     max_sigma: 20.0
-    positions: random
     amplitude: 1.0
     width: 0.1
     background: 0.0
@@ -37,3 +36,4 @@ domain_size:
 - 250.0
 - 250.0
 t_end: 50.0
+randomize: true

@@ -14,7 +14,6 @@ init:
     - 0.5
     - 1.0
     seed: 105
-    positions: random
     amplitude: 1.0
     width: 0.1
     background: 0.0
@@ -36,3 +35,4 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
+randomize: true

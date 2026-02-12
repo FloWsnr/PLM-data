@@ -12,7 +12,6 @@ init:
       type: gaussian-blob
       params:
         num_blobs: 1
-        positions: random
         amplitude: 0.5
         width: 0.1
         background: 1.0
@@ -37,6 +36,7 @@ t_end: 50.0
 bc:
   x-: neumann:0
   x+: neumann:0
+randomize: true
 output:
   formats: [gif]
   num_frames: 100

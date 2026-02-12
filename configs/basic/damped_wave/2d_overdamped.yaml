@@ -9,7 +9,6 @@ init:
     num_blobs: 1
     sigma: 0.12
     amplitude: 1.5
-    positions: random
     width: 0.1
     background: 0.0
     random_amplitude: false
@@ -30,3 +29,4 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
+randomize: true

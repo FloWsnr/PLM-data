@@ -12,7 +12,6 @@ init:
     width: 0.09
     background: 0.0
     random_amplitude: true
-    positions: random
     aspect_ratio: 1.0
     random_aspect: false
 solver: rk4
@@ -31,3 +30,4 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
+randomize: true

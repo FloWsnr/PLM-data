@@ -16,7 +16,6 @@ init:
     kz: 1
     amplitude: 0.5
     offset: 0.0
-    phase_x: random
 solver: euler
 backend: numba
 adaptive: false
@@ -29,6 +28,7 @@ bc:
   x+: periodic
 domain_size:
 - 200
+randomize: true
 output:
   formats:
   - gif

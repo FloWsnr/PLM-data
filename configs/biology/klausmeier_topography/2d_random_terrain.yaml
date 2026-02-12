@@ -12,8 +12,6 @@ init:
     amplitude: 4.0
     blob_width: 0.18
     n_blobs: 8
-    blob_positions: random
-    blob_amplitudes: random
     n_mean: 0.5
     n_std: 0.1
     base_slope: 0.0
@@ -33,3 +31,4 @@ domain_size:
 - 100.0
 - 100.0
 t_end: 50.0
+randomize: true

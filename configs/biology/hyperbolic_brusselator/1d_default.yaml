@@ -14,7 +14,6 @@ init:
       type: gaussian-blob
       params:
         num_blobs: 1
-        positions: random
         amplitude: 0.2
         width: 0.1
         background: 3.0
@@ -25,7 +24,6 @@ init:
       type: gaussian-blob
       params:
         num_blobs: 1
-        positions: random
         amplitude: 0.2
         width: 0.1
         background: 3.0
@@ -50,3 +48,4 @@ bc:
   x+: neumann:0
 domain_size: [10.0]
 t_end: 50.0
+randomize: true

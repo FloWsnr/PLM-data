@@ -7,7 +7,6 @@ init:
   params:
     kx: 4
     amplitude: 0.5
-    phase_x: random
     ky: 1
     kz: 1
     offset: 0.0
@@ -23,6 +22,7 @@ t_end: 20.0
 bc:
   x-: periodic
   x+: periodic
+randomize: true
 output:
   formats:
   - gif

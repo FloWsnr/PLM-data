@@ -8,8 +8,6 @@ init:
     ky: 4
     amplitude: 1.0
     offset: 0.5
-    phase_x: random
-    phase_y: random
     kz: 1
 solver: euler
 backend: numba
@@ -27,3 +25,4 @@ domain_size:
 - 320.0
 - 320.0
 t_end: 200.0
+randomize: true

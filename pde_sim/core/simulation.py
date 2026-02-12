@@ -19,35 +19,6 @@ from ..pdes import get_pde_preset
 VALID_BACKENDS = ("auto", "numpy", "numba")
 
 
-def _has_random_sentinel(params: dict) -> bool:
-    """Return True if any value in *params* (or nested dicts) equals ``"random"``."""
-    for value in params.values():
-        if value == "random":
-            return True
-        if isinstance(value, dict):
-            if _has_random_sentinel(value):
-                return True
-        if isinstance(value, list):
-            for item in value:
-                if item == "random":
-                    return True
-    return False
-
-
-def _strip_random_sentinels(params: dict) -> dict:
-    """Replace ``"random"`` sentinel values with ``None`` so IC generators use defaults."""
-    result = {}
-    for key, value in params.items():
-        if value == "random":
-            result[key] = None
-        elif isinstance(value, dict):
-            result[key] = _strip_random_sentinels(value)
-        elif isinstance(value, list):
-            result[key] = [None if item == "random" else item for item in value]
-        else:
-            result[key] = value
-    return result
-
 
 def _get_next_folder_name(
     base_path: Path,
@@ -230,14 +201,6 @@ class SimulationRunner:
         ic_params = config.init.params.copy()
         if config.seed is not None and "seed" not in ic_params:
             ic_params["seed"] = config.seed
-
-        # Auto-enable randomize if any IC param value is "random" (backward compat)
-        if not config.randomize and _has_random_sentinel(ic_params):
-            config.randomize = True
-
-        # Strip "random" sentinel strings so IC generators receive None defaults
-        if config.randomize:
-            ic_params = _strip_random_sentinels(ic_params)
 
         # When randomize is enabled, override seed in IC params with the run seed
         # so different --seed values diversify layouts.

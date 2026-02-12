@@ -10,8 +10,6 @@ init:
     ky: 2
     amplitude: 1.0
     offset: 0.0
-    phase_x: random
-    phase_y: random
     kz: 1
 solver: euler
 dt: 0.002
@@ -28,3 +26,4 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
+randomize: true

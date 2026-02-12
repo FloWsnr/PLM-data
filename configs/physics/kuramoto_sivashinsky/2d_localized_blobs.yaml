@@ -9,7 +9,6 @@ init:
     width: 0.08
     background: 0.0
     random_amplitude: true
-    positions: random
     aspect_ratio: 1.0
     random_aspect: false
 solver: scipy
@@ -28,3 +27,4 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
+randomize: true

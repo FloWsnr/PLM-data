@@ -14,7 +14,6 @@ init:
     - 0.5
     - 1.0
     seed: 109
-    positions: random
     amplitude: 1.0
     width: 0.1
     background: 0.0
@@ -32,3 +31,4 @@ timesteps: 100
 bc:
   x-: neumann:0
   x+: neumann:0
+randomize: true

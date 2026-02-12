@@ -12,7 +12,6 @@ init:
     background: -1.0
     random_amplitude: true
     seed: 9999
-    positions: random
     aspect_ratio: 1.0
     random_aspect: false
 solver: euler
@@ -31,3 +30,4 @@ domain_size:
 - 100.0
 - 100.0
 t_end: 80.0
+randomize: true

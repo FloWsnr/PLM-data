@@ -13,7 +13,6 @@ init:
         num_blobs: 3
         amplitude: 0.5
         width: 0.03
-        positions: random
         background: 0.0
         random_amplitude: false
         aspect_ratio: 1.0
@@ -34,6 +33,7 @@ bc:
   x+: periodic
 domain_size:
 - 500
+randomize: true
 output:
   num_frames: 100
   formats:

@@ -14,7 +14,6 @@ init:
     - 0.7
     - 1.2
     seed: 110
-    positions: random
     amplitude: 1.0
     width: 0.1
     background: 0.0
@@ -36,3 +35,4 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
+randomize: true

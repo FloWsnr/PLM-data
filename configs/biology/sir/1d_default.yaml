@@ -10,7 +10,6 @@ init:
   params:
     S0: 0.99
     I0: 0.05
-    seed_x: random
     seed_radius: 3.0
     noise: 0.0
 solver: euler
@@ -25,3 +24,4 @@ bc:
 domain_size:
 - 100.0
 t_end: 200.0
+randomize: true

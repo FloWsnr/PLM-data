@@ -15,7 +15,6 @@ init:
       type: gaussian-blob
       params:
         num_blobs: 6
-        positions: random
         amplitude: 1.0
         width: 0.08
         background: 0.0
@@ -32,6 +31,7 @@ domain_size: [80]
 bc:
   x-: periodic
   x+: periodic
+randomize: true
 output:
   formats: [gif]
   num_frames: 100

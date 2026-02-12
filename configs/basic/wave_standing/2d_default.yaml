@@ -7,8 +7,6 @@ init:
     kx: 4
     ky: 4
     amplitude: 1.0
-    phase_x: random
-    phase_y: random
     kz: 1
     offset: 0.0
 solver: euler
@@ -26,3 +24,4 @@ bc:
   x+: neumann:0
   y-: neumann:0
   y+: neumann:0
+randomize: true

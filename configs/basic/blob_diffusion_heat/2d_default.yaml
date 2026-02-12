@@ -12,7 +12,6 @@ init:
     amplitude: 1.0
     width: 0.08
     seed: 999
-    positions: random
     background: 0.0
     random_amplitude: false
     aspect_ratio: 1.0
@@ -32,3 +31,4 @@ bc:
   x+: periodic
   y-: periodic
   y+: periodic
+randomize: true
