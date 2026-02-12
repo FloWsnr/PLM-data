@@ -1,0 +1,29 @@
+# 2D Sod shock tube - canonical Riemann problem
+# Compressibility effect: rightward shock, contact discontinuity, leftward rarefaction fan
+preset: compressible-navier-stokes
+parameters:
+  gamma: 1.4
+  mu: 0.005
+  kappa: 0.005
+init:
+  type: shock-tube
+  params:
+    orientation: vertical
+    interface_pos: 0.5
+    rho_left: 1.0
+    rho_right: 0.125
+    p_left: 1.0
+    p_right: 0.1
+    smooth: 0.01
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.0002
+resolution: [128, 128]
+bc:
+  x-: neumann:0
+  x+: neumann:0
+  y-: periodic
+  y+: periodic
+domain_size: [1.0, 1.0]
+t_end: 0.5

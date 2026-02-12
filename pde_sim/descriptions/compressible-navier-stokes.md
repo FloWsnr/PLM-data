@@ -43,6 +43,12 @@ Compressible shear layer with density stratification. A velocity shear profile (
 ### density-blob
 Gaussian density perturbation with isentropic pressure matching (p/p0 = (rho/rho0)^gamma). Shows expansion/compression dynamics as the blob equilibrates with the surrounding medium.
 
+### shock-tube
+2D Riemann problem with distinct left and right states separated by a smoothed interface. Produces a rightward-propagating shock wave, a contact discontinuity, and a leftward-propagating rarefaction fan. The canonical test for compressible flow solvers (Sod, 1978).
+
+### colliding-jets
+Two opposing horizontal streams that collide at a central interface. The kinetic energy converts to thermal energy, creating a high-pressure stagnation region with strong compression. Seeds instability via a transverse velocity perturbation.
+
 ## References
 
 - Anderson, J. D. (2003). *Modern Compressible Flow: With Historical Perspective*. McGraw-Hill.

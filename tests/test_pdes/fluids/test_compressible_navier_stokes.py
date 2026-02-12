@@ -91,6 +91,64 @@ class TestCompressibleNavierStokesPDE:
         check_result_finite(result, "compressible-navier-stokes", 2)
         check_dimension_variation(result, 2, "compressible-navier-stokes")
 
+    def test_shock_tube_ic(self):
+        """Test running with shock-tube IC (Sod problem)."""
+        preset = get_pde_preset("compressible-navier-stokes")
+
+        grid = create_grid_for_dimension(2, resolution=16)
+        bc = create_bc_for_dimension(2)
+
+        params = {"gamma": 1.4, "mu": 0.01, "kappa": 0.01}
+        pde = preset.create_pde(params, bc, grid)
+
+        state = preset.create_initial_state(
+            grid, "shock-tube",
+            {
+                "orientation": "vertical",
+                "interface_pos": 0.5,
+                "rho_left": 1.0,
+                "rho_right": 0.125,
+                "p_left": 1.0,
+                "p_right": 0.1,
+                "smooth": 0.02,
+                "seed": 42,
+            },
+        )
+
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None, backend="numpy")
+
+        assert isinstance(result, FieldCollection)
+        check_result_finite(result, "compressible-navier-stokes", 2)
+        # Shock tube is intentionally 1D-like (uniform along y), so skip y-variation check
+
+    def test_colliding_jets_ic(self):
+        """Test running with colliding-jets IC."""
+        preset = get_pde_preset("compressible-navier-stokes")
+
+        grid = create_grid_for_dimension(2, resolution=16)
+        bc = create_bc_for_dimension(2)
+
+        params = {"gamma": 1.4, "mu": 0.01, "kappa": 0.01}
+        pde = preset.create_pde(params, bc, grid)
+
+        state = preset.create_initial_state(
+            grid, "colliding-jets",
+            {
+                "jet_y": 0.5,
+                "jet_width": 0.05,
+                "jet_velocity": 0.5,
+                "rho_0": 1.0,
+                "p_0": 1.0,
+                "seed": 42,
+            },
+        )
+
+        result = pde.solve(state, t_range=0.01, dt=0.001, solver="euler", tracker=None, backend="numpy")
+
+        assert isinstance(result, FieldCollection)
+        check_result_finite(result, "compressible-navier-stokes", 2)
+        check_dimension_variation(result, 2, "compressible-navier-stokes")
+
     def test_unsupported_dimensions(self):
         """Test that compressible-navier-stokes only supports 2D."""
         preset = get_pde_preset("compressible-navier-stokes")

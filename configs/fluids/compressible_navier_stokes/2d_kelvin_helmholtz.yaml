@@ -1,0 +1,29 @@
+# Kelvin-Helmholtz instability with density stratification
+# Compressibility effect: density-weighted vortex roll-up, acoustic radiation from vortices
+preset: compressible-navier-stokes
+parameters:
+  gamma: 1.4
+  mu: 0.001
+  kappa: 0.001
+init:
+  type: kelvin-helmholtz
+  params:
+    shear_y: 0.5
+    shear_width: 0.03
+    velocity_amplitude: 0.8
+    density_ratio: 3.0
+    rho_0: 1.0
+    p_0: 2.5
+    perturbation_amplitude: 0.05
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.0002
+resolution: [128, 128]
+bc:
+  x-: periodic
+  x+: periodic
+  y-: neumann:0
+  y+: neumann:0
+domain_size: [1.0, 1.0]
+t_end: 2.0

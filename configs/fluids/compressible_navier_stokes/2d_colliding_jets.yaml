@@ -1,0 +1,27 @@
+# Colliding jets - converging streams creating compression at stagnation line
+# Compressibility effect: kinetic-to-thermal energy conversion, density pileup, pressure buildup
+preset: compressible-navier-stokes
+parameters:
+  gamma: 1.4
+  mu: 0.005
+  kappa: 0.005
+init:
+  type: colliding-jets
+  params:
+    jet_y: 0.5
+    jet_width: 0.03
+    jet_velocity: 0.8
+    rho_0: 1.0
+    p_0: 1.0
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.0001
+resolution: [128, 128]
+bc:
+  x-: periodic
+  x+: periodic
+  y-: neumann:0
+  y+: neumann:0
+domain_size: [1.0, 1.0]
+t_end: 0.5

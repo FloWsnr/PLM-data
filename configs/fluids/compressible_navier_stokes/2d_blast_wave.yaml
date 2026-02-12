@@ -1,0 +1,28 @@
+# Strong blast wave - high pressure ratio creates an expanding shock front
+# Compressibility effect: nonlinear steepening, shock formation, post-shock density jump
+preset: compressible-navier-stokes
+parameters:
+  gamma: 1.4
+  mu: 0.005
+  kappa: 0.005
+init:
+  type: acoustic-pulse
+  params:
+    x0: 0.5
+    y0: 0.5
+    amplitude: 5.0
+    width: 0.04
+    rho_0: 1.0
+    p_0: 1.0
+solver: euler
+backend: numpy
+adaptive: true
+dt: 0.0001
+resolution: [128, 128]
+bc:
+  x-: periodic
+  x+: periodic
+  y-: periodic
+  y+: periodic
+domain_size: [1.0, 1.0]
+t_end: 0.5

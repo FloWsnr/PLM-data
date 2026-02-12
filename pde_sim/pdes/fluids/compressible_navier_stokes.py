@@ -171,6 +171,8 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
             - acoustic-pulse / default: Gaussian pressure perturbation on uniform background
             - kelvin-helmholtz: Compressible shear layer with density stratification
             - density-blob: Gaussian density perturbation (isentropic)
+            - shock-tube: 2D Riemann problem with left/right states
+            - colliding-jets: Opposing horizontal streams that collide
         """
         x_min, x_max = grid.axes_bounds[0]
         y_min, y_max = grid.axes_bounds[1]
@@ -218,11 +220,12 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
             density_ratio = ic_params.get("density_ratio", 2.0)
             rho_0 = ic_params.get("rho_0", 1.0)
             p_0 = ic_params.get("p_0", 2.5)
+            perturbation_amplitude = ic_params.get("perturbation_amplitude", 0.01)
 
             # Shear velocity profile (tanh)
             u_data = velocity_amplitude * np.tanh((y_norm - shear_y) / shear_width)
             # Perturbation to seed instability
-            v_data = 0.01 * np.sin(2 * np.pi * x_norm) * np.exp(-((y_norm - shear_y) / (4 * shear_width)) ** 2)
+            v_data = perturbation_amplitude * np.sin(2 * np.pi * x_norm) * np.exp(-((y_norm - shear_y) / (4 * shear_width)) ** 2)
             # Density jump across shear layer
             rho_data = rho_0 * (1.0 + (density_ratio - 1.0) * 0.5 * (1.0 + np.tanh((y_norm - shear_y) / shear_width)))
             # Uniform pressure (pressure equilibrium)
@@ -248,6 +251,50 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
             # Isentropic: p/p_0 = (rho/rho_0)^gamma
             gamma = ic_params.get("gamma", 1.4)
             p_data = p_0 * (rho_data / rho_0) ** gamma
+
+        elif ic_type == "shock-tube":
+            # 2D shock tube (Riemann problem) with left/right states
+            # Interface orientation: vertical (along x) or horizontal (along y)
+            orientation = ic_params["orientation"]
+            interface_pos = ic_params["interface_pos"]
+            rho_left = ic_params["rho_left"]
+            rho_right = ic_params["rho_right"]
+            p_left = ic_params["p_left"]
+            p_right = ic_params["p_right"]
+            u_left = ic_params.get("u_left", 0.0)
+            u_right = ic_params.get("u_right", 0.0)
+            v_left = ic_params.get("v_left", 0.0)
+            v_right = ic_params.get("v_right", 0.0)
+            # Smoothing width for the interface (avoids pure discontinuity)
+            smooth = ic_params.get("smooth", 0.01)
+
+            if orientation == "vertical":
+                # Interface at x = interface_pos (normalized)
+                transition = 0.5 * (1.0 + np.tanh((x_norm - interface_pos) / smooth))
+            else:
+                # Interface at y = interface_pos (normalized)
+                transition = 0.5 * (1.0 + np.tanh((y_norm - interface_pos) / smooth))
+
+            rho_data = rho_left + (rho_right - rho_left) * transition
+            u_data = u_left + (u_right - u_left) * transition
+            v_data = v_left + (v_right - v_left) * transition
+            p_data = p_left + (p_right - p_left) * transition
+
+        elif ic_type == "colliding-jets":
+            # Two converging streams that collide at a horizontal stagnation line
+            jet_y = ic_params["jet_y"]
+            jet_width = ic_params["jet_width"]
+            jet_velocity = ic_params["jet_velocity"]
+            rho_0 = ic_params.get("rho_0", 1.0)
+            p_0 = ic_params.get("p_0", 1.0)
+
+            # Lower half flows upward, upper half flows downward → collision at jet_y
+            transition = np.tanh((y_norm - jet_y) / jet_width)
+            v_data = -jet_velocity * transition
+            # Small x-perturbation to seed instability at the stagnation line
+            u_data = 0.01 * np.sin(4 * np.pi * x_norm) * np.exp(-((y_norm - jet_y) / (4 * jet_width)) ** 2)
+            rho_data = rho_0 * np.ones_like(x)
+            p_data = p_0 * np.ones_like(x)
 
         else:
             # Fallback: use standard IC generator for rho, zeros for velocity, uniform pressure
@@ -275,6 +322,10 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
             return {"shear_y"}
         if ic_type == "density-blob":
             return {"x0", "y0"}
+        if ic_type == "shock-tube":
+            return {"interface_pos"}
+        if ic_type == "colliding-jets":
+            return {"jet_y"}
         return super().get_position_params(ic_type)
 
     def resolve_ic_params(
@@ -314,5 +365,19 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
                 resolved["y0"] = rng.uniform(0.3, 0.7)
             if resolved["x0"] is None or resolved["y0"] is None:
                 raise ValueError("density-blob requires x0 and y0 (or random)")
+            return resolved
+        if ic_type == "shock-tube":
+            if "interface_pos" not in resolved:
+                raise ValueError("shock-tube requires interface_pos")
+            rng = np.random.default_rng(resolved.get("seed"))
+            if resolved["interface_pos"] == "random":
+                resolved["interface_pos"] = rng.uniform(0.35, 0.65)
+            return resolved
+        if ic_type == "colliding-jets":
+            if "jet_y" not in resolved:
+                raise ValueError("colliding-jets requires jet_y")
+            rng = np.random.default_rng(resolved.get("seed"))
+            if resolved["jet_y"] == "random":
+                resolved["jet_y"] = rng.uniform(0.35, 0.65)
             return resolved
         return super().resolve_ic_params(grid, ic_type, ic_params)
