@@ -179,8 +179,6 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
         L_x = x_max - x_min
         L_y = y_max - y_min
 
-        rng = np.random.default_rng(ic_params.get("seed"))
-
         x, y = np.meshgrid(
             np.linspace(x_min, x_max, grid.shape[0]),
             np.linspace(y_min, y_max, grid.shape[1]),

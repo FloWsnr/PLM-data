@@ -5,6 +5,7 @@ simultaneously (e.g. png + numpy) without duplicating orchestration logic.
 """
 
 import json
+import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,24 @@ import numpy as np
 from numpy.lib.format import open_memmap
 
 from .render import render_colormap_rgb
+
+LOGGER = logging.getLogger("pde_sim.output.handlers")
+
+
+def _close_with_warning(
+    resource: Any,
+    *,
+    kind: str,
+    name: str,
+    close_errors: list[str],
+) -> None:
+    """Close a writer/file and report close errors without dropping them silently."""
+    try:
+        resource.close()
+    except Exception as exc:
+        msg = f"Failed to close {kind} '{name}': {exc}"
+        LOGGER.warning(msg)
+        close_errors.append(msg)
 
 
 class OutputHandler(ABC):
@@ -296,18 +315,24 @@ class MP4Handler(OutputHandler):
 
     def finalize(self) -> dict[str, Any]:
         video_files: dict[str, str] = {}
+        close_errors: list[str] = []
         for field_name, writer in self._writers.items():
-            try:
-                writer.close()
-            except Exception:
-                pass
+            _close_with_warning(
+                writer,
+                kind="mp4 writer",
+                name=field_name,
+                close_errors=close_errors,
+            )
             video_files[field_name] = f"{field_name}.mp4"
 
-        return {
+        metadata = {
             "format": "mp4",
             "fps": self.fps,
             "videos": video_files,
         }
+        if close_errors:
+            metadata["closeErrors"] = close_errors
+        return metadata
 
 
 class GIFHandler(OutputHandler):
@@ -353,18 +378,24 @@ class GIFHandler(OutputHandler):
 
     def finalize(self) -> dict[str, Any]:
         gif_files: dict[str, str] = {}
+        close_errors: list[str] = []
         for field_name, writer in self._writers.items():
-            try:
-                writer.close()
-            except Exception:
-                pass
+            _close_with_warning(
+                writer,
+                kind="gif writer",
+                name=field_name,
+                close_errors=close_errors,
+            )
             gif_files[field_name] = f"{field_name}.gif"
 
-        return {
+        metadata = {
             "format": "gif",
             "fps": self.fps,
             "gifs": gif_files,
         }
+        if close_errors:
+            metadata["closeErrors"] = close_errors
+        return metadata
 
 
 SLICE_AXES = ("x_slice", "y_slice", "z_slice")
@@ -471,30 +502,39 @@ class Output3DHandler(OutputHandler):
 
         # GIF or MP4
         output_files: dict[str, str] = {}
+        close_errors: list[str] = []
         for (field_name, axis), writer in self._writers.items():
-            try:
-                writer.close()
-            except Exception:
-                pass
+            _close_with_warning(
+                writer,
+                kind=f"{self.output_format} writer",
+                name=f"{field_name}_{axis}",
+                close_errors=close_errors,
+            )
             ext = self.output_format
             output_files[f"{field_name}_{axis}"] = f"{field_name}_{axis}.{ext}"
 
         if self.output_format == "mp4":
-            return {
+            metadata = {
                 "format": "mp4",
                 "type": "3D_slices",
                 "fps": self.fps,
                 "videos": output_files,
                 "sliceAxes": list(SLICE_AXES),
             }
+            if close_errors:
+                metadata["closeErrors"] = close_errors
+            return metadata
 
-        return {
+        metadata = {
             "format": "gif",
             "type": "3D_slices",
             "fps": self.fps,
             "gifs": output_files,
             "sliceAxes": list(SLICE_AXES),
         }
+        if close_errors:
+            metadata["closeErrors"] = close_errors
+        return metadata
 
 
 class NumpyHandler(OutputHandler):
@@ -801,14 +841,22 @@ class H5Handler(OutputHandler):
         shape = list(self._traj.shape) if self._traj is not None else None
         shape_desc = "(T, X, F)" if ndim == 1 else "(T, H, W, F)" if ndim == 2 else "(T, D, H, W, F)"
 
+        close_errors: list[str] = []
         if self._h5 is not None:
             try:
                 self._h5.flush()
-                self._h5.close()
-            except Exception:
-                pass
+            except Exception as exc:
+                msg = f"Failed to flush h5 file 'trajectory.h5': {exc}"
+                LOGGER.warning(msg)
+                close_errors.append(msg)
+            _close_with_warning(
+                self._h5,
+                kind="h5 file",
+                name="trajectory.h5",
+                close_errors=close_errors,
+            )
 
-        return {
+        metadata = {
             "format": "h5",
             "trajectoryFile": "trajectory.h5",
             "dataset": "trajectory",
@@ -818,6 +866,9 @@ class H5Handler(OutputHandler):
             "ndim": ndim,
             "fieldOrder": self.field_order,
         }
+        if close_errors:
+            metadata["closeErrors"] = close_errors
+        return metadata
 
 
 def create_output_handler(output_format: str, fps: int = 30, ndim: int = 2) -> OutputHandler:

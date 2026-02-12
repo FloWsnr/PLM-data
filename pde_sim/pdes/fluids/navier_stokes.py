@@ -97,8 +97,6 @@ class NavierStokesPDE(MultiFieldPDEPreset):
         L_x = x_max - x_min
         L_y = y_max - y_min
 
-        rng = np.random.default_rng(ic_params.get("seed"))
-
         if ic_type in ("navier-stokes-default", "default", "shear-layer"):
             # Shear layer initial condition
             shear_width = ic_params.get("shear_width", 0.1)

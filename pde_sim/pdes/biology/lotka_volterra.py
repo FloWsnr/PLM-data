@@ -122,7 +122,7 @@ class LotkaVolterraPDE(MultiFieldPDEPreset):
         cx = (x_bounds[0] + x_bounds[1]) / 2
         cy = (y_bounds[0] + y_bounds[1]) / 2
         Lx = x_bounds[1] - x_bounds[0]
-        Ly = y_bounds[1] - y_bounds[1]
+        Ly = y_bounds[1] - y_bounds[0]
 
         # Create spatial structure: prey and predator at different locations
         # This promotes pursuit waves and spatial dynamics
@@ -130,7 +130,7 @@ class LotkaVolterraPDE(MultiFieldPDEPreset):
         offset = Lx / 6
 
         # Localized bumps with Gaussian profiles
-        width = Lx / 10
+        width = min(Lx, Ly) / 10
         prey_bump = np.exp(-((X - cx + offset)**2 + (Y - cy)**2) / (2 * width**2))
         pred_bump = np.exp(-((X - cx - offset)**2 + (Y - cy)**2) / (2 * width**2))
 
