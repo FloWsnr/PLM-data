@@ -9,12 +9,14 @@ from pde_sim.core.logging import restore_stdout, setup_logging
 from pde_sim.core.simulation import run_from_config
 
 
-def collect_yaml_files(config_dir: Path, pattern: str = "*.yaml") -> list[Path]:
-    """Collect YAML config files from a directory (supports .yaml and .yml)."""
+def collect_yaml_files(config_dir: Path, pattern: str = "**/*.yaml") -> list[Path]:
+    """Collect YAML config files (recursive by default) and skip master configs."""
     yaml_files = list(config_dir.glob(pattern))
     if pattern.endswith(".yaml"):
         yaml_files.extend(config_dir.glob(pattern[:-5] + ".yml"))
-    return sorted(set(yaml_files))
+    return sorted(
+        p for p in set(yaml_files) if p.name not in {"master.yaml", "master.yml"}
+    )
 
 
 def run_batch(
@@ -23,7 +25,7 @@ def run_batch(
     start_index: int = 1,
     log_file: Path | None = None,
     quiet: bool = False,
-    pattern: str = "*.yaml",
+    pattern: str = "**/*.yaml",
     output_dir: Path | None = None,
     seed: int | None = None,
     storage: str | None = None,
@@ -118,4 +120,3 @@ def run_batch(
         sys.stderr.write("Batch stopped due to failure\n")
 
     return ok, failed
-

@@ -12,7 +12,7 @@
 # Example: sbatch batch_job.sh configs/basic/damped_wave
 # Example with log: sbatch batch_job.sh configs/basic/damped_wave logs/batch.log
 # Example with start index: sbatch batch_job.sh configs/basic/damped_wave logs/batch.log 5
-# Example with pattern: sbatch batch_job.sh configs/basic/damped_wave logs/batch.log 1 "*.yaml"
+# Example with pattern: sbatch batch_job.sh configs/basic/damped_wave logs/batch.log 1 "**/*.yaml"
 #
 # The config_dir should contain one or more YAML config files, each specifying
 # a complete simulation configuration including preset, parameters, etc.
@@ -23,7 +23,7 @@ set -e
 CONFIG_DIR=${1}
 LOG_FILE=${2:-}         # Optional: path to log file
 START_INDEX=${3:-1}     # Optional: start from config N (1-indexed)
-PATTERN=${4:-"*.yaml"}  # Optional: glob pattern for config files
+PATTERN=${4:-"**/*.yaml"}  # Optional: glob pattern for config files
 
 if [ -z "$CONFIG_DIR" ]; then
     echo "Error: Config directory is required"

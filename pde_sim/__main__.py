@@ -131,8 +131,8 @@ def main():
     batch_parser.add_argument(
         "--pattern",
         type=str,
-        default="*.yaml",
-        help="Glob pattern for matching config files. Default: *.yaml",
+        default="**/*.yaml",
+        help="Glob pattern for matching config files. Default: **/*.yaml",
     )
     batch_parser.add_argument(
         "--log-file",
