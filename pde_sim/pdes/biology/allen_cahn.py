@@ -2,8 +2,7 @@
 
 from typing import Any
 
-import numpy as np
-from pde import PDE, CartesianGrid, ScalarField
+from pde import PDE, CartesianGrid
 
 from ..base import ScalarPDEPreset, PDEMetadata, PDEParameter
 from .. import register_pde
@@ -68,31 +67,3 @@ class BistableAllenCahnPDE(ScalarPDEPreset):
             bc=self._convert_bc(bc),
         )
 
-    def create_initial_state(
-        self,
-        grid: CartesianGrid,
-        ic_type: str,
-        ic_params: dict[str, Any],
-        **kwargs,
-    ) -> ScalarField:
-        """Create initial state for bistable Allen-Cahn.
-
-        Supports:
-        - gaussian-blob: Localized population patches
-        - step: Step function (left=0, right=1)
-        - random-uniform: Random values in [0, 1]
-        """
-        if ic_type == "step":
-            # Step function: 0 on left, 1 on right
-            ndim = len(grid.shape)
-            x_bounds = grid.axes_bounds[0]
-            x_1d = np.linspace(x_bounds[0], x_bounds[1], grid.shape[0])
-            shape = [1] * ndim
-            shape[0] = grid.shape[0]
-            X = x_1d.reshape(shape)
-            mid = (x_bounds[0] + x_bounds[1]) / 2
-            data = np.broadcast_to(np.where(X < mid, 0.0, 1.0), grid.shape).copy()
-            return ScalarField(grid, data)
-
-        # Default: use base class
-        return super().create_initial_state(grid, ic_type, ic_params)
