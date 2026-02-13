@@ -182,6 +182,17 @@ Supported BC types:
 - `neumann:VALUE` - Fixed derivative (value required, e.g., `neumann:0`)
 - `dirichlet:VALUE` - Fixed value (value required, e.g., `dirichlet:0`)
 
+VALUE can be a numeric literal or a **parameter name** from the `parameters` section. Parameter references are resolved at runtime:
+```yaml
+parameters:
+  U: 0.7
+bc:
+  x-: dirichlet:U    # Resolved to dirichlet:0.7 from parameters.U
+  x+: dirichlet:U
+  y-: periodic
+  y+: periodic
+```
+
 ### Output Configuration
 
 Output supports: PNG images, MP4 videos, GIF animations, numpy arrays, and HDF5 trajectories. You can specify one or more formats simultaneously.

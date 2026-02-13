@@ -115,11 +115,18 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
             supported_dimensions=[2],
         )
 
-    def _get_field_bc(self, bc: Any, field_name: str) -> Any:
+    def _get_field_bc(
+        self,
+        bc: Any,
+        field_name: str,
+        parameters: dict[str, float] | None = None,
+    ) -> Any:
         """Extract boundary condition for a specific field."""
         if isinstance(bc, BoundaryConfig):
             field_bc = bc.get_field_bc(field_name)
-            return BoundaryConditionFactory.convert_field_bc(field_bc)
+            return BoundaryConditionFactory.convert_field_bc(
+                field_bc, parameters=parameters
+            )
         elif isinstance(bc, dict):
             base_bc = {
                 "x-": bc.get("x-", "periodic"),
@@ -129,7 +136,9 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
             }
             if "fields" in bc and field_name in bc["fields"]:
                 base_bc.update(bc["fields"][field_name])
-            return BoundaryConditionFactory.convert_field_bc(base_bc)
+            return BoundaryConditionFactory.convert_field_bc(
+                base_bc, parameters=parameters
+            )
         else:
             return bc
 
@@ -143,10 +152,10 @@ class CompressibleNavierStokesPDE(MultiFieldPDEPreset):
         mu = parameters.get("mu", 0.01)
         kappa = parameters.get("kappa", 0.01)
 
-        bc_rho = self._get_field_bc(bc, "rho")
-        bc_u = self._get_field_bc(bc, "u")
-        bc_v = self._get_field_bc(bc, "v")
-        bc_p = self._get_field_bc(bc, "p")
+        bc_rho = self._get_field_bc(bc, "rho", parameters)
+        bc_u = self._get_field_bc(bc, "u", parameters)
+        bc_v = self._get_field_bc(bc, "v", parameters)
+        bc_p = self._get_field_bc(bc, "p", parameters)
 
         return CompressibleNavierStokesPDEImpl(
             gamma=gamma,

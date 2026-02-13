@@ -21,8 +21,8 @@ adaptive: true
 dt: 0.03
 resolution: [256, 256]
 bc:
-  x-: dirichlet:0.5
-  x+: dirichlet:0.5
+  x-: dirichlet:U
+  x+: dirichlet:U
   y-: periodic
   y+: periodic
   fields:

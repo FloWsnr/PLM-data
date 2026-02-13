@@ -15,7 +15,7 @@ resolution:
 - 128
 - 128
 bc:
-  x-: dirichlet:0.9
+  x-: dirichlet:c0
   x+: neumann:0
   y-: periodic
   y+: periodic

@@ -140,12 +140,18 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
             supported_dimensions=[2],
         )
 
-    def _get_field_bc(self, bc: Any, field_name: str) -> Any:
+    def _get_field_bc(
+        self,
+        bc: Any,
+        field_name: str,
+        parameters: dict[str, float] | None = None,
+    ) -> Any:
         """Extract boundary condition for a specific field.
 
         Args:
             bc: Boundary configuration (BoundaryConfig or dict)
             field_name: Name of the field ("omega", "psi", or "b")
+            parameters: PDE parameter dict for resolving named BC values.
 
         Returns:
             py-pde compatible BC specification
@@ -153,7 +159,9 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
         if isinstance(bc, BoundaryConfig):
             # Get field BC dict with x-, x+, y-, y+ keys (already merged with defaults)
             field_bc = bc.get_field_bc(field_name)
-            return BoundaryConditionFactory.convert_field_bc(field_bc)
+            return BoundaryConditionFactory.convert_field_bc(
+                field_bc, parameters=parameters
+            )
         elif isinstance(bc, dict):
             # Handle dict format (from YAML config)
             # Build base BC dict from x-, x+, y-, y+ keys
@@ -166,7 +174,9 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
             # Apply per-field overrides if present
             if "fields" in bc and field_name in bc["fields"]:
                 base_bc.update(bc["fields"][field_name])
-            return BoundaryConditionFactory.convert_field_bc(base_bc)
+            return BoundaryConditionFactory.convert_field_bc(
+                base_bc, parameters=parameters
+            )
         else:
             # Fallback: assume it's already in py-pde format
             return bc
@@ -192,9 +202,9 @@ class ThermalConvectionPDE(MultiFieldPDEPreset):
         kappa = parameters.get("kappa", 0.5)
 
         # Extract per-field BCs
-        bc_omega = self._get_field_bc(bc, "omega")
-        bc_psi = self._get_field_bc(bc, "psi")
-        bc_b = self._get_field_bc(bc, "b")
+        bc_omega = self._get_field_bc(bc, "omega", parameters)
+        bc_psi = self._get_field_bc(bc, "psi", parameters)
+        bc_b = self._get_field_bc(bc, "b", parameters)
 
         return ThermalConvectionPDEImpl(
             nu=nu,

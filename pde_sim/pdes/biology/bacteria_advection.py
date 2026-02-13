@@ -65,7 +65,7 @@ class BacteriaAdvectionPDE(ScalarPDEPreset):
         # Pure advection-decay (no diffusion)
         return PDE(
             rhs={"C": f"-{u} * d_dx(C) - {k} * C"},
-            bc=self._convert_bc(bc),
+            bc=self._convert_bc(bc, parameters=parameters),
         )
 
     def create_initial_state(

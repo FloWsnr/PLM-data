@@ -176,31 +176,44 @@ class PDEPreset(ABC):
         # Fallback: keep previous behavior
         return 2
 
-    def _convert_bc(self, bc: Any, ndim: int | None = None) -> dict[str, Any]:
+    def _convert_bc(
+        self,
+        bc: Any,
+        ndim: int | None = None,
+        parameters: dict[str, float] | None = None,
+    ) -> dict[str, Any]:
         """Convert boundary condition config to py-pde format.
 
         Args:
             bc: BoundaryConfig object or a raw dict.
             ndim: Number of spatial dimensions. If None, inferred from `bc`.
+            parameters: PDE parameter dict for resolving named BC values
+                (e.g., ``dirichlet:U``).
 
         Returns:
             BC specs in py-pde format.
         """
         if ndim is None:
             ndim = self._infer_ndim_from_bc(bc)
-        return BoundaryConditionFactory.convert_config(bc, ndim)
+        return BoundaryConditionFactory.convert_config(bc, ndim, parameters)
 
-    def _get_pde_bc_kwargs(self, bc: Any, ndim: int | None = None) -> dict:
+    def _get_pde_bc_kwargs(
+        self,
+        bc: Any,
+        ndim: int | None = None,
+        parameters: dict[str, float] | None = None,
+    ) -> dict:
         """Get bc kwargs for PDE constructor.
 
         Args:
             bc: Boundary condition configuration (BoundaryConfig)
             ndim: Number of spatial dimensions. If None, inferred from `bc`.
+            parameters: PDE parameter dict for resolving named BC values.
 
         Returns:
             Dictionary with {'bc': ...}
         """
-        return {"bc": self._convert_bc(bc, ndim)}
+        return {"bc": self._convert_bc(bc, ndim, parameters)}
 
 
 class ScalarPDEPreset(PDEPreset):

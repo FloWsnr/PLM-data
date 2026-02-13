@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from pde_sim.boundaries import BoundaryConditionFactory
 from pde_sim.core.config import (
     SimulationConfig,
     OutputConfig,
@@ -207,6 +208,74 @@ class TestBoundaryConfig:
         assert field_bc["x+"] == "neumann:0"
         assert field_bc["y-"] == "dirichlet:0"
         assert field_bc["y+"] == "dirichlet:0"
+
+
+class TestBCParameterResolution:
+    """Tests for resolving parameter names in boundary condition values."""
+
+    def test_convert_numeric_value(self):
+        """Test that numeric BC values still work."""
+
+        result = BoundaryConditionFactory.convert("dirichlet:0.5")
+        assert result == {"value": 0.5}
+
+    def test_convert_parameter_reference(self):
+        """Test that parameter names are resolved from the parameters dict."""
+
+        params = {"U": 0.7, "nu": 0.1}
+        result = BoundaryConditionFactory.convert("dirichlet:U", params)
+        assert result == {"value": 0.7}
+
+    def test_convert_neumann_parameter_reference(self):
+        """Test parameter resolution for Neumann BCs."""
+
+        params = {"flux": 0.3}
+        result = BoundaryConditionFactory.convert("neumann:flux", params)
+        assert result == {"derivative": 0.3}
+
+    def test_convert_parameter_not_found(self):
+        """Test error when parameter name is not in the dict."""
+
+        params = {"nu": 0.1}
+        with pytest.raises(ValueError, match="not found in parameters"):
+            BoundaryConditionFactory.convert("dirichlet:U", params)
+
+    def test_convert_parameter_no_dict(self):
+        """Test error when parameter name is used without parameters dict."""
+
+        with pytest.raises(ValueError, match="no parameters dict"):
+            BoundaryConditionFactory.convert("dirichlet:U")
+
+    def test_convert_config_with_parameters(self):
+        """Test convert_config resolves parameter references."""
+
+        bc = BoundaryConfig(
+            x_minus="dirichlet:U",
+            x_plus="dirichlet:U",
+            y_minus="periodic",
+            y_plus="periodic",
+        )
+        params = {"U": 0.7}
+        result = BoundaryConditionFactory.convert_config(bc, ndim=2, parameters=params)
+        assert result["x-"] == {"value": 0.7}
+        assert result["x+"] == {"value": 0.7}
+        assert result["y-"] == "periodic"
+
+    def test_convert_field_bc_with_parameters(self):
+        """Test convert_field_bc resolves parameter references."""
+
+        field_bc = {
+            "x-": "dirichlet:U",
+            "x+": "dirichlet:U",
+            "y-": "periodic",
+            "y+": "periodic",
+        }
+        params = {"U": 0.5}
+        result = BoundaryConditionFactory.convert_field_bc(
+            field_bc, ndim=2, parameters=params
+        )
+        assert result["x-"] == {"value": 0.5}
+        assert result["x+"] == {"value": 0.5}
 
 
 class TestPerFieldBCConfigParsing:

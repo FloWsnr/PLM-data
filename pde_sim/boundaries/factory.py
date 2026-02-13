@@ -18,11 +18,17 @@ class BoundaryConditionFactory:
     """
 
     @classmethod
-    def convert(cls, bc_str: str) -> Any:
+    def convert(
+        cls, bc_str: str, parameters: dict[str, float] | None = None
+    ) -> Any:
         """Convert BC string to py-pde format.
 
         Args:
-            bc_str: One of: "periodic", "neumann:VALUE", "dirichlet:VALUE"
+            bc_str: One of: "periodic", "neumann:VALUE", "dirichlet:VALUE".
+                VALUE can be a number (e.g., ``dirichlet:0.5``) or a parameter
+                name (e.g., ``dirichlet:U``) that will be looked up in
+                *parameters*.
+            parameters: PDE parameter dict used to resolve named references.
 
         Returns:
             py-pde compatible boundary condition specification.
@@ -41,7 +47,7 @@ class BoundaryConditionFactory:
             )
 
         bc_type, value_str = bc_str.split(":", 1)
-        value = float(value_str)
+        value = cls._resolve_value(value_str, parameters)
 
         if bc_type.lower() == "neumann":
             return {"derivative": value}
@@ -53,14 +59,55 @@ class BoundaryConditionFactory:
             )
 
     @classmethod
+    def _resolve_value(
+        cls, value_str: str, parameters: dict[str, float] | None
+    ) -> float:
+        """Resolve a BC value string to a float.
+
+        Tries numeric parsing first. If that fails, looks up *value_str* as a
+        parameter name in *parameters*.
+
+        Args:
+            value_str: Numeric literal or parameter name.
+            parameters: PDE parameter dict.
+
+        Returns:
+            Resolved float value.
+
+        Raises:
+            ValueError: If the value cannot be resolved.
+        """
+        try:
+            return float(value_str)
+        except ValueError:
+            pass
+
+        if parameters is not None and value_str in parameters:
+            return float(parameters[value_str])
+
+        if parameters is None:
+            raise ValueError(
+                f"BC value '{value_str}' is not numeric and no parameters dict "
+                "was provided to resolve it"
+            )
+        raise ValueError(
+            f"BC value '{value_str}' is not numeric and not found in parameters. "
+            f"Available parameters: {sorted(parameters.keys())}"
+        )
+
+    @classmethod
     def convert_config(
-        cls, bc_config: "BoundaryConfig | dict[str, str]", ndim: int = 2
+        cls,
+        bc_config: "BoundaryConfig | dict[str, str]",
+        ndim: int = 2,
+        parameters: dict[str, float] | None = None,
     ) -> dict[str, Any]:
         """Convert BC config to py-pde format.
 
         Args:
             bc_config: BoundaryConfig object or dict with boundary keys.
             ndim: Number of spatial dimensions.
+            parameters: PDE parameter dict for resolving named BC values.
 
         Returns:
             Dictionary with side-keyed BC specs for py-pde.
@@ -71,51 +118,57 @@ class BoundaryConditionFactory:
         if hasattr(bc_config, "x_minus"):
             # BoundaryConfig object
             result = {
-                "x-": cls.convert(bc_config.x_minus),
-                "x+": cls.convert(bc_config.x_plus),
+                "x-": cls.convert(bc_config.x_minus, parameters),
+                "x+": cls.convert(bc_config.x_plus, parameters),
             }
             if ndim >= 2 and bc_config.y_minus is not None:
-                result["y-"] = cls.convert(bc_config.y_minus)
-                result["y+"] = cls.convert(bc_config.y_plus)
+                result["y-"] = cls.convert(bc_config.y_minus, parameters)
+                result["y+"] = cls.convert(bc_config.y_plus, parameters)
             if ndim >= 3 and bc_config.z_minus is not None:
-                result["z-"] = cls.convert(bc_config.z_minus)
-                result["z+"] = cls.convert(bc_config.z_plus)
+                result["z-"] = cls.convert(bc_config.z_minus, parameters)
+                result["z+"] = cls.convert(bc_config.z_plus, parameters)
             return result
         else:
             # Dict with boundary keys
             result = {
-                "x-": cls.convert(bc_config.get("x-", "periodic")),
-                "x+": cls.convert(bc_config.get("x+", "periodic")),
+                "x-": cls.convert(bc_config.get("x-", "periodic"), parameters),
+                "x+": cls.convert(bc_config.get("x+", "periodic"), parameters),
             }
             if ndim >= 2:
-                result["y-"] = cls.convert(bc_config.get("y-", "periodic"))
-                result["y+"] = cls.convert(bc_config.get("y+", "periodic"))
+                result["y-"] = cls.convert(bc_config.get("y-", "periodic"), parameters)
+                result["y+"] = cls.convert(bc_config.get("y+", "periodic"), parameters)
             if ndim >= 3:
-                result["z-"] = cls.convert(bc_config.get("z-", "periodic"))
-                result["z+"] = cls.convert(bc_config.get("z+", "periodic"))
+                result["z-"] = cls.convert(bc_config.get("z-", "periodic"), parameters)
+                result["z+"] = cls.convert(bc_config.get("z+", "periodic"), parameters)
             return result
 
     @classmethod
-    def convert_field_bc(cls, field_bc: dict[str, str], ndim: int = 2) -> dict[str, Any]:
+    def convert_field_bc(
+        cls,
+        field_bc: dict[str, str],
+        ndim: int = 2,
+        parameters: dict[str, float] | None = None,
+    ) -> dict[str, Any]:
         """Convert field-specific BC dict to py-pde format.
 
         Args:
             field_bc: Dict with boundary keys (already merged with defaults).
             ndim: Number of spatial dimensions.
+            parameters: PDE parameter dict for resolving named BC values.
 
         Returns:
             BC specification in py-pde format.
         """
         result = {
-            "x-": cls.convert(field_bc["x-"]),
-            "x+": cls.convert(field_bc["x+"]),
+            "x-": cls.convert(field_bc["x-"], parameters),
+            "x+": cls.convert(field_bc["x+"], parameters),
         }
         if ndim >= 2 and "y-" in field_bc:
-            result["y-"] = cls.convert(field_bc["y-"])
-            result["y+"] = cls.convert(field_bc["y+"])
+            result["y-"] = cls.convert(field_bc["y-"], parameters)
+            result["y+"] = cls.convert(field_bc["y+"], parameters)
         if ndim >= 3 and "z-" in field_bc:
-            result["z-"] = cls.convert(field_bc["z-"])
-            result["z+"] = cls.convert(field_bc["z+"])
+            result["z-"] = cls.convert(field_bc["z-"], parameters)
+            result["z+"] = cls.convert(field_bc["z+"], parameters)
         return result
 
     @classmethod

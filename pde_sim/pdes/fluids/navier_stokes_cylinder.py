@@ -88,7 +88,7 @@ class NavierStokesCylinderPDE(MultiFieldPDEPreset):
                 "p": f"{nu} * laplace(p) - {inv_M2} * (d_dx(u) + d_dy(v))",
                 "S": "0",  # Static obstacle field
             },
-            **self._get_pde_bc_kwargs(bc),
+            **self._get_pde_bc_kwargs(bc, parameters=parameters),
         )
 
     def create_initial_state(
