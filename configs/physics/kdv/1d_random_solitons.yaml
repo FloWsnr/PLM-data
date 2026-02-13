@@ -8,15 +8,15 @@ init:
   type: random-solitons
   params:
     n: 4          # Number of solitons
-    k_min: 0.35   # Minimum width parameter
-    k_max: 0.65   # Maximum width parameter
+    k_min: 0.25   # Minimum width parameter
+    k_max: 0.40   # Maximum width parameter
     margin: 0.1   # Margin from domain edges
 
 solver: rk4
 backend: numba
 adaptive: false
 dt: 0.001
-t_end: 40.0
+t_end: 15.0
 resolution: [256]  # 1D resolution
 
 bc:

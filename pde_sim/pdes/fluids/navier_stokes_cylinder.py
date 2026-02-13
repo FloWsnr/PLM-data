@@ -133,9 +133,9 @@ class NavierStokesCylinderPDE(MultiFieldPDEPreset):
             cy = ic_params.get("cylinder_y")
             if randomize:
                 rng = np.random.default_rng(ic_params.get("seed"))
-                margin = cylinder_radius + 0.05
-                cx = rng.uniform(margin, 1.0 - margin)
-                cy = rng.uniform(margin, 1.0 - margin)
+                cx = 0.5
+                cy = 0.5
+                cylinder_radius = rng.uniform(0.03, 0.08)
             if cx is None or cy is None:
                 raise ValueError("navier-stokes-cylinder requires cylinder_x and cylinder_y")
             # Uniform inflow velocity everywhere (including inside cylinder)
@@ -161,10 +161,12 @@ class NavierStokesCylinderPDE(MultiFieldPDEPreset):
                 if "n_cylinders" not in ic_params:
                     raise ValueError("navier-stokes-cylinder multi-cylinder random positions require n_cylinders")
                 rng = np.random.default_rng(ic_params.get("seed"))
-                margin = cylinder_radius + 0.05
+                cylinder_radius = rng.uniform(0.03, 0.08)
+                n_cyl = int(ic_params["n_cylinders"])
+                # Evenly space cylinders vertically, centered horizontally
                 positions = [
-                    [rng.uniform(margin, 1.0 - margin), rng.uniform(margin, 1.0 - margin)]
-                    for _ in range(int(ic_params["n_cylinders"]))
+                    [0.5, (i + 1) / (n_cyl + 1)]
+                    for i in range(n_cyl)
                 ]
             if positions is None:
                 raise ValueError("navier-stokes-cylinder multi-cylinder requires positions")
@@ -193,9 +195,9 @@ class NavierStokesCylinderPDE(MultiFieldPDEPreset):
             cy = ic_params.get("cylinder_y")
             if randomize:
                 rng = np.random.default_rng(ic_params.get("seed"))
-                margin = cylinder_radius + 0.05
-                cx = rng.uniform(margin, 1.0 - margin)
-                cy = rng.uniform(margin, 1.0 - margin)
+                cx = 0.5
+                cy = 0.5
+                cylinder_radius = rng.uniform(0.03, 0.08)
             if cx is None or cy is None:
                 raise ValueError("navier-stokes-cylinder requires cylinder_x and cylinder_y")
             u_data = np.full_like(x, U)

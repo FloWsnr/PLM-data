@@ -7,7 +7,7 @@ parameters:
 init:
   type: n-wave
   params:
-    amplitude: 1.5   # Initial bump amplitude
+    amplitude: 0.4   # Initial bump amplitude
     width: 0.08      # Bump width (fraction of domain)
     x0: 20           # Bump center position
 
@@ -15,7 +15,7 @@ solver: rk4
 backend: numba
 adaptive: false
 dt: 0.001
-t_end: 40.0
+t_end: 15.0
 resolution: [256]  # 1D resolution
 
 bc:

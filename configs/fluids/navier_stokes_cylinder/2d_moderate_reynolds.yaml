@@ -34,4 +34,4 @@ bc:
       y-: dirichlet:0
       y+: dirichlet:0
 domain_size: [128.0, 128.0]
-t_end: 200.0
+t_end: 100.0

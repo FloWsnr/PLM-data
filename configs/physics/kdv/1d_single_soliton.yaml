@@ -6,14 +6,14 @@ parameters:
 init:
   type: soliton
   params:
-    k: 0.5       # Width parameter (amplitude = 2k^2 = 0.5)
+    k: 0.35      # Width parameter (amplitude = 2k^2 = 0.245)
     x0: 20       # Start on left side
 
 solver: rk4
 backend: numba
 adaptive: false
 dt: 0.001
-t_end: 40.0
+t_end: 15.0
 resolution: [256]  # 1D resolution
 
 bc:
