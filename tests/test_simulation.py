@@ -40,6 +40,45 @@ class TestSimulationRunner:
         # Initial states should be identical
         np.testing.assert_array_equal(state1, state2)
 
+    def test_initialization_does_not_create_output_folder(self, tmp_path):
+        """Initializing a runner should not reserve/create an output folder."""
+        config_dict = {
+            "preset": "heat",
+            "parameters": {"D_T": 0.01},
+            "init": {"type": "random-uniform", "params": {}},
+            "solver": "euler",
+            "backend": "numpy",
+            "t_end": 0.001,
+            "dt": 0.0001,
+            "resolution": [16, 16],
+            "bc": {"x-": "periodic", "x+": "periodic", "y-": "periodic", "y+": "periodic"},
+            "output": {"path": str(tmp_path), "num_frames": 3, "formats": ["png"]},
+            "seed": 42,
+        }
+
+        config_path = tmp_path / "cfg.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+
+        config = load_config(config_path)
+        _runner = SimulationRunner(
+            config,
+            output_dir=tmp_path,
+            config_name="cfg",
+            unique_suffix=False,
+        )
+
+        # Regression guard: this used to create an empty cfg_001 folder.
+        assert not (tmp_path / "cfg_001").exists()
+
+        metadata = run_from_config(
+            config_path,
+            output_dir=tmp_path,
+            verbose=False,
+            unique_suffix=False,
+        )
+        assert metadata["folder_name"] == "cfg_001"
+
     def test_run_short_simulation(self, tmp_path):
         """Test running a complete short simulation."""
         # Create config for a very short simulation

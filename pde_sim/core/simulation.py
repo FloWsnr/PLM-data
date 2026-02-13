@@ -138,9 +138,9 @@ class SimulationRunner:
             # Full folder path: {preset}/{folder_name}
             self.folder_name = f"{config.preset}/{folder_name}"
 
-        # Ensure the output directory exists early so file-based storage can write into it.
+        # Resolve output path now; create it lazily in run() so constructing a
+        # runner (without executing it) does not leave empty output folders.
         self.full_output_dir = self.output_dir / self.folder_name
-        self.full_output_dir.mkdir(parents=True, exist_ok=True)
 
         # Validate backend
         if config.backend not in VALID_BACKENDS:
@@ -259,6 +259,9 @@ class SimulationRunner:
         if num_frames < 2:
             raise ValueError("num_frames must be at least 2")
         save_interval = self.config.t_end / (num_frames - 1)
+
+        # Create output directory only when a simulation actually starts running.
+        self.full_output_dir.mkdir(parents=True, exist_ok=True)
 
         if verbose:
             resolution_str = "x".join(str(r) for r in self.config.resolution)

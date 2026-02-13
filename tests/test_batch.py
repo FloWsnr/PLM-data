@@ -82,3 +82,39 @@ def test_run_batch_parallel(tmp_path):
         assert meta["preset"] == "heat"
         assert meta["simulation"]["totalFrames"] == 3
 
+
+def test_run_batch_parallel_log_file_creates_main_and_per_sim_logs(tmp_path):
+    """Batch logging writes one main file and one per-simulation file."""
+    config_dir = tmp_path / "configs"
+    config_dir.mkdir()
+
+    for i in range(2):
+        _write_config(config_dir / f"run_{i}.yaml", seed=200 + i)
+
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+
+    main_log = tmp_path / "logs" / "batch.log"
+
+    ok, failed = run_batch(
+        config_dir=config_dir,
+        output_dir=output_dir,
+        num_processes=2,
+        unique_suffix=False,
+        log_file=main_log,
+        quiet=True,
+    )
+
+    assert ok == 2
+    assert failed == 0
+    assert main_log.exists()
+
+    main_log_text = main_log.read_text()
+    assert "Batch complete" in main_log_text
+
+    simulation_logs = sorted(main_log.parent.glob(f"{main_log.stem}_*.log"))
+    assert len(simulation_logs) == 2
+
+    for sim_log in simulation_logs:
+        text = sim_log.read_text()
+        assert "Starting simulation:" in text

@@ -137,7 +137,10 @@ def main():
     batch_parser.add_argument(
         "--log-file",
         type=Path,
-        help="Path to log file. If provided, all output is logged to this file.",
+        help=(
+            "Main batch log file path. If provided, each simulation also gets its own "
+            "log file in the same directory."
+        ),
     )
     batch_parser.add_argument(
         "--quiet",

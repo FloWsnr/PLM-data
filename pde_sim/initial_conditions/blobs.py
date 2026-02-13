@@ -168,7 +168,8 @@ class GaussianBlob(InitialConditionGenerator):
         sigma_x = width * Lx
 
         for cx in centers:
-            amp = rng.uniform(0.5 * amplitude, amplitude) if randomize else amplitude
+            lo, hi = sorted([0.5 * amplitude, amplitude])
+            amp = rng.uniform(lo, hi) if randomize else amplitude
             blob = amp * np.exp(-((x - cx) ** 2) / (2 * sigma_x**2))
             data += blob
 
@@ -191,7 +192,8 @@ class GaussianBlob(InitialConditionGenerator):
         X, Y = np.meshgrid(x, y, indexing="ij")
 
         for cx, cy in centers:
-            amp = rng.uniform(0.5 * amplitude, amplitude) if randomize else amplitude
+            lo, hi = sorted([0.5 * amplitude, amplitude])
+            amp = rng.uniform(lo, hi) if randomize else amplitude
 
             if aspect_ratio == 1.0 and not randomize:
                 # Symmetric blob
@@ -247,7 +249,8 @@ class GaussianBlob(InitialConditionGenerator):
         X, Y, Z = np.meshgrid(x, y, z, indexing="ij")
 
         for cx, cy, cz in centers:
-            amp = rng.uniform(0.5 * amplitude, amplitude) if randomize else amplitude
+            lo, hi = sorted([0.5 * amplitude, amplitude])
+            amp = rng.uniform(lo, hi) if randomize else amplitude
 
             if aspect_ratio == 1.0 and not randomize:
                 # Symmetric blob
