@@ -1,0 +1,17 @@
+preset: poisson
+parameters:
+  kappa: 1.0
+  f_amplitude: 1.0
+solver:
+  ksp_type: preonly
+  pc_type: lu
+domain:
+  type: rectangle
+  size: [1.0, 1.0]
+  mesh_resolution: [64, 64]
+output_resolution: [64, 64]
+output:
+  path: ./output
+  num_frames: 1
+  formats: [numpy]
+seed: 42

@@ -26,6 +26,15 @@ Before committing, check ALL changed Python files for:
 
 If issues are found, fix them before proceeding to the commit. Do NOT ask the user — just fix them silently and include the fixes in the commit.
 
+### Step 4: Tests
+
+Make sure we ran all relevant tests already. If not, run them now and fix any failures before committing.
+
+### Update Claude.md
+
+If the commit includes important changes in API or functionality, update the `Claude.md` documentation file to reflect these changes. This ensures that the documentation stays accurate and helpful for future reference. Also check and update the README.md if relevant.
+
+
 ### Step 3: Stage and Commit
 
 1. Stage only the session-relevant files by name (never `git add -A` or `git add .`)
