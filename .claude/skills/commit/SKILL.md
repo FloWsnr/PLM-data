@@ -20,6 +20,7 @@ Before committing, check ALL changed Python files for:
 1. **Unused imports** — imports that are not referenced anywhere in the file
 2. **Imports inside functions** — move these to the top of the file unless there is a clear circular-import or conditional-import reason
 3. **Linting errors** — run ruff to check for any linting issues and fix them
+4. **Type errors** — run pyright to check for type errors and fix them
 
 **For large changesets (4+ files changed):** Use fast subagents (haiku model) in parallel to check each file simultaneously. Each subagent should read one file and report any unused imports or function-level imports found.
 
@@ -27,16 +28,16 @@ Before committing, check ALL changed Python files for:
 
 If issues are found, fix them before proceeding to the commit. Do NOT ask the user — just fix them silently and include the fixes in the commit.
 
-### Step 4: Tests
+### Step 3: Tests
 
 Make sure we ran all relevant tests already. If not, run them now and fix any failures before committing.
 
-### Update Claude.md
+### Step 4: Update Claude.md
 
 If the commit includes important changes in API or functionality, update the `Claude.md` documentation file to reflect these changes. This ensures that the documentation stays accurate and helpful for future reference. Also check and update the README.md if relevant.
 
 
-### Step 3: Stage and Commit
+### Step 5: Stage and Commit
 
 1. Stage only the session-relevant files by name (never `git add -A` or `git add .`)
 2. Run `git log --oneline -5` to match the repository's commit message style
