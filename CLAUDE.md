@@ -30,7 +30,7 @@ The system has three layers:
 2. **Core** (`plm_data/core/`) — Shared infrastructure:
    - `config.py` — `SimulationConfig` dataclass loaded from YAML; all fields explicit, no hidden defaults
    - `runner.py` — `SimulationRunner` orchestrates: loads config → instantiates preset → calls `preset.run()` → finalizes output
-   - `output.py` — `FrameWriter` receives field snapshots, interpolates to regular grids, saves as `.npy`
+   - `output.py` — `FrameWriter` accumulates field snapshots in memory, then saves one `(num_frames, *resolution)` array per field in `finalize()`
    - `interpolation.py` — `function_to_array()` maps DOLFINx FEM functions onto regular numpy grids via point evaluation
    - `mesh.py` — Creates rectangle (2D) or box (3D) meshes from config
    - `initial_conditions.py` — `apply_ic()` sets initial conditions on DOLFINx Functions (gaussian_bump, sine_wave, random_perturbation, constant, step, or custom)
@@ -54,7 +54,7 @@ The system has three layers:
 ## Key Conventions
 
 - YAML configs must be fully explicit — no hidden defaults in code
-- Output goes to `output/<category>/<preset>/frames/<field>/<NNNNNN>.npy`
+- Output goes to `output/<category>/<preset>/<field>.npy` as a single `(num_frames, *resolution)` array
 - Presets are auto-discovered via module imports triggered by `_load_all_presets()`
 - Meshes use `GhostMode.shared_facet` for DOLFINx compatibility
 - PETSc solver option prefixes follow the pattern `plm_` or `plm_<preset>_`

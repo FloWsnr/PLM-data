@@ -19,10 +19,10 @@ def test_frame_writer(tmp_path, heat_config):
     writer.write_frame({"u": f}, t=0.0)
     writer.finalize()
 
-    npy_path = output_dir / "frames" / "u" / "000000.npy"
+    npy_path = output_dir / "u.npy"
     assert npy_path.exists()
     arr = np.load(npy_path)
-    assert arr.shape == tuple(heat_config.output_resolution)
+    assert arr.shape == (1, *heat_config.output_resolution)
 
     meta_path = output_dir / "frames_meta.json"
     assert meta_path.exists()
