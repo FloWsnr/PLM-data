@@ -4,12 +4,12 @@ import numpy as np
 from dolfinx import fem
 
 from plm_data.core.interpolation import function_to_array
-from plm_data.core.mesh import create_mesh
+from plm_data.core.mesh import create_domain
 
 
 def test_function_to_array(rectangle_domain):
-    msh = create_mesh(rectangle_domain)
-    V = fem.functionspace(msh, ("Lagrange", 1))
+    domain_geom = create_domain(rectangle_domain)
+    V = fem.functionspace(domain_geom.mesh, ("Lagrange", 1))
     f = fem.Function(V)
     f.x.array[:] = 1.0
 

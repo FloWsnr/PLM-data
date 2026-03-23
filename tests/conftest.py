@@ -5,11 +5,13 @@ from pathlib import Path
 import pytest
 
 from plm_data.core.config import (
+    BCConfig,
     DomainConfig,
     ICConfig,
     OutputConfig,
     SimulationConfig,
     SolverConfig,
+    SourceTermConfig,
 )
 
 
@@ -33,10 +35,21 @@ def heat_config(tmp_path, rectangle_domain, direct_solver):
         parameters={"kappa": 0.01},
         domain=rectangle_domain,
         output_resolution=[4, 4],
-        initial_condition=ICConfig(
-            type="gaussian_bump",
-            params={"sigma": 0.1, "amplitude": 1.0, "cx": 0.5, "cy": 0.5},
-        ),
+        boundary_conditions={
+            "u": {
+                "x-": BCConfig(type="neumann", value=0.0),
+                "x+": BCConfig(type="neumann", value=0.0),
+                "y-": BCConfig(type="neumann", value=0.0),
+                "y+": BCConfig(type="neumann", value=0.0),
+            },
+        },
+        source_terms={"u": SourceTermConfig(type="none", params={})},
+        initial_conditions={
+            "u": ICConfig(
+                type="gaussian_bump",
+                params={"sigma": 0.1, "amplitude": 1.0, "cx": 0.5, "cy": 0.5},
+            ),
+        },
         output=OutputConfig(
             path=tmp_path,
             num_frames=2,
@@ -50,13 +63,31 @@ def heat_config(tmp_path, rectangle_domain, direct_solver):
 
 
 @pytest.fixture
-def poisson_config(tmp_path, rectangle_domain, direct_solver):
+def poisson_config(tmp_path, direct_solver):
+    domain = DomainConfig(
+        type="rectangle",
+        params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+    )
     return SimulationConfig(
         preset="poisson",
         parameters={"kappa": 1.0, "f_amplitude": 1.0},
-        domain=rectangle_domain,
+        domain=domain,
         output_resolution=[4, 4],
-        initial_condition=None,
+        boundary_conditions={
+            "u": {
+                "x-": BCConfig(type="dirichlet", value=0.0),
+                "x+": BCConfig(type="dirichlet", value=0.0),
+                "y-": BCConfig(type="dirichlet", value=0.0),
+                "y+": BCConfig(type="dirichlet", value=0.0),
+            },
+        },
+        source_terms={
+            "u": SourceTermConfig(
+                type="sine_product",
+                params={"amplitude": "param:f_amplitude", "kx": 1, "ky": 1},
+            ),
+        },
+        initial_conditions={},
         output=OutputConfig(
             path=tmp_path,
             num_frames=1,

@@ -6,12 +6,12 @@ from dolfinx import fem
 
 from plm_data.core.config import ICConfig
 from plm_data.core.initial_conditions import apply_ic
-from plm_data.core.mesh import create_mesh
+from plm_data.core.mesh import create_domain
 
 
 def _make_function(rectangle_domain):
-    msh = create_mesh(rectangle_domain)
-    V = fem.functionspace(msh, ("Lagrange", 1))
+    domain_geom = create_domain(rectangle_domain)
+    V = fem.functionspace(domain_geom.mesh, ("Lagrange", 1))
     return fem.Function(V)
 
 

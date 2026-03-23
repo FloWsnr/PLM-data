@@ -46,7 +46,7 @@ class HeatPreset(TimeDependentPreset):
         self.uh = fem.Function(self.V, name="u")
 
         # Apply initial condition from config
-        apply_ic(self.u_n, config.initial_condition, seed=config.seed)
+        apply_ic(self.u_n, config.initial_conditions["u"], seed=config.seed)
 
         # Implicit Euler: (u - u_n)/dt = kappa * laplacian(u) + f
         u = ufl.TrialFunction(self.V)
@@ -61,13 +61,13 @@ class HeatPreset(TimeDependentPreset):
         L = ufl.inner(self.u_n, v) * ufl.dx
 
         # Source term: dt * f * v * dx
-        source = build_source_form(v, self.msh, config.source_term, config.parameters)
+        source = build_source_form(v, self.msh, config.source_terms["u"], config.parameters)
         if source is not None:
             L = L + dt_c * source
 
         # Natural BCs (Neumann/Robin): scaled by dt for implicit Euler
         a_bc, L_bc = build_natural_bc_forms(
-            u, v, domain_geom, config.domain.boundary_conditions, config.parameters
+            u, v, domain_geom, config.boundary_conditions["u"], config.parameters
         )
         if a_bc is not None:
             a = a + dt_c * a_bc
@@ -76,7 +76,7 @@ class HeatPreset(TimeDependentPreset):
 
         # Dirichlet BCs
         bcs = apply_dirichlet_bcs(
-            self.V, domain_geom, config.domain.boundary_conditions, config.parameters
+            self.V, domain_geom, config.boundary_conditions["u"], config.parameters
         )
 
         self.problem = LinearProblem(

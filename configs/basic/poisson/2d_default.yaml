@@ -9,6 +9,19 @@ domain:
   type: rectangle
   size: [1.0, 1.0]
   mesh_resolution: [64, 64]
+boundary_conditions:
+  u:
+    x-: {type: dirichlet, value: 0.0}
+    x+: {type: dirichlet, value: 0.0}
+    y-: {type: dirichlet, value: 0.0}
+    y+: {type: dirichlet, value: 0.0}
+source_terms:
+  u:
+    type: sine_product
+    params:
+      amplitude: "param:f_amplitude"
+      kx: 1
+      ky: 1
 output_resolution: [64, 64]
 output:
   path: ./output

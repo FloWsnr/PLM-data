@@ -4,13 +4,12 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
 
-import dolfinx.mesh
 import numpy as np
 from dolfinx import fem
 from dolfinx.fem.petsc import LinearProblem
 
 from plm_data.core.config import SimulationConfig
-from plm_data.core.mesh import create_mesh
+from plm_data.core.mesh import DomainGeometry, create_domain
 from plm_data.core.output import FrameWriter
 from plm_data.presets.metadata import PDEMetadata
 
@@ -49,19 +48,19 @@ class SteadyLinearPreset(PDEPreset):
     """Convenience base for steady-state linear problems.
 
     Subclasses implement create_function_space(), create_boundary_conditions(),
-    and create_forms(). The run() method handles mesh creation, solving via
+    and create_forms(). The run() method handles domain creation, solving via
     LinearProblem, and writing a single output frame.
     """
 
-    def create_mesh(
+    def create_domain(
         self, config: SimulationConfig
-    ) -> dolfinx.mesh.Mesh:
-        """Create the mesh. Override for custom domains."""
-        return create_mesh(config.domain)
+    ) -> DomainGeometry:
+        """Create the domain with tagged boundaries. Override for custom domains."""
+        return create_domain(config.domain)
 
     @abstractmethod
     def create_function_space(
-        self, msh: dolfinx.mesh.Mesh, config: SimulationConfig
+        self, domain_geom: DomainGeometry, config: SimulationConfig
     ) -> fem.FunctionSpace:
         """Create the FEM function space on the given mesh."""
 
@@ -69,7 +68,7 @@ class SteadyLinearPreset(PDEPreset):
     def create_boundary_conditions(
         self,
         V: fem.FunctionSpace,
-        msh: dolfinx.mesh.Mesh,
+        domain_geom: DomainGeometry,
         config: SimulationConfig,
     ) -> list[fem.DirichletBC]:
         """Create boundary conditions."""
@@ -78,16 +77,16 @@ class SteadyLinearPreset(PDEPreset):
     def create_forms(
         self,
         V: fem.FunctionSpace,
-        msh: dolfinx.mesh.Mesh,
+        domain_geom: DomainGeometry,
         config: SimulationConfig,
     ) -> tuple:
         """Return the bilinear form a and linear form L."""
 
     def run(self, config: SimulationConfig, output: FrameWriter) -> RunResult:
-        msh = self.create_mesh(config)
-        V = self.create_function_space(msh, config)
-        bcs = self.create_boundary_conditions(V, msh, config)
-        a, L = self.create_forms(V, msh, config)
+        domain_geom = self.create_domain(config)
+        V = self.create_function_space(domain_geom, config)
+        bcs = self.create_boundary_conditions(V, domain_geom, config)
+        a, L = self.create_forms(V, domain_geom, config)
 
         problem = LinearProblem(
             a, L, bcs=bcs,
@@ -120,6 +119,7 @@ class TimeDependentPreset(PDEPreset):
         """Create mesh, function spaces, forms, solver, and set initial condition.
 
         Store everything needed for time-stepping as instance attributes.
+        Use create_domain() from plm_data.core.mesh to get a DomainGeometry.
         """
 
     @abstractmethod

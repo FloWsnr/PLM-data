@@ -8,16 +8,26 @@ domain:
   type: rectangle
   size: [1.0, 1.0]
   mesh_resolution: [128, 128]
-output_resolution: [64, 64]
-initial_condition:
-  type: gaussian_bump
-  params:
-    sigma: 0.1
-    amplitude: 1.0
-    cx: 0.5
-    cy: 0.5
+boundary_conditions:
+  u:
+    x-: {type: neumann, value: 0.0}
+    x+: {type: neumann, value: 0.0}
+    y-: {type: neumann, value: 0.0}
+    y+: {type: neumann, value: 0.0}
+source_terms:
+  u:
+    type: none
+initial_conditions:
+  u:
+    type: gaussian_bump
+    params:
+      sigma: 0.1
+      amplitude: 1.0
+      cx: 0.5
+      cy: 0.5
 dt: 0.01
 t_end: 1.0
+output_resolution: [64, 64]
 output:
   path: ./output
   num_frames: 20

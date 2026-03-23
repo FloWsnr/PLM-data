@@ -3,13 +3,13 @@
 import numpy as np
 from dolfinx import fem
 
-from plm_data.core.mesh import create_mesh
+from plm_data.core.mesh import create_domain
 from plm_data.core.output import FrameWriter
 
 
 def test_frame_writer(tmp_path, heat_config):
-    msh = create_mesh(heat_config.domain)
-    V = fem.functionspace(msh, ("Lagrange", 1))
+    domain_geom = create_domain(heat_config.domain)
+    V = fem.functionspace(domain_geom.mesh, ("Lagrange", 1))
     f = fem.Function(V)
     f.x.array[:] = 1.0
 

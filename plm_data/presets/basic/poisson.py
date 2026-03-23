@@ -36,7 +36,7 @@ class PoissonPreset(SteadyLinearPreset):
 
     def create_boundary_conditions(self, V, domain_geom, config):
         return apply_dirichlet_bcs(
-            V, domain_geom, config.domain.boundary_conditions, config.parameters
+            V, domain_geom, config.boundary_conditions["u"], config.parameters
         )
 
     def create_forms(self, V, domain_geom, config):
@@ -47,9 +47,9 @@ class PoissonPreset(SteadyLinearPreset):
 
         a = kappa * ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
 
-        L = build_source_form(v, domain_geom.mesh, config.source_term, config.parameters)
+        L = build_source_form(v, domain_geom.mesh, config.source_terms["u"], config.parameters)
         a_bc, L_bc = build_natural_bc_forms(
-            u, v, domain_geom, config.domain.boundary_conditions, config.parameters
+            u, v, domain_geom, config.boundary_conditions["u"], config.parameters
         )
         if a_bc is not None:
             a = a + a_bc

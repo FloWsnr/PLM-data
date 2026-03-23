@@ -16,7 +16,7 @@ python -m plm_data run configs/basic/heat/2d_default.yaml
 python -m plm_data list
 ```
 
-There is no build step, test suite, or linter configured yet. The project runs directly as a Python module. DOLFINx and its dependencies (PETSc, mpi4py, UFL) must be installed in the environment.
+Tests run via `python -m pytest tests/`. The project runs directly as a Python module. DOLFINx and its dependencies (PETSc, mpi4py, UFL) must be installed in the environment.
 
 ## Architecture
 
@@ -24,18 +24,21 @@ The system has three layers:
 
 1. **Presets** (`plm_data/presets/`) — Each PDE is a self-contained class registered via `@register_preset("name")`. Presets own their full solve logic (mesh, function space, variational form, solver, time-stepping). Three base classes:
    - `PDEPreset` — abstract base, implement `run()` directly
-   - `SteadyLinearPreset` — for steady-state linear problems; implement `create_function_space()`, `create_boundary_conditions()`, `create_forms()`; the base handles mesh creation, `LinearProblem` solve, and frame output
+   - `SteadyLinearPreset` — for steady-state linear problems; implement `create_function_space()`, `create_boundary_conditions()`, `create_forms()`; methods receive `DomainGeometry` (not bare mesh); the base handles domain creation, `LinearProblem` solve, and frame output
    - `TimeDependentPreset` — for time-dependent problems; implement `setup()`, `step()`, `get_output_fields()`; the base handles the time loop and output scheduling
 
 2. **Core** (`plm_data/core/`) — Shared infrastructure:
-   - `config.py` — `SimulationConfig` dataclass loaded from YAML; all fields explicit, no hidden defaults
+   - `config.py` — `SimulationConfig` dataclass loaded from YAML; all fields explicit, no hidden defaults. BCs, source terms, and ICs are all per-field (keyed by field name like "u", "velocity", "pressure")
+   - `mesh.py` — `create_domain()` returns `DomainGeometry` (mesh + facet_tags + boundary_names + ds measure). Built-in domains auto-tag boundaries (x-, x+, y-, y+ for rectangle; 6 faces for box). Future Gmsh support will populate from physical groups
+   - `spatial_fields.py` — Shared spatial field type system (constant, sine_product, gaussian_bump, none, custom). Two renderers: `build_ufl_field()` for variational forms, `build_interpolator()` for numpy interpolation. Supports `"param:name"` references
+   - `boundary_conditions.py` — `apply_dirichlet_bcs()` creates DirichletBC objects; `build_natural_bc_forms()` returns (a_bc, L_bc) for Neumann and Robin BCs
+   - `source_terms.py` — `build_source_form()` constructs f*v*dx from config
+   - `initial_conditions.py` — `apply_ic()` sets initial conditions on DOLFINx Functions (gaussian_bump, sine_wave, random_perturbation, constant, step, or custom)
    - `runner.py` — `SimulationRunner` orchestrates: loads config → instantiates preset → calls `preset.run()` → finalizes output
    - `output.py` — `FrameWriter` accumulates field snapshots in memory, then saves one `(num_frames, *resolution)` array per field in `finalize()`
    - `interpolation.py` — `function_to_array()` maps DOLFINx FEM functions onto regular numpy grids via point evaluation
-   - `mesh.py` — Creates rectangle (2D) or box (3D) meshes from config
-   - `initial_conditions.py` — `apply_ic()` sets initial conditions on DOLFINx Functions (gaussian_bump, sine_wave, random_perturbation, constant, step, or custom)
 
-3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, mesh/output resolution, domain size, initial condition, time-stepping (dt, t_end), output settings, and seed.
+3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, domain (pure geometry), per-field boundary conditions (dirichlet/neumann/robin), per-field source terms, per-field initial conditions, output resolution, time-stepping (dt, t_end), solver options, and seed.
 
 ## Adding a New PDE Preset
 
