@@ -226,7 +226,7 @@ def test_cahn_hilliard_constant_ic(tmp_path):
     """Test Cahn-Hilliard with constant IC instead of random_perturbation."""
     config = SimulationConfig(
         preset="cahn_hilliard",
-        parameters={"lmbda": 0.01, "theta": 0.5},
+        parameters={"lmbda": 0.01, "barrier_height": 100.0, "mobility": 1.0, "theta": 0.5},
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},

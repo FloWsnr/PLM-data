@@ -37,6 +37,11 @@ class CahnHilliardPreset(TimeDependentPreset):
             parameters=[
                 PDEParameter("lmbda", "Surface parameter (interface width)"),
                 PDEParameter(
+                    "barrier_height",
+                    "Height of the double-well free energy barrier",
+                ),
+                PDEParameter("mobility", "Mobility coefficient M in div(M*grad(mu))"),
+                PDEParameter(
                     "theta",
                     "Time stepping parameter (0.5=Crank-Nicolson, 1=backward Euler)",
                 ),
@@ -56,6 +61,8 @@ class CahnHilliardPreset(TimeDependentPreset):
 
         # Parameters
         lmbda = config.parameters["lmbda"]
+        barrier_height = config.parameters["barrier_height"]
+        mobility = config.parameters["mobility"]
         theta = config.parameters["theta"]
         dt = config.dt
 
@@ -75,9 +82,9 @@ class CahnHilliardPreset(TimeDependentPreset):
         # Test functions
         q, v = ufl.TestFunctions(ME)
 
-        # Chemical potential: f = 100*c^2*(1-c)^2, df/dc via automatic differentiation
+        # Chemical potential: f = barrier_height*c^2*(1-c)^2, df/dc via automatic differentiation
         c = ufl.variable(c)
-        f = 100 * c**2 * (1 - c) ** 2
+        f = barrier_height * c**2 * (1 - c) ** 2
         dfdc = ufl.diff(f, c)
 
         # Theta-method: mu at mid-point
@@ -87,11 +94,11 @@ class CahnHilliardPreset(TimeDependentPreset):
         dt_c = fem.Constant(self.msh, default_real_type(dt))
 
         # Weak form (nonlinear residual)
-        # Equation 1: dc/dt = div(M * grad(mu)), M=1
+        # Equation 1: dc/dt = div(M * grad(mu))
         F0 = (
             ufl.inner(c, q) * ufl.dx
             - ufl.inner(c0, q) * ufl.dx
-            + dt_c * ufl.inner(ufl.grad(mu_mid), ufl.grad(q)) * ufl.dx
+            + dt_c * mobility * ufl.inner(ufl.grad(mu_mid), ufl.grad(q)) * ufl.dx
         )
         # Equation 2: mu = df/dc - lmbda * laplacian(c)
         F1 = (

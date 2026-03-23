@@ -64,7 +64,7 @@ def heat_config(tmp_path, rectangle_domain, direct_solver):
 def cahn_hilliard_config(tmp_path, rectangle_domain, direct_solver):
     return SimulationConfig(
         preset="cahn_hilliard",
-        parameters={"lmbda": 0.01, "theta": 0.5},
+        parameters={"lmbda": 0.01, "barrier_height": 100.0, "mobility": 1.0, "theta": 0.5},
         domain=rectangle_domain,
         output_resolution=[4, 4],
         boundary_conditions={"c": {}},
