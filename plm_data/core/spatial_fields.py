@@ -2,8 +2,7 @@
 
 Converts {type, params} field configs into UFL expressions (for variational
 forms) or numpy callables (for interpolation into DOLFINx Functions).
-Used by source terms, boundary condition values, and (eventually) initial
-conditions.
+Used by source terms, boundary condition values, and initial conditions.
 """
 
 from typing import Any, Callable
@@ -22,7 +21,7 @@ def resolve_param_ref(value: Any, parameters: dict[str, float]) -> float:
     if isinstance(value, (int, float)):
         return float(value)
     if isinstance(value, str) and value.startswith("param:"):
-        name = value[len("param:"):]
+        name = value[len("param:") :]
         if name not in parameters:
             raise ValueError(
                 f"Parameter reference '{value}' not found. "
@@ -48,9 +47,7 @@ def normalize_field_config(value: Any) -> dict:
         return {"type": "constant", "params": {"value": value}}
     if isinstance(value, dict):
         if "type" not in value:
-            raise ValueError(
-                f"Field config dict must have a 'type' key. Got: {value}"
-            )
+            raise ValueError(f"Field config dict must have a 'type' key. Got: {value}")
         return value
     raise ValueError(
         f"Invalid field config: {value!r}. "
@@ -77,7 +74,7 @@ def build_ufl_field(
     msh: dmesh.Mesh,
     field_config: dict,
     parameters: dict[str, float],
-) -> ufl.core.expr.Expr:
+) -> "ufl.core.expr.Expr | None":  # type: ignore[reportAttributeAccessIssue]
     """Build a UFL expression from a normalized field config.
 
     Args:
@@ -109,7 +106,7 @@ def build_ufl_field(
         for key, axis in axis_keys.items():
             if key in p:
                 k = resolve_param_ref(p[key], parameters)
-                expr = expr * ufl.sin(k * ufl.pi * x[axis])
+                expr = expr * ufl.sin(k * ufl.pi * x[axis])  # type: ignore[reportOperatorIssue]
                 found_any = True
         if not found_any:
             raise ValueError(
@@ -121,9 +118,7 @@ def build_ufl_field(
         amplitude = resolve_param_ref(
             _require_param(p, "amplitude", field_type), parameters
         )
-        sigma = resolve_param_ref(
-            _require_param(p, "sigma", field_type), parameters
-        )
+        sigma = resolve_param_ref(_require_param(p, "sigma", field_type), parameters)
         center = _require_param(p, "center", field_type)
         gdim = msh.geometry.dim
         if len(center) != gdim:
@@ -132,6 +127,19 @@ def build_ufl_field(
             )
         r_sq = sum((x[i] - center[i]) ** 2 for i in range(gdim))
         return amplitude * ufl.exp(-r_sq / (2 * sigma**2))
+
+    elif field_type == "step":
+        value_left = resolve_param_ref(
+            _require_param(p, "value_left", field_type), parameters
+        )
+        value_right = resolve_param_ref(
+            _require_param(p, "value_right", field_type), parameters
+        )
+        x_split = resolve_param_ref(
+            _require_param(p, "x_split", field_type), parameters
+        )
+        axis = int(_require_param(p, "axis", field_type))
+        return ufl.conditional(ufl.lt(x[axis], x_split), value_left, value_right)
 
     elif field_type == "custom":
         return None
@@ -197,9 +205,7 @@ def build_interpolator(
         amplitude = resolve_param_ref(
             _require_param(p, "amplitude", field_type), parameters
         )
-        sigma = resolve_param_ref(
-            _require_param(p, "sigma", field_type), parameters
-        )
+        sigma = resolve_param_ref(_require_param(p, "sigma", field_type), parameters)
         center = _require_param(p, "center", field_type)
 
         def _gaussian(x, amp=amplitude, sig=sigma, ctr=center):
@@ -208,6 +214,23 @@ def build_interpolator(
             return amp * np.exp(-r_sq / (2 * sig**2))
 
         return _gaussian
+
+    elif field_type == "step":
+        value_left = resolve_param_ref(
+            _require_param(p, "value_left", field_type), parameters
+        )
+        value_right = resolve_param_ref(
+            _require_param(p, "value_right", field_type), parameters
+        )
+        x_split = resolve_param_ref(
+            _require_param(p, "x_split", field_type), parameters
+        )
+        axis = int(_require_param(p, "axis", field_type))
+
+        def _step(x, vl=value_left, vr=value_right, xs=x_split, ax=axis):
+            return np.where(x[ax] < xs, vl, vr)
+
+        return _step
 
     elif field_type == "custom":
         return None

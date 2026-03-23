@@ -30,10 +30,10 @@ The system has three layers:
 2. **Core** (`plm_data/core/`) — Shared infrastructure:
    - `config.py` — `SimulationConfig` dataclass loaded from YAML; all fields explicit, no hidden defaults. BCs, source terms, and ICs are all per-field (keyed by field name like "u", "velocity", "pressure")
    - `mesh.py` — `create_domain()` returns `DomainGeometry` (mesh + facet_tags + boundary_names + ds measure). Built-in domains auto-tag boundaries (x-, x+, y-, y+ for rectangle; 6 faces for box). Future Gmsh support will populate from physical groups
-   - `spatial_fields.py` — Shared spatial field type system (constant, sine_product, gaussian_bump, none, custom). Two renderers: `build_ufl_field()` for variational forms, `build_interpolator()` for numpy interpolation. Supports `"param:name"` references
+   - `spatial_fields.py` — Shared spatial field type system (constant, sine_product, gaussian_bump, step, none, custom). Two renderers: `build_ufl_field()` for variational forms, `build_interpolator()` for numpy interpolation. Supports `"param:name"` references. This is the central hub — BCs, source terms, and ICs all delegate to it
    - `boundary_conditions.py` — `apply_dirichlet_bcs()` creates DirichletBC objects; `build_natural_bc_forms()` returns (a_bc, L_bc) for Neumann and Robin BCs
-   - `source_terms.py` — `build_source_form()` constructs f*v*dx from config
-   - `initial_conditions.py` — `apply_ic()` sets initial conditions on DOLFINx Functions (gaussian_bump, sine_wave, random_perturbation, constant, step, or custom)
+   - `source_terms.py` — `build_source_form()` constructs f*v*dx for scalar fields; `build_vector_source_form()` assembles per-component scalar source terms into a vector body force for vector PDEs
+   - `initial_conditions.py` — `apply_ic(func, ic_config, parameters, seed)` delegates spatial types to `build_interpolator()` from spatial_fields; handles `random_perturbation` directly (DOF-based). `apply_vector_ic()` applies per-component scalar ICs to vector functions for vector PDEs
    - `runner.py` — `SimulationRunner` orchestrates: loads config → instantiates preset → calls `preset.run()` → finalizes output
    - `output.py` — `FrameWriter` accumulates field snapshots in memory, then saves one `(num_frames, *resolution)` array per field in `finalize()`
    - `interpolation.py` — `function_to_array()` maps DOLFINx FEM functions onto regular numpy grids via point evaluation

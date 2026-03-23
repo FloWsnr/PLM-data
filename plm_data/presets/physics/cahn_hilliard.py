@@ -71,20 +71,25 @@ class CahnHilliardPreset(TimeDependentPreset):
         self.u0 = fem.Function(ME)
 
         # Apply initial condition to concentration component (sub 0)
-        apply_ic(self.u.sub(0), config.initial_conditions["c"], seed=config.seed)
-        self.u.x.scatter_forward()
-        self.u0.x.array[:] = self.u.x.array
+        apply_ic(
+            self.u.sub(0),  # type: ignore[reportAttributeAccessIssue]
+            config.initial_conditions["c"],
+            config.parameters,
+            seed=config.seed,
+        )
+        self.u.x.scatter_forward()  # type: ignore[reportAttributeAccessIssue]
+        self.u0.x.array[:] = self.u.x.array  # type: ignore[reportAttributeAccessIssue]
 
         # Split into components for variational form
-        c, mu = ufl.split(self.u)
-        c0, mu0 = ufl.split(self.u0)
+        c, mu = ufl.split(self.u)  # type: ignore[reportAssignmentType]
+        c0, mu0 = ufl.split(self.u0)  # type: ignore[reportAssignmentType]
 
         # Test functions
-        q, v = ufl.TestFunctions(ME)
+        q, v = ufl.TestFunctions(ME)  # type: ignore[reportAssignmentType]
 
         # Chemical potential: f = barrier_height*c^2*(1-c)^2, df/dc via automatic differentiation
-        c = ufl.variable(c)
-        f = barrier_height * c**2 * (1 - c) ** 2
+        c = ufl.variable(c)  # type: ignore[reportOperatorIssue]
+        f = barrier_height * c**2 * (1 - c) ** 2  # type: ignore[reportOperatorIssue]
         dfdc = ufl.diff(f, c)
 
         # Theta-method: mu at mid-point
@@ -96,22 +101,22 @@ class CahnHilliardPreset(TimeDependentPreset):
         # Weak form (nonlinear residual)
         # Equation 1: dc/dt = div(M * grad(mu))
         F0 = (
-            ufl.inner(c, q) * ufl.dx
-            - ufl.inner(c0, q) * ufl.dx
-            + dt_c * mobility * ufl.inner(ufl.grad(mu_mid), ufl.grad(q)) * ufl.dx
+            ufl.inner(c, q) * ufl.dx  # type: ignore[reportOperatorIssue]
+            - ufl.inner(c0, q) * ufl.dx  # type: ignore[reportOperatorIssue]
+            + dt_c * mobility * ufl.inner(ufl.grad(mu_mid), ufl.grad(q)) * ufl.dx  # type: ignore[reportOperatorIssue]
         )
         # Equation 2: mu = df/dc - lmbda * laplacian(c)
         F1 = (
-            ufl.inner(mu, v) * ufl.dx
-            - ufl.inner(dfdc, v) * ufl.dx
-            - lmbda * ufl.inner(ufl.grad(c), ufl.grad(v)) * ufl.dx
+            ufl.inner(mu, v) * ufl.dx  # type: ignore[reportOperatorIssue]
+            - ufl.inner(dfdc, v) * ufl.dx  # type: ignore[reportOperatorIssue]
+            - lmbda * ufl.inner(ufl.grad(c), ufl.grad(v)) * ufl.dx  # type: ignore[reportOperatorIssue]
         )
-        F = F0 + F1
+        F = F0 + F1  # type: ignore[reportOperatorIssue]
 
         # Nonlinear problem with Newton solver
         self.problem = NonlinearProblem(
             F,
-            self.u,
+            self.u,  # type: ignore[reportArgumentType]
             petsc_options_prefix="plm_cahn_hilliard_",
             petsc_options=self._solver_options,
         )
@@ -122,13 +127,13 @@ class CahnHilliardPreset(TimeDependentPreset):
 
     def step(self, t: float, dt: float) -> None:
         # Copy current solution to previous
-        self.u0.x.array[:] = self.u.x.array
+        self.u0.x.array[:] = self.u.x.array  # type: ignore[reportAttributeAccessIssue]
         # Solve nonlinear system
         self.problem.solve()
 
     def get_output_fields(self) -> dict[str, fem.Function]:
-        self.c_out.x.array[:] = self.u.x.array[self._c_dofs]
-        return {"c": self.c_out}
+        self.c_out.x.array[:] = self.u.x.array[self._c_dofs]  # type: ignore[reportAttributeAccessIssue]
+        return {"c": self.c_out}  # type: ignore[reportReturnType]
 
     def get_num_dofs(self) -> int:
-        return self.u.function_space.dofmap.index_map.size_global
+        return self.u.function_space.dofmap.index_map.size_global  # type: ignore[reportAttributeAccessIssue]

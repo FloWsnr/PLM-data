@@ -17,6 +17,7 @@ from plm_data.core.spatial_fields import (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def params():
     """Standard parameter dict for testing references."""
@@ -142,36 +143,39 @@ class TestBuildUflField:
     def test_type_none(self, mesh_2d, params):
         result = build_ufl_field(mesh_2d, {"type": "none"}, params)
         assert result is not None
-        assert isinstance(result, ufl.core.expr.Expr)
+        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
 
     def test_type_zero(self, mesh_2d, params):
         result = build_ufl_field(mesh_2d, {"type": "zero"}, params)
         assert result is not None
-        assert isinstance(result, ufl.core.expr.Expr)
+        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
 
     def test_constant_literal(self, mesh_2d, params):
         cfg = {"type": "constant", "params": {"value": 42.0}}
         result = build_ufl_field(mesh_2d, cfg, params)
         assert result is not None
-        assert isinstance(result, ufl.core.expr.Expr)
+        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
 
     def test_constant_param_ref(self, mesh_2d, params):
         cfg = {"type": "constant", "params": {"value": "param:kappa"}}
         result = build_ufl_field(mesh_2d, cfg, params)
         assert result is not None
-        assert isinstance(result, ufl.core.expr.Expr)
+        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
 
     def test_sine_product_kx_only(self, mesh_2d, params):
         cfg = {"type": "sine_product", "params": {"amplitude": 1.0, "kx": 2.0}}
         result = build_ufl_field(mesh_2d, cfg, params)
         assert result is not None
-        assert isinstance(result, ufl.core.expr.Expr)
+        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
 
     def test_sine_product_kx_ky(self, mesh_2d, params):
-        cfg = {"type": "sine_product", "params": {"amplitude": 1.0, "kx": 1.0, "ky": 2.0}}
+        cfg = {
+            "type": "sine_product",
+            "params": {"amplitude": 1.0, "kx": 1.0, "ky": 2.0},
+        }
         result = build_ufl_field(mesh_2d, cfg, params)
         assert result is not None
-        assert isinstance(result, ufl.core.expr.Expr)
+        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
 
     def test_sine_product_no_axes_raises(self, mesh_2d, params):
         cfg = {"type": "sine_product", "params": {"amplitude": 1.0}}
@@ -185,7 +189,7 @@ class TestBuildUflField:
         }
         result = build_ufl_field(mesh_2d, cfg, params)
         assert result is not None
-        assert isinstance(result, ufl.core.expr.Expr)
+        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
 
     def test_gaussian_bump_wrong_center_dim_raises(self, mesh_2d, params):
         cfg = {
@@ -206,7 +210,35 @@ class TestBuildUflField:
         }
         result = build_ufl_field(mesh_2d, cfg, params)
         assert result is not None
-        assert isinstance(result, ufl.core.expr.Expr)
+        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
+
+    def test_step_2d(self, mesh_2d, params):
+        cfg = {
+            "type": "step",
+            "params": {
+                "value_left": 1.0,
+                "value_right": 0.0,
+                "x_split": 0.5,
+                "axis": 0,
+            },
+        }
+        result = build_ufl_field(mesh_2d, cfg, params)
+        assert result is not None
+        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
+
+    def test_step_param_refs(self, mesh_2d, params):
+        cfg = {
+            "type": "step",
+            "params": {
+                "value_left": "param:amplitude",
+                "value_right": 0.0,
+                "x_split": "param:sigma",
+                "axis": 0,
+            },
+        }
+        result = build_ufl_field(mesh_2d, cfg, params)
+        assert result is not None
+        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
 
     def test_custom_returns_none(self, mesh_2d, params):
         result = build_ufl_field(mesh_2d, {"type": "custom"}, params)
@@ -225,12 +257,14 @@ class TestBuildUflField:
 class TestBuildInterpolator:
     def test_type_none_returns_zeros(self, points_2d):
         fn = build_interpolator({"type": "none"}, {})
+        assert fn is not None
         result = fn(points_2d)
         assert result.shape == (points_2d.shape[1],)
         np.testing.assert_array_equal(result, 0.0)
 
     def test_type_zero_returns_zeros(self, points_2d):
         fn = build_interpolator({"type": "zero"}, {})
+        assert fn is not None
         result = fn(points_2d)
         assert result.shape == (points_2d.shape[1],)
         np.testing.assert_array_equal(result, 0.0)
@@ -238,6 +272,7 @@ class TestBuildInterpolator:
     def test_constant_uniform(self, points_2d):
         cfg = {"type": "constant", "params": {"value": 7.5}}
         fn = build_interpolator(cfg, {})
+        assert fn is not None
         result = fn(points_2d)
         assert result.shape == (points_2d.shape[1],)
         np.testing.assert_array_equal(result, 7.5)
@@ -245,13 +280,18 @@ class TestBuildInterpolator:
     def test_constant_param_ref(self, points_2d):
         cfg = {"type": "constant", "params": {"value": "param:kappa"}}
         fn = build_interpolator(cfg, {"kappa": 3.0})
+        assert fn is not None
         result = fn(points_2d)
         np.testing.assert_array_equal(result, 3.0)
 
     def test_sine_product_known_values(self, points_2d):
         """sin(pi*x) * sin(pi*y) should be 0 on all boundaries and max at center."""
-        cfg = {"type": "sine_product", "params": {"amplitude": 1.0, "kx": 1.0, "ky": 1.0}}
+        cfg = {
+            "type": "sine_product",
+            "params": {"amplitude": 1.0, "kx": 1.0, "ky": 1.0},
+        }
         fn = build_interpolator(cfg, {})
+        assert fn is not None
         result = fn(points_2d)
 
         # At boundary points (x=0 or x=1 or y=0 or y=1), sin(pi*0)=0 and sin(pi*1)=0
@@ -264,8 +304,8 @@ class TestBuildInterpolator:
         """With only kx, result depends only on x."""
         cfg = {"type": "sine_product", "params": {"amplitude": 2.0, "kx": 1.0}}
         fn = build_interpolator(cfg, {})
-        x = np.array([[0.0, 0.25, 0.5, 0.75, 1.0],
-                       [0.5, 0.5, 0.5, 0.5, 0.5]])
+        assert fn is not None
+        x = np.array([[0.0, 0.25, 0.5, 0.75, 1.0], [0.5, 0.5, 0.5, 0.5, 0.5]])
         result = fn(x)
         expected = 2.0 * np.sin(np.pi * x[0])
         np.testing.assert_allclose(result, expected, atol=1e-14)
@@ -281,6 +321,7 @@ class TestBuildInterpolator:
             "params": {"amplitude": "param:amp", "kx": "param:k"},
         }
         fn = build_interpolator(cfg, {"amp": 3.0, "k": 2.0})
+        assert fn is not None
         result = fn(points_2d)
         expected = 3.0 * np.sin(2.0 * np.pi * points_2d[0])
         np.testing.assert_allclose(result, expected, atol=1e-14)
@@ -291,6 +332,7 @@ class TestBuildInterpolator:
             "params": {"amplitude": 5.0, "sigma": 0.2, "center": [0.5, 0.5]},
         }
         fn = build_interpolator(cfg, {})
+        assert fn is not None
         result = fn(points_2d)
 
         # Find the point closest to (0.5, 0.5) — it should have max value
@@ -310,9 +352,9 @@ class TestBuildInterpolator:
             "params": {"amplitude": 1.0, "sigma": 0.1, "center": [0.5, 0.5]},
         }
         fn = build_interpolator(cfg, {})
+        assert fn is not None
         # Three points: center, near, far
-        x = np.array([[0.5, 0.6, 1.0],
-                       [0.5, 0.5, 1.0]])
+        x = np.array([[0.5, 0.6, 1.0], [0.5, 0.5, 1.0]])
         result = fn(x)
         assert result[0] > result[1] > result[2]
 
@@ -322,6 +364,7 @@ class TestBuildInterpolator:
             "params": {"amplitude": 2.0, "sigma": 0.3, "center": [0.5, 0.5, 0.5]},
         }
         fn = build_interpolator(cfg, {})
+        assert fn is not None
         result = fn(points_3d)
         assert result.shape == (points_3d.shape[1],)
 
@@ -340,11 +383,71 @@ class TestBuildInterpolator:
             },
         }
         fn = build_interpolator(cfg, {"amp": 4.0, "sig": 0.2})
+        assert fn is not None
         result = fn(points_2d)
         # Peak at center should be amplitude
         dists = (points_2d[0] - 0.5) ** 2 + (points_2d[1] - 0.5) ** 2
         center_idx = np.argmin(dists)
         assert result[center_idx] == pytest.approx(4.0, abs=1e-10)
+
+    def test_step_x_axis(self, points_2d):
+        cfg = {
+            "type": "step",
+            "params": {
+                "value_left": 1.0,
+                "value_right": 0.0,
+                "x_split": 0.5,
+                "axis": 0,
+            },
+        }
+        fn = build_interpolator(cfg, {})
+        assert fn is not None
+        result = fn(points_2d)
+        assert result.shape == (points_2d.shape[1],)
+        # Points with x < 0.5 should be 1.0, x >= 0.5 should be 0.0
+        for i in range(points_2d.shape[1]):
+            if points_2d[0, i] < 0.5:
+                assert result[i] == 1.0
+            else:
+                assert result[i] == 0.0
+
+    def test_step_y_axis(self, points_2d):
+        cfg = {
+            "type": "step",
+            "params": {
+                "value_left": -1.0,
+                "value_right": 2.0,
+                "x_split": 0.5,
+                "axis": 1,
+            },
+        }
+        fn = build_interpolator(cfg, {})
+        assert fn is not None
+        result = fn(points_2d)
+        for i in range(points_2d.shape[1]):
+            if points_2d[1, i] < 0.5:
+                assert result[i] == -1.0
+            else:
+                assert result[i] == 2.0
+
+    def test_step_param_refs(self, points_2d):
+        cfg = {
+            "type": "step",
+            "params": {
+                "value_left": "param:vl",
+                "value_right": "param:vr",
+                "x_split": 0.5,
+                "axis": 0,
+            },
+        }
+        fn = build_interpolator(cfg, {"vl": 10.0, "vr": 20.0})
+        assert fn is not None
+        result = fn(points_2d)
+        for i in range(points_2d.shape[1]):
+            if points_2d[0, i] < 0.5:
+                assert result[i] == 10.0
+            else:
+                assert result[i] == 20.0
 
     def test_custom_returns_none(self):
         result = build_interpolator({"type": "custom"}, {})
@@ -356,6 +459,7 @@ class TestBuildInterpolator:
 
     def test_zero_with_3d_points(self, points_3d):
         fn = build_interpolator({"type": "zero"}, {})
+        assert fn is not None
         result = fn(points_3d)
         assert result.shape == (points_3d.shape[1],)
         np.testing.assert_array_equal(result, 0.0)
@@ -363,6 +467,7 @@ class TestBuildInterpolator:
     def test_constant_with_3d_points(self, points_3d):
         cfg = {"type": "constant", "params": {"value": -2.5}}
         fn = build_interpolator(cfg, {})
+        assert fn is not None
         result = fn(points_3d)
         assert result.shape == (points_3d.shape[1],)
         np.testing.assert_array_equal(result, -2.5)

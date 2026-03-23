@@ -66,8 +66,8 @@ class NavierStokesPreset(TimeDependentPreset):
         )
 
         # Trial and test functions
-        u, p = ufl.TrialFunctions(VQ)
-        v, q = ufl.TestFunctions(VQ)
+        u, p = ufl.TrialFunctions(VQ)  # type: ignore[reportAssignmentType]
+        v, q = ufl.TestFunctions(VQ)  # type: ignore[reportAssignmentType]
 
         # Constants
         delta_t = fem.Constant(self.msh, default_real_type(dt))
@@ -77,21 +77,21 @@ class NavierStokesPreset(TimeDependentPreset):
         n = ufl.FacetNormal(self.msh)
 
         # --- Viscous DG bilinear form (symmetric interior penalty) ---
-        a_visc = (1.0 / Re) * (
-            ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+        a_visc = (1.0 / Re) * (  # type: ignore[reportOperatorIssue]
+            ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx  # type: ignore[reportOperatorIssue]
             - ufl.inner(ufl.avg(ufl.grad(u)), dg_jump(v, n)) * ufl.dS
             - ufl.inner(dg_jump(u, n), ufl.avg(ufl.grad(v))) * ufl.dS
-            + (alpha / ufl.avg(h)) * ufl.inner(dg_jump(u, n), dg_jump(v, n)) * ufl.dS
+            + (alpha / ufl.avg(h)) * ufl.inner(dg_jump(u, n), dg_jump(v, n)) * ufl.dS  # type: ignore[reportOperatorIssue]
             - ufl.inner(ufl.grad(u), ufl.outer(v, n)) * ufl.ds
             - ufl.inner(ufl.outer(u, n), ufl.grad(v)) * ufl.ds
-            + (alpha / h) * ufl.inner(ufl.outer(u, n), ufl.outer(v, n)) * ufl.ds
+            + (alpha / h) * ufl.inner(ufl.outer(u, n), ufl.outer(v, n)) * ufl.ds  # type: ignore[reportOperatorIssue]
         )
 
         # Pressure-velocity coupling
-        a_pv = -ufl.inner(p, ufl.div(v)) * ufl.dx
-        a_up = -ufl.inner(ufl.div(u), q) * ufl.dx
+        a_pv = -ufl.inner(p, ufl.div(v)) * ufl.dx  # type: ignore[reportOptionalOperand]
+        a_up = -ufl.inner(ufl.div(u), q) * ufl.dx  # type: ignore[reportOptionalOperand]
 
-        a_stokes = a_visc + a_pv + a_up
+        a_stokes = a_visc + a_pv + a_up  # type: ignore[reportOperatorIssue]
 
         # --- Boundary conditions ---
         # Parse velocity BCs from config: each boundary gets a vector value
@@ -103,7 +103,7 @@ class NavierStokesPreset(TimeDependentPreset):
                 if isinstance(val, list):
                     bc_values[bnd_name] = val
                 else:
-                    bc_values[bnd_name] = [float(val), 0.0]
+                    bc_values[bnd_name] = [float(val), 0.0]  # type: ignore[reportArgumentType]
 
         # u_D on DG Lagrange vector space: stores full boundary velocity
         # (RT elements only capture normal flux, losing tangential components)
@@ -112,7 +112,7 @@ class NavierStokesPreset(TimeDependentPreset):
 
         # u_D_rt on RT space for strong Dirichlet BC (normal component)
         u_D_rt = fem.Function(V)
-        u_D_rt.interpolate(u_D)
+        u_D_rt.interpolate(u_D)  # type: ignore[reportAttributeAccessIssue]
 
         # Strong Dirichlet BC on RT space (constrains normal velocity)
         self.msh.topology.create_connectivity(
@@ -122,21 +122,21 @@ class NavierStokesPreset(TimeDependentPreset):
         boundary_vel_dofs = fem.locate_dofs_topological(
             V, self.msh.topology.dim - 1, boundary_facets
         )
-        bc_u = fem.dirichletbc(u_D_rt, boundary_vel_dofs)
+        bc_u = fem.dirichletbc(u_D_rt, boundary_vel_dofs)  # type: ignore[reportArgumentType]
         bcs = [bc_u]
 
         # Weak BC terms: use u_D (DG Lagrange) for full velocity enforcement
-        L_bc = (1.0 / Re) * (
-            -ufl.inner(ufl.outer(u_D, n), ufl.grad(v)) * ufl.ds
-            + (alpha / h) * ufl.inner(ufl.outer(u_D, n), ufl.outer(v, n)) * ufl.ds
+        L_bc = (1.0 / Re) * (  # type: ignore[reportOperatorIssue]
+            -ufl.inner(ufl.outer(u_D, n), ufl.grad(v)) * ufl.ds  # type: ignore[reportOptionalOperand]
+            + (alpha / h) * ufl.inner(ufl.outer(u_D, n), ufl.outer(v, n)) * ufl.ds  # type: ignore[reportOperatorIssue]
         )
 
         # Zero RHS for pressure equation (needed for block structure)
-        L_bc += ufl.inner(fem.Constant(self.msh, default_real_type(0.0)), q) * ufl.dx
+        L_bc += ufl.inner(fem.Constant(self.msh, default_real_type(0.0)), q) * ufl.dx  # type: ignore[reportOperatorIssue]
 
         # --- Body force (source term) ---
         source_form = build_vector_source_form(
-            v,
+            v,  # type: ignore[reportArgumentType]
             self.msh,
             ["velocity_x", "velocity_y"],
             config.source_terms,
@@ -155,7 +155,7 @@ class NavierStokesPreset(TimeDependentPreset):
         # --- Solution functions ---
         self.u_h = fem.Function(V)
         self.p_h = fem.Function(Q)
-        self.p_h.name = "p"
+        self.p_h.name = "p"  # type: ignore[reportAttributeAccessIssue]
 
         # --- Initial condition ---
         ic_configs = config.initial_conditions
@@ -166,55 +166,55 @@ class NavierStokesPreset(TimeDependentPreset):
         if use_stokes_ic or not ic_configs:
             # Custom IC: Stokes solve for divergence-free initial velocity
             stokes_problem = LinearProblem(
-                ufl.extract_blocks(a_stokes),
-                ufl.extract_blocks(L_bc),
-                u=[self.u_h, self.p_h],
+                ufl.extract_blocks(a_stokes),  # type: ignore[reportArgumentType]
+                ufl.extract_blocks(L_bc),  # type: ignore[reportArgumentType]
+                u=[self.u_h, self.p_h],  # type: ignore[reportArgumentType]
                 bcs=bcs,
                 kind="mpi",
                 petsc_options_prefix="plm_ns_stokes_",
                 petsc_options=self._solver_options,
             )
             stokes_problem.solve()
-            self.p_h.x.array[:] -= domain_average(self.msh, self.p_h)
+            self.p_h.x.array[:] -= domain_average(self.msh, self.p_h)  # type: ignore[reportAttributeAccessIssue]
         else:
             # Per-component ICs via shared utility
             apply_vector_ic(
-                self._u_vis,
-                [self._u_x, self._u_y],
+                self._u_vis,  # type: ignore[reportArgumentType]
+                [self._u_x, self._u_y],  # type: ignore[reportArgumentType]
                 [self._dofs_x, self._dofs_y],
                 ic_configs,
                 ["velocity_x", "velocity_y"],
                 config.parameters,
                 seed=config.seed,
             )
-            self.u_h.interpolate(self._u_vis)
+            self.u_h.interpolate(self._u_vis)  # type: ignore[reportAttributeAccessIssue]
 
         # Store previous velocity
         self.u_n = fem.Function(V, name="u_prev")
-        self.u_n.x.array[:] = self.u_h.x.array
+        self.u_n.x.array[:] = self.u_h.x.array  # type: ignore[reportAttributeAccessIssue]
 
         # --- Add time-stepping and convective terms ---
         # Upwind flux
-        lmbda = ufl.conditional(ufl.gt(ufl.dot(self.u_n, n), 0), 1, 0)
-        u_uw = lmbda("+") * u("+") + lmbda("-") * u("-")
+        lmbda = ufl.conditional(ufl.gt(ufl.dot(self.u_n, n), 0), 1, 0)  # type: ignore[reportOperatorIssue]
+        u_uw = lmbda("+") * u("+") + lmbda("-") * u("-")  # type: ignore[reportOperatorIssue]
 
-        a_ns = a_stokes + (
-            ufl.inner(u / delta_t, v) * ufl.dx
-            - ufl.inner(u, ufl.div(ufl.outer(v, self.u_n))) * ufl.dx
-            + ufl.inner((ufl.dot(self.u_n, n))("+") * u_uw, v("+")) * ufl.dS
-            + ufl.inner((ufl.dot(self.u_n, n))("-") * u_uw, v("-")) * ufl.dS
+        a_ns = a_stokes + (  # type: ignore[reportOperatorIssue]
+            ufl.inner(u / delta_t, v) * ufl.dx  # type: ignore[reportOperatorIssue]
+            - ufl.inner(u, ufl.div(ufl.outer(v, self.u_n))) * ufl.dx  # type: ignore[reportOperatorIssue]
+            + ufl.inner((ufl.dot(self.u_n, n))("+") * u_uw, v("+")) * ufl.dS  # type: ignore[reportOptionalCall, reportOperatorIssue]
+            + ufl.inner((ufl.dot(self.u_n, n))("-") * u_uw, v("-")) * ufl.dS  # type: ignore[reportOptionalCall, reportOperatorIssue]
             + ufl.inner(ufl.dot(self.u_n, n) * lmbda * u, v) * ufl.ds
         )
 
-        L_ns = L_bc + (
+        L_ns = L_bc + (  # type: ignore[reportOperatorIssue]
             ufl.inner(self.u_n / delta_t, v) * ufl.dx
-            - ufl.inner(ufl.dot(self.u_n, n) * (1 - lmbda) * u_D, v) * ufl.ds
+            - ufl.inner(ufl.dot(self.u_n, n) * (1 - lmbda) * u_D, v) * ufl.ds  # type: ignore[reportOperatorIssue]
         )
 
         self._ns_problem = LinearProblem(
-            ufl.extract_blocks(a_ns),
-            ufl.extract_blocks(L_ns),
-            u=[self.u_h, self.p_h],
+            ufl.extract_blocks(a_ns),  # type: ignore[reportArgumentType]
+            ufl.extract_blocks(L_ns),  # type: ignore[reportArgumentType]
+            u=[self.u_h, self.p_h],  # type: ignore[reportArgumentType]
             bcs=bcs,
             kind="mpi",
             petsc_options_prefix="plm_ns_",
@@ -272,18 +272,18 @@ class NavierStokesPreset(TimeDependentPreset):
 
     def step(self, t: float, dt: float) -> None:
         self._ns_problem.solve()
-        self.p_h.x.array[:] -= domain_average(self.msh, self.p_h)
-        self.u_n.x.array[:] = self.u_h.x.array
+        self.p_h.x.array[:] -= domain_average(self.msh, self.p_h)  # type: ignore[reportAttributeAccessIssue]
+        self.u_n.x.array[:] = self.u_h.x.array  # type: ignore[reportAttributeAccessIssue]
 
     def get_output_fields(self) -> dict[str, fem.Function]:
         # Interpolate RT velocity into DG Lagrange vector space
-        self._u_vis.interpolate(self.u_h)
+        self._u_vis.interpolate(self.u_h)  # type: ignore[reportAttributeAccessIssue]
 
         # Extract scalar components
-        self._u_x.x.array[:] = self._u_vis.x.array[self._dofs_x]
-        self._u_y.x.array[:] = self._u_vis.x.array[self._dofs_y]
+        self._u_x.x.array[:] = self._u_vis.x.array[self._dofs_x]  # type: ignore[reportAttributeAccessIssue]
+        self._u_y.x.array[:] = self._u_vis.x.array[self._dofs_y]  # type: ignore[reportAttributeAccessIssue]
 
-        return {
+        return {  # type: ignore[reportReturnType]
             "velocity_x": self._u_x,
             "velocity_y": self._u_y,
             "pressure": self.p_h,

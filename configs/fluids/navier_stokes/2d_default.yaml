@@ -26,7 +26,9 @@ boundary_conditions:
   pressure: {}
 
 source_terms:
-  velocity:
+  velocity_x:
+    type: none
+  velocity_y:
     type: none
   pressure:
     type: none

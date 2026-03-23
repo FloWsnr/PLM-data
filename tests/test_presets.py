@@ -115,7 +115,8 @@ def _make_ns_config(
         parameters = {"Re": 25.0, "k": 1.0}
     if source_terms is None:
         source_terms = {
-            "velocity": SourceTermConfig(type="none", params={}),
+            "velocity_x": SourceTermConfig(type="none", params={}),
+            "velocity_y": SourceTermConfig(type="none", params={}),
             "pressure": SourceTermConfig(type="none", params={}),
         }
     return SimulationConfig(
@@ -187,7 +188,7 @@ def test_navier_stokes_gaussian_bump_ic(tmp_path):
         initial_conditions={
             "velocity_x": ICConfig(
                 type="gaussian_bump",
-                params={"sigma": 0.2, "amplitude": 0.5, "cx": 0.5, "cy": 0.5},
+                params={"sigma": 0.2, "amplitude": 0.5, "center": [0.5, 0.5]},
             ),
             "velocity_y": ICConfig(type="constant", params={"value": 0.0}),
         },
@@ -202,15 +203,15 @@ def test_navier_stokes_gaussian_bump_ic(tmp_path):
 
 
 def test_navier_stokes_body_force(tmp_path):
-    """Test NS with custom body force (gravity-like)."""
+    """Test NS with body force (gravity-like) using per-component source terms."""
     config = _make_ns_config(
         tmp_path,
-        parameters={"Re": 25.0, "k": 1.0, "force_x": 0.0, "force_y": -1.0},
         initial_conditions={
             "velocity": ICConfig(type="custom", params={}),
         },
         source_terms={
-            "velocity": SourceTermConfig(type="custom", params={}),
+            "velocity_x": SourceTermConfig(type="constant", params={"value": 0.0}),
+            "velocity_y": SourceTermConfig(type="constant", params={"value": -1.0}),
             "pressure": SourceTermConfig(type="none", params={}),
         },
     )
@@ -226,7 +227,12 @@ def test_cahn_hilliard_constant_ic(tmp_path):
     """Test Cahn-Hilliard with constant IC instead of random_perturbation."""
     config = SimulationConfig(
         preset="cahn_hilliard",
-        parameters={"lmbda": 0.01, "barrier_height": 100.0, "mobility": 1.0, "theta": 0.5},
+        parameters={
+            "lmbda": 0.01,
+            "barrier_height": 100.0,
+            "mobility": 1.0,
+            "theta": 0.5,
+        },
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},

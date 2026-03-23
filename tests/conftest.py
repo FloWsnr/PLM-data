@@ -45,7 +45,7 @@ def heat_config(tmp_path, rectangle_domain, direct_solver):
         initial_conditions={
             "u": ICConfig(
                 type="gaussian_bump",
-                params={"sigma": 0.1, "amplitude": 1.0, "cx": 0.5, "cy": 0.5},
+                params={"sigma": 0.1, "amplitude": 1.0, "center": [0.5, 0.5]},
             ),
         },
         output=OutputConfig(
@@ -64,7 +64,12 @@ def heat_config(tmp_path, rectangle_domain, direct_solver):
 def cahn_hilliard_config(tmp_path, rectangle_domain, direct_solver):
     return SimulationConfig(
         preset="cahn_hilliard",
-        parameters={"lmbda": 0.01, "barrier_height": 100.0, "mobility": 1.0, "theta": 0.5},
+        parameters={
+            "lmbda": 0.01,
+            "barrier_height": 100.0,
+            "mobility": 1.0,
+            "theta": 0.5,
+        },
         domain=rectangle_domain,
         output_resolution=[4, 4],
         boundary_conditions={"c": {}},
@@ -115,7 +120,8 @@ def navier_stokes_config(tmp_path, direct_solver):
             "pressure": {},
         },
         source_terms={
-            "velocity": SourceTermConfig(type="none", params={}),
+            "velocity_x": SourceTermConfig(type="none", params={}),
+            "velocity_y": SourceTermConfig(type="none", params={}),
             "pressure": SourceTermConfig(type="none", params={}),
         },
         initial_conditions={
