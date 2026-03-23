@@ -29,7 +29,34 @@ class HeatPreset(TimeDependentPreset):
             field_names=["u"],
             steady_state=False,
             supported_dimensions=[2],
-            recommended_solver={"ksp_type": "preonly", "pc_type": "lu"},
+            recommended_config={
+                "preset": "heat",
+                "parameters": {"kappa": 0.01},
+                "solver": {"ksp_type": "preonly", "pc_type": "lu"},
+                "domain": {
+                    "type": "rectangle",
+                    "size": [1.0, 1.0],
+                    "mesh_resolution": [128, 128],
+                },
+                "output_resolution": [64, 64],
+                "initial_condition": {
+                    "type": "gaussian_bump",
+                    "params": {
+                        "sigma": 0.1,
+                        "amplitude": 1.0,
+                        "cx": 0.5,
+                        "cy": 0.5,
+                    },
+                },
+                "dt": 0.01,
+                "t_end": 1.0,
+                "output": {
+                    "path": "./output",
+                    "num_frames": 20,
+                    "formats": ["numpy"],
+                },
+                "seed": 42,
+            },
         )
 
     def setup(self, config: SimulationConfig) -> None:

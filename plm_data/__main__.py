@@ -28,9 +28,23 @@ def cmd_list(args):
         print(f"\n{category}:")
         for meta in metas:
             state = "steady" if meta.steady_state else "transient"
-            solver_str = ", ".join(f"{k}={v}" for k, v in meta.recommended_solver.items())
-            print(f"  {meta.name:20s}  [{state}]  {meta.description}")
-            print(f"  {'':20s}  solver: {solver_str}")
+            dims = ", ".join(str(d) + "D" for d in meta.supported_dimensions)
+            print(f"  {meta.name:20s}  [{state}, {dims}]  {meta.description}")
+
+
+def cmd_show(args):
+    import yaml
+
+    from plm_data.presets import list_presets
+
+    presets = list_presets()
+    name = args.preset
+    if name not in presets:
+        print(f"Unknown preset '{name}'. Use 'list' to see available presets.")
+        sys.exit(1)
+
+    meta = presets[name]().metadata
+    print(yaml.dump(meta.recommended_config, default_flow_style=False, sort_keys=False))
 
 
 def main():
@@ -43,6 +57,10 @@ def main():
 
     p_list = sub.add_parser("list", help="List available PDE presets")
     p_list.set_defaults(func=cmd_list)
+
+    p_show = sub.add_parser("show", help="Show recommended config for a preset")
+    p_show.add_argument("preset", help="Name of the preset")
+    p_show.set_defaults(func=cmd_show)
 
     args = parser.parse_args()
     if not hasattr(args, "func"):
