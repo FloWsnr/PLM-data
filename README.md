@@ -2,6 +2,28 @@
 
 Generate PDE simulation datasets using [DOLFINx](https://github.com/FEniCS/dolfinx) (FEniCSx). Each simulation produces numpy arrays on a regular grid, suitable for training machine learning models.
 
+## Installation
+
+### DOLFINx (FEniCSx)
+
+Create a conda environment with DOLFINx and its dependencies:
+
+```bash
+conda create -n fenicsx-env
+conda activate fenicsx-env
+conda install -c conda-forge fenics-dolfinx mpich  # Linux and macOS
+```
+
+See the [DOLFINx README](https://github.com/FEniCS/dolfinx#installation) for alternative installation methods (Docker, apt, Spack, Windows).
+
+### Python dependencies
+
+With the conda environment activated, install the remaining packages:
+
+```bash
+pip install pyyaml pytest pyright
+```
+
 ## Architecture
 
 - **Presets** (`plm_data/presets/`) — Each PDE is a Python class that owns its full solve logic (mesh, function space, variational form, solver, time-stepping). A thin base class provides a standard `run(config, output)` interface.

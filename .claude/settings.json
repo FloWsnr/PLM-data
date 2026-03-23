@@ -6,8 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'Remember to check Pylance diagnostics (mcp__ide__getDiagnostics) after this batch of edits.'",
-            "timeout": 5
+            "command": "FILE=$(cat | jq -r '.tool_input.file_path') && [[ \"$FILE\" == *.py ]] && pyright \"$FILE\" || true",
+            "timeout": 30
           }
         ]
       }
