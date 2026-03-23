@@ -27,7 +27,7 @@ class BCConfig:
     """
 
     type: str
-    value: float | str | dict
+    value: float | str | dict | list
     alpha: float | str | None = None
 
 

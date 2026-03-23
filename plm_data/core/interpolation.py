@@ -27,15 +27,11 @@ def function_to_array(
     if bounds is None:
         coords = msh.geometry.x
         bounds = tuple(
-            (float(coords[:, d].min()), float(coords[:, d].max()))
-            for d in range(gdim)
+            (float(coords[:, d].min()), float(coords[:, d].max())) for d in range(gdim)
         )
 
     # Create regular grid points
-    axes = [
-        np.linspace(bounds[d][0], bounds[d][1], resolution[d])
-        for d in range(gdim)
-    ]
+    axes = [np.linspace(bounds[d][0], bounds[d][1], resolution[d]) for d in range(gdim)]
 
     if gdim == 2:
         # axes[0] -> x (columns), axes[1] -> y (rows)
@@ -60,7 +56,7 @@ def function_to_array(
     # Evaluate function point by point
     values = np.full(points.shape[0], np.nan)
     for i in range(points.shape[0]):
-        cells = cell_collisions.links(i)
+        cells = cell_collisions.links(i)  # type: ignore[reportArgumentType]
         if len(cells) > 0:
             val = func.eval(points[i : i + 1], cells[:1])
             values[i] = val.flat[0]

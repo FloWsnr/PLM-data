@@ -4,7 +4,10 @@ import pytest
 import ufl
 from dolfinx import fem
 
-from plm_data.core.boundary_conditions import apply_dirichlet_bcs, build_natural_bc_forms
+from plm_data.core.boundary_conditions import (
+    apply_dirichlet_bcs,
+    build_natural_bc_forms,
+)
 from plm_data.core.config import BCConfig, DomainConfig
 from plm_data.core.mesh import create_domain
 
@@ -35,7 +38,6 @@ def trial_test(V):
 
 
 class TestApplyDirichletBCs:
-
     def test_constant_value(self, V, domain_geom):
         """Constant Dirichlet BC (value=0.0) produces a DirichletBC on the boundary."""
         bc_configs = {
@@ -115,14 +117,15 @@ class TestApplyDirichletBCs:
 
 
 class TestBuildNaturalBCForms:
-
     def test_neumann_nonzero(self, domain_geom, trial_test):
         """Neumann BC with non-zero value produces (None, L_bc) with L_bc not None."""
         u, v = trial_test
         bc_configs = {
             "x-": BCConfig(type="neumann", value=5.0),
         }
-        a_bc, L_bc = build_natural_bc_forms(u, v, domain_geom, bc_configs, parameters={})
+        a_bc, L_bc = build_natural_bc_forms(
+            u, v, domain_geom, bc_configs, parameters={}
+        )
         assert a_bc is None
         assert L_bc is not None
 
@@ -132,7 +135,9 @@ class TestBuildNaturalBCForms:
         bc_configs = {
             "x-": BCConfig(type="neumann", value=0.0),
         }
-        a_bc, L_bc = build_natural_bc_forms(u, v, domain_geom, bc_configs, parameters={})
+        a_bc, L_bc = build_natural_bc_forms(
+            u, v, domain_geom, bc_configs, parameters={}
+        )
         assert a_bc is None
         assert L_bc is None
 
@@ -142,7 +147,9 @@ class TestBuildNaturalBCForms:
         bc_configs = {
             "y+": BCConfig(type="robin", value=2.0, alpha=3.0),
         }
-        a_bc, L_bc = build_natural_bc_forms(u, v, domain_geom, bc_configs, parameters={})
+        a_bc, L_bc = build_natural_bc_forms(
+            u, v, domain_geom, bc_configs, parameters={}
+        )
         assert a_bc is not None
         assert L_bc is not None
 
@@ -152,7 +159,9 @@ class TestBuildNaturalBCForms:
         bc_configs = {
             "y-": BCConfig(type="robin", value=1.0, alpha=0.0),
         }
-        a_bc, L_bc = build_natural_bc_forms(u, v, domain_geom, bc_configs, parameters={})
+        a_bc, L_bc = build_natural_bc_forms(
+            u, v, domain_geom, bc_configs, parameters={}
+        )
         assert a_bc is None
         assert L_bc is not None
 
@@ -163,7 +172,9 @@ class TestBuildNaturalBCForms:
             "x-": BCConfig(type="neumann", value=1.0),
             "x+": BCConfig(type="robin", value=2.0, alpha=1.0),
         }
-        a_bc, L_bc = build_natural_bc_forms(u, v, domain_geom, bc_configs, parameters={})
+        a_bc, L_bc = build_natural_bc_forms(
+            u, v, domain_geom, bc_configs, parameters={}
+        )
         # Robin contributes to a_bc, both contribute to L_bc
         assert a_bc is not None
         assert L_bc is not None
@@ -177,7 +188,9 @@ class TestBuildNaturalBCForms:
             "y-": BCConfig(type="neumann", value=0.0),
             "y+": BCConfig(type="neumann", value=0.0),
         }
-        a_bc, L_bc = build_natural_bc_forms(u, v, domain_geom, bc_configs, parameters={})
+        a_bc, L_bc = build_natural_bc_forms(
+            u, v, domain_geom, bc_configs, parameters={}
+        )
         assert a_bc is None
         assert L_bc is None
 
@@ -197,7 +210,9 @@ class TestBuildNaturalBCForms:
             "x-": BCConfig(type="dirichlet", value=0.0),
             "x+": BCConfig(type="dirichlet", value=0.0),
         }
-        a_bc, L_bc = build_natural_bc_forms(u, v, domain_geom, bc_configs, parameters={})
+        a_bc, L_bc = build_natural_bc_forms(
+            u, v, domain_geom, bc_configs, parameters={}
+        )
         assert a_bc is None
         assert L_bc is None
 
@@ -208,9 +223,7 @@ class TestBuildNaturalBCForms:
             "x-": BCConfig(type="robin", value="param:g", alpha="param:a"),
         }
         parameters = {"g": 2.0, "a": 0.5}
-        a_bc, L_bc = build_natural_bc_forms(
-            u, v, domain_geom, bc_configs, parameters
-        )
+        a_bc, L_bc = build_natural_bc_forms(u, v, domain_geom, bc_configs, parameters)
         assert a_bc is not None
         assert L_bc is not None
 
@@ -221,9 +234,7 @@ class TestBuildNaturalBCForms:
             "y+": BCConfig(type="neumann", value="param:flux"),
         }
         parameters = {"flux": 3.0}
-        a_bc, L_bc = build_natural_bc_forms(
-            u, v, domain_geom, bc_configs, parameters
-        )
+        a_bc, L_bc = build_natural_bc_forms(u, v, domain_geom, bc_configs, parameters)
         assert a_bc is None
         assert L_bc is not None
 
@@ -233,7 +244,9 @@ class TestBuildNaturalBCForms:
         bc_configs = {
             "x+": BCConfig(type="robin", value=0.0, alpha=2.0),
         }
-        a_bc, L_bc = build_natural_bc_forms(u, v, domain_geom, bc_configs, parameters={})
+        a_bc, L_bc = build_natural_bc_forms(
+            u, v, domain_geom, bc_configs, parameters={}
+        )
         assert a_bc is not None
         assert L_bc is None
 

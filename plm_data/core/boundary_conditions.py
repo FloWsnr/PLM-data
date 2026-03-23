@@ -72,9 +72,12 @@ def apply_dirichlet_bcs(
             )
         else:
             interp = build_interpolator(field_config, parameters)
+            assert interp is not None, (
+                f"No interpolator for field type '{field_config['type']}'"
+            )
             bc_func = fem.Function(V)
-            bc_func.interpolate(interp)
-            bc_obj = fem.dirichletbc(value=bc_func, dofs=dofs)
+            bc_func.interpolate(interp)  # type: ignore[arg-type]
+            bc_obj = fem.dirichletbc(value=bc_func, dofs=dofs)  # type: ignore[arg-type]
 
         bcs.append(bc_obj)
 
@@ -130,13 +133,13 @@ def build_natural_bc_forms(
         if not skip_L:
             g = build_ufl_field(msh, field_config, parameters)
             term = ufl.inner(g, v) * domain_geom.ds(tag)
-            L_bc = term if L_bc is None else L_bc + term
+            L_bc = term if L_bc is None else L_bc + term  # type: ignore[reportOperatorIssue]
 
         # --- a contribution (Robin only): α * u * v * ds(tag) ---
         if bc.type == "robin":
             alpha = resolve_param_ref(bc.alpha, parameters)
             if alpha != 0.0:
-                term = alpha * ufl.inner(u, v) * domain_geom.ds(tag)
-                a_bc = term if a_bc is None else a_bc + term
+                term = alpha * ufl.inner(u, v) * domain_geom.ds(tag)  # type: ignore[reportOperatorIssue]
+                a_bc = term if a_bc is None else a_bc + term  # type: ignore[reportOperatorIssue]
 
     return a_bc, L_bc

@@ -52,9 +52,7 @@ class SteadyLinearPreset(PDEPreset):
     LinearProblem, and writing a single output frame.
     """
 
-    def create_domain(
-        self, config: SimulationConfig
-    ) -> DomainGeometry:
+    def create_domain(self, config: SimulationConfig) -> DomainGeometry:
         """Create the domain with tagged boundaries. Override for custom domains."""
         return create_domain(config.domain)
 
@@ -89,14 +87,16 @@ class SteadyLinearPreset(PDEPreset):
         a, L = self.create_forms(V, domain_geom, config)
 
         problem = LinearProblem(
-            a, L, bcs=bcs,
+            a,
+            L,
+            bcs=bcs,
             petsc_options_prefix="plm_",
             petsc_options=config.solver.options,
         )
         uh = problem.solve()
 
         converged = problem.solver.getConvergedReason() > 0
-        output.write_frame({"u": uh}, t=0.0)
+        output.write_frame({"u": uh}, t=0.0)  # type: ignore[reportArgumentType]
 
         return RunResult(
             num_dofs=V.dofmap.index_map.size_global,
@@ -113,9 +113,7 @@ class TimeDependentPreset(PDEPreset):
     """
 
     @abstractmethod
-    def setup(
-        self, config: SimulationConfig
-    ) -> None:
+    def setup(self, config: SimulationConfig) -> None:
         """Create mesh, function spaces, forms, solver, and set initial condition.
 
         Store everything needed for time-stepping as instance attributes.
@@ -138,6 +136,7 @@ class TimeDependentPreset(PDEPreset):
         self._solver_options = config.solver.options
         self.setup(config)
 
+        assert config.dt is not None and config.t_end is not None
         dt = config.dt
         t_end = config.t_end
         num_frames = config.output.num_frames
@@ -161,7 +160,10 @@ class TimeDependentPreset(PDEPreset):
             t += dt
             num_steps += 1
 
-            if next_output_idx < len(output_times) and t >= output_times[next_output_idx] - 1e-14 * dt:
+            if (
+                next_output_idx < len(output_times)
+                and t >= output_times[next_output_idx] - 1e-14 * dt
+            ):
                 output.write_frame(self.get_output_fields(), t=t)
                 next_output_idx += 1
 

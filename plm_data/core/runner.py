@@ -28,7 +28,9 @@ class SimulationRunner:
 
         if verbose:
             print(f"Running '{meta.name}' ({meta.category})...")
-            print(f"  Domain: {self.config.domain.type}, Output: {self.config.output_resolution}")
+            print(
+                f"  Domain: {self.config.domain.type}, Output: {self.config.output_resolution}"
+            )
             if self.config.t_end is not None:
                 print(f"  Time: 0 → {self.config.t_end}, dt={self.config.dt}")
 

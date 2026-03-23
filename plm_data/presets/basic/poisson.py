@@ -3,9 +3,10 @@
 import ufl
 from dolfinx import fem
 
-from plm_data.core.boundary_conditions import apply_dirichlet_bcs, build_natural_bc_forms
-from plm_data.core.config import SimulationConfig
-from plm_data.core.mesh import DomainGeometry
+from plm_data.core.boundary_conditions import (
+    apply_dirichlet_bcs,
+    build_natural_bc_forms,
+)
 from plm_data.core.source_terms import build_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import SteadyLinearPreset
@@ -14,7 +15,6 @@ from plm_data.presets.metadata import PDEMetadata, PDEParameter
 
 @register_preset("poisson")
 class PoissonPreset(SteadyLinearPreset):
-
     @property
     def metadata(self) -> PDEMetadata:
         return PDEMetadata(
@@ -45,11 +45,20 @@ class PoissonPreset(SteadyLinearPreset):
         u = ufl.TrialFunction(V)
         v = ufl.TestFunction(V)
 
-        a = kappa * ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+        a = kappa * ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx  # type: ignore[reportOperatorIssue]
 
-        L = build_source_form(v, domain_geom.mesh, config.source_terms["u"], config.parameters)
+        L = build_source_form(
+            v,  # type: ignore[reportArgumentType]
+            domain_geom.mesh,
+            config.source_terms["u"],
+            config.parameters,
+        )
         a_bc, L_bc = build_natural_bc_forms(
-            u, v, domain_geom, config.boundary_conditions["u"], config.parameters
+            u,  # type: ignore[reportArgumentType]
+            v,  # type: ignore[reportArgumentType]
+            domain_geom,
+            config.boundary_conditions["u"],
+            config.parameters,
         )
         if a_bc is not None:
             a = a + a_bc

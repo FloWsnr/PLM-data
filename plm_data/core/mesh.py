@@ -1,5 +1,6 @@
 """Mesh creation helpers with boundary tagging."""
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
@@ -21,9 +22,9 @@ class DomainGeometry:
     """
 
     mesh: mesh.Mesh
-    facet_tags: mesh.MeshTags
+    facet_tags: mesh.MeshTags  # type: ignore[reportInvalidTypeForm]
     boundary_names: dict[str, int]  # name → tag integer
-    ds: ufl.Measure  # ds(tag) integrates over that boundary
+    ds: ufl.Measure  # type: ignore[reportInvalidTypeForm]  # ds(tag) integrates over that boundary
 
 
 def _require_param(params: dict, key: str, domain_type: str):
@@ -47,14 +48,13 @@ def create_domain(domain: DomainConfig) -> DomainGeometry:
         return _create_box(domain)
     else:
         raise ValueError(
-            f"Unknown domain type: '{domain.type}'. "
-            f"Available: rectangle, box"
+            f"Unknown domain type: '{domain.type}'. Available: rectangle, box"
         )
 
 
-def _tag_boundaries(msh: mesh.Mesh, predicates: dict[str, callable]) -> tuple[
-    mesh.MeshTags, dict[str, int], ufl.Measure
-]:
+def _tag_boundaries(
+    msh: mesh.Mesh, predicates: dict[str, Callable]
+) -> tuple[mesh.MeshTags, dict[str, int], ufl.Measure]:
     """Tag boundary facets using geometric predicates.
 
     Args:
@@ -127,7 +127,7 @@ def _create_box(domain: DomainConfig) -> DomainGeometry:
 
     msh = mesh.create_box(
         comm=MPI.COMM_WORLD,
-        points=((0.0, 0.0, 0.0), (Lx, Ly, Lz)),
+        points=((0.0, 0.0, 0.0), (Lx, Ly, Lz)),  # type: ignore[reportArgumentType]
         n=(res[0], res[1], res[2]),
         cell_type=CellType.tetrahedron,
         ghost_mode=GhostMode.shared_facet,

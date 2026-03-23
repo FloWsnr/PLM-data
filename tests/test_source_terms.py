@@ -41,9 +41,7 @@ def test_source_custom(test_function, mesh_2d):
 def test_source_constant(test_function, mesh_2d):
     """type='constant' returns a UFL form."""
     config = SourceTermConfig(type="constant", params={"value": 5.0})
-    result = build_source_form(
-        test_function, mesh_2d, config, parameters={}
-    )
+    result = build_source_form(test_function, mesh_2d, config, parameters={})
     assert result is not None
 
 
@@ -53,9 +51,7 @@ def test_source_sine_product(test_function, mesh_2d):
         type="sine_product",
         params={"amplitude": 1.0, "kx": 1, "ky": 1},
     )
-    result = build_source_form(
-        test_function, mesh_2d, config, parameters={}
-    )
+    result = build_source_form(test_function, mesh_2d, config, parameters={})
     assert result is not None
 
 
@@ -65,9 +61,7 @@ def test_source_gaussian_bump(test_function, mesh_2d):
         type="gaussian_bump",
         params={"amplitude": 2.0, "sigma": 0.1, "center": [0.5, 0.5]},
     )
-    result = build_source_form(
-        test_function, mesh_2d, config, parameters={}
-    )
+    result = build_source_form(test_function, mesh_2d, config, parameters={})
     assert result is not None
 
 

@@ -33,7 +33,9 @@ def cmd_list(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="plm_data", description="PDE simulation data generation")
+    parser = argparse.ArgumentParser(
+        prog="plm_data", description="PDE simulation data generation"
+    )
     sub = parser.add_subparsers(dest="command")
 
     p_run = sub.add_parser("run", help="Run a simulation from a YAML config")

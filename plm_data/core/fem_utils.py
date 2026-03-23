@@ -10,12 +10,13 @@ def domain_average(msh: Mesh, v) -> float:
     """Compute the average of a function over the domain."""
     vol = msh.comm.allreduce(
         fem.assemble_scalar(
-            fem.form(fem.Constant(msh, default_real_type(1.0)) * ufl.dx)
+            fem.form(fem.Constant(msh, default_real_type(1.0)) * ufl.dx)  # type: ignore[reportArgumentType]
         ),
         op=MPI.SUM,
     )
     return (1 / vol) * msh.comm.allreduce(
-        fem.assemble_scalar(fem.form(v * ufl.dx)), op=MPI.SUM
+        fem.assemble_scalar(fem.form(v * ufl.dx)),  # type: ignore[reportArgumentType]
+        op=MPI.SUM,
     )
 
 
