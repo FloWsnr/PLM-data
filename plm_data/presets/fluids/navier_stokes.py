@@ -10,31 +10,13 @@ from dolfinx import default_real_type, fem, mesh as dmesh
 from dolfinx.fem.petsc import LinearProblem
 
 from plm_data.core.config import SimulationConfig
-from plm_data.core.initial_conditions import apply_ic
+from plm_data.core.fem_utils import dg_jump, domain_average
+from plm_data.core.initial_conditions import apply_vector_ic
 from plm_data.core.mesh import create_domain
+from plm_data.core.source_terms import build_vector_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import TimeDependentPreset
 from plm_data.presets.metadata import PDEMetadata, PDEParameter
-
-from mpi4py import MPI
-
-
-def _domain_average(msh, v):
-    """Compute the average of a function over the domain."""
-    vol = msh.comm.allreduce(
-        fem.assemble_scalar(
-            fem.form(fem.Constant(msh, default_real_type(1.0)) * ufl.dx)
-        ),
-        op=MPI.SUM,
-    )
-    return (1 / vol) * msh.comm.allreduce(
-        fem.assemble_scalar(fem.form(v * ufl.dx)), op=MPI.SUM
-    )
-
-
-def _jump(phi, n):
-    """Compute the jump of phi across facets: phi+ x n+ + phi- x n-."""
-    return ufl.outer(phi("+"), n("+")) + ufl.outer(phi("-"), n("-"))
 
 
 @register_preset("navier_stokes")
@@ -97,9 +79,9 @@ class NavierStokesPreset(TimeDependentPreset):
         # --- Viscous DG bilinear form (symmetric interior penalty) ---
         a_visc = (1.0 / Re) * (
             ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
-            - ufl.inner(ufl.avg(ufl.grad(u)), _jump(v, n)) * ufl.dS
-            - ufl.inner(_jump(u, n), ufl.avg(ufl.grad(v))) * ufl.dS
-            + (alpha / ufl.avg(h)) * ufl.inner(_jump(u, n), _jump(v, n)) * ufl.dS
+            - ufl.inner(ufl.avg(ufl.grad(u)), dg_jump(v, n)) * ufl.dS
+            - ufl.inner(dg_jump(u, n), ufl.avg(ufl.grad(v))) * ufl.dS
+            + (alpha / ufl.avg(h)) * ufl.inner(dg_jump(u, n), dg_jump(v, n)) * ufl.dS
             - ufl.inner(ufl.grad(u), ufl.outer(v, n)) * ufl.ds
             - ufl.inner(ufl.outer(u, n), ufl.grad(v)) * ufl.ds
             + (alpha / h) * ufl.inner(ufl.outer(u, n), ufl.outer(v, n)) * ufl.ds
@@ -153,14 +135,15 @@ class NavierStokesPreset(TimeDependentPreset):
         L_bc += ufl.inner(fem.Constant(self.msh, default_real_type(0.0)), q) * ufl.dx
 
         # --- Body force (source term) ---
-        source_config = config.source_terms.get("velocity")
-        if source_config and source_config.type == "custom":
-            force_x = config.parameters["force_x"]
-            force_y = config.parameters["force_y"]
-            f_body = ufl.as_vector(
-                [default_real_type(force_x), default_real_type(force_y)]
-            )
-            L_bc = L_bc + ufl.inner(f_body, v) * ufl.dx
+        source_form = build_vector_source_form(
+            v,
+            self.msh,
+            ["velocity_x", "velocity_y"],
+            config.source_terms,
+            config.parameters,
+        )
+        if source_form is not None:
+            L_bc = L_bc + source_form
 
         # --- Prepare output sub-spaces (needed for IC and output) ---
         self._u_vis = fem.Function(self._W, name="u_vis")
@@ -192,10 +175,19 @@ class NavierStokesPreset(TimeDependentPreset):
                 petsc_options=self._solver_options,
             )
             stokes_problem.solve()
-            self.p_h.x.array[:] -= _domain_average(self.msh, self.p_h)
+            self.p_h.x.array[:] -= domain_average(self.msh, self.p_h)
         else:
-            # Per-component ICs: apply standard IC types to velocity_x, velocity_y
-            self._apply_component_ics(ic_configs, V, config.seed)
+            # Per-component ICs via shared utility
+            apply_vector_ic(
+                self._u_vis,
+                [self._u_x, self._u_y],
+                [self._dofs_x, self._dofs_y],
+                ic_configs,
+                ["velocity_x", "velocity_y"],
+                config.parameters,
+                seed=config.seed,
+            )
+            self.u_h.interpolate(self._u_vis)
 
         # Store previous velocity
         self.u_n = fem.Function(V, name="u_prev")
@@ -278,27 +270,9 @@ class NavierStokesPreset(TimeDependentPreset):
 
         u_D.interpolate(_bc_expr)
 
-    def _apply_component_ics(self, ic_configs, V, seed):
-        """Apply per-component initial conditions to velocity.
-
-        Uses velocity_x and velocity_y IC configs to set scalar components
-        on the DG Lagrange vector space, then interpolates into RT space.
-        """
-        if "velocity_x" in ic_configs:
-            apply_ic(self._u_x, ic_configs["velocity_x"], seed=seed)
-        if "velocity_y" in ic_configs:
-            apply_ic(self._u_y, ic_configs["velocity_y"], seed=seed)
-
-        # Write scalar components into the DG Lagrange vector function
-        self._u_vis.x.array[self._dofs_x] = self._u_x.x.array
-        self._u_vis.x.array[self._dofs_y] = self._u_y.x.array
-
-        # Interpolate from DG Lagrange vector into RT space
-        self.u_h.interpolate(self._u_vis)
-
     def step(self, t: float, dt: float) -> None:
         self._ns_problem.solve()
-        self.p_h.x.array[:] -= _domain_average(self.msh, self.p_h)
+        self.p_h.x.array[:] -= domain_average(self.msh, self.p_h)
         self.u_n.x.array[:] = self.u_h.x.array
 
     def get_output_fields(self) -> dict[str, fem.Function]:
