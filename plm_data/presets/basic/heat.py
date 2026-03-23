@@ -1,15 +1,17 @@
-"""Heat equation preset: du/dt = kappa * laplacian(u)."""
+"""Heat equation preset: du/dt = kappa * laplacian(u) + f."""
 
 import numpy as np
 import ufl
 from dolfinx import fem
 from dolfinx.fem.petsc import LinearProblem
 
+from plm_data.core.boundary_conditions import apply_dirichlet_bcs, build_natural_bc_forms
 from plm_data.core.config import SimulationConfig
 from plm_data.core.initial_conditions import apply_ic
-from plm_data.core.mesh import create_mesh
+from plm_data.core.mesh import create_domain
+from plm_data.core.source_terms import build_source_form
 from plm_data.presets import register_preset
-from plm_data.presets.base import RunResult, TimeDependentPreset
+from plm_data.presets.base import TimeDependentPreset
 from plm_data.presets.metadata import PDEMetadata, PDEParameter
 
 
@@ -21,46 +23,19 @@ class HeatPreset(TimeDependentPreset):
         return PDEMetadata(
             name="heat",
             category="basic",
-            description="Heat equation du/dt = kappa * laplacian(u)",
-            equations={"u": "∂u/∂t = κ ∇²u"},
+            description="Heat equation du/dt = kappa * laplacian(u) + f",
+            equations={"u": "∂u/∂t = κ ∇²u + f"},
             parameters=[
                 PDEParameter("kappa", "Thermal diffusivity"),
             ],
             field_names=["u"],
             steady_state=False,
-            supported_dimensions=[2],
-            recommended_config={
-                "preset": "heat",
-                "parameters": {"kappa": 0.01},
-                "solver": {"ksp_type": "preonly", "pc_type": "lu"},
-                "domain": {
-                    "type": "rectangle",
-                    "size": [1.0, 1.0],
-                    "mesh_resolution": [128, 128],
-                },
-                "output_resolution": [64, 64],
-                "initial_condition": {
-                    "type": "gaussian_bump",
-                    "params": {
-                        "sigma": 0.1,
-                        "amplitude": 1.0,
-                        "cx": 0.5,
-                        "cy": 0.5,
-                    },
-                },
-                "dt": 0.01,
-                "t_end": 1.0,
-                "output": {
-                    "path": "./output",
-                    "num_frames": 20,
-                    "formats": ["numpy"],
-                },
-                "seed": 42,
-            },
+            supported_dimensions=[2, 3],
         )
 
     def setup(self, config: SimulationConfig) -> None:
-        self.msh = create_mesh(config.domain)
+        domain_geom = create_domain(config.domain)
+        self.msh = domain_geom.mesh
         self.V = fem.functionspace(self.msh, ("Lagrange", 1))
 
         kappa = config.parameters["kappa"]
@@ -73,7 +48,7 @@ class HeatPreset(TimeDependentPreset):
         # Apply initial condition from config
         apply_ic(self.u_n, config.initial_condition, seed=config.seed)
 
-        # Implicit Euler: (u - u_n)/dt = kappa * laplacian(u)
+        # Implicit Euler: (u - u_n)/dt = kappa * laplacian(u) + f
         u = ufl.TrialFunction(self.V)
         v = ufl.TestFunction(self.V)
         dt_c = fem.Constant(self.msh, np.float64(dt))
@@ -85,9 +60,27 @@ class HeatPreset(TimeDependentPreset):
         )
         L = ufl.inner(self.u_n, v) * ufl.dx
 
-        # No BCs = natural Neumann (zero-flux) on all boundaries
+        # Source term: dt * f * v * dx
+        source = build_source_form(v, self.msh, config.source_term, config.parameters)
+        if source is not None:
+            L = L + dt_c * source
+
+        # Natural BCs (Neumann/Robin): scaled by dt for implicit Euler
+        a_bc, L_bc = build_natural_bc_forms(
+            u, v, domain_geom, config.domain.boundary_conditions, config.parameters
+        )
+        if a_bc is not None:
+            a = a + dt_c * a_bc
+        if L_bc is not None:
+            L = L + dt_c * L_bc
+
+        # Dirichlet BCs
+        bcs = apply_dirichlet_bcs(
+            self.V, domain_geom, config.domain.boundary_conditions, config.parameters
+        )
+
         self.problem = LinearProblem(
-            a, L, bcs=[],
+            a, L, bcs=bcs,
             petsc_options_prefix="plm_heat_",
             petsc_options=self._solver_options,
         )

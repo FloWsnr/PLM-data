@@ -23,4 +23,3 @@ class PDEMetadata:
     field_names: list[str]
     steady_state: bool
     supported_dimensions: list[int]
-    recommended_config: dict
