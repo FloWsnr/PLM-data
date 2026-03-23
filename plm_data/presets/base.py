@@ -9,6 +9,7 @@ from dolfinx import fem
 from dolfinx.fem.petsc import LinearProblem
 
 from plm_data.core.config import SimulationConfig
+from plm_data.core.logging import get_logger
 from plm_data.core.mesh import DomainGeometry, create_domain
 from plm_data.core.output import FrameWriter
 from plm_data.presets.metadata import PDEMetadata
@@ -81,8 +82,12 @@ class SteadyLinearPreset(PDEPreset):
         """Return the bilinear form a and linear form L."""
 
     def run(self, config: SimulationConfig, output: FrameWriter) -> RunResult:
+        logger = get_logger("solver")
         domain_geom = self.create_domain(config)
         V = self.create_function_space(domain_geom, config)
+        num_dofs = V.dofmap.index_map.size_global
+        logger.info("  Solving steady-state linear problem (%d DOFs)...", num_dofs)
+
         bcs = self.create_boundary_conditions(V, domain_geom, config)
         a, L = self.create_forms(V, domain_geom, config)
 
@@ -98,13 +103,15 @@ class SteadyLinearPreset(PDEPreset):
         converged = problem.solver.getConvergedReason() > 0
         if not converged:
             reason = problem.solver.getConvergedReason()
+            logger.error("  Solver did not converge (KSP reason=%s)", reason)
             raise RuntimeError(
                 f"Steady linear solver did not converge (KSP reason={reason})"
             )
+        logger.info("  Solve complete (converged)")
         output.write_frame({"u": uh}, t=0.0)  # type: ignore[reportArgumentType]
 
         return RunResult(
-            num_dofs=V.dofmap.index_map.size_global,
+            num_dofs=num_dofs,
             solver_converged=True,
         )
 
@@ -142,6 +149,7 @@ class TimeDependentPreset(PDEPreset):
         return 0
 
     def run(self, config: SimulationConfig, output: FrameWriter) -> RunResult:
+        logger = get_logger("timestepper")
         self._solver_options = config.solver.options
         self.setup(config)
 
@@ -156,6 +164,12 @@ class TimeDependentPreset(PDEPreset):
         else:
             output_times = np.array([t_end])
         next_output_idx = 0
+
+        total_steps = int(round(t_end / dt))
+        log_every = max(1, total_steps // 10)
+        logger.info(
+            "  Time stepping: %d steps, dt=%s, t_end=%s", total_steps, dt, t_end
+        )
 
         # Write initial condition
         if next_output_idx < len(output_times):
@@ -172,16 +186,34 @@ class TimeDependentPreset(PDEPreset):
 
             if not converged:
                 solver_converged = False
+                logger.error(
+                    "  Solver did not converge at t=%.6g (step %d)", t, num_steps
+                )
                 raise RuntimeError(
                     f"Solver did not converge at t={t:.6g} (step {num_steps})"
+                )
+
+            logger.debug("  Step %d: t=%.6g, converged=%s", num_steps, t, converged)
+
+            if num_steps % log_every == 0 or num_steps == 1:
+                progress = t / t_end * 100
+                logger.info(
+                    "  Step %d/%d (t=%.4g, %.0f%%)",
+                    num_steps,
+                    total_steps,
+                    t,
+                    progress,
                 )
 
             if (
                 next_output_idx < len(output_times)
                 and t >= output_times[next_output_idx] - 1e-14 * dt
             ):
+                logger.debug("  Writing frame %d at t=%.6g", next_output_idx, t)
                 output.write_frame(self.get_output_fields(), t=t)
                 next_output_idx += 1
+
+        logger.info("  Time stepping complete: %d steps", num_steps)
 
         return RunResult(
             num_dofs=self.get_num_dofs(),

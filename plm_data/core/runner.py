@@ -1,11 +1,13 @@
 """Simulation runner."""
 
+import logging
 import time
 from pathlib import Path
 
 import numpy as np
 
 from plm_data.core.config import SimulationConfig, load_config
+from plm_data.core.logging import get_logger, setup_logging, teardown_logging
 from plm_data.core.output import FrameWriter
 from plm_data.presets import get_preset
 
@@ -21,36 +23,45 @@ class SimulationRunner:
     def from_yaml(cls, path: str | Path) -> "SimulationRunner":
         return cls(load_config(path))
 
-    def run(self, verbose: bool = True) -> dict:
+    def run(self, console_level: int = logging.INFO) -> dict:
         meta = self.preset.metadata
         output_dir = Path(self.config.output.path) / meta.category / meta.name
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        if verbose:
-            print(f"Running '{meta.name}' ({meta.category})...")
-            print(
-                f"  Domain: {self.config.domain.type}, Output: {self.config.output_resolution}"
+        setup_logging(output_dir, console_level=console_level)
+        logger = get_logger("runner")
+
+        try:
+            logger.info("Running '%s' (%s)...", meta.name, meta.category)
+            logger.info(
+                "  Domain: %s, Output: %s",
+                self.config.domain.type,
+                self.config.output_resolution,
             )
             if self.config.t_end is not None:
-                print(f"  Time: 0 → {self.config.t_end}, dt={self.config.dt}")
+                logger.info("  Time: 0 → %s, dt=%s", self.config.t_end, self.config.dt)
+            logger.debug("  Seed: %s", self.config.seed)
+            logger.debug("  Solver options: %s", self.config.solver.options)
 
-        if self.config.seed is not None:
-            np.random.seed(self.config.seed)
+            if self.config.seed is not None:
+                np.random.seed(self.config.seed)
 
-        output = FrameWriter(output_dir, self.config)
+            output = FrameWriter(output_dir, self.config)
 
-        t_start = time.perf_counter()
-        result = self.preset.run(self.config, output)
-        result.wall_time = time.perf_counter() - t_start
+            t_start = time.perf_counter()
+            result = self.preset.run(self.config, output)
+            result.wall_time = time.perf_counter() - t_start
 
-        output.finalize()
+            output.finalize()
 
-        if verbose:
-            print(f"  Converged: {result.solver_converged}")
-            print(f"  DOFs: {result.num_dofs}")
-            print(f"  Frames: {output.frame_count}")
-            print(f"  Wall time: {result.wall_time:.2f}s")
-            print(f"  Output: {output_dir}")
+            logger.info("  Converged: %s", result.solver_converged)
+            logger.info("  DOFs: %s", result.num_dofs)
+            logger.info("  Frames: %s", output.frame_count)
+            logger.info("  Wall time: %.2fs", result.wall_time)
+            logger.info("  Output: %s", output_dir)
+            logger.info("  Log: %s", output_dir / "simulation.log")
+        finally:
+            teardown_logging()
 
         return {
             "preset": meta.name,

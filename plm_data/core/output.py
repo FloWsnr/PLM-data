@@ -8,6 +8,7 @@ from dolfinx import fem
 
 from plm_data.core.config import SimulationConfig
 from plm_data.core.interpolation import function_to_array
+from plm_data.core.logging import get_logger
 
 
 class FrameWriter:
@@ -26,6 +27,7 @@ class FrameWriter:
         self.frame_times: list[float] = []
         self.field_names: list[str] = []
         self._field_frames: dict[str, list[np.ndarray]] = {}
+        self._logger = get_logger("output")
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -49,6 +51,7 @@ class FrameWriter:
 
         self.frame_times.append(t)
         self.frame_count += 1
+        self._logger.debug("  Frame %d captured at t=%.6g", self.frame_count, t)
 
     def finalize(self):
         """Stack all frames per field into a single array and save."""
@@ -56,6 +59,12 @@ class FrameWriter:
             for name, frames in self._field_frames.items():
                 stacked = np.stack(frames, axis=0)
                 np.save(self.output_dir / f"{name}.npy", stacked)
+            self._logger.info(
+                "  Saved %d frames (%s) to %s",
+                self.frame_count,
+                ", ".join(self.field_names),
+                self.output_dir,
+            )
 
         metadata = {
             "num_frames": self.frame_count,

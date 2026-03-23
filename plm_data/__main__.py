@@ -1,14 +1,16 @@
 """CLI entry point: python -m plm_data"""
 
 import argparse
+import logging
 import sys
 
 
 def cmd_run(args):
     from plm_data.core.runner import SimulationRunner
 
+    level = getattr(logging, args.log_level)
     runner = SimulationRunner.from_yaml(args.config)
-    runner.run(verbose=True)
+    runner.run(console_level=level)
 
 
 def cmd_list(args):
@@ -40,6 +42,12 @@ def main():
 
     p_run = sub.add_parser("run", help="Run a simulation from a YAML config")
     p_run.add_argument("config", help="Path to YAML config file")
+    p_run.add_argument(
+        "--log-level",
+        choices=["DEBUG", "INFO", "WARNING"],
+        default="INFO",
+        help="Console log level (file always logs DEBUG)",
+    )
     p_run.set_defaults(func=cmd_run)
 
     p_list = sub.add_parser("list", help="List available PDE presets")

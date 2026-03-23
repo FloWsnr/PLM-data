@@ -1,11 +1,13 @@
 """Tests for plm_data.core.runner."""
 
+import logging
+
 from plm_data.core.runner import SimulationRunner
 
 
 def test_simulation_runner_heat(heat_config):
     runner = SimulationRunner(heat_config)
-    summary = runner.run(verbose=False)
+    summary = runner.run(console_level=logging.WARNING)
 
     assert summary["preset"] == "heat"
     assert summary["category"] == "basic"
