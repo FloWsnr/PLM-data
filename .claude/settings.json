@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Remember to check Pylance diagnostics (mcp__ide__getDiagnostics) after this batch of edits.'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

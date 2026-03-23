@@ -63,3 +63,5 @@ The system has three layers:
 
 - Do not use parameter defaults in code. The config must specify all parameters explicitly.
 - Don't account for backwards compatibility if you are planning code changes. This is a research codebase, not a production library.
+- use ruff for linting and formatting. Make sure to run ruff after making changes to ensure code style consistency.
+- After making code changes, check Pylance diagnostics using `mcp__ide__getDiagnostics` to catch type errors and other issues. Do this after completing a logical batch of edits, not after every single edit.
