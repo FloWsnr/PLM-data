@@ -19,6 +19,7 @@ Before committing, check ALL changed Python files for:
 
 1. **Unused imports** — imports that are not referenced anywhere in the file
 2. **Imports inside functions** — move these to the top of the file unless there is a clear circular-import or conditional-import reason
+3. **Linting errors** — run ruff to check for any linting issues and fix them
 
 **For large changesets (4+ files changed):** Use fast subagents (haiku model) in parallel to check each file simultaneously. Each subagent should read one file and report any unused imports or function-level imports found.
 

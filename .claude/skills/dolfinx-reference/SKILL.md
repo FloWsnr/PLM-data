@@ -84,6 +84,10 @@ The online docs at `https://docs.fenicsproject.org/dolfinx/v0.10.0.post5/python/
 
 Use `WebFetch` to retrieve specific API docs or demo pages when the local source isn't sufficient (e.g., for rendered docstrings or cross-references).
 
+Another important resource is this tutorial:
+- **DOLFINx Tutorial**: `https://jsdokken.com/dolfinx-tutorial/index.html`
+You can find many examples and explanations here, often with more narrative than the official demos.
+
 ### Lookup Strategy
 
 When implementing or debugging a DOLFINx feature:
