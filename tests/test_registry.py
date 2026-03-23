@@ -10,6 +10,8 @@ def test_list_presets():
     presets = list_presets()
     assert "heat" in presets
     assert "poisson" in presets
+    assert "cahn_hilliard" in presets
+    assert "navier_stokes" in presets
 
 
 def test_get_preset():

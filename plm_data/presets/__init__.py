@@ -31,6 +31,8 @@ def list_presets() -> dict[str, type[PDEPreset]]:
 def _load_all_presets():
     """Import all preset modules so they register themselves."""
     import plm_data.presets.basic  # noqa: F401
+    import plm_data.presets.fluids  # noqa: F401
+    import plm_data.presets.physics  # noqa: F401
 
 
 _load_all_presets()
