@@ -61,4 +61,11 @@ def function_to_array(
             val = func.eval(points[i : i + 1], cells[:1])
             values[i] = val.flat[0]
 
-    return values.reshape(resolution)
+    result = values.reshape(resolution)
+    nan_count = np.isnan(result).sum()
+    if nan_count > 0:
+        raise RuntimeError(
+            f"Interpolation produced {nan_count}/{result.size} NaN values. "
+            "This may indicate solver divergence or points outside the mesh."
+        )
+    return result

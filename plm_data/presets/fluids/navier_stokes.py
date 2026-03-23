@@ -270,10 +270,11 @@ class NavierStokesPreset(TimeDependentPreset):
 
         u_D.interpolate(_bc_expr)
 
-    def step(self, t: float, dt: float) -> None:
+    def step(self, t: float, dt: float) -> bool:
         self._ns_problem.solve()
         self.p_h.x.array[:] -= domain_average(self.msh, self.p_h)  # type: ignore[reportAttributeAccessIssue]
         self.u_n.x.array[:] = self.u_h.x.array  # type: ignore[reportAttributeAccessIssue]
+        return self._ns_problem.solver.getConvergedReason() > 0
 
     def get_output_fields(self) -> dict[str, fem.Function]:
         # Interpolate RT velocity into DG Lagrange vector space

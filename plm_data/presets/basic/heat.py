@@ -103,9 +103,10 @@ class HeatPreset(TimeDependentPreset):
             petsc_options=self._solver_options,
         )
 
-    def step(self, t: float, dt: float) -> None:
+    def step(self, t: float, dt: float) -> bool:
         self.uh = self.problem.solve()
         self.u_n.x.array[:] = self.uh.x.array  # type: ignore[reportAttributeAccessIssue]
+        return self.problem.solver.getConvergedReason() > 0
 
     def get_output_fields(self) -> dict[str, fem.Function]:
         return {"u": self.u_n}  # type: ignore[reportReturnType]

@@ -96,11 +96,16 @@ class SteadyLinearPreset(PDEPreset):
         uh = problem.solve()
 
         converged = problem.solver.getConvergedReason() > 0
+        if not converged:
+            reason = problem.solver.getConvergedReason()
+            raise RuntimeError(
+                f"Steady linear solver did not converge (KSP reason={reason})"
+            )
         output.write_frame({"u": uh}, t=0.0)  # type: ignore[reportArgumentType]
 
         return RunResult(
             num_dofs=V.dofmap.index_map.size_global,
-            solver_converged=converged,
+            solver_converged=True,
         )
 
 
@@ -121,8 +126,12 @@ class TimeDependentPreset(PDEPreset):
         """
 
     @abstractmethod
-    def step(self, t: float, dt: float) -> None:
-        """Advance the solution by one timestep."""
+    def step(self, t: float, dt: float) -> bool:
+        """Advance the solution by one timestep.
+
+        Returns:
+            True if the solver converged, False otherwise.
+        """
 
     @abstractmethod
     def get_output_fields(self) -> dict[str, fem.Function]:
@@ -155,10 +164,17 @@ class TimeDependentPreset(PDEPreset):
 
         t = 0.0
         num_steps = 0
+        solver_converged = True
         while t < t_end - 1e-14 * dt:
-            self.step(t, dt)
+            converged = self.step(t, dt)
             t += dt
             num_steps += 1
+
+            if not converged:
+                solver_converged = False
+                raise RuntimeError(
+                    f"Solver did not converge at t={t:.6g} (step {num_steps})"
+                )
 
             if (
                 next_output_idx < len(output_times)
@@ -169,6 +185,6 @@ class TimeDependentPreset(PDEPreset):
 
         return RunResult(
             num_dofs=self.get_num_dofs(),
-            solver_converged=True,
+            solver_converged=solver_converged,
             num_timesteps=num_steps,
         )

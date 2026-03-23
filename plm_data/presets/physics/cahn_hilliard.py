@@ -125,11 +125,12 @@ class CahnHilliardPreset(TimeDependentPreset):
         V0, self._c_dofs = ME.sub(0).collapse()
         self.c_out = fem.Function(V0, name="c")
 
-    def step(self, t: float, dt: float) -> None:
+    def step(self, t: float, dt: float) -> bool:
         # Copy current solution to previous
         self.u0.x.array[:] = self.u.x.array  # type: ignore[reportAttributeAccessIssue]
         # Solve nonlinear system
         self.problem.solve()
+        return self.problem.solver.getConvergedReason() > 0
 
     def get_output_fields(self) -> dict[str, fem.Function]:
         self.c_out.x.array[:] = self.u.x.array[self._c_dofs]  # type: ignore[reportAttributeAccessIssue]
