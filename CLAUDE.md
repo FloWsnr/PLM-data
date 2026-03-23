@@ -62,3 +62,4 @@ The system has three layers:
 ## Coding Rules
 
 - Do not use parameter defaults in code. The config must specify all parameters explicitly.
+- Don't account for backwards compatibility if you are planning code changes. This is a research codebase, not a production library.
