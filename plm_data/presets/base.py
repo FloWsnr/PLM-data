@@ -1,8 +1,10 @@
-"""Base classes for PDE presets."""
+"""Base contracts for presets and reusable problem engines."""
+
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from dolfinx import fem
@@ -11,13 +13,15 @@ from dolfinx.fem.petsc import LinearProblem
 from plm_data.core.config import SimulationConfig
 from plm_data.core.logging import get_logger
 from plm_data.core.mesh import DomainGeometry, create_domain
-from plm_data.core.output import FrameWriter
-from plm_data.presets.metadata import PDEMetadata
+from plm_data.presets.metadata import PresetSpec
+
+if TYPE_CHECKING:
+    from plm_data.core.output import FrameWriter
 
 
 @dataclass
 class RunResult:
-    """Result of a simulation run. Filled by the preset after solving."""
+    """Result of a simulation run."""
 
     num_dofs: int
     solver_converged: bool
@@ -26,139 +30,132 @@ class RunResult:
     diagnostics: dict[str, Any] = field(default_factory=dict)
 
 
-class PDEPreset(ABC):
-    """Base class for all DOLFINx PDE presets.
+class ProblemInstance(ABC):
+    """Executable runtime object for a single simulation configuration."""
 
-    Each preset owns its entire solve logic. The `run()` method receives
-    a config and a FrameWriter, and is responsible for mesh creation,
-    function space setup, BC application, form assembly, solving, and
-    writing output frames.
-    """
+    def __init__(self, spec: PresetSpec, config: SimulationConfig):
+        self.spec = spec
+        self.config = config
+        self._solver_options = config.solver.options
+
+    @abstractmethod
+    def run(self, output: FrameWriter) -> RunResult:
+        """Execute the simulation and write output frames."""
+
+
+class PDEPreset(ABC):
+    """Factory for validated problem instances."""
 
     @property
     @abstractmethod
-    def metadata(self) -> PDEMetadata:
-        """Return metadata describing this PDE preset."""
+    def spec(self) -> PresetSpec:
+        """Return the preset specification."""
 
     @abstractmethod
-    def run(self, config: SimulationConfig, output: FrameWriter) -> RunResult:
-        """Execute the full simulation."""
+    def build_problem(self, config: SimulationConfig) -> ProblemInstance:
+        """Build the runtime problem object for a validated config."""
 
 
-class SteadyLinearPreset(PDEPreset):
-    """Convenience base for steady-state linear problems.
+class StationaryLinearProblem(ProblemInstance):
+    """Reusable engine for steady-state linear problems."""
 
-    Subclasses implement create_function_space(), create_boundary_conditions(),
-    and create_forms(). The run() method handles domain creation, solving via
-    LinearProblem, and writing a single output frame.
-    """
-
-    def create_domain(self, config: SimulationConfig) -> DomainGeometry:
-        """Create the domain with tagged boundaries. Override for custom domains."""
-        return create_domain(config.domain)
+    def create_domain(self) -> DomainGeometry:
+        """Create the domain with tagged boundaries."""
+        return create_domain(self.config.domain)
 
     @abstractmethod
-    def create_function_space(
-        self, domain_geom: DomainGeometry, config: SimulationConfig
-    ) -> fem.FunctionSpace:
-        """Create the FEM function space on the given mesh."""
+    def create_function_space(self, domain_geom: DomainGeometry) -> fem.FunctionSpace:
+        """Create the FEM function space."""
 
     @abstractmethod
     def create_boundary_conditions(
         self,
         V: fem.FunctionSpace,
         domain_geom: DomainGeometry,
-        config: SimulationConfig,
     ) -> list[fem.DirichletBC]:
-        """Create boundary conditions."""
+        """Create strong boundary conditions."""
 
     @abstractmethod
     def create_forms(
         self,
         V: fem.FunctionSpace,
         domain_geom: DomainGeometry,
-        config: SimulationConfig,
-    ) -> tuple:
-        """Return the bilinear form a and linear form L."""
+    ) -> tuple[Any, Any]:
+        """Return the bilinear and linear forms."""
 
-    def run(self, config: SimulationConfig, output: FrameWriter) -> RunResult:
+    @abstractmethod
+    def export_solution_fields(self, solution: fem.Function) -> dict[str, fem.Function]:
+        """Return base output fields after the solve."""
+
+    def solver_prefix(self) -> str:
+        """Return the PETSc option prefix for this problem."""
+        return f"plm_{self.spec.name}_"
+
+    def run(self, output: FrameWriter) -> RunResult:
         logger = get_logger("solver")
-        domain_geom = self.create_domain(config)
-        V = self.create_function_space(domain_geom, config)
+        domain_geom = self.create_domain()
+        V = self.create_function_space(domain_geom)
         num_dofs = V.dofmap.index_map.size_global
-        logger.info("  Solving steady-state linear problem (%d DOFs)...", num_dofs)
+        logger.info("  Solving stationary linear problem (%d DOFs)...", num_dofs)
 
-        bcs = self.create_boundary_conditions(V, domain_geom, config)
-        a, L = self.create_forms(V, domain_geom, config)
+        bcs = self.create_boundary_conditions(V, domain_geom)
+        a, L = self.create_forms(V, domain_geom)
 
         problem = LinearProblem(
             a,
             L,
             bcs=bcs,
-            petsc_options_prefix="plm_",
-            petsc_options=config.solver.options,
+            petsc_options_prefix=self.solver_prefix(),
+            petsc_options=self._solver_options,
         )
-        uh = problem.solve()
+        solution = problem.solve()
 
-        converged = problem.solver.getConvergedReason() > 0
-        if not converged:
-            reason = problem.solver.getConvergedReason()
+        reason = problem.solver.getConvergedReason()
+        if reason <= 0:
             logger.error("  Solver did not converge (KSP reason=%s)", reason)
             raise RuntimeError(
-                f"Steady linear solver did not converge (KSP reason={reason})"
+                f"Stationary linear solver did not converge (KSP reason={reason})"
             )
+
+        output.write_frame(self.export_solution_fields(solution), t=0.0)
         logger.info("  Solve complete (converged)")
-        output.write_frame({"u": uh}, t=0.0)  # type: ignore[reportArgumentType]
-
-        return RunResult(
-            num_dofs=num_dofs,
-            solver_converged=True,
-        )
+        return RunResult(num_dofs=num_dofs, solver_converged=True)
 
 
-class TimeDependentPreset(PDEPreset):
-    """Convenience base for time-dependent problems with a standard time loop.
-
-    Subclasses implement setup() to create mesh, spaces, forms, solver, and
-    initial condition. Then implement step() for a single timestep and
-    get_output_fields() to return the current solution fields.
-    """
+class _TransientProblemBase(ProblemInstance):
+    """Shared time-loop engine for transient problems."""
 
     @abstractmethod
-    def setup(self, config: SimulationConfig) -> None:
-        """Create mesh, function spaces, forms, solver, and set initial condition.
-
-        Store everything needed for time-stepping as instance attributes.
-        Use create_domain() from plm_data.core.mesh to get a DomainGeometry.
-        """
+    def setup(self) -> None:
+        """Initialize spaces, forms, solvers, and state."""
 
     @abstractmethod
     def step(self, t: float, dt: float) -> bool:
-        """Advance the solution by one timestep.
-
-        Returns:
-            True if the solver converged, False otherwise.
-        """
+        """Advance by one timestep and return convergence status."""
 
     @abstractmethod
     def get_output_fields(self) -> dict[str, fem.Function]:
-        """Return current solution fields for output."""
+        """Return base output fields for the current state."""
 
     def get_num_dofs(self) -> int:
-        """Return total number of DOFs."""
+        """Return the total number of degrees of freedom."""
         return 0
 
-    def run(self, config: SimulationConfig, output: FrameWriter) -> RunResult:
+    def emit_initial_frame(self) -> bool:
+        """Return whether to write the initial state at t=0."""
+        return True
+
+    def run(self, output: FrameWriter) -> RunResult:
         logger = get_logger("timestepper")
-        self._solver_options = config.solver.options
-        self.setup(config)
+        self.setup()
 
-        assert config.dt is not None and config.t_end is not None
-        dt = config.dt
-        t_end = config.t_end
-        num_frames = config.output.num_frames
+        if self.config.time is None:
+            raise ValueError(f"Preset '{self.spec.name}' requires a time section")
 
-        # Compute output times (evenly spaced including t=0 and t=t_end)
+        dt = self.config.time.dt
+        t_end = self.config.time.t_end
+        num_frames = self.config.output.num_frames
+
         if num_frames > 1:
             output_times = np.linspace(0.0, t_end, num_frames)
         else:
@@ -171,29 +168,24 @@ class TimeDependentPreset(PDEPreset):
             "  Time stepping: %d steps, dt=%s, t_end=%s", total_steps, dt, t_end
         )
 
-        # Write initial condition
-        if next_output_idx < len(output_times):
+        if self.emit_initial_frame() and next_output_idx < len(output_times):
             output.write_frame(self.get_output_fields(), t=0.0)
             next_output_idx += 1
 
         t = 0.0
         num_steps = 0
-        solver_converged = True
         while t < t_end - 1e-14 * dt:
             converged = self.step(t, dt)
             t += dt
             num_steps += 1
 
             if not converged:
-                solver_converged = False
                 logger.error(
                     "  Solver did not converge at t=%.6g (step %d)", t, num_steps
                 )
                 raise RuntimeError(
                     f"Solver did not converge at t={t:.6g} (step {num_steps})"
                 )
-
-            logger.debug("  Step %d: t=%.6g, converged=%s", num_steps, t, converged)
 
             if num_steps % log_every == 0 or num_steps == 1:
                 progress = t / t_end * 100
@@ -209,14 +201,24 @@ class TimeDependentPreset(PDEPreset):
                 next_output_idx < len(output_times)
                 and t >= output_times[next_output_idx] - 1e-14 * dt
             ):
-                logger.debug("  Writing frame %d at t=%.6g", next_output_idx, t)
                 output.write_frame(self.get_output_fields(), t=t)
                 next_output_idx += 1
 
         logger.info("  Time stepping complete: %d steps", num_steps)
-
         return RunResult(
             num_dofs=self.get_num_dofs(),
-            solver_converged=solver_converged,
+            solver_converged=True,
             num_timesteps=num_steps,
         )
+
+
+class TransientLinearProblem(_TransientProblemBase):
+    """Reusable engine for transient linear problems."""
+
+
+class TransientNonlinearProblem(_TransientProblemBase):
+    """Reusable engine for transient nonlinear problems."""
+
+
+class CustomProblem(ProblemInstance):
+    """Escape hatch for problem families that need full control."""

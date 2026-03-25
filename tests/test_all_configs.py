@@ -25,18 +25,18 @@ def test_config_runs(config_path, tmp_path):
     cfg = load_config(config_path)
 
     # Shrink to minimal run (match dimensionality of the domain)
-    ndim = len(cfg.domain.params.get("size", [1, 1]))
-    cfg.output_resolution = [4] * ndim
+    ndim = cfg.domain.dimension
+    cfg.output.resolution = [4] * ndim
     cfg.output.path = tmp_path
     cfg.output.num_frames = 2
-    if cfg.t_end is not None and cfg.dt is not None:
-        cfg.t_end = cfg.dt  # single timestep
+    if cfg.time is not None:
+        cfg.time.t_end = cfg.time.dt  # single timestep
 
     preset = get_preset(cfg.preset)
     output_dir = tmp_path / "out"
-    writer = FrameWriter(output_dir, cfg)
+    writer = FrameWriter(output_dir, cfg, preset.spec)
 
-    result = preset.run(cfg, writer)
+    result = preset.build_problem(cfg).run(writer)
 
     assert result.solver_converged is True
     assert writer.frame_count >= 1

@@ -26,9 +26,10 @@ pip install pyyaml pytest pyright
 
 ## Architecture
 
-- **Presets** (`plm_data/presets/`) — Each PDE is a Python class that owns its full solve logic (mesh, function space, variational form, solver, time-stepping). A thin base class provides a standard `run(config, output)` interface.
-- **Config** (`configs/`) — YAML files specify all parameters explicitly: physical params, mesh/output resolution, domain size, initial conditions, time-stepping, and output settings. No hidden defaults.
-- **Output** (`plm_data/core/output.py`) — A `FrameWriter` interpolates FEM solutions onto regular grids and saves them as `.npy` arrays.
+- **Presets** (`plm_data/presets/`) — Each PDE is a `PDEPreset` with a `PresetSpec` and a `build_problem(config)` factory. Presets are responsible for equations and discretization, not for config validation or output expansion.
+- **Problem engines** (`plm_data/presets/base.py`) — Reusable runtime engines cover stationary linear, transient linear, transient nonlinear, and custom problems. Common PDE families share lifecycle code; unusual PDEs use the custom escape hatch.
+- **Config** (`configs/`) — YAML is field-centric. Each field owns its `boundary_conditions`, `source`, `initial_condition`, and explicit `output` mode. Time-dependent presets use a `time:` section; output resolution lives under `output.resolution`.
+- **Output** (`plm_data/core/output.py`) — `FrameWriter` validates exported base fields against the preset spec, expands vector fields into component arrays, and saves `.npy` outputs.
 
 ## Usage
 
@@ -42,6 +43,8 @@ python -m plm_data list
 
 ## Adding a new PDE
 
-1. Create a preset class in `plm_data/presets/<category>/` that subclasses `PDEPreset` (or `SteadyLinearPreset` / `TimeDependentPreset` for common patterns)
-2. Register it with `@register_preset("name")`
-3. Create a YAML config in `configs/<category>/<name>/`
+1. Create a preset class in `plm_data/presets/<category>/` that implements `spec` and `build_problem(config)`.
+2. Define a `PresetSpec` with explicit parameters, fields, supported dimensions, and output modes.
+3. Return a runtime problem object backed by one of the shared engines, or `CustomProblem` if the PDE needs bespoke solve logic.
+4. Register it with `@register_preset("name")`.
+5. Create a YAML config in `configs/<category>/<name>/` using the field-centric schema.

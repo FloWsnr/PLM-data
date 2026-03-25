@@ -9,56 +9,70 @@ from plm_data.core.boundary_conditions import (
 )
 from plm_data.core.source_terms import build_source_form
 from plm_data.presets import register_preset
-from plm_data.presets.base import SteadyLinearPreset
-from plm_data.presets.metadata import PDEMetadata, PDEParameter
+from plm_data.presets.base import PDEPreset, ProblemInstance, StationaryLinearProblem
+from plm_data.presets.metadata import FieldSpec, PDEParameter, PresetSpec
 
-
-@register_preset("poisson")
-class PoissonPreset(SteadyLinearPreset):
-    @property
-    def metadata(self) -> PDEMetadata:
-        return PDEMetadata(
-            name="poisson",
-            category="basic",
-            description="Poisson equation -div(kappa * grad(u)) = f",
-            equations={"u": "-∇·(κ ∇u) = f"},
-            parameters=[
-                PDEParameter("kappa", "Diffusion coefficient"),
-                PDEParameter("f_amplitude", "Source term amplitude"),
-            ],
-            field_names=["u"],
-            steady_state=True,
-            supported_dimensions=[2, 3],
+_POISSON_SPEC = PresetSpec(
+    name="poisson",
+    category="basic",
+    description="Poisson equation -div(kappa * grad(u)) = f",
+    equations={"u": "-∇·(κ ∇u) = f"},
+    parameters=[
+        PDEParameter("kappa", "Diffusion coefficient"),
+        PDEParameter("f_amplitude", "Source term amplitude"),
+    ],
+    fields={
+        "u": FieldSpec(
+            name="u",
+            shape="scalar",
+            allow_boundary_conditions=True,
+            allow_source=True,
+            allow_initial_condition=False,
+            output_mode="scalar",
         )
+    },
+    family="stationary_linear",
+    steady_state=True,
+    supported_dimensions=[2, 3],
+)
 
-    def create_function_space(self, domain_geom, config):
+
+class _PoissonProblem(StationaryLinearProblem):
+    def create_function_space(self, domain_geom):
         return fem.functionspace(domain_geom.mesh, ("Lagrange", 2))
 
-    def create_boundary_conditions(self, V, domain_geom, config):
+    def create_boundary_conditions(self, V, domain_geom):
         return apply_dirichlet_bcs(
-            V, domain_geom, config.boundary_conditions["u"], config.parameters
+            V,
+            domain_geom,
+            self.config.field("u").boundary_conditions,
+            self.config.parameters,
         )
 
-    def create_forms(self, V, domain_geom, config):
-        kappa = config.parameters["kappa"]
+    def create_forms(self, V, domain_geom):
+        kappa = self.config.parameters["kappa"]
+        field_config = self.config.field("u")
 
         u = ufl.TrialFunction(V)
         v = ufl.TestFunction(V)
+        a = kappa * ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+        zero = fem.Constant(domain_geom.mesh, 0.0)
 
-        a = kappa * ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx  # type: ignore[reportOperatorIssue]
-
+        assert field_config.source is not None
         L = build_source_form(
-            v,  # type: ignore[reportArgumentType]
+            v,
             domain_geom.mesh,
-            config.source_terms["u"],
-            config.parameters,
+            field_config.source,
+            self.config.parameters,
         )
+        if L is None:
+            L = ufl.inner(zero, v) * ufl.dx
         a_bc, L_bc = build_natural_bc_forms(
-            u,  # type: ignore[reportArgumentType]
-            v,  # type: ignore[reportArgumentType]
+            u,
+            v,
             domain_geom,
-            config.boundary_conditions["u"],
-            config.parameters,
+            field_config.boundary_conditions,
+            self.config.parameters,
         )
         if a_bc is not None:
             a = a + a_bc
@@ -66,3 +80,17 @@ class PoissonPreset(SteadyLinearPreset):
             L = L + L_bc
 
         return a, L
+
+    def export_solution_fields(self, solution):
+        solution.name = "u"
+        return {"u": solution}
+
+
+@register_preset("poisson")
+class PoissonPreset(PDEPreset):
+    @property
+    def spec(self) -> PresetSpec:
+        return _POISSON_SPEC
+
+    def build_problem(self, config) -> ProblemInstance:
+        return _PoissonProblem(self.spec, config)

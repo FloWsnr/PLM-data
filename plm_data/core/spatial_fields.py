@@ -1,15 +1,14 @@
-"""Shared spatial field type system.
-
-Converts {type, params} field configs into UFL expressions (for variational
-forms) or numpy callables (for interpolation into DOLFINx Functions).
-Used by source terms, boundary condition values, and initial conditions.
-"""
+"""Shared scalar and vector spatial field helpers."""
 
 from typing import Any, Callable
 
 import numpy as np
 import ufl
 from dolfinx import mesh as dmesh
+
+from plm_data.core.config import FieldExpressionConfig
+
+_COMPONENT_LABELS = ("x", "y", "z")
 
 
 def resolve_param_ref(value: Any, parameters: dict[str, float]) -> float:
@@ -52,6 +51,48 @@ def normalize_field_config(value: Any) -> dict:
     raise ValueError(
         f"Invalid field config: {value!r}. "
         f"Expected a number, 'param:<name>' string, or {{type, params}} dict."
+    )
+
+
+def component_labels_for_dim(gdim: int) -> tuple[str, ...]:
+    """Return active vector component labels for the dimension."""
+    return _COMPONENT_LABELS[:gdim]
+
+
+def scalar_expression_to_config(expr: FieldExpressionConfig) -> dict:
+    """Convert a scalar field expression config to the old {type, params} shape."""
+    if expr.is_componentwise:
+        raise ValueError(
+            "Expected a scalar field expression, got component-wise config"
+        )
+    if expr.type is None:
+        raise ValueError("Scalar field expression must define a 'type'")
+    return {"type": expr.type, "params": expr.params}
+
+
+def component_expressions(
+    expr: FieldExpressionConfig,
+    gdim: int,
+) -> dict[str, FieldExpressionConfig]:
+    """Expand a vector field expression into scalar component expressions."""
+    labels = component_labels_for_dim(gdim)
+    if expr.components:
+        if set(expr.components) != set(labels):
+            raise ValueError(
+                f"Vector field components must match {list(labels)} in {gdim}D. "
+                f"Got {sorted(expr.components)}."
+            )
+        return {label: expr.components[label] for label in labels}
+
+    if expr.type in {"none", "zero", "custom"}:
+        return {
+            label: FieldExpressionConfig(type=expr.type, params=dict(expr.params))
+            for label in labels
+        }
+
+    raise ValueError(
+        "Vector field expressions must use explicit components or a field-level "
+        "'none', 'zero', or 'custom' type"
     )
 
 
@@ -237,3 +278,34 @@ def build_interpolator(
 
     else:
         raise ValueError(f"Unknown field type: '{field_type}'")
+
+
+def build_vector_interpolator(
+    expr: FieldExpressionConfig,
+    gdim: int,
+    parameters: dict[str, float],
+) -> Callable[[np.ndarray], np.ndarray] | None:
+    """Build a vector-valued interpolator from a field expression config."""
+    if not expr.is_componentwise and expr.type == "custom":
+        return None
+
+    components = component_expressions(expr, gdim)
+    scalar_interps = []
+    for label in component_labels_for_dim(gdim):
+        scalar_interp = build_interpolator(
+            scalar_expression_to_config(components[label]),
+            parameters,
+        )
+        if scalar_interp is None:
+            raise ValueError(
+                f"Component '{label}' cannot use 'custom' inside a vector expression"
+            )
+        scalar_interps.append(scalar_interp)
+
+    def _vector_interpolator(x: np.ndarray) -> np.ndarray:
+        values = np.zeros((gdim, x.shape[1]))
+        for i, interp in enumerate(scalar_interps):
+            values[i, :] = interp(x)
+        return values
+
+    return _vector_interpolator

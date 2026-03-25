@@ -11,13 +11,11 @@ def test_load_config():
     assert cfg.preset == "heat"
     assert "kappa" in cfg.parameters
     assert cfg.domain.type == "rectangle"
-    assert cfg.output_resolution == [64, 64]
-    assert cfg.dt == 0.01
-    assert cfg.t_end == 1.0
-    assert "u" in cfg.initial_conditions
-    assert cfg.initial_conditions["u"].type == "gaussian_bump"
-    assert "u" in cfg.boundary_conditions
-    assert "u" in cfg.source_terms
+    assert cfg.output.resolution == [64, 64]
+    assert cfg.time.dt == 0.01
+    assert cfg.time.t_end == 1.0
+    assert cfg.field("u").initial_condition.type == "gaussian_bump"
+    assert cfg.field("u").source.type == "none"
 
 
 def test_load_config_missing_field(tmp_path):
@@ -27,56 +25,50 @@ def test_load_config_missing_field(tmp_path):
         load_config(bad_yaml)
 
 
-def test_load_config_per_field_boundary_conditions():
+def test_load_config_field_sections():
     cfg = load_config("configs/basic/poisson/2d_default.yaml")
-    assert "u" in cfg.boundary_conditions
-    u_bcs = cfg.boundary_conditions["u"]
-    assert "x-" in u_bcs
-    assert "x+" in u_bcs
-    assert "y-" in u_bcs
-    assert "y+" in u_bcs
-    for bc in u_bcs.values():
-        assert bc.type == "dirichlet"
+    u_field = cfg.field("u")
+    assert "x-" in u_field.boundary_conditions
+    assert "x+" in u_field.boundary_conditions
+    assert "y-" in u_field.boundary_conditions
+    assert "y+" in u_field.boundary_conditions
+    assert u_field.source.type == "sine_product"
+    assert u_field.output.mode == "scalar"
 
 
-def test_load_config_per_field_source_terms():
-    cfg = load_config("configs/basic/poisson/2d_default.yaml")
-    assert "u" in cfg.source_terms
-    assert cfg.source_terms["u"].type == "sine_product"
-
-
-def test_load_config_per_field_initial_conditions():
-    cfg = load_config("configs/basic/heat/2d_default.yaml")
-    assert "u" in cfg.initial_conditions
-    assert cfg.initial_conditions["u"].type == "gaussian_bump"
-
-
-def test_load_config_steady_state_no_ics():
-    cfg = load_config("configs/basic/poisson/2d_default.yaml")
-    assert cfg.initial_conditions == {}
+def test_load_config_vector_field():
+    cfg = load_config("configs/fluids/navier_stokes/2d_default.yaml")
+    velocity = cfg.field("velocity")
+    assert velocity.output.mode == "components"
+    assert velocity.source.type == "none"
+    assert velocity.initial_condition.type == "custom"
+    assert (
+        velocity.boundary_conditions["y+"].value.components["x"].params["value"] == 1.0
+    )
 
 
 def _base_yaml_dict():
     """Return a minimal valid config dict with all required top-level fields."""
     return {
-        "preset": "test",
-        "parameters": {"k": 1.0},
+        "preset": "poisson",
+        "parameters": {"kappa": 1.0, "f_amplitude": 1.0},
         "domain": {
             "type": "rectangle",
             "size": [1.0, 1.0],
             "mesh_resolution": [4, 4],
         },
-        "boundary_conditions": {
+        "fields": {
             "u": {
-                "x-": {"type": "dirichlet", "value": 0.0},
+                "boundary_conditions": {
+                    "x-": {"type": "dirichlet", "value": 0.0},
+                },
+                "source": {"type": "none", "params": {}},
+                "output": "scalar",
             },
         },
-        "source_terms": {
-            "u": {"type": "none"},
-        },
-        "output_resolution": [8, 8],
         "output": {
             "path": "./output",
+            "resolution": [8, 8],
             "num_frames": 1,
             "formats": ["numpy"],
         },
@@ -89,26 +81,26 @@ def _base_yaml_dict():
 
 def test_robin_bc_missing_alpha(tmp_path):
     data = _base_yaml_dict()
-    data["boundary_conditions"]["u"]["x-"] = {"type": "robin", "value": 0.0}
+    data["fields"]["u"]["boundary_conditions"]["x-"] = {"type": "robin", "value": 0.0}
     p = tmp_path / "robin_no_alpha.yaml"
     p.write_text(yaml.dump(data))
     with pytest.raises(ValueError, match="alpha"):
         load_config(p)
 
 
-def test_missing_boundary_conditions(tmp_path):
+def test_missing_fields_section(tmp_path):
     data = _base_yaml_dict()
-    del data["boundary_conditions"]
-    p = tmp_path / "no_bcs.yaml"
+    del data["fields"]
+    p = tmp_path / "no_fields.yaml"
     p.write_text(yaml.dump(data))
-    with pytest.raises(ValueError, match="boundary_conditions"):
+    with pytest.raises(ValueError, match="fields"):
         load_config(p)
 
 
-def test_missing_source_terms(tmp_path):
+def test_missing_output_resolution(tmp_path):
     data = _base_yaml_dict()
-    del data["source_terms"]
-    p = tmp_path / "no_src.yaml"
+    del data["output"]["resolution"]
+    p = tmp_path / "no_resolution.yaml"
     p.write_text(yaml.dump(data))
-    with pytest.raises(ValueError, match="source_terms"):
+    with pytest.raises(ValueError, match="resolution"):
         load_config(p)

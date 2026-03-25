@@ -1,34 +1,36 @@
 preset: heat
 parameters:
   kappa: 0.01
-solver:
-  ksp_type: preonly
-  pc_type: lu
 domain:
   type: rectangle
   size: [1.0, 1.0]
   mesh_resolution: [128, 128]
-boundary_conditions:
+time:
+  dt: 0.01
+  t_end: 1.0
+fields:
   u:
-    x-: {type: neumann, value: 0.0}
-    x+: {type: neumann, value: 0.0}
-    y-: {type: neumann, value: 0.0}
-    y+: {type: neumann, value: 0.0}
-source_terms:
-  u:
-    type: none
-initial_conditions:
-  u:
-    type: gaussian_bump
-    params:
-      sigma: 0.1
-      amplitude: 1.0
-      center: [0.5, 0.5]
-dt: 0.01
-t_end: 1.0
-output_resolution: [64, 64]
+    boundary_conditions:
+      x-: {type: neumann, value: 0.0}
+      x+: {type: neumann, value: 0.0}
+      y-: {type: neumann, value: 0.0}
+      y+: {type: neumann, value: 0.0}
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: gaussian_bump
+      params:
+        sigma: 0.1
+        amplitude: 1.0
+        center: [0.5, 0.5]
+    output: scalar
+solver:
+  ksp_type: preonly
+  pc_type: lu
 output:
   path: ./output
+  resolution: [64, 64]
   num_frames: 20
   formats: [numpy]
 seed: 42

@@ -1,52 +1,43 @@
 preset: navier_stokes
-
 parameters:
   Re: 100.0
   k: 1.0
-
 domain:
   type: rectangle
   size: [1.0, 1.0]
   mesh_resolution: [32, 32]
-
-boundary_conditions:
+time:
+  dt: 0.01
+  t_end: 5.0
+fields:
   velocity:
-    x-:
-      type: dirichlet
-      value: [0.0, 0.0]
-    x+:
-      type: dirichlet
-      value: [0.0, 0.0]
-    y-:
-      type: dirichlet
-      value: [0.0, 0.0]
-    y+:
-      type: dirichlet
-      value: [1.0, 0.0]
-  pressure: {}
-
-source_terms:
-  velocity_x:
-    type: none
-  velocity_y:
-    type: none
+    boundary_conditions:
+      x-:
+        type: dirichlet
+        value: [0.0, 0.0]
+      x+:
+        type: dirichlet
+        value: [0.0, 0.0]
+      y-:
+        type: dirichlet
+        value: [0.0, 0.0]
+      y+:
+        type: dirichlet
+        value: [1.0, 0.0]
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: custom
+      params: {}
+    output: components
   pressure:
-    type: none
-
-initial_conditions:
-  velocity:
-    type: custom
-    params: {}
-
-dt: 0.01
-t_end: 5.0
-
-output_resolution: [64, 64]
+    output: scalar
 output:
   path: ./output
+  resolution: [64, 64]
   num_frames: 20
   formats: [numpy]
-
 solver:
   ksp_type: preonly
   pc_type: lu
@@ -55,5 +46,4 @@ solver:
   mat_mumps_icntl_24: 1
   mat_mumps_icntl_25: 0
   ksp_error_if_not_converged: 1
-
 seed: 42

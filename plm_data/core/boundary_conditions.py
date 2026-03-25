@@ -1,29 +1,19 @@
-"""Boundary condition application from config.
-
-Converts BCConfig entries into DOLFINx DirichletBC objects and/or
-weak-form contributions (Neumann, Robin), using DomainGeometry for
-boundary identification and spatial_fields for value resolution.
-
-Supported BC types:
-  - dirichlet: strong constraint via fem.dirichletbc()
-  - neumann:   ∂u/∂n = g  →  adds g*v*ds to L
-  - robin:     ∂u/∂n + α*u = g  →  adds α*u*v*ds to a, g*v*ds to L
-"""
+"""Boundary condition helpers for scalar fields."""
 
 import ufl
 from dolfinx import fem
 
-from plm_data.core.config import BCConfig
+from plm_data.core.config import BoundaryConditionConfig
 from plm_data.core.mesh import DomainGeometry
 from plm_data.core.spatial_fields import (
     build_interpolator,
     build_ufl_field,
-    normalize_field_config,
     resolve_param_ref,
+    scalar_expression_to_config,
 )
 
 
-def _validate_boundary_name(name: str, domain_geom: DomainGeometry):
+def _validate_boundary_name(name: str, domain_geom: DomainGeometry) -> None:
     if name not in domain_geom.boundary_names:
         raise ValueError(
             f"Boundary '{name}' not found in domain. "
@@ -34,20 +24,10 @@ def _validate_boundary_name(name: str, domain_geom: DomainGeometry):
 def apply_dirichlet_bcs(
     V: fem.FunctionSpace,
     domain_geom: DomainGeometry,
-    bc_configs: dict[str, BCConfig],
+    bc_configs: dict[str, BoundaryConditionConfig],
     parameters: dict[str, float],
 ) -> list[fem.DirichletBC]:
-    """Create DirichletBC objects for all Dirichlet boundaries.
-
-    Args:
-        V: The function space.
-        domain_geom: Domain geometry with tagged boundaries.
-        bc_configs: Mapping from boundary name to BCConfig.
-        parameters: PDE parameters for resolving 'param:name' refs.
-
-    Returns:
-        List of DirichletBC objects.
-    """
+    """Create DirichletBC objects for all scalar Dirichlet boundaries."""
     msh = domain_geom.mesh
     tdim = msh.topology.dim
     fdim = tdim - 1
@@ -58,26 +38,28 @@ def apply_dirichlet_bcs(
             continue
 
         _validate_boundary_name(name, domain_geom)
+        if bc.value.is_componentwise:
+            raise ValueError("Scalar Dirichlet BCs cannot use component-wise values")
 
         tag = domain_geom.boundary_names[name]
         facets = domain_geom.facet_tags.find(tag)
         dofs = fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
-
-        field_config = normalize_field_config(bc.value)
+        field_config = scalar_expression_to_config(bc.value)
 
         if field_config["type"] == "constant":
             value = resolve_param_ref(field_config["params"]["value"], parameters)
             bc_obj = fem.dirichletbc(
-                value=fem.Constant(msh, float(value)), dofs=dofs, V=V
+                value=fem.Constant(msh, float(value)),
+                dofs=dofs,
+                V=V,
             )
         else:
             interp = build_interpolator(field_config, parameters)
-            assert interp is not None, (
-                f"No interpolator for field type '{field_config['type']}'"
-            )
+            if interp is None:
+                raise ValueError(f"Dirichlet BC on '{name}' cannot use custom values")
             bc_func = fem.Function(V)
-            bc_func.interpolate(interp)  # type: ignore[arg-type]
-            bc_obj = fem.dirichletbc(value=bc_func, dofs=dofs)  # type: ignore[arg-type]
+            bc_func.interpolate(interp)
+            bc_obj = fem.dirichletbc(value=bc_func, dofs=dofs)
 
         bcs.append(bc_obj)
 
@@ -88,25 +70,10 @@ def build_natural_bc_forms(
     u: ufl.Argument,
     v: ufl.Argument,
     domain_geom: DomainGeometry,
-    bc_configs: dict[str, BCConfig],
+    bc_configs: dict[str, BoundaryConditionConfig],
     parameters: dict[str, float],
 ) -> tuple[ufl.Form | None, ufl.Form | None]:
-    """Build weak-form contributions from Neumann and Robin BCs.
-
-    Neumann (∂u/∂n = g):  adds g*v*ds(tag) to L
-    Robin (∂u/∂n + α*u = g):  adds α*u*v*ds(tag) to a, g*v*ds(tag) to L
-
-    Args:
-        u: The trial function.
-        v: The test function.
-        domain_geom: Domain geometry with tagged boundaries and ds measure.
-        bc_configs: Mapping from boundary name to BCConfig.
-        parameters: PDE parameters for resolving 'param:name' refs.
-
-    Returns:
-        (a_bc, L_bc) tuple. Either may be None if no contributions exist.
-        a_bc should be added to the bilinear form, L_bc to the linear form.
-    """
+    """Build weak-form contributions from scalar Neumann and Robin BCs."""
     msh = domain_geom.mesh
     a_bc = None
     L_bc = None
@@ -116,30 +83,29 @@ def build_natural_bc_forms(
             continue
 
         _validate_boundary_name(name, domain_geom)
+        if bc.value.is_componentwise:
+            raise ValueError("Scalar natural BCs cannot use component-wise values")
+
         tag = domain_geom.boundary_names[name]
+        field_config = scalar_expression_to_config(bc.value)
 
-        # --- L contribution: g * v * ds(tag) ---
-        field_config = normalize_field_config(bc.value)
-
-        # Skip zero values (no assembly needed)
         skip_L = False
         if field_config["type"] in ("none", "zero"):
             skip_L = True
         elif field_config["type"] == "constant":
-            val = resolve_param_ref(field_config["params"]["value"], parameters)
-            if val == 0.0:
+            value = resolve_param_ref(field_config["params"]["value"], parameters)
+            if value == 0.0:
                 skip_L = True
 
         if not skip_L:
             g = build_ufl_field(msh, field_config, parameters)
             term = ufl.inner(g, v) * domain_geom.ds(tag)
-            L_bc = term if L_bc is None else L_bc + term  # type: ignore[reportOperatorIssue]
+            L_bc = term if L_bc is None else L_bc + term
 
-        # --- a contribution (Robin only): α * u * v * ds(tag) ---
         if bc.type == "robin":
             alpha = resolve_param_ref(bc.alpha, parameters)
             if alpha != 0.0:
-                term = alpha * ufl.inner(u, v) * domain_geom.ds(tag)  # type: ignore[reportOperatorIssue]
-                a_bc = term if a_bc is None else a_bc + term  # type: ignore[reportOperatorIssue]
+                term = alpha * ufl.inner(u, v) * domain_geom.ds(tag)
+                a_bc = term if a_bc is None else a_bc + term
 
     return a_bc, L_bc

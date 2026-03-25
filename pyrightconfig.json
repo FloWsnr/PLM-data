@@ -1,0 +1,12 @@
+{
+  "include": ["plm_data", "tests"],
+  "exclude": ["reference", "output", ".claude"],
+  "typeCheckingMode": "basic",
+  "reportArgumentType": "none",
+  "reportAssignmentType": "none",
+  "reportAttributeAccessIssue": "none",
+  "reportOperatorIssue": "none",
+  "reportOptionalMemberAccess": "none",
+  "reportOptionalOperand": "none",
+  "reportReturnType": "none"
+}

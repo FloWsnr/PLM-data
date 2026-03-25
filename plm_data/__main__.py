@@ -23,15 +23,15 @@ def cmd_list(args):
 
     by_category: dict[str, list] = {}
     for name, cls in sorted(presets.items()):
-        meta = cls().metadata
-        by_category.setdefault(meta.category, []).append(meta)
+        spec = cls().spec
+        by_category.setdefault(spec.category, []).append(spec)
 
-    for category, metas in sorted(by_category.items()):
+    for category, specs in sorted(by_category.items()):
         print(f"\n{category}:")
-        for meta in metas:
-            state = "steady" if meta.steady_state else "transient"
-            dims = ", ".join(str(d) + "D" for d in meta.supported_dimensions)
-            print(f"  {meta.name:20s}  [{state}, {dims}]  {meta.description}")
+        for spec in specs:
+            state = "steady" if spec.steady_state else "transient"
+            dims = ", ".join(str(d) + "D" for d in spec.supported_dimensions)
+            print(f"  {spec.name:20s}  [{state}, {dims}]  {spec.description}")
 
 
 def main():

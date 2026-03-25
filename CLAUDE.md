@@ -22,33 +22,32 @@ Tests run via `python -m pytest tests/`. The project runs directly as a Python m
 
 The system has three layers:
 
-1. **Presets** (`plm_data/presets/`) — Each PDE is a self-contained class registered via `@register_preset("name")`. Presets own their full solve logic (mesh, function space, variational form, solver, time-stepping). Three base classes:
-   - `PDEPreset` — abstract base, implement `run()` directly
-   - `SteadyLinearPreset` — for steady-state linear problems; implement `create_function_space()`, `create_boundary_conditions()`, `create_forms()`; methods receive `DomainGeometry` (not bare mesh); the base handles domain creation, `LinearProblem` solve, and frame output
-   - `TimeDependentPreset` — for time-dependent problems; implement `setup()`, `step()`, `get_output_fields()`; the base handles the time loop and output scheduling
+1. **Presets** (`plm_data/presets/`) — Each PDE is a self-contained class registered via `@register_preset("name")`. Presets expose:
+   - `spec` — a `PresetSpec` describing parameters, fields, output modes, family, and supported dimensions
+   - `build_problem(config)` — returns a runtime problem object for one of the shared engines or for the custom escape hatch
+   Common solver families live in `plm_data/presets/base.py` as `StationaryLinearProblem`, `TransientLinearProblem`, `TransientNonlinearProblem`, and `CustomProblem`.
 
 2. **Core** (`plm_data/core/`) — Shared infrastructure:
-   - `config.py` — `SimulationConfig` dataclass loaded from YAML; all fields explicit, no hidden defaults. BCs, source terms, and ICs are all per-field (keyed by field name like "u", "velocity", "pressure")
+   - `config.py` — `SimulationConfig` dataclass loaded from YAML. Configs are validated against the preset spec up front. The schema is field-centric: each field owns explicit `boundary_conditions`, `source`, `initial_condition`, and `output` settings. Transient presets use a `time:` section. Output resolution lives under `output.resolution`
    - `mesh.py` — `create_domain()` returns `DomainGeometry` (mesh + facet_tags + boundary_names + ds measure). Built-in domains auto-tag boundaries (x-, x+, y-, y+ for rectangle; 6 faces for box). Future Gmsh support will populate from physical groups
-   - `spatial_fields.py` — Shared spatial field type system (constant, sine_product, gaussian_bump, step, none, custom). Two renderers: `build_ufl_field()` for variational forms, `build_interpolator()` for numpy interpolation. Supports `"param:name"` references. This is the central hub — BCs, source terms, and ICs all delegate to it
-   - `boundary_conditions.py` — `apply_dirichlet_bcs()` creates DirichletBC objects; `build_natural_bc_forms()` returns (a_bc, L_bc) for Neumann and Robin BCs
-   - `source_terms.py` — `build_source_form()` constructs f*v*dx for scalar fields; `build_vector_source_form()` assembles per-component scalar source terms into a vector body force for vector PDEs
-   - `initial_conditions.py` — `apply_ic(func, ic_config, parameters, seed)` delegates spatial types to `build_interpolator()` from spatial_fields; handles `random_perturbation` directly (DOF-based). `apply_vector_ic()` applies per-component scalar ICs to vector functions for vector PDEs
-   - `runner.py` — `SimulationRunner` orchestrates: loads config → instantiates preset → calls `preset.run()` → finalizes output
-   - `output.py` — `FrameWriter` accumulates field snapshots in memory, then saves one `(num_frames, *resolution)` array per field in `finalize()`
+   - `spatial_fields.py` — Shared scalar and vector spatial field system (constant, sine_product, gaussian_bump, step, none, custom). Provides UFL builders, scalar interpolators, and vector-component expansion helpers. Supports `"param:name"` references
+   - `boundary_conditions.py` — scalar Dirichlet / Neumann / Robin helpers for presets that use the shared scalar BC path
+   - `source_terms.py` — scalar and vector source-form builders from the unified field expression config
+   - `initial_conditions.py` — scalar and vector IC helpers from the unified field expression config; `random_perturbation` stays scalar-only and DOF-based
+   - `runner.py` — `SimulationRunner` orchestrates: loads config → instantiates preset → builds problem → runs it → finalizes output
+   - `output.py` — `FrameWriter` validates base fields against the preset spec, expands vector fields into component outputs, accumulates frames in memory, and saves one `(num_frames, *resolution)` array per concrete output
    - `interpolation.py` — `function_to_array()` maps DOLFINx FEM functions onto regular numpy grids via point evaluation
 
-3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, domain (pure geometry), per-field boundary conditions (dirichlet/neumann/robin), per-field source terms, per-field initial conditions, output resolution, time-stepping (dt, t_end), solver options, and seed.
+3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, domain geometry, optional `time`, explicit per-field config blocks under `fields`, solver options, output settings, and seed.
 
 ## Adding a New PDE Preset
 
 1. Create `plm_data/presets/<category>/<name>.py`
-2. Subclass `SteadyLinearPreset` or `TimeDependentPreset` (or `PDEPreset` for full control)
-3. Decorate with `@register_preset("name")`
-4. Provide a `metadata` property returning `PDEMetadata`
-5. Import the new module in `plm_data/presets/<category>/__init__.py`
-6. If adding a new category, also import it in `plm_data/presets/__init__.py` inside `_load_all_presets()`
-7. Create a YAML config in `configs/<category>/<name>/`
+2. Implement `spec` with a `PresetSpec`
+3. Implement `build_problem(config)` returning one of the shared problem engines or a `CustomProblem`
+4. Decorate with `@register_preset("name")`
+5. Create a YAML config in `configs/<category>/<name>/`
+6. No central import list is needed; preset modules are auto-discovered recursively
 
 ## Reference Material
 
@@ -57,8 +56,9 @@ The system has three layers:
 ## Key Conventions
 
 - YAML configs must be fully explicit — no hidden defaults in code
+- Config validation is spec-driven: parameter names, field names, allowed sections, output modes, and supported dimensions are checked before solving
 - Output goes to `output/<category>/<preset>/<field>.npy` as a single `(num_frames, *resolution)` array
-- Presets are auto-discovered via module imports triggered by `_load_all_presets()`
+- Presets are auto-discovered recursively under `plm_data.presets`
 - Meshes use `GhostMode.shared_facet` for DOLFINx compatibility
 - PETSc solver option prefixes follow the pattern `plm_` or `plm_<preset>_`
 

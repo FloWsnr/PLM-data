@@ -3,14 +3,28 @@
 import pytest
 
 from plm_data.core.config import (
-    BCConfig,
+    BoundaryConditionConfig,
     DomainConfig,
-    ICConfig,
+    FieldConfig,
+    FieldExpressionConfig,
+    FieldOutputConfig,
     OutputConfig,
     SimulationConfig,
     SolverConfig,
-    SourceTermConfig,
+    TimeConfig,
 )
+
+
+def constant(value):
+    return FieldExpressionConfig(type="constant", params={"value": value})
+
+
+def scalar_expr(expr_type: str, **params):
+    return FieldExpressionConfig(type=expr_type, params=params)
+
+
+def vector_expr(**components):
+    return FieldExpressionConfig(components=components)
 
 
 @pytest.fixture
@@ -32,36 +46,38 @@ def heat_config(tmp_path, rectangle_domain, direct_solver):
         preset="heat",
         parameters={"kappa": 0.01},
         domain=rectangle_domain,
-        output_resolution=[4, 4],
-        boundary_conditions={
-            "u": {
-                "x-": BCConfig(type="neumann", value=0.0),
-                "x+": BCConfig(type="neumann", value=0.0),
-                "y-": BCConfig(type="neumann", value=0.0),
-                "y+": BCConfig(type="neumann", value=0.0),
-            },
-        },
-        source_terms={"u": SourceTermConfig(type="none", params={})},
-        initial_conditions={
-            "u": ICConfig(
-                type="gaussian_bump",
-                params={"sigma": 0.1, "amplitude": 1.0, "center": [0.5, 0.5]},
-            ),
+        fields={
+            "u": FieldConfig(
+                boundary_conditions={
+                    "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                    "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                    "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                    "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                },
+                source=scalar_expr("none"),
+                initial_condition=scalar_expr(
+                    "gaussian_bump",
+                    sigma=0.1,
+                    amplitude=1.0,
+                    center=[0.5, 0.5],
+                ),
+                output=FieldOutputConfig(mode="scalar"),
+            )
         },
         output=OutputConfig(
             path=tmp_path,
+            resolution=[4, 4],
             num_frames=2,
             formats=["numpy"],
         ),
         solver=direct_solver,
-        dt=0.01,
-        t_end=0.01,
+        time=TimeConfig(dt=0.01, t_end=0.01),
         seed=42,
     )
 
 
 @pytest.fixture
-def cahn_hilliard_config(tmp_path, rectangle_domain, direct_solver):
+def cahn_hilliard_config(tmp_path, rectangle_domain):
     return SimulationConfig(
         preset="cahn_hilliard",
         parameters={
@@ -71,17 +87,19 @@ def cahn_hilliard_config(tmp_path, rectangle_domain, direct_solver):
             "theta": 0.5,
         },
         domain=rectangle_domain,
-        output_resolution=[4, 4],
-        boundary_conditions={"c": {}},
-        source_terms={"c": SourceTermConfig(type="none", params={})},
-        initial_conditions={
-            "c": ICConfig(
-                type="random_perturbation",
-                params={"mean": 0.63, "std": 0.02},
-            ),
+        fields={
+            "c": FieldConfig(
+                initial_condition=scalar_expr(
+                    "random_perturbation",
+                    mean=0.63,
+                    std=0.02,
+                ),
+                output=FieldOutputConfig(mode="scalar"),
+            )
         },
         output=OutputConfig(
             path=tmp_path,
+            resolution=[4, 4],
             num_frames=2,
             formats=["numpy"],
         ),
@@ -93,14 +111,13 @@ def cahn_hilliard_config(tmp_path, rectangle_domain, direct_solver):
                 "pc_type": "lu",
             }
         ),
-        dt=5e-6,
-        t_end=5e-6,
+        time=TimeConfig(dt=5e-6, t_end=5e-6),
         seed=42,
     )
 
 
 @pytest.fixture
-def navier_stokes_config(tmp_path, direct_solver):
+def navier_stokes_config(tmp_path):
     domain = DomainConfig(
         type="rectangle",
         params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
@@ -109,26 +126,35 @@ def navier_stokes_config(tmp_path, direct_solver):
         preset="navier_stokes",
         parameters={"Re": 25.0, "k": 1.0},
         domain=domain,
-        output_resolution=[4, 4],
-        boundary_conditions={
-            "velocity": {
-                "x-": BCConfig(type="dirichlet", value=[0.0, 0.0]),
-                "x+": BCConfig(type="dirichlet", value=[0.0, 0.0]),
-                "y-": BCConfig(type="dirichlet", value=[0.0, 0.0]),
-                "y+": BCConfig(type="dirichlet", value=[1.0, 0.0]),
-            },
-            "pressure": {},
-        },
-        source_terms={
-            "velocity_x": SourceTermConfig(type="none", params={}),
-            "velocity_y": SourceTermConfig(type="none", params={}),
-            "pressure": SourceTermConfig(type="none", params={}),
-        },
-        initial_conditions={
-            "velocity": ICConfig(type="custom", params={}),
+        fields={
+            "velocity": FieldConfig(
+                boundary_conditions={
+                    "x-": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(x=constant(0.0), y=constant(0.0)),
+                    ),
+                    "x+": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(x=constant(0.0), y=constant(0.0)),
+                    ),
+                    "y-": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(x=constant(0.0), y=constant(0.0)),
+                    ),
+                    "y+": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(x=constant(1.0), y=constant(0.0)),
+                    ),
+                },
+                source=scalar_expr("none"),
+                initial_condition=scalar_expr("custom"),
+                output=FieldOutputConfig(mode="components"),
+            ),
+            "pressure": FieldConfig(output=FieldOutputConfig(mode="scalar")),
         },
         output=OutputConfig(
             path=tmp_path,
+            resolution=[4, 4],
             num_frames=2,
             formats=["numpy"],
         ),
@@ -143,8 +169,7 @@ def navier_stokes_config(tmp_path, direct_solver):
                 "ksp_error_if_not_converged": "1",
             }
         ),
-        dt=0.1,
-        t_end=0.1,
+        time=TimeConfig(dt=0.1, t_end=0.1),
         seed=42,
     )
 
@@ -159,24 +184,34 @@ def poisson_config(tmp_path, direct_solver):
         preset="poisson",
         parameters={"kappa": 1.0, "f_amplitude": 1.0},
         domain=domain,
-        output_resolution=[4, 4],
-        boundary_conditions={
-            "u": {
-                "x-": BCConfig(type="dirichlet", value=0.0),
-                "x+": BCConfig(type="dirichlet", value=0.0),
-                "y-": BCConfig(type="dirichlet", value=0.0),
-                "y+": BCConfig(type="dirichlet", value=0.0),
-            },
+        fields={
+            "u": FieldConfig(
+                boundary_conditions={
+                    "x-": BoundaryConditionConfig(
+                        type="dirichlet", value=constant(0.0)
+                    ),
+                    "x+": BoundaryConditionConfig(
+                        type="dirichlet", value=constant(0.0)
+                    ),
+                    "y-": BoundaryConditionConfig(
+                        type="dirichlet", value=constant(0.0)
+                    ),
+                    "y+": BoundaryConditionConfig(
+                        type="dirichlet", value=constant(0.0)
+                    ),
+                },
+                source=scalar_expr(
+                    "sine_product",
+                    amplitude="param:f_amplitude",
+                    kx=1,
+                    ky=1,
+                ),
+                output=FieldOutputConfig(mode="scalar"),
+            )
         },
-        source_terms={
-            "u": SourceTermConfig(
-                type="sine_product",
-                params={"amplitude": "param:f_amplitude", "kx": 1, "ky": 1},
-            ),
-        },
-        initial_conditions={},
         output=OutputConfig(
             path=tmp_path,
+            resolution=[4, 4],
             num_frames=1,
             formats=["numpy"],
         ),

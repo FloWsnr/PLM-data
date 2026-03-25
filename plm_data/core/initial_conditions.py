@@ -1,86 +1,59 @@
-"""Initial condition generators for DOLFINx functions.
-
-Delegates to the shared spatial field type system for spatial IC types
-(constant, gaussian_bump, sine_product, step). Handles random_perturbation
-directly (DOF-based, not a spatial field).
-"""
+"""Initial condition helpers for scalar and vector fields."""
 
 import numpy as np
 from dolfinx import fem
 
-from plm_data.core.config import ICConfig
-from plm_data.core.spatial_fields import build_interpolator
+from plm_data.core.config import FieldExpressionConfig
+from plm_data.core.spatial_fields import (
+    build_interpolator,
+    build_vector_interpolator,
+    scalar_expression_to_config,
+)
 
 
 def apply_ic(
     func: fem.Function,
-    ic_config: ICConfig,
+    ic_config: FieldExpressionConfig,
     parameters: dict[str, float],
     seed: int | None = None,
 ) -> None:
-    """Apply an initial condition to a DOLFINx Function in-place.
+    """Apply a scalar initial condition to a DOLFINx function in-place."""
+    if ic_config.is_componentwise:
+        raise ValueError("apply_ic expects a scalar initial-condition config")
 
-    Spatial IC types (constant, gaussian_bump, sine_product, step) are
-    delegated to the shared spatial_fields system. random_perturbation
-    is handled directly as it operates on DOF arrays, not spatial coords.
-
-    Args:
-        func: The Function to initialize.
-        ic_config: IC configuration with type and params.
-        parameters: PDE parameters for resolving 'param:name' refs.
-        seed: Random seed for reproducible ICs.
-    """
     ic_type = ic_config.type
-
     if ic_type == "custom":
-        # Preset is responsible for generating its own IC.
         return
 
     if ic_type == "random_perturbation":
-        # DOF-based — not a spatial field, needs RNG.
         rng = np.random.default_rng(seed)
-        p = ic_config.params
-        mean = p["mean"]
-        std = p["std"]
-        values = rng.normal(mean, std, size=func.x.array.shape)
-        func.x.array[:] = values
+        mean = ic_config.params["mean"]
+        std = ic_config.params["std"]
+        func.x.array[:] = rng.normal(mean, std, size=func.x.array.shape)
         return
 
-    # All other types: delegate to the shared spatial field system.
-    field_config = {"type": ic_type, "params": ic_config.params}
-    interpolator = build_interpolator(field_config, parameters)
+    interpolator = build_interpolator(
+        scalar_expression_to_config(ic_config),
+        parameters,
+    )
     if interpolator is not None:
         func.interpolate(interpolator)
 
 
 def apply_vector_ic(
-    vector_func: fem.Function,
-    component_funcs: list[fem.Function],
-    component_dofs: list[np.ndarray],
-    ic_configs: dict[str, ICConfig],
-    component_names: list[str],
+    func: fem.Function,
+    ic_config: FieldExpressionConfig,
     parameters: dict[str, float],
     seed: int | None = None,
 ) -> None:
-    """Apply per-component ICs to a vector function.
+    """Apply a vector initial condition to a DOLFINx vector function."""
+    if ic_config.type == "custom" and not ic_config.is_componentwise:
+        return
 
-    Applies scalar ICs to each named component, assembles the results
-    into the vector function. Used by vector PDEs (Navier-Stokes,
-    elasticity, etc.) where ICs are specified per scalar component.
+    if ic_config.type == "random_perturbation":
+        raise ValueError("Vector initial conditions do not support random_perturbation")
 
-    Args:
-        vector_func: The vector Function to populate (e.g., DG Lagrange vector).
-        component_funcs: Scalar Functions for each component (collapsed sub-spaces).
-        component_dofs: DOF index arrays mapping each component into vector_func.
-        ic_configs: Per-component IC configs keyed by component name.
-        component_names: Names matching ic_configs keys (e.g., ["velocity_x", "velocity_y"]).
-        parameters: PDE parameters for resolving 'param:name' refs.
-        seed: Random seed for reproducible ICs.
-    """
-    for name, comp_func in zip(component_names, component_funcs):
-        if name in ic_configs:
-            apply_ic(comp_func, ic_configs[name], parameters, seed=seed)
-
-    # Assemble scalar components into the vector function
-    for comp_func, dofs in zip(component_funcs, component_dofs):
-        vector_func.x.array[dofs] = comp_func.x.array
+    gdim = func.function_space.mesh.geometry.dim
+    interpolator = build_vector_interpolator(ic_config, gdim, parameters)
+    if interpolator is not None:
+        func.interpolate(interpolator)
