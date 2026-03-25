@@ -1,98 +1,74 @@
 """Interpolate DOLFINx functions onto regular grids for data output.
 
-Uses non-matching mesh interpolation (C++-backed) for performance:
-creates a structured output mesh once, precomputes interpolation data,
-then reuses it for all subsequent frames.
+Uses direct point evaluation via Function.eval() with a precomputed
+bounding-box-tree cell lookup.  The grid points and their owning cells
+are computed once and reused for every subsequent frame.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
-from dolfinx import fem, mesh as dmesh
-from dolfinx.mesh import CellType, GhostMode
-from mpi4py import MPI
+from dolfinx import fem
+from dolfinx import mesh as dmesh
+from dolfinx.geometry import bb_tree, compute_colliding_cells, compute_collisions_points
 
 
 @dataclass
 class InterpolationCache:
-    """Cached interpolation infrastructure for a given source→output mesh pair.
+    """Cached grid points and cell assignments for direct point evaluation.
 
-    Created once per (source function space, output resolution) combination.
-    Reused across all frames to avoid recomputing the expensive
-    create_interpolation_data step.
+    Created once per (source mesh, output resolution) combination.
+    Reused across all frames — only `func.eval()` is called per frame.
     """
 
-    out_mesh: dmesh.Mesh
-    V_out: fem.FunctionSpace
-    u_out: fem.Function
-    cells: np.ndarray
-    interp_data: dict = field(default_factory=dict)
-    # Grid reordering indices
-    grid_indices: list[np.ndarray] = field(default_factory=list)
-    resolution: tuple[int, ...] = ()
-    gdim: int = 0
+    points: np.ndarray  # (N, 3) evaluation points
+    cells: np.ndarray  # (N,) owning cell index per point
+    resolution: tuple[int, ...]
+    gdim: int
 
 
 def _create_cache(
-    V_from: fem.FunctionSpace,
+    src_mesh: dmesh.Mesh,
     resolution: tuple[int, ...],
     bounds: tuple[tuple[float, float], ...],
 ) -> InterpolationCache:
-    """Build the output mesh, function space, and interpolation data."""
-    gdim = V_from.mesh.geometry.dim
+    """Build the regular grid and find owning cells via bounding-box tree."""
+    gdim = src_mesh.geometry.dim
 
-    if gdim == 2:
-        out_mesh = dmesh.create_rectangle(
-            comm=MPI.COMM_WORLD,
-            points=((bounds[0][0], bounds[1][0]), (bounds[0][1], bounds[1][1])),
-            n=(resolution[0] - 1, resolution[1] - 1),
-            cell_type=CellType.triangle,
-            ghost_mode=GhostMode.shared_facet,
-        )
-    elif gdim == 3:
-        out_mesh = dmesh.create_box(
-            comm=MPI.COMM_WORLD,
-            points=(  # type: ignore[reportArgumentType]
-                (bounds[0][0], bounds[1][0], bounds[2][0]),
-                (bounds[0][1], bounds[1][1], bounds[2][1]),
-            ),
-            n=(resolution[0] - 1, resolution[1] - 1, resolution[2] - 1),
-            cell_type=CellType.tetrahedron,
-            ghost_mode=GhostMode.shared_facet,
-        )
-    else:
-        raise ValueError(f"Unsupported geometry dimension: {gdim}")
+    # Build regular grid points
+    axes = [np.linspace(bounds[d][0], bounds[d][1], resolution[d]) for d in range(gdim)]
+    grids = np.meshgrid(*axes, indexing="ij")
+    flat = [g.ravel() for g in grids]
 
-    V_out = fem.functionspace(out_mesh, ("Lagrange", 1))
-    u_out = fem.Function(V_out)
-
-    cell_map = out_mesh.topology.index_map(out_mesh.topology.dim)
-    num_cells = cell_map.size_local + cell_map.num_ghosts
-    cells = np.arange(num_cells, dtype=np.int32)
-
-    interp_data = fem.create_interpolation_data(V_out, V_from, cells, padding=1e-14)
-
-    # Precompute grid reordering indices
-    dof_coords = V_out.tabulate_dof_coordinates()
-    grid_indices = []
+    # Function.eval() always expects (N, 3)
+    n_pts = flat[0].size
+    points = np.zeros((n_pts, 3), dtype=src_mesh.geometry.x.dtype)
     for d in range(gdim):
-        spacing = (bounds[d][1] - bounds[d][0]) / (resolution[d] - 1)
-        idx = np.round((dof_coords[:, d] - bounds[d][0]) / spacing).astype(int)
-        idx = np.clip(idx, 0, resolution[d] - 1)
-        grid_indices.append(idx)
+        points[:, d] = flat[d]
 
-    cache = InterpolationCache(
-        out_mesh=out_mesh,
-        V_out=V_out,
-        u_out=u_out,
+    # Find owning cells
+    tree = bb_tree(src_mesh, src_mesh.topology.dim)
+    candidates = compute_collisions_points(tree, points)
+    colliding = compute_colliding_cells(src_mesh, candidates, points)
+
+    cells = np.empty(n_pts, dtype=np.int32)
+    for i in range(n_pts):
+        links = colliding.links(i)
+        cells[i] = links[0] if links.size > 0 else -1
+
+    missing = int((cells < 0).sum())
+    if missing > 0:
+        raise RuntimeError(
+            f"{missing}/{n_pts} grid points found no owning cell. "
+            "Check domain bounds vs mesh geometry."
+        )
+
+    return InterpolationCache(
+        points=points,
         cells=cells,
-        grid_indices=grid_indices,
         resolution=resolution,
         gdim=gdim,
     )
-    # Store interp_data keyed by source function space id
-    cache.interp_data[id(V_from)] = interp_data
-    return cache
 
 
 def function_to_array(
@@ -121,33 +97,11 @@ def function_to_array(
             (float(coords[:, d].min()), float(coords[:, d].max())) for d in range(gdim)
         )
 
-    V_from = func.function_space
-
     if cache is None:
-        cache = _create_cache(V_from, resolution, bounds)
+        cache = _create_cache(src_mesh, resolution, bounds)
 
-    # If this function space hasn't been seen, compute its interpolation data
-    if id(V_from) not in cache.interp_data:
-        cache.interp_data[id(V_from)] = fem.create_interpolation_data(
-            cache.V_out, V_from, cache.cells, padding=1e-14
-        )
-
-    interp_data = cache.interp_data[id(V_from)]
-    cache.u_out.interpolate_nonmatching(
-        func, cache.cells, interpolation_data=interp_data
-    )
-
-    # Reorder DOFs to grid layout
-    dof_count = len(cache.grid_indices[0])
-    result = np.full(cache.resolution, np.nan)
-    if gdim == 2:
-        result[cache.grid_indices[1], cache.grid_indices[0]] = cache.u_out.x.array[
-            :dof_count
-        ]
-    elif gdim == 3:
-        result[cache.grid_indices[0], cache.grid_indices[1], cache.grid_indices[2]] = (
-            cache.u_out.x.array[:dof_count]
-        )
+    values = func.eval(cache.points, cache.cells)
+    result = values[:, 0].reshape(cache.resolution)
 
     nan_count = int(np.isnan(result).sum())
     if nan_count > 0:
