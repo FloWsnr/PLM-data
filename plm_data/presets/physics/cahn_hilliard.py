@@ -48,7 +48,7 @@ class CahnHilliardPreset(TimeDependentPreset):
             ],
             field_names=["c"],
             steady_state=False,
-            supported_dimensions=[2],
+            supported_dimensions=[2, 3],
         )
 
     def setup(self, config: SimulationConfig) -> None:

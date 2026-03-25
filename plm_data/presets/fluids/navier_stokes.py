@@ -12,11 +12,13 @@ from dolfinx.fem.petsc import LinearProblem
 from plm_data.core.config import SimulationConfig
 from plm_data.core.fem_utils import dg_jump, domain_average
 from plm_data.core.initial_conditions import apply_vector_ic
-from plm_data.core.mesh import create_domain
+from plm_data.core.mesh import DomainGeometry, create_domain
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import TimeDependentPreset
 from plm_data.presets.metadata import PDEMetadata, PDEParameter
+
+_COMPONENT_LABELS = ["x", "y", "z"]
 
 
 @register_preset("navier_stokes")
@@ -41,15 +43,18 @@ class NavierStokesPreset(TimeDependentPreset):
                     "k", "Polynomial degree for velocity (RT_{k+1}) and pressure (DG_k)"
                 ),
             ],
-            field_names=["velocity_x", "velocity_y", "pressure"],
+            field_names=["velocity_x", "velocity_y", "velocity_z", "pressure"],
             steady_state=False,
-            supported_dimensions=[2],
+            supported_dimensions=[2, 3],
         )
 
     def setup(self, config: SimulationConfig) -> None:
         domain_geom = create_domain(config.domain)
         self.msh = domain_geom.mesh
         gdim = self.msh.geometry.dim
+
+        # Build dimension-dependent velocity component names
+        self._velocity_names = [f"velocity_{c}" for c in _COMPONENT_LABELS[:gdim]]
 
         Re = config.parameters["Re"]
         k = int(config.parameters["k"])
@@ -96,14 +101,14 @@ class NavierStokesPreset(TimeDependentPreset):
         # --- Boundary conditions ---
         # Parse velocity BCs from config: each boundary gets a vector value
         bc_configs = config.boundary_conditions.get("velocity", {})
-        bc_values = {}
+        bc_values: dict[str, list[float]] = {}
         for bnd_name, bc_conf in bc_configs.items():
             if bc_conf.type == "dirichlet":
                 val = bc_conf.value
                 if isinstance(val, list):
                     bc_values[bnd_name] = val
                 else:
-                    bc_values[bnd_name] = [float(val), 0.0]  # type: ignore[reportArgumentType]
+                    bc_values[bnd_name] = [float(val)] + [0.0] * (gdim - 1)  # type: ignore[reportArgumentType]
 
         # u_D on DG Lagrange vector space: stores full boundary velocity
         # (RT elements only capture normal flux, losing tangential components)
@@ -138,7 +143,7 @@ class NavierStokesPreset(TimeDependentPreset):
         source_form = build_vector_source_form(
             v,  # type: ignore[reportArgumentType]
             self.msh,
-            ["velocity_x", "velocity_y"],
+            self._velocity_names,
             config.source_terms,
             config.parameters,
         )
@@ -147,10 +152,12 @@ class NavierStokesPreset(TimeDependentPreset):
 
         # --- Prepare output sub-spaces (needed for IC and output) ---
         self._u_vis = fem.Function(self._W, name="u_vis")
-        W_x, self._dofs_x = self._W.sub(0).collapse()
-        W_y, self._dofs_y = self._W.sub(1).collapse()
-        self._u_x = fem.Function(W_x, name="velocity_x")
-        self._u_y = fem.Function(W_y, name="velocity_y")
+        self._component_funcs: list[fem.Function] = []
+        self._component_dofs: list[np.ndarray] = []
+        for i, name in enumerate(self._velocity_names):
+            W_i, dofs_i = self._W.sub(i).collapse()
+            self._component_funcs.append(fem.Function(W_i, name=name))
+            self._component_dofs.append(dofs_i)
 
         # --- Solution functions ---
         self.u_h = fem.Function(V)
@@ -180,10 +187,10 @@ class NavierStokesPreset(TimeDependentPreset):
             # Per-component ICs via shared utility
             apply_vector_ic(
                 self._u_vis,  # type: ignore[reportArgumentType]
-                [self._u_x, self._u_y],  # type: ignore[reportArgumentType]
-                [self._dofs_x, self._dofs_y],
+                self._component_funcs,  # type: ignore[reportArgumentType]
+                self._component_dofs,
                 ic_configs,
-                ["velocity_x", "velocity_y"],
+                self._velocity_names,
                 config.parameters,
                 seed=config.seed,
             )
@@ -224,15 +231,18 @@ class NavierStokesPreset(TimeDependentPreset):
         self._V = V
         self._Q = Q
 
-    def _interpolate_boundary_velocity(self, u_D, domain_geom, bc_values):
+    def _interpolate_boundary_velocity(
+        self,
+        u_D: fem.Function,
+        domain_geom: DomainGeometry,
+        bc_values: dict[str, list[float]],
+    ) -> None:
         """Interpolate velocity boundary condition from per-boundary config."""
-        # Default: zero velocity everywhere
         u_D.x.array[:] = 0.0
 
         if not bc_values:
             return
 
-        # Validate boundary names
         for bnd_name in bc_values:
             if bnd_name not in domain_geom.boundary_names:
                 raise ValueError(
@@ -240,32 +250,30 @@ class NavierStokesPreset(TimeDependentPreset):
                     f"Available: {list(domain_geom.boundary_names.keys())}"
                 )
 
-        # Interpolate combined BC expression for all boundaries
+        gdim = self.msh.geometry.dim
+        coords = self.msh.geometry.x
+        bounds = tuple(
+            (float(coords[:, d].min()), float(coords[:, d].max())) for d in range(gdim)
+        )
+        tol = 1e-10
+
+        # Build boundary name → (axis, limit) mapping from geometry
+        axis_map = {"x": 0, "y": 1, "z": 2}
+        boundary_checks: dict[str, tuple[int, float]] = {}
+        for name in domain_geom.boundary_names:
+            axis = axis_map[name[0]]
+            limit = bounds[axis][1] if name[1] == "+" else bounds[axis][0]
+            boundary_checks[name] = (axis, limit)
+
         def _bc_expr(x):
-            result = np.zeros((self.msh.geometry.dim, x.shape[1]))
-            coords = self.msh.geometry.x
-            bounds = tuple(
-                (float(coords[:, d].min()), float(coords[:, d].max()))
-                for d in range(self.msh.geometry.dim)
-            )
-            tol = 1e-10
-
+            result = np.zeros((gdim, x.shape[1]))
             for bnd_name, value in bc_values.items():
-                # Determine which points are on this boundary
-                if bnd_name == "x-":
-                    mask = np.abs(x[0] - bounds[0][0]) < tol
-                elif bnd_name == "x+":
-                    mask = np.abs(x[0] - bounds[0][1]) < tol
-                elif bnd_name == "y-":
-                    mask = np.abs(x[1] - bounds[1][0]) < tol
-                elif bnd_name == "y+":
-                    mask = np.abs(x[1] - bounds[1][1]) < tol
-                else:
+                if bnd_name not in boundary_checks:
                     continue
-
-                for d in range(min(len(value), self.msh.geometry.dim)):
+                axis, limit = boundary_checks[bnd_name]
+                mask = np.abs(x[axis] - limit) < tol
+                for d in range(min(len(value), gdim)):
                     result[d, mask] = value[d]
-
             return result
 
         u_D.interpolate(_bc_expr)
@@ -281,14 +289,14 @@ class NavierStokesPreset(TimeDependentPreset):
         self._u_vis.interpolate(self.u_h)  # type: ignore[reportAttributeAccessIssue]
 
         # Extract scalar components
-        self._u_x.x.array[:] = self._u_vis.x.array[self._dofs_x]  # type: ignore[reportAttributeAccessIssue]
-        self._u_y.x.array[:] = self._u_vis.x.array[self._dofs_y]  # type: ignore[reportAttributeAccessIssue]
-
-        return {  # type: ignore[reportReturnType]
-            "velocity_x": self._u_x,
-            "velocity_y": self._u_y,
-            "pressure": self.p_h,
-        }
+        fields: dict[str, fem.Function] = {}
+        for name, func, dofs in zip(
+            self._velocity_names, self._component_funcs, self._component_dofs
+        ):
+            func.x.array[:] = self._u_vis.x.array[dofs]  # type: ignore[reportAttributeAccessIssue]
+            fields[name] = func
+        fields["pressure"] = self.p_h
+        return fields  # type: ignore[reportReturnType]
 
     def get_num_dofs(self) -> int:
         return (

@@ -7,7 +7,7 @@ import numpy as np
 from dolfinx import fem
 
 from plm_data.core.config import SimulationConfig
-from plm_data.core.interpolation import function_to_array
+from plm_data.core.interpolation import InterpolationCache, function_to_array
 from plm_data.core.logging import get_logger
 
 
@@ -27,6 +27,7 @@ class FrameWriter:
         self.frame_times: list[float] = []
         self.field_names: list[str] = []
         self._field_frames: dict[str, list[np.ndarray]] = {}
+        self._interp_cache: InterpolationCache | None = None
         self._logger = get_logger("output")
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -44,7 +45,9 @@ class FrameWriter:
         res = tuple(self.config.output_resolution)
 
         for name, func in fields.items():
-            arr = function_to_array(func, resolution=res)
+            arr, self._interp_cache = function_to_array(
+                func, resolution=res, cache=self._interp_cache
+            )
             if name not in self._field_frames:
                 self._field_frames[name] = []
             self._field_frames[name].append(arr)

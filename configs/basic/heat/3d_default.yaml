@@ -1,0 +1,36 @@
+preset: heat
+parameters:
+  kappa: 0.01
+solver:
+  ksp_type: preonly
+  pc_type: lu
+domain:
+  type: box
+  size: [1.0, 1.0, 1.0]
+  mesh_resolution: [32, 32, 32]
+boundary_conditions:
+  u:
+    x-: {type: neumann, value: 0.0}
+    x+: {type: neumann, value: 0.0}
+    y-: {type: neumann, value: 0.0}
+    y+: {type: neumann, value: 0.0}
+    z-: {type: neumann, value: 0.0}
+    z+: {type: neumann, value: 0.0}
+source_terms:
+  u:
+    type: none
+initial_conditions:
+  u:
+    type: gaussian_bump
+    params:
+      sigma: 0.1
+      amplitude: 1.0
+      center: [0.5, 0.5, 0.5]
+dt: 0.01
+t_end: 1.0
+output_resolution: [64, 64, 64]
+output:
+  path: ./output
+  num_frames: 10
+  formats: [numpy]
+seed: 42

@@ -1,0 +1,33 @@
+preset: poisson
+parameters:
+  kappa: 1.0
+  f_amplitude: 1.0
+solver:
+  ksp_type: preonly
+  pc_type: lu
+domain:
+  type: box
+  size: [1.0, 1.0, 1.0]
+  mesh_resolution: [16, 16, 16]
+boundary_conditions:
+  u:
+    x-: {type: dirichlet, value: 0.0}
+    x+: {type: dirichlet, value: 0.0}
+    y-: {type: dirichlet, value: 0.0}
+    y+: {type: dirichlet, value: 0.0}
+    z-: {type: dirichlet, value: 0.0}
+    z+: {type: dirichlet, value: 0.0}
+source_terms:
+  u:
+    type: sine_product
+    params:
+      amplitude: "param:f_amplitude"
+      kx: 1
+      ky: 1
+      kz: 1
+output_resolution: [16, 16, 16]
+output:
+  path: ./output
+  num_frames: 1
+  formats: [numpy]
+seed: 42

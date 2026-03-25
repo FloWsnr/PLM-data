@@ -24,8 +24,9 @@ ALL_CONFIGS = sorted(CONFIGS_DIR.rglob("*.yaml"))
 def test_config_runs(config_path, tmp_path):
     cfg = load_config(config_path)
 
-    # Shrink to minimal run
-    cfg.output_resolution = [4, 4]
+    # Shrink to minimal run (match dimensionality of the domain)
+    ndim = len(cfg.domain.params.get("size", [1, 1]))
+    cfg.output_resolution = [4] * ndim
     cfg.output.path = tmp_path
     cfg.output.num_frames = 2
     if cfg.t_end is not None and cfg.dt is not None:
