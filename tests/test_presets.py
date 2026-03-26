@@ -1,6 +1,7 @@
 """Tests for running actual PDE preset simulations."""
 
 import numpy as np
+import pytest
 import ufl
 from dolfinx import fem
 
@@ -17,6 +18,7 @@ from plm_data.core.config import (
 )
 from plm_data.core.mesh import create_domain
 from plm_data.core.output import FrameWriter
+from plm_data.core.runtime import is_complex_runtime
 from plm_data.presets import get_preset
 from plm_data.presets.base import StationaryLinearProblem
 from plm_data.presets.metadata import FieldSpec, PresetSpec
@@ -32,6 +34,10 @@ def scalar_expr(expr_type: str, **params):
 
 def vector_expr(**components):
     return FieldExpressionConfig(components=components)
+
+
+def vector_zero():
+    return FieldExpressionConfig(type="zero", params={})
 
 
 _VECTOR_STATIONARY_SPEC = PresetSpec(
@@ -89,6 +95,150 @@ def _run_preset(config):
     result = preset.build_problem(config).run(writer)
     writer.finalize()
     return result, output_dir
+
+
+def _make_maxwell_pulse_config(tmp_path, *, gdim: int):
+    if gdim == 2:
+        domain = DomainConfig(
+            type="rectangle",
+            params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+        )
+        center = [0.25, 0.5]
+        boundary_conditions = {
+            "x-": BoundaryConditionConfig(type="absorbing", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="absorbing", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+        }
+        source = vector_expr(
+            x=scalar_expr("gaussian_bump", amplitude=1.0, sigma=0.06, center=center),
+            y=constant(0.0),
+        )
+    else:
+        domain = DomainConfig(
+            type="box",
+            params={"size": [1.0, 1.0, 1.0], "mesh_resolution": [4, 4, 4]},
+        )
+        center = [0.25, 0.5, 0.5]
+        boundary_conditions = {
+            "x-": BoundaryConditionConfig(type="absorbing", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="absorbing", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="absorbing", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="absorbing", value=vector_zero()),
+            "z-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "z+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+        }
+        source = vector_expr(
+            x=scalar_expr("gaussian_bump", amplitude=1.0, sigma=0.08, center=center),
+            y=constant(0.0),
+            z=constant(0.0),
+        )
+
+    return SimulationConfig(
+        preset="maxwell_pulse",
+        parameters={
+            "epsilon_r": 1.0,
+            "mu_r": 1.0,
+            "sigma": 0.05,
+            "pulse_amplitude": 3.0,
+            "pulse_frequency": 6.0,
+            "pulse_width": 0.08,
+            "pulse_delay": 0.1,
+        },
+        domain=domain,
+        fields={
+            "electric_field": FieldConfig(
+                boundary_conditions=boundary_conditions,
+                source=source,
+                initial_condition=vector_zero(),
+                output=FieldOutputConfig(mode="components"),
+            )
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[4] * gdim,
+            num_frames=2,
+            formats=["numpy"],
+        ),
+        solver=SolverConfig(
+            options={
+                "ksp_type": "preonly",
+                "pc_type": "lu",
+            }
+        ),
+        time=TimeConfig(dt=0.02, t_end=0.02),
+        seed=42,
+    )
+
+
+def _make_maxwell_config(tmp_path, *, gdim: int):
+    if gdim == 2:
+        domain = DomainConfig(
+            type="rectangle",
+            params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+        )
+        center = [0.35, 0.5]
+        boundary_names = ("x-", "x+", "y-", "y+")
+        source = vector_expr(
+            x=scalar_expr(
+                "gaussian_bump",
+                amplitude="param:source_amplitude",
+                sigma=0.08,
+                center=center,
+            ),
+            y=constant(0.0),
+        )
+    else:
+        domain = DomainConfig(
+            type="box",
+            params={"size": [1.0, 1.0, 1.0], "mesh_resolution": [3, 3, 3]},
+        )
+        center = [0.35, 0.5, 0.5]
+        boundary_names = ("x-", "x+", "y-", "y+", "z-", "z+")
+        source = vector_expr(
+            x=scalar_expr(
+                "gaussian_bump",
+                amplitude="param:source_amplitude",
+                sigma=0.1,
+                center=center,
+            ),
+            y=constant(0.0),
+            z=constant(0.0),
+        )
+
+    return SimulationConfig(
+        preset="maxwell",
+        parameters={
+            "epsilon_r": 1.0,
+            "mu_r": 1.0,
+            "k0": 8.0,
+            "source_amplitude": 1.0,
+        },
+        domain=domain,
+        fields={
+            "electric_field": FieldConfig(
+                boundary_conditions={
+                    name: BoundaryConditionConfig(type="absorbing", value=vector_zero())
+                    for name in boundary_names
+                },
+                source=source,
+                output=FieldOutputConfig(mode="components"),
+            )
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[4] * gdim,
+            num_frames=1,
+            formats=["numpy"],
+        ),
+        solver=SolverConfig(
+            options={
+                "ksp_type": "preonly",
+                "pc_type": "lu",
+            }
+        ),
+        seed=42,
+    )
 
 
 def test_heat_preset_single_step(heat_config):
@@ -518,3 +668,67 @@ def test_cahn_hilliard_constant_ic(tmp_path):
     arr = np.load(output_dir / "c.npy")
     assert arr.shape == (2, *config.output.resolution)
     assert np.allclose(arr[0], 0.5, atol=0.05)
+
+
+def test_maxwell_pulse_preset_2d_single_step(tmp_path):
+    config = _make_maxwell_pulse_config(tmp_path, gdim=2)
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 1
+
+    ex = np.load(output_dir / "electric_field_x.npy")
+    ey = np.load(output_dir / "electric_field_y.npy")
+    assert ex.shape == (2, *config.output.resolution)
+    assert ey.shape == (2, *config.output.resolution)
+    assert np.max(np.abs(ex)) > 0
+
+
+def test_maxwell_pulse_preset_3d_single_step(tmp_path):
+    config = _make_maxwell_pulse_config(tmp_path, gdim=3)
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 1
+
+    for field in ["electric_field_x", "electric_field_y", "electric_field_z"]:
+        arr = np.load(output_dir / f"{field}.npy")
+        assert arr.shape == (2, *config.output.resolution)
+
+
+def test_maxwell_preset_requires_complex_runtime(tmp_path):
+    if is_complex_runtime():
+        pytest.skip("runtime is already complex-capable")
+    config = _make_maxwell_config(tmp_path, gdim=2)
+    preset = get_preset(config.preset)
+    with pytest.raises(RuntimeError, match="complex-valued DOLFINx/PETSc build"):
+        preset.build_problem(config)
+
+
+@pytest.mark.skipif(
+    not is_complex_runtime(),
+    reason="harmonic Maxwell requires a complex-valued runtime",
+)
+def test_maxwell_preset_2d(tmp_path):
+    config = _make_maxwell_config(tmp_path, gdim=2)
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    ex = np.load(output_dir / "electric_field_x.npy")
+    ey = np.load(output_dir / "electric_field_y.npy")
+    assert ex.shape == (1, *config.output.resolution)
+    assert ey.shape == (1, *config.output.resolution)
+    assert np.iscomplexobj(ex)
+
+
+@pytest.mark.skipif(
+    not is_complex_runtime(),
+    reason="harmonic Maxwell requires a complex-valued runtime",
+)
+def test_maxwell_preset_3d(tmp_path):
+    config = _make_maxwell_config(tmp_path, gdim=3)
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    for field in ["electric_field_x", "electric_field_y", "electric_field_z"]:
+        arr = np.load(output_dir / f"{field}.npy")
+        assert arr.shape == (1, *config.output.resolution)
+        assert np.iscomplexobj(arr)

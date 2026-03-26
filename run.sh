@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Activate conda environment
 eval "$(conda shell.bash hook)"
-conda activate fenicsx-env
+conda activate "${PLM_CONDA_ENV:-fenicsx-env}"
 
 # Parse -n flag (number of MPI ranks, default 1)
 NPROCS=1

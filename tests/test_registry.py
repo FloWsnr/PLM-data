@@ -11,6 +11,8 @@ def test_list_presets():
     assert "heat" in presets
     assert "poisson" in presets
     assert "cahn_hilliard" in presets
+    assert "maxwell" in presets
+    assert "maxwell_pulse" in presets
     assert "navier_stokes" in presets
     assert "stokes" in presets
 

@@ -44,7 +44,13 @@ Use the `run.sh` wrapper script, which activates the `fenicsx-env` conda environ
 
 # List available presets
 ./run.sh list
+
+# Use a different conda environment, e.g. a complex-valued DOLFINx build
+PLM_CONDA_ENV=fenicsx-env-complex ./run.sh run configs/physics/maxwell/2d_default.yaml
 ```
+
+The transient `maxwell_pulse` preset runs in the standard real-valued build. The
+time-harmonic `maxwell` preset requires a complex-valued DOLFINx/PETSc environment.
 
 ## Adding a new PDE
 

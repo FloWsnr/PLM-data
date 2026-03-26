@@ -24,6 +24,9 @@ class FrameWriter:
         self._field_frames: dict[str, list[np.ndarray]] = {}
         self._interp_cache: InterpolationCache | None = None
         self._vector_cache: dict[str, tuple[list[fem.Function], list[np.ndarray]]] = {}
+        self._vector_vis_cache: dict[
+            str, tuple[fem.Function, list[fem.Function], list[np.ndarray]]
+        ] = {}
         self._logger = get_logger("output")
 
         output_modes = {
@@ -41,6 +44,46 @@ class FrameWriter:
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
+    def _vector_output_view(
+        self,
+        field_name: str,
+        func: fem.Function,
+    ) -> fem.Function:
+        """Return a vector field in a component-addressable output space."""
+        field_spec = self.spec.fields[field_name]
+        labels = field_spec.component_labels(self.config.domain.dimension)
+
+        if func.function_space.num_sub_spaces == len(labels):
+            return func
+
+        if field_name not in self._vector_vis_cache:
+            element = func.function_space.element
+            degree = 1
+            if getattr(element, "basix_element", None) is not None:
+                degree = max(1, element.basix_element.degree)
+
+            W = fem.functionspace(
+                func.function_space.mesh,
+                ("Discontinuous Lagrange", degree, (len(labels),)),
+            )
+            vis_func = fem.Function(W, name=f"{field_name}_vis")
+
+            component_funcs = []
+            component_dofs = []
+            for i, label in enumerate(labels):
+                W_i, dofs_i = W.sub(i).collapse()
+                component_funcs.append(fem.Function(W_i, name=f"{field_name}_{label}"))
+                component_dofs.append(dofs_i)
+            self._vector_vis_cache[field_name] = (
+                vis_func,
+                component_funcs,
+                component_dofs,
+            )
+
+        vis_func, _, _ = self._vector_vis_cache[field_name]
+        vis_func.interpolate(func)
+        return vis_func
+
     def _split_vector_field(
         self,
         field_name: str,
@@ -49,12 +92,13 @@ class FrameWriter:
         """Split a vector-valued function into scalar component functions."""
         field_spec = self.spec.fields[field_name]
         labels = field_spec.component_labels(self.config.domain.dimension)
+        view_func = self._vector_output_view(field_name, func)
 
         if field_name not in self._vector_cache:
             component_funcs = []
             component_dofs = []
             for i, label in enumerate(labels):
-                V_i, dofs_i = func.function_space.sub(i).collapse()
+                V_i, dofs_i = view_func.function_space.sub(i).collapse()
                 component_funcs.append(fem.Function(V_i, name=f"{field_name}_{label}"))
                 component_dofs.append(dofs_i)
             self._vector_cache[field_name] = (component_funcs, component_dofs)
@@ -62,7 +106,7 @@ class FrameWriter:
         component_funcs, component_dofs = self._vector_cache[field_name]
         components: dict[str, fem.Function] = {}
         for label, component_func, dofs in zip(labels, component_funcs, component_dofs):
-            component_func.x.array[:] = func.x.array[dofs]
+            component_func.x.array[:] = view_func.x.array[dofs]
             components[f"{field_name}_{label}"] = component_func
         return components
 

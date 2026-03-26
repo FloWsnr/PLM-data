@@ -1,0 +1,55 @@
+preset: maxwell_pulse
+parameters:
+  epsilon_r: 1.0
+  mu_r: 1.0
+  sigma: 0.05
+  pulse_amplitude: 4.0
+  pulse_frequency: 8.0
+  pulse_width: 0.06
+  pulse_delay: 0.18
+domain:
+  type: rectangle
+  size: [1.0, 1.0]
+  mesh_resolution: [32, 32]
+fields:
+  electric_field:
+    boundary_conditions:
+      x-:
+        type: absorbing
+        value: {type: zero, params: {}}
+      x+:
+        type: absorbing
+        value: {type: zero, params: {}}
+      y-:
+        type: dirichlet
+        value: [0.0, 0.0]
+      y+:
+        type: dirichlet
+        value: [0.0, 0.0]
+    source:
+      components:
+        x:
+          type: gaussian_bump
+          params:
+            amplitude: 1.0
+            sigma: 0.05
+            center: [0.25, 0.5]
+        y:
+          type: zero
+          params: {}
+    initial_condition:
+      type: zero
+      params: {}
+    output: components
+time:
+  dt: 0.01
+  t_end: 0.4
+solver:
+  ksp_type: preonly
+  pc_type: lu
+output:
+  path: ./output
+  resolution: [64, 64]
+  num_frames: 12
+  formats: [numpy]
+seed: 42

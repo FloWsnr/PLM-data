@@ -10,6 +10,7 @@ import pytest
 
 from plm_data.core.config import load_config
 from plm_data.core.output import FrameWriter
+from plm_data.core.runtime import is_complex_runtime
 from plm_data.presets import get_preset
 
 CONFIGS_DIR = Path(__file__).resolve().parent.parent / "configs"
@@ -23,6 +24,8 @@ ALL_CONFIGS = sorted(CONFIGS_DIR.rglob("*.yaml"))
 )
 def test_config_runs(config_path, tmp_path):
     cfg = load_config(config_path)
+    if cfg.preset == "maxwell" and not is_complex_runtime():
+        pytest.skip("harmonic Maxwell requires a complex-valued runtime")
 
     # Shrink to minimal run (match dimensionality of the domain)
     ndim = cfg.domain.dimension

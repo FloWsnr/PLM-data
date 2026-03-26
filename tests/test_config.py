@@ -47,6 +47,15 @@ def test_load_config_vector_field():
     )
 
 
+def test_load_config_maxwell_pulse():
+    cfg = load_config("configs/physics/maxwell_pulse/2d_default.yaml")
+    electric_field = cfg.field("electric_field")
+    assert electric_field.output.mode == "components"
+    assert electric_field.initial_condition.type == "zero"
+    assert electric_field.boundary_conditions["x-"].type == "absorbing"
+    assert electric_field.boundary_conditions["y-"].type == "dirichlet"
+
+
 def _base_yaml_dict():
     """Return a minimal valid config dict with all required top-level fields."""
     return {
@@ -114,6 +123,62 @@ def _base_stokes_yaml_dict():
     }
 
 
+def _base_maxwell_pulse_yaml_dict():
+    return {
+        "preset": "maxwell_pulse",
+        "parameters": {
+            "epsilon_r": 1.0,
+            "mu_r": 1.0,
+            "sigma": 0.05,
+            "pulse_amplitude": 1.0,
+            "pulse_frequency": 4.0,
+            "pulse_width": 0.1,
+            "pulse_delay": 0.2,
+        },
+        "domain": {
+            "type": "rectangle",
+            "size": [1.0, 1.0],
+            "mesh_resolution": [4, 4],
+        },
+        "fields": {
+            "electric_field": {
+                "boundary_conditions": {
+                    "x-": {"type": "absorbing", "value": {"type": "zero", "params": {}}},
+                    "x+": {"type": "absorbing", "value": {"type": "zero", "params": {}}},
+                    "y-": {"type": "dirichlet", "value": [0.0, 0.0]},
+                    "y+": {"type": "dirichlet", "value": [0.0, 0.0]},
+                },
+                "source": {
+                    "components": {
+                        "x": {
+                            "type": "gaussian_bump",
+                            "params": {
+                                "amplitude": 1.0,
+                                "sigma": 0.1,
+                                "center": [0.5, 0.5],
+                            },
+                        },
+                        "y": {"type": "zero", "params": {}},
+                    }
+                },
+                "initial_condition": {"type": "zero", "params": {}},
+                "output": "components",
+            }
+        },
+        "output": {
+            "path": "./output",
+            "resolution": [8, 8],
+            "num_frames": 2,
+            "formats": ["numpy"],
+        },
+        "solver": {
+            "ksp_type": "preonly",
+            "pc_type": "lu",
+        },
+        "time": {"dt": 0.05, "t_end": 0.1},
+    }
+
+
 def test_robin_bc_missing_alpha(tmp_path):
     data = _base_yaml_dict()
     data["fields"]["u"]["boundary_conditions"]["x-"] = {"type": "robin", "value": 0.0}
@@ -169,3 +234,14 @@ def test_vector_robin_bc_still_rejected(tmp_path):
 
     with pytest.raises(ValueError, match="only supported for scalar fields"):
         load_config(p)
+
+
+def test_load_config_vector_absorbing_bc(tmp_path):
+    data = _base_maxwell_pulse_yaml_dict()
+    p = tmp_path / "maxwell_pulse_absorbing.yaml"
+    p.write_text(yaml.dump(data))
+
+    cfg = load_config(p)
+    bc = cfg.field("electric_field").boundary_conditions["x-"]
+    assert bc.type == "absorbing"
+    assert bc.value.type == "zero"
