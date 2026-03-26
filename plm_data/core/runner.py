@@ -55,13 +55,25 @@ class SimulationRunner:
 
             t_start = time.perf_counter()
             result = problem.run(output)
-            result.wall_time = time.perf_counter() - t_start
+            problem_run_time = time.perf_counter() - t_start
 
+            finalize_start = time.perf_counter()
             output.finalize()
+            finalize_time = time.perf_counter() - finalize_start
+
+            result.wall_time = problem_run_time + finalize_time
+            result.diagnostics["timings"] = {
+                "problem_run_seconds": problem_run_time,
+                "output_finalize_call_seconds": finalize_time,
+                "total_wall_seconds": result.wall_time,
+                "output": output.timing_summary(),
+            }
 
             logger.info("  Converged: %s", result.solver_converged)
             logger.info("  DOFs: %s", result.num_dofs)
             logger.info("  Frames: %s", output.frame_count)
+            logger.info("  Problem run: %.2fs", problem_run_time)
+            logger.info("  Output finalize: %.2fs", finalize_time)
             logger.info("  Wall time: %.2fs", result.wall_time)
             logger.info("  Output: %s", output_dir)
             logger.info("  Log: %s", output_dir / "simulation.log")
@@ -76,5 +88,6 @@ class SimulationRunner:
             "solver_converged": result.solver_converged,
             "num_timesteps": result.num_timesteps,
             "num_frames": output.frame_count,
+            "timings": result.diagnostics["timings"],
             "output_dir": str(output_dir),
         }

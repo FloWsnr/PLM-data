@@ -174,6 +174,8 @@ class TestNumpyWriter:
         assert meta["num_frames"] == 2
         assert meta["times"] == [0.0, 1.0]
         assert meta["field_names"] == ["u"]
+        assert meta["timings"]["frame_count"] == 2
+        assert meta["timings"]["grid_interpolation_calls"] == 2
 
         assert not (output_dir / "u.gif").exists()
         assert not (output_dir / "u.mp4").exists()
@@ -197,6 +199,9 @@ class TestNumpyWriter:
         assert vy.shape == (1, 4, 4)
         assert p.shape == (1, 4, 4)
         assert np.max(np.abs(vx)) > 0
+
+        meta = json.loads((output_dir / "frames_meta.json").read_text())
+        assert meta["timings"]["grid_interpolation_calls"] == 2
 
 
 class TestGifWriter:

@@ -1,7 +1,7 @@
 """Interpolate DOLFINx functions onto regular grids for data output.
 
 Uses direct point evaluation via Function.eval() with a precomputed
-bounding-box-tree cell lookup.  The grid points and their owning cells
+bounding-box-tree cell lookup. The grid points and their owning cells
 are computed once and reused for every subsequent frame.
 """
 
@@ -18,7 +18,7 @@ class InterpolationCache:
     """Cached grid points and cell assignments for direct point evaluation.
 
     Created once per (source mesh, output resolution) combination.
-    Reused across all frames — only `func.eval()` is called per frame.
+    Reused across all frames; only `func.eval()` is called per frame.
     """
 
     points: np.ndarray  # (N, 3) evaluation points
@@ -77,16 +77,36 @@ def function_to_array(
     bounds: tuple[tuple[float, float], ...] | None = None,
     cache: InterpolationCache | None = None,
 ) -> tuple[np.ndarray, InterpolationCache]:
-    """Interpolate a DOLFINx function onto a regular grid.
+    """Interpolate a scalar DOLFINx function onto a regular grid.
 
     Args:
-        func: A DOLFINx Function to evaluate.
+        func: A scalar DOLFINx Function to evaluate.
         resolution: Grid resolution, e.g. (nx, ny) for 2D or (nx, ny, nz) for 3D.
         bounds: Domain bounds. If None, inferred from the mesh geometry.
         cache: Reusable interpolation cache. If None, one is created.
 
     Returns:
         Tuple of (array of shape `resolution`, cache for reuse).
+    """
+    result, cache = function_to_grid(func, resolution, bounds=bounds, cache=cache)
+    if result.ndim != len(cache.resolution):
+        raise ValueError(
+            f"function_to_array expected a scalar function but got grid shape "
+            f"{result.shape}."
+        )
+    return result, cache
+
+
+def function_to_grid(
+    func: fem.Function,
+    resolution: tuple[int, ...],
+    bounds: tuple[tuple[float, float], ...] | None = None,
+    cache: InterpolationCache | None = None,
+) -> tuple[np.ndarray, InterpolationCache]:
+    """Interpolate a scalar or vector DOLFINx function onto a regular grid.
+
+    Returns a scalar grid with shape `resolution`, or a vector grid with shape
+    `(num_components, *resolution)`.
     """
     src_mesh = func.function_space.mesh
     gdim = src_mesh.geometry.dim
@@ -101,7 +121,7 @@ def function_to_array(
         cache = _create_cache(src_mesh, resolution, bounds)
 
     values = func.eval(cache.points, cache.cells)
-    result = values[:, 0].reshape(cache.resolution)
+    result = _reshape_grid_values(values, cache.resolution)
 
     nan_count = int(np.isnan(result).sum())
     if nan_count > 0:
@@ -110,3 +130,17 @@ def function_to_array(
             "This may indicate solver divergence or points outside the mesh."
         )
     return result, cache
+
+
+def _reshape_grid_values(values: np.ndarray, resolution: tuple[int, ...]) -> np.ndarray:
+    """Reshape `Function.eval()` output into scalar or vector grid arrays."""
+    if values.ndim == 1:
+        return values.reshape(resolution)
+
+    value_shape = values.shape[1:]
+    if value_shape == (1,):
+        return values[:, 0].reshape(resolution)
+
+    grid = values.reshape(*resolution, *value_shape)
+    component_axes = tuple(range(len(resolution), grid.ndim))
+    return np.moveaxis(grid, component_axes, tuple(range(len(component_axes))))

@@ -15,3 +15,7 @@ def test_simulation_runner_heat(heat_config):
     assert summary["num_frames"] == 2
     assert summary["num_dofs"] > 0
     assert summary["wall_time"] > 0
+    assert summary["timings"]["total_wall_seconds"] == summary["wall_time"]
+    assert summary["timings"]["problem_run_seconds"] > 0
+    assert summary["timings"]["output_finalize_call_seconds"] >= 0
+    assert summary["timings"]["output"]["frame_count"] == 2

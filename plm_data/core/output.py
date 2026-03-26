@@ -1,8 +1,9 @@
 """Output handlers for simulation data."""
 
 import json
+import time
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 from dolfinx import fem
@@ -12,12 +13,39 @@ from plm_data.core.formats.gif_writer import GifWriter
 from plm_data.core.formats.numpy_writer import NumpyWriter
 from plm_data.core.formats.video_writer import VideoWriter
 from plm_data.core.formats.vtk_writer import VTKWriter
-from plm_data.core.interpolation import InterpolationCache, function_to_array
+from plm_data.core.interpolation import InterpolationCache, function_to_grid
 from plm_data.core.logging import get_logger
-from plm_data.presets.metadata import OutputSpec, PresetSpec
+from plm_data.presets.metadata import ConcreteOutputSpec, OutputSpec, PresetSpec
 
 GridWriter = NumpyWriter | GifWriter | VideoWriter
 FEMWriter = VTKWriter
+
+
+@dataclass(frozen=True)
+class GridOutputGroup:
+    """One logical output expanded into one or more concrete grid arrays."""
+
+    output_name: str
+    output_spec: OutputSpec
+    concrete_outputs: list[ConcreteOutputSpec]
+
+
+@dataclass
+class OutputTimingStats:
+    """Accumulated timing breakdown for output generation."""
+
+    write_frame_seconds: float = 0.0
+    vtk_write_seconds: float = 0.0
+    vector_view_seconds: float = 0.0
+    grid_interpolation_seconds: float = 0.0
+    grid_dispatch_seconds: float = 0.0
+    writer_finalize_seconds: float = 0.0
+    grid_interpolation_calls: int = 0
+    format_finalize_seconds: dict[str, float] = field(default_factory=dict)
+
+    def as_dict(self) -> dict[str, float | int | dict[str, float]]:
+        """Return a JSON-serializable timing summary."""
+        return asdict(self)
 
 
 class FrameWriter:
@@ -30,12 +58,11 @@ class FrameWriter:
         self.frame_count = 0
         self.frame_times: list[float] = []
         self._logger = get_logger("output")
+        self._resolution = tuple(self.config.output.resolution)
+        self._timings = OutputTimingStats()
 
         self._interp_cache: InterpolationCache | None = None
-        self._vector_cache: dict[str, tuple[list[fem.Function], list[np.ndarray]]] = {}
-        self._vector_vis_cache: dict[
-            str, tuple[fem.Function, list[fem.Function], list[np.ndarray]]
-        ] = {}
+        self._vector_vis_cache: dict[str, fem.Function] = {}
 
         output_modes = {
             output_name: selection.mode
@@ -50,6 +77,19 @@ class FrameWriter:
         self._expected_base_fields = {
             output.source_name for output in self._expected_outputs
         }
+        self._grid_output_groups = [
+            GridOutputGroup(
+                output_name=output_name,
+                output_spec=output_spec,
+                concrete_outputs=[
+                    output
+                    for output in self._expected_outputs
+                    if output.output_name == output_name
+                ],
+            )
+            for output_name, output_spec in self._output_specs.items()
+            if self.config.output_mode(output_name) != "hidden"
+        ]
         self._selected_vtk_outputs = {
             output_name: output_spec
             for output_name, output_spec in self._output_specs.items()
@@ -96,54 +136,14 @@ class FrameWriter:
                 ("Discontinuous Lagrange", degree, (len(labels),)),
             )
             vis_func = fem.Function(W, name=f"{output_name}_vis")
+            self._vector_vis_cache[output_name] = vis_func
 
-            component_funcs = []
-            component_dofs: list[Any] = []
-            for i, label in enumerate(labels):
-                W_i, dofs_i = W.sub(i).collapse()
-                component_funcs.append(fem.Function(W_i, name=f"{output_name}_{label}"))
-                component_dofs.append(dofs_i)
-            self._vector_vis_cache[output_name] = (
-                vis_func,
-                component_funcs,
-                component_dofs,
-            )
-
-        vis_func, _, _ = self._vector_vis_cache[output_name]
+        vis_func = self._vector_vis_cache[output_name]
         vis_func.interpolate(func)
         return vis_func
 
-    def _split_vector_output(
-        self,
-        output_name: str,
-        output_spec: OutputSpec,
-        func: fem.Function,
-    ) -> dict[str, fem.Function]:
-        """Split a vector-valued output into scalar component functions."""
-        labels = output_spec.component_labels(self.config.domain.dimension)
-        view_func = self._vector_output_view(output_name, output_spec, func)
-
-        if output_name not in self._vector_cache:
-            component_funcs = []
-            component_dofs: list[Any] = []
-            for i, label in enumerate(labels):
-                V_i, dofs_i = view_func.function_space.sub(i).collapse()
-                component_funcs.append(fem.Function(V_i, name=f"{output_name}_{label}"))
-                component_dofs.append(dofs_i)
-            self._vector_cache[output_name] = (component_funcs, component_dofs)
-
-        component_funcs, component_dofs = self._vector_cache[output_name]
-        components: dict[str, fem.Function] = {}
-        for label, component_func, dofs in zip(labels, component_funcs, component_dofs):
-            component_func.x.array[:] = view_func.x.array[dofs]
-            components[f"{output_name}_{label}"] = component_func
-        return components
-
-    def _expand_output_fields(
-        self,
-        fields: dict[str, fem.Function],
-    ) -> dict[str, fem.Function]:
-        """Expand base output fields into concrete output arrays."""
+    def _validate_output_fields(self, fields: dict[str, fem.Function]) -> None:
+        """Validate that all required base output fields are available."""
         missing = self._expected_base_fields - set(fields)
         if missing:
             raise ValueError(
@@ -151,28 +151,6 @@ class FrameWriter:
                 f"Expected at least {sorted(self._expected_base_fields)}, "
                 f"got {sorted(fields)}."
             )
-
-        expanded: dict[str, fem.Function] = {}
-        expanded_vectors: set[str] = set()
-        for concrete_output in self._expected_outputs:
-            output_spec = self._output_specs[concrete_output.output_name]
-            base_function = fields[concrete_output.source_name]
-            if output_spec.shape == "scalar":
-                expanded[concrete_output.name] = base_function
-                continue
-
-            if concrete_output.output_name not in expanded_vectors:
-                expanded.update(
-                    self._split_vector_output(
-                        concrete_output.output_name, output_spec, base_function
-                    )
-                )
-                expanded_vectors.add(concrete_output.output_name)
-
-        return {
-            concrete_output.name: expanded[concrete_output.name]
-            for concrete_output in self._expected_outputs
-        }
 
     def _selected_vtk_fields(
         self,
@@ -189,35 +167,111 @@ class FrameWriter:
             selected[output_name] = fields[source_name]
         return selected
 
+    def _dispatch_grid_field(self, name: str, arr: np.ndarray, t: float) -> None:
+        """Send one concrete grid array to all grid writers."""
+        dispatch_start = time.perf_counter()
+        for writer in self._grid_writers:
+            writer.on_frame_field(name, arr, t)
+        self._timings.grid_dispatch_seconds += time.perf_counter() - dispatch_start
+
+    def timing_summary(self) -> dict[str, float | int | dict[str, float]]:
+        """Return output timing counters for logs, metadata, and runner summaries."""
+        summary = self._timings.as_dict()
+        summary["frame_count"] = self.frame_count
+        return summary
+
     def write_frame(self, fields: dict[str, fem.Function], t: float) -> None:
         """Capture a snapshot of one or more output fields."""
+        frame_start = time.perf_counter()
+
         vtk_fields = self._selected_vtk_fields(fields)
-        for writer in self._fem_writers:
-            writer.on_frame(vtk_fields, t)
+        if self._fem_writers:
+            vtk_start = time.perf_counter()
+            for writer in self._fem_writers:
+                writer.on_frame(vtk_fields, t)
+            self._timings.vtk_write_seconds += time.perf_counter() - vtk_start
 
         if self._grid_writers:
-            res = tuple(self.config.output.resolution)
-            concrete_fields = self._expand_output_fields(fields)
+            self._validate_output_fields(fields)
 
-            for name, func in concrete_fields.items():
-                arr, self._interp_cache = function_to_array(
-                    func,
-                    resolution=res,
+            for output_group in self._grid_output_groups:
+                base_function = fields[output_group.output_spec.source_name]
+
+                if output_group.output_spec.shape == "scalar":
+                    interp_start = time.perf_counter()
+                    arr, self._interp_cache = function_to_grid(
+                        base_function,
+                        resolution=self._resolution,
+                        cache=self._interp_cache,
+                    )
+                    self._timings.grid_interpolation_seconds += (
+                        time.perf_counter() - interp_start
+                    )
+                    self._timings.grid_interpolation_calls += 1
+                    self._dispatch_grid_field(
+                        output_group.concrete_outputs[0].name,
+                        arr,
+                        t,
+                    )
+                    continue
+
+                vector_start = time.perf_counter()
+                view_func = self._vector_output_view(
+                    output_group.output_name,
+                    output_group.output_spec,
+                    base_function,
+                )
+                self._timings.vector_view_seconds += time.perf_counter() - vector_start
+
+                interp_start = time.perf_counter()
+                grid, self._interp_cache = function_to_grid(
+                    view_func,
+                    resolution=self._resolution,
                     cache=self._interp_cache,
                 )
-                for writer in self._grid_writers:
-                    writer.on_frame_field(name, arr, t)
+                self._timings.grid_interpolation_seconds += (
+                    time.perf_counter() - interp_start
+                )
+                self._timings.grid_interpolation_calls += 1
+
+                if grid.ndim != len(self._resolution) + 1:
+                    raise ValueError(
+                        f"Vector output '{output_group.output_name}' produced grid "
+                        f"shape {grid.shape}; expected component-first output."
+                    )
+                if grid.shape[0] != len(output_group.concrete_outputs):
+                    raise ValueError(
+                        f"Vector output '{output_group.output_name}' produced "
+                        f"{grid.shape[0]} components, expected "
+                        f"{len(output_group.concrete_outputs)}."
+                    )
+
+                for concrete_output, component_grid in zip(
+                    output_group.concrete_outputs, grid
+                ):
+                    self._dispatch_grid_field(concrete_output.name, component_grid, t)
 
         self.frame_times.append(t)
         self.frame_count += 1
+        self._timings.write_frame_seconds += time.perf_counter() - frame_start
         self._logger.debug("  Frame %d captured at t=%.6g", self.frame_count, t)
 
     def finalize(self) -> None:
         """Delegate finalization to all format writers and save metadata."""
         for writer in self._grid_writers:
+            writer_name = type(writer).__name__.removesuffix("Writer").lower()
+            finalize_start = time.perf_counter()
             writer.finalize()
+            elapsed = time.perf_counter() - finalize_start
+            self._timings.writer_finalize_seconds += elapsed
+            self._timings.format_finalize_seconds[writer_name] = elapsed
         for writer in self._fem_writers:
+            writer_name = type(writer).__name__.removesuffix("Writer").lower()
+            finalize_start = time.perf_counter()
             writer.finalize()
+            elapsed = time.perf_counter() - finalize_start
+            self._timings.writer_finalize_seconds += elapsed
+            self._timings.format_finalize_seconds[writer_name] = elapsed
 
         self._logger.info(
             "  Saved %d frames (%s) to %s",
@@ -225,6 +279,22 @@ class FrameWriter:
             ", ".join(self.field_names),
             self.output_dir,
         )
+        self._logger.info(
+            "  Output timing: frames=%.3fs, vtk=%.3fs, vector_view=%.3fs, "
+            "interpolation=%.3fs, grid_dispatch=%.3fs, finalize=%.3fs",
+            self._timings.write_frame_seconds,
+            self._timings.vtk_write_seconds,
+            self._timings.vector_view_seconds,
+            self._timings.grid_interpolation_seconds,
+            self._timings.grid_dispatch_seconds,
+            self._timings.writer_finalize_seconds,
+        )
+        if self._timings.format_finalize_seconds:
+            format_breakdown = ", ".join(
+                f"{name}={seconds:.3f}s"
+                for name, seconds in self._timings.format_finalize_seconds.items()
+            )
+            self._logger.info("  Finalize by format: %s", format_breakdown)
 
         metadata = {
             "num_frames": self.frame_count,
@@ -242,6 +312,7 @@ class FrameWriter:
                 }
                 for output in self._expected_outputs
             ],
+            "timings": self.timing_summary(),
         }
         with open(self.output_dir / "frames_meta.json", "w") as f:
             json.dump(metadata, f, indent=2)
