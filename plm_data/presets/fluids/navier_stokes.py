@@ -6,11 +6,8 @@ import numpy as np
 import ufl
 from dolfinx import default_real_type, fem, mesh as dmesh
 from dolfinx.fem.petsc import LinearProblem
-from typing import TYPE_CHECKING
-
 from plm_data.core.initial_conditions import apply_vector_ic
 from plm_data.core.fem_utils import dg_jump, domain_average
-from plm_data.core.logging import get_logger
 from plm_data.core.mesh import create_domain
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.core.spatial_fields import (
@@ -18,11 +15,9 @@ from plm_data.core.spatial_fields import (
     component_labels_for_dim,
 )
 from plm_data.presets import register_preset
-from plm_data.presets.base import CustomProblem, PDEPreset, ProblemInstance, RunResult
+from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
 from plm_data.presets.metadata import FieldSpec, PDEParameter, PresetSpec
 
-if TYPE_CHECKING:
-    from plm_data.core.output import FrameWriter
 
 _NAVIER_STOKES_SPEC = PresetSpec(
     name="navier_stokes",
@@ -63,7 +58,7 @@ _NAVIER_STOKES_SPEC = PresetSpec(
 )
 
 
-class _NavierStokesProblem(CustomProblem):
+class _NavierStokesProblem(TransientLinearProblem):
     def setup(self) -> None:
         domain_geom = create_domain(self.config.domain)
         self.domain_geom = domain_geom
@@ -253,64 +248,6 @@ class _NavierStokesProblem(CustomProblem):
     def get_num_dofs(self) -> int:
         return (
             self._V.dofmap.index_map.size_global + self._Q.dofmap.index_map.size_global
-        )
-
-    def run(self, output: FrameWriter) -> RunResult:
-        logger = get_logger("timestepper")
-        self.setup()
-
-        dt = self.config.time.dt
-        t_end = self.config.time.t_end
-        num_frames = self.config.output.num_frames
-        output_times = (
-            np.linspace(0.0, t_end, num_frames) if num_frames > 1 else np.array([t_end])
-        )
-        next_output_idx = 0
-        total_steps = int(round(t_end / dt))
-        log_every = max(1, total_steps // 10)
-
-        logger.info(
-            "  Time stepping: %d steps, dt=%s, t_end=%s", total_steps, dt, t_end
-        )
-        output.write_frame(self.get_output_fields(), t=0.0)
-        next_output_idx += 1
-
-        t = 0.0
-        num_steps = 0
-        while t < t_end - 1e-14 * dt:
-            converged = self.step(t, dt)
-            t += dt
-            num_steps += 1
-
-            if not converged:
-                logger.error(
-                    "  Solver did not converge at t=%.6g (step %d)", t, num_steps
-                )
-                raise RuntimeError(
-                    f"Solver did not converge at t={t:.6g} (step {num_steps})"
-                )
-
-            if num_steps % log_every == 0 or num_steps == 1:
-                logger.info(
-                    "  Step %d/%d (t=%.4g, %.0f%%)",
-                    num_steps,
-                    total_steps,
-                    t,
-                    t / t_end * 100,
-                )
-
-            if (
-                next_output_idx < len(output_times)
-                and t >= output_times[next_output_idx] - 1e-14 * dt
-            ):
-                output.write_frame(self.get_output_fields(), t=t)
-                next_output_idx += 1
-
-        logger.info("  Time stepping complete: %d steps", num_steps)
-        return RunResult(
-            num_dofs=self.get_num_dofs(),
-            solver_converged=True,
-            num_timesteps=num_steps,
         )
 
 

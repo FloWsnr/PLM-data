@@ -1,0 +1,48 @@
+preset: stokes
+parameters:
+  nu: 1.0
+domain:
+  type: box
+  size: [1.0, 1.0, 1.0]
+  mesh_resolution: [8, 8, 8]
+fields:
+  velocity:
+    boundary_conditions:
+      x-:
+        type: dirichlet
+        value: [0.0, 0.0, 0.0]
+      x+:
+        type: dirichlet
+        value: [0.0, 0.0, 0.0]
+      y-:
+        type: dirichlet
+        value: [0.0, 0.0, 0.0]
+      y+:
+        type: dirichlet
+        value: [1.0, 0.0, 0.0]
+      z-:
+        type: dirichlet
+        value: [0.0, 0.0, 0.0]
+      z+:
+        type: dirichlet
+        value: [0.0, 0.0, 0.0]
+    source:
+      type: none
+      params: {}
+    output: components
+  pressure:
+    output: scalar
+output:
+  path: ./output
+  resolution: [16, 16, 16]
+  num_frames: 1
+  formats: [numpy]
+solver:
+  ksp_type: preonly
+  pc_type: lu
+  pc_factor_mat_solver_type: mumps
+  mat_mumps_icntl_14: 80
+  mat_mumps_icntl_24: 1
+  mat_mumps_icntl_25: 0
+  ksp_error_if_not_converged: 1
+seed: 42

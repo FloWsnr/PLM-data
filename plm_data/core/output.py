@@ -71,10 +71,12 @@ class FrameWriter:
         fields: dict[str, fem.Function],
     ) -> dict[str, fem.Function]:
         """Expand base fields into concrete output arrays."""
-        if set(fields) != self._expected_base_fields:
+        missing = self._expected_base_fields - set(fields)
+        if missing:
             raise ValueError(
-                f"Output fields must match {sorted(self._expected_base_fields)}. "
-                f"Got {sorted(fields)}."
+                f"Output fields missing: {sorted(missing)}. "
+                f"Expected at least {sorted(self._expected_base_fields)}, "
+                f"got {sorted(fields)}."
             )
 
         expanded: dict[str, fem.Function] = {}
