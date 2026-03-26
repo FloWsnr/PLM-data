@@ -175,6 +175,108 @@ def navier_stokes_config(tmp_path):
 
 
 @pytest.fixture
+def helmholtz_config(tmp_path, direct_solver):
+    domain = DomainConfig(
+        type="rectangle",
+        params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+    )
+    return SimulationConfig(
+        preset="helmholtz",
+        parameters={"kappa": 1.0, "k": 2.0, "f_amplitude": 1.0},
+        domain=domain,
+        fields={
+            "u": FieldConfig(
+                boundary_conditions={
+                    "x-": BoundaryConditionConfig(
+                        type="dirichlet", value=constant(0.0)
+                    ),
+                    "x+": BoundaryConditionConfig(
+                        type="dirichlet", value=constant(0.0)
+                    ),
+                    "y-": BoundaryConditionConfig(
+                        type="dirichlet", value=constant(0.0)
+                    ),
+                    "y+": BoundaryConditionConfig(
+                        type="dirichlet", value=constant(0.0)
+                    ),
+                },
+                source=scalar_expr(
+                    "sine_product",
+                    amplitude="param:f_amplitude",
+                    kx=1,
+                    ky=1,
+                ),
+                output=FieldOutputConfig(mode="scalar"),
+            )
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[4, 4],
+            num_frames=1,
+            formats=["numpy"],
+        ),
+        solver=direct_solver,
+        seed=42,
+    )
+
+
+@pytest.fixture
+def stokes_config(tmp_path):
+    domain = DomainConfig(
+        type="rectangle",
+        params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+    )
+    return SimulationConfig(
+        preset="stokes",
+        parameters={"nu": 1.0},
+        domain=domain,
+        fields={
+            "velocity": FieldConfig(
+                boundary_conditions={
+                    "x-": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(x=constant(0.0), y=constant(0.0)),
+                    ),
+                    "x+": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(x=constant(0.0), y=constant(0.0)),
+                    ),
+                    "y-": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(x=constant(0.0), y=constant(0.0)),
+                    ),
+                    "y+": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(x=constant(1.0), y=constant(0.0)),
+                    ),
+                },
+                source=scalar_expr("none"),
+                output=FieldOutputConfig(mode="components"),
+            ),
+            "pressure": FieldConfig(output=FieldOutputConfig(mode="scalar")),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[4, 4],
+            num_frames=1,
+            formats=["numpy"],
+        ),
+        solver=SolverConfig(
+            options={
+                "ksp_type": "preonly",
+                "pc_type": "lu",
+                "pc_factor_mat_solver_type": "mumps",
+                "mat_mumps_icntl_14": "80",
+                "mat_mumps_icntl_24": "1",
+                "mat_mumps_icntl_25": "0",
+                "ksp_error_if_not_converged": "1",
+            }
+        ),
+        seed=42,
+    )
+
+
+@pytest.fixture
 def poisson_config(tmp_path, direct_solver):
     domain = DomainConfig(
         type="rectangle",

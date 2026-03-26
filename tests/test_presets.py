@@ -58,6 +58,34 @@ def test_poisson_preset(poisson_config):
     assert np.max(arr) > 0
 
 
+def test_helmholtz_preset(helmholtz_config):
+    result, output_dir = _run_preset(helmholtz_config)
+    assert result.solver_converged is True
+    assert result.num_dofs > 0
+
+    arr = np.load(output_dir / "u.npy")
+    assert arr.shape == (1, *helmholtz_config.output.resolution)
+    assert np.max(arr) > 0
+
+
+def test_helmholtz_resonance_warning(caplog):
+    """Warn when k^2 is near a Laplacian eigenvalue."""
+    import logging
+
+    from plm_data.presets.basic.helmholtz import _check_resonance
+
+    # k=4.44 gives k^2=19.71, near eigenvalue pi^2*(1+1)=19.74 on [0,1]^2
+    with caplog.at_level(logging.WARNING):
+        _check_resonance(4.44, [1.0, 1.0])
+    assert "ill-conditioned" in caplog.text
+
+    caplog.clear()
+    # k=2.0 gives k^2=4.0, far from any eigenvalue
+    with caplog.at_level(logging.WARNING):
+        _check_resonance(2.0, [1.0, 1.0])
+    assert caplog.text == ""
+
+
 def test_cahn_hilliard_preset_single_step(cahn_hilliard_config):
     result, output_dir = _run_preset(cahn_hilliard_config)
     assert result.solver_converged is True
@@ -187,6 +215,180 @@ def test_navier_stokes_body_force(tmp_path):
 
     vy = np.load(output_dir / "velocity_y.npy")
     assert np.max(np.abs(vy)) > 0
+
+
+def test_stokes_preset(stokes_config):
+    result, output_dir = _run_preset(stokes_config)
+    assert result.solver_converged is True
+    assert result.num_dofs > 0
+
+    for field in ["velocity_x", "velocity_y", "pressure"]:
+        arr = np.load(output_dir / f"{field}.npy")
+        assert arr.shape == (1, *stokes_config.output.resolution)
+
+    vx = np.load(output_dir / "velocity_x.npy")
+    assert np.max(np.abs(vx)) > 0
+
+
+def _make_stokes_config(tmp_path, *, source=None, parameters=None):
+    domain = DomainConfig(
+        type="rectangle",
+        params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+    )
+    if parameters is None:
+        parameters = {"nu": 1.0}
+    if source is None:
+        source = scalar_expr("none")
+
+    return SimulationConfig(
+        preset="stokes",
+        parameters=parameters,
+        domain=domain,
+        fields={
+            "velocity": FieldConfig(
+                boundary_conditions={
+                    "x-": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(x=constant(0.0), y=constant(0.0)),
+                    ),
+                    "x+": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(x=constant(0.0), y=constant(0.0)),
+                    ),
+                    "y-": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(x=constant(0.0), y=constant(0.0)),
+                    ),
+                    "y+": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(x=constant(1.0), y=constant(0.0)),
+                    ),
+                },
+                source=source,
+                output=FieldOutputConfig(mode="components"),
+            ),
+            "pressure": FieldConfig(output=FieldOutputConfig(mode="scalar")),
+        },
+        output=OutputConfig(
+            path=tmp_path, resolution=[4, 4], num_frames=1, formats=["numpy"]
+        ),
+        solver=SolverConfig(
+            options={
+                "ksp_type": "preonly",
+                "pc_type": "lu",
+                "pc_factor_mat_solver_type": "mumps",
+                "mat_mumps_icntl_14": "80",
+                "mat_mumps_icntl_24": "1",
+                "mat_mumps_icntl_25": "0",
+                "ksp_error_if_not_converged": "1",
+            }
+        ),
+        seed=42,
+    )
+
+
+def test_stokes_body_force(tmp_path):
+    config = _make_stokes_config(
+        tmp_path,
+        source=vector_expr(x=constant(0.0), y=constant(-1.0)),
+    )
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    vy = np.load(output_dir / "velocity_y.npy")
+    assert np.max(np.abs(vy)) > 0
+
+
+def test_stokes_3d(tmp_path):
+    config = SimulationConfig(
+        preset="stokes",
+        parameters={"nu": 1.0},
+        domain=DomainConfig(
+            type="box",
+            params={"size": [1.0, 1.0, 1.0], "mesh_resolution": [4, 4, 4]},
+        ),
+        fields={
+            "velocity": FieldConfig(
+                boundary_conditions={
+                    "x-": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(
+                            x=constant(0.0), y=constant(0.0), z=constant(0.0)
+                        ),
+                    ),
+                    "x+": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(
+                            x=constant(0.0), y=constant(0.0), z=constant(0.0)
+                        ),
+                    ),
+                    "y-": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(
+                            x=constant(0.0), y=constant(0.0), z=constant(0.0)
+                        ),
+                    ),
+                    "y+": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(
+                            x=constant(1.0), y=constant(0.0), z=constant(0.0)
+                        ),
+                    ),
+                    "z-": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(
+                            x=constant(0.0), y=constant(0.0), z=constant(0.0)
+                        ),
+                    ),
+                    "z+": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(
+                            x=constant(0.0), y=constant(0.0), z=constant(0.0)
+                        ),
+                    ),
+                },
+                source=scalar_expr("none"),
+                output=FieldOutputConfig(mode="components"),
+            ),
+            "pressure": FieldConfig(output=FieldOutputConfig(mode="scalar")),
+        },
+        output=OutputConfig(
+            path=tmp_path, resolution=[4, 4, 4], num_frames=1, formats=["numpy"]
+        ),
+        solver=SolverConfig(
+            options={
+                "ksp_type": "preonly",
+                "pc_type": "lu",
+                "pc_factor_mat_solver_type": "mumps",
+                "mat_mumps_icntl_14": "80",
+                "mat_mumps_icntl_24": "1",
+                "mat_mumps_icntl_25": "0",
+                "ksp_error_if_not_converged": "1",
+            }
+        ),
+        seed=42,
+    )
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_dofs > 0
+
+    for field in ["velocity_x", "velocity_y", "velocity_z", "pressure"]:
+        arr = np.load(output_dir / f"{field}.npy")
+        assert arr.shape == (1, *config.output.resolution)
+
+    vx = np.load(output_dir / "velocity_x.npy")
+    assert np.max(np.abs(vx)) > 0
+
+
+def test_stokes_hidden_pressure(tmp_path):
+    config = _make_stokes_config(tmp_path)
+    config.fields["pressure"].output = FieldOutputConfig(mode="hidden")
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    assert (output_dir / "velocity_x.npy").exists()
+    assert (output_dir / "velocity_y.npy").exists()
+    assert not (output_dir / "pressure.npy").exists()
 
 
 def test_cahn_hilliard_constant_ic(tmp_path):
