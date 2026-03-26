@@ -36,7 +36,8 @@ The system has three layers:
    - `source_terms.py` — scalar and vector source-form builders from the unified field expression config
    - `initial_conditions.py` — scalar and vector IC helpers from the unified field expression config; `random_perturbation` stays scalar-only and DOF-based
    - `runner.py` — `SimulationRunner` orchestrates: loads config → instantiates preset → builds problem → runs it → finalizes output
-   - `output.py` — `FrameWriter` validates base fields against the preset spec, expands vector fields into component outputs, accumulates frames in memory, and saves one `(num_frames, *resolution)` array per concrete output
+   - `output.py` — `FrameWriter` coordinates format-specific writers. Validates base fields against the preset spec, expands vector fields into component outputs for grid-based formats. Delegates to writers in `formats/`
+   - `formats/` — Output format writers: `NumpyWriter` (.npy arrays), `GifWriter` (animated .gif), `VideoWriter` (.mp4), `VTKWriter` (pyvista .vtu/.pvd for Paraview). Grid writers (numpy/gif/video) share the interpolation pipeline; VTK writes FEM functions directly
    - `interpolation.py` — `function_to_array()` maps DOLFINx FEM functions onto regular numpy grids via point evaluation
 
 3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, domain geometry, optional `time`, explicit per-field config blocks under `fields`, solver options, output settings, and seed.
@@ -58,7 +59,7 @@ The system has three layers:
 
 - YAML configs must be fully explicit — no hidden defaults in code
 - Config validation is spec-driven: parameter names, field names, allowed sections, output modes, and supported dimensions are checked before solving
-- Output goes to `output/<category>/<preset>/<field>.npy` as a single `(num_frames, *resolution)` array
+- Output goes to `output/<category>/<preset>/` with format-specific files: `.npy` arrays, `.gif`/`.mp4` animations, and `paraview/` directory with `.pvd`+`.vtu` files for Paraview
 - Presets are auto-discovered recursively under `plm_data.presets`
 - Meshes use `GhostMode.shared_facet` for DOLFINx compatibility
 - PETSc solver option prefixes follow the pattern `plm_` or `plm_<preset>_`

@@ -1,19 +1,30 @@
 """Output handlers for simulation data."""
 
+from __future__ import annotations
+
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from dolfinx import fem
 
 from plm_data.core.config import SimulationConfig
+from plm_data.core.formats.gif_writer import GifWriter
+from plm_data.core.formats.numpy_writer import NumpyWriter
+from plm_data.core.formats.video_writer import VideoWriter
+from plm_data.core.formats.vtk_writer import VTKWriter
 from plm_data.core.interpolation import InterpolationCache, function_to_array
 from plm_data.core.logging import get_logger
 from plm_data.presets.metadata import PresetSpec
 
+# Type aliases for format writer categories
+GridWriter = NumpyWriter | GifWriter | VideoWriter
+FEMWriter = VTKWriter
+
 
 class FrameWriter:
-    """Capture simulation snapshots and write validated output arrays."""
+    """Capture simulation snapshots and delegate to format-specific writers."""
 
     def __init__(self, output_dir: Path, config: SimulationConfig, spec: PresetSpec):
         self.output_dir = output_dir
@@ -21,13 +32,14 @@ class FrameWriter:
         self.spec = spec
         self.frame_count = 0
         self.frame_times: list[float] = []
-        self._field_frames: dict[str, list[np.ndarray]] = {}
+        self._logger = get_logger("output")
+
+        # Grid interpolation state (only needed for numpy/gif/video)
         self._interp_cache: InterpolationCache | None = None
         self._vector_cache: dict[str, tuple[list[fem.Function], list[np.ndarray]]] = {}
         self._vector_vis_cache: dict[
             str, tuple[fem.Function, list[fem.Function], list[np.ndarray]]
         ] = {}
-        self._logger = get_logger("output")
 
         output_modes = {
             field_name: field_config.output.mode
@@ -43,6 +55,22 @@ class FrameWriter:
         }
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Instantiate format writers
+        formats = set(config.output.formats)
+        self._grid_writers: list[GridWriter] = []
+        self._fem_writers: list[FEMWriter] = []
+
+        if "numpy" in formats:
+            self._grid_writers.append(NumpyWriter(output_dir, self.field_names))
+        if "gif" in formats:
+            self._grid_writers.append(GifWriter(output_dir))
+        if "video" in formats:
+            self._grid_writers.append(VideoWriter(output_dir))
+        if "vtk" in formats:
+            self._fem_writers.append(VTKWriter(output_dir))
+
+        self._logger.info("  Output formats: %s", ", ".join(config.output.formats))
 
     def _vector_output_view(
         self,
@@ -69,7 +97,7 @@ class FrameWriter:
             vis_func = fem.Function(W, name=f"{field_name}_vis")
 
             component_funcs = []
-            component_dofs = []
+            component_dofs: list[Any] = []
             for i, label in enumerate(labels):
                 W_i, dofs_i = W.sub(i).collapse()
                 component_funcs.append(fem.Function(W_i, name=f"{field_name}_{label}"))
@@ -96,7 +124,7 @@ class FrameWriter:
 
         if field_name not in self._vector_cache:
             component_funcs = []
-            component_dofs = []
+            component_dofs: list[Any] = []
             for i, label in enumerate(labels):
                 V_i, dofs_i = view_func.function_space.sub(i).collapse()
                 component_funcs.append(fem.Function(V_i, name=f"{field_name}_{label}"))
@@ -142,32 +170,41 @@ class FrameWriter:
 
     def write_frame(self, fields: dict[str, fem.Function], t: float) -> None:
         """Capture a snapshot of one or more base fields."""
-        res = tuple(self.config.output.resolution)
-        concrete_fields = self._expand_output_fields(fields)
+        # FEM-native writers get raw base fields (before expansion/splitting)
+        for writer in self._fem_writers:
+            writer.on_frame(fields, t)
 
-        for name, func in concrete_fields.items():
-            arr, self._interp_cache = function_to_array(
-                func,
-                resolution=res,
-                cache=self._interp_cache,
-            )
-            self._field_frames.setdefault(name, []).append(arr)
+        # Grid-interpolated writers get numpy arrays
+        if self._grid_writers:
+            res = tuple(self.config.output.resolution)
+            concrete_fields = self._expand_output_fields(fields)
+
+            for name, func in concrete_fields.items():
+                arr, self._interp_cache = function_to_array(
+                    func,
+                    resolution=res,
+                    cache=self._interp_cache,
+                )
+                for writer in self._grid_writers:
+                    writer.on_frame_field(name, arr, t)
 
         self.frame_times.append(t)
         self.frame_count += 1
         self._logger.debug("  Frame %d captured at t=%.6g", self.frame_count, t)
 
     def finalize(self) -> None:
-        """Stack all frames per field into a single array and save."""
-        if "numpy" in self.config.output.formats:
-            for name, frames in self._field_frames.items():
-                np.save(self.output_dir / f"{name}.npy", np.stack(frames, axis=0))
-            self._logger.info(
-                "  Saved %d frames (%s) to %s",
-                self.frame_count,
-                ", ".join(self.field_names),
-                self.output_dir,
-            )
+        """Delegate finalization to all format writers and save metadata."""
+        for writer in self._grid_writers:
+            writer.finalize()
+        for writer in self._fem_writers:
+            writer.finalize()
+
+        self._logger.info(
+            "  Saved %d frames (%s) to %s",
+            self.frame_count,
+            ", ".join(self.field_names),
+            self.output_dir,
+        )
 
         metadata = {
             "num_frames": self.frame_count,

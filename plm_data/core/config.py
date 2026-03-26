@@ -102,6 +102,11 @@ class FieldConfig:
     )
 
 
+_VALID_FORMATS = {"numpy", "gif", "video", "vtk"}
+
+_GRID_FORMATS = {"numpy", "gif", "video"}
+
+
 @dataclass
 class OutputConfig:
     """Output configuration."""
@@ -110,6 +115,11 @@ class OutputConfig:
     resolution: list[int]
     num_frames: int
     formats: list[str]
+
+    @property
+    def needs_grid_interpolation(self) -> bool:
+        """True if any format requires interpolated numpy arrays."""
+        return bool(_GRID_FORMATS & set(self.formats))
 
 
 @dataclass
@@ -318,6 +328,16 @@ def load_config(path: str | Path) -> SimulationConfig:
             f"output.resolution must have {gdim} entries in {gdim}D. "
             f"Got {output.resolution}."
         )
+    if not output.formats:
+        raise ValueError("output.formats must contain at least one format")
+    invalid = set(output.formats) - _VALID_FORMATS
+    if invalid:
+        raise ValueError(
+            f"Unknown output format(s) {sorted(invalid)}. "
+            f"Valid formats: {sorted(_VALID_FORMATS)}."
+        )
+    if len(output.formats) != len(set(output.formats)):
+        raise ValueError("output.formats contains duplicates")
 
     solver_raw = _as_mapping(_require(raw, "solver"), "solver")
     solver = SolverConfig(options={str(k): str(v) for k, v in solver_raw.items()})
