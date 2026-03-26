@@ -8,7 +8,7 @@ domain:
   type: rectangle
   size: [1.0, 1.0]
   mesh_resolution: [32, 32]
-fields:
+inputs:
   electric_field:
     boundary_conditions:
       x-:
@@ -34,7 +34,6 @@ fields:
         y:
           type: zero
           params: {}
-    output: components
 solver:
   ksp_type: preonly
   pc_type: lu
@@ -43,4 +42,6 @@ output:
   resolution: [64, 64]
   num_frames: 1
   formats: [numpy]
+  fields:
+    electric_field: components
 seed: 42

@@ -6,7 +6,7 @@ domain:
   type: box
   size: [1.0, 1.0, 1.0]
   mesh_resolution: [16, 16, 16]
-fields:
+inputs:
   u:
     boundary_conditions:
       x-: {type: dirichlet, value: 0.0}
@@ -22,7 +22,6 @@ fields:
         kx: 1
         ky: 1
         kz: 1
-    output: scalar
 solver:
   ksp_type: preonly
   pc_type: lu
@@ -31,4 +30,6 @@ output:
   resolution: [16, 16, 16]
   num_frames: 1
   formats: [numpy]
+  fields:
+    u: scalar
 seed: 42

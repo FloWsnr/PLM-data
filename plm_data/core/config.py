@@ -1,7 +1,5 @@
 """Simulation configuration loading and validation."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -9,6 +7,8 @@ from typing import Any
 import yaml
 
 _COMPONENT_LABELS = ("x", "y", "z")
+_VALID_FORMATS = {"numpy", "gif", "video", "vtk"}
+_GRID_FORMATS = {"numpy", "gif", "video"}
 
 
 def _require(raw: dict[str, Any], key: str, context: str = "config") -> Any:
@@ -32,13 +32,18 @@ def _component_labels(gdim: int) -> tuple[str, ...]:
 
 def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
     """Infer the spatial dimension from the configured domain."""
-    if domain_type == "rectangle":
-        return 2
-    if domain_type == "box":
-        return 3
+    builtin_dims = {
+        "interval": 1,
+        "rectangle": 2,
+        "box": 3,
+    }
+    if domain_type in builtin_dims:
+        return builtin_dims[domain_type]
+
     size = params.get("size")
     if isinstance(size, list):
         return len(size)
+
     raise ValueError(
         f"Cannot infer spatial dimension for domain type '{domain_type}'. "
         "Provide a supported built-in domain."
@@ -82,29 +87,21 @@ class DomainConfig:
 
 
 @dataclass
-class FieldOutputConfig:
-    """Per-field output policy."""
+class OutputSelectionConfig:
+    """Per-output selection policy."""
 
     mode: str
 
 
 @dataclass
-class FieldConfig:
-    """Configuration for one preset field."""
+class InputConfig:
+    """Configuration for one preset input."""
 
     boundary_conditions: dict[str, BoundaryConditionConfig] = field(
         default_factory=dict
     )
     source: FieldExpressionConfig | None = None
     initial_condition: FieldExpressionConfig | None = None
-    output: FieldOutputConfig = field(
-        default_factory=lambda: FieldOutputConfig("hidden")
-    )
-
-
-_VALID_FORMATS = {"numpy", "gif", "video", "vtk"}
-
-_GRID_FORMATS = {"numpy", "gif", "video"}
 
 
 @dataclass
@@ -115,6 +112,7 @@ class OutputConfig:
     resolution: list[int]
     num_frames: int
     formats: list[str]
+    fields: dict[str, OutputSelectionConfig]
 
     @property
     def needs_grid_interpolation(self) -> bool:
@@ -144,7 +142,7 @@ class SimulationConfig:
     preset: str
     parameters: dict[str, float]
     domain: DomainConfig
-    fields: dict[str, FieldConfig]
+    inputs: dict[str, InputConfig]
     output: OutputConfig
     solver: SolverConfig
     time: TimeConfig | None = None
@@ -169,11 +167,21 @@ class SimulationConfig:
         """Return the configured output grid resolution."""
         return self.output.resolution
 
-    def field(self, name: str) -> FieldConfig:
-        """Return a configured field by name."""
-        if name not in self.fields:
-            raise KeyError(f"Unknown field '{name}'")
-        return self.fields[name]
+    def input(self, name: str) -> InputConfig:
+        """Return a configured input by name."""
+        if name not in self.inputs:
+            raise KeyError(f"Unknown input '{name}'")
+        return self.inputs[name]
+
+    def field(self, name: str) -> InputConfig:
+        """Compatibility accessor for input configs."""
+        return self.input(name)
+
+    def output_mode(self, name: str) -> str:
+        """Return the configured output mode for a named output."""
+        if name not in self.output.fields:
+            raise KeyError(f"Unknown output '{name}'")
+        return self.output.fields[name].mode
 
 
 def _parse_scalar_expression(raw: Any, context: str) -> FieldExpressionConfig:
@@ -213,7 +221,6 @@ def _parse_vector_expression(
         return FieldExpressionConfig(components=components)
 
     mapping = _as_mapping(raw, context)
-
     if "components" in mapping:
         components_raw = _as_mapping(mapping["components"], f"{context}.components")
         if set(components_raw) != set(labels):
@@ -248,7 +255,7 @@ def _parse_field_expression(
     shape: str,
     gdim: int,
 ) -> FieldExpressionConfig:
-    """Parse a field expression according to the declared field shape."""
+    """Parse a field expression according to the declared shape."""
     if shape == "scalar":
         return _parse_scalar_expression(raw, context)
     if shape == "vector":
@@ -278,12 +285,12 @@ def _parse_boundary_condition(
     return BoundaryConditionConfig(type=bc_type, value=bc_value, alpha=bc_alpha)
 
 
-def _parse_output_config(raw: Any, context: str) -> FieldOutputConfig:
-    """Parse a field output policy."""
+def _parse_output_selection(raw: Any, context: str) -> OutputSelectionConfig:
+    """Parse an output selection policy."""
     if isinstance(raw, str):
-        return FieldOutputConfig(mode=raw)
+        return OutputSelectionConfig(mode=raw)
     mapping = _as_mapping(raw, context)
-    return FieldOutputConfig(mode=_require(mapping, "mode", context))
+    return OutputSelectionConfig(mode=_require(mapping, "mode", context))
 
 
 def load_config(path: str | Path) -> SimulationConfig:
@@ -317,11 +324,29 @@ def load_config(path: str | Path) -> SimulationConfig:
     parameters = {name: float(value) for name, value in parameters_raw.items()}
 
     output_raw = _as_mapping(_require(raw, "output"), "output")
+    output_fields_raw = _as_mapping(
+        _require(output_raw, "fields", "output"), "output.fields"
+    )
+    if set(output_fields_raw) != set(spec.outputs):
+        raise ValueError(
+            f"Preset '{preset_name}' requires outputs {sorted(spec.outputs)}. "
+            f"Got {sorted(output_fields_raw)}."
+        )
+    output_fields = {
+        output_name: _parse_output_selection(
+            output_fields_raw[output_name], f"output.fields.{output_name}"
+        )
+        for output_name in spec.outputs
+    }
+    for output_name, output_spec in spec.outputs.items():
+        output_spec.validate_output_mode(output_fields[output_name].mode)
+
     output = OutputConfig(
         path=Path(_require(output_raw, "path", "output")),
         resolution=list(_require(output_raw, "resolution", "output")),
         num_frames=int(_require(output_raw, "num_frames", "output")),
         formats=list(_require(output_raw, "formats", "output")),
+        fields=output_fields,
     )
     if len(output.resolution) != gdim:
         raise ValueError(
@@ -355,43 +380,43 @@ def load_config(path: str | Path) -> SimulationConfig:
             t_end=float(_require(time_raw, "t_end", "time")),
         )
 
-    fields_raw = _as_mapping(_require(raw, "fields"), "fields")
-    if set(fields_raw) != set(spec.fields):
+    inputs_raw = _as_mapping(_require(raw, "inputs"), "inputs")
+    if set(inputs_raw) != set(spec.inputs):
         raise ValueError(
-            f"Preset '{preset_name}' requires fields {sorted(spec.fields)}. "
-            f"Got {sorted(fields_raw)}."
+            f"Preset '{preset_name}' requires inputs {sorted(spec.inputs)}. "
+            f"Got {sorted(inputs_raw)}."
         )
 
-    fields: dict[str, FieldConfig] = {}
-    for field_name, field_spec in spec.fields.items():
-        context = f"fields.{field_name}"
-        field_raw = _as_mapping(fields_raw[field_name], context)
+    inputs: dict[str, InputConfig] = {}
+    for input_name, input_spec in spec.inputs.items():
+        context = f"inputs.{input_name}"
+        input_raw = _as_mapping(inputs_raw[input_name], context)
 
-        allowed_keys = {"output"}
-        if field_spec.allow_boundary_conditions:
+        allowed_keys: set[str] = set()
+        if input_spec.allow_boundary_conditions:
             allowed_keys.add("boundary_conditions")
-        if field_spec.allow_source:
+        if input_spec.allow_source:
             allowed_keys.add("source")
-        if field_spec.allow_initial_condition:
+        if input_spec.allow_initial_condition:
             allowed_keys.add("initial_condition")
 
-        unexpected_keys = set(field_raw) - allowed_keys
+        unexpected_keys = set(input_raw) - allowed_keys
         if unexpected_keys:
             raise ValueError(
                 f"{context} has unsupported keys {sorted(unexpected_keys)}. "
                 f"Allowed keys: {sorted(allowed_keys)}."
             )
 
-        if field_spec.allow_boundary_conditions:
+        if input_spec.allow_boundary_conditions:
             boundary_raw = _as_mapping(
-                _require(field_raw, "boundary_conditions", context),
+                _require(input_raw, "boundary_conditions", context),
                 f"{context}.boundary_conditions",
             )
             boundary_conditions = {
                 name: _parse_boundary_condition(
                     bc_raw,
                     f"{context}.boundary_conditions.{name}",
-                    field_spec.shape,
+                    input_spec.shape,
                     gdim,
                 )
                 for name, bc_raw in boundary_raw.items()
@@ -399,43 +424,37 @@ def load_config(path: str | Path) -> SimulationConfig:
         else:
             boundary_conditions = {}
 
-        if field_spec.allow_source:
+        if input_spec.allow_source:
             source = _parse_field_expression(
-                _require(field_raw, "source", context),
+                _require(input_raw, "source", context),
                 f"{context}.source",
-                field_spec.shape,
+                input_spec.shape,
                 gdim,
             )
         else:
             source = None
 
-        if field_spec.allow_initial_condition:
+        if input_spec.allow_initial_condition:
             initial_condition = _parse_field_expression(
-                _require(field_raw, "initial_condition", context),
+                _require(input_raw, "initial_condition", context),
                 f"{context}.initial_condition",
-                field_spec.shape,
+                input_spec.shape,
                 gdim,
             )
         else:
             initial_condition = None
 
-        output_policy = _parse_output_config(
-            _require(field_raw, "output", context), f"{context}.output"
-        )
-        field_spec.validate_output_mode(output_policy.mode)
-
-        fields[field_name] = FieldConfig(
+        inputs[input_name] = InputConfig(
             boundary_conditions=boundary_conditions,
             source=source,
             initial_condition=initial_condition,
-            output=output_policy,
         )
 
     return SimulationConfig(
         preset=preset_name,
         parameters=parameters,
         domain=domain,
-        fields=fields,
+        inputs=inputs,
         output=output,
         solver=solver,
         time=time,

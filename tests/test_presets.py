@@ -1,5 +1,7 @@
 """Tests for running actual PDE preset simulations."""
 
+import logging
+
 import numpy as np
 import pytest
 import ufl
@@ -8,10 +10,10 @@ from dolfinx import fem
 from plm_data.core.config import (
     BoundaryConditionConfig,
     DomainConfig,
-    FieldConfig,
     FieldExpressionConfig,
-    FieldOutputConfig,
+    InputConfig,
     OutputConfig,
+    OutputSelectionConfig,
     SimulationConfig,
     SolverConfig,
     TimeConfig,
@@ -21,7 +23,12 @@ from plm_data.core.output import FrameWriter
 from plm_data.core.runtime import is_complex_runtime
 from plm_data.presets import get_preset
 from plm_data.presets.base import StationaryLinearProblem
-from plm_data.presets.metadata import FieldSpec, PresetSpec
+from plm_data.presets.basic.helmholtz import _check_resonance
+from plm_data.presets.metadata import (
+    OutputSpec,
+    PresetSpec,
+    StateSpec,
+)
 
 
 def constant(value):
@@ -40,23 +47,26 @@ def vector_zero():
     return FieldExpressionConfig(type="zero", params={})
 
 
+def output_fields(**modes):
+    return {name: OutputSelectionConfig(mode=mode) for name, mode in modes.items()}
+
+
 _VECTOR_STATIONARY_SPEC = PresetSpec(
     name="vector_dummy",
     category="tests",
     description="Dummy vector-valued stationary problem for engine tests",
     equations={"u": "u = 0"},
     parameters=[],
-    fields={
-        "u": FieldSpec(
+    inputs={},
+    states={"u": StateSpec(name="u", shape="vector")},
+    outputs={
+        "u": OutputSpec(
             name="u",
             shape="vector",
-            allow_boundary_conditions=False,
-            allow_source=False,
-            allow_initial_condition=False,
             output_mode="components",
+            source_name="u",
         )
     },
-    family="stationary_linear",
     steady_state=True,
     supported_dimensions=[2],
 )
@@ -146,12 +156,11 @@ def _make_maxwell_pulse_config(tmp_path, *, gdim: int):
             "pulse_delay": 0.1,
         },
         domain=domain,
-        fields={
-            "electric_field": FieldConfig(
+        inputs={
+            "electric_field": InputConfig(
                 boundary_conditions=boundary_conditions,
                 source=source,
                 initial_condition=vector_zero(),
-                output=FieldOutputConfig(mode="components"),
             )
         },
         output=OutputConfig(
@@ -159,6 +168,7 @@ def _make_maxwell_pulse_config(tmp_path, *, gdim: int):
             resolution=[4] * gdim,
             num_frames=2,
             formats=["numpy"],
+            fields=output_fields(electric_field="components"),
         ),
         solver=SolverConfig(
             options={
@@ -215,14 +225,13 @@ def _make_maxwell_config(tmp_path, *, gdim: int):
             "source_amplitude": 1.0,
         },
         domain=domain,
-        fields={
-            "electric_field": FieldConfig(
+        inputs={
+            "electric_field": InputConfig(
                 boundary_conditions={
                     name: BoundaryConditionConfig(type="absorbing", value=vector_zero())
                     for name in boundary_names
                 },
                 source=source,
-                output=FieldOutputConfig(mode="components"),
             )
         },
         output=OutputConfig(
@@ -230,6 +239,7 @@ def _make_maxwell_config(tmp_path, *, gdim: int):
             resolution=[4] * gdim,
             num_frames=1,
             formats=["numpy"],
+            fields=output_fields(electric_field="components"),
         ),
         solver=SolverConfig(
             options={
@@ -273,17 +283,11 @@ def test_helmholtz_preset(helmholtz_config):
 
 def test_helmholtz_resonance_warning(caplog):
     """Warn when k^2 is near a Laplacian eigenvalue."""
-    import logging
-
-    from plm_data.presets.basic.helmholtz import _check_resonance
-
-    # k=4.44 gives k^2=19.71, near eigenvalue pi^2*(1+1)=19.74 on [0,1]^2
     with caplog.at_level(logging.WARNING):
         _check_resonance(4.44, [1.0, 1.0])
     assert "ill-conditioned" in caplog.text
 
     caplog.clear()
-    # k=2.0 gives k^2=4.0, far from any eigenvalue
     with caplog.at_level(logging.WARNING):
         _check_resonance(2.0, [1.0, 1.0])
     assert caplog.text == ""
@@ -328,8 +332,8 @@ def _make_ns_config(tmp_path, *, initial_condition, source=None, parameters=None
         preset="navier_stokes",
         parameters=parameters,
         domain=domain,
-        fields={
-            "velocity": FieldConfig(
+        inputs={
+            "velocity": InputConfig(
                 boundary_conditions={
                     "x-": BoundaryConditionConfig(
                         type="dirichlet",
@@ -350,12 +354,14 @@ def _make_ns_config(tmp_path, *, initial_condition, source=None, parameters=None
                 },
                 source=source,
                 initial_condition=initial_condition,
-                output=FieldOutputConfig(mode="components"),
             ),
-            "pressure": FieldConfig(output=FieldOutputConfig(mode="scalar")),
         },
         output=OutputConfig(
-            path=tmp_path, resolution=[4, 4], num_frames=2, formats=["numpy"]
+            path=tmp_path,
+            resolution=[4, 4],
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(velocity="components", pressure="scalar"),
         ),
         solver=SolverConfig(
             options={
@@ -447,8 +453,8 @@ def _make_stokes_config(tmp_path, *, source=None, parameters=None):
         preset="stokes",
         parameters=parameters,
         domain=domain,
-        fields={
-            "velocity": FieldConfig(
+        inputs={
+            "velocity": InputConfig(
                 boundary_conditions={
                     "x-": BoundaryConditionConfig(
                         type="dirichlet",
@@ -468,12 +474,14 @@ def _make_stokes_config(tmp_path, *, source=None, parameters=None):
                     ),
                 },
                 source=source,
-                output=FieldOutputConfig(mode="components"),
             ),
-            "pressure": FieldConfig(output=FieldOutputConfig(mode="scalar")),
         },
         output=OutputConfig(
-            path=tmp_path, resolution=[4, 4], num_frames=1, formats=["numpy"]
+            path=tmp_path,
+            resolution=[4, 4],
+            num_frames=1,
+            formats=["numpy"],
+            fields=output_fields(velocity="components", pressure="scalar"),
         ),
         solver=SolverConfig(
             options={
@@ -510,8 +518,8 @@ def test_stokes_3d(tmp_path):
             type="box",
             params={"size": [1.0, 1.0, 1.0], "mesh_resolution": [4, 4, 4]},
         ),
-        fields={
-            "velocity": FieldConfig(
+        inputs={
+            "velocity": InputConfig(
                 boundary_conditions={
                     "x-": BoundaryConditionConfig(
                         type="dirichlet",
@@ -551,12 +559,14 @@ def test_stokes_3d(tmp_path):
                     ),
                 },
                 source=scalar_expr("none"),
-                output=FieldOutputConfig(mode="components"),
             ),
-            "pressure": FieldConfig(output=FieldOutputConfig(mode="scalar")),
         },
         output=OutputConfig(
-            path=tmp_path, resolution=[4, 4, 4], num_frames=1, formats=["numpy"]
+            path=tmp_path,
+            resolution=[4, 4, 4],
+            num_frames=1,
+            formats=["numpy"],
+            fields=output_fields(velocity="components", pressure="scalar"),
         ),
         solver=SolverConfig(
             options={
@@ -585,7 +595,7 @@ def test_stokes_3d(tmp_path):
 
 def test_stokes_hidden_pressure(tmp_path):
     config = _make_stokes_config(tmp_path)
-    config.fields["pressure"].output = FieldOutputConfig(mode="hidden")
+    config.output.fields["pressure"] = OutputSelectionConfig(mode="hidden")
     result, output_dir = _run_preset(config)
     assert result.solver_converged is True
 
@@ -602,12 +612,13 @@ def test_stationary_linear_problem_counts_vector_dofs(tmp_path, direct_solver):
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [4, 4]},
         ),
-        fields={"u": FieldConfig(output=FieldOutputConfig(mode="components"))},
+        inputs={},
         output=OutputConfig(
             path=tmp_path,
             resolution=[4, 4],
             num_frames=1,
             formats=["numpy"],
+            fields=output_fields(u="components"),
         ),
         solver=direct_solver,
         seed=42,
@@ -641,14 +652,17 @@ def test_cahn_hilliard_constant_ic(tmp_path):
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
         ),
-        fields={
-            "c": FieldConfig(
+        inputs={
+            "c": InputConfig(
                 initial_condition=constant(0.5),
-                output=FieldOutputConfig(mode="scalar"),
             )
         },
         output=OutputConfig(
-            path=tmp_path, resolution=[4, 4], num_frames=2, formats=["numpy"]
+            path=tmp_path,
+            resolution=[4, 4],
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(c="scalar"),
         ),
         solver=SolverConfig(
             options={

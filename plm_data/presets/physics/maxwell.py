@@ -1,7 +1,5 @@
 """Time-harmonic Maxwell equations in curl-conforming spaces."""
 
-from __future__ import annotations
-
 import numpy as np
 import ufl
 from dolfinx import default_scalar_type, fem
@@ -10,7 +8,13 @@ from plm_data.core.runtime import require_complex_runtime
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, StationaryLinearProblem
-from plm_data.presets.metadata import FieldSpec, PDEParameter, PresetSpec
+from plm_data.presets.metadata import (
+    InputSpec,
+    OutputSpec,
+    PDEParameter,
+    PresetSpec,
+    StateSpec,
+)
 from plm_data.presets.physics._maxwell_common import (
     apply_maxwell_dirichlet_bcs,
     build_absorbing_boundary_form,
@@ -32,17 +36,24 @@ _MAXWELL_SPEC = PresetSpec(
         PDEParameter("k0", "Background wavenumber"),
         PDEParameter("source_amplitude", "Interior source amplitude"),
     ],
-    fields={
-        "electric_field": FieldSpec(
+    inputs={
+        "electric_field": InputSpec(
             name="electric_field",
             shape="vector",
             allow_boundary_conditions=True,
             allow_source=True,
             allow_initial_condition=False,
-            output_mode="components",
         ),
     },
-    family="stationary_linear",
+    states={"electric_field": StateSpec(name="electric_field", shape="vector")},
+    outputs={
+        "electric_field": OutputSpec(
+            name="electric_field",
+            shape="vector",
+            output_mode="components",
+            source_name="electric_field",
+        )
+    },
     steady_state=True,
     supported_dimensions=[2, 3],
 )
@@ -56,7 +67,7 @@ class _MaxwellProblem(StationaryLinearProblem):
         return apply_maxwell_dirichlet_bcs(
             V,
             domain_geom,
-            self.config.field("electric_field").boundary_conditions,
+            self.config.input("electric_field").boundary_conditions,
             self.config.parameters,
         )
 
@@ -64,7 +75,7 @@ class _MaxwellProblem(StationaryLinearProblem):
         epsilon_r = self.config.parameters["epsilon_r"]
         mu_r = self.config.parameters["mu_r"]
         k0 = self.config.parameters["k0"]
-        field_config = self.config.field("electric_field")
+        field_config = self.config.input("electric_field")
 
         E = ufl.TrialFunction(V)
         v = ufl.TestFunction(V)

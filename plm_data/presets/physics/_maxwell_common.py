@@ -1,7 +1,5 @@
 """Shared helpers for Maxwell-family presets."""
 
-from __future__ import annotations
-
 import ufl
 from dolfinx import fem
 
@@ -60,8 +58,10 @@ def build_absorbing_boundary_form(
         if bc.type != "absorbing":
             continue
         _require_zero_absorbing_value(name, bc.value, gdim, parameters)
-        term = coefficient * tangential_inner(u, v, n, gdim) * domain_geom.ds(
-            domain_geom.boundary_names[name]
+        term = (
+            coefficient
+            * tangential_inner(u, v, n, gdim)
+            * domain_geom.ds(domain_geom.boundary_names[name])
         )
         form = term if form is None else form + term
     return form

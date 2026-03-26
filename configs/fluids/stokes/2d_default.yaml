@@ -5,7 +5,7 @@ domain:
   type: rectangle
   size: [1.0, 1.0]
   mesh_resolution: [32, 32]
-fields:
+inputs:
   velocity:
     boundary_conditions:
       x-:
@@ -23,14 +23,14 @@ fields:
     source:
       type: none
       params: {}
-    output: components
-  pressure:
-    output: scalar
 output:
   path: ./output
   resolution: [64, 64]
   num_frames: 1
   formats: [numpy]
+  fields:
+    velocity: components
+    pressure: scalar
 solver:
   ksp_type: preonly
   pc_type: lu

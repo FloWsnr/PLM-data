@@ -11,7 +11,7 @@ domain:
   type: rectangle
   size: [1.0, 1.0]
   mesh_resolution: [32, 32]
-fields:
+inputs:
   electric_field:
     boundary_conditions:
       x-:
@@ -40,7 +40,6 @@ fields:
     initial_condition:
       type: zero
       params: {}
-    output: components
 time:
   dt: 0.01
   t_end: 0.4
@@ -52,4 +51,6 @@ output:
   resolution: [64, 64]
   num_frames: 12
   formats: [numpy]
+  fields:
+    electric_field: components
 seed: 42

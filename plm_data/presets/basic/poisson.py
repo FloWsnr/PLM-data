@@ -10,7 +10,13 @@ from plm_data.core.boundary_conditions import (
 from plm_data.core.source_terms import build_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, StationaryLinearProblem
-from plm_data.presets.metadata import FieldSpec, PDEParameter, PresetSpec
+from plm_data.presets.metadata import (
+    InputSpec,
+    OutputSpec,
+    PDEParameter,
+    PresetSpec,
+    StateSpec,
+)
 
 _POISSON_SPEC = PresetSpec(
     name="poisson",
@@ -21,17 +27,24 @@ _POISSON_SPEC = PresetSpec(
         PDEParameter("kappa", "Diffusion coefficient"),
         PDEParameter("f_amplitude", "Source term amplitude"),
     ],
-    fields={
-        "u": FieldSpec(
+    inputs={
+        "u": InputSpec(
             name="u",
             shape="scalar",
             allow_boundary_conditions=True,
             allow_source=True,
             allow_initial_condition=False,
-            output_mode="scalar",
         )
     },
-    family="stationary_linear",
+    states={"u": StateSpec(name="u", shape="scalar")},
+    outputs={
+        "u": OutputSpec(
+            name="u",
+            shape="scalar",
+            output_mode="scalar",
+            source_name="u",
+        )
+    },
     steady_state=True,
     supported_dimensions=[2, 3],
 )
@@ -45,13 +58,13 @@ class _PoissonProblem(StationaryLinearProblem):
         return apply_dirichlet_bcs(
             V,
             domain_geom,
-            self.config.field("u").boundary_conditions,
+            self.config.input("u").boundary_conditions,
             self.config.parameters,
         )
 
     def create_forms(self, V, domain_geom):
         kappa = self.config.parameters["kappa"]
-        field_config = self.config.field("u")
+        field_config = self.config.input("u")
 
         u = ufl.TrialFunction(V)
         v = ufl.TestFunction(V)

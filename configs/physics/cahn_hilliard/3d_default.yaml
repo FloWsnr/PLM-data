@@ -11,19 +11,20 @@ domain:
 time:
   dt: 5.0e-06
   t_end: 2.5e-04
-fields:
+inputs:
   c:
     initial_condition:
       type: random_perturbation
       params:
         mean: 0.63
         std: 0.02
-    output: scalar
 output:
   path: ./output
   resolution: [16, 16, 16]
   num_frames: 5
   formats: [numpy]
+  fields:
+    c: scalar
 solver:
   snes_type: newtonls
   snes_linesearch_type: "none"

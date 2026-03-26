@@ -1,7 +1,5 @@
 """Incompressible Navier-Stokes preset using a divergence-conforming DG method."""
 
-from __future__ import annotations
-
 import numpy as np
 import ufl
 from dolfinx import default_real_type, fem, mesh as dmesh
@@ -16,7 +14,13 @@ from plm_data.core.spatial_fields import (
 )
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
-from plm_data.presets.metadata import FieldSpec, PDEParameter, PresetSpec
+from plm_data.presets.metadata import (
+    InputSpec,
+    OutputSpec,
+    PDEParameter,
+    PresetSpec,
+    StateSpec,
+)
 
 
 _NAVIER_STOKES_SPEC = PresetSpec(
@@ -34,25 +38,33 @@ _NAVIER_STOKES_SPEC = PresetSpec(
         PDEParameter("Re", "Reynolds number"),
         PDEParameter("k", "Polynomial degree for velocity and pressure spaces"),
     ],
-    fields={
-        "velocity": FieldSpec(
+    inputs={
+        "velocity": InputSpec(
             name="velocity",
             shape="vector",
             allow_boundary_conditions=True,
             allow_source=True,
             allow_initial_condition=True,
-            output_mode="components",
-        ),
-        "pressure": FieldSpec(
-            name="pressure",
-            shape="scalar",
-            allow_boundary_conditions=False,
-            allow_source=False,
-            allow_initial_condition=False,
-            output_mode="scalar",
         ),
     },
-    family="custom",
+    states={
+        "velocity": StateSpec(name="velocity", shape="vector"),
+        "pressure": StateSpec(name="pressure", shape="scalar"),
+    },
+    outputs={
+        "velocity": OutputSpec(
+            name="velocity",
+            shape="vector",
+            output_mode="components",
+            source_name="velocity",
+        ),
+        "pressure": OutputSpec(
+            name="pressure",
+            shape="scalar",
+            output_mode="scalar",
+            source_name="pressure",
+        ),
+    },
     steady_state=False,
     supported_dimensions=[2, 3],
 )
@@ -122,7 +134,7 @@ class _NavierStokesProblem(TransientLinearProblem):
         )
         L_bc += ufl.inner(fem.Constant(self.msh, default_real_type(0.0)), q) * ufl.dx
 
-        velocity_field = self.config.field("velocity")
+        velocity_field = self.config.input("velocity")
         assert velocity_field.source is not None
         source_form = build_vector_source_form(
             v,
@@ -191,7 +203,7 @@ class _NavierStokesProblem(TransientLinearProblem):
 
     def _interpolate_boundary_velocity(self, u_D: fem.Function) -> None:
         """Interpolate a piecewise boundary velocity field onto a DG vector space."""
-        velocity_bcs = self.config.field("velocity").boundary_conditions
+        velocity_bcs = self.config.input("velocity").boundary_conditions
         for name, bc in velocity_bcs.items():
             if bc.type != "dirichlet":
                 raise ValueError(

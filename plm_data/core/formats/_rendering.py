@@ -1,7 +1,5 @@
 """Shared matplotlib rendering for GIF and video output."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import numpy as np

@@ -14,7 +14,13 @@ from plm_data.core.mesh import create_domain
 from plm_data.core.source_terms import build_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
-from plm_data.presets.metadata import FieldSpec, PDEParameter, PresetSpec
+from plm_data.presets.metadata import (
+    InputSpec,
+    OutputSpec,
+    PDEParameter,
+    PresetSpec,
+    StateSpec,
+)
 
 _HEAT_SPEC = PresetSpec(
     name="heat",
@@ -22,17 +28,24 @@ _HEAT_SPEC = PresetSpec(
     description="Heat equation du/dt = kappa * laplacian(u) + f",
     equations={"u": "∂u/∂t = κ ∇²u + f"},
     parameters=[PDEParameter("kappa", "Thermal diffusivity")],
-    fields={
-        "u": FieldSpec(
+    inputs={
+        "u": InputSpec(
             name="u",
             shape="scalar",
             allow_boundary_conditions=True,
             allow_source=True,
             allow_initial_condition=True,
-            output_mode="scalar",
         )
     },
-    family="transient_linear",
+    states={"u": StateSpec(name="u", shape="scalar")},
+    outputs={
+        "u": OutputSpec(
+            name="u",
+            shape="scalar",
+            output_mode="scalar",
+            source_name="u",
+        )
+    },
     steady_state=False,
     supported_dimensions=[2, 3],
 )
@@ -45,7 +58,7 @@ class _HeatProblem(TransientLinearProblem):
         self.V = fem.functionspace(self.msh, ("Lagrange", 1))
 
         kappa = self.config.parameters["kappa"]
-        field_config = self.config.field("u")
+        field_config = self.config.input("u")
         dt = self.config.time.dt
 
         self.u_n = fem.Function(self.V, name="u_n")

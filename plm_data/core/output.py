@@ -1,7 +1,5 @@
 """Output handlers for simulation data."""
 
-from __future__ import annotations
-
 import json
 from pathlib import Path
 from typing import Any
@@ -16,9 +14,8 @@ from plm_data.core.formats.video_writer import VideoWriter
 from plm_data.core.formats.vtk_writer import VTKWriter
 from plm_data.core.interpolation import InterpolationCache, function_to_array
 from plm_data.core.logging import get_logger
-from plm_data.presets.metadata import PresetSpec
+from plm_data.presets.metadata import OutputSpec, PresetSpec
 
-# Type aliases for format writer categories
 GridWriter = NumpyWriter | GifWriter | VideoWriter
 FEMWriter = VTKWriter
 
@@ -34,7 +31,6 @@ class FrameWriter:
         self.frame_times: list[float] = []
         self._logger = get_logger("output")
 
-        # Grid interpolation state (only needed for numpy/gif/video)
         self._interp_cache: InterpolationCache | None = None
         self._vector_cache: dict[str, tuple[list[fem.Function], list[np.ndarray]]] = {}
         self._vector_vis_cache: dict[
@@ -42,21 +38,26 @@ class FrameWriter:
         ] = {}
 
         output_modes = {
-            field_name: field_config.output.mode
-            for field_name, field_config in self.config.fields.items()
+            output_name: selection.mode
+            for output_name, selection in self.config.output.fields.items()
         }
         self._expected_outputs = self.spec.expected_outputs(
             output_modes=output_modes,
             gdim=self.config.domain.dimension,
         )
+        self._output_specs = self.spec.outputs
         self.field_names = [output.name for output in self._expected_outputs]
         self._expected_base_fields = {
-            output.field_name for output in self._expected_outputs
+            output.source_name for output in self._expected_outputs
+        }
+        self._selected_vtk_outputs = {
+            output_name: output_spec
+            for output_name, output_spec in self._output_specs.items()
+            if self.config.output_mode(output_name) != "hidden"
         }
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Instantiate format writers
         formats = set(config.output.formats)
         self._grid_writers: list[GridWriter] = []
         self._fem_writers: list[FEMWriter] = []
@@ -74,17 +75,17 @@ class FrameWriter:
 
     def _vector_output_view(
         self,
-        field_name: str,
+        output_name: str,
+        output_spec: OutputSpec,
         func: fem.Function,
     ) -> fem.Function:
         """Return a vector field in a component-addressable output space."""
-        field_spec = self.spec.fields[field_name]
-        labels = field_spec.component_labels(self.config.domain.dimension)
+        labels = output_spec.component_labels(self.config.domain.dimension)
 
         if func.function_space.num_sub_spaces == len(labels):
             return func
 
-        if field_name not in self._vector_vis_cache:
+        if output_name not in self._vector_vis_cache:
             element = func.function_space.element
             degree = 1
             if getattr(element, "basix_element", None) is not None:
@@ -94,55 +95,55 @@ class FrameWriter:
                 func.function_space.mesh,
                 ("Discontinuous Lagrange", degree, (len(labels),)),
             )
-            vis_func = fem.Function(W, name=f"{field_name}_vis")
+            vis_func = fem.Function(W, name=f"{output_name}_vis")
 
             component_funcs = []
             component_dofs: list[Any] = []
             for i, label in enumerate(labels):
                 W_i, dofs_i = W.sub(i).collapse()
-                component_funcs.append(fem.Function(W_i, name=f"{field_name}_{label}"))
+                component_funcs.append(fem.Function(W_i, name=f"{output_name}_{label}"))
                 component_dofs.append(dofs_i)
-            self._vector_vis_cache[field_name] = (
+            self._vector_vis_cache[output_name] = (
                 vis_func,
                 component_funcs,
                 component_dofs,
             )
 
-        vis_func, _, _ = self._vector_vis_cache[field_name]
+        vis_func, _, _ = self._vector_vis_cache[output_name]
         vis_func.interpolate(func)
         return vis_func
 
-    def _split_vector_field(
+    def _split_vector_output(
         self,
-        field_name: str,
+        output_name: str,
+        output_spec: OutputSpec,
         func: fem.Function,
     ) -> dict[str, fem.Function]:
-        """Split a vector-valued function into scalar component functions."""
-        field_spec = self.spec.fields[field_name]
-        labels = field_spec.component_labels(self.config.domain.dimension)
-        view_func = self._vector_output_view(field_name, func)
+        """Split a vector-valued output into scalar component functions."""
+        labels = output_spec.component_labels(self.config.domain.dimension)
+        view_func = self._vector_output_view(output_name, output_spec, func)
 
-        if field_name not in self._vector_cache:
+        if output_name not in self._vector_cache:
             component_funcs = []
             component_dofs: list[Any] = []
             for i, label in enumerate(labels):
                 V_i, dofs_i = view_func.function_space.sub(i).collapse()
-                component_funcs.append(fem.Function(V_i, name=f"{field_name}_{label}"))
+                component_funcs.append(fem.Function(V_i, name=f"{output_name}_{label}"))
                 component_dofs.append(dofs_i)
-            self._vector_cache[field_name] = (component_funcs, component_dofs)
+            self._vector_cache[output_name] = (component_funcs, component_dofs)
 
-        component_funcs, component_dofs = self._vector_cache[field_name]
+        component_funcs, component_dofs = self._vector_cache[output_name]
         components: dict[str, fem.Function] = {}
         for label, component_func, dofs in zip(labels, component_funcs, component_dofs):
             component_func.x.array[:] = view_func.x.array[dofs]
-            components[f"{field_name}_{label}"] = component_func
+            components[f"{output_name}_{label}"] = component_func
         return components
 
     def _expand_output_fields(
         self,
         fields: dict[str, fem.Function],
     ) -> dict[str, fem.Function]:
-        """Expand base fields into concrete output arrays."""
+        """Expand base output fields into concrete output arrays."""
         missing = self._expected_base_fields - set(fields)
         if missing:
             raise ValueError(
@@ -153,28 +154,47 @@ class FrameWriter:
 
         expanded: dict[str, fem.Function] = {}
         expanded_vectors: set[str] = set()
-        for output in self._expected_outputs:
-            field_spec = self.spec.fields[output.field_name]
-            base_function = fields[output.field_name]
-            if field_spec.shape == "scalar":
-                expanded[output.name] = base_function
+        for concrete_output in self._expected_outputs:
+            output_spec = self._output_specs[concrete_output.output_name]
+            base_function = fields[concrete_output.source_name]
+            if output_spec.shape == "scalar":
+                expanded[concrete_output.name] = base_function
                 continue
 
-            if output.field_name not in expanded_vectors:
+            if concrete_output.output_name not in expanded_vectors:
                 expanded.update(
-                    self._split_vector_field(output.field_name, base_function)
+                    self._split_vector_output(
+                        concrete_output.output_name, output_spec, base_function
+                    )
                 )
-                expanded_vectors.add(output.field_name)
+                expanded_vectors.add(concrete_output.output_name)
 
-        return {output.name: expanded[output.name] for output in self._expected_outputs}
+        return {
+            concrete_output.name: expanded[concrete_output.name]
+            for concrete_output in self._expected_outputs
+        }
+
+    def _selected_vtk_fields(
+        self,
+        fields: dict[str, fem.Function],
+    ) -> dict[str, fem.Function]:
+        selected: dict[str, fem.Function] = {}
+        for output_name, output_spec in self._selected_vtk_outputs.items():
+            source_name = output_spec.source_name
+            if source_name not in fields:
+                raise ValueError(
+                    f"Output source '{source_name}' for '{output_name}' was not "
+                    f"provided by the runtime problem."
+                )
+            selected[output_name] = fields[source_name]
+        return selected
 
     def write_frame(self, fields: dict[str, fem.Function], t: float) -> None:
-        """Capture a snapshot of one or more base fields."""
-        # FEM-native writers get raw base fields (before expansion/splitting)
+        """Capture a snapshot of one or more output fields."""
+        vtk_fields = self._selected_vtk_fields(fields)
         for writer in self._fem_writers:
-            writer.on_frame(fields, t)
+            writer.on_frame(vtk_fields, t)
 
-        # Grid-interpolated writers get numpy arrays
         if self._grid_writers:
             res = tuple(self.config.output.resolution)
             concrete_fields = self._expand_output_fields(fields)
@@ -216,7 +236,8 @@ class FrameWriter:
             "expected_outputs": [
                 {
                     "name": output.name,
-                    "field_name": output.field_name,
+                    "output_name": output.output_name,
+                    "source_name": output.source_name,
                     "component": output.component,
                 }
                 for output in self._expected_outputs

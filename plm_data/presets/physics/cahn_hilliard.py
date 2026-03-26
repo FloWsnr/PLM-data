@@ -13,7 +13,13 @@ from plm_data.presets.base import (
     ProblemInstance,
     TransientNonlinearProblem,
 )
-from plm_data.presets.metadata import FieldSpec, PDEParameter, PresetSpec
+from plm_data.presets.metadata import (
+    InputSpec,
+    OutputSpec,
+    PDEParameter,
+    PresetSpec,
+    StateSpec,
+)
 
 _CAHN_HILLIARD_SPEC = PresetSpec(
     name="cahn_hilliard",
@@ -32,17 +38,27 @@ _CAHN_HILLIARD_SPEC = PresetSpec(
         PDEParameter("mobility", "Mobility coefficient M"),
         PDEParameter("theta", "Time-stepping parameter"),
     ],
-    fields={
-        "c": FieldSpec(
+    inputs={
+        "c": InputSpec(
             name="c",
             shape="scalar",
             allow_boundary_conditions=False,
             allow_source=False,
             allow_initial_condition=True,
-            output_mode="scalar",
         )
     },
-    family="transient_nonlinear",
+    states={
+        "c": StateSpec(name="c", shape="scalar"),
+        "mu": StateSpec(name="mu", shape="scalar"),
+    },
+    outputs={
+        "c": OutputSpec(
+            name="c",
+            shape="scalar",
+            output_mode="scalar",
+            source_name="c",
+        )
+    },
     steady_state=False,
     supported_dimensions=[2, 3],
 )
@@ -65,7 +81,7 @@ class _CahnHilliardProblem(TransientNonlinearProblem):
         self.u = fem.Function(ME)
         self.u0 = fem.Function(ME)
 
-        initial_condition = self.config.field("c").initial_condition
+        initial_condition = self.config.input("c").initial_condition
         assert initial_condition is not None
         apply_ic(
             self.u.sub(0),

@@ -7,7 +7,7 @@ domain:
   type: rectangle
   size: [1.0, 1.0]
   mesh_resolution: [64, 64]
-fields:
+inputs:
   u:
     boundary_conditions:
       x-: {type: dirichlet, value: 0.0}
@@ -20,7 +20,6 @@ fields:
         amplitude: "param:f_amplitude"
         kx: 1
         ky: 1
-    output: scalar
 solver:
   ksp_type: preonly
   pc_type: lu
@@ -29,4 +28,6 @@ output:
   resolution: [64, 64]
   num_frames: 1
   formats: [numpy]
+  fields:
+    u: scalar
 seed: 42

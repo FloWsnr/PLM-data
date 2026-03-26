@@ -5,10 +5,10 @@ import pytest
 from plm_data.core.config import (
     BoundaryConditionConfig,
     DomainConfig,
-    FieldConfig,
     FieldExpressionConfig,
-    FieldOutputConfig,
+    InputConfig,
     OutputConfig,
+    OutputSelectionConfig,
     SimulationConfig,
     SolverConfig,
     TimeConfig,
@@ -25,6 +25,10 @@ def scalar_expr(expr_type: str, **params):
 
 def vector_expr(**components):
     return FieldExpressionConfig(components=components)
+
+
+def output_fields(**modes):
+    return {name: OutputSelectionConfig(mode=mode) for name, mode in modes.items()}
 
 
 @pytest.fixture
@@ -46,8 +50,8 @@ def heat_config(tmp_path, rectangle_domain, direct_solver):
         preset="heat",
         parameters={"kappa": 0.01},
         domain=rectangle_domain,
-        fields={
-            "u": FieldConfig(
+        inputs={
+            "u": InputConfig(
                 boundary_conditions={
                     "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
                     "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
@@ -61,7 +65,6 @@ def heat_config(tmp_path, rectangle_domain, direct_solver):
                     amplitude=1.0,
                     center=[0.5, 0.5],
                 ),
-                output=FieldOutputConfig(mode="scalar"),
             )
         },
         output=OutputConfig(
@@ -69,6 +72,7 @@ def heat_config(tmp_path, rectangle_domain, direct_solver):
             resolution=[4, 4],
             num_frames=2,
             formats=["numpy"],
+            fields=output_fields(u="scalar"),
         ),
         solver=direct_solver,
         time=TimeConfig(dt=0.01, t_end=0.01),
@@ -87,14 +91,13 @@ def cahn_hilliard_config(tmp_path, rectangle_domain):
             "theta": 0.5,
         },
         domain=rectangle_domain,
-        fields={
-            "c": FieldConfig(
+        inputs={
+            "c": InputConfig(
                 initial_condition=scalar_expr(
                     "random_perturbation",
                     mean=0.63,
                     std=0.02,
                 ),
-                output=FieldOutputConfig(mode="scalar"),
             )
         },
         output=OutputConfig(
@@ -102,6 +105,7 @@ def cahn_hilliard_config(tmp_path, rectangle_domain):
             resolution=[4, 4],
             num_frames=2,
             formats=["numpy"],
+            fields=output_fields(c="scalar"),
         ),
         solver=SolverConfig(
             options={
@@ -126,8 +130,8 @@ def navier_stokes_config(tmp_path):
         preset="navier_stokes",
         parameters={"Re": 25.0, "k": 1.0},
         domain=domain,
-        fields={
-            "velocity": FieldConfig(
+        inputs={
+            "velocity": InputConfig(
                 boundary_conditions={
                     "x-": BoundaryConditionConfig(
                         type="dirichlet",
@@ -148,15 +152,14 @@ def navier_stokes_config(tmp_path):
                 },
                 source=scalar_expr("none"),
                 initial_condition=scalar_expr("custom"),
-                output=FieldOutputConfig(mode="components"),
             ),
-            "pressure": FieldConfig(output=FieldOutputConfig(mode="scalar")),
         },
         output=OutputConfig(
             path=tmp_path,
             resolution=[4, 4],
             num_frames=2,
             formats=["numpy"],
+            fields=output_fields(velocity="components", pressure="scalar"),
         ),
         solver=SolverConfig(
             options={
@@ -184,8 +187,8 @@ def helmholtz_config(tmp_path, direct_solver):
         preset="helmholtz",
         parameters={"kappa": 1.0, "k": 2.0, "f_amplitude": 1.0},
         domain=domain,
-        fields={
-            "u": FieldConfig(
+        inputs={
+            "u": InputConfig(
                 boundary_conditions={
                     "x-": BoundaryConditionConfig(
                         type="dirichlet", value=constant(0.0)
@@ -206,7 +209,6 @@ def helmholtz_config(tmp_path, direct_solver):
                     kx=1,
                     ky=1,
                 ),
-                output=FieldOutputConfig(mode="scalar"),
             )
         },
         output=OutputConfig(
@@ -214,6 +216,7 @@ def helmholtz_config(tmp_path, direct_solver):
             resolution=[4, 4],
             num_frames=1,
             formats=["numpy"],
+            fields=output_fields(u="scalar"),
         ),
         solver=direct_solver,
         seed=42,
@@ -230,8 +233,8 @@ def stokes_config(tmp_path):
         preset="stokes",
         parameters={"nu": 1.0},
         domain=domain,
-        fields={
-            "velocity": FieldConfig(
+        inputs={
+            "velocity": InputConfig(
                 boundary_conditions={
                     "x-": BoundaryConditionConfig(
                         type="dirichlet",
@@ -251,15 +254,14 @@ def stokes_config(tmp_path):
                     ),
                 },
                 source=scalar_expr("none"),
-                output=FieldOutputConfig(mode="components"),
-            ),
-            "pressure": FieldConfig(output=FieldOutputConfig(mode="scalar")),
+            )
         },
         output=OutputConfig(
             path=tmp_path,
             resolution=[4, 4],
             num_frames=1,
             formats=["numpy"],
+            fields=output_fields(velocity="components", pressure="scalar"),
         ),
         solver=SolverConfig(
             options={
@@ -277,17 +279,13 @@ def stokes_config(tmp_path):
 
 
 @pytest.fixture
-def poisson_config(tmp_path, direct_solver):
-    domain = DomainConfig(
-        type="rectangle",
-        params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-    )
+def poisson_config(tmp_path, rectangle_domain, direct_solver):
     return SimulationConfig(
         preset="poisson",
         parameters={"kappa": 1.0, "f_amplitude": 1.0},
-        domain=domain,
-        fields={
-            "u": FieldConfig(
+        domain=rectangle_domain,
+        inputs={
+            "u": InputConfig(
                 boundary_conditions={
                     "x-": BoundaryConditionConfig(
                         type="dirichlet", value=constant(0.0)
@@ -308,7 +306,6 @@ def poisson_config(tmp_path, direct_solver):
                     kx=1,
                     ky=1,
                 ),
-                output=FieldOutputConfig(mode="scalar"),
             )
         },
         output=OutputConfig(
@@ -316,6 +313,7 @@ def poisson_config(tmp_path, direct_solver):
             resolution=[4, 4],
             num_frames=1,
             formats=["numpy"],
+            fields=output_fields(u="scalar"),
         ),
         solver=direct_solver,
         seed=42,

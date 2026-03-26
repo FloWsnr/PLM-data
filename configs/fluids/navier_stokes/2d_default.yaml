@@ -9,7 +9,7 @@ domain:
 time:
   dt: 0.01
   t_end: 5.0
-fields:
+inputs:
   velocity:
     boundary_conditions:
       x-:
@@ -30,14 +30,14 @@ fields:
     initial_condition:
       type: custom
       params: {}
-    output: components
-  pressure:
-    output: scalar
 output:
   path: ./output
   resolution: [64, 64]
   num_frames: 20
   formats: [numpy]
+  fields:
+    velocity: components
+    pressure: scalar
 solver:
   ksp_type: preonly
   pc_type: lu

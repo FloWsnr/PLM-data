@@ -16,7 +16,13 @@ from plm_data.core.mesh import create_domain
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import CustomProblem, PDEPreset, ProblemInstance, RunResult
-from plm_data.presets.metadata import FieldSpec, PDEParameter, PresetSpec
+from plm_data.presets.metadata import (
+    InputSpec,
+    OutputSpec,
+    PDEParameter,
+    PresetSpec,
+    StateSpec,
+)
 
 if TYPE_CHECKING:
     from plm_data.core.output import FrameWriter
@@ -36,25 +42,33 @@ _STOKES_SPEC = PresetSpec(
     parameters=[
         PDEParameter("nu", "Kinematic viscosity"),
     ],
-    fields={
-        "velocity": FieldSpec(
+    inputs={
+        "velocity": InputSpec(
             name="velocity",
             shape="vector",
             allow_boundary_conditions=True,
             allow_source=True,
             allow_initial_condition=False,
-            output_mode="components",
-        ),
-        "pressure": FieldSpec(
-            name="pressure",
-            shape="scalar",
-            allow_boundary_conditions=False,
-            allow_source=False,
-            allow_initial_condition=False,
-            output_mode="scalar",
         ),
     },
-    family="custom",
+    states={
+        "velocity": StateSpec(name="velocity", shape="vector"),
+        "pressure": StateSpec(name="pressure", shape="scalar"),
+    },
+    outputs={
+        "velocity": OutputSpec(
+            name="velocity",
+            shape="vector",
+            output_mode="components",
+            source_name="velocity",
+        ),
+        "pressure": OutputSpec(
+            name="pressure",
+            shape="scalar",
+            output_mode="scalar",
+            source_name="pressure",
+        ),
+    },
     steady_state=True,
     supported_dimensions=[2, 3],
 )
@@ -99,7 +113,7 @@ class _StokesProblem(CustomProblem):
         )
 
         # Add vector source term if configured
-        velocity_field = self.config.field("velocity")
+        velocity_field = self.config.input("velocity")
         assert velocity_field.source is not None
         source_form = build_vector_source_form(
             v, msh, velocity_field.source, self.config.parameters

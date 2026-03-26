@@ -1,4 +1,4 @@
-"""Mesh creation helpers with boundary tagging."""
+"""Mesh creation helpers with a pluggable domain registry."""
 
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -14,17 +14,32 @@ from plm_data.core.config import DomainConfig
 
 @dataclass
 class DomainGeometry:
-    """Mesh plus named boundary identification.
-
-    Built-in domains (rectangle, box) auto-generate boundary names from
-    geometry (x-, x+, y-, y+, etc.). Future Gmsh domains will populate
-    boundary_names from physical groups.
-    """
+    """Mesh plus named boundary identification."""
 
     mesh: mesh.Mesh
     facet_tags: mesh.MeshTags  # type: ignore[reportInvalidTypeForm]
-    boundary_names: dict[str, int]  # name → tag integer
-    ds: ufl.Measure  # type: ignore[reportInvalidTypeForm]  # ds(tag) integrates over that boundary
+    boundary_names: dict[str, int]
+    ds: ufl.Measure  # type: ignore[reportInvalidTypeForm]
+    periodic_axes: tuple[int, ...] = ()
+
+
+DomainFactory = Callable[[DomainConfig], DomainGeometry]
+_DOMAIN_REGISTRY: dict[str, DomainFactory] = {}
+
+
+def register_domain(name: str) -> Callable[[DomainFactory], DomainFactory]:
+    """Register a domain factory under a config-facing type name."""
+
+    def decorator(factory: DomainFactory) -> DomainFactory:
+        _DOMAIN_REGISTRY[name] = factory
+        return factory
+
+    return decorator
+
+
+def list_domains() -> list[str]:
+    """Return the registered domain types."""
+    return sorted(_DOMAIN_REGISTRY)
 
 
 def _require_param(params: dict, key: str, domain_type: str):
@@ -38,38 +53,24 @@ def _require_param(params: dict, key: str, domain_type: str):
 
 
 def create_domain(domain: DomainConfig) -> DomainGeometry:
-    """Create a mesh with tagged boundaries from a domain configuration.
-
-    Dispatches on domain.type. All required params must be in domain.params.
-    """
-    if domain.type == "rectangle":
-        return _create_rectangle(domain)
-    elif domain.type == "box":
-        return _create_box(domain)
-    else:
+    """Create a mesh with tagged boundaries from a domain configuration."""
+    if domain.type not in _DOMAIN_REGISTRY:
         raise ValueError(
-            f"Unknown domain type: '{domain.type}'. Available: rectangle, box"
+            f"Unknown domain type: '{domain.type}'. "
+            f"Available: {', '.join(list_domains())}"
         )
+    return _DOMAIN_REGISTRY[domain.type](domain)
 
 
 def _tag_boundaries(
     msh: mesh.Mesh, predicates: dict[str, Callable]
 ) -> tuple[mesh.MeshTags, dict[str, int], ufl.Measure]:
-    """Tag boundary facets using geometric predicates.
-
-    Args:
-        msh: The mesh.
-        predicates: Mapping from boundary name to a marker function
-            with signature (x: ndarray) -> bool ndarray.
-
-    Returns:
-        (facet_tags, boundary_names, ds) tuple.
-    """
+    """Tag boundary facets using geometric predicates."""
     tdim = msh.topology.dim
     fdim = tdim - 1
     msh.topology.create_connectivity(fdim, tdim)
 
-    boundary_names = {}
+    boundary_names: dict[str, int] = {}
     all_facets = []
     all_tags = []
 
@@ -82,7 +83,6 @@ def _tag_boundaries(
     if all_facets:
         facet_indices = np.concatenate(all_facets)
         tag_values = np.concatenate(all_tags)
-        # Sort by facet index (required by meshtags)
         sort_order = np.argsort(facet_indices)
         facet_indices = facet_indices[sort_order]
         tag_values = tag_values[sort_order]
@@ -95,6 +95,30 @@ def _tag_boundaries(
     return ft, boundary_names, ds
 
 
+@register_domain("interval")
+def _create_interval(domain: DomainConfig) -> DomainGeometry:
+    p = domain.params
+    size = _require_param(p, "size", domain.type)
+    res = _require_param(p, "mesh_resolution", domain.type)
+    length = float(size[0] if isinstance(size, list) else size)
+    nx = int(res[0] if isinstance(res, list) else res)
+
+    msh = mesh.create_interval(
+        comm=MPI.COMM_WORLD,
+        nx=nx,
+        points=[0.0, length],
+        ghost_mode=GhostMode.shared_facet,
+    )
+
+    predicates = {
+        "x-": lambda x, lim=0.0: np.isclose(x[0], lim),
+        "x+": lambda x, lim=length: np.isclose(x[0], lim),
+    }
+    ft, boundary_names, ds = _tag_boundaries(msh, predicates)
+    return DomainGeometry(mesh=msh, facet_tags=ft, boundary_names=boundary_names, ds=ds)
+
+
+@register_domain("rectangle")
 def _create_rectangle(domain: DomainConfig) -> DomainGeometry:
     p = domain.params
     size = _require_param(p, "size", domain.type)
@@ -119,6 +143,7 @@ def _create_rectangle(domain: DomainConfig) -> DomainGeometry:
     return DomainGeometry(mesh=msh, facet_tags=ft, boundary_names=boundary_names, ds=ds)
 
 
+@register_domain("box")
 def _create_box(domain: DomainConfig) -> DomainGeometry:
     p = domain.params
     size = _require_param(p, "size", domain.type)

@@ -1,7 +1,5 @@
 """Runtime capability helpers."""
 
-from __future__ import annotations
-
 import numpy as np
 from dolfinx import default_scalar_type
 
