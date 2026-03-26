@@ -4,6 +4,7 @@ parameters:
   f_amplitude: 1.0
 domain:
   type: rectangle
+  periodic_axes: []
   size: [1.0, 1.0]
   mesh_resolution: [64, 64]
 inputs:

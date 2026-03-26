@@ -14,9 +14,15 @@ def test_load_config():
     assert cfg.output.resolution == [64, 64]
     assert cfg.time.dt == 0.01
     assert cfg.time.t_end == 1.0
+    assert cfg.domain.periodic_axes == ()
     assert cfg.input("u").initial_condition.type == "gaussian_bump"
     assert cfg.input("u").source.type == "none"
     assert cfg.output_mode("u") == "scalar"
+
+
+def test_load_config_periodic_axes():
+    cfg = load_config("configs/physics/cahn_hilliard/2d_default.yaml")
+    assert cfg.domain.periodic_axes == (0, 1)
 
 
 def test_load_config_missing_field(tmp_path):
@@ -67,6 +73,7 @@ def _base_yaml_dict():
             "type": "rectangle",
             "size": [1.0, 1.0],
             "mesh_resolution": [4, 4],
+            "periodic_axes": [],
         },
         "inputs": {
             "u": {
@@ -98,6 +105,7 @@ def _base_stokes_yaml_dict():
             "type": "rectangle",
             "size": [1.0, 1.0],
             "mesh_resolution": [4, 4],
+            "periodic_axes": [],
         },
         "inputs": {
             "velocity": {
@@ -140,6 +148,7 @@ def _base_maxwell_pulse_yaml_dict():
             "type": "rectangle",
             "size": [1.0, 1.0],
             "mesh_resolution": [4, 4],
+            "periodic_axes": [],
         },
         "inputs": {
             "electric_field": {
@@ -210,6 +219,33 @@ def test_missing_output_resolution(tmp_path):
     p = tmp_path / "no_resolution.yaml"
     p.write_text(yaml.dump(data))
     with pytest.raises(ValueError, match="resolution"):
+        load_config(p)
+
+
+def test_missing_periodic_axes(tmp_path):
+    data = _base_yaml_dict()
+    del data["domain"]["periodic_axes"]
+    p = tmp_path / "no_periodic_axes.yaml"
+    p.write_text(yaml.dump(data))
+    with pytest.raises(ValueError, match="periodic_axes"):
+        load_config(p)
+
+
+def test_periodic_axes_reject_boundary_conditions_on_periodic_faces(tmp_path):
+    data = _base_yaml_dict()
+    data["domain"]["periodic_axes"] = ["x"]
+    p = tmp_path / "periodic_bc_conflict.yaml"
+    p.write_text(yaml.dump(data))
+    with pytest.raises(ValueError, match="periodic faces"):
+        load_config(p)
+
+
+def test_periodic_axes_reject_invalid_label(tmp_path):
+    data = _base_yaml_dict()
+    data["domain"]["periodic_axes"] = ["z"]
+    p = tmp_path / "bad_periodic_axes.yaml"
+    p.write_text(yaml.dump(data))
+    with pytest.raises(ValueError, match="unsupported axis"):
         load_config(p)
 
 

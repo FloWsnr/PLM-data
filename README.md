@@ -22,13 +22,15 @@ With the conda environment activated, install the remaining packages:
 
 ```bash
 pip install pyyaml pytest pyright
+# Required for configs that use domain.periodic_axes
+pip install dolfinx_mpc
 ```
 
 ## Architecture
 
 - **Presets** (`plm_data/presets/`) — Each PDE is a `PDEPreset` with a `PresetSpec` and a `build_problem(config)` factory. Specs now separate config-facing `inputs`, solved `states`, and selectable `outputs`.
 - **Problem engines** (`plm_data/presets/base.py`) — Reusable runtime engines cover stationary linear, transient linear, transient nonlinear, and custom problems. Presets still own the formulation details and use shared runtime loops where that helps.
-- **Config** (`configs/`) — YAML is input-centric. Top-level `inputs:` configures boundary conditions, sources, and initial conditions; `output.fields` selects which declared outputs to save and how to expand them. Time-dependent presets use a `time:` section; output resolution lives under `output.resolution`. Shared scalar Robin is supported; vector boundaries use shared Dirichlet/Neumann or preset-specific types such as Maxwell `absorbing`, while generic vector Robin remains intentionally unsupported.
+- **Config** (`configs/`) — YAML is input-centric. Top-level `inputs:` configures boundary conditions, sources, and initial conditions; `output.fields` selects which declared outputs to save and how to expand them. Time-dependent presets use a `time:` section; output resolution lives under `output.resolution`. Domains must declare `periodic_axes` explicitly, even when empty. Shared scalar Robin is supported; vector boundaries use shared Dirichlet/Neumann or preset-specific types such as Maxwell `absorbing`, while generic vector Robin remains intentionally unsupported.
 - **Domains** (`plm_data/core/mesh.py`) — Built-in domains are registry-backed. The current repo ships `interval`, `rectangle`, and `box`.
 - **Output** (`plm_data/core/output.py`) — `FrameWriter` validates requested outputs against the preset spec, expands vector outputs into components for grid formats, and writes only selected outputs.
 
@@ -60,3 +62,18 @@ time-harmonic `maxwell` preset requires a complex-valued DOLFINx/PETSc environme
 3. Return a runtime problem object backed by one of the shared engines, or `CustomProblem` if the PDE needs bespoke solve logic.
 4. Register it with `@register_preset("name")`.
 5. Create a YAML config in `configs/<category>/<name>/` using the `inputs:` plus `output.fields:` schema.
+
+## Periodic domains
+
+Periodic domains are configured on the domain block:
+
+```yaml
+domain:
+  type: rectangle
+  periodic_axes: [x, y]
+  size: [1.0, 1.0]
+  mesh_resolution: [96, 96]
+```
+
+Do not declare boundary conditions on periodic faces. For a fully periodic input,
+use an explicit empty mapping such as `boundary_conditions: {}`.

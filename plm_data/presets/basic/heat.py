@@ -3,8 +3,6 @@
 import numpy as np
 import ufl
 from dolfinx import fem
-from dolfinx.fem.petsc import LinearProblem
-
 from plm_data.core.boundary_conditions import (
     apply_dirichlet_bcs,
     build_natural_bc_forms,
@@ -55,11 +53,19 @@ class _HeatProblem(TransientLinearProblem):
     def setup(self) -> None:
         domain_geom = create_domain(self.config.domain)
         self.msh = domain_geom.mesh
-        self.V = fem.functionspace(self.msh, ("Lagrange", 1))
+        V = fem.functionspace(self.msh, ("Lagrange", 1))
 
         kappa = self.config.parameters["kappa"]
         field_config = self.config.input("u")
         dt = self.config.time.dt
+        bcs = apply_dirichlet_bcs(
+            V,
+            domain_geom,
+            field_config.boundary_conditions,
+            self.config.parameters,
+        )
+        mpc = self.create_periodic_constraint(V, domain_geom, bcs)
+        self.V = V if mpc is None else mpc.function_space
 
         self.u_n = fem.Function(self.V, name="u_n")
         self.uh = fem.Function(self.V, name="u")
@@ -72,8 +78,8 @@ class _HeatProblem(TransientLinearProblem):
             seed=self.config.seed,
         )
 
-        u = ufl.TrialFunction(self.V)
-        v = ufl.TestFunction(self.V)
+        u = ufl.TrialFunction(V)
+        v = ufl.TestFunction(V)
         dt_c = fem.Constant(self.msh, np.float64(dt))
         kappa_c = fem.Constant(self.msh, np.float64(kappa))
 
@@ -105,24 +111,19 @@ class _HeatProblem(TransientLinearProblem):
         if L_bc is not None:
             L = L + dt_c * L_bc
 
-        bcs = apply_dirichlet_bcs(
-            self.V,
-            domain_geom,
-            field_config.boundary_conditions,
-            self.config.parameters,
-        )
-
-        self.problem = LinearProblem(
+        self.problem = self.create_linear_problem(
             a,
             L,
+            u=self.uh,
             bcs=bcs,
             petsc_options_prefix="plm_heat_",
-            petsc_options=self._solver_options,
+            mpc=mpc,
         )
 
     def step(self, t: float, dt: float) -> bool:
-        self.uh = self.problem.solve()
+        self.problem.solve()
         self.u_n.x.array[:] = self.uh.x.array
+        self.u_n.x.scatter_forward()
         return self.problem.solver.getConvergedReason() > 0
 
     def get_output_fields(self) -> dict[str, fem.Function]:

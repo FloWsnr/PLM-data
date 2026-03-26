@@ -34,6 +34,7 @@ def _scalar_heat_config(tmp_path, formats):
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+            periodic_axes=(),
         ),
         inputs={
             "u": InputConfig(
@@ -71,6 +72,7 @@ def _vector_stokes_config(tmp_path, formats):
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+            periodic_axes=(),
         ),
         inputs={
             "velocity": InputConfig(

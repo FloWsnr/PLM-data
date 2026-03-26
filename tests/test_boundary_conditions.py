@@ -36,6 +36,7 @@ def domain_geom():
     domain = DomainConfig(
         type="rectangle",
         params={"size": [1.0, 1.0], "mesh_resolution": [4, 4]},
+        periodic_axes=(),
     )
     return create_domain(domain)
 

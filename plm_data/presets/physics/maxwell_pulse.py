@@ -4,10 +4,10 @@ import math
 
 import ufl
 from dolfinx import default_scalar_type, fem
-from dolfinx.fem.petsc import LinearProblem
 
 from plm_data.core.initial_conditions import apply_vector_ic
 from plm_data.core.mesh import create_domain
+from plm_data.core.periodic import require_unverified_periodic_support
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
@@ -70,6 +70,11 @@ _MAXWELL_PULSE_SPEC = PresetSpec(
 class _MaxwellPulseProblem(TransientLinearProblem):
     def setup(self) -> None:
         domain_geom = create_domain(self.config.domain)
+        require_unverified_periodic_support(
+            self.spec.name,
+            domain_geom,
+            "N1curl spaces",
+        )
         self.domain_geom = domain_geom
         self.msh = domain_geom.mesh
 
@@ -145,13 +150,12 @@ class _MaxwellPulseProblem(TransientLinearProblem):
             field_config.boundary_conditions,
             self.config.parameters,
         )
-        self.problem = LinearProblem(
+        self.problem = self.create_linear_problem(
             a,
             L,
             u=self.E_next,
             bcs=bcs,
             petsc_options_prefix="plm_maxwell_pulse_",
-            petsc_options=self._solver_options,
         )
 
     def _pulse_value(self, t: float) -> float:

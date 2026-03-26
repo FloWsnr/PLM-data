@@ -5,6 +5,7 @@ from dolfinx import fem
 
 from plm_data.core.config import BoundaryConditionConfig
 from plm_data.core.mesh import DomainGeometry
+from plm_data.core.periodic import periodic_boundary_names
 from plm_data.core.spatial_fields import (
     build_interpolator,
     build_vector_interpolator,
@@ -17,6 +18,11 @@ from plm_data.core.spatial_fields import (
 
 
 def _validate_boundary_name(name: str, domain_geom: DomainGeometry) -> None:
+    if name in periodic_boundary_names(domain_geom):
+        raise ValueError(
+            f"Boundary '{name}' is periodic in this domain and cannot define a "
+            "boundary condition."
+        )
     if name not in domain_geom.boundary_names:
         raise ValueError(
             f"Boundary '{name}' not found in domain. "

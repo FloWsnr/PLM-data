@@ -29,8 +29,9 @@ The system has three layers:
    Common solver families live in `plm_data/presets/base.py` as `StationaryLinearProblem`, `TransientLinearProblem`, `TransientNonlinearProblem`, and `CustomProblem`.
 
 2. **Core** (`plm_data/core/`) — Shared infrastructure:
-   - `config.py` — `SimulationConfig` dataclass loaded from YAML. Configs are validated against the preset spec up front. The schema is input-centric: each entry under `inputs` owns explicit `boundary_conditions`, `source`, and `initial_condition` settings, while `output.fields` selects which declared outputs are saved. Transient presets use a `time:` section. Output resolution lives under `output.resolution`
-   - `mesh.py` — `create_domain()` returns `DomainGeometry` (mesh + facet_tags + boundary_names + ds measure). Domain creation is registry-backed. Built-in domains auto-tag boundaries (x-, x+, y-, y+ for rectangle; 6 faces for box; x-/x+ for interval)
+   - `config.py` — `SimulationConfig` dataclass loaded from YAML. Configs are validated against the preset spec up front. The schema is input-centric: each entry under `inputs` owns explicit `boundary_conditions`, `source`, and `initial_condition` settings, while `output.fields` selects which declared outputs are saved. Transient presets use a `time:` section. Output resolution lives under `output.resolution`. Domains must declare `periodic_axes` explicitly, even when empty, and config-facing boundary conditions may not target periodic faces.
+   - `mesh.py` — `create_domain()` returns `DomainGeometry` (mesh + facet_tags + boundary_names + ds measure + axis bounds / periodic metadata). Domain creation is registry-backed. Built-in domains auto-tag boundaries (x-, x+, y-, y+ for rectangle; 6 faces for box; x-/x+ for interval)
+   - `periodic.py` — shared `dolfinx_mpc` integration for domain-level periodic constraints. Presets should treat periodicity as a domain property via `domain.periodic_axes`, not as a boundary-condition type.
    - `spatial_fields.py` — Shared scalar and vector spatial field system (constant, sine_product, gaussian_bump, step, none, custom). Provides UFL builders, scalar interpolators, and vector-component expansion helpers. Supports `"param:name"` references
   - `boundary_conditions.py` — shared scalar Dirichlet / Neumann / Robin helpers plus vector Dirichlet / Neumann helpers for standard vector-valued spaces; vector Robin remains intentionally unsupported in the shared layer
    - `source_terms.py` — scalar and vector source-form builders from the unified field expression config
@@ -40,7 +41,7 @@ The system has three layers:
    - `formats/` — Output format writers: `NumpyWriter` (.npy arrays), `GifWriter` (animated .gif), `VideoWriter` (.mp4), `VTKWriter` (pyvista .vtu/.pvd for Paraview). Grid writers (numpy/gif/video) share the interpolation pipeline; VTK writes FEM functions directly
    - `interpolation.py` — `function_to_array()` maps DOLFINx FEM functions onto regular numpy grids via point evaluation
 
-3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, domain geometry, optional `time`, explicit per-field config blocks under `fields`, solver options, output settings, and seed.
+3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, domain geometry, optional `time`, explicit per-input config blocks under `inputs`, solver options, output settings, and seed.
    The current schema uses explicit per-input blocks under `inputs` plus output selection under `output.fields`.
 
 ## Adding a New PDE Preset
@@ -59,6 +60,7 @@ The system has three layers:
 ## Key Conventions
 
 - YAML configs must be fully explicit — no hidden defaults in code
+- Domain periodicity is configured explicitly with `domain.periodic_axes`; non-periodic configs still declare `[]`
 - Config validation is spec-driven: parameter names, input names, output names, allowed sections, output modes, and supported dimensions are checked before solving
 - Output goes to `output/<category>/<preset>/` with format-specific files: `.npy` arrays, `.gif`/`.mp4` animations, and `paraview/` directory with `.pvd`+`.vtu` files for Paraview
 - Presets are auto-discovered recursively under `plm_data.presets`

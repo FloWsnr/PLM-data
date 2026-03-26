@@ -6,6 +6,7 @@ parameters:
   theta: 0.5
 domain:
   type: box
+  periodic_axes: [x, y, z]
   size: [1.0, 1.0, 1.0]
   mesh_resolution: [16, 16, 16]
 time:

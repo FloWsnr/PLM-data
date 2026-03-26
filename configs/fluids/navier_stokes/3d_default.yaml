@@ -4,6 +4,7 @@ parameters:
   k: 1.0
 domain:
   type: box
+  periodic_axes: []
   size: [1.0, 1.0, 1.0]
   mesh_resolution: [4, 4, 4]
 time:

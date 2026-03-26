@@ -1,5 +1,6 @@
 """Tests for running actual PDE preset simulations."""
 
+import importlib.util
 import logging
 
 import numpy as np
@@ -29,6 +30,8 @@ from plm_data.presets.metadata import (
     PresetSpec,
     StateSpec,
 )
+
+HAS_DOLFINX_MPC = importlib.util.find_spec("dolfinx_mpc") is not None
 
 
 def constant(value):
@@ -112,6 +115,7 @@ def _make_maxwell_pulse_config(tmp_path, *, gdim: int):
         domain = DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+            periodic_axes=(),
         )
         center = [0.25, 0.5]
         boundary_conditions = {
@@ -128,6 +132,7 @@ def _make_maxwell_pulse_config(tmp_path, *, gdim: int):
         domain = DomainConfig(
             type="box",
             params={"size": [1.0, 1.0, 1.0], "mesh_resolution": [4, 4, 4]},
+            periodic_axes=(),
         )
         center = [0.25, 0.5, 0.5]
         boundary_conditions = {
@@ -186,6 +191,7 @@ def _make_maxwell_config(tmp_path, *, gdim: int):
         domain = DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+            periodic_axes=(),
         )
         center = [0.35, 0.5]
         boundary_names = ("x-", "x+", "y-", "y+")
@@ -202,6 +208,7 @@ def _make_maxwell_config(tmp_path, *, gdim: int):
         domain = DomainConfig(
             type="box",
             params={"size": [1.0, 1.0, 1.0], "mesh_resolution": [3, 3, 3]},
+            periodic_axes=(),
         )
         center = [0.35, 0.5, 0.5]
         boundary_names = ("x-", "x+", "y-", "y+", "z-", "z+")
@@ -293,6 +300,10 @@ def test_helmholtz_resonance_warning(caplog):
     assert caplog.text == ""
 
 
+@pytest.mark.skipif(
+    not HAS_DOLFINX_MPC,
+    reason="periodic Cahn-Hilliard requires dolfinx_mpc",
+)
 def test_cahn_hilliard_preset_single_step(cahn_hilliard_config):
     result, output_dir = _run_preset(cahn_hilliard_config)
     assert result.solver_converged is True
@@ -322,6 +333,7 @@ def _make_ns_config(tmp_path, *, initial_condition, source=None, parameters=None
     domain = DomainConfig(
         type="rectangle",
         params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+        periodic_axes=(),
     )
     if parameters is None:
         parameters = {"Re": 25.0, "k": 1.0}
@@ -443,6 +455,7 @@ def _make_stokes_config(tmp_path, *, source=None, parameters=None):
     domain = DomainConfig(
         type="rectangle",
         params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+        periodic_axes=(),
     )
     if parameters is None:
         parameters = {"nu": 1.0}
@@ -517,6 +530,7 @@ def test_stokes_3d(tmp_path):
         domain=DomainConfig(
             type="box",
             params={"size": [1.0, 1.0, 1.0], "mesh_resolution": [4, 4, 4]},
+            periodic_axes=(),
         ),
         inputs={
             "velocity": InputConfig(
@@ -611,6 +625,7 @@ def test_stationary_linear_problem_counts_vector_dofs(tmp_path, direct_solver):
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [4, 4]},
+            periodic_axes=(),
         ),
         inputs={},
         output=OutputConfig(
@@ -639,6 +654,10 @@ def test_stationary_linear_problem_counts_vector_dofs(tmp_path, direct_solver):
     assert result.num_dofs == expected_num_dofs
 
 
+@pytest.mark.skipif(
+    not HAS_DOLFINX_MPC,
+    reason="periodic Cahn-Hilliard requires dolfinx_mpc",
+)
 def test_cahn_hilliard_constant_ic(tmp_path):
     config = SimulationConfig(
         preset="cahn_hilliard",
@@ -651,6 +670,7 @@ def test_cahn_hilliard_constant_ic(tmp_path):
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+            periodic_axes=(0, 1),
         ),
         inputs={
             "c": InputConfig(
@@ -695,6 +715,178 @@ def test_maxwell_pulse_preset_2d_single_step(tmp_path):
     assert ex.shape == (2, *config.output.resolution)
     assert ey.shape == (2, *config.output.resolution)
     assert np.max(np.abs(ex)) > 0
+
+
+@pytest.mark.skipif(
+    not HAS_DOLFINX_MPC,
+    reason="periodic heat solve requires dolfinx_mpc",
+)
+def test_heat_periodic_domain_single_step(tmp_path, direct_solver):
+    config = SimulationConfig(
+        preset="heat",
+        parameters={"kappa": 0.01},
+        domain=DomainConfig(
+            type="rectangle",
+            params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+            periodic_axes=(0, 1),
+        ),
+        inputs={
+            "u": InputConfig(
+                boundary_conditions={},
+                source=scalar_expr("none"),
+                initial_condition=scalar_expr(
+                    "gaussian_bump",
+                    sigma=0.1,
+                    amplitude=1.0,
+                    center=[0.5, 0.5],
+                ),
+            )
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[8, 8],
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(u="scalar"),
+        ),
+        solver=direct_solver,
+        time=TimeConfig(dt=0.01, t_end=0.01),
+        seed=42,
+    )
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    arr = np.load(output_dir / "u.npy")
+    assert np.allclose(arr[-1, :, 0], arr[-1, :, -1], atol=1e-4)
+    assert np.allclose(arr[-1, 0, :], arr[-1, -1, :], atol=1e-4)
+
+
+@pytest.mark.skipif(
+    not HAS_DOLFINX_MPC,
+    reason="periodic Stokes solve requires dolfinx_mpc",
+)
+def test_stokes_periodic_x_domain(tmp_path):
+    config = SimulationConfig(
+        preset="stokes",
+        parameters={"nu": 1.0},
+        domain=DomainConfig(
+            type="rectangle",
+            params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+            periodic_axes=(0,),
+        ),
+        inputs={
+            "velocity": InputConfig(
+                boundary_conditions={
+                    "y-": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(x=constant(0.0), y=constant(0.0)),
+                    ),
+                    "y+": BoundaryConditionConfig(
+                        type="dirichlet",
+                        value=vector_expr(x=constant(1.0), y=constant(0.0)),
+                    ),
+                },
+                source=scalar_expr("none"),
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[6, 6],
+            num_frames=1,
+            formats=["numpy"],
+            fields=output_fields(velocity="components", pressure="scalar"),
+        ),
+        solver=SolverConfig(
+            options={
+                "ksp_type": "preonly",
+                "pc_type": "lu",
+                "pc_factor_mat_solver_type": "mumps",
+                "mat_mumps_icntl_14": "80",
+                "mat_mumps_icntl_24": "1",
+                "mat_mumps_icntl_25": "0",
+                "ksp_error_if_not_converged": "1",
+            }
+        ),
+        seed=42,
+    )
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    vx = np.load(output_dir / "velocity_x.npy")
+    pressure = np.load(output_dir / "pressure.npy")
+    assert np.allclose(vx[0, 0, :], vx[0, -1, :], atol=1e-4)
+    assert np.allclose(pressure[0, 0, :], pressure[0, -1, :], atol=1e-4)
+
+
+def test_periodic_heat_requires_dolfinx_mpc(monkeypatch, tmp_path, direct_solver):
+    import plm_data.core.periodic as periodic_mod
+
+    original_import_module = periodic_mod.importlib.import_module
+
+    def _missing_dolfinx_mpc(name, *args, **kwargs):
+        if name == "dolfinx_mpc":
+            raise ImportError("missing dolfinx_mpc")
+        return original_import_module(name, *args, **kwargs)
+
+    monkeypatch.setattr(periodic_mod.importlib, "import_module", _missing_dolfinx_mpc)
+
+    config = SimulationConfig(
+        preset="heat",
+        parameters={"kappa": 0.01},
+        domain=DomainConfig(
+            type="rectangle",
+            params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+            periodic_axes=(0, 1),
+        ),
+        inputs={
+            "u": InputConfig(
+                boundary_conditions={},
+                source=scalar_expr("none"),
+                initial_condition=scalar_expr(
+                    "gaussian_bump",
+                    sigma=0.1,
+                    amplitude=1.0,
+                    center=[0.5, 0.5],
+                ),
+            )
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[4, 4],
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(u="scalar"),
+        ),
+        solver=direct_solver,
+        time=TimeConfig(dt=0.01, t_end=0.01),
+        seed=42,
+    )
+
+    with pytest.raises(RuntimeError, match="dolfinx_mpc"):
+        _run_preset(config)
+
+
+def test_navier_stokes_periodic_domain_rejected(tmp_path):
+    config = _make_ns_config(
+        tmp_path,
+        initial_condition=vector_expr(x=constant(0.0), y=constant(0.0)),
+    )
+    config.domain.periodic_axes = (0,)
+    del config.input("velocity").boundary_conditions["x-"]
+    del config.input("velocity").boundary_conditions["x+"]
+
+    with pytest.raises(NotImplementedError, match="Raviart-Thomas / DG spaces"):
+        _run_preset(config)
+
+
+def test_maxwell_pulse_periodic_domain_rejected(tmp_path):
+    config = _make_maxwell_pulse_config(tmp_path, gdim=2)
+    config.domain.periodic_axes = (0,)
+    del config.input("electric_field").boundary_conditions["x-"]
+    del config.input("electric_field").boundary_conditions["x+"]
+
+    with pytest.raises(NotImplementedError, match="N1curl spaces"):
+        _run_preset(config)
 
 
 def test_maxwell_pulse_preset_3d_single_step(tmp_path):

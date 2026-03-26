@@ -30,6 +30,11 @@ def _component_labels(gdim: int) -> tuple[str, ...]:
     return _COMPONENT_LABELS[:gdim]
 
 
+def _periodic_axis_labels(periodic_axes: tuple[int, ...], gdim: int) -> tuple[str, ...]:
+    """Return config-facing axis labels for periodic directions."""
+    return tuple(_component_labels(gdim)[axis] for axis in periodic_axes)
+
+
 def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
     """Infer the spatial dimension from the configured domain."""
     builtin_dims = {
@@ -79,11 +84,17 @@ class DomainConfig:
 
     type: str
     params: dict[str, Any]
+    periodic_axes: tuple[int, ...]
 
     @property
     def dimension(self) -> int:
         """Return the spatial dimension."""
         return _infer_domain_dimension(self.type, self.params)
+
+    @property
+    def periodic_axis_labels(self) -> tuple[str, ...]:
+        """Return periodic axes as config-facing labels."""
+        return _periodic_axis_labels(self.periodic_axes, self.dimension)
 
 
 @dataclass
@@ -295,6 +306,46 @@ def _parse_output_selection(raw: Any, context: str) -> OutputSelectionConfig:
     return OutputSelectionConfig(mode=_require(mapping, "mode", context))
 
 
+def _parse_periodic_axes(raw: Any, context: str, gdim: int) -> tuple[int, ...]:
+    """Parse explicit periodic axes from the domain section."""
+    if not isinstance(raw, list):
+        raise ValueError(f"{context} must be a list. Got: {raw!r}")
+
+    labels = _component_labels(gdim)
+    axis_by_label = {label: axis for axis, label in enumerate(labels)}
+    periodic_axes: list[int] = []
+    seen: set[int] = set()
+
+    for index, label_raw in enumerate(raw):
+        if not isinstance(label_raw, str):
+            raise ValueError(
+                f"{context}[{index}] must be a string axis label. Got: {label_raw!r}"
+            )
+        if label_raw not in axis_by_label:
+            raise ValueError(
+                f"{context}[{index}] uses unsupported axis '{label_raw}' in {gdim}D. "
+                f"Valid axes: {list(labels)}."
+            )
+        axis = axis_by_label[label_raw]
+        if axis in seen:
+            raise ValueError(
+                f"{context} contains duplicate axis '{label_raw}'. Got {list(raw)}."
+            )
+        seen.add(axis)
+        periodic_axes.append(axis)
+
+    return tuple(periodic_axes)
+
+
+def _periodic_boundary_names(periodic_axes: tuple[int, ...], gdim: int) -> set[str]:
+    """Return boundary names that are unavailable due to periodicity."""
+    blocked: set[str] = set()
+    for label in _periodic_axis_labels(periodic_axes, gdim):
+        blocked.add(f"{label}-")
+        blocked.add(f"{label}+")
+    return blocked
+
+
 def load_config(path: str | Path) -> SimulationConfig:
     """Load and validate a simulation config from YAML."""
     path = Path(path)
@@ -307,9 +358,22 @@ def load_config(path: str | Path) -> SimulationConfig:
 
     domain_raw = _as_mapping(_require(raw, "domain"), "domain")
     domain_type = _require(domain_raw, "type", "domain")
-    domain_params = {k: v for k, v in domain_raw.items() if k != "type"}
-    domain = DomainConfig(type=domain_type, params=domain_params)
+    domain_params = {
+        k: v for k, v in domain_raw.items() if k not in {"type", "periodic_axes"}
+    }
+    gdim = _infer_domain_dimension(domain_type, domain_params)
+    periodic_axes = _parse_periodic_axes(
+        _require(domain_raw, "periodic_axes", "domain"),
+        "domain.periodic_axes",
+        gdim,
+    )
+    domain = DomainConfig(
+        type=domain_type,
+        params=domain_params,
+        periodic_axes=periodic_axes,
+    )
     gdim = domain.dimension
+    blocked_boundaries = _periodic_boundary_names(periodic_axes, gdim)
 
     from plm_data.presets import get_preset
 
@@ -423,6 +487,13 @@ def load_config(path: str | Path) -> SimulationConfig:
                 )
                 for name, bc_raw in boundary_raw.items()
             }
+            periodic_overlap = set(boundary_conditions) & blocked_boundaries
+            if periodic_overlap:
+                raise ValueError(
+                    f"{context}.boundary_conditions configures periodic faces "
+                    f"{sorted(periodic_overlap)}. Periodic faces cannot also define "
+                    "boundary conditions."
+                )
         else:
             boundary_conditions = {}
 

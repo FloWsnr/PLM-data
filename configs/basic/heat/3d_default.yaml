@@ -3,6 +3,7 @@ parameters:
   kappa: 0.01
 domain:
   type: box
+  periodic_axes: []
   size: [1.0, 1.0, 1.0]
   mesh_resolution: [32, 32, 32]
 time:

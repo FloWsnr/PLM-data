@@ -7,6 +7,7 @@ from dolfinx.fem.petsc import LinearProblem
 from plm_data.core.initial_conditions import apply_vector_ic
 from plm_data.core.fem_utils import dg_jump, domain_average
 from plm_data.core.mesh import create_domain
+from plm_data.core.periodic import require_unverified_periodic_support
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.core.spatial_fields import (
     build_vector_interpolator,
@@ -73,6 +74,11 @@ _NAVIER_STOKES_SPEC = PresetSpec(
 class _NavierStokesProblem(TransientLinearProblem):
     def setup(self) -> None:
         domain_geom = create_domain(self.config.domain)
+        require_unverified_periodic_support(
+            self.spec.name,
+            domain_geom,
+            "Raviart-Thomas / DG spaces",
+        )
         self.domain_geom = domain_geom
         self.msh = domain_geom.mesh
         self.gdim = self.msh.geometry.dim

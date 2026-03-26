@@ -9,6 +9,7 @@ parameters:
   pulse_delay: 0.18
 domain:
   type: rectangle
+  periodic_axes: []
   size: [1.0, 1.0]
   mesh_resolution: [32, 32]
 inputs:

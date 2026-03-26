@@ -4,6 +4,7 @@ import numpy as np
 import ufl
 from dolfinx import default_scalar_type, fem
 
+from plm_data.core.periodic import require_unverified_periodic_support
 from plm_data.core.runtime import require_complex_runtime
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.presets import register_preset
@@ -62,6 +63,14 @@ _MAXWELL_SPEC = PresetSpec(
 class _MaxwellProblem(StationaryLinearProblem):
     def create_function_space(self, domain_geom):
         return fem.functionspace(domain_geom.mesh, ("N1curl", 1))
+
+    def create_periodic_constraint(self, V, domain_geom, bcs):
+        require_unverified_periodic_support(
+            self.spec.name,
+            domain_geom,
+            "N1curl spaces",
+        )
+        return None
 
     def create_boundary_conditions(self, V, domain_geom):
         return apply_maxwell_dirichlet_bcs(

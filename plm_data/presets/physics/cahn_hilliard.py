@@ -3,8 +3,6 @@
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem
-from dolfinx.fem.petsc import NonlinearProblem
-
 from plm_data.core.initial_conditions import apply_ic
 from plm_data.core.mesh import create_domain
 from plm_data.presets import register_preset
@@ -77,9 +75,16 @@ class _CahnHilliardProblem(TransientNonlinearProblem):
         mobility = self.config.parameters["mobility"]
         theta = self.config.parameters["theta"]
         dt = self.config.time.dt
+        mpc = self.create_periodic_constraint(
+            ME,
+            domain_geom,
+            [],
+            constrained_spaces=[ME.sub(0), ME.sub(1)],
+        )
+        solution_space = ME if mpc is None else mpc.function_space
 
-        self.u = fem.Function(ME)
-        self.u0 = fem.Function(ME)
+        self.u = fem.Function(solution_space)
+        self.u0 = fem.Function(solution_space)
 
         initial_condition = self.config.input("c").initial_condition
         assert initial_condition is not None
@@ -113,15 +118,18 @@ class _CahnHilliardProblem(TransientNonlinearProblem):
             - lmbda * ufl.inner(ufl.grad(c), ufl.grad(v)) * ufl.dx
         )
         F = F0 + F1
+        J = ufl.derivative(F, self.u, ufl.TrialFunction(ME))
 
-        self.problem = NonlinearProblem(
+        self.problem = self.create_nonlinear_problem(
             F,
             self.u,
+            bcs=[],
             petsc_options_prefix="plm_cahn_hilliard_",
-            petsc_options=self._solver_options,
+            J=J,
+            mpc=mpc,
         )
 
-        V0, self._c_dofs = ME.sub(0).collapse()
+        V0, self._c_dofs = self.u.function_space.sub(0).collapse()
         self.c_out = fem.Function(V0, name="c")
 
     def step(self, t: float, dt: float) -> bool:

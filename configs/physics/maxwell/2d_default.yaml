@@ -6,6 +6,7 @@ parameters:
   source_amplitude: 1.0
 domain:
   type: rectangle
+  periodic_axes: []
   size: [1.0, 1.0]
   mesh_resolution: [32, 32]
 inputs:

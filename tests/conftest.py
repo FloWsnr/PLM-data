@@ -36,6 +36,7 @@ def rectangle_domain():
     return DomainConfig(
         type="rectangle",
         params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+        periodic_axes=(),
     )
 
 
@@ -90,7 +91,11 @@ def cahn_hilliard_config(tmp_path, rectangle_domain):
             "mobility": 1.0,
             "theta": 0.5,
         },
-        domain=rectangle_domain,
+        domain=DomainConfig(
+            type="rectangle",
+            params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+            periodic_axes=(0, 1),
+        ),
         inputs={
             "c": InputConfig(
                 initial_condition=scalar_expr(
@@ -125,6 +130,7 @@ def navier_stokes_config(tmp_path):
     domain = DomainConfig(
         type="rectangle",
         params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+        periodic_axes=(),
     )
     return SimulationConfig(
         preset="navier_stokes",
@@ -182,6 +188,7 @@ def helmholtz_config(tmp_path, direct_solver):
     domain = DomainConfig(
         type="rectangle",
         params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+        periodic_axes=(),
     )
     return SimulationConfig(
         preset="helmholtz",
@@ -228,6 +235,7 @@ def stokes_config(tmp_path):
     domain = DomainConfig(
         type="rectangle",
         params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+        periodic_axes=(),
     )
     return SimulationConfig(
         preset="stokes",

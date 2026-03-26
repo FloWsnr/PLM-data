@@ -3,6 +3,7 @@ parameters:
   nu: 1.0
 domain:
   type: box
+  periodic_axes: []
   size: [1.0, 1.0, 1.0]
   mesh_resolution: [8, 8, 8]
 inputs:

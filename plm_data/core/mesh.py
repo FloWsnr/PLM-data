@@ -21,6 +21,12 @@ class DomainGeometry:
     boundary_names: dict[str, int]
     ds: ufl.Measure  # type: ignore[reportInvalidTypeForm]
     periodic_axes: tuple[int, ...] = ()
+    axis_bounds: tuple[tuple[float, float], ...] = ()
+
+    @property
+    def has_periodic_axes(self) -> bool:
+        """Return whether any periodic directions are configured."""
+        return bool(self.periodic_axes)
 
 
 DomainFactory = Callable[[DomainConfig], DomainGeometry]
@@ -115,7 +121,14 @@ def _create_interval(domain: DomainConfig) -> DomainGeometry:
         "x+": lambda x, lim=length: np.isclose(x[0], lim),
     }
     ft, boundary_names, ds = _tag_boundaries(msh, predicates)
-    return DomainGeometry(mesh=msh, facet_tags=ft, boundary_names=boundary_names, ds=ds)
+    return DomainGeometry(
+        mesh=msh,
+        facet_tags=ft,
+        boundary_names=boundary_names,
+        ds=ds,
+        periodic_axes=domain.periodic_axes,
+        axis_bounds=((0.0, length),),
+    )
 
 
 @register_domain("rectangle")
@@ -140,7 +153,14 @@ def _create_rectangle(domain: DomainConfig) -> DomainGeometry:
         "y+": lambda x, lim=Ly: np.isclose(x[1], lim),
     }
     ft, boundary_names, ds = _tag_boundaries(msh, predicates)
-    return DomainGeometry(mesh=msh, facet_tags=ft, boundary_names=boundary_names, ds=ds)
+    return DomainGeometry(
+        mesh=msh,
+        facet_tags=ft,
+        boundary_names=boundary_names,
+        ds=ds,
+        periodic_axes=domain.periodic_axes,
+        axis_bounds=((0.0, Lx), (0.0, Ly)),
+    )
 
 
 @register_domain("box")
@@ -167,4 +187,11 @@ def _create_box(domain: DomainConfig) -> DomainGeometry:
         "z+": lambda x, lim=Lz: np.isclose(x[2], lim),
     }
     ft, boundary_names, ds = _tag_boundaries(msh, predicates)
-    return DomainGeometry(mesh=msh, facet_tags=ft, boundary_names=boundary_names, ds=ds)
+    return DomainGeometry(
+        mesh=msh,
+        facet_tags=ft,
+        boundary_names=boundary_names,
+        ds=ds,
+        periodic_axes=domain.periodic_axes,
+        axis_bounds=((0.0, Lx), (0.0, Ly), (0.0, Lz)),
+    )

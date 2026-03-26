@@ -1,13 +1,10 @@
 """Stokes flow preset using Taylor-Hood (P2/P1) finite elements."""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING
 
 import numpy as np
 import ufl
 from dolfinx import default_real_type, fem
-from dolfinx.fem.petsc import LinearProblem
 
 from plm_data.core.boundary_conditions import apply_vector_dirichlet_bcs
 from plm_data.core.fem_utils import domain_average
@@ -75,7 +72,7 @@ _STOKES_SPEC = PresetSpec(
 
 
 class _StokesProblem(CustomProblem):
-    def run(self, output: FrameWriter) -> RunResult:
+    def run(self, output: "FrameWriter") -> RunResult:
         logger = get_logger("solver")
         domain_geom = create_domain(self.config.domain)
         msh = domain_geom.mesh
@@ -133,20 +130,25 @@ class _StokesProblem(CustomProblem):
             velocity_bcs,
             self.config.parameters,
         )
+        mpc_u = self.create_periodic_constraint(V, domain_geom, bcs)
+        mpc_p = self.create_periodic_constraint(Q, domain_geom, [])
+        mpcs = None if mpc_u is None else [mpc_u, mpc_p]
 
         # Solution functions
-        u_h = fem.Function(V, name="velocity")
-        p_h = fem.Function(Q, name="pressure")
+        velocity_space = V if mpc_u is None else mpc_u.function_space
+        pressure_space = Q if mpc_p is None else mpc_p.function_space
+        u_h = fem.Function(velocity_space, name="velocity")
+        p_h = fem.Function(pressure_space, name="pressure")
 
         # Solve the block system
-        problem = LinearProblem(
+        problem = self.create_linear_problem(
             ufl.extract_blocks(a_form),
             ufl.extract_blocks(L_form),
             u=[u_h, p_h],
             bcs=bcs,
-            kind="mpi",
             petsc_options_prefix="plm_stokes_",
-            petsc_options=self._solver_options,
+            kind="mpi",
+            mpc=mpcs,
         )
         problem.solve()
 

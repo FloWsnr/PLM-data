@@ -1,18 +1,18 @@
 """Base contracts for presets and reusable problem engines."""
 
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from dolfinx import fem
-from dolfinx.fem.petsc import LinearProblem
+from dolfinx.fem.petsc import LinearProblem as DolfinxLinearProblem
+from dolfinx.fem.petsc import NonlinearProblem as DolfinxNonlinearProblem
 
 from plm_data.core.config import SimulationConfig
 from plm_data.core.logging import get_logger
 from plm_data.core.mesh import DomainGeometry, create_domain
+from plm_data.core.periodic import build_periodic_mpc, require_dolfinx_mpc
 from plm_data.presets.metadata import PresetSpec
 
 if TYPE_CHECKING:
@@ -38,8 +38,104 @@ class ProblemInstance(ABC):
         self.config = config
         self._solver_options = config.solver.options
 
+    def create_linear_problem(
+        self,
+        a,
+        L,
+        *,
+        bcs: list[fem.DirichletBC] | None = None,
+        petsc_options_prefix: str,
+        petsc_options: dict[str, str] | None = None,
+        u=None,
+        mpc=None,
+        kind=None,
+        P=None,
+    ):
+        """Create a linear problem, switching to MPC when periodicity is active."""
+        options = self._solver_options if petsc_options is None else petsc_options
+        if mpc is None:
+            kwargs: dict[str, Any] = {
+                "bcs": [] if bcs is None else bcs,
+                "petsc_options_prefix": petsc_options_prefix,
+                "petsc_options": options,
+            }
+            if u is not None:
+                kwargs["u"] = u
+            if kind is not None:
+                kwargs["kind"] = kind
+            if P is not None:
+                kwargs["P"] = P
+            return DolfinxLinearProblem(a, L, **kwargs)
+
+        dolfinx_mpc = require_dolfinx_mpc()
+        kwargs = {
+            "bcs": [] if bcs is None else bcs,
+            "petsc_options_prefix": petsc_options_prefix,
+            "petsc_options": options,
+        }
+        if u is not None:
+            kwargs["u"] = u
+        if P is not None:
+            kwargs["P"] = P
+        return dolfinx_mpc.LinearProblem(a, L, mpc, **kwargs)
+
+    def create_periodic_constraint(
+        self,
+        V: fem.FunctionSpace,
+        domain_geom: DomainGeometry,
+        bcs: list[fem.DirichletBC] | None = None,
+        constrained_spaces: list[fem.FunctionSpace] | None = None,
+    ):
+        """Build an MPC for the configured periodic domain, if any."""
+        return build_periodic_mpc(
+            V,
+            domain_geom,
+            bcs=bcs,
+            constrained_spaces=constrained_spaces,
+        )
+
+    def create_nonlinear_problem(
+        self,
+        F,
+        u,
+        *,
+        petsc_options_prefix: str,
+        bcs: list[fem.DirichletBC] | None = None,
+        J=None,
+        P=None,
+        kind=None,
+        mpc=None,
+    ):
+        """Create a nonlinear problem, switching to MPC when periodicity is active."""
+        if mpc is None:
+            kwargs: dict[str, Any] = {
+                "petsc_options_prefix": petsc_options_prefix,
+                "bcs": [] if bcs is None else bcs,
+                "petsc_options": self._solver_options,
+            }
+            if J is not None:
+                kwargs["J"] = J
+            if P is not None:
+                kwargs["P"] = P
+            if kind is not None:
+                kwargs["kind"] = kind
+            return DolfinxNonlinearProblem(F, u, **kwargs)
+
+        dolfinx_mpc = require_dolfinx_mpc()
+        kwargs = {
+            "bcs": [] if bcs is None else bcs,
+            "petsc_options": self._solver_options,
+        }
+        if J is not None:
+            kwargs["J"] = J
+        if P is not None:
+            kwargs["P"] = P
+        if kind is not None:
+            kwargs["kind"] = kind
+        return dolfinx_mpc.NonlinearProblem(F, u, mpc, **kwargs)
+
     @abstractmethod
-    def run(self, output: FrameWriter) -> RunResult:
+    def run(self, output: "FrameWriter") -> RunResult:
         """Execute the simulation and write output frames."""
 
 
@@ -95,7 +191,7 @@ class StationaryLinearProblem(ProblemInstance):
         """Return the PETSc option prefix for this problem."""
         return f"plm_{self.spec.name}_"
 
-    def run(self, output: FrameWriter) -> RunResult:
+    def run(self, output: "FrameWriter") -> RunResult:
         logger = get_logger("solver")
         domain_geom = self.create_domain()
         V = self.create_function_space(domain_geom)
@@ -103,14 +199,15 @@ class StationaryLinearProblem(ProblemInstance):
         logger.info("  Solving stationary linear problem (%d DOFs)...", num_dofs)
 
         bcs = self.create_boundary_conditions(V, domain_geom)
+        mpc = self.create_periodic_constraint(V, domain_geom, bcs)
         a, L = self.create_forms(V, domain_geom)
 
-        problem = LinearProblem(
+        problem = self.create_linear_problem(
             a,
             L,
             bcs=bcs,
             petsc_options_prefix=self.solver_prefix(),
-            petsc_options=self._solver_options,
+            mpc=mpc,
         )
         solution = problem.solve()
 
@@ -149,7 +246,7 @@ class _TransientProblemBase(ProblemInstance):
         """Return whether to write the initial state at t=0."""
         return True
 
-    def run(self, output: FrameWriter) -> RunResult:
+    def run(self, output: "FrameWriter") -> RunResult:
         logger = get_logger("timestepper")
         self.setup()
 

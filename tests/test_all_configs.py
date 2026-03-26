@@ -5,6 +5,7 @@ to a single timestep. Output resolution is reduced for speed.
 """
 
 from pathlib import Path
+import importlib.util
 
 import pytest
 
@@ -15,6 +16,7 @@ from plm_data.presets import get_preset
 
 CONFIGS_DIR = Path(__file__).resolve().parent.parent / "configs"
 ALL_CONFIGS = sorted(CONFIGS_DIR.rglob("*.yaml"))
+HAS_DOLFINX_MPC = importlib.util.find_spec("dolfinx_mpc") is not None
 
 
 @pytest.mark.parametrize(
@@ -26,6 +28,8 @@ def test_config_runs(config_path, tmp_path):
     cfg = load_config(config_path)
     if cfg.preset == "maxwell" and not is_complex_runtime():
         pytest.skip("harmonic Maxwell requires a complex-valued runtime")
+    if cfg.domain.periodic_axes and not HAS_DOLFINX_MPC:
+        pytest.skip("periodic configs require dolfinx_mpc")
 
     # Shrink to minimal run (match dimensionality of the domain)
     ndim = cfg.domain.dimension
