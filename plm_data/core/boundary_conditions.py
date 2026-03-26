@@ -168,7 +168,10 @@ def build_vector_natural_bc_forms(
         if bc.type == "dirichlet":
             continue
         if bc.type == "robin":
-            raise ValueError("Vector natural BCs do not support robin conditions")
+            raise ValueError(
+                "Shared vector Robin is intentionally unsupported. "
+                "Use vector neumann data or a preset-specific boundary type."
+            )
         if bc.type != "neumann":
             continue
 

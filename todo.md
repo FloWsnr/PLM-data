@@ -1,12 +1,13 @@
 # TODO
 
-## Vector Robin Boundary Conditions
+## Vector Robin Boundary Conditions (resolved)
 
-Current status:
-- Vector `neumann` BCs are supported in shared config/core infrastructure.
-- Vector `robin` BCs are intentionally blocked in config validation.
+Decision:
+- Keep generic vector `robin` unsupported in the shared config/core layer.
+- Continue using shared vector `dirichlet` and `neumann`, plus preset-specific vector boundary types where the operator is structurally different, such as Maxwell `absorbing`.
+- If a future preset needs the isotropic form `alpha * inner(u, v) ds`, add it as an explicit BC type such as `isotropic_robin` rather than overloading generic `robin`.
 
-Why this is blocked:
+Why:
 - The current Robin schema is scalar-shaped: it only provides a single `alpha`.
 - For scalar PDEs, Robin is unambiguous: `alpha * u = g` on the boundary.
 - For vector PDEs, "Robin" can mean several different things:
@@ -16,17 +17,3 @@ Why this is blocked:
   - normal-only or tangential-only terms
   - PDE-specific laws such as slip/friction or elastic foundation models
 - If shared infrastructure accepted vector Robin today, it would silently choose one interpretation, most likely the isotropic `alpha * I` case. That is too implicit for a modular PDE library.
-
-What would be needed to support it cleanly:
-- Decide the shared meaning first.
-- Smallest acceptable extension:
-  - define an explicit "isotropic vector Robin" contract
-  - keep `value` vector-valued
-  - interpret `alpha` as a scalar multiplier of `inner(u, v)` on the boundary
-- More general extension:
-  - allow componentwise or tensor-valued Robin coefficients in the config schema
-  - possibly distinguish normal/tangential Robin operators
-
-Recommended next step:
-- Only add shared vector Robin once there is a concrete PDE that needs it and the required semantics are clear.
-- For now, keep the shared layer limited to vector Dirichlet and vector Neumann, which are much less ambiguous.

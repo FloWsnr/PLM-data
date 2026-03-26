@@ -280,7 +280,9 @@ def _parse_boundary_condition(
         raise ValueError(f"Robin BC in {context} requires 'alpha'")
     if shape != "scalar" and bc_type == "robin":
         raise ValueError(
-            f"{context} uses BC type '{bc_type}', which is only supported for scalar fields"
+            f"{context} uses BC type '{bc_type}', but shared vector Robin is "
+            "intentionally unsupported. Use 'neumann' for vector traction data "
+            "or a preset-specific type such as 'absorbing'."
         )
     return BoundaryConditionConfig(type=bc_type, value=bc_value, alpha=bc_alpha)
 

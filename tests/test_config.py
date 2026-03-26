@@ -239,7 +239,9 @@ def test_vector_robin_bc_still_rejected(tmp_path):
     p = tmp_path / "stokes_vector_robin.yaml"
     p.write_text(yaml.dump(data))
 
-    with pytest.raises(ValueError, match="only supported for scalar fields"):
+    with pytest.raises(
+        ValueError, match="shared vector Robin is intentionally unsupported"
+    ):
         load_config(p)
 
 

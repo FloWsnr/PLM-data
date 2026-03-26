@@ -28,7 +28,7 @@ pip install pyyaml pytest pyright
 
 - **Presets** (`plm_data/presets/`) — Each PDE is a `PDEPreset` with a `PresetSpec` and a `build_problem(config)` factory. Specs now separate config-facing `inputs`, solved `states`, and selectable `outputs`.
 - **Problem engines** (`plm_data/presets/base.py`) — Reusable runtime engines cover stationary linear, transient linear, transient nonlinear, and custom problems. Presets still own the formulation details and use shared runtime loops where that helps.
-- **Config** (`configs/`) — YAML is input-centric. Top-level `inputs:` configures boundary conditions, sources, and initial conditions; `output.fields` selects which declared outputs to save and how to expand them. Time-dependent presets use a `time:` section; output resolution lives under `output.resolution`.
+- **Config** (`configs/`) — YAML is input-centric. Top-level `inputs:` configures boundary conditions, sources, and initial conditions; `output.fields` selects which declared outputs to save and how to expand them. Time-dependent presets use a `time:` section; output resolution lives under `output.resolution`. Shared scalar Robin is supported; vector boundaries use shared Dirichlet/Neumann or preset-specific types such as Maxwell `absorbing`, while generic vector Robin remains intentionally unsupported.
 - **Domains** (`plm_data/core/mesh.py`) — Built-in domains are registry-backed. The current repo ships `interval`, `rectangle`, and `box`.
 - **Output** (`plm_data/core/output.py`) — `FrameWriter` validates requested outputs against the preset spec, expands vector outputs into components for grid formats, and writes only selected outputs.
 

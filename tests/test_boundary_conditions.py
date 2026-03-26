@@ -305,7 +305,7 @@ class TestBuildVectorNaturalBCForms:
             ),
         }
         with pytest.raises(
-            ValueError, match="Vector natural BCs do not support robin conditions"
+            ValueError, match="Shared vector Robin is intentionally unsupported"
         ):
             build_vector_natural_bc_forms(
                 vector_test, domain_geom, bc_configs, parameters={}
