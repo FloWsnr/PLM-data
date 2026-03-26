@@ -275,10 +275,9 @@ class _TransientProblemBase(ProblemInstance):
 
         t = 0.0
         num_steps = 0
-        while t < t_end - 1e-14 * dt:
+        for num_steps in range(1, total_steps + 1):
             converged = self.step(t, dt)
-            t += dt
-            num_steps += 1
+            t = num_steps * dt
 
             if not converged:
                 logger.error(

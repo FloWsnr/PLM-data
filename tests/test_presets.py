@@ -23,7 +23,7 @@ from plm_data.core.mesh import create_domain
 from plm_data.core.output import FrameWriter
 from plm_data.core.runtime import is_complex_runtime
 from plm_data.presets import get_preset
-from plm_data.presets.base import StationaryLinearProblem
+from plm_data.presets.base import StationaryLinearProblem, TransientLinearProblem
 from plm_data.presets.basic.helmholtz import _check_resonance
 from plm_data.presets.metadata import (
     OutputSpec,
@@ -74,6 +74,26 @@ _VECTOR_STATIONARY_SPEC = PresetSpec(
     supported_dimensions=[2],
 )
 
+_SCALAR_TRANSIENT_SPEC = PresetSpec(
+    name="scalar_transient_dummy",
+    category="tests",
+    description="Dummy scalar transient problem for engine tests",
+    equations={"u": "du/dt = 0"},
+    parameters=[],
+    inputs={},
+    states={"u": StateSpec(name="u", shape="scalar")},
+    outputs={
+        "u": OutputSpec(
+            name="u",
+            shape="scalar",
+            output_mode="scalar",
+            source_name="u",
+        )
+    },
+    steady_state=False,
+    supported_dimensions=[2],
+)
+
 
 class _DummyVectorStationaryProblem(StationaryLinearProblem):
     def create_function_space(self, domain_geom):
@@ -99,6 +119,26 @@ class _DummyVectorStationaryProblem(StationaryLinearProblem):
     def export_solution_fields(self, solution):
         solution.name = "u"
         return {"u": solution}
+
+
+class _DummyScalarTransientProblem(TransientLinearProblem):
+    def setup(self) -> None:
+        self._step_calls = 0
+        domain_geom = create_domain(self.config.domain)
+        self._V = fem.functionspace(domain_geom.mesh, ("Lagrange", 1))
+        self._u = fem.Function(self._V, name="u")
+
+    def step(self, t: float, dt: float) -> bool:
+        self._step_calls += 1
+        self._u.x.array[:] = float(self._step_calls)
+        self._u.x.scatter_forward()
+        return True
+
+    def get_output_fields(self) -> dict[str, fem.Function]:
+        return {"u": self._u}
+
+    def get_num_dofs(self) -> int:
+        return self._V.dofmap.index_map.size_global * self._V.dofmap.index_map_bs
 
 
 def _run_preset(config):
@@ -652,6 +692,41 @@ def test_stationary_linear_problem_counts_vector_dofs(tmp_path, direct_solver):
     V = fem.functionspace(domain_geom.mesh, ("Lagrange", 1, (2,)))
     expected_num_dofs = V.dofmap.index_map.size_global * V.dofmap.index_map_bs
     assert result.num_dofs == expected_num_dofs
+
+
+def test_transient_problem_uses_exact_integer_step_count(tmp_path, direct_solver):
+    config = SimulationConfig(
+        preset="scalar_transient_dummy",
+        parameters={},
+        domain=DomainConfig(
+            type="rectangle",
+            params={"size": [1.0, 1.0], "mesh_resolution": [2, 2]},
+            periodic_axes=(),
+        ),
+        inputs={},
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[2, 2],
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(u="scalar"),
+        ),
+        solver=direct_solver,
+        time=TimeConfig(dt=0.01, t_end=5.0),
+        seed=42,
+    )
+
+    output_dir = (
+        config.output.path
+        / _SCALAR_TRANSIENT_SPEC.category
+        / _SCALAR_TRANSIENT_SPEC.name
+    )
+    writer = FrameWriter(output_dir, config, _SCALAR_TRANSIENT_SPEC)
+    result = _DummyScalarTransientProblem(_SCALAR_TRANSIENT_SPEC, config).run(writer)
+    writer.finalize()
+
+    assert result.solver_converged is True
+    assert result.num_timesteps == 500
 
 
 @pytest.mark.skipif(
