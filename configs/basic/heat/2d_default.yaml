@@ -31,7 +31,7 @@ output:
   path: ./output
   resolution: [64, 64]
   num_frames: 20
-  formats: [numpy]
+  formats: [numpy, gif]
   fields:
     u: scalar
 seed: 42

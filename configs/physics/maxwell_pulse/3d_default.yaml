@@ -59,7 +59,7 @@ output:
   path: ./output
   resolution: [24, 24, 24]
   num_frames: 12
-  formats: [numpy]
+  formats: [numpy, gif]
   fields:
     electric_field: components
 seed: 42

@@ -33,7 +33,7 @@ output:
   path: ./output
   resolution: [16, 16, 16]
   num_frames: 1
-  formats: [numpy]
+  formats: [numpy, gif]
   fields:
     velocity: components
     pressure: scalar
