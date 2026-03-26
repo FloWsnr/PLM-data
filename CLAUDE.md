@@ -24,13 +24,13 @@ Tests run via `python -m pytest tests/`. The project runs directly as a Python m
 The system has three layers:
 
 1. **Presets** (`plm_data/presets/`) — Each PDE is a self-contained class registered via `@register_preset("name")`. Presets expose:
-   - `spec` — a `PresetSpec` describing parameters, fields, output modes, family, and supported dimensions
+   - `spec` — a `PresetSpec` describing parameters, config-facing inputs, solved states, selectable outputs, and supported dimensions
    - `build_problem(config)` — returns a runtime problem object for one of the shared engines or for the custom escape hatch
    Common solver families live in `plm_data/presets/base.py` as `StationaryLinearProblem`, `TransientLinearProblem`, `TransientNonlinearProblem`, and `CustomProblem`.
 
 2. **Core** (`plm_data/core/`) — Shared infrastructure:
-   - `config.py` — `SimulationConfig` dataclass loaded from YAML. Configs are validated against the preset spec up front. The schema is field-centric: each field owns explicit `boundary_conditions`, `source`, `initial_condition`, and `output` settings. Transient presets use a `time:` section. Output resolution lives under `output.resolution`
-   - `mesh.py` — `create_domain()` returns `DomainGeometry` (mesh + facet_tags + boundary_names + ds measure). Built-in domains auto-tag boundaries (x-, x+, y-, y+ for rectangle; 6 faces for box). Future Gmsh support will populate from physical groups
+   - `config.py` — `SimulationConfig` dataclass loaded from YAML. Configs are validated against the preset spec up front. The schema is input-centric: each entry under `inputs` owns explicit `boundary_conditions`, `source`, and `initial_condition` settings, while `output.fields` selects which declared outputs are saved. Transient presets use a `time:` section. Output resolution lives under `output.resolution`
+   - `mesh.py` — `create_domain()` returns `DomainGeometry` (mesh + facet_tags + boundary_names + ds measure). Domain creation is registry-backed. Built-in domains auto-tag boundaries (x-, x+, y-, y+ for rectangle; 6 faces for box; x-/x+ for interval)
    - `spatial_fields.py` — Shared scalar and vector spatial field system (constant, sine_product, gaussian_bump, step, none, custom). Provides UFL builders, scalar interpolators, and vector-component expansion helpers. Supports `"param:name"` references
   - `boundary_conditions.py` — shared scalar Dirichlet / Neumann / Robin helpers plus vector Dirichlet / Neumann helpers for standard vector-valued spaces; vector Robin remains intentionally unsupported in the shared layer
    - `source_terms.py` — scalar and vector source-form builders from the unified field expression config
@@ -41,6 +41,7 @@ The system has three layers:
    - `interpolation.py` — `function_to_array()` maps DOLFINx FEM functions onto regular numpy grids via point evaluation
 
 3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, domain geometry, optional `time`, explicit per-field config blocks under `fields`, solver options, output settings, and seed.
+   The current schema uses explicit per-input blocks under `inputs` plus output selection under `output.fields`.
 
 ## Adding a New PDE Preset
 
@@ -58,7 +59,7 @@ The system has three layers:
 ## Key Conventions
 
 - YAML configs must be fully explicit — no hidden defaults in code
-- Config validation is spec-driven: parameter names, field names, allowed sections, output modes, and supported dimensions are checked before solving
+- Config validation is spec-driven: parameter names, input names, output names, allowed sections, output modes, and supported dimensions are checked before solving
 - Output goes to `output/<category>/<preset>/` with format-specific files: `.npy` arrays, `.gif`/`.mp4` animations, and `paraview/` directory with `.pvd`+`.vtu` files for Paraview
 - Presets are auto-discovered recursively under `plm_data.presets`
 - Meshes use `GhostMode.shared_facet` for DOLFINx compatibility
@@ -71,3 +72,4 @@ The system has three layers:
 - Do not use parameter defaults in code. The config must specify all parameters explicitly.
 - use ruff for linting and formatting. Make sure to run ruff after making changes to ensure code style consistency.
 - After making code changes, check Pylance diagnostics using `mcp__ide__getDiagnostics` to catch type errors and other issues. Do this after completing a logical batch of edits, not after every single edit.
+- Do not use `from __future__ import annotations`. This is a Python 3.10+ codebase, and we want to keep type annotations straightforward without string literals.
