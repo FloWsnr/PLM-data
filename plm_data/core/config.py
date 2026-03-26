@@ -261,7 +261,7 @@ def _parse_boundary_condition(
     bc_alpha = mapping.get("alpha")
     if bc_type == "robin" and bc_alpha is None:
         raise ValueError(f"Robin BC in {context} requires 'alpha'")
-    if shape != "scalar" and bc_type in {"neumann", "robin"}:
+    if shape != "scalar" and bc_type == "robin":
         raise ValueError(
             f"{context} uses BC type '{bc_type}', which is only supported for scalar fields"
         )

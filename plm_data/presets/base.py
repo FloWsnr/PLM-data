@@ -63,6 +63,10 @@ class StationaryLinearProblem(ProblemInstance):
         """Create the domain with tagged boundaries."""
         return create_domain(self.config.domain)
 
+    def count_dofs(self, V: fem.FunctionSpace) -> int:
+        """Return the total scalar DOF count for the function space."""
+        return V.dofmap.index_map.size_global * V.dofmap.index_map_bs
+
     @abstractmethod
     def create_function_space(self, domain_geom: DomainGeometry) -> fem.FunctionSpace:
         """Create the FEM function space."""
@@ -95,7 +99,7 @@ class StationaryLinearProblem(ProblemInstance):
         logger = get_logger("solver")
         domain_geom = self.create_domain()
         V = self.create_function_space(domain_geom)
-        num_dofs = V.dofmap.index_map.size_global
+        num_dofs = self.count_dofs(V)
         logger.info("  Solving stationary linear problem (%d DOFs)...", num_dofs)
 
         bcs = self.create_boundary_conditions(V, domain_geom)

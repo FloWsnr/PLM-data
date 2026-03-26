@@ -79,6 +79,41 @@ def _base_yaml_dict():
     }
 
 
+def _base_stokes_yaml_dict():
+    return {
+        "preset": "stokes",
+        "parameters": {"nu": 1.0},
+        "domain": {
+            "type": "rectangle",
+            "size": [1.0, 1.0],
+            "mesh_resolution": [4, 4],
+        },
+        "fields": {
+            "velocity": {
+                "boundary_conditions": {
+                    "x-": {"type": "dirichlet", "value": [0.0, 0.0]},
+                    "x+": {"type": "dirichlet", "value": [0.0, 0.0]},
+                    "y-": {"type": "dirichlet", "value": [0.0, 0.0]},
+                    "y+": {"type": "dirichlet", "value": [1.0, 0.0]},
+                },
+                "source": {"type": "none", "params": {}},
+                "output": "components",
+            },
+            "pressure": {"output": "scalar"},
+        },
+        "output": {
+            "path": "./output",
+            "resolution": [8, 8],
+            "num_frames": 1,
+            "formats": ["numpy"],
+        },
+        "solver": {
+            "ksp_type": "preonly",
+            "pc_type": "lu",
+        },
+    }
+
+
 def test_robin_bc_missing_alpha(tmp_path):
     data = _base_yaml_dict()
     data["fields"]["u"]["boundary_conditions"]["x-"] = {"type": "robin", "value": 0.0}
@@ -103,4 +138,34 @@ def test_missing_output_resolution(tmp_path):
     p = tmp_path / "no_resolution.yaml"
     p.write_text(yaml.dump(data))
     with pytest.raises(ValueError, match="resolution"):
+        load_config(p)
+
+
+def test_load_config_vector_neumann_bc(tmp_path):
+    data = _base_stokes_yaml_dict()
+    data["fields"]["velocity"]["boundary_conditions"]["x-"] = {
+        "type": "neumann",
+        "value": [1.0, 0.0],
+    }
+    p = tmp_path / "stokes_vector_neumann.yaml"
+    p.write_text(yaml.dump(data))
+
+    cfg = load_config(p)
+    bc = cfg.field("velocity").boundary_conditions["x-"]
+    assert bc.type == "neumann"
+    assert bc.value.components["x"].params["value"] == 1.0
+    assert bc.value.components["y"].params["value"] == 0.0
+
+
+def test_vector_robin_bc_still_rejected(tmp_path):
+    data = _base_stokes_yaml_dict()
+    data["fields"]["velocity"]["boundary_conditions"]["x-"] = {
+        "type": "robin",
+        "value": [1.0, 0.0],
+        "alpha": 1.0,
+    }
+    p = tmp_path / "stokes_vector_robin.yaml"
+    p.write_text(yaml.dump(data))
+
+    with pytest.raises(ValueError, match="only supported for scalar fields"):
         load_config(p)

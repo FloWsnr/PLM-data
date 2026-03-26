@@ -34,7 +34,7 @@ The system has three layers:
    - `config.py` — `SimulationConfig` dataclass loaded from YAML. Configs are validated against the preset spec up front. The schema is field-centric: each field owns explicit `boundary_conditions`, `source`, `initial_condition`, and `output` settings. Transient presets use a `time:` section. Output resolution lives under `output.resolution`
    - `mesh.py` — `create_domain()` returns `DomainGeometry` (mesh + facet_tags + boundary_names + ds measure). Built-in domains auto-tag boundaries (x-, x+, y-, y+ for rectangle; 6 faces for box). Future Gmsh support will populate from physical groups
    - `spatial_fields.py` — Shared scalar and vector spatial field system (constant, sine_product, gaussian_bump, step, none, custom). Provides UFL builders, scalar interpolators, and vector-component expansion helpers. Supports `"param:name"` references
-   - `boundary_conditions.py` — scalar Dirichlet / Neumann / Robin helpers for presets that use the shared scalar BC path
+  - `boundary_conditions.py` — shared scalar Dirichlet / Neumann / Robin helpers plus vector Dirichlet / Neumann helpers for standard vector-valued spaces; vector Robin remains intentionally unsupported in the shared layer
    - `source_terms.py` — scalar and vector source-form builders from the unified field expression config
    - `initial_conditions.py` — scalar and vector IC helpers from the unified field expression config; `random_perturbation` stays scalar-only and DOF-based
    - `runner.py` — `SimulationRunner` orchestrates: loads config → instantiates preset → builds problem → runs it → finalizes output

@@ -1,6 +1,8 @@
 """Tests for running actual PDE preset simulations."""
 
 import numpy as np
+import ufl
+from dolfinx import fem
 
 from plm_data.core.config import (
     BoundaryConditionConfig,
@@ -13,8 +15,11 @@ from plm_data.core.config import (
     SolverConfig,
     TimeConfig,
 )
+from plm_data.core.mesh import create_domain
 from plm_data.core.output import FrameWriter
 from plm_data.presets import get_preset
+from plm_data.presets.base import StationaryLinearProblem
+from plm_data.presets.metadata import FieldSpec, PresetSpec
 
 
 def constant(value):
@@ -27,6 +32,54 @@ def scalar_expr(expr_type: str, **params):
 
 def vector_expr(**components):
     return FieldExpressionConfig(components=components)
+
+
+_VECTOR_STATIONARY_SPEC = PresetSpec(
+    name="vector_dummy",
+    category="tests",
+    description="Dummy vector-valued stationary problem for engine tests",
+    equations={"u": "u = 0"},
+    parameters=[],
+    fields={
+        "u": FieldSpec(
+            name="u",
+            shape="vector",
+            allow_boundary_conditions=False,
+            allow_source=False,
+            allow_initial_condition=False,
+            output_mode="components",
+        )
+    },
+    family="stationary_linear",
+    steady_state=True,
+    supported_dimensions=[2],
+)
+
+
+class _DummyVectorStationaryProblem(StationaryLinearProblem):
+    def create_function_space(self, domain_geom):
+        gdim = domain_geom.mesh.geometry.dim
+        return fem.functionspace(domain_geom.mesh, ("Lagrange", 1, (gdim,)))
+
+    def create_boundary_conditions(self, V, domain_geom):
+        return []
+
+    def create_forms(self, V, domain_geom):
+        gdim = domain_geom.mesh.geometry.dim
+        u = ufl.TrialFunction(V)
+        v = ufl.TestFunction(V)
+        a = ufl.inner(u, v) * ufl.dx
+        L = (
+            ufl.inner(
+                fem.Constant(domain_geom.mesh, np.zeros(gdim, dtype=np.float64)), v
+            )
+            * ufl.dx
+        )
+        return a, L
+
+    def export_solution_fields(self, solution):
+        solution.name = "u"
+        return {"u": solution}
 
 
 def _run_preset(config):
@@ -389,6 +442,40 @@ def test_stokes_hidden_pressure(tmp_path):
     assert (output_dir / "velocity_x.npy").exists()
     assert (output_dir / "velocity_y.npy").exists()
     assert not (output_dir / "pressure.npy").exists()
+
+
+def test_stationary_linear_problem_counts_vector_dofs(tmp_path, direct_solver):
+    config = SimulationConfig(
+        preset="vector_dummy",
+        parameters={},
+        domain=DomainConfig(
+            type="rectangle",
+            params={"size": [1.0, 1.0], "mesh_resolution": [4, 4]},
+        ),
+        fields={"u": FieldConfig(output=FieldOutputConfig(mode="components"))},
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[4, 4],
+            num_frames=1,
+            formats=["numpy"],
+        ),
+        solver=direct_solver,
+        seed=42,
+    )
+
+    output_dir = (
+        config.output.path
+        / _VECTOR_STATIONARY_SPEC.category
+        / _VECTOR_STATIONARY_SPEC.name
+    )
+    writer = FrameWriter(output_dir, config, _VECTOR_STATIONARY_SPEC)
+    result = _DummyVectorStationaryProblem(_VECTOR_STATIONARY_SPEC, config).run(writer)
+    writer.finalize()
+
+    domain_geom = create_domain(config.domain)
+    V = fem.functionspace(domain_geom.mesh, ("Lagrange", 1, (2,)))
+    expected_num_dofs = V.dofmap.index_map.size_global * V.dofmap.index_map_bs
+    assert result.num_dofs == expected_num_dofs
 
 
 def test_cahn_hilliard_constant_ic(tmp_path):

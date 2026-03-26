@@ -9,11 +9,11 @@ import ufl
 from dolfinx import default_real_type, fem
 from dolfinx.fem.petsc import LinearProblem
 
+from plm_data.core.boundary_conditions import apply_vector_dirichlet_bcs
 from plm_data.core.fem_utils import domain_average
 from plm_data.core.logging import get_logger
 from plm_data.core.mesh import create_domain
 from plm_data.core.source_terms import build_vector_source_form
-from plm_data.core.spatial_fields import build_vector_interpolator
 from plm_data.presets import register_preset
 from plm_data.presets.base import CustomProblem, PDEPreset, ProblemInstance, RunResult
 from plm_data.presets.metadata import FieldSpec, PDEParameter, PresetSpec
@@ -66,8 +66,6 @@ class _StokesProblem(CustomProblem):
         domain_geom = create_domain(self.config.domain)
         msh = domain_geom.mesh
         gdim = msh.geometry.dim
-        tdim = msh.topology.dim
-        fdim = tdim - 1
 
         nu = self.config.parameters["nu"]
 
@@ -109,29 +107,18 @@ class _StokesProblem(CustomProblem):
         if source_form is not None:
             L_form = L_form + source_form
 
-        # Build per-boundary vector Dirichlet BCs on velocity space
-        msh.topology.create_connectivity(fdim, tdim)
-        bcs: list[fem.DirichletBC] = []
         velocity_bcs = velocity_field.boundary_conditions
         for name, bc_config in velocity_bcs.items():
             if bc_config.type != "dirichlet":
                 raise ValueError(
                     f"Stokes boundary '{name}' must be dirichlet, got '{bc_config.type}'"
                 )
-            tag = domain_geom.boundary_names[name]
-            facets = domain_geom.facet_tags.find(tag)
-            dofs = fem.locate_dofs_topological(V, fdim, facets)
-
-            interpolator = build_vector_interpolator(
-                bc_config.value, gdim, self.config.parameters
-            )
-            if interpolator is None:
-                raise ValueError(
-                    f"Stokes boundary '{name}' cannot use custom vector values"
-                )
-            bc_func = fem.Function(V)
-            bc_func.interpolate(interpolator)
-            bcs.append(fem.dirichletbc(bc_func, dofs))
+        bcs = apply_vector_dirichlet_bcs(
+            V,
+            domain_geom,
+            velocity_bcs,
+            self.config.parameters,
+        )
 
         # Solution functions
         u_h = fem.Function(V, name="velocity")
