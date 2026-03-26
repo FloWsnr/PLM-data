@@ -27,6 +27,7 @@ The system has three layers:
    - `spec` — a `PresetSpec` describing parameters, config-facing inputs, solved states, selectable outputs, and supported dimensions
    - `build_problem(config)` — returns a runtime problem object for one of the shared engines or for the custom escape hatch
    Common solver families live in `plm_data/presets/base.py` as `StationaryLinearProblem`, `TransientLinearProblem`, `TransientNonlinearProblem`, and `CustomProblem`.
+   Family-specific helpers can live alongside presets when multiple presets share a discretization; for example, `plm_data/presets/fluids/_taylor_hood.py` is the shared Stokes / Navier-Stokes incompressible-flow helper.
 
 2. **Core** (`plm_data/core/`) — Shared infrastructure:
    - `config.py` — `SimulationConfig` dataclass loaded from YAML. Configs are validated against the preset spec up front. The schema is input-centric: each entry under `inputs` owns explicit `boundary_conditions`, `source`, and `initial_condition` settings, while `output.fields` selects which declared outputs are saved. Transient presets use a `time:` section. Output resolution lives under `output.resolution`. Domains must declare `periodic_axes` explicitly, even when empty, and config-facing boundary conditions may not target periodic faces.

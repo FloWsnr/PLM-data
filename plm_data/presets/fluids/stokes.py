@@ -6,13 +6,16 @@ import numpy as np
 import ufl
 from dolfinx import default_real_type, fem
 
-from plm_data.core.boundary_conditions import apply_vector_dirichlet_bcs
-from plm_data.core.fem_utils import domain_average
 from plm_data.core.logging import get_logger
 from plm_data.core.mesh import create_domain
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import CustomProblem, PDEPreset, ProblemInstance, RunResult
+from plm_data.presets.fluids._taylor_hood import (
+    create_taylor_hood_linear_problem,
+    create_taylor_hood_system,
+    normalize_pressure,
+)
 from plm_data.presets.metadata import (
     InputSpec,
     OutputSpec,
@@ -76,40 +79,36 @@ class _StokesProblem(CustomProblem):
         logger = get_logger("solver")
         domain_geom = create_domain(self.config.domain)
         msh = domain_geom.mesh
-        gdim = msh.geometry.dim
-
         nu = self.config.parameters["nu"]
-
-        # Taylor-Hood: P2 velocity, P1 pressure
-        V = fem.functionspace(msh, ("Lagrange", 2, (gdim,)))
-        Q = fem.functionspace(msh, ("Lagrange", 1))
-        VQ = ufl.MixedFunctionSpace(V, Q)
-
-        num_dofs = (
-            V.dofmap.index_map.size_global * V.dofmap.index_map_bs
-            + Q.dofmap.index_map.size_global
+        system = create_taylor_hood_system(
+            self.create_periodic_constraint,
+            domain_geom,
+            self.config.input("velocity").boundary_conditions,
+            self.config.parameters,
+            pressure_degree=1,
+            preset_name="Stokes",
         )
+        num_dofs = system.num_dofs()
         logger.info("  Solving Stokes problem (%d DOFs)...", num_dofs)
 
-        # Trial and test functions from the mixed space
-        u, p = ufl.TrialFunctions(VQ)
-        v, q = ufl.TestFunctions(VQ)
+        u, p = ufl.TrialFunctions(system.VQ)
+        v, q = ufl.TestFunctions(system.VQ)
 
-        # Bilinear form: viscous + pressure coupling (symmetric saddle-point)
         a_form = (
             nu * ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
             - ufl.inner(p, ufl.div(v)) * ufl.dx
             - ufl.inner(ufl.div(u), q) * ufl.dx
         )
 
-        # Linear form: body force on velocity + dummy zero on pressure
         L_form = (
-            ufl.inner(fem.Constant(msh, np.zeros(gdim, dtype=default_real_type)), v)
+            ufl.inner(
+                fem.Constant(msh, np.zeros(msh.geometry.dim, dtype=default_real_type)),
+                v,
+            )
             * ufl.dx
             + ufl.inner(fem.Constant(msh, default_real_type(0.0)), q) * ufl.dx
         )
 
-        # Add vector source term if configured
         velocity_field = self.config.input("velocity")
         assert velocity_field.source is not None
         source_form = build_vector_source_form(
@@ -118,37 +117,16 @@ class _StokesProblem(CustomProblem):
         if source_form is not None:
             L_form = L_form + source_form
 
-        velocity_bcs = velocity_field.boundary_conditions
-        for name, bc_config in velocity_bcs.items():
-            if bc_config.type != "dirichlet":
-                raise ValueError(
-                    f"Stokes boundary '{name}' must be dirichlet, got '{bc_config.type}'"
-                )
-        bcs = apply_vector_dirichlet_bcs(
-            V,
-            domain_geom,
-            velocity_bcs,
-            self.config.parameters,
-        )
-        mpc_u = self.create_periodic_constraint(V, domain_geom, bcs)
-        mpc_p = self.create_periodic_constraint(Q, domain_geom, [])
-        mpcs = None if mpc_u is None else [mpc_u, mpc_p]
-
-        # Solution functions
-        velocity_space = V if mpc_u is None else mpc_u.function_space
-        pressure_space = Q if mpc_p is None else mpc_p.function_space
-        u_h = fem.Function(velocity_space, name="velocity")
-        p_h = fem.Function(pressure_space, name="pressure")
-
-        # Solve the block system
-        problem = self.create_linear_problem(
-            ufl.extract_blocks(a_form),
-            ufl.extract_blocks(L_form),
-            u=[u_h, p_h],
-            bcs=bcs,
+        u_h = system.create_velocity_function("velocity")
+        p_h = system.create_pressure_function("pressure")
+        problem = create_taylor_hood_linear_problem(
+            self,
+            system,
+            a_form,
+            L_form,
+            velocity=u_h,
+            pressure=p_h,
             petsc_options_prefix="plm_stokes_",
-            kind="mpi",
-            mpc=mpcs,
         )
         problem.solve()
 
@@ -157,9 +135,7 @@ class _StokesProblem(CustomProblem):
             logger.error("  Solver did not converge (KSP reason=%s)", reason)
             raise RuntimeError(f"Stokes solver did not converge (KSP reason={reason})")
 
-        # Normalize pressure (remove null-space constant)
-        p_h.x.array[:] -= domain_average(msh, p_h)
-
+        normalize_pressure(msh, p_h)
         output.write_frame({"velocity": u_h, "pressure": p_h}, t=0.0)
         logger.info("  Solve complete (converged)")
         return RunResult(num_dofs=num_dofs, solver_converged=True)

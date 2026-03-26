@@ -866,7 +866,11 @@ def test_periodic_heat_requires_dolfinx_mpc(monkeypatch, tmp_path, direct_solver
         _run_preset(config)
 
 
-def test_navier_stokes_periodic_domain_rejected(tmp_path):
+@pytest.mark.skipif(
+    not HAS_DOLFINX_MPC,
+    reason="periodic Navier-Stokes solve requires dolfinx_mpc",
+)
+def test_navier_stokes_periodic_x_domain(tmp_path):
     config = _make_ns_config(
         tmp_path,
         initial_condition=vector_expr(x=constant(0.0), y=constant(0.0)),
@@ -874,13 +878,71 @@ def test_navier_stokes_periodic_domain_rejected(tmp_path):
     config.domain.periodic_axes = (0,)
     del config.input("velocity").boundary_conditions["x-"]
     del config.input("velocity").boundary_conditions["x+"]
+    config.output.resolution = [6, 6]
 
-    with pytest.raises(NotImplementedError, match="Raviart-Thomas / DG spaces"):
-        _run_preset(config)
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    vx = np.load(output_dir / "velocity_x.npy")
+    vy = np.load(output_dir / "velocity_y.npy")
+    pressure = np.load(output_dir / "pressure.npy")
+    assert np.allclose(vx[-1, 0, :], vx[-1, -1, :], atol=1e-4)
+    assert np.allclose(vy[-1, 0, :], vy[-1, -1, :], atol=1e-4)
+    assert np.allclose(pressure[-1, 0, :], pressure[-1, -1, :], atol=1e-4)
+
+
+@pytest.mark.skipif(
+    not HAS_DOLFINX_MPC,
+    reason="periodic Navier-Stokes solve requires dolfinx_mpc",
+)
+def test_navier_stokes_fully_periodic_domain(tmp_path):
+    config = _make_ns_config(
+        tmp_path,
+        initial_condition=vector_expr(
+            x=scalar_expr(
+                "gaussian_bump",
+                sigma=0.15,
+                amplitude=0.5,
+                center=[0.5, 0.5],
+            ),
+            y=constant(0.0),
+        ),
+        parameters={"Re": 10.0, "k": 1.0},
+    )
+    config.domain.periodic_axes = (0, 1)
+    config.input("velocity").boundary_conditions = {}
+    config.output.resolution = [6, 6]
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    vx = np.load(output_dir / "velocity_x.npy")
+    vy = np.load(output_dir / "velocity_y.npy")
+    pressure = np.load(output_dir / "pressure.npy")
+    assert np.allclose(vx[-1, 0, :], vx[-1, -1, :], atol=1e-4)
+    assert np.allclose(vx[-1, :, 0], vx[-1, :, -1], atol=1e-4)
+    assert np.allclose(vy[-1, 0, :], vy[-1, -1, :], atol=1e-4)
+    assert np.allclose(vy[-1, :, 0], vy[-1, :, -1], atol=1e-4)
+    assert np.allclose(pressure[-1, 0, :], pressure[-1, -1, :], atol=1e-4)
+    assert np.allclose(pressure[-1, :, 0], pressure[-1, :, -1], atol=1e-4)
 
 
 def test_maxwell_pulse_periodic_domain_rejected(tmp_path):
     config = _make_maxwell_pulse_config(tmp_path, gdim=2)
+    config.domain.periodic_axes = (0,)
+    del config.input("electric_field").boundary_conditions["x-"]
+    del config.input("electric_field").boundary_conditions["x+"]
+
+    with pytest.raises(NotImplementedError, match="N1curl spaces"):
+        _run_preset(config)
+
+
+@pytest.mark.skipif(
+    not is_complex_runtime(),
+    reason="steady Maxwell periodic rejection is only reachable in complex runtime",
+)
+def test_maxwell_periodic_domain_rejected(tmp_path):
+    config = _make_maxwell_config(tmp_path, gdim=2)
     config.domain.periodic_axes = (0,)
     del config.input("electric_field").boundary_conditions["x-"]
     del config.input("electric_field").boundary_conditions["x+"]
