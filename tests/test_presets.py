@@ -8,10 +8,10 @@ import pytest
 import ufl
 from dolfinx import fem
 
+import plm_data.core.periodic as periodic_mod
 from plm_data.core.config import (
     BoundaryConditionConfig,
     DomainConfig,
-    FieldExpressionConfig,
     InputConfig,
     OutputConfig,
     OutputSelectionConfig,
@@ -30,28 +30,16 @@ from plm_data.presets.metadata import (
     PresetSpec,
     StateSpec,
 )
+from tests.preset_matrix import (
+    constant,
+    output_fields,
+    run_preset,
+    scalar_expr,
+    vector_expr,
+    vector_zero,
+)
 
 HAS_DOLFINX_MPC = importlib.util.find_spec("dolfinx_mpc") is not None
-
-
-def constant(value):
-    return FieldExpressionConfig(type="constant", params={"value": value})
-
-
-def scalar_expr(expr_type: str, **params):
-    return FieldExpressionConfig(type=expr_type, params=params)
-
-
-def vector_expr(**components):
-    return FieldExpressionConfig(components=components)
-
-
-def vector_zero():
-    return FieldExpressionConfig(type="zero", params={})
-
-
-def output_fields(**modes):
-    return {name: OutputSelectionConfig(mode=mode) for name, mode in modes.items()}
 
 
 _VECTOR_STATIONARY_SPEC = PresetSpec(
@@ -141,13 +129,7 @@ class _DummyScalarTransientProblem(TransientLinearProblem):
         return self._V.dofmap.index_map.size_global * self._V.dofmap.index_map_bs
 
 
-def _run_preset(config):
-    preset = get_preset(config.preset)
-    output_dir = config.output.path / preset.spec.category / preset.spec.name
-    writer = FrameWriter(output_dir, config, preset.spec)
-    result = preset.build_problem(config).run(writer)
-    writer.finalize()
-    return result, output_dir
+_run_preset = run_preset
 
 
 def _make_maxwell_pulse_config(tmp_path, *, gdim: int):
@@ -298,36 +280,6 @@ def _make_maxwell_config(tmp_path, *, gdim: int):
     )
 
 
-def test_heat_preset_single_step(heat_config):
-    result, output_dir = _run_preset(heat_config)
-    assert result.solver_converged is True
-    assert result.num_timesteps == 1
-    assert result.num_dofs > 0
-
-    arr = np.load(output_dir / "u.npy")
-    assert arr.shape == (2, *heat_config.output.resolution)
-
-
-def test_poisson_preset(poisson_config):
-    result, output_dir = _run_preset(poisson_config)
-    assert result.solver_converged is True
-    assert result.num_dofs > 0
-
-    arr = np.load(output_dir / "u.npy")
-    assert arr.shape == (1, *poisson_config.output.resolution)
-    assert np.max(arr) > 0
-
-
-def test_helmholtz_preset(helmholtz_config):
-    result, output_dir = _run_preset(helmholtz_config)
-    assert result.solver_converged is True
-    assert result.num_dofs > 0
-
-    arr = np.load(output_dir / "u.npy")
-    assert arr.shape == (1, *helmholtz_config.output.resolution)
-    assert np.max(arr) > 0
-
-
 def test_helmholtz_resonance_warning(caplog):
     """Warn when k^2 is near a Laplacian eigenvalue."""
     with caplog.at_level(logging.WARNING):
@@ -338,35 +290,6 @@ def test_helmholtz_resonance_warning(caplog):
     with caplog.at_level(logging.WARNING):
         _check_resonance(2.0, [1.0, 1.0])
     assert caplog.text == ""
-
-
-@pytest.mark.skipif(
-    not HAS_DOLFINX_MPC,
-    reason="periodic Cahn-Hilliard requires dolfinx_mpc",
-)
-def test_cahn_hilliard_preset_single_step(cahn_hilliard_config):
-    result, output_dir = _run_preset(cahn_hilliard_config)
-    assert result.solver_converged is True
-    assert result.num_timesteps == 1
-    assert result.num_dofs > 0
-
-    arr = np.load(output_dir / "c.npy")
-    assert arr.shape == (2, *cahn_hilliard_config.output.resolution)
-    assert 0.0 < np.mean(arr) < 1.0
-
-
-def test_navier_stokes_preset_single_step(navier_stokes_config):
-    result, output_dir = _run_preset(navier_stokes_config)
-    assert result.solver_converged is True
-    assert result.num_timesteps == 1
-    assert result.num_dofs > 0
-
-    for field in ["velocity_x", "velocity_y", "pressure"]:
-        arr = np.load(output_dir / f"{field}.npy")
-        assert arr.shape == (2, *navier_stokes_config.output.resolution)
-
-    vx = np.load(output_dir / "velocity_x.npy")
-    assert np.max(np.abs(vx)) > 0
 
 
 def _make_ns_config(tmp_path, *, initial_condition, source=None, parameters=None):
@@ -431,66 +354,6 @@ def _make_ns_config(tmp_path, *, initial_condition, source=None, parameters=None
     )
 
 
-def test_navier_stokes_per_component_ic(tmp_path):
-    config = _make_ns_config(
-        tmp_path,
-        initial_condition=vector_expr(x=constant(0.0), y=constant(0.0)),
-    )
-    result, output_dir = _run_preset(config)
-    assert result.solver_converged is True
-
-    for field in ["velocity_x", "velocity_y", "pressure"]:
-        arr = np.load(output_dir / f"{field}.npy")
-        assert arr.shape == (2, *config.output.resolution)
-
-
-def test_navier_stokes_gaussian_bump_ic(tmp_path):
-    config = _make_ns_config(
-        tmp_path,
-        initial_condition=vector_expr(
-            x=scalar_expr(
-                "gaussian_bump",
-                sigma=0.2,
-                amplitude=0.5,
-                center=[0.5, 0.5],
-            ),
-            y=constant(0.0),
-        ),
-    )
-    result, output_dir = _run_preset(config)
-    assert result.solver_converged is True
-
-    vx = np.load(output_dir / "velocity_x.npy")
-    assert vx.shape == (2, *config.output.resolution)
-    assert np.max(np.abs(vx[0])) > 0
-
-
-def test_navier_stokes_body_force(tmp_path):
-    config = _make_ns_config(
-        tmp_path,
-        initial_condition=scalar_expr("custom"),
-        source=vector_expr(x=constant(0.0), y=constant(-1.0)),
-    )
-    result, output_dir = _run_preset(config)
-    assert result.solver_converged is True
-
-    vy = np.load(output_dir / "velocity_y.npy")
-    assert np.max(np.abs(vy)) > 0
-
-
-def test_stokes_preset(stokes_config):
-    result, output_dir = _run_preset(stokes_config)
-    assert result.solver_converged is True
-    assert result.num_dofs > 0
-
-    for field in ["velocity_x", "velocity_y", "pressure"]:
-        arr = np.load(output_dir / f"{field}.npy")
-        assert arr.shape == (1, *stokes_config.output.resolution)
-
-    vx = np.load(output_dir / "velocity_x.npy")
-    assert np.max(np.abs(vx)) > 0
-
-
 def _make_stokes_config(tmp_path, *, source=None, parameters=None):
     domain = DomainConfig(
         type="rectangle",
@@ -549,18 +412,6 @@ def _make_stokes_config(tmp_path, *, source=None, parameters=None):
         ),
         seed=42,
     )
-
-
-def test_stokes_body_force(tmp_path):
-    config = _make_stokes_config(
-        tmp_path,
-        source=vector_expr(x=constant(0.0), y=constant(-1.0)),
-    )
-    result, output_dir = _run_preset(config)
-    assert result.solver_converged is True
-
-    vy = np.load(output_dir / "velocity_y.npy")
-    assert np.max(np.abs(vy)) > 0
 
 
 def test_stokes_3d(tmp_path):
@@ -731,69 +582,6 @@ def test_transient_problem_uses_exact_integer_step_count(tmp_path, direct_solver
 
 @pytest.mark.skipif(
     not HAS_DOLFINX_MPC,
-    reason="periodic Cahn-Hilliard requires dolfinx_mpc",
-)
-def test_cahn_hilliard_constant_ic(tmp_path):
-    config = SimulationConfig(
-        preset="cahn_hilliard",
-        parameters={
-            "lmbda": 0.01,
-            "barrier_height": 100.0,
-            "mobility": 1.0,
-            "theta": 0.5,
-        },
-        domain=DomainConfig(
-            type="rectangle",
-            params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-            periodic_axes=(0, 1),
-        ),
-        inputs={
-            "c": InputConfig(
-                initial_condition=constant(0.5),
-            )
-        },
-        output=OutputConfig(
-            path=tmp_path,
-            resolution=[4, 4],
-            num_frames=2,
-            formats=["numpy"],
-            fields=output_fields(c="scalar"),
-        ),
-        solver=SolverConfig(
-            options={
-                "snes_type": "newtonls",
-                "snes_linesearch_type": "none",
-                "ksp_type": "preonly",
-                "pc_type": "lu",
-            }
-        ),
-        time=TimeConfig(dt=5e-6, t_end=5e-6),
-        seed=42,
-    )
-
-    result, output_dir = _run_preset(config)
-    assert result.solver_converged is True
-
-    arr = np.load(output_dir / "c.npy")
-    assert arr.shape == (2, *config.output.resolution)
-    assert np.allclose(arr[0], 0.5, atol=0.05)
-
-
-def test_maxwell_pulse_preset_2d_single_step(tmp_path):
-    config = _make_maxwell_pulse_config(tmp_path, gdim=2)
-    result, output_dir = _run_preset(config)
-    assert result.solver_converged is True
-    assert result.num_timesteps == 1
-
-    ex = np.load(output_dir / "electric_field_x.npy")
-    ey = np.load(output_dir / "electric_field_y.npy")
-    assert ex.shape == (2, *config.output.resolution)
-    assert ey.shape == (2, *config.output.resolution)
-    assert np.max(np.abs(ex)) > 0
-
-
-@pytest.mark.skipif(
-    not HAS_DOLFINX_MPC,
     reason="periodic heat solve requires dolfinx_mpc",
 )
 def test_heat_periodic_domain_single_step(tmp_path, direct_solver):
@@ -836,66 +624,7 @@ def test_heat_periodic_domain_single_step(tmp_path, direct_solver):
     assert np.allclose(arr[-1, 0, :], arr[-1, -1, :], atol=1e-4)
 
 
-@pytest.mark.skipif(
-    not HAS_DOLFINX_MPC,
-    reason="periodic Stokes solve requires dolfinx_mpc",
-)
-def test_stokes_periodic_x_domain(tmp_path):
-    config = SimulationConfig(
-        preset="stokes",
-        parameters={"nu": 1.0},
-        domain=DomainConfig(
-            type="rectangle",
-            params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-            periodic_axes=(0,),
-        ),
-        inputs={
-            "velocity": InputConfig(
-                boundary_conditions={
-                    "y-": BoundaryConditionConfig(
-                        type="dirichlet",
-                        value=vector_expr(x=constant(0.0), y=constant(0.0)),
-                    ),
-                    "y+": BoundaryConditionConfig(
-                        type="dirichlet",
-                        value=vector_expr(x=constant(1.0), y=constant(0.0)),
-                    ),
-                },
-                source=scalar_expr("none"),
-            ),
-        },
-        output=OutputConfig(
-            path=tmp_path,
-            resolution=[6, 6],
-            num_frames=1,
-            formats=["numpy"],
-            fields=output_fields(velocity="components", pressure="scalar"),
-        ),
-        solver=SolverConfig(
-            options={
-                "ksp_type": "preonly",
-                "pc_type": "lu",
-                "pc_factor_mat_solver_type": "mumps",
-                "mat_mumps_icntl_14": "80",
-                "mat_mumps_icntl_24": "1",
-                "mat_mumps_icntl_25": "0",
-                "ksp_error_if_not_converged": "1",
-            }
-        ),
-        seed=42,
-    )
-    result, output_dir = _run_preset(config)
-    assert result.solver_converged is True
-
-    vx = np.load(output_dir / "velocity_x.npy")
-    pressure = np.load(output_dir / "pressure.npy")
-    assert np.allclose(vx[0, 0, :], vx[0, -1, :], atol=1e-4)
-    assert np.allclose(pressure[0, 0, :], pressure[0, -1, :], atol=1e-4)
-
-
 def test_periodic_heat_requires_dolfinx_mpc(monkeypatch, tmp_path, direct_solver):
-    import plm_data.core.periodic as periodic_mod
-
     original_import_module = periodic_mod.importlib.import_module
 
     def _missing_dolfinx_mpc(name, *args, **kwargs):
@@ -945,31 +674,6 @@ def test_periodic_heat_requires_dolfinx_mpc(monkeypatch, tmp_path, direct_solver
     not HAS_DOLFINX_MPC,
     reason="periodic Navier-Stokes solve requires dolfinx_mpc",
 )
-def test_navier_stokes_periodic_x_domain(tmp_path):
-    config = _make_ns_config(
-        tmp_path,
-        initial_condition=vector_expr(x=constant(0.0), y=constant(0.0)),
-    )
-    config.domain.periodic_axes = (0,)
-    del config.input("velocity").boundary_conditions["x-"]
-    del config.input("velocity").boundary_conditions["x+"]
-    config.output.resolution = [6, 6]
-
-    result, output_dir = _run_preset(config)
-    assert result.solver_converged is True
-
-    vx = np.load(output_dir / "velocity_x.npy")
-    vy = np.load(output_dir / "velocity_y.npy")
-    pressure = np.load(output_dir / "pressure.npy")
-    assert np.allclose(vx[-1, 0, :], vx[-1, -1, :], atol=1e-4)
-    assert np.allclose(vy[-1, 0, :], vy[-1, -1, :], atol=1e-4)
-    assert np.allclose(pressure[-1, 0, :], pressure[-1, -1, :], atol=1e-4)
-
-
-@pytest.mark.skipif(
-    not HAS_DOLFINX_MPC,
-    reason="periodic Navier-Stokes solve requires dolfinx_mpc",
-)
 def test_navier_stokes_fully_periodic_domain(tmp_path):
     config = _make_ns_config(
         tmp_path,
@@ -1002,30 +706,6 @@ def test_navier_stokes_fully_periodic_domain(tmp_path):
     assert np.allclose(pressure[-1, :, 0], pressure[-1, :, -1], atol=1e-4)
 
 
-def test_maxwell_pulse_periodic_domain_rejected(tmp_path):
-    config = _make_maxwell_pulse_config(tmp_path, gdim=2)
-    config.domain.periodic_axes = (0,)
-    del config.input("electric_field").boundary_conditions["x-"]
-    del config.input("electric_field").boundary_conditions["x+"]
-
-    with pytest.raises(NotImplementedError, match="N1curl spaces"):
-        _run_preset(config)
-
-
-@pytest.mark.skipif(
-    not is_complex_runtime(),
-    reason="steady Maxwell periodic rejection is only reachable in complex runtime",
-)
-def test_maxwell_periodic_domain_rejected(tmp_path):
-    config = _make_maxwell_config(tmp_path, gdim=2)
-    config.domain.periodic_axes = (0,)
-    del config.input("electric_field").boundary_conditions["x-"]
-    del config.input("electric_field").boundary_conditions["x+"]
-
-    with pytest.raises(NotImplementedError, match="N1curl spaces"):
-        _run_preset(config)
-
-
 def test_maxwell_pulse_preset_3d_single_step(tmp_path):
     config = _make_maxwell_pulse_config(tmp_path, gdim=3)
     result, output_dir = _run_preset(config)
@@ -1044,22 +724,6 @@ def test_maxwell_preset_requires_complex_runtime(tmp_path):
     preset = get_preset(config.preset)
     with pytest.raises(RuntimeError, match="complex-valued DOLFINx/PETSc build"):
         preset.build_problem(config)
-
-
-@pytest.mark.skipif(
-    not is_complex_runtime(),
-    reason="harmonic Maxwell requires a complex-valued runtime",
-)
-def test_maxwell_preset_2d(tmp_path):
-    config = _make_maxwell_config(tmp_path, gdim=2)
-    result, output_dir = _run_preset(config)
-    assert result.solver_converged is True
-
-    ex = np.load(output_dir / "electric_field_x.npy")
-    ey = np.load(output_dir / "electric_field_y.npy")
-    assert ex.shape == (1, *config.output.resolution)
-    assert ey.shape == (1, *config.output.resolution)
-    assert np.iscomplexobj(ex)
 
 
 @pytest.mark.skipif(
