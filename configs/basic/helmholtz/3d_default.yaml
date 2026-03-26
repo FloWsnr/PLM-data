@@ -1,0 +1,35 @@
+preset: helmholtz
+parameters:
+  kappa: 1.0
+  k: 2.0
+  f_amplitude: 1.0
+domain:
+  type: box
+  size: [1.0, 1.0, 1.0]
+  mesh_resolution: [16, 16, 16]
+fields:
+  u:
+    boundary_conditions:
+      x-: {type: dirichlet, value: 0.0}
+      x+: {type: dirichlet, value: 0.0}
+      y-: {type: dirichlet, value: 0.0}
+      y+: {type: dirichlet, value: 0.0}
+      z-: {type: dirichlet, value: 0.0}
+      z+: {type: dirichlet, value: 0.0}
+    source:
+      type: sine_product
+      params:
+        amplitude: "param:f_amplitude"
+        kx: 1
+        ky: 1
+        kz: 1
+    output: scalar
+solver:
+  ksp_type: preonly
+  pc_type: lu
+output:
+  path: ./output
+  resolution: [16, 16, 16]
+  num_frames: 1
+  formats: [numpy]
+seed: 42
