@@ -9,11 +9,14 @@ PLM-data generates PDE simulation datasets using DOLFINx (FEniCSx). It produces 
 ## Commands
 
 ```bash
-# Run a simulation from a YAML config
-python -m plm_data run configs/basic/heat/2d_default.yaml
+# Run a simulation (single core)
+./run.sh run configs/basic/heat/2d_default.yaml
+
+# Run a simulation with multiple MPI ranks
+./run.sh -n 4 run configs/basic/heat/2d_default.yaml
 
 # List registered presets
-python -m plm_data list
+./run.sh list
 ```
 
 Tests run via `python -m pytest tests/`. The project runs directly as a Python module. DOLFINx and its dependencies (PETSc, mpi4py, UFL) must be installed in the environment.

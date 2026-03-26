@@ -33,12 +33,17 @@ pip install pyyaml pytest pyright
 
 ## Usage
 
+Use the `run.sh` wrapper script, which activates the `fenicsx-env` conda environment and optionally launches with MPI:
+
 ```bash
-# Run a simulation
-python -m plm_data run configs/basic/poisson/2d_default.yaml
+# Run a simulation (single core)
+./run.sh run configs/basic/poisson/2d_default.yaml
+
+# Run a simulation with multiple MPI ranks
+./run.sh -n 4 run configs/basic/poisson/2d_default.yaml
 
 # List available presets
-python -m plm_data list
+./run.sh list
 ```
 
 ## Adding a new PDE
