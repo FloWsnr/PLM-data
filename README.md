@@ -24,6 +24,8 @@ With the conda environment activated, install the remaining packages:
 pip install pyyaml pytest pyright
 # Required for configs that use periodic boundary operators
 pip install dolfinx_mpc
+# Required for mp4/video output
+conda install -c conda-forge ffmpeg
 ```
 
 ## Architecture
