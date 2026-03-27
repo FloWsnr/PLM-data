@@ -4,7 +4,6 @@ parameters:
   k: 1.0
 domain:
   type: rectangle
-  periodic_axes: [x]
   size: [1.0, 1.0]
   mesh_resolution: [32, 32]
 time:
@@ -12,19 +11,26 @@ time:
   t_end: 2.0
 inputs:
   velocity:
-    boundary_conditions:
-      y-:
-        type: dirichlet
-        value: [0.0, 0.0]
-      y+:
-        type: dirichlet
-        value: [1.0, 0.0]
     source:
       type: none
       params: {}
     initial_condition:
       type: custom
       params: {}
+boundary_conditions:
+  velocity:
+    x-:
+      - operator: periodic
+        pair_with: x+
+    x+:
+      - operator: periodic
+        pair_with: x-
+    y-:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+    y+:
+      - operator: dirichlet
+        value: [1.0, 0.0]
 output:
   path: ./output
   resolution: [64, 64]

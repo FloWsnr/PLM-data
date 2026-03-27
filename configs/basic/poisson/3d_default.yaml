@@ -4,18 +4,10 @@ parameters:
   f_amplitude: 1.0
 domain:
   type: box
-  periodic_axes: []
   size: [1.0, 1.0, 1.0]
   mesh_resolution: [16, 16, 16]
 inputs:
   u:
-    boundary_conditions:
-      x-: {type: dirichlet, value: 0.0}
-      x+: {type: dirichlet, value: 0.0}
-      y-: {type: dirichlet, value: 0.0}
-      y+: {type: dirichlet, value: 0.0}
-      z-: {type: dirichlet, value: 0.0}
-      z+: {type: dirichlet, value: 0.0}
     source:
       type: sine_product
       params:
@@ -23,6 +15,26 @@ inputs:
         kx: 1
         ky: 1
         kz: 1
+boundary_conditions:
+  u:
+    x-:
+      - operator: dirichlet
+        value: 0.0
+    x+:
+      - operator: dirichlet
+        value: 0.0
+    y-:
+      - operator: dirichlet
+        value: 0.0
+    y+:
+      - operator: dirichlet
+        value: 0.0
+    z-:
+      - operator: dirichlet
+        value: 0.0
+    z+:
+      - operator: dirichlet
+        value: 0.0
 solver:
   ksp_type: preonly
   pc_type: lu

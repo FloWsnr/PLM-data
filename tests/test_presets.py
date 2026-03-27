@@ -31,6 +31,7 @@ from plm_data.presets.metadata import (
     StateSpec,
 )
 from tests.preset_matrix import (
+    boundary_field_config,
     constant,
     output_fields,
     run_preset,
@@ -49,6 +50,7 @@ _VECTOR_STATIONARY_SPEC = PresetSpec(
     equations={"u": "u = 0"},
     parameters=[],
     inputs={},
+    boundary_fields={},
     states={"u": StateSpec(name="u", shape="vector")},
     outputs={
         "u": OutputSpec(
@@ -69,6 +71,7 @@ _SCALAR_TRANSIENT_SPEC = PresetSpec(
     equations={"u": "du/dt = 0"},
     parameters=[],
     inputs={},
+    boundary_fields={},
     states={"u": StateSpec(name="u", shape="scalar")},
     outputs={
         "u": OutputSpec(
@@ -137,7 +140,6 @@ def _make_maxwell_pulse_config(tmp_path, *, gdim: int):
         domain = DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-            periodic_axes=(),
         )
         center = [0.25, 0.5]
         boundary_conditions = {
@@ -154,7 +156,6 @@ def _make_maxwell_pulse_config(tmp_path, *, gdim: int):
         domain = DomainConfig(
             type="box",
             params={"size": [1.0, 1.0, 1.0], "mesh_resolution": [4, 4, 4]},
-            periodic_axes=(),
         )
         center = [0.25, 0.5, 0.5]
         boundary_conditions = {
@@ -185,10 +186,12 @@ def _make_maxwell_pulse_config(tmp_path, *, gdim: int):
         domain=domain,
         inputs={
             "electric_field": InputConfig(
-                boundary_conditions=boundary_conditions,
                 source=source,
                 initial_condition=vector_zero(),
             )
+        },
+        boundary_conditions={
+            "electric_field": boundary_field_config(boundary_conditions)
         },
         output=OutputConfig(
             path=tmp_path,
@@ -213,7 +216,6 @@ def _make_maxwell_config(tmp_path, *, gdim: int):
         domain = DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-            periodic_axes=(),
         )
         center = [0.35, 0.5]
         boundary_names = ("x-", "x+", "y-", "y+")
@@ -230,7 +232,6 @@ def _make_maxwell_config(tmp_path, *, gdim: int):
         domain = DomainConfig(
             type="box",
             params={"size": [1.0, 1.0, 1.0], "mesh_resolution": [3, 3, 3]},
-            periodic_axes=(),
         )
         center = [0.35, 0.5, 0.5]
         boundary_names = ("x-", "x+", "y-", "y+", "z-", "z+")
@@ -256,11 +257,15 @@ def _make_maxwell_config(tmp_path, *, gdim: int):
         domain=domain,
         inputs={
             "electric_field": InputConfig(
-                boundary_conditions={
+                source=source,
+            )
+        },
+        boundary_conditions={
+            "electric_field": boundary_field_config(
+                {
                     name: BoundaryConditionConfig(type="absorbing", value=vector_zero())
                     for name in boundary_names
-                },
-                source=source,
+                }
             )
         },
         output=OutputConfig(
@@ -296,7 +301,6 @@ def _make_ns_config(tmp_path, *, initial_condition, source=None, parameters=None
     domain = DomainConfig(
         type="rectangle",
         params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-        periodic_axes=(),
     )
     if parameters is None:
         parameters = {"Re": 25.0, "k": 1.0}
@@ -309,7 +313,13 @@ def _make_ns_config(tmp_path, *, initial_condition, source=None, parameters=None
         domain=domain,
         inputs={
             "velocity": InputConfig(
-                boundary_conditions={
+                source=source,
+                initial_condition=initial_condition,
+            ),
+        },
+        boundary_conditions={
+            "velocity": boundary_field_config(
+                {
                     "x-": BoundaryConditionConfig(
                         type="dirichlet",
                         value=vector_expr(x=constant(0.0), y=constant(0.0)),
@@ -326,10 +336,8 @@ def _make_ns_config(tmp_path, *, initial_condition, source=None, parameters=None
                         type="dirichlet",
                         value=vector_expr(x=constant(1.0), y=constant(0.0)),
                     ),
-                },
-                source=source,
-                initial_condition=initial_condition,
-            ),
+                }
+            )
         },
         output=OutputConfig(
             path=tmp_path,
@@ -358,7 +366,6 @@ def _make_stokes_config(tmp_path, *, source=None, parameters=None):
     domain = DomainConfig(
         type="rectangle",
         params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-        periodic_axes=(),
     )
     if parameters is None:
         parameters = {"nu": 1.0}
@@ -371,7 +378,12 @@ def _make_stokes_config(tmp_path, *, source=None, parameters=None):
         domain=domain,
         inputs={
             "velocity": InputConfig(
-                boundary_conditions={
+                source=source,
+            ),
+        },
+        boundary_conditions={
+            "velocity": boundary_field_config(
+                {
                     "x-": BoundaryConditionConfig(
                         type="dirichlet",
                         value=vector_expr(x=constant(0.0), y=constant(0.0)),
@@ -388,9 +400,8 @@ def _make_stokes_config(tmp_path, *, source=None, parameters=None):
                         type="dirichlet",
                         value=vector_expr(x=constant(1.0), y=constant(0.0)),
                     ),
-                },
-                source=source,
-            ),
+                }
+            )
         },
         output=OutputConfig(
             path=tmp_path,
@@ -421,11 +432,15 @@ def test_stokes_3d(tmp_path):
         domain=DomainConfig(
             type="box",
             params={"size": [1.0, 1.0, 1.0], "mesh_resolution": [4, 4, 4]},
-            periodic_axes=(),
         ),
         inputs={
             "velocity": InputConfig(
-                boundary_conditions={
+                source=scalar_expr("none"),
+            ),
+        },
+        boundary_conditions={
+            "velocity": boundary_field_config(
+                {
                     "x-": BoundaryConditionConfig(
                         type="dirichlet",
                         value=vector_expr(
@@ -462,9 +477,8 @@ def test_stokes_3d(tmp_path):
                             x=constant(0.0), y=constant(0.0), z=constant(0.0)
                         ),
                     ),
-                },
-                source=scalar_expr("none"),
-            ),
+                }
+            )
         },
         output=OutputConfig(
             path=tmp_path,
@@ -516,9 +530,9 @@ def test_stationary_linear_problem_counts_vector_dofs(tmp_path, direct_solver):
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [4, 4]},
-            periodic_axes=(),
         ),
         inputs={},
+        boundary_conditions={},
         output=OutputConfig(
             path=tmp_path,
             resolution=[4, 4],
@@ -552,9 +566,9 @@ def test_transient_problem_uses_exact_integer_step_count(tmp_path, direct_solver
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [2, 2]},
-            periodic_axes=(),
         ),
         inputs={},
+        boundary_conditions={},
         output=OutputConfig(
             path=tmp_path,
             resolution=[2, 2],
@@ -591,11 +605,9 @@ def test_heat_periodic_domain_single_step(tmp_path, direct_solver):
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-            periodic_axes=(0, 1),
         ),
         inputs={
             "u": InputConfig(
-                boundary_conditions={},
                 source=scalar_expr("none"),
                 initial_condition=scalar_expr(
                     "gaussian_bump",
@@ -605,6 +617,7 @@ def test_heat_periodic_domain_single_step(tmp_path, direct_solver):
                 ),
             )
         },
+        boundary_conditions={"u": boundary_field_config({}, periodic_axes=(0, 1))},
         output=OutputConfig(
             path=tmp_path,
             resolution=[8, 8],
@@ -640,11 +653,9 @@ def test_periodic_heat_requires_dolfinx_mpc(monkeypatch, tmp_path, direct_solver
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-            periodic_axes=(0, 1),
         ),
         inputs={
             "u": InputConfig(
-                boundary_conditions={},
                 source=scalar_expr("none"),
                 initial_condition=scalar_expr(
                     "gaussian_bump",
@@ -654,6 +665,7 @@ def test_periodic_heat_requires_dolfinx_mpc(monkeypatch, tmp_path, direct_solver
                 ),
             )
         },
+        boundary_conditions={"u": boundary_field_config({}, periodic_axes=(0, 1))},
         output=OutputConfig(
             path=tmp_path,
             resolution=[4, 4],
@@ -688,8 +700,10 @@ def test_navier_stokes_fully_periodic_domain(tmp_path):
         ),
         parameters={"Re": 10.0, "k": 1.0},
     )
-    config.domain.periodic_axes = (0, 1)
-    config.input("velocity").boundary_conditions = {}
+    config.boundary_conditions["velocity"] = boundary_field_config(
+        {},
+        periodic_axes=(0, 1),
+    )
     config.output.resolution = [6, 6]
 
     result, output_dir = _run_preset(config)

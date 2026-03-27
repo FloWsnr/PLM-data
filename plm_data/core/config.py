@@ -30,11 +30,6 @@ def _component_labels(gdim: int) -> tuple[str, ...]:
     return _COMPONENT_LABELS[:gdim]
 
 
-def _periodic_axis_labels(periodic_axes: tuple[int, ...], gdim: int) -> tuple[str, ...]:
-    """Return config-facing axis labels for periodic directions."""
-    return tuple(_component_labels(gdim)[axis] for axis in periodic_axes)
-
-
 def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
     """Infer the spatial dimension from the configured domain."""
     builtin_dims = {
@@ -71,11 +66,62 @@ class FieldExpressionConfig:
 
 @dataclass
 class BoundaryConditionConfig:
-    """Configuration for a single boundary condition."""
+    """Configuration for one boundary operator entry."""
 
     type: str
-    value: FieldExpressionConfig
+    value: FieldExpressionConfig | None = None
+    pair_with: str | None = None
+    operator_parameters: dict[str, Any] = field(default_factory=dict)
     alpha: float | str | None = None
+
+    def __post_init__(self) -> None:
+        if self.alpha is not None:
+            self.operator_parameters = {
+                **self.operator_parameters,
+                "alpha": self.alpha,
+            }
+
+
+@dataclass
+class BoundaryFieldConfig:
+    """Configuration for all side conditions of one BC-addressable field."""
+
+    sides: dict[str, list[BoundaryConditionConfig]] = field(default_factory=dict)
+
+    def side_conditions(self, name: str) -> list[BoundaryConditionConfig]:
+        """Return configured conditions for one side."""
+        if name not in self.sides:
+            raise KeyError(f"Unknown boundary side '{name}'")
+        return self.sides[name]
+
+    def periodic_pair_keys(self) -> set[frozenset[str]]:
+        """Return all active periodic side pairs."""
+        pairs: set[frozenset[str]] = set()
+        for side, entries in self.sides.items():
+            for entry in entries:
+                if entry.type == "periodic":
+                    if entry.pair_with is None:
+                        raise ValueError(
+                            f"Periodic boundary on side '{side}' is missing "
+                            "'pair_with'."
+                        )
+                    pairs.add(frozenset({side, entry.pair_with}))
+        return pairs
+
+    @property
+    def has_periodic(self) -> bool:
+        """Return whether any side uses the periodic operator."""
+        return bool(self.periodic_pair_keys())
+
+
+@dataclass
+class PeriodicMapConfig:
+    """Declarative periodic map for a custom or imported domain."""
+
+    slave: str
+    master: str
+    matrix: list[list[float]]
+    offset: list[float]
 
 
 @dataclass
@@ -84,17 +130,12 @@ class DomainConfig:
 
     type: str
     params: dict[str, Any]
-    periodic_axes: tuple[int, ...]
+    periodic_maps: dict[str, PeriodicMapConfig] = field(default_factory=dict)
 
     @property
     def dimension(self) -> int:
         """Return the spatial dimension."""
         return _infer_domain_dimension(self.type, self.params)
-
-    @property
-    def periodic_axis_labels(self) -> tuple[str, ...]:
-        """Return periodic axes as config-facing labels."""
-        return _periodic_axis_labels(self.periodic_axes, self.dimension)
 
 
 @dataclass
@@ -108,9 +149,6 @@ class OutputSelectionConfig:
 class InputConfig:
     """Configuration for one preset input."""
 
-    boundary_conditions: dict[str, BoundaryConditionConfig] = field(
-        default_factory=dict
-    )
     source: FieldExpressionConfig | None = None
     initial_condition: FieldExpressionConfig | None = None
 
@@ -154,6 +192,7 @@ class SimulationConfig:
     parameters: dict[str, float]
     domain: DomainConfig
     inputs: dict[str, InputConfig]
+    boundary_conditions: dict[str, BoundaryFieldConfig]
     output: OutputConfig
     solver: SolverConfig
     time: TimeConfig | None = None
@@ -184,6 +223,12 @@ class SimulationConfig:
             raise KeyError(f"Unknown input '{name}'")
         return self.inputs[name]
 
+    def boundary_field(self, name: str) -> BoundaryFieldConfig:
+        """Return configured boundary conditions for one BC field."""
+        if name not in self.boundary_conditions:
+            raise KeyError(f"Unknown boundary field '{name}'")
+        return self.boundary_conditions[name]
+
     def field(self, name: str) -> InputConfig:
         """Compatibility accessor for input configs."""
         return self.input(name)
@@ -193,6 +238,14 @@ class SimulationConfig:
         if name not in self.output.fields:
             raise KeyError(f"Unknown output '{name}'")
         return self.output.fields[name].mode
+
+    @property
+    def has_periodic_boundary_conditions(self) -> bool:
+        """Return whether any BC field uses periodic side pairs."""
+        return any(
+            field_config.has_periodic
+            for field_config in self.boundary_conditions.values()
+        )
 
 
 def _parse_scalar_expression(raw: Any, context: str) -> FieldExpressionConfig:
@@ -227,7 +280,7 @@ def _parse_vector_expression(
             )
         components = {
             label: _parse_scalar_expression(value, f"{context}[{label}]")
-            for label, value in zip(labels, raw)
+            for label, value in zip(labels, raw, strict=True)
         }
         return FieldExpressionConfig(components=components)
 
@@ -274,28 +327,154 @@ def _parse_field_expression(
     raise ValueError(f"Unknown field shape '{shape}' in {context}")
 
 
+def _parse_operator_parameters(
+    raw: Any,
+    context: str,
+    allowed: tuple[str, ...],
+) -> dict[str, Any]:
+    """Parse operator-specific scalar parameters."""
+    if not allowed:
+        if raw is None:
+            return {}
+        mapping = _as_mapping(raw, context)
+        if mapping:
+            raise ValueError(
+                f"{context} does not allow operator parameters. Got {sorted(mapping)}."
+            )
+        return {}
+
+    if raw is None:
+        raise ValueError(f"{context} must contain exactly {sorted(allowed)}. Got [].")
+
+    mapping = _as_mapping(raw, context)
+    if set(mapping) != set(allowed):
+        raise ValueError(
+            f"{context} must contain exactly {sorted(allowed)}. Got {sorted(mapping)}."
+        )
+    return dict(mapping)
+
+
 def _parse_boundary_condition(
     raw: Any,
     context: str,
     shape: str,
     gdim: int,
+    *,
+    operators: dict[str, Any],
 ) -> BoundaryConditionConfig:
-    """Parse one boundary condition config."""
+    """Parse one boundary operator config."""
     mapping = _as_mapping(raw, context)
-    bc_type = _require(mapping, "type", context)
-    bc_value = _parse_field_expression(
-        _require(mapping, "value", context), f"{context}.value", shape, gdim
-    )
-    bc_alpha = mapping.get("alpha")
-    if bc_type == "robin" and bc_alpha is None:
-        raise ValueError(f"Robin BC in {context} requires 'alpha'")
-    if shape != "scalar" and bc_type == "robin":
+    operator = _require(mapping, "operator", context)
+    if operator not in operators:
         raise ValueError(
-            f"{context} uses BC type '{bc_type}', but shared vector Robin is "
-            "intentionally unsupported. Use 'neumann' for vector traction data "
-            "or a preset-specific type such as 'absorbing'."
+            f"{context} uses unsupported operator '{operator}'. "
+            f"Allowed operators: {sorted(operators)}."
         )
-    return BoundaryConditionConfig(type=bc_type, value=bc_value, alpha=bc_alpha)
+    operator_spec = operators[operator]
+
+    if operator_spec.value_shape is None:
+        if "value" in mapping:
+            raise ValueError(
+                f"{context} operator '{operator}' does not accept a value."
+            )
+        value = None
+    else:
+        value_shape = (
+            shape if operator_spec.value_shape == "field" else operator_spec.value_shape
+        )
+        value = _parse_field_expression(
+            _require(mapping, "value", context),
+            f"{context}.value",
+            value_shape,
+            gdim,
+        )
+
+    pair_with = mapping.get("pair_with")
+    if operator_spec.requires_pair_with and pair_with is None:
+        raise ValueError(f"{context} operator '{operator}' requires 'pair_with'.")
+    if not operator_spec.requires_pair_with and pair_with is not None:
+        raise ValueError(
+            f"{context} operator '{operator}' does not accept 'pair_with'."
+        )
+
+    operator_parameters = _parse_operator_parameters(
+        mapping.get("operator_parameters"),
+        f"{context}.operator_parameters",
+        operator_spec.operator_parameter_names,
+    )
+
+    unexpected_keys = set(mapping) - {
+        "operator",
+        "value",
+        "pair_with",
+        "operator_parameters",
+    }
+    if unexpected_keys:
+        raise ValueError(f"{context} has unsupported keys {sorted(unexpected_keys)}.")
+
+    return BoundaryConditionConfig(
+        type=operator,
+        value=value,
+        pair_with=pair_with,
+        operator_parameters=operator_parameters,
+    )
+
+
+def _parse_boundary_field(
+    raw: Any,
+    context: str,
+    *,
+    shape: str,
+    gdim: int,
+    operators: dict[str, Any],
+) -> BoundaryFieldConfig:
+    """Parse all side conditions for one BC-addressable field."""
+    mapping = _as_mapping(raw, context)
+    sides: dict[str, list[BoundaryConditionConfig]] = {}
+    for side_name, entries_raw in mapping.items():
+        side_context = f"{context}.{side_name}"
+        if not isinstance(entries_raw, list):
+            raise ValueError(f"{side_context} must be a list. Got {entries_raw!r}")
+        if not entries_raw:
+            raise ValueError(f"{side_context} must contain at least one operator.")
+        sides[side_name] = [
+            _parse_boundary_condition(
+                entry_raw,
+                f"{side_context}[{index}]",
+                shape,
+                gdim,
+                operators=operators,
+            )
+            for index, entry_raw in enumerate(entries_raw)
+        ]
+
+    for side_name, entries in sides.items():
+        periodic_entries = [entry for entry in entries if entry.type == "periodic"]
+        if not periodic_entries:
+            continue
+        if len(entries) != 1:
+            raise ValueError(
+                f"{context}.{side_name} cannot mix 'periodic' with other operators."
+            )
+        pair_with = periodic_entries[0].pair_with
+        if pair_with not in sides:
+            raise ValueError(
+                f"{context}.{side_name} pairs with unknown side '{pair_with}'."
+            )
+        paired_entries = sides[pair_with]
+        if len(paired_entries) != 1 or paired_entries[0].type != "periodic":
+            raise ValueError(
+                f"{context}.{side_name} periodic pair must be reciprocal with "
+                f"'{pair_with}', and the paired side must also be a pure "
+                "periodic entry."
+            )
+        if paired_entries[0].pair_with != side_name:
+            raise ValueError(
+                f"{context}.{side_name} periodic pair must be reciprocal with "
+                f"'{pair_with}'."
+            )
+
+    return BoundaryFieldConfig(sides=sides)
 
 
 def _parse_output_selection(raw: Any, context: str) -> OutputSelectionConfig:
@@ -306,44 +485,59 @@ def _parse_output_selection(raw: Any, context: str) -> OutputSelectionConfig:
     return OutputSelectionConfig(mode=_require(mapping, "mode", context))
 
 
-def _parse_periodic_axes(raw: Any, context: str, gdim: int) -> tuple[int, ...]:
-    """Parse explicit periodic axes from the domain section."""
-    if not isinstance(raw, list):
-        raise ValueError(f"{context} must be a list. Got: {raw!r}")
-
-    labels = _component_labels(gdim)
-    axis_by_label = {label: axis for axis, label in enumerate(labels)}
-    periodic_axes: list[int] = []
-    seen: set[int] = set()
-
-    for index, label_raw in enumerate(raw):
-        if not isinstance(label_raw, str):
+def _parse_periodic_map(raw: Any, context: str, gdim: int) -> PeriodicMapConfig:
+    """Parse one domain-level periodic map declaration."""
+    mapping = _as_mapping(raw, context)
+    slave = _require(mapping, "slave", context)
+    master = _require(mapping, "master", context)
+    transform = _as_mapping(
+        _require(mapping, "transform", context), f"{context}.transform"
+    )
+    transform_type = _require(transform, "type", f"{context}.transform")
+    if transform_type != "affine":
+        raise ValueError(
+            f"{context}.transform.type must be 'affine'. Got '{transform_type}'."
+        )
+    matrix = _require(transform, "matrix", f"{context}.transform")
+    offset = _require(transform, "offset", f"{context}.transform")
+    if not isinstance(matrix, list) or len(matrix) != gdim:
+        raise ValueError(
+            f"{context}.transform.matrix must have {gdim} rows in {gdim}D. "
+            f"Got {matrix!r}."
+        )
+    parsed_matrix: list[list[float]] = []
+    for row_index, row in enumerate(matrix):
+        if not isinstance(row, list) or len(row) != gdim:
             raise ValueError(
-                f"{context}[{index}] must be a string axis label. Got: {label_raw!r}"
+                f"{context}.transform.matrix[{row_index}] must have {gdim} "
+                f"entries in {gdim}D. Got {row!r}."
             )
-        if label_raw not in axis_by_label:
-            raise ValueError(
-                f"{context}[{index}] uses unsupported axis '{label_raw}' in {gdim}D. "
-                f"Valid axes: {list(labels)}."
-            )
-        axis = axis_by_label[label_raw]
-        if axis in seen:
-            raise ValueError(
-                f"{context} contains duplicate axis '{label_raw}'. Got {list(raw)}."
-            )
-        seen.add(axis)
-        periodic_axes.append(axis)
+        parsed_matrix.append([float(value) for value in row])
+    if not isinstance(offset, list) or len(offset) != gdim:
+        raise ValueError(
+            f"{context}.transform.offset must have {gdim} entries in {gdim}D. "
+            f"Got {offset!r}."
+        )
+    unexpected_keys = set(mapping) - {"slave", "master", "transform"}
+    if unexpected_keys:
+        raise ValueError(f"{context} has unsupported keys {sorted(unexpected_keys)}.")
+    return PeriodicMapConfig(
+        slave=str(slave),
+        master=str(master),
+        matrix=parsed_matrix,
+        offset=[float(value) for value in offset],
+    )
 
-    return tuple(periodic_axes)
 
-
-def _periodic_boundary_names(periodic_axes: tuple[int, ...], gdim: int) -> set[str]:
-    """Return boundary names that are unavailable due to periodicity."""
-    blocked: set[str] = set()
-    for label in _periodic_axis_labels(periodic_axes, gdim):
-        blocked.add(f"{label}-")
-        blocked.add(f"{label}+")
-    return blocked
+def _parse_periodic_maps(
+    raw: Any, context: str, gdim: int
+) -> dict[str, PeriodicMapConfig]:
+    """Parse all domain-level periodic map declarations."""
+    mapping = _as_mapping(raw, context)
+    return {
+        name: _parse_periodic_map(periodic_raw, f"{context}.{name}", gdim)
+        for name, periodic_raw in mapping.items()
+    }
 
 
 def load_config(path: str | Path) -> SimulationConfig:
@@ -359,21 +553,23 @@ def load_config(path: str | Path) -> SimulationConfig:
     domain_raw = _as_mapping(_require(raw, "domain"), "domain")
     domain_type = _require(domain_raw, "type", "domain")
     domain_params = {
-        k: v for k, v in domain_raw.items() if k not in {"type", "periodic_axes"}
+        key: value
+        for key, value in domain_raw.items()
+        if key not in {"type", "periodic_maps"}
     }
     gdim = _infer_domain_dimension(domain_type, domain_params)
-    periodic_axes = _parse_periodic_axes(
-        _require(domain_raw, "periodic_axes", "domain"),
-        "domain.periodic_axes",
+    periodic_maps_raw = domain_raw.get("periodic_maps", {})
+    periodic_maps = _parse_periodic_maps(
+        periodic_maps_raw,
+        "domain.periodic_maps",
         gdim,
     )
     domain = DomainConfig(
         type=domain_type,
         params=domain_params,
-        periodic_axes=periodic_axes,
+        periodic_maps=periodic_maps,
     )
     gdim = domain.dimension
-    blocked_boundaries = _periodic_boundary_names(periodic_axes, gdim)
 
     from plm_data.presets import get_preset
 
@@ -459,8 +655,6 @@ def load_config(path: str | Path) -> SimulationConfig:
         input_raw = _as_mapping(inputs_raw[input_name], context)
 
         allowed_keys: set[str] = set()
-        if input_spec.allow_boundary_conditions:
-            allowed_keys.add("boundary_conditions")
         if input_spec.allow_source:
             allowed_keys.add("source")
         if input_spec.allow_initial_condition:
@@ -472,30 +666,6 @@ def load_config(path: str | Path) -> SimulationConfig:
                 f"{context} has unsupported keys {sorted(unexpected_keys)}. "
                 f"Allowed keys: {sorted(allowed_keys)}."
             )
-
-        if input_spec.allow_boundary_conditions:
-            boundary_raw = _as_mapping(
-                _require(input_raw, "boundary_conditions", context),
-                f"{context}.boundary_conditions",
-            )
-            boundary_conditions = {
-                name: _parse_boundary_condition(
-                    bc_raw,
-                    f"{context}.boundary_conditions.{name}",
-                    input_spec.shape,
-                    gdim,
-                )
-                for name, bc_raw in boundary_raw.items()
-            }
-            periodic_overlap = set(boundary_conditions) & blocked_boundaries
-            if periodic_overlap:
-                raise ValueError(
-                    f"{context}.boundary_conditions configures periodic faces "
-                    f"{sorted(periodic_overlap)}. Periodic faces cannot also define "
-                    "boundary conditions."
-                )
-        else:
-            boundary_conditions = {}
 
         if input_spec.allow_source:
             source = _parse_field_expression(
@@ -518,16 +688,44 @@ def load_config(path: str | Path) -> SimulationConfig:
             initial_condition = None
 
         inputs[input_name] = InputConfig(
-            boundary_conditions=boundary_conditions,
             source=source,
             initial_condition=initial_condition,
         )
+
+    if spec.boundary_fields:
+        boundary_raw = _as_mapping(
+            _require(raw, "boundary_conditions", "config"),
+            "boundary_conditions",
+        )
+        if set(boundary_raw) != set(spec.boundary_fields):
+            raise ValueError(
+                f"Preset '{preset_name}' requires boundary condition fields "
+                f"{sorted(spec.boundary_fields)}. Got {sorted(boundary_raw)}."
+            )
+        boundary_conditions = {
+            field_name: _parse_boundary_field(
+                boundary_raw[field_name],
+                f"boundary_conditions.{field_name}",
+                shape=field_spec.shape,
+                gdim=gdim,
+                operators=field_spec.operators,
+            )
+            for field_name, field_spec in spec.boundary_fields.items()
+        }
+    else:
+        boundary_conditions_raw = raw.get("boundary_conditions")
+        if boundary_conditions_raw not in (None, {}):
+            raise ValueError(
+                f"Preset '{preset_name}' does not support boundary_conditions."
+            )
+        boundary_conditions = {}
 
     return SimulationConfig(
         preset=preset_name,
         parameters=parameters,
         domain=domain,
         inputs=inputs,
+        boundary_conditions=boundary_conditions,
         output=output,
         solver=solver,
         time=time,

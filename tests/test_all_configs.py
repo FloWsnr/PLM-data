@@ -28,7 +28,7 @@ def test_config_runs(config_path, tmp_path):
     cfg = load_config(config_path)
     if cfg.preset == "maxwell" and not is_complex_runtime():
         pytest.skip("harmonic Maxwell requires a complex-valued runtime")
-    if cfg.domain.periodic_axes and not HAS_DOLFINX_MPC:
+    if cfg.has_periodic_boundary_conditions and not HAS_DOLFINX_MPC:
         pytest.skip("periodic configs require dolfinx_mpc")
 
     # Shrink to minimal run (match dimensionality of the domain)

@@ -3,33 +3,33 @@ parameters:
   nu: 1.0
 domain:
   type: box
-  periodic_axes: []
   size: [1.0, 1.0, 1.0]
   mesh_resolution: [8, 8, 8]
 inputs:
   velocity:
-    boundary_conditions:
-      x-:
-        type: dirichlet
-        value: [0.0, 0.0, 0.0]
-      x+:
-        type: dirichlet
-        value: [0.0, 0.0, 0.0]
-      y-:
-        type: dirichlet
-        value: [0.0, 0.0, 0.0]
-      y+:
-        type: dirichlet
-        value: [1.0, 0.0, 0.0]
-      z-:
-        type: dirichlet
-        value: [0.0, 0.0, 0.0]
-      z+:
-        type: dirichlet
-        value: [0.0, 0.0, 0.0]
     source:
       type: none
       params: {}
+boundary_conditions:
+  velocity:
+    x-:
+      - operator: dirichlet
+        value: [0.0, 0.0, 0.0]
+    x+:
+      - operator: dirichlet
+        value: [0.0, 0.0, 0.0]
+    y-:
+      - operator: dirichlet
+        value: [0.0, 0.0, 0.0]
+    y+:
+      - operator: dirichlet
+        value: [1.0, 0.0, 0.0]
+    z-:
+      - operator: dirichlet
+        value: [0.0, 0.0, 0.0]
+    z+:
+      - operator: dirichlet
+        value: [0.0, 0.0, 0.0]
 output:
   path: ./output
   resolution: [16, 16, 16]

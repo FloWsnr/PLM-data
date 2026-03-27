@@ -7,7 +7,7 @@ import ufl
 from dolfinx import fem
 
 from plm_data.core.boundary_conditions import apply_vector_dirichlet_bcs
-from plm_data.core.config import BoundaryConditionConfig
+from plm_data.core.config import BoundaryFieldConfig
 from plm_data.core.fem_utils import domain_average
 from plm_data.core.mesh import DomainGeometry
 
@@ -67,29 +67,27 @@ class TaylorHoodSystem:
 def create_taylor_hood_system(
     create_periodic_constraint: Callable[..., Any],
     domain_geom: DomainGeometry,
-    velocity_bcs: dict[str, BoundaryConditionConfig],
+    velocity_boundary_field: BoundaryFieldConfig,
     parameters: dict[str, float],
     *,
     pressure_degree: int,
-    preset_name: str,
+    pressure_boundary_field: BoundaryFieldConfig | None = None,
 ) -> TaylorHoodSystem:
     """Create shared Taylor-Hood spaces, BCs, and periodic constraints."""
-    for name, bc_config in velocity_bcs.items():
-        if bc_config.type != "dirichlet":
-            raise ValueError(
-                f"{preset_name} boundary '{name}' must be dirichlet, got "
-                f"'{bc_config.type}'"
-            )
-
     msh = domain_geom.mesh
     gdim = msh.geometry.dim
     V = fem.functionspace(msh, ("Lagrange", pressure_degree + 1, (gdim,)))
     Q = fem.functionspace(msh, ("Lagrange", pressure_degree))
     VQ = ufl.MixedFunctionSpace(V, Q)
 
-    bcs = apply_vector_dirichlet_bcs(V, domain_geom, velocity_bcs, parameters)
-    mpc_u = create_periodic_constraint(V, domain_geom, bcs)
-    mpc_p = create_periodic_constraint(Q, domain_geom, [])
+    bcs = apply_vector_dirichlet_bcs(
+        V, domain_geom, velocity_boundary_field, parameters
+    )
+    mpc_u = create_periodic_constraint(V, domain_geom, velocity_boundary_field, bcs)
+    if pressure_boundary_field is None:
+        mpc_p = None
+    else:
+        mpc_p = create_periodic_constraint(Q, domain_geom, pressure_boundary_field, [])
 
     return TaylorHoodSystem(
         V=V,

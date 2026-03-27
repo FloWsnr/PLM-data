@@ -3,7 +3,6 @@ parameters:
   kappa: 0.01
 domain:
   type: box
-  periodic_axes: []
   size: [1.0, 1.0, 1.0]
   mesh_resolution: [32, 32, 32]
 time:
@@ -11,13 +10,6 @@ time:
   t_end: 1.0
 inputs:
   u:
-    boundary_conditions:
-      x-: {type: neumann, value: 0.0}
-      x+: {type: neumann, value: 0.0}
-      y-: {type: neumann, value: 0.0}
-      y+: {type: neumann, value: 0.0}
-      z-: {type: neumann, value: 0.0}
-      z+: {type: neumann, value: 0.0}
     source:
       type: none
       params: {}
@@ -27,6 +19,26 @@ inputs:
         sigma: 0.1
         amplitude: 1.0
         center: [0.5, 0.5, 0.5]
+boundary_conditions:
+  u:
+    x-:
+      - operator: neumann
+        value: 0.0
+    x+:
+      - operator: neumann
+        value: 0.0
+    y-:
+      - operator: neumann
+        value: 0.0
+    y+:
+      - operator: neumann
+        value: 0.0
+    z-:
+      - operator: neumann
+        value: 0.0
+    z+:
+      - operator: neumann
+        value: 0.0
 solver:
   ksp_type: preonly
   pc_type: lu

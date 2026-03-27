@@ -8,15 +8,19 @@ from plm_data.core.boundary_conditions import (
     build_natural_bc_forms,
 )
 from plm_data.core.initial_conditions import apply_ic
-from plm_data.core.mesh import create_domain
 from plm_data.core.source_terms import build_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
+from plm_data.presets.boundary_validation import (
+    validate_scalar_standard_boundary_field,
+)
 from plm_data.presets.metadata import (
+    BoundaryFieldSpec,
     InputSpec,
     OutputSpec,
     PDEParameter,
     PresetSpec,
+    SCALAR_STANDARD_BOUNDARY_OPERATORS,
     StateSpec,
 )
 
@@ -30,9 +34,16 @@ _HEAT_SPEC = PresetSpec(
         "u": InputSpec(
             name="u",
             shape="scalar",
-            allow_boundary_conditions=True,
             allow_source=True,
             allow_initial_condition=True,
+        )
+    },
+    boundary_fields={
+        "u": BoundaryFieldSpec(
+            name="u",
+            shape="scalar",
+            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
+            description="Boundary conditions for the scalar temperature field.",
         )
     },
     states={"u": StateSpec(name="u", shape="scalar")},
@@ -50,21 +61,30 @@ _HEAT_SPEC = PresetSpec(
 
 
 class _HeatProblem(TransientLinearProblem):
+    def validate_boundary_conditions(self, domain_geom):
+        validate_scalar_standard_boundary_field(
+            preset_name=self.spec.name,
+            field_name="u",
+            boundary_field=self.config.boundary_field("u"),
+            domain_geom=domain_geom,
+        )
+
     def setup(self) -> None:
-        domain_geom = create_domain(self.config.domain)
+        domain_geom = self.load_domain_geometry()
         self.msh = domain_geom.mesh
         V = fem.functionspace(self.msh, ("Lagrange", 1))
 
         kappa = self.config.parameters["kappa"]
         field_config = self.config.input("u")
+        boundary_field = self.config.boundary_field("u")
         dt = self.config.time.dt
         bcs = apply_dirichlet_bcs(
             V,
             domain_geom,
-            field_config.boundary_conditions,
+            boundary_field,
             self.config.parameters,
         )
-        mpc = self.create_periodic_constraint(V, domain_geom, bcs)
+        mpc = self.create_periodic_constraint(V, domain_geom, boundary_field, bcs)
         self.V = V if mpc is None else mpc.function_space
 
         self.u_n = fem.Function(self.V, name="u_n")
@@ -103,7 +123,7 @@ class _HeatProblem(TransientLinearProblem):
             u,
             v,
             domain_geom,
-            field_config.boundary_conditions,
+            boundary_field,
             self.config.parameters,
         )
         if a_bc is not None:

@@ -13,11 +13,16 @@ from plm_data.core.boundary_conditions import (
 from plm_data.core.source_terms import build_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, StationaryLinearProblem
+from plm_data.presets.boundary_validation import (
+    validate_scalar_standard_boundary_field,
+)
 from plm_data.presets.metadata import (
+    BoundaryFieldSpec,
     InputSpec,
     OutputSpec,
     PDEParameter,
     PresetSpec,
+    SCALAR_STANDARD_BOUNDARY_OPERATORS,
     StateSpec,
 )
 
@@ -37,9 +42,16 @@ _HELMHOLTZ_SPEC = PresetSpec(
         "u": InputSpec(
             name="u",
             shape="scalar",
-            allow_boundary_conditions=True,
             allow_source=True,
             allow_initial_condition=False,
+        )
+    },
+    boundary_fields={
+        "u": BoundaryFieldSpec(
+            name="u",
+            shape="scalar",
+            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
+            description="Boundary conditions for the scalar solution.",
         )
     },
     states={"u": StateSpec(name="u", shape="scalar")},
@@ -83,14 +95,25 @@ def _check_resonance(k: float, domain_size: list[float]) -> None:
 
 
 class _HelmholtzProblem(StationaryLinearProblem):
+    def validate_boundary_conditions(self, domain_geom):
+        validate_scalar_standard_boundary_field(
+            preset_name=self.spec.name,
+            field_name="u",
+            boundary_field=self.config.boundary_field("u"),
+            domain_geom=domain_geom,
+        )
+
     def create_function_space(self, domain_geom):
         return fem.functionspace(domain_geom.mesh, ("Lagrange", 2))
+
+    def periodic_boundary_field(self):
+        return self.config.boundary_field("u")
 
     def create_boundary_conditions(self, V, domain_geom):
         return apply_dirichlet_bcs(
             V,
             domain_geom,
-            self.config.input("u").boundary_conditions,
+            self.config.boundary_field("u"),
             self.config.parameters,
         )
 
@@ -124,7 +147,7 @@ class _HelmholtzProblem(StationaryLinearProblem):
             u,
             v,
             domain_geom,
-            field_config.boundary_conditions,
+            self.config.boundary_field("u"),
             self.config.parameters,
         )
         if a_bc is not None:

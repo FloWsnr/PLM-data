@@ -9,24 +9,10 @@ parameters:
   pulse_delay: 0.18
 domain:
   type: rectangle
-  periodic_axes: []
   size: [1.0, 1.0]
   mesh_resolution: [32, 32]
 inputs:
   electric_field:
-    boundary_conditions:
-      x-:
-        type: absorbing
-        value: {type: zero, params: {}}
-      x+:
-        type: absorbing
-        value: {type: zero, params: {}}
-      y-:
-        type: dirichlet
-        value: [0.0, 0.0]
-      y+:
-        type: dirichlet
-        value: [0.0, 0.0]
     source:
       components:
         x:
@@ -41,6 +27,20 @@ inputs:
     initial_condition:
       type: zero
       params: {}
+boundary_conditions:
+  electric_field:
+    x-:
+      - operator: absorbing
+        value: {type: zero, params: {}}
+    x+:
+      - operator: absorbing
+        value: {type: zero, params: {}}
+    y-:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+    y+:
+      - operator: dirichlet
+        value: [0.0, 0.0]
 time:
   dt: 0.01
   t_end: 0.4

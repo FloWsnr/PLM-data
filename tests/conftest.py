@@ -11,7 +11,12 @@ from plm_data.core.config import (
     SolverConfig,
     TimeConfig,
 )
-from tests.preset_matrix import constant, output_fields, scalar_expr
+from tests.preset_matrix import (
+    boundary_field_config,
+    constant,
+    output_fields,
+    scalar_expr,
+)
 
 
 @pytest.fixture
@@ -19,7 +24,6 @@ def rectangle_domain():
     return DomainConfig(
         type="rectangle",
         params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-        periodic_axes=(),
     )
 
 
@@ -36,12 +40,6 @@ def heat_config(tmp_path, rectangle_domain, direct_solver):
         domain=rectangle_domain,
         inputs={
             "u": InputConfig(
-                boundary_conditions={
-                    "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
-                    "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
-                    "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
-                    "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
-                },
                 source=scalar_expr("none"),
                 initial_condition=scalar_expr(
                     "gaussian_bump",
@@ -50,6 +48,16 @@ def heat_config(tmp_path, rectangle_domain, direct_solver):
                     center=[0.5, 0.5],
                 ),
             )
+        },
+        boundary_conditions={
+            "u": boundary_field_config(
+                {
+                    "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                    "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                    "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                    "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                }
+            ),
         },
         output=OutputConfig(
             path=tmp_path,

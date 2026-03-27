@@ -16,6 +16,7 @@ from plm_data.core.config import (
     FieldExpressionConfig,
 )
 from plm_data.core.mesh import create_domain
+from tests.preset_matrix import boundary_field_config
 
 
 def constant(value):
@@ -36,7 +37,6 @@ def domain_geom():
     domain = DomainConfig(
         type="rectangle",
         params={"size": [1.0, 1.0], "mesh_resolution": [4, 4]},
-        periodic_axes=(),
     )
     return create_domain(domain)
 
@@ -66,7 +66,9 @@ class TestApplyDirichletBCs:
         bc_configs = {
             "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0))
         }
-        bcs = apply_dirichlet_bcs(V, domain_geom, bc_configs, parameters={})
+        bcs = apply_dirichlet_bcs(
+            V, domain_geom, boundary_field_config(bc_configs), parameters={}
+        )
         assert len(bcs) == 1
         assert isinstance(bcs[0], fem.DirichletBC)
 
@@ -74,7 +76,9 @@ class TestApplyDirichletBCs:
         bc_configs = {
             "x+": BoundaryConditionConfig(type="dirichlet", value=constant("param:U")),
         }
-        bcs = apply_dirichlet_bcs(V, domain_geom, bc_configs, {"U": 5.0})
+        bcs = apply_dirichlet_bcs(
+            V, domain_geom, boundary_field_config(bc_configs), {"U": 5.0}
+        )
         assert len(bcs) == 1
         assert isinstance(bcs[0], fem.DirichletBC)
 
@@ -88,7 +92,9 @@ class TestApplyDirichletBCs:
                 ),
             ),
         }
-        bcs = apply_dirichlet_bcs(V, domain_geom, bc_configs, parameters={})
+        bcs = apply_dirichlet_bcs(
+            V, domain_geom, boundary_field_config(bc_configs), parameters={}
+        )
         assert len(bcs) == 1
         assert isinstance(bcs[0], fem.DirichletBC)
 
@@ -99,7 +105,9 @@ class TestApplyDirichletBCs:
             ),
         }
         with pytest.raises(ValueError, match="Boundary 'nonexistent' not found"):
-            apply_dirichlet_bcs(V, domain_geom, bc_configs, parameters={})
+            apply_dirichlet_bcs(
+                V, domain_geom, boundary_field_config(bc_configs), parameters={}
+            )
 
     def test_skips_neumann(self, V, domain_geom):
         bc_configs = {
@@ -108,7 +116,9 @@ class TestApplyDirichletBCs:
             "y-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
             "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
         }
-        bcs = apply_dirichlet_bcs(V, domain_geom, bc_configs, parameters={})
+        bcs = apply_dirichlet_bcs(
+            V, domain_geom, boundary_field_config(bc_configs), parameters={}
+        )
         assert len(bcs) == 2
 
     def test_empty_when_no_dirichlet(self, V, domain_geom):
@@ -116,7 +126,12 @@ class TestApplyDirichletBCs:
             "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
             "x+": BoundaryConditionConfig(type="neumann", value=constant(1.0)),
         }
-        assert apply_dirichlet_bcs(V, domain_geom, bc_configs, parameters={}) == []
+        assert (
+            apply_dirichlet_bcs(
+                V, domain_geom, boundary_field_config(bc_configs), parameters={}
+            )
+            == []
+        )
 
 
 class TestApplyVectorDirichletBCs:
@@ -126,7 +141,9 @@ class TestApplyVectorDirichletBCs:
                 type="dirichlet", value=vector_constant(0.0, 1.0)
             )
         }
-        bcs = apply_vector_dirichlet_bcs(V_vec, domain_geom, bc_configs, parameters={})
+        bcs = apply_vector_dirichlet_bcs(
+            V_vec, domain_geom, boundary_field_config(bc_configs), parameters={}
+        )
         assert len(bcs) == 1
         assert isinstance(bcs[0], fem.DirichletBC)
 
@@ -145,7 +162,9 @@ class TestApplyVectorDirichletBCs:
                 ),
             ),
         }
-        bcs = apply_vector_dirichlet_bcs(V_vec, domain_geom, bc_configs, parameters={})
+        bcs = apply_vector_dirichlet_bcs(
+            V_vec, domain_geom, boundary_field_config(bc_configs), parameters={}
+        )
         assert len(bcs) == 1
         assert isinstance(bcs[0], fem.DirichletBC)
 
@@ -156,7 +175,9 @@ class TestApplyVectorDirichletBCs:
             ),
         }
         with pytest.raises(ValueError, match="Boundary 'nonexistent' not found"):
-            apply_vector_dirichlet_bcs(V_vec, domain_geom, bc_configs, parameters={})
+            apply_vector_dirichlet_bcs(
+                V_vec, domain_geom, boundary_field_config(bc_configs), parameters={}
+            )
 
     def test_empty_when_no_dirichlet(self, V_vec, domain_geom):
         bc_configs = {
@@ -168,7 +189,9 @@ class TestApplyVectorDirichletBCs:
             ),
         }
         assert (
-            apply_vector_dirichlet_bcs(V_vec, domain_geom, bc_configs, parameters={})
+            apply_vector_dirichlet_bcs(
+                V_vec, domain_geom, boundary_field_config(bc_configs), parameters={}
+            )
             == []
         )
 
@@ -180,7 +203,7 @@ class TestBuildNaturalBCForms:
             "x-": BoundaryConditionConfig(type="neumann", value=constant(5.0)),
         }
         a_bc, L_bc = build_natural_bc_forms(
-            u, v, domain_geom, bc_configs, parameters={}
+            u, v, domain_geom, boundary_field_config(bc_configs), parameters={}
         )
         assert a_bc is None
         assert L_bc is not None
@@ -191,7 +214,7 @@ class TestBuildNaturalBCForms:
             "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
         }
         a_bc, L_bc = build_natural_bc_forms(
-            u, v, domain_geom, bc_configs, parameters={}
+            u, v, domain_geom, boundary_field_config(bc_configs), parameters={}
         )
         assert a_bc is None
         assert L_bc is None
@@ -202,7 +225,7 @@ class TestBuildNaturalBCForms:
             "y+": BoundaryConditionConfig(type="robin", value=constant(2.0), alpha=3.0),
         }
         a_bc, L_bc = build_natural_bc_forms(
-            u, v, domain_geom, bc_configs, parameters={}
+            u, v, domain_geom, boundary_field_config(bc_configs), parameters={}
         )
         assert a_bc is not None
         assert L_bc is not None
@@ -213,7 +236,7 @@ class TestBuildNaturalBCForms:
             "y-": BoundaryConditionConfig(type="robin", value=constant(1.0), alpha=0.0),
         }
         a_bc, L_bc = build_natural_bc_forms(
-            u, v, domain_geom, bc_configs, parameters={}
+            u, v, domain_geom, boundary_field_config(bc_configs), parameters={}
         )
         assert a_bc is None
         assert L_bc is not None
@@ -224,7 +247,9 @@ class TestBuildNaturalBCForms:
             "bogus": BoundaryConditionConfig(type="neumann", value=constant(1.0)),
         }
         with pytest.raises(ValueError, match="Boundary 'bogus' not found"):
-            build_natural_bc_forms(u, v, domain_geom, bc_configs, parameters={})
+            build_natural_bc_forms(
+                u, v, domain_geom, boundary_field_config(bc_configs), parameters={}
+            )
 
     def test_robin_with_param_ref(self, domain_geom, trial_test):
         u, v = trial_test
@@ -239,7 +264,7 @@ class TestBuildNaturalBCForms:
             u,
             v,
             domain_geom,
-            bc_configs,
+            boundary_field_config(bc_configs),
             {"g": 2.0, "a": 0.5},
         )
         assert a_bc is not None
@@ -256,7 +281,9 @@ class TestBuildNaturalBCForms:
         with pytest.raises(
             ValueError, match="Boundary 'x-' cannot use custom scalar values"
         ):
-            build_natural_bc_forms(u, v, domain_geom, bc_configs, parameters={})
+            build_natural_bc_forms(
+                u, v, domain_geom, boundary_field_config(bc_configs), parameters={}
+            )
 
 
 class TestBuildVectorNaturalBCForms:
@@ -267,7 +294,10 @@ class TestBuildVectorNaturalBCForms:
             ),
         }
         L_bc = build_vector_natural_bc_forms(
-            vector_test, domain_geom, bc_configs, parameters={}
+            vector_test,
+            domain_geom,
+            boundary_field_config(bc_configs),
+            parameters={},
         )
         assert L_bc is not None
 
@@ -278,7 +308,10 @@ class TestBuildVectorNaturalBCForms:
             ),
         }
         L_bc = build_vector_natural_bc_forms(
-            vector_test, domain_geom, bc_configs, parameters={}
+            vector_test,
+            domain_geom,
+            boundary_field_config(bc_configs),
+            parameters={},
         )
         assert L_bc is None
 
@@ -292,7 +325,7 @@ class TestBuildVectorNaturalBCForms:
         L_bc = build_vector_natural_bc_forms(
             vector_test,
             domain_geom,
-            bc_configs,
+            boundary_field_config(bc_configs),
             parameters={"tx": 2.0, "ty": -1.0},
         )
         assert L_bc is not None
@@ -309,7 +342,10 @@ class TestBuildVectorNaturalBCForms:
             ValueError, match="Shared vector Robin is intentionally unsupported"
         ):
             build_vector_natural_bc_forms(
-                vector_test, domain_geom, bc_configs, parameters={}
+                vector_test,
+                domain_geom,
+                boundary_field_config(bc_configs),
+                parameters={},
             )
 
     def test_custom_component_raises(self, domain_geom, vector_test):
@@ -329,5 +365,8 @@ class TestBuildVectorNaturalBCForms:
             match="Boundary 'x-' component 'x' cannot use custom values",
         ):
             build_vector_natural_bc_forms(
-                vector_test, domain_geom, bc_configs, parameters={}
+                vector_test,
+                domain_geom,
+                boundary_field_config(bc_configs),
+                parameters={},
             )

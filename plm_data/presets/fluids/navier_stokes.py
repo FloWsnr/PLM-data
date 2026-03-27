@@ -3,8 +3,8 @@
 import numpy as np
 import ufl
 from dolfinx import default_real_type, fem
+from plm_data.core.boundary_conditions import build_vector_natural_bc_forms
 from plm_data.core.initial_conditions import apply_vector_ic
-from plm_data.core.mesh import create_domain
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.presets.fluids._taylor_hood import (
     create_taylor_hood_linear_problem,
@@ -13,12 +13,17 @@ from plm_data.presets.fluids._taylor_hood import (
 )
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
+from plm_data.presets.boundary_validation import (
+    validate_vector_standard_boundary_field,
+)
 from plm_data.presets.metadata import (
+    BoundaryFieldSpec,
     InputSpec,
     OutputSpec,
     PDEParameter,
     PresetSpec,
     StateSpec,
+    VECTOR_STANDARD_BOUNDARY_OPERATORS,
 )
 
 
@@ -41,10 +46,17 @@ _NAVIER_STOKES_SPEC = PresetSpec(
         "velocity": InputSpec(
             name="velocity",
             shape="vector",
-            allow_boundary_conditions=True,
             allow_source=True,
             allow_initial_condition=True,
         ),
+    },
+    boundary_fields={
+        "velocity": BoundaryFieldSpec(
+            name="velocity",
+            shape="vector",
+            operators=VECTOR_STANDARD_BOUNDARY_OPERATORS,
+            description="Boundary conditions for the velocity field.",
+        )
     },
     states={
         "velocity": StateSpec(name="velocity", shape="vector"),
@@ -70,8 +82,16 @@ _NAVIER_STOKES_SPEC = PresetSpec(
 
 
 class _NavierStokesProblem(TransientLinearProblem):
+    def validate_boundary_conditions(self, domain_geom):
+        validate_vector_standard_boundary_field(
+            preset_name=self.spec.name,
+            field_name="velocity",
+            boundary_field=self.config.boundary_field("velocity"),
+            domain_geom=domain_geom,
+        )
+
     def setup(self) -> None:
-        domain_geom = create_domain(self.config.domain)
+        domain_geom = self.load_domain_geometry()
         self.domain_geom = domain_geom
         self.msh = domain_geom.mesh
         self.gdim = self.msh.geometry.dim
@@ -80,13 +100,14 @@ class _NavierStokesProblem(TransientLinearProblem):
         k = int(self.config.parameters["k"])
         dt = self.config.time.dt
         velocity_field = self.config.input("velocity")
+        velocity_boundary_field = self.config.boundary_field("velocity")
         system = create_taylor_hood_system(
             self.create_periodic_constraint,
             domain_geom,
-            velocity_field.boundary_conditions,
+            velocity_boundary_field,
             self.config.parameters,
             pressure_degree=k,
-            preset_name="Navier-Stokes",
+            pressure_boundary_field=velocity_boundary_field,
         )
         self._num_dofs = system.num_dofs()
 
@@ -114,6 +135,14 @@ class _NavierStokesProblem(TransientLinearProblem):
         )
         if source_form is not None:
             base_rhs = base_rhs + source_form
+        traction_form = build_vector_natural_bc_forms(
+            v,
+            domain_geom,
+            velocity_boundary_field,
+            self.config.parameters,
+        )
+        if traction_form is not None:
+            base_rhs = base_rhs + traction_form
 
         stokes_form = (
             (1.0 / Re) * ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx

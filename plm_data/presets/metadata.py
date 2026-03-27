@@ -23,7 +23,6 @@ class InputSpec:
 
     name: str
     shape: str
-    allow_boundary_conditions: bool
     allow_source: bool
     allow_initial_condition: bool
 
@@ -39,6 +38,32 @@ class StateSpec:
 
     name: str
     shape: str
+
+    def component_labels(self, gdim: int) -> tuple[str, ...]:
+        if self.shape != "vector":
+            return ()
+        return _component_labels(gdim)
+
+
+@dataclass(frozen=True)
+class BoundaryOperatorSpec:
+    """Config-facing declaration for one named boundary operator."""
+
+    name: str
+    value_shape: str | None
+    requires_pair_with: bool = False
+    operator_parameter_names: tuple[str, ...] = ()
+    description: str = ""
+
+
+@dataclass(frozen=True)
+class BoundaryFieldSpec:
+    """Config-facing declaration for one BC-addressable field."""
+
+    name: str
+    shape: str
+    operators: dict[str, BoundaryOperatorSpec]
+    description: str = ""
 
     def component_labels(self, gdim: int) -> tuple[str, ...]:
         if self.shape != "vector":
@@ -105,6 +130,7 @@ class PresetSpec:
     equations: dict[str, str]
     parameters: list[PDEParameter]
     inputs: dict[str, InputSpec]
+    boundary_fields: dict[str, BoundaryFieldSpec]
     states: dict[str, StateSpec]
     outputs: dict[str, OutputSpec]
     steady_state: bool
@@ -117,6 +143,25 @@ class PresetSpec:
                     f"Preset '{self.name}' input key '{name}' does not match "
                     f"InputSpec.name '{spec.name}'"
                 )
+
+        for name, spec in self.boundary_fields.items():
+            if name != spec.name:
+                raise ValueError(
+                    f"Preset '{self.name}' boundary field key '{name}' does not "
+                    f"match BoundaryFieldSpec.name '{spec.name}'"
+                )
+            if spec.shape not in {"scalar", "vector"}:
+                raise ValueError(
+                    f"Preset '{self.name}' boundary field '{name}' has unsupported "
+                    f"shape '{spec.shape}'"
+                )
+            for operator_name, operator_spec in spec.operators.items():
+                if operator_name != operator_spec.name:
+                    raise ValueError(
+                        f"Preset '{self.name}' boundary field '{name}' operator key "
+                        f"'{operator_name}' does not match "
+                        f"BoundaryOperatorSpec.name '{operator_spec.name}'"
+                    )
 
         for name, spec in self.states.items():
             if name != spec.name:
@@ -156,6 +201,9 @@ class PresetSpec:
     def input_names(self) -> list[str]:
         return list(self.inputs.keys())
 
+    def boundary_field_names(self) -> list[str]:
+        return list(self.boundary_fields.keys())
+
     def output_names(self) -> list[str]:
         return list(self.outputs.keys())
 
@@ -194,3 +242,58 @@ class PresetSpec:
                 f"Preset '{self.name}' supports dimensions "
                 f"{self.supported_dimensions}, not {gdim}D."
             )
+
+
+SCALAR_STANDARD_BOUNDARY_OPERATORS = {
+    "dirichlet": BoundaryOperatorSpec(
+        name="dirichlet",
+        value_shape="field",
+        description="Strong value boundary condition.",
+    ),
+    "neumann": BoundaryOperatorSpec(
+        name="neumann",
+        value_shape="field",
+        description="Natural flux boundary condition.",
+    ),
+    "robin": BoundaryOperatorSpec(
+        name="robin",
+        value_shape="field",
+        operator_parameter_names=("alpha",),
+        description="Scalar Robin boundary condition.",
+    ),
+    "periodic": BoundaryOperatorSpec(
+        name="periodic",
+        value_shape=None,
+        requires_pair_with=True,
+        description="Periodic side-pair constraint.",
+    ),
+}
+
+VECTOR_STANDARD_BOUNDARY_OPERATORS = {
+    "dirichlet": BoundaryOperatorSpec(
+        name="dirichlet",
+        value_shape="field",
+        description="Strong vector boundary condition.",
+    ),
+    "neumann": BoundaryOperatorSpec(
+        name="neumann",
+        value_shape="field",
+        description="Natural vector traction boundary condition.",
+    ),
+    "periodic": BoundaryOperatorSpec(
+        name="periodic",
+        value_shape=None,
+        requires_pair_with=True,
+        description="Periodic side-pair constraint.",
+    ),
+}
+
+MAXWELL_BOUNDARY_OPERATORS = {
+    "dirichlet": VECTOR_STANDARD_BOUNDARY_OPERATORS["dirichlet"],
+    "periodic": VECTOR_STANDARD_BOUNDARY_OPERATORS["periodic"],
+    "absorbing": BoundaryOperatorSpec(
+        name="absorbing",
+        value_shape="field",
+        description="Absorbing Maxwell boundary condition.",
+    ),
+}

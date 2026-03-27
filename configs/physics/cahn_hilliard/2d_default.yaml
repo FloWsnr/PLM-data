@@ -6,7 +6,6 @@ parameters:
   theta: 0.5
 domain:
   type: rectangle
-  periodic_axes: [x, y]
   size: [1.0, 1.0]
   mesh_resolution: [96, 96]
 time:
@@ -19,6 +18,20 @@ inputs:
       params:
         mean: 0.63
         std: 0.02
+boundary_conditions:
+  c:
+    x-:
+      - operator: periodic
+        pair_with: x+
+    x+:
+      - operator: periodic
+        pair_with: x-
+    y-:
+      - operator: periodic
+        pair_with: y+
+    y+:
+      - operator: periodic
+        pair_with: y-
 output:
   path: ./output
   resolution: [64, 64]

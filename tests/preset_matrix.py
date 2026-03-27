@@ -10,6 +10,7 @@ from numpy.typing import NDArray
 
 from plm_data.core.config import (
     BoundaryConditionConfig,
+    BoundaryFieldConfig,
     DomainConfig,
     FieldExpressionConfig,
     InputConfig,
@@ -25,6 +26,11 @@ from plm_data.presets import get_preset
 from plm_data.presets.base import RunResult
 
 HAS_DOLFINX_MPC = importlib.util.find_spec("dolfinx_mpc") is not None
+_AXIS_SIDE_NAMES = {
+    0: ("x-", "x+"),
+    1: ("y-", "y+"),
+    2: ("z-", "z+"),
+}
 
 
 def constant(value):
@@ -47,15 +53,29 @@ def output_fields(**modes):
     return {name: OutputSelectionConfig(mode=mode) for name, mode in modes.items()}
 
 
+def boundary_field_config(
+    boundary_conditions: dict[str, BoundaryConditionConfig],
+    *,
+    periodic_axes: tuple[int, ...] = (),
+) -> BoundaryFieldConfig:
+    sides = {
+        name: [bc] if isinstance(bc, BoundaryConditionConfig) else list(bc)
+        for name, bc in boundary_conditions.items()
+    }
+    for axis in periodic_axes:
+        minus, plus = _AXIS_SIDE_NAMES[axis]
+        sides[minus] = [BoundaryConditionConfig(type="periodic", pair_with=plus)]
+        sides[plus] = [BoundaryConditionConfig(type="periodic", pair_with=minus)]
+    return BoundaryFieldConfig(sides=sides)
+
+
 def rectangle_domain(
     *,
     mesh_resolution: tuple[int, int] = (8, 8),
-    periodic_axes: tuple[int, ...] = (),
 ) -> DomainConfig:
     return DomainConfig(
         type="rectangle",
         params={"size": [1.0, 1.0], "mesh_resolution": list(mesh_resolution)},
-        periodic_axes=periodic_axes,
     )
 
 
@@ -106,15 +126,17 @@ def make_scalar_preset_config(
     return SimulationConfig(
         preset=preset,
         parameters=parameters,
-        domain=rectangle_domain(
-            mesh_resolution=mesh_resolution,
-            periodic_axes=periodic_axes,
-        ),
+        domain=rectangle_domain(mesh_resolution=mesh_resolution),
         inputs={
             "u": InputConfig(
-                boundary_conditions=boundary_conditions,
                 source=source,
                 initial_condition=initial_condition,
+            )
+        },
+        boundary_conditions={
+            "u": boundary_field_config(
+                boundary_conditions,
+                periodic_axes=periodic_axes,
             )
         },
         output=OutputConfig(
@@ -147,15 +169,17 @@ def make_flow_preset_config(
     return SimulationConfig(
         preset=preset,
         parameters=parameters,
-        domain=rectangle_domain(
-            mesh_resolution=mesh_resolution,
-            periodic_axes=periodic_axes,
-        ),
+        domain=rectangle_domain(mesh_resolution=mesh_resolution),
         inputs={
             "velocity": InputConfig(
-                boundary_conditions=boundary_conditions,
                 source=source,
                 initial_condition=initial_condition,
+            )
+        },
+        boundary_conditions={
+            "velocity": boundary_field_config(
+                boundary_conditions,
+                periodic_axes=periodic_axes,
             )
         },
         output=OutputConfig(
@@ -188,11 +212,11 @@ def make_cahn_hilliard_config(
             "mobility": 1.0,
             "theta": 0.5,
         },
-        domain=rectangle_domain(
-            mesh_resolution=mesh_resolution,
-            periodic_axes=periodic_axes,
-        ),
+        domain=rectangle_domain(mesh_resolution=mesh_resolution),
         inputs={"c": InputConfig(initial_condition=initial_condition)},
+        boundary_conditions={
+            "c": boundary_field_config({}, periodic_axes=periodic_axes)
+        },
         output=OutputConfig(
             path=tmp_path,
             resolution=list(output_resolution),
@@ -224,14 +248,16 @@ def make_maxwell_config(
             "k0": 8.0,
             "source_amplitude": 1.0,
         },
-        domain=rectangle_domain(
-            mesh_resolution=mesh_resolution,
-            periodic_axes=periodic_axes,
-        ),
+        domain=rectangle_domain(mesh_resolution=mesh_resolution),
         inputs={
             "electric_field": InputConfig(
-                boundary_conditions=boundary_conditions,
                 source=source,
+            )
+        },
+        boundary_conditions={
+            "electric_field": boundary_field_config(
+                boundary_conditions,
+                periodic_axes=periodic_axes,
             )
         },
         output=OutputConfig(
@@ -268,15 +294,17 @@ def make_maxwell_pulse_config(
             "pulse_width": 0.08,
             "pulse_delay": 0.1,
         },
-        domain=rectangle_domain(
-            mesh_resolution=mesh_resolution,
-            periodic_axes=periodic_axes,
-        ),
+        domain=rectangle_domain(mesh_resolution=mesh_resolution),
         inputs={
             "electric_field": InputConfig(
-                boundary_conditions=boundary_conditions,
                 source=source,
                 initial_condition=initial_condition,
+            )
+        },
+        boundary_conditions={
+            "electric_field": boundary_field_config(
+                boundary_conditions,
+                periodic_axes=periodic_axes,
             )
         },
         output=OutputConfig(

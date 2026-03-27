@@ -21,6 +21,7 @@ from plm_data.core.mesh import create_domain
 from plm_data.core.output import FrameWriter
 from plm_data.presets import get_preset
 from tests.conftest import output_fields, scalar_expr
+from tests.preset_matrix import boundary_field_config
 
 _has_ffmpeg = shutil.which("ffmpeg") is not None
 
@@ -34,20 +35,23 @@ def _scalar_heat_config(tmp_path, formats):
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-            periodic_axes=(),
         ),
         inputs={
             "u": InputConfig(
-                boundary_conditions={
-                    "x-": _neumann_zero(),
-                    "x+": _neumann_zero(),
-                    "y-": _neumann_zero(),
-                    "y+": _neumann_zero(),
-                },
                 source=scalar_expr("none"),
                 initial_condition=scalar_expr(
                     "gaussian_bump", sigma=0.1, amplitude=1.0, center=[0.5, 0.5]
                 ),
+            )
+        },
+        boundary_conditions={
+            "u": boundary_field_config(
+                {
+                    "x-": _neumann_zero(),
+                    "x+": _neumann_zero(),
+                    "y-": _neumann_zero(),
+                    "y+": _neumann_zero(),
+                }
             )
         },
         output=OutputConfig(
@@ -72,17 +76,20 @@ def _vector_stokes_config(tmp_path, formats):
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-            periodic_axes=(),
         ),
         inputs={
             "velocity": InputConfig(
-                boundary_conditions={
+                source=scalar_expr("none"),
+            )
+        },
+        boundary_conditions={
+            "velocity": boundary_field_config(
+                {
                     "x-": _dirichlet_vector_zero(),
                     "x+": _dirichlet_vector_zero(),
                     "y-": _dirichlet_vector_zero(),
                     "y+": _dirichlet_vector([1.0, 0.0]),
-                },
-                source=scalar_expr("none"),
+                }
             )
         },
         output=OutputConfig(

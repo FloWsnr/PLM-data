@@ -6,22 +6,27 @@ import numpy as np
 import ufl
 from dolfinx import default_real_type, fem
 
+from plm_data.core.boundary_conditions import build_vector_natural_bc_forms
 from plm_data.core.logging import get_logger
-from plm_data.core.mesh import create_domain
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import CustomProblem, PDEPreset, ProblemInstance, RunResult
+from plm_data.presets.boundary_validation import (
+    validate_vector_standard_boundary_field,
+)
 from plm_data.presets.fluids._taylor_hood import (
     create_taylor_hood_linear_problem,
     create_taylor_hood_system,
     normalize_pressure,
 )
 from plm_data.presets.metadata import (
+    BoundaryFieldSpec,
     InputSpec,
     OutputSpec,
     PDEParameter,
     PresetSpec,
     StateSpec,
+    VECTOR_STANDARD_BOUNDARY_OPERATORS,
 )
 
 if TYPE_CHECKING:
@@ -46,10 +51,17 @@ _STOKES_SPEC = PresetSpec(
         "velocity": InputSpec(
             name="velocity",
             shape="vector",
-            allow_boundary_conditions=True,
             allow_source=True,
             allow_initial_condition=False,
         ),
+    },
+    boundary_fields={
+        "velocity": BoundaryFieldSpec(
+            name="velocity",
+            shape="vector",
+            operators=VECTOR_STANDARD_BOUNDARY_OPERATORS,
+            description="Boundary conditions for the velocity field.",
+        )
     },
     states={
         "velocity": StateSpec(name="velocity", shape="vector"),
@@ -75,18 +87,27 @@ _STOKES_SPEC = PresetSpec(
 
 
 class _StokesProblem(CustomProblem):
+    def validate_boundary_conditions(self, domain_geom):
+        validate_vector_standard_boundary_field(
+            preset_name=self.spec.name,
+            field_name="velocity",
+            boundary_field=self.config.boundary_field("velocity"),
+            domain_geom=domain_geom,
+        )
+
     def run(self, output: "FrameWriter") -> RunResult:
         logger = get_logger("solver")
-        domain_geom = create_domain(self.config.domain)
+        domain_geom = self.load_domain_geometry()
         msh = domain_geom.mesh
         nu = self.config.parameters["nu"]
+        velocity_boundary_field = self.config.boundary_field("velocity")
         system = create_taylor_hood_system(
             self.create_periodic_constraint,
             domain_geom,
-            self.config.input("velocity").boundary_conditions,
+            velocity_boundary_field,
             self.config.parameters,
             pressure_degree=1,
-            preset_name="Stokes",
+            pressure_boundary_field=velocity_boundary_field,
         )
         num_dofs = system.num_dofs()
         logger.info("  Solving Stokes problem (%d DOFs)...", num_dofs)
@@ -116,6 +137,15 @@ class _StokesProblem(CustomProblem):
         )
         if source_form is not None:
             L_form = L_form + source_form
+
+        traction_form = build_vector_natural_bc_forms(
+            v,
+            domain_geom,
+            velocity_boundary_field,
+            self.config.parameters,
+        )
+        if traction_form is not None:
+            L_form = L_form + traction_form
 
         u_h = system.create_velocity_function("velocity")
         p_h = system.create_pressure_function("pressure")

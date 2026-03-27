@@ -9,8 +9,13 @@ from plm_data.core.runtime import require_complex_runtime
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, StationaryLinearProblem
+from plm_data.presets.boundary_validation import (
+    validate_vector_standard_boundary_field,
+)
 from plm_data.presets.metadata import (
+    BoundaryFieldSpec,
     InputSpec,
+    MAXWELL_BOUNDARY_OPERATORS,
     OutputSpec,
     PDEParameter,
     PresetSpec,
@@ -41,10 +46,17 @@ _MAXWELL_SPEC = PresetSpec(
         "electric_field": InputSpec(
             name="electric_field",
             shape="vector",
-            allow_boundary_conditions=True,
             allow_source=True,
             allow_initial_condition=False,
         ),
+    },
+    boundary_fields={
+        "electric_field": BoundaryFieldSpec(
+            name="electric_field",
+            shape="vector",
+            operators=MAXWELL_BOUNDARY_OPERATORS,
+            description="Boundary conditions for the electric field.",
+        )
     },
     states={"electric_field": StateSpec(name="electric_field", shape="vector")},
     outputs={
@@ -61,13 +73,25 @@ _MAXWELL_SPEC = PresetSpec(
 
 
 class _MaxwellProblem(StationaryLinearProblem):
+    def validate_boundary_conditions(self, domain_geom):
+        validate_vector_standard_boundary_field(
+            preset_name=self.spec.name,
+            field_name="electric_field",
+            boundary_field=self.config.boundary_field("electric_field"),
+            domain_geom=domain_geom,
+            allowed_operators={"dirichlet", "absorbing", "periodic"},
+        )
+
     def create_function_space(self, domain_geom):
         return fem.functionspace(domain_geom.mesh, ("N1curl", 1))
 
-    def create_periodic_constraint(self, V, domain_geom, bcs):
+    def periodic_boundary_field(self):
+        return self.config.boundary_field("electric_field")
+
+    def create_periodic_constraint(self, V, domain_geom, boundary_field, bcs):
         require_unverified_periodic_support(
             self.spec.name,
-            domain_geom,
+            boundary_field,
             "N1curl spaces",
         )
         return None
@@ -76,7 +100,7 @@ class _MaxwellProblem(StationaryLinearProblem):
         return apply_maxwell_dirichlet_bcs(
             V,
             domain_geom,
-            self.config.input("electric_field").boundary_conditions,
+            self.config.boundary_field("electric_field"),
             self.config.parameters,
         )
 
@@ -85,6 +109,7 @@ class _MaxwellProblem(StationaryLinearProblem):
         mu_r = self.config.parameters["mu_r"]
         k0 = self.config.parameters["k0"]
         field_config = self.config.input("electric_field")
+        boundary_field = self.config.boundary_field("electric_field")
 
         E = ufl.TrialFunction(V)
         v = ufl.TestFunction(V)
@@ -116,7 +141,7 @@ class _MaxwellProblem(StationaryLinearProblem):
             E,
             v,
             domain_geom,
-            field_config.boundary_conditions,
+            boundary_field,
             absorbing_coeff,
             self.config.parameters,
         )

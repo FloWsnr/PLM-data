@@ -4,7 +4,7 @@ import ufl
 from dolfinx import fem
 
 from plm_data.core.boundary_conditions import apply_vector_dirichlet_bcs
-from plm_data.core.config import BoundaryConditionConfig, FieldExpressionConfig
+from plm_data.core.config import BoundaryFieldConfig, FieldExpressionConfig
 from plm_data.core.mesh import DomainGeometry
 from plm_data.core.spatial_fields import (
     component_expressions,
@@ -32,52 +32,61 @@ def tangential_inner(u, v, n, gdim: int):
 def apply_maxwell_dirichlet_bcs(
     V: fem.FunctionSpace,
     domain_geom: DomainGeometry,
-    bc_configs: dict[str, BoundaryConditionConfig],
+    boundary_field: BoundaryFieldConfig,
     parameters: dict[str, float],
 ) -> list[fem.DirichletBC]:
     """Apply strong PEC-style Maxwell boundary conditions."""
-    _validate_boundary_types(bc_configs, allowed={"dirichlet", "absorbing"})
-    return apply_vector_dirichlet_bcs(V, domain_geom, bc_configs, parameters)
+    _validate_boundary_types(
+        boundary_field,
+        allowed={"dirichlet", "absorbing", "periodic"},
+    )
+    return apply_vector_dirichlet_bcs(V, domain_geom, boundary_field, parameters)
 
 
 def build_absorbing_boundary_form(
     u,
     v,
     domain_geom: DomainGeometry,
-    bc_configs: dict[str, BoundaryConditionConfig],
+    boundary_field: BoundaryFieldConfig,
     coefficient,
     parameters: dict[str, float],
 ):
     """Build homogeneous absorbing boundary contributions."""
-    _validate_boundary_types(bc_configs, allowed={"dirichlet", "absorbing"})
+    _validate_boundary_types(
+        boundary_field,
+        allowed={"dirichlet", "absorbing", "periodic"},
+    )
 
     gdim = domain_geom.mesh.geometry.dim
     n = ufl.FacetNormal(domain_geom.mesh)
     form = None
-    for name, bc in bc_configs.items():
-        if bc.type != "absorbing":
-            continue
-        _require_zero_absorbing_value(name, bc.value, gdim, parameters)
-        term = (
-            coefficient
-            * tangential_inner(u, v, n, gdim)
-            * domain_geom.ds(domain_geom.boundary_names[name])
-        )
-        form = term if form is None else form + term
+    for name, entries in boundary_field.sides.items():
+        for bc in entries:
+            if bc.type != "absorbing":
+                continue
+            assert bc.value is not None
+            _require_zero_absorbing_value(name, bc.value, gdim, parameters)
+            term = (
+                coefficient
+                * tangential_inner(u, v, n, gdim)
+                * domain_geom.ds(domain_geom.boundary_names[name])
+            )
+            form = term if form is None else form + term
     return form
 
 
 def _validate_boundary_types(
-    bc_configs: dict[str, BoundaryConditionConfig],
+    boundary_field: BoundaryFieldConfig,
     allowed: set[str],
 ) -> None:
-    for name, bc in bc_configs.items():
-        if bc.type not in allowed:
-            allowed_str = ", ".join(sorted(allowed))
-            raise ValueError(
-                f"Maxwell boundary '{name}' uses unsupported type '{bc.type}'. "
-                f"Allowed types: {allowed_str}."
-            )
+    for name, entries in boundary_field.sides.items():
+        for bc in entries:
+            if bc.type not in allowed:
+                allowed_str = ", ".join(sorted(allowed))
+                raise ValueError(
+                    f"Maxwell boundary '{name}' uses unsupported type '{bc.type}'. "
+                    f"Allowed types: {allowed_str}."
+                )
 
 
 def _require_zero_absorbing_value(

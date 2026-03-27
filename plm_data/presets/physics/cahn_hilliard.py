@@ -4,18 +4,20 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem
 from plm_data.core.initial_conditions import apply_ic
-from plm_data.core.mesh import create_domain
 from plm_data.presets import register_preset
 from plm_data.presets.base import (
     PDEPreset,
     ProblemInstance,
     TransientNonlinearProblem,
 )
+from plm_data.presets.boundary_validation import validate_boundary_field_structure
 from plm_data.presets.metadata import (
+    BoundaryFieldSpec,
     InputSpec,
     OutputSpec,
     PDEParameter,
     PresetSpec,
+    SCALAR_STANDARD_BOUNDARY_OPERATORS,
     StateSpec,
 )
 
@@ -40,9 +42,16 @@ _CAHN_HILLIARD_SPEC = PresetSpec(
         "c": InputSpec(
             name="c",
             shape="scalar",
-            allow_boundary_conditions=False,
             allow_source=False,
             allow_initial_condition=True,
+        )
+    },
+    boundary_fields={
+        "c": BoundaryFieldSpec(
+            name="c",
+            shape="scalar",
+            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
+            description="Boundary conditions for the concentration field.",
         )
     },
     states={
@@ -63,9 +72,19 @@ _CAHN_HILLIARD_SPEC = PresetSpec(
 
 
 class _CahnHilliardProblem(TransientNonlinearProblem):
+    def validate_boundary_conditions(self, domain_geom):
+        validate_boundary_field_structure(
+            preset_name=self.spec.name,
+            field_name="c",
+            boundary_field=self.config.boundary_field("c"),
+            domain_geom=domain_geom,
+            allowed_operators={"periodic"},
+        )
+
     def setup(self) -> None:
-        domain_geom = create_domain(self.config.domain)
+        domain_geom = self.load_domain_geometry()
         self.msh = domain_geom.mesh
+        boundary_field = self.config.boundary_field("c")
 
         P1 = element("Lagrange", self.msh.basix_cell(), 1, dtype=default_real_type)
         ME = fem.functionspace(self.msh, mixed_element([P1, P1]))
@@ -78,6 +97,7 @@ class _CahnHilliardProblem(TransientNonlinearProblem):
         mpc = self.create_periodic_constraint(
             ME,
             domain_geom,
+            boundary_field,
             [],
             constrained_spaces=[ME.sub(0), ME.sub(1)],
         )

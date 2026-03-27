@@ -6,13 +6,17 @@ import ufl
 from dolfinx import default_scalar_type, fem
 
 from plm_data.core.initial_conditions import apply_vector_ic
-from plm_data.core.mesh import create_domain
 from plm_data.core.periodic import require_unverified_periodic_support
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
+from plm_data.presets.boundary_validation import (
+    validate_vector_standard_boundary_field,
+)
 from plm_data.presets.metadata import (
+    BoundaryFieldSpec,
     InputSpec,
+    MAXWELL_BOUNDARY_OPERATORS,
     OutputSpec,
     PDEParameter,
     PresetSpec,
@@ -48,10 +52,17 @@ _MAXWELL_PULSE_SPEC = PresetSpec(
         "electric_field": InputSpec(
             name="electric_field",
             shape="vector",
-            allow_boundary_conditions=True,
             allow_source=True,
             allow_initial_condition=True,
         ),
+    },
+    boundary_fields={
+        "electric_field": BoundaryFieldSpec(
+            name="electric_field",
+            shape="vector",
+            operators=MAXWELL_BOUNDARY_OPERATORS,
+            description="Boundary conditions for the electric field.",
+        )
     },
     states={"electric_field": StateSpec(name="electric_field", shape="vector")},
     outputs={
@@ -68,11 +79,21 @@ _MAXWELL_PULSE_SPEC = PresetSpec(
 
 
 class _MaxwellPulseProblem(TransientLinearProblem):
+    def validate_boundary_conditions(self, domain_geom):
+        validate_vector_standard_boundary_field(
+            preset_name=self.spec.name,
+            field_name="electric_field",
+            boundary_field=self.config.boundary_field("electric_field"),
+            domain_geom=domain_geom,
+            allowed_operators={"dirichlet", "absorbing", "periodic"},
+        )
+
     def setup(self) -> None:
-        domain_geom = create_domain(self.config.domain)
+        domain_geom = self.load_domain_geometry()
+        boundary_field = self.config.boundary_field("electric_field")
         require_unverified_periodic_support(
             self.spec.name,
-            domain_geom,
+            boundary_field,
             "N1curl spaces",
         )
         self.domain_geom = domain_geom
@@ -118,7 +139,7 @@ class _MaxwellPulseProblem(TransientLinearProblem):
             E,
             v,
             domain_geom,
-            field_config.boundary_conditions,
+            boundary_field,
             beta / dt,
             self.config.parameters,
         )
@@ -128,7 +149,7 @@ class _MaxwellPulseProblem(TransientLinearProblem):
                 self.E_curr,
                 v,
                 domain_geom,
-                field_config.boundary_conditions,
+                boundary_field,
                 beta / dt,
                 self.config.parameters,
             )
@@ -147,7 +168,7 @@ class _MaxwellPulseProblem(TransientLinearProblem):
         bcs = apply_maxwell_dirichlet_bcs(
             V,
             domain_geom,
-            field_config.boundary_conditions,
+            boundary_field,
             self.config.parameters,
         )
         self.problem = self.create_linear_problem(

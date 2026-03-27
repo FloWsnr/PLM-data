@@ -9,7 +9,7 @@ from dolfinx import fem
 from dolfinx.fem.petsc import LinearProblem as DolfinxLinearProblem
 from dolfinx.fem.petsc import NonlinearProblem as DolfinxNonlinearProblem
 
-from plm_data.core.config import SimulationConfig
+from plm_data.core.config import BoundaryFieldConfig, SimulationConfig
 from plm_data.core.logging import get_logger
 from plm_data.core.mesh import DomainGeometry, create_domain
 from plm_data.core.periodic import build_periodic_mpc, require_dolfinx_mpc
@@ -37,6 +37,15 @@ class ProblemInstance(ABC):
         self.spec = spec
         self.config = config
         self._solver_options = config.solver.options
+
+    def validate_boundary_conditions(self, domain_geom: DomainGeometry) -> None:
+        """Validate boundary-condition semantics for this preset."""
+
+    def load_domain_geometry(self) -> DomainGeometry:
+        """Create and validate the domain geometry for this problem."""
+        domain_geom = create_domain(self.config.domain)
+        self.validate_boundary_conditions(domain_geom)
+        return domain_geom
 
     def create_linear_problem(
         self,
@@ -83,6 +92,7 @@ class ProblemInstance(ABC):
         self,
         V: fem.FunctionSpace,
         domain_geom: DomainGeometry,
+        boundary_field: BoundaryFieldConfig,
         bcs: list[fem.DirichletBC] | None = None,
         constrained_spaces: list[fem.FunctionSpace] | None = None,
     ):
@@ -90,6 +100,7 @@ class ProblemInstance(ABC):
         return build_periodic_mpc(
             V,
             domain_geom,
+            boundary_field,
             bcs=bcs,
             constrained_spaces=constrained_spaces,
         )
@@ -157,7 +168,7 @@ class StationaryLinearProblem(ProblemInstance):
 
     def create_domain(self) -> DomainGeometry:
         """Create the domain with tagged boundaries."""
-        return create_domain(self.config.domain)
+        return self.load_domain_geometry()
 
     def count_dofs(self, V: fem.FunctionSpace) -> int:
         """Return the total scalar DOF count for the function space."""
@@ -187,6 +198,10 @@ class StationaryLinearProblem(ProblemInstance):
     def export_solution_fields(self, solution: fem.Function) -> dict[str, fem.Function]:
         """Return base output fields after the solve."""
 
+    def periodic_boundary_field(self) -> BoundaryFieldConfig | None:
+        """Return the BC field that drives periodic constraints, if any."""
+        return None
+
     def solver_prefix(self) -> str:
         """Return the PETSc option prefix for this problem."""
         return f"plm_{self.spec.name}_"
@@ -199,7 +214,11 @@ class StationaryLinearProblem(ProblemInstance):
         logger.info("  Solving stationary linear problem (%d DOFs)...", num_dofs)
 
         bcs = self.create_boundary_conditions(V, domain_geom)
-        mpc = self.create_periodic_constraint(V, domain_geom, bcs)
+        periodic_field = self.periodic_boundary_field()
+        if periodic_field is None:
+            mpc = None
+        else:
+            mpc = self.create_periodic_constraint(V, domain_geom, periodic_field, bcs)
         a, L = self.create_forms(V, domain_geom)
 
         problem = self.create_linear_problem(

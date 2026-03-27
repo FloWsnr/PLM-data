@@ -6,24 +6,10 @@ parameters:
   source_amplitude: 1.0
 domain:
   type: rectangle
-  periodic_axes: []
   size: [1.0, 1.0]
   mesh_resolution: [32, 32]
 inputs:
   electric_field:
-    boundary_conditions:
-      x-:
-        type: absorbing
-        value: {type: zero, params: {}}
-      x+:
-        type: absorbing
-        value: {type: zero, params: {}}
-      y-:
-        type: absorbing
-        value: {type: zero, params: {}}
-      y+:
-        type: absorbing
-        value: {type: zero, params: {}}
     source:
       components:
         x:
@@ -35,6 +21,20 @@ inputs:
         y:
           type: zero
           params: {}
+boundary_conditions:
+  electric_field:
+    x-:
+      - operator: absorbing
+        value: {type: zero, params: {}}
+    x+:
+      - operator: absorbing
+        value: {type: zero, params: {}}
+    y-:
+      - operator: absorbing
+        value: {type: zero, params: {}}
+    y+:
+      - operator: absorbing
+        value: {type: zero, params: {}}
 solver:
   ksp_type: preonly
   pc_type: lu
