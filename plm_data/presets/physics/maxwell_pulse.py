@@ -73,6 +73,7 @@ _MAXWELL_PULSE_SPEC = PresetSpec(
             source_name="electric_field",
         )
     },
+    static_fields=[],
     steady_state=False,
     supported_dimensions=[2, 3],
 )

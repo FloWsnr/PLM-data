@@ -63,6 +63,7 @@ _HELMHOLTZ_SPEC = PresetSpec(
             source_name="u",
         )
     },
+    static_fields=[],
     steady_state=True,
     supported_dimensions=[2, 3],
 )

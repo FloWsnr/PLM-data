@@ -133,6 +133,7 @@ class PresetSpec:
     boundary_fields: dict[str, BoundaryFieldSpec]
     states: dict[str, StateSpec]
     outputs: dict[str, OutputSpec]
+    static_fields: list[str]
     steady_state: bool
     supported_dimensions: list[int]
 
@@ -193,6 +194,14 @@ class PresetSpec:
                 raise ValueError(
                     f"Preset '{self.name}' output '{name}' has unsupported "
                     f"source kind '{spec.source_kind}'"
+                )
+
+        for field_name in self.static_fields:
+            if field_name not in self.outputs:
+                raise ValueError(
+                    f"Preset '{self.name}' static field '{field_name}' does not "
+                    f"match any declared output. Expected one of "
+                    f"{sorted(self.outputs)}."
                 )
 
     def parameter_names(self) -> set[str]:

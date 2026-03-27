@@ -81,6 +81,7 @@ _STOKES_SPEC = PresetSpec(
             source_name="pressure",
         ),
     },
+    static_fields=[],
     steady_state=True,
     supported_dimensions=[2, 3],
 )

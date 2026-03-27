@@ -66,6 +66,7 @@ _CAHN_HILLIARD_SPEC = PresetSpec(
             source_name="c",
         )
     },
+    static_fields=[],
     steady_state=False,
     supported_dimensions=[2, 3],
 )

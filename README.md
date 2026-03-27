@@ -22,17 +22,17 @@ With the conda environment activated, install the remaining packages:
 
 ```bash
 pip install pyyaml pytest pyright
-# Required for configs that use domain.periodic_axes
+# Required for configs that use periodic boundary operators
 pip install dolfinx_mpc
 ```
 
 ## Architecture
 
-- **Presets** (`plm_data/presets/`) — Each PDE is a `PDEPreset` with a `PresetSpec` and a `build_problem(config)` factory. Specs now separate config-facing `inputs`, solved `states`, and selectable `outputs`.
+- **Presets** (`plm_data/presets/`) — Each PDE is a `PDEPreset` with a `PresetSpec` and a `build_problem(config)` factory. Specs now separate config-facing `inputs`, boundary-condition fields/operators, solved `states`, selectable `outputs`, and explicit `static_fields` that are excluded from post-run stagnation warnings.
 - **Problem engines** (`plm_data/presets/base.py`) — Reusable runtime engines cover stationary linear, transient linear, transient nonlinear, and custom problems. Presets still own the formulation details and use shared runtime loops where that helps.
-- **Config** (`configs/`) — YAML is input-centric. Top-level `inputs:` configures boundary conditions, sources, and initial conditions; `output.fields` selects which declared outputs to save and how to expand them. Time-dependent presets use a `time:` section; output resolution lives under `output.resolution`. Domains must declare `periodic_axes` explicitly, even when empty. Shared scalar Robin is supported; vector boundaries use shared Dirichlet/Neumann or preset-specific types such as Maxwell `absorbing`, while generic vector Robin remains intentionally unsupported.
+- **Config** (`configs/`) — YAML uses explicit top-level `inputs:`, `boundary_conditions:`, and `output:` sections. Inputs configure sources and initial conditions; `boundary_conditions` configures each preset boundary field; `output.fields` selects which declared outputs to save and how to expand them. Time-dependent presets use a `time:` section; output resolution lives under `output.resolution`. Periodic constraints are activated with boundary `periodic` operators and resolved against built-in or custom `domain.periodic_maps`. Shared scalar Robin is supported; vector boundaries use shared Dirichlet/Neumann or preset-specific types such as Maxwell `absorbing`, while generic vector Robin remains intentionally unsupported.
 - **Domains** (`plm_data/core/mesh.py`) — Built-in domains are registry-backed. The current repo ships `interval`, `rectangle`, and `box`.
-- **Output** (`plm_data/core/output.py`) — `FrameWriter` validates requested outputs against the preset spec, expands vector outputs into components for grid formats, and writes only selected outputs.
+- **Output** (`plm_data/core/output.py`) — `FrameWriter` validates requested outputs against the preset spec, expands vector outputs into components for grid formats, and writes post-run stagnation diagnostics to `frames_meta.json`, skipping outputs listed in `static_fields`.
 
 ## Usage
 
@@ -58,22 +58,26 @@ time-harmonic `maxwell` preset requires a complex-valued DOLFINx/PETSc environme
 ## Adding a new PDE
 
 1. Create a preset class in `plm_data/presets/<category>/` that implements `spec` and `build_problem(config)`.
-2. Define a `PresetSpec` with explicit parameters, config-facing inputs, solved states, supported dimensions, and selectable outputs.
+2. Define a `PresetSpec` with explicit parameters, config-facing inputs, boundary-condition fields/operators, solved states, selectable outputs, explicit `static_fields`, and supported dimensions.
 3. Return a runtime problem object backed by one of the shared engines, or `CustomProblem` if the PDE needs bespoke solve logic.
 4. Register it with `@register_preset("name")`.
-5. Create a YAML config in `configs/<category>/<name>/` using the `inputs:` plus `output.fields:` schema.
+5. Create a YAML config in `configs/<category>/<name>/` using the top-level `inputs:`, `boundary_conditions:`, and `output.fields:` schema.
 
 ## Periodic domains
 
-Periodic domains are configured on the domain block:
+Periodic constraints are activated on boundary-condition entries:
 
 ```yaml
-domain:
-  type: rectangle
-  periodic_axes: [x, y]
-  size: [1.0, 1.0]
-  mesh_resolution: [96, 96]
+boundary_conditions:
+  velocity:
+    x-:
+      - operator: periodic
+        pair_with: x+
+    x+:
+      - operator: periodic
+        pair_with: x-
 ```
 
-Do not declare boundary conditions on periodic faces. For a fully periodic input,
-use an explicit empty mapping such as `boundary_conditions: {}`.
+Built-in domains provide the standard face-pair maps. Use `domain.periodic_maps`
+only when you need a custom affine slave/master pairing for a domain. Non-periodic
+faces still need explicit boundary conditions when the preset requires them.

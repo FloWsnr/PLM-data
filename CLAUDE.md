@@ -24,31 +24,31 @@ Tests run via `python -m pytest tests/`. The project runs directly as a Python m
 The system has three layers:
 
 1. **Presets** (`plm_data/presets/`) — Each PDE is a self-contained class registered via `@register_preset("name")`. Presets expose:
-   - `spec` — a `PresetSpec` describing parameters, config-facing inputs, solved states, selectable outputs, and supported dimensions
+   - `spec` — a `PresetSpec` describing parameters, config-facing inputs, boundary-condition fields/operators, solved states, selectable outputs, `static_fields` excluded from stagnation warnings, and supported dimensions
    - `build_problem(config)` — returns a runtime problem object for one of the shared engines or for the custom escape hatch
    Common solver families live in `plm_data/presets/base.py` as `StationaryLinearProblem`, `TransientLinearProblem`, `TransientNonlinearProblem`, and `CustomProblem`.
    Family-specific helpers can live alongside presets when multiple presets share a discretization; for example, `plm_data/presets/fluids/_taylor_hood.py` is the shared Stokes / Navier-Stokes incompressible-flow helper.
 
 2. **Core** (`plm_data/core/`) — Shared infrastructure:
-   - `config.py` — `SimulationConfig` dataclass loaded from YAML. Configs are validated against the preset spec up front. The schema is input-centric: each entry under `inputs` owns explicit `boundary_conditions`, `source`, and `initial_condition` settings, while `output.fields` selects which declared outputs are saved. Transient presets use a `time:` section. Output resolution lives under `output.resolution`. Domains must declare `periodic_axes` explicitly, even when empty, and config-facing boundary conditions may not target periodic faces.
+   - `config.py` — `SimulationConfig` dataclass loaded from YAML. Configs are validated against the preset spec up front. The schema uses explicit top-level `inputs`, `boundary_conditions`, and `output` sections. Inputs own `source` and `initial_condition`; boundary conditions are declared separately per preset boundary field; `output.fields` selects which declared outputs are saved. Transient presets use a `time:` section. Output resolution lives under `output.resolution`. Domains may declare extra `periodic_maps`, while built-in domains provide the standard face-pair maps used by periodic boundary operators.
    - `mesh.py` — `create_domain()` returns `DomainGeometry` (mesh + facet_tags + boundary_names + ds measure + axis bounds / periodic metadata). Domain creation is registry-backed. Built-in domains auto-tag boundaries (x-, x+, y-, y+ for rectangle; 6 faces for box; x-/x+ for interval)
-   - `periodic.py` — shared `dolfinx_mpc` integration for domain-level periodic constraints. Presets should treat periodicity as a domain property via `domain.periodic_axes`, not as a boundary-condition type.
+   - `periodic.py` — shared `dolfinx_mpc` integration for periodic boundary operators. Periodicity is activated per boundary field via the `periodic` operator and resolved against the domain's available periodic maps.
    - `spatial_fields.py` — Shared scalar and vector spatial field system (constant, sine_product, gaussian_bump, step, none, custom). Provides UFL builders, scalar interpolators, and vector-component expansion helpers. Supports `"param:name"` references
   - `boundary_conditions.py` — shared scalar Dirichlet / Neumann / Robin helpers plus vector Dirichlet / Neumann helpers for standard vector-valued spaces; vector Robin remains intentionally unsupported in the shared layer
    - `source_terms.py` — scalar and vector source-form builders from the unified field expression config
    - `initial_conditions.py` — scalar and vector IC helpers from the unified field expression config; `random_perturbation` stays scalar-only and DOF-based
    - `runner.py` — `SimulationRunner` orchestrates: loads config → instantiates preset → builds problem → runs it → finalizes output
-   - `output.py` — `FrameWriter` coordinates format-specific writers. Validates base fields against the preset spec, expands vector fields into component outputs for grid-based formats. Delegates to writers in `formats/`
+   - `output.py` — `FrameWriter` coordinates format-specific writers. It validates base fields against the preset spec, expands vector fields into component outputs for grid-based formats, and writes post-run stagnation diagnostics to `frames_meta.json`, skipping outputs listed in `spec.static_fields`. Delegates to writers in `formats/`
    - `formats/` — Output format writers: `NumpyWriter` (.npy arrays), `GifWriter` (animated .gif), `VideoWriter` (.mp4), `VTKWriter` (pyvista .vtu/.pvd for Paraview). Grid writers (numpy/gif/video) share the interpolation pipeline; VTK writes FEM functions directly
    - `interpolation.py` — `function_to_array()` maps DOLFINx FEM functions onto regular numpy grids via point evaluation
 
-3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, domain geometry, optional `time`, explicit per-input config blocks under `inputs`, solver options, output settings, and seed.
-   The current schema uses explicit per-input blocks under `inputs` plus output selection under `output.fields`.
+3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, domain geometry, explicit `inputs`, explicit `boundary_conditions`, optional `time`, solver options, output settings, and seed.
+   The current schema uses top-level `inputs`, `boundary_conditions`, and `output.fields`.
 
 ## Adding a New PDE Preset
 
 1. Create `plm_data/presets/<category>/<name>.py`
-2. Implement `spec` with a `PresetSpec`
+2. Implement `spec` with a `PresetSpec`, including explicit `boundary_fields` and `static_fields`
 3. Implement `build_problem(config)` returning one of the shared problem engines or a `CustomProblem`
 4. Decorate with `@register_preset("name")`
 5. Create a YAML config in `configs/<category>/<name>/`
@@ -61,9 +61,10 @@ The system has three layers:
 ## Key Conventions
 
 - YAML configs must be fully explicit — no hidden defaults in code
-- Domain periodicity is configured explicitly with `domain.periodic_axes`; non-periodic configs still declare `[]`
-- Config validation is spec-driven: parameter names, input names, output names, allowed sections, output modes, and supported dimensions are checked before solving
+- Periodic constraints are declared with `boundary_conditions.<field>.<side>.[].operator: periodic`; optional `domain.periodic_maps` can add custom geometric pairings beyond the built-in domain maps
+- Config validation is spec-driven: parameter names, input names, boundary field names, output names, allowed sections, boundary operators, output modes, and supported dimensions are checked before solving
 - Output goes to `output/<category>/<preset>/` with format-specific files: `.npy` arrays, `.gif`/`.mp4` animations, and `paraview/` directory with `.pvd`+`.vtu` files for Paraview
+- Presets must declare `static_fields` explicitly; post-run stagnation warnings skip those outputs
 - Presets are auto-discovered recursively under `plm_data.presets`
 - Meshes use `GhostMode.shared_facet` for DOLFINx compatibility
 - PETSc solver option prefixes follow the pattern `plm_` or `plm_<preset>_`

@@ -4,11 +4,13 @@ import json
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from dolfinx import fem
 
 from plm_data.core.config import SimulationConfig
+from plm_data.core.diagnostics import build_stagnation_report
 from plm_data.core.formats.gif_writer import GifWriter
 from plm_data.core.formats.numpy_writer import NumpyWriter
 from plm_data.core.formats.video_writer import VideoWriter
@@ -74,9 +76,23 @@ class FrameWriter:
         )
         self._output_specs = self.spec.outputs
         self.field_names = [output.name for output in self._expected_outputs]
+        self._checked_diagnostic_fields = [
+            output.name
+            for output in self._expected_outputs
+            if output.output_name not in self.spec.static_fields
+        ]
+        self._skipped_static_fields = [
+            output.name
+            for output in self._expected_outputs
+            if output.output_name in self.spec.static_fields
+        ]
         self._expected_base_fields = {
             output.source_name for output in self._expected_outputs
         }
+        self._diagnostic_frames: dict[str, list[np.ndarray]] = {
+            name: [] for name in self._checked_diagnostic_fields
+        }
+        self._stagnation_diagnostics: dict[str, Any] | None = None
         self._grid_output_groups = [
             GridOutputGroup(
                 output_name=output_name,
@@ -174,6 +190,46 @@ class FrameWriter:
             writer.on_frame_field(name, arr, t)
         self._timings.grid_dispatch_seconds += time.perf_counter() - dispatch_start
 
+    def _needs_grid_sampling(self) -> bool:
+        """Return whether this run needs grid interpolation work."""
+        return bool(self._grid_writers or self._checked_diagnostic_fields)
+
+    def _record_diagnostic_field(self, name: str, arr: np.ndarray) -> None:
+        """Store one concrete output trajectory for post-run diagnostics."""
+        if name in self._diagnostic_frames:
+            self._diagnostic_frames[name].append(arr)
+
+    def _compute_stagnation_diagnostics(self) -> dict[str, Any]:
+        """Build and cache the post-run stagnation diagnostics report."""
+        if self._stagnation_diagnostics is None:
+            self._stagnation_diagnostics = build_stagnation_report(
+                self._diagnostic_frames,
+                num_frames=self.frame_count,
+                skipped_static_fields=self._skipped_static_fields,
+            )
+        return self._stagnation_diagnostics
+
+    def _log_stagnation_warnings(self, diagnostics: dict[str, Any]) -> None:
+        """Emit warnings for checked fields that became stagnant."""
+        if not diagnostics["applied"]:
+            return
+
+        for field_name in diagnostics["stagnant_fields"]:
+            info = diagnostics["fields"][field_name]
+            if info["field_range"] == 0:
+                self._logger.warning(
+                    "  Health check: field '%s' is completely constant",
+                    field_name,
+                )
+                continue
+            self._logger.warning(
+                "  Health check: field '%s' appears stagnant from frame %s "
+                "(%s frames with no significant change)",
+                field_name,
+                info["stagnant_from_frame"],
+                info["trailing_stagnant_frames"],
+            )
+
     def timing_summary(self) -> dict[str, float | int | dict[str, float]]:
         """Return output timing counters for logs, metadata, and runner summaries."""
         summary = self._timings.as_dict()
@@ -184,14 +240,14 @@ class FrameWriter:
         """Capture a snapshot of one or more output fields."""
         frame_start = time.perf_counter()
 
-        vtk_fields = self._selected_vtk_fields(fields)
         if self._fem_writers:
+            vtk_fields = self._selected_vtk_fields(fields)
             vtk_start = time.perf_counter()
             for writer in self._fem_writers:
                 writer.on_frame(vtk_fields, t)
             self._timings.vtk_write_seconds += time.perf_counter() - vtk_start
 
-        if self._grid_writers:
+        if self._needs_grid_sampling():
             self._validate_output_fields(fields)
 
             for output_group in self._grid_output_groups:
@@ -208,11 +264,10 @@ class FrameWriter:
                         time.perf_counter() - interp_start
                     )
                     self._timings.grid_interpolation_calls += 1
-                    self._dispatch_grid_field(
-                        output_group.concrete_outputs[0].name,
-                        arr,
-                        t,
-                    )
+                    field_name = output_group.concrete_outputs[0].name
+                    self._record_diagnostic_field(field_name, arr)
+                    if self._grid_writers:
+                        self._dispatch_grid_field(field_name, arr, t)
                     continue
 
                 vector_start = time.perf_counter()
@@ -249,7 +304,11 @@ class FrameWriter:
                 for concrete_output, component_grid in zip(
                     output_group.concrete_outputs, grid
                 ):
-                    self._dispatch_grid_field(concrete_output.name, component_grid, t)
+                    self._record_diagnostic_field(concrete_output.name, component_grid)
+                    if self._grid_writers:
+                        self._dispatch_grid_field(
+                            concrete_output.name, component_grid, t
+                        )
 
         self.frame_times.append(t)
         self.frame_count += 1
@@ -296,6 +355,9 @@ class FrameWriter:
             )
             self._logger.info("  Finalize by format: %s", format_breakdown)
 
+        stagnation = self._compute_stagnation_diagnostics()
+        self._log_stagnation_warnings(stagnation)
+
         metadata = {
             "num_frames": self.frame_count,
             "times": self.frame_times,
@@ -312,6 +374,9 @@ class FrameWriter:
                 }
                 for output in self._expected_outputs
             ],
+            "diagnostics": {
+                "stagnation": stagnation,
+            },
             "timings": self.timing_summary(),
         }
         with open(self.output_dir / "frames_meta.json", "w") as f:

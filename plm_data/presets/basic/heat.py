@@ -55,6 +55,7 @@ _HEAT_SPEC = PresetSpec(
             source_name="u",
         )
     },
+    static_fields=[],
     steady_state=False,
     supported_dimensions=[2, 3],
 )

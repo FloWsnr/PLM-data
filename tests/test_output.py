@@ -1,7 +1,9 @@
 """Tests for output format writers and FrameWriter coordinator."""
 
 import json
+import logging
 import shutil
+from dataclasses import replace
 
 import numpy as np
 import pytest
@@ -166,29 +168,58 @@ def _write_scalar_frames(writer, func, num_frames=2):
 
 
 class TestNumpyWriter:
-    def test_scalar_output(self, tmp_path):
+    def test_scalar_output(self, tmp_path, caplog):
         config = _scalar_heat_config(tmp_path, formats=["numpy"])
         output_dir = tmp_path / "out"
         spec = get_preset("heat").spec
         writer = FrameWriter(output_dir, config, spec)
 
         func = _create_scalar_function(config)
-        _write_scalar_frames(writer, func, num_frames=2)
+        with caplog.at_level(logging.WARNING, logger="plm_data"):
+            _write_scalar_frames(writer, func, num_frames=3)
 
         npy = np.load(output_dir / "u.npy")
-        assert npy.shape == (2, 4, 4)
+        assert npy.shape == (3, 4, 4)
         assert np.max(np.abs(npy)) > 0
 
         meta = json.loads((output_dir / "frames_meta.json").read_text())
-        assert meta["num_frames"] == 2
-        assert meta["times"] == [0.0, 1.0]
+        stagnation = meta["diagnostics"]["stagnation"]
+        assert meta["num_frames"] == 3
+        assert meta["times"] == [0.0, 1.0, 2.0]
         assert meta["field_names"] == ["u"]
-        assert meta["timings"]["frame_count"] == 2
-        assert meta["timings"]["grid_interpolation_calls"] == 2
+        assert stagnation["applied"] is True
+        assert stagnation["checked_fields"] == ["u"]
+        assert stagnation["skipped_static_fields"] == []
+        assert stagnation["stagnant_fields"] == ["u"]
+        assert meta["timings"]["frame_count"] == 3
+        assert meta["timings"]["grid_interpolation_calls"] == 3
+        assert any(
+            "Health check: field 'u' appears stagnant" in record.message
+            for record in caplog.records
+        )
 
         assert not (output_dir / "u.gif").exists()
         assert not (output_dir / "u.mp4").exists()
         assert not (output_dir / "u.bp").exists()
+
+    def test_static_fields_are_skipped(self, tmp_path, caplog):
+        config = _scalar_heat_config(tmp_path, formats=["numpy"])
+        output_dir = tmp_path / "out"
+        spec = replace(get_preset("heat").spec, static_fields=["u"])
+        writer = FrameWriter(output_dir, config, spec)
+
+        func = _create_scalar_function(config)
+        with caplog.at_level(logging.WARNING, logger="plm_data"):
+            _write_scalar_frames(writer, func, num_frames=3)
+
+        meta = json.loads((output_dir / "frames_meta.json").read_text())
+        stagnation = meta["diagnostics"]["stagnation"]
+        assert stagnation["applied"] is True
+        assert stagnation["reason"] is None
+        assert stagnation["checked_fields"] == []
+        assert stagnation["skipped_static_fields"] == ["u"]
+        assert stagnation["stagnant_fields"] == []
+        assert not any("Health check:" in record.message for record in caplog.records)
 
     def test_vector_components_output(self, tmp_path):
         config = _vector_stokes_config(tmp_path, formats=["numpy"])

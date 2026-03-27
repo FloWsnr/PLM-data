@@ -2,6 +2,7 @@
 
 import importlib.util
 import logging
+from dataclasses import replace
 
 import numpy as np
 import pytest
@@ -60,6 +61,7 @@ _VECTOR_STATIONARY_SPEC = PresetSpec(
             source_name="u",
         )
     },
+    static_fields=[],
     steady_state=True,
     supported_dimensions=[2],
 )
@@ -81,6 +83,7 @@ _SCALAR_TRANSIENT_SPEC = PresetSpec(
             source_name="u",
         )
     },
+    static_fields=[],
     steady_state=False,
     supported_dimensions=[2],
 )
@@ -295,6 +298,11 @@ def test_helmholtz_resonance_warning(caplog):
     with caplog.at_level(logging.WARNING):
         _check_resonance(2.0, [1.0, 1.0])
     assert caplog.text == ""
+
+
+def test_preset_spec_rejects_unknown_static_fields():
+    with pytest.raises(ValueError, match="static field 'missing'"):
+        replace(_SCALAR_TRANSIENT_SPEC, static_fields=["missing"])
 
 
 def _make_ns_config(tmp_path, *, initial_condition, source=None, parameters=None):

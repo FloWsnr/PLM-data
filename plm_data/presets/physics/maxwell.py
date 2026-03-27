@@ -67,6 +67,7 @@ _MAXWELL_SPEC = PresetSpec(
             source_name="electric_field",
         )
     },
+    static_fields=[],
     steady_state=True,
     supported_dimensions=[2, 3],
 )
