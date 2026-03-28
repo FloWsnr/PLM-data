@@ -39,7 +39,6 @@ boundary_conditions:
       - operator: periodic
         pair_with: z-
 output:
-  path: ./output
   resolution: [16, 16, 16]
   num_frames: 5
   formats: [numpy, gif]

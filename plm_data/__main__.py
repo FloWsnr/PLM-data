@@ -9,7 +9,7 @@ def cmd_run(args):
     from plm_data.core.runner import SimulationRunner
 
     level = getattr(logging, args.log_level)
-    runner = SimulationRunner.from_yaml(args.config)
+    runner = SimulationRunner.from_yaml(args.config, args.output_dir)
     runner.run(console_level=level)
 
 
@@ -42,6 +42,11 @@ def main():
 
     p_run = sub.add_parser("run", help="Run a simulation from a YAML config")
     p_run.add_argument("config", help="Path to YAML config file")
+    p_run.add_argument(
+        "--output-dir",
+        required=True,
+        help="Base output directory. Results are written to <dir>/<category>/<preset>",
+    )
     p_run.add_argument(
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING"],

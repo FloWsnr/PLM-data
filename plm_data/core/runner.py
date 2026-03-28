@@ -15,17 +15,22 @@ from plm_data.presets import get_preset
 class SimulationRunner:
     """Orchestrates a single simulation run."""
 
-    def __init__(self, config: SimulationConfig):
+    def __init__(self, config: SimulationConfig, output_root: str | Path | None = None):
         self.config = config
         self.preset = get_preset(config.preset)
+        self.output_root = (
+            Path(output_root) if output_root is not None else self.config.output.path
+        )
+        if self.output_root is None:
+            raise ValueError("SimulationRunner requires an output root directory.")
 
     @classmethod
-    def from_yaml(cls, path: str | Path) -> "SimulationRunner":
-        return cls(load_config(path))
+    def from_yaml(cls, path: str | Path, output_root: str | Path) -> "SimulationRunner":
+        return cls(load_config(path), output_root)
 
     def run(self, console_level: int = logging.INFO) -> dict:
         spec = self.preset.spec
-        output_dir = Path(self.config.output.path) / spec.category / spec.name
+        output_dir = self.output_root / spec.category / spec.name
         output_dir.mkdir(parents=True, exist_ok=True)
 
         setup_logging(output_dir, console_level=console_level)

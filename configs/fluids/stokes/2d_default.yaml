@@ -25,7 +25,6 @@ boundary_conditions:
       - operator: dirichlet
         value: [1.0, 0.0]
 output:
-  path: ./output
   resolution: [64, 64]
   num_frames: 1
   formats: [numpy, gif]

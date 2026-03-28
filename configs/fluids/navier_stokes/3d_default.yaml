@@ -38,7 +38,6 @@ boundary_conditions:
       - operator: dirichlet
         value: [0.0, 0.0, 0.0]
 output:
-  path: ./output
   resolution: [8, 8, 8]
   num_frames: 5
   formats: [numpy, gif]

@@ -57,7 +57,6 @@ solver:
   ksp_type: preonly
   pc_type: lu
 output:
-  path: ./output
   resolution: [24, 24, 24]
   num_frames: 12
   formats: [numpy, gif]

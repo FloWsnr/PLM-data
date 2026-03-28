@@ -33,7 +33,6 @@ boundary_conditions:
       - operator: periodic
         pair_with: y-
 output:
-  path: ./output
   resolution: [64, 64]
   num_frames: 20
   formats: [numpy, gif]
