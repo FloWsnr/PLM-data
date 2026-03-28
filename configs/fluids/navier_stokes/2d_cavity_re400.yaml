@@ -1,14 +1,14 @@
 preset: navier_stokes
 parameters:
-  Re: 100.0
+  Re: 400.0
   k: 1.0
 domain:
   type: rectangle
   size: [1.0, 1.0]
-  mesh_resolution: [32, 32]
+  mesh_resolution: [48, 48]
 time:
-  dt: 0.01
-  t_end: 5.0
+  dt: 0.005
+  t_end: 6.0
 inputs:
   velocity:
     source:
@@ -32,8 +32,8 @@ boundary_conditions:
       - operator: dirichlet
         value: [1.0, 0.0]
 output:
-  resolution: [64, 64]
-  num_frames: 20
+  resolution: [96, 96]
+  num_frames: 30
   formats: [numpy, gif]
   fields:
     velocity: components
