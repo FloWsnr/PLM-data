@@ -1,7 +1,7 @@
 preset: poisson
 parameters:
   kappa: 1.0
-  f_amplitude: 1.0
+  f_amplitude: 10.0
 domain:
   type: rectangle
   size: [1.0, 1.0]
@@ -12,8 +12,8 @@ inputs:
       type: sine_product
       params:
         amplitude: "param:f_amplitude"
-        kx: 1
-        ky: 1
+        kx: 4
+        ky: 3
 boundary_conditions:
   u:
     x-:
