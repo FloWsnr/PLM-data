@@ -1,0 +1,85 @@
+preset: thermal_convection
+parameters:
+  Ra: 5000.0
+  Pr: 1.0
+  k: 1.0
+domain:
+  type: box
+  size: [2.0, 2.0, 1.0]
+  mesh_resolution: [8, 8, 4]
+time:
+  dt: 0.02
+  t_end: 0.2
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: zero
+      params: {}
+  temperature:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: conductive_noise
+      params:
+        amplitude: 0.08
+        num_modes: 2
+boundary_conditions:
+  velocity:
+    x-:
+      - operator: periodic
+        pair_with: x+
+    x+:
+      - operator: periodic
+        pair_with: x-
+    y-:
+      - operator: periodic
+        pair_with: y+
+    y+:
+      - operator: periodic
+        pair_with: y-
+    z-:
+      - operator: dirichlet
+        value: [0.0, 0.0, 0.0]
+    z+:
+      - operator: dirichlet
+        value: [0.0, 0.0, 0.0]
+  temperature:
+    x-:
+      - operator: periodic
+        pair_with: x+
+    x+:
+      - operator: periodic
+        pair_with: x-
+    y-:
+      - operator: periodic
+        pair_with: y+
+    y+:
+      - operator: periodic
+        pair_with: y-
+    z-:
+      - operator: dirichlet
+        value: 1.0
+    z+:
+      - operator: dirichlet
+        value: 0.0
+output:
+  resolution: [16, 16, 8]
+  num_frames: 5
+  formats: [numpy]
+  fields:
+    velocity: components
+    pressure: scalar
+    temperature: scalar
+solver:
+  ksp_type: preonly
+  pc_type: lu
+  pc_factor_mat_solver_type: mumps
+  mat_mumps_icntl_14: 80
+  mat_mumps_icntl_24: 1
+  mat_mumps_icntl_25: 0
+  ksp_error_if_not_converged: 1
+seed: 42

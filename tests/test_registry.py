@@ -15,6 +15,7 @@ def test_list_presets():
     assert "maxwell_pulse" in presets
     assert "navier_stokes" in presets
     assert "stokes" in presets
+    assert "thermal_convection" in presets
 
 
 def test_get_preset():

@@ -67,7 +67,8 @@ def test_load_config_thermal_convection_2d():
     assert cfg.output_mode("pressure") == "scalar"
     assert cfg.output_mode("temperature") == "scalar"
     assert cfg.input("velocity").initial_condition.type == "zero"
-    assert cfg.input("temperature").initial_condition.type == "random_perturbation"
+    assert cfg.input("temperature").initial_condition.type == "conductive_noise"
+    assert cfg.input("temperature").initial_condition.params["amplitude"] == 0.15
     assert cfg.boundary_field("velocity").side_conditions("x-")[0].type == "periodic"
     assert (
         cfg.boundary_field("temperature").side_conditions("y-")[0].value.params["value"]
@@ -80,6 +81,7 @@ def test_load_config_thermal_convection_3d():
     assert cfg.preset == "thermal_convection"
     assert cfg.domain.dimension == 3
     assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.input("temperature").initial_condition.type == "conductive_noise"
     assert cfg.boundary_field("velocity").side_conditions("y+")[0].pair_with == "y-"
     assert (
         cfg.boundary_field("temperature").side_conditions("z+")[0].value.params["value"]
