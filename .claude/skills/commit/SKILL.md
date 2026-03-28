@@ -1,5 +1,5 @@
 ---
-name: commit Session Changes
+name: commit
 description: This skill should be used when the user asks to "commit", "commit changes", "make a commit", "git commit", or wants to save their work to git. Invoked via /commit.
 ---
 
@@ -32,9 +32,9 @@ If issues are found, fix them before proceeding to the commit. Do NOT ask the us
 
 Make sure we ran all relevant tests already. If not, run them now and fix any failures before committing.
 
-### Step 4: Update Claude.md
+### Step 4: Update CLAUDE.md, AGENTs.md, and README.md if relevant
 
-If the commit includes important changes in API or functionality, update the `Claude.md` documentation file to reflect these changes. This ensures that the documentation stays accurate and helpful for future reference. Also check and update the README.md if relevant.
+If the commit includes important changes in API or functionality, update the `CLAUDE.md` documentation file to reflect these changes. `AGENTS.md` is a symlink to `CLAUDE.md`. This ensures that the documentation stays accurate and helpful for future reference. Also check and update the `README.md` files if relevant.
 
 
 ### Step 5: Stage and Commit
@@ -42,15 +42,6 @@ If the commit includes important changes in API or functionality, update the `Cl
 1. Stage only the session-relevant files by name (never `git add -A` or `git add .`)
 2. Run `git log --oneline -5` to match the repository's commit message style
 3. Write a concise commit message (1-2 sentences) focusing on the "why" not the "what"
-4. Create the commit using a HEREDOC for the message:
-
-```bash
-git commit -m "$(cat <<'EOF'
-Commit message here
-
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
-EOF
-)"
 ```
 
 5. Run `git status` after to verify success
