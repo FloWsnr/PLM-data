@@ -157,11 +157,11 @@ class InputConfig:
 class OutputConfig:
     """Output configuration."""
 
-    path: Path
     resolution: list[int]
     num_frames: int
     formats: list[str]
     fields: dict[str, OutputSelectionConfig]
+    path: Path | None = None
 
     @property
     def needs_grid_interpolation(self) -> bool:
@@ -197,6 +197,7 @@ class SimulationConfig:
     solver: SolverConfig
     time: TimeConfig | None = None
     seed: int | None = None
+    coefficients: dict[str, FieldExpressionConfig] = field(default_factory=dict)
 
     @property
     def dt(self) -> float | None:
@@ -222,6 +223,12 @@ class SimulationConfig:
         if name not in self.inputs:
             raise KeyError(f"Unknown input '{name}'")
         return self.inputs[name]
+
+    def coefficient(self, name: str) -> FieldExpressionConfig:
+        """Return a configured coefficient by name."""
+        if name not in self.coefficients:
+            raise KeyError(f"Unknown coefficient '{name}'")
+        return self.coefficients[name]
 
     def boundary_field(self, name: str) -> BoundaryFieldConfig:
         """Return configured boundary conditions for one BC field."""
@@ -585,7 +592,41 @@ def load_config(path: str | Path) -> SimulationConfig:
         )
     parameters = {name: float(value) for name, value in parameters_raw.items()}
 
+    if spec.coefficients:
+        coefficients_raw = _as_mapping(
+            _require(raw, "coefficients", "config"), "coefficients"
+        )
+        if set(coefficients_raw) != set(spec.coefficients):
+            raise ValueError(
+                f"Preset '{preset_name}' requires coefficients "
+                f"{sorted(spec.coefficients)}. Got {sorted(coefficients_raw)}."
+            )
+        coefficients = {
+            coefficient_name: _parse_field_expression(
+                coefficients_raw[coefficient_name],
+                f"coefficients.{coefficient_name}",
+                coefficient_spec.shape,
+                gdim,
+            )
+            for coefficient_name, coefficient_spec in spec.coefficients.items()
+        }
+    else:
+        coefficients_raw = raw.get("coefficients")
+        if coefficients_raw not in (None, {}):
+            raise ValueError(f"Preset '{preset_name}' does not support coefficients.")
+        coefficients = {}
+
     output_raw = _as_mapping(_require(raw, "output"), "output")
+    unexpected_output_keys = set(output_raw) - {
+        "resolution",
+        "num_frames",
+        "formats",
+        "fields",
+    }
+    if unexpected_output_keys:
+        raise ValueError(
+            f"output has unsupported keys {sorted(unexpected_output_keys)}."
+        )
     output_fields_raw = _as_mapping(
         _require(output_raw, "fields", "output"), "output.fields"
     )
@@ -604,7 +645,7 @@ def load_config(path: str | Path) -> SimulationConfig:
         output_spec.validate_output_mode(output_fields[output_name].mode)
 
     output = OutputConfig(
-        path=Path(_require(output_raw, "path", "output")),
+        path=None,
         resolution=list(_require(output_raw, "resolution", "output")),
         num_frames=int(_require(output_raw, "num_frames", "output")),
         formats=list(_require(output_raw, "formats", "output")),
@@ -730,4 +771,5 @@ def load_config(path: str | Path) -> SimulationConfig:
         solver=solver,
         time=time,
         seed=raw.get("seed"),
+        coefficients=coefficients,
     )

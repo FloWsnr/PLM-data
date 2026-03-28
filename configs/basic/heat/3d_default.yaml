@@ -1,6 +1,10 @@
 preset: heat
-parameters:
-  kappa: 0.01
+parameters: {}
+coefficients:
+  kappa:
+    type: constant
+    params:
+      value: 0.01
 domain:
   type: box
   size: [1.0, 1.0, 1.0]
@@ -43,7 +47,6 @@ solver:
   ksp_type: preonly
   pc_type: lu
 output:
-  path: ./output
   resolution: [64, 64, 64]
   num_frames: 10
   formats: [numpy, gif]

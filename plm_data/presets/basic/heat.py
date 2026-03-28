@@ -1,4 +1,4 @@
-"""Heat equation preset: du/dt = kappa * laplacian(u) + f."""
+"""Heat equation preset: du/dt = div(kappa * grad(u)) + f."""
 
 import numpy as np
 import ufl
@@ -8,6 +8,7 @@ from plm_data.core.boundary_conditions import (
     build_natural_bc_forms,
 )
 from plm_data.core.initial_conditions import apply_ic
+from plm_data.core.spatial_fields import build_ufl_field, scalar_expression_to_config
 from plm_data.core.source_terms import build_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
@@ -16,9 +17,9 @@ from plm_data.presets.boundary_validation import (
 )
 from plm_data.presets.metadata import (
     BoundaryFieldSpec,
+    CoefficientSpec,
     InputSpec,
     OutputSpec,
-    PDEParameter,
     PresetSpec,
     SCALAR_STANDARD_BOUNDARY_OPERATORS,
     StateSpec,
@@ -27,9 +28,9 @@ from plm_data.presets.metadata import (
 _HEAT_SPEC = PresetSpec(
     name="heat",
     category="basic",
-    description="Heat equation du/dt = kappa * laplacian(u) + f",
-    equations={"u": "∂u/∂t = κ ∇²u + f"},
-    parameters=[PDEParameter("kappa", "Thermal diffusivity")],
+    description="Heat equation du/dt = div(kappa * grad(u)) + f",
+    equations={"u": "∂u/∂t = ∇·(κ ∇u) + f"},
+    parameters=[],
     inputs={
         "u": InputSpec(
             name="u",
@@ -58,6 +59,13 @@ _HEAT_SPEC = PresetSpec(
     static_fields=[],
     steady_state=False,
     supported_dimensions=[2, 3],
+    coefficients={
+        "kappa": CoefficientSpec(
+            name="kappa",
+            shape="scalar",
+            description="Thermal diffusivity coefficient field.",
+        )
+    },
 )
 
 
@@ -75,8 +83,8 @@ class _HeatProblem(TransientLinearProblem):
         self.msh = domain_geom.mesh
         V = fem.functionspace(self.msh, ("Lagrange", 1))
 
-        kappa = self.config.parameters["kappa"]
         field_config = self.config.input("u")
+        kappa_config = self.config.coefficient("kappa")
         boundary_field = self.config.boundary_field("u")
         dt = self.config.time.dt
         bcs = apply_dirichlet_bcs(
@@ -102,11 +110,17 @@ class _HeatProblem(TransientLinearProblem):
         u = ufl.TrialFunction(V)
         v = ufl.TestFunction(V)
         dt_c = fem.Constant(self.msh, np.float64(dt))
-        kappa_c = fem.Constant(self.msh, np.float64(kappa))
+        kappa = build_ufl_field(
+            self.msh,
+            scalar_expression_to_config(kappa_config),
+            self.config.parameters,
+        )
+        if kappa is None:
+            raise ValueError("Heat coefficient 'kappa' cannot use a custom expression")
 
         a = (
             ufl.inner(u, v) * ufl.dx
-            + dt_c * kappa_c * ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+            + dt_c * ufl.inner(kappa * ufl.grad(u), ufl.grad(v)) * ufl.dx
         )
         L = ufl.inner(self.u_n, v) * ufl.dx
 

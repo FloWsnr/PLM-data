@@ -23,7 +23,7 @@ from plm_data.core.mesh import create_domain
 from plm_data.core.output import FrameWriter
 from plm_data.presets import get_preset
 from tests.conftest import output_fields, scalar_expr
-from tests.preset_matrix import boundary_field_config
+from tests.preset_matrix import boundary_field_config, constant
 
 _has_ffmpeg = shutil.which("ffmpeg") is not None
 
@@ -33,7 +33,7 @@ def _scalar_heat_config(tmp_path, formats):
 
     return SimulationConfig(
         preset="heat",
-        parameters={"kappa": 0.01},
+        parameters={},
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
@@ -66,6 +66,7 @@ def _scalar_heat_config(tmp_path, formats):
         solver=SolverConfig(options={"ksp_type": "preonly", "pc_type": "lu"}),
         time=TimeConfig(dt=0.01, t_end=0.01),
         seed=42,
+        coefficients={"kappa": constant(0.01)},
     )
 
 

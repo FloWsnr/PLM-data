@@ -8,10 +8,10 @@ PLM-data generates PDE simulation datasets using DOLFINx (FEniCSx). It produces 
 
 ```bash
 # Run a simulation (single core)
-./run.sh run configs/basic/heat/2d_default.yaml
+./run.sh run configs/basic/heat/2d_default.yaml --output-dir ./output
 
 # Run a simulation with multiple MPI ranks
-./run.sh -n 4 run configs/basic/heat/2d_default.yaml
+./run.sh -n 4 run configs/basic/heat/2d_default.yaml --output-dir ./output
 
 # List registered presets
 ./run.sh list
@@ -24,16 +24,16 @@ Tests run via `python -m pytest tests/`. The project runs directly as a Python m
 The system has three layers:
 
 1. **Presets** (`plm_data/presets/`) — Each PDE is a self-contained class registered via `@register_preset("name")`. Presets expose:
-   - `spec` — a `PresetSpec` describing parameters, config-facing inputs, boundary-condition fields/operators, solved states, selectable outputs, `static_fields` excluded from stagnation warnings, and supported dimensions
+   - `spec` — a `PresetSpec` describing parameters, config-facing coefficients/inputs, boundary-condition fields/operators, solved states, selectable outputs, `static_fields` excluded from stagnation warnings, and supported dimensions
    - `build_problem(config)` — returns a runtime problem object for one of the shared engines or for the custom escape hatch
    Common solver families live in `plm_data/presets/base.py` as `StationaryLinearProblem`, `TransientLinearProblem`, `TransientNonlinearProblem`, and `CustomProblem`.
    Family-specific helpers can live alongside presets when multiple presets share a discretization; for example, `plm_data/presets/fluids/_taylor_hood.py` is the shared Stokes / Navier-Stokes incompressible-flow helper.
 
 2. **Core** (`plm_data/core/`) — Shared infrastructure:
-   - `config.py` — `SimulationConfig` dataclass loaded from YAML. Configs are validated against the preset spec up front. The schema uses explicit top-level `inputs`, `boundary_conditions`, and `output` sections. Inputs own `source` and `initial_condition`; boundary conditions are declared separately per preset boundary field; `output.fields` selects which declared outputs are saved. Transient presets use a `time:` section. Output resolution lives under `output.resolution`. Domains may declare extra `periodic_maps`, while built-in domains provide the standard face-pair maps used by periodic boundary operators.
+   - `config.py` — `SimulationConfig` dataclass loaded from YAML. Configs are validated against the preset spec up front. The schema uses explicit top-level `coefficients`, `inputs`, `boundary_conditions`, and `output` sections. Coefficients are preset-declared field expressions used directly in forms; inputs own `source` and `initial_condition`; boundary conditions are declared separately per preset boundary field; `output.fields` selects which declared outputs are saved. Transient presets use a `time:` section. Output resolution lives under `output.resolution`, while the output root directory is provided at runtime via `--output-dir`. Domains may declare extra `periodic_maps`, while built-in domains provide the standard face-pair maps used by periodic boundary operators.
    - `mesh.py` — `create_domain()` returns `DomainGeometry` (mesh + facet_tags + boundary_names + ds measure + axis bounds / periodic metadata). Domain creation is registry-backed. Built-in domains auto-tag boundaries (x-, x+, y-, y+ for rectangle; 6 faces for box; x-/x+ for interval)
    - `periodic.py` — shared `dolfinx_mpc` integration for periodic boundary operators. Periodicity is activated per boundary field via the `periodic` operator and resolved against the domain's available periodic maps.
-   - `spatial_fields.py` — Shared scalar and vector spatial field system (constant, sine_product, gaussian_bump, step, none, custom). Provides UFL builders, scalar interpolators, and vector-component expansion helpers. Supports `"param:name"` references
+   - `spatial_fields.py` — Shared scalar and vector spatial field system (constant, sine_product, cosine_product, gaussian_bump, radial_cosine, step, none, custom). Provides UFL builders, scalar interpolators, and vector-component expansion helpers. Supports `"param:name"` references
   - `boundary_conditions.py` — shared scalar Dirichlet / Neumann / Robin helpers plus vector Dirichlet / Neumann helpers for standard vector-valued spaces; vector Robin remains intentionally unsupported in the shared layer
    - `source_terms.py` — scalar and vector source-form builders from the unified field expression config
    - `initial_conditions.py` — scalar and vector IC helpers from the unified field expression config; `random_perturbation` stays scalar-only and DOF-based
@@ -42,8 +42,8 @@ The system has three layers:
    - `formats/` — Output format writers: `NumpyWriter` (.npy arrays), `GifWriter` (animated .gif), `VideoWriter` (.mp4), `VTKWriter` (pyvista .vtu/.pvd for Paraview). Grid writers (numpy/gif/video) share the interpolation pipeline; VTK writes FEM functions directly
    - `interpolation.py` — `function_to_array()` maps DOLFINx FEM functions onto regular numpy grids via point evaluation
 
-3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, domain geometry, explicit `inputs`, explicit `boundary_conditions`, optional `time`, solver options, output settings, and seed.
-   The current schema uses top-level `inputs`, `boundary_conditions`, and `output.fields`.
+3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, explicit coefficients, domain geometry, explicit `inputs`, explicit `boundary_conditions`, optional `time`, solver options, output settings, and seed.
+   The current schema uses top-level `coefficients`, `inputs`, `boundary_conditions`, and `output.fields`.
 
 ## Adding a New PDE Preset
 
@@ -77,3 +77,9 @@ The system has three layers:
 - use ruff for linting and formatting. Make sure to run ruff after making changes to ensure code style consistency.
 - After making code changes, check Pylance diagnostics using `mcp__ide__getDiagnostics` to catch type errors and other issues. Do this after completing a logical batch of edits, not after every single edit.
 - Do not use `from __future__ import annotations`. This is a Python 3.10+ codebase, and we want to keep type annotations straightforward without string literals.
+
+## Simulation Rules
+
+- use the `./output` directory for all simulation outputs
+- create a new subdirectory under `./output` for each new simulation run, following the pattern `./output/<category>/<preset>/`
+- Delete old simulations if they are no longer needed to avoid cluttering the output directory

@@ -79,6 +79,16 @@ def rectangle_domain(
     )
 
 
+def box_domain(
+    *,
+    mesh_resolution: tuple[int, int, int] = (6, 6, 4),
+) -> DomainConfig:
+    return DomainConfig(
+        type="box",
+        params={"size": [1.0, 1.0, 1.0], "mesh_resolution": list(mesh_resolution)},
+    )
+
+
 def direct_solver_config() -> SolverConfig:
     return SolverConfig(options={"ksp_type": "preonly", "pc_type": "lu"})
 
@@ -113,6 +123,7 @@ def make_scalar_preset_config(
     *,
     preset: str,
     parameters: dict[str, float],
+    coefficients: dict[str, FieldExpressionConfig] | None = None,
     boundary_conditions: dict[str, BoundaryConditionConfig],
     source: FieldExpressionConfig,
     initial_condition: FieldExpressionConfig | None = None,
@@ -149,6 +160,7 @@ def make_scalar_preset_config(
         solver=solver or direct_solver_config(),
         time=time,
         seed=seed,
+        coefficients={} if coefficients is None else coefficients,
     )
 
 
@@ -188,6 +200,77 @@ def make_flow_preset_config(
             num_frames=2 if time is not None else 1,
             formats=["numpy"],
             fields=output_fields(velocity="components", pressure="scalar"),
+        ),
+        solver=flow_solver_config(),
+        time=time,
+        seed=seed,
+    )
+
+
+def make_thermal_convection_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    parameters: dict[str, float],
+    velocity_boundary_conditions: dict[str, BoundaryConditionConfig],
+    temperature_boundary_conditions: dict[str, BoundaryConditionConfig],
+    velocity_source: FieldExpressionConfig,
+    velocity_initial_condition: FieldExpressionConfig,
+    temperature_source: FieldExpressionConfig,
+    temperature_initial_condition: FieldExpressionConfig,
+    periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(
+            f"Thermal convection test helper only supports 2D/3D, got {gdim}D"
+        )
+
+    return SimulationConfig(
+        preset="thermal_convection",
+        parameters=parameters,
+        domain=domain,
+        inputs={
+            "velocity": InputConfig(
+                source=velocity_source,
+                initial_condition=velocity_initial_condition,
+            ),
+            "temperature": InputConfig(
+                source=temperature_source,
+                initial_condition=temperature_initial_condition,
+            ),
+        },
+        boundary_conditions={
+            "velocity": boundary_field_config(
+                velocity_boundary_conditions,
+                periodic_axes=periodic_axes,
+            ),
+            "temperature": boundary_field_config(
+                temperature_boundary_conditions,
+                periodic_axes=periodic_axes,
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(
+                velocity="components",
+                pressure="scalar",
+                temperature="scalar",
+            ),
         ),
         solver=flow_solver_config(),
         time=time,

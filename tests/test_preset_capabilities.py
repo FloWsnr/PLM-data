@@ -15,6 +15,7 @@ from tests.preset_matrix import (
     make_maxwell_config,
     make_maxwell_pulse_config,
     make_scalar_preset_config,
+    make_thermal_convection_config,
     run_preset,
     scalar_expr,
     skip_without_complex_runtime,
@@ -81,6 +82,92 @@ def _periodic_maxwell_boundary_conditions() -> dict[str, BoundaryConditionConfig
         "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
         "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
     }
+
+
+def _thermal_velocity_boundary_conditions(
+    *, gdim: int, periodic_axes: tuple[int, ...]
+) -> dict[str, BoundaryConditionConfig]:
+    if gdim == 2:
+        boundary_conditions = {
+            "x-": BoundaryConditionConfig(
+                type="dirichlet",
+                value=vector_expr(x=constant(0.0), y=constant(0.0)),
+            ),
+            "x+": BoundaryConditionConfig(
+                type="dirichlet",
+                value=vector_expr(x=constant(0.0), y=constant(0.0)),
+            ),
+            "y-": BoundaryConditionConfig(
+                type="dirichlet",
+                value=vector_expr(x=constant(0.0), y=constant(0.0)),
+            ),
+            "y+": BoundaryConditionConfig(
+                type="dirichlet",
+                value=vector_expr(x=constant(0.0), y=constant(0.0)),
+            ),
+        }
+    else:
+        boundary_conditions = {
+            "x-": BoundaryConditionConfig(
+                type="dirichlet",
+                value=vector_expr(x=constant(0.0), y=constant(0.0), z=constant(0.0)),
+            ),
+            "x+": BoundaryConditionConfig(
+                type="dirichlet",
+                value=vector_expr(x=constant(0.0), y=constant(0.0), z=constant(0.0)),
+            ),
+            "y-": BoundaryConditionConfig(
+                type="dirichlet",
+                value=vector_expr(x=constant(0.0), y=constant(0.0), z=constant(0.0)),
+            ),
+            "y+": BoundaryConditionConfig(
+                type="dirichlet",
+                value=vector_expr(x=constant(0.0), y=constant(0.0), z=constant(0.0)),
+            ),
+            "z-": BoundaryConditionConfig(
+                type="dirichlet",
+                value=vector_expr(x=constant(0.0), y=constant(0.0), z=constant(0.0)),
+            ),
+            "z+": BoundaryConditionConfig(
+                type="dirichlet",
+                value=vector_expr(x=constant(0.0), y=constant(0.0), z=constant(0.0)),
+            ),
+        }
+
+    for axis in periodic_axes:
+        minus, plus = {0: ("x-", "x+"), 1: ("y-", "y+"), 2: ("z-", "z+")}[axis]
+        boundary_conditions.pop(minus, None)
+        boundary_conditions.pop(plus, None)
+
+    return boundary_conditions
+
+
+def _thermal_temperature_boundary_conditions(
+    *, gdim: int, periodic_axes: tuple[int, ...]
+) -> dict[str, BoundaryConditionConfig]:
+    if gdim == 2:
+        boundary_conditions = {
+            "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+        }
+    else:
+        boundary_conditions = {
+            "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "z-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+            "z+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+        }
+
+    for axis in periodic_axes:
+        minus, plus = {0: ("x-", "x+"), 1: ("y-", "y+"), 2: ("z-", "z+")}[axis]
+        boundary_conditions.pop(minus, None)
+        boundary_conditions.pop(plus, None)
+
+    return boundary_conditions
 
 
 def _maxwell_source():
@@ -182,13 +269,39 @@ def _assert_maxwell_pulse_case(config, result, output_dir):
     assert_nontrivial(arrays["electric_field_x"])
 
 
+def _assert_thermal_convection_2d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["temperature"])
+    assert_periodic_axis(arrays["velocity_x"], axis=0)
+    assert_periodic_axis(arrays["velocity_y"], axis=0)
+    assert_periodic_axis(arrays["pressure"], axis=0)
+    assert_periodic_axis(arrays["temperature"], axis=0)
+
+
+def _assert_thermal_convection_3d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["temperature"])
+    for field_name in (
+        "velocity_x",
+        "velocity_y",
+        "velocity_z",
+        "pressure",
+        "temperature",
+    ):
+        assert_periodic_axis(arrays[field_name], axis=0)
+        assert_periodic_axis(arrays[field_name], axis=1)
+
+
 SUCCESS_CASES = (
     RuntimePresetCase(
         name="heat_mixed_scalar_bc",
         make_config=lambda tmp_path: make_scalar_preset_config(
             tmp_path,
             preset="heat",
-            parameters={"kappa": 0.01},
+            parameters={},
+            coefficients={"kappa": constant(0.01)},
             boundary_conditions=_mixed_scalar_boundary_conditions(),
             source=scalar_expr("sine_product", amplitude=1.0, kx=1, ky=1),
             initial_condition=scalar_expr(
@@ -206,7 +319,8 @@ SUCCESS_CASES = (
         make_config=lambda tmp_path: make_scalar_preset_config(
             tmp_path,
             preset="heat",
-            parameters={"kappa": 0.01},
+            parameters={},
+            coefficients={"kappa": constant(0.01)},
             boundary_conditions=_periodic_scalar_boundary_conditions(),
             source=scalar_expr("none"),
             initial_condition=scalar_expr(
@@ -347,6 +461,66 @@ SUCCESS_CASES = (
             time=TimeConfig(dt=0.1, t_end=0.1),
         ),
         assert_result=_assert_navier_periodic_x,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="thermal_convection_2d_periodic_x",
+        make_config=lambda tmp_path: make_thermal_convection_config(
+            tmp_path,
+            gdim=2,
+            parameters={"Ra": 1000.0, "Pr": 1.0, "k": 1.0},
+            velocity_boundary_conditions=_thermal_velocity_boundary_conditions(
+                gdim=2,
+                periodic_axes=(0,),
+            ),
+            temperature_boundary_conditions=_thermal_temperature_boundary_conditions(
+                gdim=2,
+                periodic_axes=(0,),
+            ),
+            velocity_source=scalar_expr("none"),
+            velocity_initial_condition=vector_zero(),
+            temperature_source=scalar_expr("none"),
+            temperature_initial_condition=scalar_expr(
+                "random_perturbation",
+                mean=0.5,
+                std=0.02,
+            ),
+            periodic_axes=(0,),
+            mesh_resolution=(6, 6),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.05, t_end=0.05),
+        ),
+        assert_result=_assert_thermal_convection_2d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="thermal_convection_3d_periodic_xy",
+        make_config=lambda tmp_path: make_thermal_convection_config(
+            tmp_path,
+            gdim=3,
+            parameters={"Ra": 1000.0, "Pr": 1.0, "k": 1.0},
+            velocity_boundary_conditions=_thermal_velocity_boundary_conditions(
+                gdim=3,
+                periodic_axes=(0, 1),
+            ),
+            temperature_boundary_conditions=_thermal_temperature_boundary_conditions(
+                gdim=3,
+                periodic_axes=(0, 1),
+            ),
+            velocity_source=scalar_expr("none"),
+            velocity_initial_condition=vector_zero(),
+            temperature_source=scalar_expr("none"),
+            temperature_initial_condition=scalar_expr(
+                "random_perturbation",
+                mean=0.5,
+                std=0.02,
+            ),
+            periodic_axes=(0, 1),
+            mesh_resolution=(4, 4, 3),
+            output_resolution=(3, 3, 3),
+            time=TimeConfig(dt=0.05, t_end=0.05),
+        ),
+        assert_result=_assert_thermal_convection_3d,
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(

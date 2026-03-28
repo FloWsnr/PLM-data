@@ -1,6 +1,6 @@
 """Preset specifications and public extension contracts."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 _COMPONENT_LABELS = ("x", "y", "z")
 
@@ -15,6 +15,20 @@ class PDEParameter:
 
     name: str
     description: str
+
+
+@dataclass(frozen=True)
+class CoefficientSpec:
+    """A config-facing coefficient field used in variational forms."""
+
+    name: str
+    shape: str
+    description: str = ""
+
+    def component_labels(self, gdim: int) -> tuple[str, ...]:
+        if self.shape != "vector":
+            return ()
+        return _component_labels(gdim)
 
 
 @dataclass(frozen=True)
@@ -136,8 +150,21 @@ class PresetSpec:
     static_fields: list[str]
     steady_state: bool
     supported_dimensions: list[int]
+    coefficients: dict[str, CoefficientSpec] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        for name, spec in self.coefficients.items():
+            if name != spec.name:
+                raise ValueError(
+                    f"Preset '{self.name}' coefficient key '{name}' does not match "
+                    f"CoefficientSpec.name '{spec.name}'"
+                )
+            if spec.shape not in {"scalar", "vector"}:
+                raise ValueError(
+                    f"Preset '{self.name}' coefficient '{name}' has unsupported "
+                    f"shape '{spec.shape}'"
+                )
+
         for name, spec in self.inputs.items():
             if name != spec.name:
                 raise ValueError(
@@ -206,6 +233,9 @@ class PresetSpec:
 
     def parameter_names(self) -> set[str]:
         return {parameter.name for parameter in self.parameters}
+
+    def coefficient_names(self) -> list[str]:
+        return list(self.coefficients.keys())
 
     def input_names(self) -> list[str]:
         return list(self.inputs.keys())

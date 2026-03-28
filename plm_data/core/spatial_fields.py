@@ -106,6 +106,61 @@ def _require_param(params: dict, key: str, field_type: str):
     return params[key]
 
 
+def _build_axis_trig_expression(
+    x,
+    params: dict,
+    parameters: dict[str, float],
+    *,
+    field_type: str,
+    trig_fn,
+):
+    amplitude = resolve_param_ref(
+        _require_param(params, "amplitude", field_type), parameters
+    )
+    expr = ufl.as_ufl(amplitude)
+    axis_keys = {"kx": 0, "ky": 1, "kz": 2}
+    found_any = False
+    for key, axis in axis_keys.items():
+        if key in params:
+            k = resolve_param_ref(params[key], parameters)
+            expr = expr * trig_fn(k * ufl.pi * x[axis])  # type: ignore[reportOperatorIssue]
+            found_any = True
+    if not found_any:
+        raise ValueError(
+            f"{field_type} requires at least one of kx, ky, kz. Got params: {params}"
+        )
+    return expr
+
+
+def _build_axis_trig_interpolator(
+    params: dict,
+    parameters: dict[str, float],
+    *,
+    field_type: str,
+    trig_fn,
+) -> Callable[[np.ndarray], np.ndarray]:
+    amplitude = resolve_param_ref(
+        _require_param(params, "amplitude", field_type), parameters
+    )
+    axis_keys = {"kx": 0, "ky": 1, "kz": 2}
+    axes = {}
+    for key, axis in axis_keys.items():
+        if key in params:
+            axes[axis] = resolve_param_ref(params[key], parameters)
+    if not axes:
+        raise ValueError(
+            f"{field_type} requires at least one of kx, ky, kz. Got params: {params}"
+        )
+
+    def _axis_trig(x, amp=amplitude, ax=axes):
+        result = np.full(x.shape[1], amp)
+        for axis, k in ax.items():
+            result = result * trig_fn(k * np.pi * x[axis])
+        return result
+
+    return _axis_trig
+
+
 # ---------------------------------------------------------------------------
 # UFL renderer — produces symbolic expressions for variational forms
 # ---------------------------------------------------------------------------
@@ -138,22 +193,22 @@ def build_ufl_field(
         return ufl.as_ufl(value)
 
     elif field_type == "sine_product":
-        amplitude = resolve_param_ref(
-            _require_param(p, "amplitude", field_type), parameters
+        return _build_axis_trig_expression(
+            x,
+            p,
+            parameters,
+            field_type=field_type,
+            trig_fn=ufl.sin,
         )
-        expr = ufl.as_ufl(amplitude)
-        axis_keys = {"kx": 0, "ky": 1, "kz": 2}
-        found_any = False
-        for key, axis in axis_keys.items():
-            if key in p:
-                k = resolve_param_ref(p[key], parameters)
-                expr = expr * ufl.sin(k * ufl.pi * x[axis])  # type: ignore[reportOperatorIssue]
-                found_any = True
-        if not found_any:
-            raise ValueError(
-                f"sine_product requires at least one of kx, ky, kz. Got params: {p}"
-            )
-        return expr
+
+    elif field_type == "cosine_product":
+        return _build_axis_trig_expression(
+            x,
+            p,
+            parameters,
+            field_type=field_type,
+            trig_fn=ufl.cos,
+        )
 
     elif field_type == "gaussian_bump":
         amplitude = resolve_param_ref(
@@ -168,6 +223,23 @@ def build_ufl_field(
             )
         r_sq = sum((x[i] - center[i]) ** 2 for i in range(gdim))
         return amplitude * ufl.exp(-r_sq / (2 * sigma**2))
+
+    elif field_type == "radial_cosine":
+        base = resolve_param_ref(_require_param(p, "base", field_type), parameters)
+        amplitude = resolve_param_ref(
+            _require_param(p, "amplitude", field_type), parameters
+        )
+        frequency = resolve_param_ref(
+            _require_param(p, "frequency", field_type), parameters
+        )
+        center = _require_param(p, "center", field_type)
+        gdim = msh.geometry.dim
+        if len(center) != gdim:
+            raise ValueError(
+                f"radial_cosine center has {len(center)} components but mesh is {gdim}D"
+            )
+        r = ufl.sqrt(sum((x[i] - center[i]) ** 2 for i in range(gdim)))
+        return ufl.as_ufl(base) + amplitude * ufl.cos(frequency * r)
 
     elif field_type == "step":
         value_left = resolve_param_ref(
@@ -221,26 +293,20 @@ def build_interpolator(
         return lambda x, v=value: np.full(x.shape[1], v)
 
     elif field_type == "sine_product":
-        amplitude = resolve_param_ref(
-            _require_param(p, "amplitude", field_type), parameters
+        return _build_axis_trig_interpolator(
+            p,
+            parameters,
+            field_type=field_type,
+            trig_fn=np.sin,
         )
-        axis_keys = {"kx": 0, "ky": 1, "kz": 2}
-        axes = {}
-        for key, axis in axis_keys.items():
-            if key in p:
-                axes[axis] = resolve_param_ref(p[key], parameters)
-        if not axes:
-            raise ValueError(
-                f"sine_product requires at least one of kx, ky, kz. Got params: {p}"
-            )
 
-        def _sine_product(x, amp=amplitude, ax=axes):
-            result = np.full(x.shape[1], amp)
-            for axis, k in ax.items():
-                result = result * np.sin(k * np.pi * x[axis])
-            return result
-
-        return _sine_product
+    elif field_type == "cosine_product":
+        return _build_axis_trig_interpolator(
+            p,
+            parameters,
+            field_type=field_type,
+            trig_fn=np.cos,
+        )
 
     elif field_type == "gaussian_bump":
         amplitude = resolve_param_ref(
@@ -255,6 +321,25 @@ def build_interpolator(
             return amp * np.exp(-r_sq / (2 * sig**2))
 
         return _gaussian
+
+    elif field_type == "radial_cosine":
+        base = resolve_param_ref(_require_param(p, "base", field_type), parameters)
+        amplitude = resolve_param_ref(
+            _require_param(p, "amplitude", field_type), parameters
+        )
+        frequency = resolve_param_ref(
+            _require_param(p, "frequency", field_type), parameters
+        )
+        center = _require_param(p, "center", field_type)
+
+        def _radial_cosine(
+            x, base_value=base, amp=amplitude, freq=frequency, ctr=center
+        ):
+            gdim = min(len(ctr), x.shape[0])
+            r = np.sqrt(sum((x[i] - ctr[i]) ** 2 for i in range(gdim)))
+            return base_value + amp * np.cos(freq * r)
+
+        return _radial_cosine
 
     elif field_type == "step":
         value_left = resolve_param_ref(

@@ -12,6 +12,7 @@ from dolfinx import fem
 import plm_data.core.periodic as periodic_mod
 from plm_data.core.config import (
     BoundaryConditionConfig,
+    BoundaryFieldConfig,
     DomainConfig,
     InputConfig,
     OutputConfig,
@@ -433,6 +434,103 @@ def _make_stokes_config(tmp_path, *, source=None, parameters=None):
     )
 
 
+def _make_thermal_convection_config(tmp_path, *, gdim: int):
+    if gdim == 2:
+        domain = DomainConfig(
+            type="rectangle",
+            params={"size": [1.0, 1.0], "mesh_resolution": [6, 6]},
+        )
+        periodic_axes = (0,)
+        velocity_boundary_conditions = {
+            "y-": BoundaryConditionConfig(
+                type="dirichlet",
+                value=vector_expr(x=constant(0.0), y=constant(0.0)),
+            ),
+            "y+": BoundaryConditionConfig(
+                type="dirichlet",
+                value=vector_expr(x=constant(0.0), y=constant(0.0)),
+            ),
+        }
+        temperature_boundary_conditions = {
+            "y-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+        }
+    else:
+        domain = DomainConfig(
+            type="box",
+            params={"size": [1.0, 1.0, 1.0], "mesh_resolution": [4, 4, 3]},
+        )
+        periodic_axes = (0, 1)
+        velocity_boundary_conditions = {
+            "z-": BoundaryConditionConfig(
+                type="dirichlet",
+                value=vector_expr(x=constant(0.0), y=constant(0.0), z=constant(0.0)),
+            ),
+            "z+": BoundaryConditionConfig(
+                type="dirichlet",
+                value=vector_expr(x=constant(0.0), y=constant(0.0), z=constant(0.0)),
+            ),
+        }
+        temperature_boundary_conditions = {
+            "z-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+            "z+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+        }
+
+    return SimulationConfig(
+        preset="thermal_convection",
+        parameters={"Ra": 1000.0, "Pr": 1.0, "k": 1.0},
+        domain=domain,
+        inputs={
+            "velocity": InputConfig(
+                source=scalar_expr("none"),
+                initial_condition=vector_zero(),
+            ),
+            "temperature": InputConfig(
+                source=scalar_expr("none"),
+                initial_condition=scalar_expr(
+                    "random_perturbation",
+                    mean=0.5,
+                    std=0.02,
+                ),
+            ),
+        },
+        boundary_conditions={
+            "velocity": boundary_field_config(
+                velocity_boundary_conditions,
+                periodic_axes=periodic_axes,
+            ),
+            "temperature": boundary_field_config(
+                temperature_boundary_conditions,
+                periodic_axes=periodic_axes,
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[4] * gdim,
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(
+                velocity="components",
+                pressure="scalar",
+                temperature="scalar",
+            ),
+        ),
+        solver=SolverConfig(
+            options={
+                "ksp_type": "preonly",
+                "pc_type": "lu",
+                "pc_factor_mat_solver_type": "mumps",
+                "mat_mumps_icntl_14": "80",
+                "mat_mumps_icntl_24": "1",
+                "mat_mumps_icntl_25": "0",
+                "ksp_error_if_not_converged": "1",
+            }
+        ),
+        time=TimeConfig(dt=0.05, t_end=0.05),
+        seed=42,
+    )
+
+
 def test_stokes_3d(tmp_path):
     config = SimulationConfig(
         preset="stokes",
@@ -609,7 +707,7 @@ def test_transient_problem_uses_exact_integer_step_count(tmp_path, direct_solver
 def test_heat_periodic_domain_single_step(tmp_path, direct_solver):
     config = SimulationConfig(
         preset="heat",
-        parameters={"kappa": 0.01},
+        parameters={},
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
@@ -636,6 +734,7 @@ def test_heat_periodic_domain_single_step(tmp_path, direct_solver):
         solver=direct_solver,
         time=TimeConfig(dt=0.01, t_end=0.01),
         seed=42,
+        coefficients={"kappa": constant(0.01)},
     )
     result, output_dir = _run_preset(config)
     assert result.solver_converged is True
@@ -657,7 +756,7 @@ def test_periodic_heat_requires_dolfinx_mpc(monkeypatch, tmp_path, direct_solver
 
     config = SimulationConfig(
         preset="heat",
-        parameters={"kappa": 0.01},
+        parameters={},
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
@@ -684,10 +783,126 @@ def test_periodic_heat_requires_dolfinx_mpc(monkeypatch, tmp_path, direct_solver
         solver=direct_solver,
         time=TimeConfig(dt=0.01, t_end=0.01),
         seed=42,
+        coefficients={"kappa": constant(0.01)},
     )
 
     with pytest.raises(RuntimeError, match="dolfinx_mpc"):
         _run_preset(config)
+
+
+def test_heat_manufactured_source_approaches_expected_profile(tmp_path, direct_solver):
+    config = SimulationConfig(
+        preset="heat",
+        parameters={},
+        domain=DomainConfig(
+            type="rectangle",
+            params={"size": [1.0, 1.0], "mesh_resolution": [48, 48]},
+        ),
+        inputs={
+            "u": InputConfig(
+                source=scalar_expr(
+                    "cosine_product",
+                    amplitude=1.9739208802178716,
+                    kx=1.0,
+                    ky=1.0,
+                ),
+                initial_condition=scalar_expr("constant", value=0.0),
+            )
+        },
+        boundary_conditions={
+            "u": boundary_field_config(
+                {
+                    "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                    "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                    "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                    "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                }
+            )
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[32, 32],
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(u="scalar"),
+        ),
+        solver=direct_solver,
+        time=TimeConfig(dt=0.02, t_end=2.0),
+        seed=42,
+        coefficients={"kappa": constant(0.1)},
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    arr = np.load(output_dir / "u.npy")[-1]
+    x = np.linspace(0.0, 1.0, config.output.resolution[0])
+    y = np.linspace(0.0, 1.0, config.output.resolution[1])
+    xx, yy = np.meshgrid(x, y, indexing="ij")
+    expected = np.cos(np.pi * xx) * np.cos(np.pi * yy)
+    assert np.max(np.abs(arr - expected)) < 0.12
+
+
+def test_heat_variable_diffusivity_evolves_nontrivially(tmp_path, direct_solver):
+    config = SimulationConfig(
+        preset="heat",
+        parameters={},
+        domain=DomainConfig(
+            type="rectangle",
+            params={"size": [1.0, 1.0], "mesh_resolution": [40, 40]},
+        ),
+        inputs={
+            "u": InputConfig(
+                source=scalar_expr("none"),
+                initial_condition=scalar_expr("constant", value=1.0),
+            )
+        },
+        boundary_conditions={
+            "u": boundary_field_config(
+                {
+                    "x-": BoundaryConditionConfig(
+                        type="dirichlet", value=constant(0.0)
+                    ),
+                    "x+": BoundaryConditionConfig(
+                        type="dirichlet", value=constant(0.0)
+                    ),
+                    "y-": BoundaryConditionConfig(
+                        type="dirichlet", value=constant(0.0)
+                    ),
+                    "y+": BoundaryConditionConfig(
+                        type="dirichlet", value=constant(0.0)
+                    ),
+                }
+            )
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[24, 24],
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(u="scalar"),
+        ),
+        solver=direct_solver,
+        time=TimeConfig(dt=0.005, t_end=0.2),
+        seed=42,
+        coefficients={
+            "kappa": scalar_expr(
+                "radial_cosine",
+                base=0.05,
+                amplitude=0.03,
+                frequency=12.566370614359172,
+                center=[0.5, 0.5],
+            )
+        },
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    arr = np.load(output_dir / "u.npy")
+    assert np.all(np.isfinite(arr))
+    assert np.max(arr[-1]) < np.max(arr[0])
+    assert np.std(arr[-1]) > 1e-3
 
 
 @pytest.mark.skipif(
@@ -726,6 +941,71 @@ def test_navier_stokes_fully_periodic_domain(tmp_path):
     assert np.allclose(vy[-1, :, 0], vy[-1, :, -1], atol=1e-4)
     assert np.allclose(pressure[-1, 0, :], pressure[-1, -1, :], atol=1e-4)
     assert np.allclose(pressure[-1, :, 0], pressure[-1, :, -1], atol=1e-4)
+
+
+def test_thermal_convection_rejects_mismatched_periodic_fields(tmp_path):
+    config = _make_thermal_convection_config(tmp_path, gdim=2)
+    config.boundary_conditions["temperature"] = boundary_field_config(
+        {
+            "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+        }
+    )
+
+    preset = get_preset(config.preset)
+    problem = preset.build_problem(config)
+    with pytest.raises(ValueError, match="identical periodic side pairs"):
+        problem.load_domain_geometry()
+
+
+def test_thermal_convection_requires_standard_boundary_names(tmp_path):
+    config = _make_thermal_convection_config(tmp_path, gdim=2)
+    config.boundary_conditions["velocity"] = BoundaryFieldConfig(
+        sides={
+            "left": [
+                BoundaryConditionConfig(
+                    type="dirichlet",
+                    value=vector_expr(x=constant(0.0), y=constant(0.0)),
+                )
+            ],
+            "right": [
+                BoundaryConditionConfig(
+                    type="dirichlet",
+                    value=vector_expr(x=constant(0.0), y=constant(0.0)),
+                )
+            ],
+            "bottom": [
+                BoundaryConditionConfig(
+                    type="dirichlet",
+                    value=vector_expr(x=constant(0.0), y=constant(0.0)),
+                )
+            ],
+            "top": [
+                BoundaryConditionConfig(
+                    type="dirichlet",
+                    value=vector_expr(x=constant(0.0), y=constant(0.0)),
+                )
+            ],
+        }
+    )
+    config.boundary_conditions["temperature"] = BoundaryFieldConfig(
+        sides={
+            "left": [BoundaryConditionConfig(type="neumann", value=constant(0.0))],
+            "right": [BoundaryConditionConfig(type="neumann", value=constant(0.0))],
+            "bottom": [BoundaryConditionConfig(type="dirichlet", value=constant(1.0))],
+            "top": [BoundaryConditionConfig(type="dirichlet", value=constant(0.0))],
+        }
+    )
+
+    preset = get_preset(config.preset)
+    problem = preset.build_problem(config)
+    domain_geom = create_domain(config.domain)
+    domain_geom.boundary_names = {"left": 1, "right": 2, "bottom": 3, "top": 4}
+
+    with pytest.raises(ValueError, match="requires standard boundary names"):
+        problem.validate_boundary_conditions(domain_geom)
 
 
 def test_maxwell_pulse_preset_3d_single_step(tmp_path):

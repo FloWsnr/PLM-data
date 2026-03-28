@@ -36,7 +36,7 @@ def direct_solver():
 def heat_config(tmp_path, rectangle_domain, direct_solver):
     return SimulationConfig(
         preset="heat",
-        parameters={"kappa": 0.01},
+        parameters={},
         domain=rectangle_domain,
         inputs={
             "u": InputConfig(
@@ -69,4 +69,5 @@ def heat_config(tmp_path, rectangle_domain, direct_solver):
         solver=direct_solver,
         time=TimeConfig(dt=0.01, t_end=0.01),
         seed=42,
+        coefficients={"kappa": constant(0.01)},
     )

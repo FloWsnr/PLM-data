@@ -177,6 +177,15 @@ class TestBuildUflField:
         assert result is not None
         assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
 
+    def test_cosine_product(self, mesh_2d, params):
+        cfg = {
+            "type": "cosine_product",
+            "params": {"amplitude": 1.0, "kx": 1.0, "ky": 2.0},
+        }
+        result = build_ufl_field(mesh_2d, cfg, params)
+        assert result is not None
+        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
+
     def test_sine_product_no_axes_raises(self, mesh_2d, params):
         cfg = {"type": "sine_product", "params": {"amplitude": 1.0}}
         with pytest.raises(ValueError, match="at least one of kx, ky, kz"):
@@ -211,6 +220,33 @@ class TestBuildUflField:
         result = build_ufl_field(mesh_2d, cfg, params)
         assert result is not None
         assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
+
+    def test_radial_cosine(self, mesh_2d, params):
+        cfg = {
+            "type": "radial_cosine",
+            "params": {
+                "base": 1.0,
+                "amplitude": 0.25,
+                "frequency": 2.0 * np.pi,
+                "center": [0.5, 0.5],
+            },
+        }
+        result = build_ufl_field(mesh_2d, cfg, params)
+        assert result is not None
+        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
+
+    def test_radial_cosine_wrong_center_dim_raises(self, mesh_2d, params):
+        cfg = {
+            "type": "radial_cosine",
+            "params": {
+                "base": 1.0,
+                "amplitude": 0.25,
+                "frequency": 2.0,
+                "center": [0.5, 0.5, 0.5],
+            },
+        }
+        with pytest.raises(ValueError, match="3 components but mesh is 2D"):
+            build_ufl_field(mesh_2d, cfg, params)
 
     def test_step_2d(self, mesh_2d, params):
         cfg = {
@@ -326,6 +362,17 @@ class TestBuildInterpolator:
         expected = 3.0 * np.sin(2.0 * np.pi * points_2d[0])
         np.testing.assert_allclose(result, expected, atol=1e-14)
 
+    def test_cosine_product_known_values(self, points_2d):
+        cfg = {
+            "type": "cosine_product",
+            "params": {"amplitude": 2.0, "kx": 1.0, "ky": 1.0},
+        }
+        fn = build_interpolator(cfg, {})
+        assert fn is not None
+        result = fn(points_2d)
+        expected = 2.0 * np.cos(np.pi * points_2d[0]) * np.cos(np.pi * points_2d[1])
+        np.testing.assert_allclose(result, expected, atol=1e-14)
+
     def test_gaussian_bump_peak_at_center(self, points_2d):
         cfg = {
             "type": "gaussian_bump",
@@ -389,6 +436,40 @@ class TestBuildInterpolator:
         dists = (points_2d[0] - 0.5) ** 2 + (points_2d[1] - 0.5) ** 2
         center_idx = np.argmin(dists)
         assert result[center_idx] == pytest.approx(4.0, abs=1e-10)
+
+    def test_radial_cosine_center_peak(self, points_2d):
+        cfg = {
+            "type": "radial_cosine",
+            "params": {
+                "base": 1.0,
+                "amplitude": 0.5,
+                "frequency": np.pi,
+                "center": [0.5, 0.5],
+            },
+        }
+        fn = build_interpolator(cfg, {})
+        assert fn is not None
+        result = fn(points_2d)
+        dists = (points_2d[0] - 0.5) ** 2 + (points_2d[1] - 0.5) ** 2
+        center_idx = np.argmin(dists)
+        assert result[center_idx] == pytest.approx(1.5, abs=1e-10)
+
+    def test_radial_cosine_param_refs(self, points_2d):
+        cfg = {
+            "type": "radial_cosine",
+            "params": {
+                "base": "param:base",
+                "amplitude": "param:amp",
+                "frequency": "param:freq",
+                "center": [0.5, 0.5],
+            },
+        }
+        fn = build_interpolator(cfg, {"base": 0.8, "amp": 0.2, "freq": 2.0})
+        assert fn is not None
+        result = fn(points_2d)
+        dists = np.sqrt((points_2d[0] - 0.5) ** 2 + (points_2d[1] - 0.5) ** 2)
+        expected = 0.8 + 0.2 * np.cos(2.0 * dists)
+        np.testing.assert_allclose(result, expected, atol=1e-14)
 
     def test_step_x_axis(self, points_2d):
         cfg = {
