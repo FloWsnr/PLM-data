@@ -121,11 +121,12 @@ def test_load_config_plate():
     assert cfg.preset == "plate"
     assert cfg.parameters["theta"] == 0.5
     assert cfg.coefficient("rho_h").type == "constant"
-    assert cfg.coefficient("damping").params["value"] == 0.1
-    assert cfg.coefficient("rigidity").params["value"] == 0.02
-    assert cfg.input("deflection").initial_condition.type == "zero"
+    assert cfg.coefficient("damping").params["value"] == 0.0
+    assert cfg.coefficient("rigidity").params["value"] == 0.2
+    assert cfg.input("deflection").initial_condition.type == "sine_product"
+    assert cfg.input("deflection").initial_condition.params["amplitude"] == 0.1
     assert cfg.input("velocity").initial_condition.type == "zero"
-    assert cfg.input("load").source.type == "gaussian_bump"
+    assert cfg.input("load").source.type == "none"
     assert cfg.output_mode("deflection") == "scalar"
     assert cfg.output_mode("velocity") == "scalar"
     assert boundary_field.side_conditions("x-")[0].type == "simply_supported"

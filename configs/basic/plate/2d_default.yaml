@@ -1,0 +1,60 @@
+preset: plate
+parameters:
+  theta: 0.5
+coefficients:
+  rho_h:
+    type: constant
+    params:
+      value: 1.0
+  damping:
+    type: constant
+    params:
+      value: 0.0
+  rigidity:
+    type: constant
+    params:
+      value: 0.2
+domain:
+  type: rectangle
+  size: [1.0, 1.0]
+  mesh_resolution: [32, 32]
+time:
+  dt: 0.01
+  t_end: 1.0
+inputs:
+  deflection:
+    initial_condition:
+      type: sine_product
+      params:
+        amplitude: 0.1
+        kx: 1
+        ky: 1
+  velocity:
+    initial_condition:
+      type: zero
+      params: {}
+  load:
+    source:
+      type: none
+      params: {}
+boundary_conditions:
+  deflection:
+    x-:
+      - operator: simply_supported
+    x+:
+      - operator: simply_supported
+    y-:
+      - operator: simply_supported
+    y+:
+      - operator: simply_supported
+solver:
+  ksp_type: preonly
+  pc_type: lu
+output:
+  resolution: [64, 64]
+  num_frames: 40
+  formats: [numpy, gif]
+  fields:
+    deflection: scalar
+    velocity: scalar
+seed: 42
