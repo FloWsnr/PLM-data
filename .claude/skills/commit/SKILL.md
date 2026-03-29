@@ -22,7 +22,7 @@ Before committing, check ALL changed Python files for:
 3. **Linting errors** — run ruff to check for any linting issues and fix them
 4. **Type errors** — run pyright to check for type errors and fix them
 
-**For large changesets (4+ files changed):** Use fast subagents (haiku model) in parallel to check each file simultaneously. Each subagent should read one file and report any unused imports or function-level imports found.
+**For large changesets (4+ files changed):** Use fast subagents in parallel to check each file simultaneously. Each subagent should read one file and report any unused imports or function-level imports found.
 
 **For small changesets (1-3 files):** Check the files directly without subagents.
 
