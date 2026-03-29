@@ -8,5 +8,8 @@
   "reportOperatorIssue": "none",
   "reportOptionalMemberAccess": "none",
   "reportOptionalOperand": "none",
-  "reportReturnType": "none"
+  "reportReturnType": "none",
+  "reportUnusedImport": "warning",
+  "reportUnusedVariable": "warning",
+  "reportDuplicateImport": "warning"
 }
