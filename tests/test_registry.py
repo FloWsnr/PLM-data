@@ -9,6 +9,8 @@ from plm_data.presets.base import PDEPreset
 def test_list_presets():
     presets = list_presets()
     assert "heat" in presets
+    assert "plate" in presets
+    assert "wave" in presets
     assert "poisson" in presets
     assert "cahn_hilliard" in presets
     assert "maxwell" in presets

@@ -35,6 +35,7 @@ from plm_data.presets.metadata import (
 from tests.preset_matrix import (
     boundary_field_config,
     constant,
+    make_wave_config,
     output_fields,
     run_preset,
     scalar_expr,
@@ -903,6 +904,81 @@ def test_heat_variable_diffusivity_evolves_nontrivially(tmp_path, direct_solver)
     assert np.all(np.isfinite(arr))
     assert np.max(arr[-1]) < np.max(arr[0])
     assert np.std(arr[-1]) > 1e-3
+
+
+def test_wave_standing_mode_matches_expected_profile(tmp_path):
+    config = make_wave_config(
+        tmp_path,
+        gdim=2,
+        boundary_conditions={
+            "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+        },
+        initial_displacement=scalar_expr(
+            "cosine_product",
+            amplitude=1.0,
+            kx=1,
+            ky=1,
+        ),
+        initial_velocity=constant(0.0),
+        forcing=scalar_expr("none"),
+        mesh_resolution=(48, 48),
+        output_resolution=(32, 32),
+        time=TimeConfig(dt=0.005, t_end=0.1),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    arr_u = np.load(output_dir / "u.npy")[-1]
+    arr_v = np.load(output_dir / "v.npy")[-1]
+    x = np.linspace(0.0, 1.0, config.output.resolution[0])
+    y = np.linspace(0.0, 1.0, config.output.resolution[1])
+    xx, yy = np.meshgrid(x, y, indexing="ij")
+    mode = np.cos(np.pi * xx) * np.cos(np.pi * yy)
+    omega = np.pi * np.sqrt(2.0)
+    expected_u = np.cos(omega * config.time.t_end) * mode
+
+    assert np.max(np.abs(arr_u - expected_u)) < 0.1
+    assert np.max(np.abs(arr_v)) > 1e-2
+
+
+def test_wave_preset_3d_single_step(tmp_path):
+    config = make_wave_config(
+        tmp_path,
+        gdim=3,
+        boundary_conditions={
+            "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "z-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "z+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+        },
+        initial_displacement=scalar_expr(
+            "cosine_product",
+            amplitude=1.0,
+            kx=1,
+            ky=1,
+            kz=1,
+        ),
+        initial_velocity=constant(0.0),
+        forcing=scalar_expr("none"),
+        mesh_resolution=(4, 4, 4),
+        output_resolution=(4, 4, 4),
+        time=TimeConfig(dt=0.02, t_end=0.02),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 1
+
+    for field in ["u", "v"]:
+        arr = np.load(output_dir / f"{field}.npy")
+        assert arr.shape == (2, *config.output.resolution)
+        assert np.all(np.isfinite(arr))
 
 
 @pytest.mark.skipif(

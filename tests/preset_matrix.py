@@ -403,6 +403,120 @@ def make_maxwell_pulse_config(
     )
 
 
+def make_plate_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    boundary_conditions: dict[str, BoundaryConditionConfig],
+    deflection_initial_condition: FieldExpressionConfig,
+    velocity_initial_condition: FieldExpressionConfig,
+    load_source: FieldExpressionConfig,
+    parameters: dict[str, float] | None = None,
+    coefficients: dict[str, FieldExpressionConfig] | None = None,
+    mesh_resolution: tuple[int, ...] = (6, 6),
+    output_resolution: tuple[int, ...] = (4, 4),
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(f"Plate test helper only supports 2D/3D, got {gdim}D")
+
+    return SimulationConfig(
+        preset="plate",
+        parameters={"theta": 0.5} if parameters is None else parameters,
+        domain=domain,
+        inputs={
+            "deflection": InputConfig(initial_condition=deflection_initial_condition),
+            "velocity": InputConfig(initial_condition=velocity_initial_condition),
+            "load": InputConfig(source=load_source),
+        },
+        boundary_conditions={"deflection": boundary_field_config(boundary_conditions)},
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(deflection="scalar", velocity="scalar"),
+        ),
+        solver=direct_solver_config(),
+        time=time,
+        seed=seed,
+        coefficients=(
+            {
+                "rho_h": constant(1.0),
+                "damping": constant(0.1),
+                "rigidity": constant(0.02),
+            }
+            if coefficients is None
+            else coefficients
+        ),
+    )
+
+
+def make_wave_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    boundary_conditions: dict[str, BoundaryConditionConfig],
+    initial_displacement: FieldExpressionConfig,
+    initial_velocity: FieldExpressionConfig,
+    forcing: FieldExpressionConfig,
+    periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (6, 6),
+    output_resolution: tuple[int, ...] = (4, 4),
+    damping: float = 0.0,
+    c_sq: FieldExpressionConfig | None = None,
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(f"Wave test helper only supports 2D/3D, got {gdim}D")
+
+    return SimulationConfig(
+        preset="wave",
+        parameters={"damping": damping},
+        domain=domain,
+        inputs={
+            "u": InputConfig(initial_condition=initial_displacement),
+            "v": InputConfig(initial_condition=initial_velocity),
+            "forcing": InputConfig(source=forcing),
+        },
+        boundary_conditions={
+            "u": boundary_field_config(
+                boundary_conditions,
+                periodic_axes=periodic_axes,
+            )
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(u="scalar", v="scalar"),
+        ),
+        solver=direct_solver_config(),
+        time=time,
+        seed=seed,
+        coefficients={"c_sq": constant(1.0) if c_sq is None else c_sq},
+    )
+
+
 def run_preset(config: SimulationConfig) -> tuple[RunResult, Path]:
     preset = get_preset(config.preset)
     output_dir = config.output.path / preset.spec.category / preset.spec.name

@@ -14,8 +14,10 @@ from tests.preset_matrix import (
     make_flow_preset_config,
     make_maxwell_config,
     make_maxwell_pulse_config,
+    make_plate_config,
     make_scalar_preset_config,
     make_thermal_convection_config,
+    make_wave_config,
     run_preset,
     scalar_expr,
     skip_without_complex_runtime,
@@ -39,6 +41,18 @@ def _periodic_scalar_boundary_conditions() -> dict[str, BoundaryConditionConfig]
         "y-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
         "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
     }
+
+
+def _simply_supported_plate_boundary_conditions(
+    *, gdim: int
+) -> dict[str, BoundaryConditionConfig]:
+    if gdim == 2:
+        sides = ("x-", "x+", "y-", "y+")
+    elif gdim == 3:
+        sides = ("x-", "x+", "y-", "y+", "z-", "z+")
+    else:
+        raise ValueError(f"Plate boundary helper only supports 2D/3D, got {gdim}D")
+    return {side: BoundaryConditionConfig(type="simply_supported") for side in sides}
 
 
 def _lid_velocity_boundary_conditions(
@@ -218,6 +232,29 @@ def _assert_heat_periodic_x(config, result, output_dir):
     assert_periodic_axis(arrays["u"], axis=0)
 
 
+def _assert_plate_case(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["deflection"])
+    assert_nontrivial(arrays["velocity"])
+
+
+def _assert_wave_case(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["u"])
+    assert_nontrivial(arrays["v"])
+
+
+def _assert_wave_periodic_x(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["u"])
+    assert_nontrivial(arrays["v"])
+    assert_periodic_axis(arrays["u"], axis=0)
+    assert_periodic_axis(arrays["v"], axis=0)
+
+
 def _assert_stokes_source(config, result, output_dir):
     arrays = _assert_success(config, result, output_dir)
     assert_nontrivial(arrays["velocity_y"])
@@ -296,6 +333,39 @@ def _assert_thermal_convection_3d(config, result, output_dir):
 
 SUCCESS_CASES = (
     RuntimePresetCase(
+        name="wave_mixed_scalar_bc",
+        make_config=lambda tmp_path: make_wave_config(
+            tmp_path,
+            gdim=2,
+            boundary_conditions=_mixed_scalar_boundary_conditions(),
+            initial_displacement=constant(0.0),
+            initial_velocity=constant(0.0),
+            forcing=scalar_expr("sine_product", amplitude=1.0, kx=1, ky=1),
+            time=TimeConfig(dt=0.02, t_end=0.02),
+        ),
+        assert_result=_assert_wave_case,
+    ),
+    RuntimePresetCase(
+        name="wave_periodic_x",
+        make_config=lambda tmp_path: make_wave_config(
+            tmp_path,
+            gdim=2,
+            boundary_conditions=_periodic_scalar_boundary_conditions(),
+            initial_displacement=scalar_expr(
+                "sine_product",
+                amplitude=1.0,
+                kx=2,
+                ky=1,
+            ),
+            initial_velocity=constant(0.0),
+            forcing=scalar_expr("none"),
+            periodic_axes=(0,),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_wave_periodic_x,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
         name="heat_mixed_scalar_bc",
         make_config=lambda tmp_path: make_scalar_preset_config(
             tmp_path,
@@ -313,6 +383,24 @@ SUCCESS_CASES = (
             time=TimeConfig(dt=0.01, t_end=0.01),
         ),
         assert_result=_assert_heat_case,
+    ),
+    RuntimePresetCase(
+        name="plate_simply_supported",
+        make_config=lambda tmp_path: make_plate_config(
+            tmp_path,
+            gdim=2,
+            boundary_conditions=_simply_supported_plate_boundary_conditions(gdim=2),
+            deflection_initial_condition=constant(0.0),
+            velocity_initial_condition=constant(0.0),
+            load_source=scalar_expr(
+                "gaussian_bump",
+                amplitude=1.0,
+                sigma=0.15,
+                center=[0.5, 0.5],
+            ),
+            time=TimeConfig(dt=0.05, t_end=0.05),
+        ),
+        assert_result=_assert_plate_case,
     ),
     RuntimePresetCase(
         name="heat_periodic_x",
@@ -569,6 +657,57 @@ SUCCESS_CASES = (
 
 
 REJECTION_CASES = (
+    RuntimePresetCase(
+        name="plate_3d_domain_rejected",
+        make_config=lambda tmp_path: make_plate_config(
+            tmp_path,
+            gdim=3,
+            boundary_conditions=_simply_supported_plate_boundary_conditions(gdim=3),
+            deflection_initial_condition=constant(0.0),
+            velocity_initial_condition=constant(0.0),
+            load_source=scalar_expr("none"),
+            mesh_resolution=(4, 4, 4),
+            output_resolution=(3, 3, 3),
+            time=TimeConfig(dt=0.05, t_end=0.05),
+        ),
+        expected_error=ValueError,
+        expected_error_match="only supports 2D domains",
+    ),
+    RuntimePresetCase(
+        name="plate_unsupported_operator_rejected",
+        make_config=lambda tmp_path: make_plate_config(
+            tmp_path,
+            gdim=2,
+            boundary_conditions={
+                **_simply_supported_plate_boundary_conditions(gdim=2),
+                "x-": BoundaryConditionConfig(type="clamped"),
+            },
+            deflection_initial_condition=constant(0.0),
+            velocity_initial_condition=constant(0.0),
+            load_source=scalar_expr("none"),
+            time=TimeConfig(dt=0.05, t_end=0.05),
+        ),
+        expected_error=ValueError,
+        expected_error_match="unsupported operator 'clamped'",
+    ),
+    RuntimePresetCase(
+        name="plate_missing_side_rejected",
+        make_config=lambda tmp_path: make_plate_config(
+            tmp_path,
+            gdim=2,
+            boundary_conditions={
+                "x-": BoundaryConditionConfig(type="simply_supported"),
+                "x+": BoundaryConditionConfig(type="simply_supported"),
+                "y-": BoundaryConditionConfig(type="simply_supported"),
+            },
+            deflection_initial_condition=constant(0.0),
+            velocity_initial_condition=constant(0.0),
+            load_source=scalar_expr("none"),
+            time=TimeConfig(dt=0.05, t_end=0.05),
+        ),
+        expected_error=ValueError,
+        expected_error_match="must configure exactly the domain sides",
+    ),
     RuntimePresetCase(
         name="maxwell_periodic_domain_rejected",
         make_config=lambda tmp_path: make_maxwell_config(

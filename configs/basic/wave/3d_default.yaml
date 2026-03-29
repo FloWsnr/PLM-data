@@ -1,0 +1,63 @@
+preset: wave
+parameters:
+  damping: 0.0
+coefficients:
+  c_sq:
+    type: constant
+    params:
+      value: 1.0
+domain:
+  type: box
+  size: [1.0, 1.0, 1.0]
+  mesh_resolution: [16, 16, 16]
+time:
+  dt: 0.02
+  t_end: 0.4
+inputs:
+  u:
+    initial_condition:
+      type: cosine_product
+      params:
+        amplitude: 1.0
+        kx: 1
+        ky: 1
+        kz: 1
+  v:
+    initial_condition:
+      type: zero
+      params: {}
+  forcing:
+    source:
+      type: none
+      params: {}
+boundary_conditions:
+  u:
+    x-:
+      - operator: neumann
+        value: 0.0
+    x+:
+      - operator: neumann
+        value: 0.0
+    y-:
+      - operator: neumann
+        value: 0.0
+    y+:
+      - operator: neumann
+        value: 0.0
+    z-:
+      - operator: neumann
+        value: 0.0
+    z+:
+      - operator: neumann
+        value: 0.0
+solver:
+  ksp_type: preonly
+  pc_type: lu
+output:
+  resolution: [24, 24, 24]
+  num_frames: 11
+  formats: [numpy, gif]
+  fields:
+    u: scalar
+    v: scalar
+seed: 42

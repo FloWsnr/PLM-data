@@ -99,6 +99,38 @@ def test_load_config_maxwell_pulse():
     assert boundary_field.side_conditions("y-")[0].type == "dirichlet"
 
 
+def test_load_config_wave():
+    cfg = load_config("configs/basic/wave/2d_default.yaml")
+    boundary_field = cfg.boundary_field("u")
+    assert cfg.preset == "wave"
+    assert cfg.parameters["damping"] == 0.03
+    assert cfg.coefficient("c_sq").type == "constant"
+    assert cfg.coefficient("c_sq").params["value"] == 4.0
+    assert cfg.input("u").initial_condition.type == "zero"
+    assert cfg.input("v").initial_condition.type == "gaussian_bump"
+    assert cfg.input("forcing").source.type == "none"
+    assert cfg.output_mode("u") == "scalar"
+    assert cfg.output_mode("v") == "scalar"
+    assert boundary_field.side_conditions("x-")[0].type == "dirichlet"
+    assert boundary_field.side_conditions("y-")[0].type == "neumann"
+
+
+def test_load_config_plate():
+    cfg = load_config("configs/basic/plate/2d_default.yaml")
+    boundary_field = cfg.boundary_field("deflection")
+    assert cfg.preset == "plate"
+    assert cfg.parameters["theta"] == 0.5
+    assert cfg.coefficient("rho_h").type == "constant"
+    assert cfg.coefficient("damping").params["value"] == 0.1
+    assert cfg.coefficient("rigidity").params["value"] == 0.02
+    assert cfg.input("deflection").initial_condition.type == "zero"
+    assert cfg.input("velocity").initial_condition.type == "zero"
+    assert cfg.input("load").source.type == "gaussian_bump"
+    assert cfg.output_mode("deflection") == "scalar"
+    assert cfg.output_mode("velocity") == "scalar"
+    assert boundary_field.side_conditions("x-")[0].type == "simply_supported"
+
+
 def _base_yaml_dict():
     """Return a minimal valid config dict with all required top-level fields."""
     return {
