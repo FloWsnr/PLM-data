@@ -29,6 +29,12 @@ def _solver_block(
     }
 
 
+def _write_yaml(tmp_path, name: str, data: dict[str, object]):
+    path = tmp_path / name
+    path.write_text(yaml.dump(data))
+    return path
+
+
 def test_load_config():
     cfg = load_config("configs/basic/heat/2d_default.yaml")
     assert cfg.preset == "heat"
@@ -319,8 +325,7 @@ def _base_maxwell_pulse_yaml_dict():
 def test_robin_bc_missing_alpha(tmp_path):
     data = _base_yaml_dict()
     data["boundary_conditions"]["u"]["x-"] = [{"operator": "robin", "value": 0.0}]
-    p = tmp_path / "robin_no_alpha.yaml"
-    p.write_text(yaml.dump(data))
+    p = _write_yaml(tmp_path, "robin_no_alpha.yaml", data)
     with pytest.raises(ValueError, match="alpha"):
         load_config(p)
 
@@ -328,8 +333,7 @@ def test_robin_bc_missing_alpha(tmp_path):
 def test_missing_inputs_section(tmp_path):
     data = _base_yaml_dict()
     del data["inputs"]
-    p = tmp_path / "no_inputs.yaml"
-    p.write_text(yaml.dump(data))
+    p = _write_yaml(tmp_path, "no_inputs.yaml", data)
     with pytest.raises(ValueError, match="inputs"):
         load_config(p)
 
@@ -369,8 +373,7 @@ def test_missing_coefficients_section(tmp_path):
         },
         "seed": 42,
     }
-    p = tmp_path / "no_coefficients.yaml"
-    p.write_text(yaml.dump(data))
+    p = _write_yaml(tmp_path, "no_coefficients.yaml", data)
     with pytest.raises(ValueError, match="coefficients"):
         load_config(p)
 
@@ -378,8 +381,7 @@ def test_missing_coefficients_section(tmp_path):
 def test_missing_boundary_conditions_section(tmp_path):
     data = _base_yaml_dict()
     del data["boundary_conditions"]
-    p = tmp_path / "no_boundary_conditions.yaml"
-    p.write_text(yaml.dump(data))
+    p = _write_yaml(tmp_path, "no_boundary_conditions.yaml", data)
     with pytest.raises(ValueError, match="boundary_conditions"):
         load_config(p)
 
@@ -387,8 +389,7 @@ def test_missing_boundary_conditions_section(tmp_path):
 def test_missing_solver_strategy(tmp_path):
     data = _base_yaml_dict()
     del data["solver"]["strategy"]
-    p = tmp_path / "no_strategy.yaml"
-    p.write_text(yaml.dump(data))
+    p = _write_yaml(tmp_path, "no_strategy.yaml", data)
     with pytest.raises(ValueError, match="Missing required field 'strategy' in solver"):
         load_config(p)
 
@@ -396,8 +397,7 @@ def test_missing_solver_strategy(tmp_path):
 def test_missing_solver_profile(tmp_path):
     data = _base_yaml_dict()
     del data["solver"]["mpi"]
-    p = tmp_path / "no_solver_mpi.yaml"
-    p.write_text(yaml.dump(data))
+    p = _write_yaml(tmp_path, "no_solver_mpi.yaml", data)
     with pytest.raises(ValueError, match="Missing required field 'mpi' in solver"):
         load_config(p)
 
@@ -405,8 +405,7 @@ def test_missing_solver_profile(tmp_path):
 def test_missing_output_resolution(tmp_path):
     data = _base_yaml_dict()
     del data["output"]["resolution"]
-    p = tmp_path / "no_resolution.yaml"
-    p.write_text(yaml.dump(data))
+    p = _write_yaml(tmp_path, "no_resolution.yaml", data)
     with pytest.raises(ValueError, match="resolution"):
         load_config(p)
 
@@ -414,8 +413,7 @@ def test_missing_output_resolution(tmp_path):
 def test_output_path_is_rejected(tmp_path):
     data = _base_yaml_dict()
     data["output"]["path"] = "./output"
-    p = tmp_path / "output_path.yaml"
-    p.write_text(yaml.dump(data))
+    p = _write_yaml(tmp_path, "output_path.yaml", data)
     with pytest.raises(ValueError, match="unsupported keys"):
         load_config(p)
 
@@ -428,8 +426,7 @@ def test_periodic_pair_must_be_reciprocal(tmp_path):
         "y-": [{"operator": "dirichlet", "value": 0.0}],
         "y+": [{"operator": "dirichlet", "value": 0.0}],
     }
-    p = tmp_path / "bad_periodic_pair.yaml"
-    p.write_text(yaml.dump(data))
+    p = _write_yaml(tmp_path, "bad_periodic_pair.yaml", data)
     with pytest.raises(ValueError, match="reciprocal"):
         load_config(p)
 
@@ -447,8 +444,7 @@ def test_parse_domain_periodic_map(tmp_path):
             },
         }
     }
-    p = tmp_path / "periodic_map.yaml"
-    p.write_text(yaml.dump(data))
+    p = _write_yaml(tmp_path, "periodic_map.yaml", data)
 
     cfg = load_config(p)
     assert "streamwise" in cfg.domain.periodic_maps
@@ -463,8 +459,7 @@ def test_load_config_vector_neumann_bc(tmp_path):
             "value": [1.0, 0.0],
         }
     ]
-    p = tmp_path / "stokes_vector_neumann.yaml"
-    p.write_text(yaml.dump(data))
+    p = _write_yaml(tmp_path, "stokes_vector_neumann.yaml", data)
 
     cfg = load_config(p)
     bc = cfg.boundary_field("velocity").side_conditions("x-")[0]
@@ -482,8 +477,7 @@ def test_vector_robin_bc_rejected_at_parse_time(tmp_path):
             "operator_parameters": {"alpha": 1.0},
         }
     ]
-    p = tmp_path / "stokes_vector_robin.yaml"
-    p.write_text(yaml.dump(data))
+    p = _write_yaml(tmp_path, "stokes_vector_robin.yaml", data)
 
     with pytest.raises(ValueError, match="unsupported operator"):
         load_config(p)
@@ -491,10 +485,105 @@ def test_vector_robin_bc_rejected_at_parse_time(tmp_path):
 
 def test_load_config_vector_absorbing_bc(tmp_path):
     data = _base_maxwell_pulse_yaml_dict()
-    p = tmp_path / "maxwell_pulse_absorbing.yaml"
-    p.write_text(yaml.dump(data))
+    p = _write_yaml(tmp_path, "maxwell_pulse_absorbing.yaml", data)
 
     cfg = load_config(p)
     bc = cfg.boundary_field("electric_field").side_conditions("x-")[0]
     assert bc.type == "absorbing"
     assert bc.value.type == "zero"
+
+
+def test_load_config_resolves_mapping_fragment_ref(tmp_path):
+    data = _base_yaml_dict()
+    data["solver"] = {"$ref": "solver.profile.stationary_scalar_spd"}
+    p = _write_yaml(tmp_path, "solver_ref.yaml", data)
+
+    cfg = load_config(p)
+
+    assert cfg.solver.strategy == STATIONARY_SCALAR_SPD
+    assert cfg.solver.serial["pc_type"] == "lu"
+    assert cfg.solver.mpi["pc_type"] == "hypre"
+
+
+def test_load_config_resolves_list_and_scalar_fragment_refs(tmp_path):
+    data = _base_yaml_dict()
+    data["output"] = {
+        "resolution": [8, 8],
+        "num_frames": 1,
+        "formats": {"$ref": "output.formats.numpy_gif"},
+        "fields": {"u": {"$ref": "output.mode.scalar"}},
+    }
+    p = _write_yaml(tmp_path, "output_ref.yaml", data)
+
+    cfg = load_config(p)
+
+    assert cfg.output.formats == ["numpy", "gif"]
+    assert cfg.output_mode("u") == "scalar"
+
+
+def test_load_config_fragment_override_deep_merges_mappings(tmp_path):
+    data = _base_yaml_dict()
+    data["solver"] = {
+        "$ref": "solver.profile.stationary_scalar_spd",
+        "mpi": {"ksp_rtol": 1.0e-8},
+    }
+    p = _write_yaml(tmp_path, "solver_override.yaml", data)
+
+    cfg = load_config(p)
+
+    assert cfg.solver.mpi["pc_type"] == "hypre"
+    assert float(cfg.solver.mpi["ksp_rtol"]) == pytest.approx(1.0e-8)
+
+
+def test_load_config_fragment_override_replaces_lists(tmp_path):
+    data = _base_yaml_dict()
+    data["output"] = {
+        "$ref": "output.template.scalar_u",
+        "resolution": [8, 8],
+        "num_frames": 1,
+        "formats": ["vtk"],
+    }
+    p = _write_yaml(tmp_path, "output_override.yaml", data)
+
+    cfg = load_config(p)
+
+    assert cfg.output.formats == ["vtk"]
+
+
+def test_load_config_missing_fragment_ref(tmp_path):
+    data = _base_yaml_dict()
+    data["solver"] = {"$ref": "solver.profile.missing"}
+    p = _write_yaml(tmp_path, "missing_ref.yaml", data)
+
+    with pytest.raises(ValueError, match="unknown fragment 'solver.profile.missing'"):
+        load_config(p)
+
+
+def test_load_config_fragment_cycle_is_rejected(tmp_path):
+    data = _base_yaml_dict()
+    data["solver"] = {"$ref": "test.cycle.a"}
+    p = _write_yaml(tmp_path, "cycle_ref.yaml", data)
+
+    with pytest.raises(ValueError, match="Detected fragment reference cycle"):
+        load_config(p)
+
+
+def test_load_config_rejects_override_on_non_mapping_fragment(tmp_path):
+    data = _base_yaml_dict()
+    data["output"]["fields"]["u"] = {
+        "$ref": "output.mode.scalar",
+        "mode": "components",
+    }
+    p = _write_yaml(tmp_path, "bad_scalar_override.yaml", data)
+
+    with pytest.raises(ValueError, match="cannot apply local overrides"):
+        load_config(p)
+
+
+def test_load_config_rejects_unknown_top_level_keys(tmp_path):
+    data = _base_yaml_dict()
+    data["unexpected"] = {"$ref": "output.mode.scalar"}
+    p = _write_yaml(tmp_path, "bad_top_level.yaml", data)
+
+    with pytest.raises(ValueError, match="unsupported top-level keys"):
+        load_config(p)

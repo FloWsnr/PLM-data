@@ -1,5 +1,6 @@
 """Simulation configuration loading and validation."""
 
+from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -12,6 +13,21 @@ from plm_data.core.solver_strategies import ALL_SOLVER_STRATEGIES
 _COMPONENT_LABELS = ("x", "y", "z")
 _VALID_FORMATS = {"numpy", "gif", "video", "vtk"}
 _GRID_FORMATS = {"numpy", "gif", "video"}
+_REF_KEY = "$ref"
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_FRAGMENT_CATALOG_PATH = _REPO_ROOT / "configs" / "_fragments.yaml"
+_TOP_LEVEL_CONFIG_KEYS = {
+    "preset",
+    "parameters",
+    "domain",
+    "coefficients",
+    "inputs",
+    "boundary_conditions",
+    "output",
+    "solver",
+    "time",
+    "seed",
+}
 
 
 def _require(raw: dict[str, Any], key: str, context: str = "config") -> Any:
@@ -51,6 +67,118 @@ def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
         f"Cannot infer spatial dimension for domain type '{domain_type}'. "
         "Provide a supported built-in domain."
     )
+
+
+def _load_fragment_catalog() -> dict[str, Any]:
+    """Load the shared config-fragment catalog."""
+    with open(_FRAGMENT_CATALOG_PATH) as f:
+        raw = yaml.safe_load(f)
+
+    if raw is None:
+        return {}
+    return _as_mapping(raw, f"fragment catalog '{_FRAGMENT_CATALOG_PATH}'")
+
+
+def _lookup_fragment(catalog: dict[str, Any], ref: str, context: str) -> Any:
+    """Resolve one dot-separated fragment reference from the shared catalog."""
+    target: Any = catalog
+    for part in ref.split("."):
+        if not isinstance(target, dict) or part not in target:
+            raise ValueError(f"{context} references unknown fragment '{ref}'.")
+        target = target[part]
+    return deepcopy(target)
+
+
+def _merge_mappings(
+    base: dict[str, Any],
+    overrides: dict[str, Any],
+) -> dict[str, Any]:
+    """Recursively merge config mappings with override values winning."""
+    merged = {key: deepcopy(value) for key, value in base.items()}
+    for key, value in overrides.items():
+        if (
+            key in merged
+            and isinstance(merged[key], dict)
+            and isinstance(value, dict)
+        ):
+            merged[key] = _merge_mappings(merged[key], value)
+        else:
+            merged[key] = deepcopy(value)
+    return merged
+
+
+def _resolve_refs(
+    raw: Any,
+    catalog: dict[str, Any],
+    *,
+    context: str,
+    ref_stack: tuple[str, ...] = (),
+) -> Any:
+    """Expand $ref nodes using the shared fragment catalog."""
+    if isinstance(raw, dict):
+        if _REF_KEY in raw:
+            ref = raw[_REF_KEY]
+            if not isinstance(ref, str) or not ref:
+                raise ValueError(f"{context}.{_REF_KEY} must be a non-empty string.")
+            if ref in ref_stack:
+                cycle = " -> ".join((*ref_stack, ref))
+                raise ValueError(f"Detected fragment reference cycle: {cycle}.")
+
+            resolved_target = _resolve_refs(
+                _lookup_fragment(catalog, ref, context),
+                catalog,
+                context=f"{context}.{_REF_KEY}",
+                ref_stack=(*ref_stack, ref),
+            )
+            if set(raw) == {_REF_KEY}:
+                return resolved_target
+            if not isinstance(resolved_target, dict):
+                raise ValueError(
+                    f"{context} cannot apply local overrides to fragment '{ref}' "
+                    "because it does not resolve to a mapping."
+                )
+
+            local_overrides = {
+                key: _resolve_refs(
+                    value,
+                    catalog,
+                    context=f"{context}.{key}",
+                    ref_stack=ref_stack,
+                )
+                for key, value in raw.items()
+                if key != _REF_KEY
+            }
+            return _merge_mappings(resolved_target, local_overrides)
+
+        return {
+            key: _resolve_refs(
+                value,
+                catalog,
+                context=f"{context}.{key}",
+                ref_stack=ref_stack,
+            )
+            for key, value in raw.items()
+        }
+
+    if isinstance(raw, list):
+        return [
+            _resolve_refs(
+                value,
+                catalog,
+                context=f"{context}[{index}]",
+                ref_stack=ref_stack,
+            )
+            for index, value in enumerate(raw)
+        ]
+
+    return deepcopy(raw)
+
+
+def _expand_config_refs(raw: Any) -> dict[str, Any]:
+    """Expand shared fragment references in a config file."""
+    catalog = _load_fragment_catalog()
+    expanded = _resolve_refs(raw, catalog, context="config")
+    return _as_mapping(expanded, "config")
 
 
 @dataclass
@@ -580,7 +708,14 @@ def load_config(path: str | Path) -> SimulationConfig:
     with open(path) as f:
         raw = yaml.safe_load(f)
 
-    raw = _as_mapping(raw, "config")
+    raw = _expand_config_refs(raw)
+    unexpected_top_level_keys = set(raw) - _TOP_LEVEL_CONFIG_KEYS
+    if unexpected_top_level_keys:
+        raise ValueError(
+            f"config has unsupported top-level keys "
+            f"{sorted(unexpected_top_level_keys)}."
+        )
+
     preset_name = _require(raw, "preset")
     parameters_raw = _as_mapping(_require(raw, "parameters"), "parameters")
 

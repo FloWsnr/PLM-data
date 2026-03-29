@@ -9,8 +9,7 @@ domain:
   size: [1.0, 1.0]
   mesh_resolution: [96, 96]
 time:
-  dt: 5.0e-06
-  t_end: 2.5e-04
+  $ref: time.cahn_hilliard_default
 inputs:
   c:
     initial_condition:
@@ -20,39 +19,11 @@ inputs:
         std: 0.02
 boundary_conditions:
   c:
-    x-:
-      - operator: periodic
-        pair_with: x+
-    x+:
-      - operator: periodic
-        pair_with: x-
-    y-:
-      - operator: periodic
-        pair_with: y+
-    y+:
-      - operator: periodic
-        pair_with: y-
+    $ref: boundary_field.scalar.full_periodic_2d
 output:
+  $ref: output.template.scalar_c
   resolution: [64, 64]
   num_frames: 20
-  formats: [numpy, gif]
-  fields:
-    c: scalar
 solver:
-  strategy: nonlinear_mixed_direct
-  serial:
-    snes_type: newtonls
-    snes_linesearch_type: "none"
-    ksp_type: preonly
-    pc_type: lu
-  mpi:
-    snes_type: newtonls
-    snes_linesearch_type: "none"
-    ksp_type: preonly
-    pc_type: lu
-    pc_factor_mat_solver_type: mumps
-    mat_mumps_icntl_14: 80
-    mat_mumps_icntl_24: 1
-    mat_mumps_icntl_25: 0
-    ksp_error_if_not_converged: 1
+  $ref: solver.profile.nonlinear_mixed_direct
 seed: 42

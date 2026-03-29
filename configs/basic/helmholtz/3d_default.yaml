@@ -18,41 +18,11 @@ inputs:
         kz: 1
 boundary_conditions:
   u:
-    x-:
-      - operator: dirichlet
-        value: 0.0
-    x+:
-      - operator: dirichlet
-        value: 0.0
-    y-:
-      - operator: dirichlet
-        value: 0.0
-    y+:
-      - operator: dirichlet
-        value: 0.0
-    z-:
-      - operator: dirichlet
-        value: 0.0
-    z+:
-      - operator: dirichlet
-        value: 0.0
+    $ref: boundary_field.scalar.homogeneous_dirichlet_3d
 solver:
-  strategy: stationary_indefinite_direct
-  serial:
-    ksp_type: preonly
-    pc_type: lu
-  mpi:
-    ksp_type: preonly
-    pc_type: lu
-    pc_factor_mat_solver_type: mumps
-    mat_mumps_icntl_14: 80
-    mat_mumps_icntl_24: 1
-    mat_mumps_icntl_25: 0
-    ksp_error_if_not_converged: 1
+  $ref: solver.profile.stationary_indefinite_direct
 output:
+  $ref: output.template.scalar_u
   resolution: [16, 16, 16]
   num_frames: 1
-  formats: [numpy, gif]
-  fields:
-    u: scalar
 seed: 42

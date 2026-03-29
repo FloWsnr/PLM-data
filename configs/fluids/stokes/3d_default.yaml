@@ -12,49 +12,11 @@ inputs:
       params: {}
 boundary_conditions:
   velocity:
-    x-:
-      - operator: dirichlet
-        value: [0.0, 0.0, 0.0]
-    x+:
-      - operator: dirichlet
-        value: [0.0, 0.0, 0.0]
-    y-:
-      - operator: dirichlet
-        value: [0.0, 0.0, 0.0]
-    y+:
-      - operator: dirichlet
-        value: [1.0, 0.0, 0.0]
-    z-:
-      - operator: dirichlet
-        value: [0.0, 0.0, 0.0]
-    z+:
-      - operator: dirichlet
-        value: [0.0, 0.0, 0.0]
+    $ref: boundary_field.vector.lid_driven_cavity_3d
 output:
+  $ref: output.template.velocity_pressure
   resolution: [16, 16, 16]
   num_frames: 1
-  formats: [numpy, gif]
-  fields:
-    velocity: components
-    pressure: scalar
 solver:
-  strategy: steady_saddle_point
-  serial:
-    ksp_type: preonly
-    pc_type: lu
-    pc_factor_mat_solver_type: mumps
-    mat_mumps_icntl_14: 80
-    mat_mumps_icntl_24: 1
-    mat_mumps_icntl_25: 0
-    ksp_error_if_not_converged: 1
-  mpi:
-    ksp_type: minres
-    ksp_rtol: 1.0e-9
-    ksp_error_if_not_converged: 1
-    pc_type: fieldsplit
-    pc_fieldsplit_type: additive
-    fieldsplit_velocity_0_ksp_type: preonly
-    fieldsplit_velocity_0_pc_type: gamg
-    fieldsplit_pressure_1_ksp_type: preonly
-    fieldsplit_pressure_1_pc_type: jacobi
+  $ref: solver.profile.steady_saddle_point
 seed: 42

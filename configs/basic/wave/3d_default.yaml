@@ -32,40 +32,11 @@ inputs:
       params: {}
 boundary_conditions:
   u:
-    x-:
-      - operator: neumann
-        value: 0.0
-    x+:
-      - operator: neumann
-        value: 0.0
-    y-:
-      - operator: neumann
-        value: 0.0
-    y+:
-      - operator: neumann
-        value: 0.0
-    z-:
-      - operator: neumann
-        value: 0.0
-    z+:
-      - operator: neumann
-        value: 0.0
+    $ref: boundary_field.scalar.homogeneous_neumann_3d
 solver:
-  strategy: constant_lhs_scalar_spd
-  serial:
-    ksp_type: preonly
-    pc_type: lu
-  mpi:
-    ksp_type: cg
-    pc_type: hypre
-    pc_hypre_type: boomeramg
-    ksp_rtol: 1.0e-10
-    ksp_error_if_not_converged: 1
+  $ref: solver.profile.constant_lhs_scalar_spd
 output:
+  $ref: output.template.scalar_uv
   resolution: [24, 24, 24]
   num_frames: 11
-  formats: [numpy, gif]
-  fields:
-    u: scalar
-    v: scalar
 seed: 42

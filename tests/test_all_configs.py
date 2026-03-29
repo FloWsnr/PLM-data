@@ -15,7 +15,9 @@ from plm_data.core.runtime import is_complex_runtime
 from plm_data.presets import get_preset
 
 CONFIGS_DIR = Path(__file__).resolve().parent.parent / "configs"
-ALL_CONFIGS = sorted(CONFIGS_DIR.rglob("*.yaml"))
+ALL_CONFIGS = sorted(
+    path for path in CONFIGS_DIR.rglob("*.yaml") if not path.name.startswith("_")
+)
 HAS_DOLFINX_MPC = importlib.util.find_spec("dolfinx_mpc") is not None
 
 

@@ -43,7 +43,7 @@ The system has three layers:
    - `interpolation.py` — `function_to_array()` maps DOLFINx FEM functions onto regular numpy grids via point evaluation
 
 3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, explicit coefficients, domain geometry, explicit `inputs`, explicit `boundary_conditions`, optional `time`, solver strategy/profile settings, output settings, and seed.
-   The current schema uses top-level `coefficients`, `inputs`, `boundary_conditions`, `output.fields`, and an explicit `solver` block with `strategy`, `serial`, and `mpi`.
+   The current schema uses top-level `coefficients`, `inputs`, `boundary_conditions`, `output.fields`, and an explicit `solver` block with `strategy`, `serial`, and `mpi`. Shared YAML fragments live in `configs/_fragments.yaml` and can be reused anywhere via `$ref`.
 
 ## Adding a New PDE Preset
 
@@ -61,6 +61,7 @@ The system has three layers:
 ## Key Conventions
 
 - YAML configs must be fully explicit — no hidden defaults in code
+- Shared config fragments are allowed via `$ref: some.path` into `configs/_fragments.yaml`; mappings may override referenced mappings locally, but reuse still stays explicit in YAML
 - Solver configs must declare `solver.strategy`, `solver.serial`, and `solver.mpi` explicitly; the runtime selects the serial or MPI profile from communicator size
 - Periodic constraints are declared with `boundary_conditions.<field>.<side>.[].operator: periodic`; optional `domain.periodic_maps` can add custom geometric pairings beyond the built-in domain maps
 - Config validation is spec-driven: parameter names, input names, boundary field names, output names, allowed sections, boundary operators, output modes, and supported dimensions are checked before solving

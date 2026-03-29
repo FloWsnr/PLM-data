@@ -19,8 +19,7 @@ domain:
   size: [1.0, 1.0]
   mesh_resolution: [32, 32]
 time:
-  dt: 0.01
-  t_end: 1.0
+  $ref: time.unit_interval_dt_0p01
 inputs:
   deflection:
     initial_condition:
@@ -48,23 +47,9 @@ boundary_conditions:
     y+:
       - operator: simply_supported
 solver:
-  strategy: constant_lhs_block_direct
-  serial:
-    ksp_type: preonly
-    pc_type: lu
-  mpi:
-    ksp_type: preonly
-    pc_type: lu
-    pc_factor_mat_solver_type: mumps
-    mat_mumps_icntl_14: 80
-    mat_mumps_icntl_24: 1
-    mat_mumps_icntl_25: 0
-    ksp_error_if_not_converged: 1
+  $ref: solver.profile.constant_lhs_block_direct
 output:
+  $ref: output.template.deflection_velocity
   resolution: [64, 64]
   num_frames: 40
-  formats: [numpy, gif]
-  fields:
-    deflection: scalar
-    velocity: scalar
 seed: 42

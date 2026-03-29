@@ -42,39 +42,11 @@ inputs:
         center: [0.28, 0.42, 0.61]
 boundary_conditions:
   u:
-    x-:
-      - operator: periodic
-        pair_with: x+
-    x+:
-      - operator: periodic
-        pair_with: x-
-    y-:
-      - operator: periodic
-        pair_with: y+
-    y+:
-      - operator: periodic
-        pair_with: y-
-    z-:
-      - operator: periodic
-        pair_with: z+
-    z+:
-      - operator: periodic
-        pair_with: z-
+    $ref: boundary_field.scalar.full_periodic_3d
 solver:
-  strategy: constant_lhs_scalar_nonsymmetric
-  serial:
-    ksp_type: preonly
-    pc_type: lu
-  mpi:
-    ksp_type: gmres
-    pc_type: hypre
-    pc_hypre_type: boomeramg
-    ksp_rtol: 1.0e-9
-    ksp_error_if_not_converged: 1
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 output:
+  $ref: output.template.scalar_u
   resolution: [48, 48, 48]
   num_frames: 19
-  formats: [numpy, gif]
-  fields:
-    u: scalar
 seed: 42

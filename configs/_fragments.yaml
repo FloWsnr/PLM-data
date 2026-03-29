@@ -1,0 +1,371 @@
+solver:
+  serial:
+    lu:
+      ksp_type: preonly
+      pc_type: lu
+    direct_mumps:
+      ksp_type: preonly
+      pc_type: lu
+      pc_factor_mat_solver_type: mumps
+      mat_mumps_icntl_14: 80
+      mat_mumps_icntl_24: 1
+      mat_mumps_icntl_25: 0
+      ksp_error_if_not_converged: 1
+    nonlinear_newton_lu:
+      snes_type: newtonls
+      snes_linesearch_type: none
+      ksp_type: preonly
+      pc_type: lu
+  mpi:
+    scalar_spd:
+      ksp_type: cg
+      pc_type: hypre
+      pc_hypre_type: boomeramg
+      ksp_rtol: 1.0e-10
+      ksp_error_if_not_converged: 1
+    scalar_nonsymmetric:
+      ksp_type: gmres
+      pc_type: hypre
+      pc_hypre_type: boomeramg
+      ksp_rtol: 1.0e-9
+      ksp_error_if_not_converged: 1
+    direct_mumps:
+      $ref: solver.serial.direct_mumps
+    steady_saddle_point:
+      ksp_type: minres
+      ksp_rtol: 1.0e-9
+      ksp_error_if_not_converged: 1
+      pc_type: fieldsplit
+      pc_fieldsplit_type: additive
+      fieldsplit_velocity_0_ksp_type: preonly
+      fieldsplit_velocity_0_pc_type: gamg
+      fieldsplit_pressure_1_ksp_type: preonly
+      fieldsplit_pressure_1_pc_type: jacobi
+    transient_saddle_point:
+      ksp_type: gmres
+      ksp_rtol: 1.0e-8
+      ksp_error_if_not_converged: 1
+      pc_type: fieldsplit
+      pc_fieldsplit_type: schur
+      pc_fieldsplit_schur_fact_type: upper
+      pc_fieldsplit_schur_precondition: selfp
+      fieldsplit_velocity_0_ksp_type: preonly
+      fieldsplit_velocity_0_pc_type: gamg
+      fieldsplit_pressure_1_ksp_type: preonly
+      fieldsplit_pressure_1_pc_type: jacobi
+    nonlinear_direct:
+      snes_type: newtonls
+      snes_linesearch_type: none
+      ksp_type: preonly
+      pc_type: lu
+      pc_factor_mat_solver_type: mumps
+      mat_mumps_icntl_14: 80
+      mat_mumps_icntl_24: 1
+      mat_mumps_icntl_25: 0
+      ksp_error_if_not_converged: 1
+  profile:
+    stationary_scalar_spd:
+      strategy: stationary_scalar_spd
+      serial:
+        $ref: solver.serial.lu
+      mpi:
+        $ref: solver.mpi.scalar_spd
+    constant_lhs_scalar_spd:
+      strategy: constant_lhs_scalar_spd
+      serial:
+        $ref: solver.serial.lu
+      mpi:
+        $ref: solver.mpi.scalar_spd
+    constant_lhs_scalar_nonsymmetric:
+      strategy: constant_lhs_scalar_nonsymmetric
+      serial:
+        $ref: solver.serial.lu
+      mpi:
+        $ref: solver.mpi.scalar_nonsymmetric
+    stationary_indefinite_direct:
+      strategy: stationary_indefinite_direct
+      serial:
+        $ref: solver.serial.lu
+      mpi:
+        $ref: solver.mpi.direct_mumps
+    constant_lhs_block_direct:
+      strategy: constant_lhs_block_direct
+      serial:
+        $ref: solver.serial.lu
+      mpi:
+        $ref: solver.mpi.direct_mumps
+    constant_lhs_curl_direct:
+      strategy: constant_lhs_curl_direct
+      serial:
+        $ref: solver.serial.lu
+      mpi:
+        $ref: solver.mpi.direct_mumps
+    transient_mixed_direct:
+      strategy: transient_mixed_direct
+      serial:
+        $ref: solver.serial.direct_mumps
+      mpi:
+        $ref: solver.mpi.direct_mumps
+    steady_saddle_point:
+      strategy: steady_saddle_point
+      serial:
+        $ref: solver.serial.direct_mumps
+      mpi:
+        $ref: solver.mpi.steady_saddle_point
+    transient_saddle_point:
+      strategy: transient_saddle_point
+      serial:
+        $ref: solver.serial.direct_mumps
+      mpi:
+        $ref: solver.mpi.transient_saddle_point
+    nonlinear_mixed_direct:
+      strategy: nonlinear_mixed_direct
+      serial:
+        $ref: solver.serial.nonlinear_newton_lu
+      mpi:
+        $ref: solver.mpi.nonlinear_direct
+
+boundary_field:
+  scalar:
+    homogeneous_neumann_2d:
+      x-:
+        - operator: neumann
+          value: 0.0
+      x+:
+        - operator: neumann
+          value: 0.0
+      y-:
+        - operator: neumann
+          value: 0.0
+      y+:
+        - operator: neumann
+          value: 0.0
+    homogeneous_neumann_3d:
+      x-:
+        - operator: neumann
+          value: 0.0
+      x+:
+        - operator: neumann
+          value: 0.0
+      y-:
+        - operator: neumann
+          value: 0.0
+      y+:
+        - operator: neumann
+          value: 0.0
+      z-:
+        - operator: neumann
+          value: 0.0
+      z+:
+        - operator: neumann
+          value: 0.0
+    homogeneous_dirichlet_2d:
+      x-:
+        - operator: dirichlet
+          value: 0.0
+      x+:
+        - operator: dirichlet
+          value: 0.0
+      y-:
+        - operator: dirichlet
+          value: 0.0
+      y+:
+        - operator: dirichlet
+          value: 0.0
+    homogeneous_dirichlet_3d:
+      x-:
+        - operator: dirichlet
+          value: 0.0
+      x+:
+        - operator: dirichlet
+          value: 0.0
+      y-:
+        - operator: dirichlet
+          value: 0.0
+      y+:
+        - operator: dirichlet
+          value: 0.0
+      z-:
+        - operator: dirichlet
+          value: 0.0
+      z+:
+        - operator: dirichlet
+          value: 0.0
+    full_periodic_2d:
+      x-:
+        - operator: periodic
+          pair_with: x+
+      x+:
+        - operator: periodic
+          pair_with: x-
+      y-:
+        - operator: periodic
+          pair_with: y+
+      y+:
+        - operator: periodic
+          pair_with: y-
+    full_periodic_3d:
+      x-:
+        - operator: periodic
+          pair_with: x+
+      x+:
+        - operator: periodic
+          pair_with: x-
+      y-:
+        - operator: periodic
+          pair_with: y+
+      y+:
+        - operator: periodic
+          pair_with: y-
+      z-:
+        - operator: periodic
+          pair_with: z+
+      z+:
+        - operator: periodic
+          pair_with: z-
+  vector:
+    lid_driven_cavity_2d:
+      x-:
+        - operator: dirichlet
+          value: [0.0, 0.0]
+      x+:
+        - operator: dirichlet
+          value: [0.0, 0.0]
+      y-:
+        - operator: dirichlet
+          value: [0.0, 0.0]
+      y+:
+        - operator: dirichlet
+          value: [1.0, 0.0]
+    lid_driven_cavity_3d:
+      x-:
+        - operator: dirichlet
+          value: [0.0, 0.0, 0.0]
+      x+:
+        - operator: dirichlet
+          value: [0.0, 0.0, 0.0]
+      y-:
+        - operator: dirichlet
+          value: [0.0, 0.0, 0.0]
+      y+:
+        - operator: dirichlet
+          value: [1.0, 0.0, 0.0]
+      z-:
+        - operator: dirichlet
+          value: [0.0, 0.0, 0.0]
+      z+:
+        - operator: dirichlet
+          value: [0.0, 0.0, 0.0]
+    periodic_shear_layer_2d:
+      x-:
+        - operator: periodic
+          pair_with: x+
+      x+:
+        - operator: periodic
+          pair_with: x-
+      y-:
+        - operator: dirichlet
+          value: [1.0, 0.0]
+      y+:
+        - operator: dirichlet
+          value: [-1.0, 0.0]
+
+output:
+  formats:
+    numpy: [numpy]
+    numpy_gif: [numpy, gif]
+  mode:
+    scalar: scalar
+    components: components
+  template:
+    scalar_u:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        u:
+          $ref: output.mode.scalar
+    scalar_u_numpy:
+      formats:
+        $ref: output.formats.numpy
+      fields:
+        u:
+          $ref: output.mode.scalar
+    scalar_uv:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        u:
+          $ref: output.mode.scalar
+        v:
+          $ref: output.mode.scalar
+    scalar_c:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        c:
+          $ref: output.mode.scalar
+    velocity_pressure:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        velocity:
+          $ref: output.mode.components
+        pressure:
+          $ref: output.mode.scalar
+    velocity_pressure_numpy:
+      formats:
+        $ref: output.formats.numpy
+      fields:
+        velocity:
+          $ref: output.mode.components
+        pressure:
+          $ref: output.mode.scalar
+    velocity_pressure_temperature:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        velocity:
+          $ref: output.mode.components
+        pressure:
+          $ref: output.mode.scalar
+        temperature:
+          $ref: output.mode.scalar
+    velocity_pressure_temperature_numpy:
+      formats:
+        $ref: output.formats.numpy
+      fields:
+        velocity:
+          $ref: output.mode.components
+        pressure:
+          $ref: output.mode.scalar
+        temperature:
+          $ref: output.mode.scalar
+    electric_field:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        electric_field:
+          $ref: output.mode.components
+    deflection_velocity:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        deflection:
+          $ref: output.mode.scalar
+        velocity:
+          $ref: output.mode.scalar
+
+time:
+  unit_interval_dt_0p01:
+    dt: 0.01
+    t_end: 1.0
+  cahn_hilliard_default:
+    dt: 5.0e-06
+    t_end: 2.5e-04
+
+test:
+  cycle:
+    a:
+      $ref: test.cycle.b
+    b:
+      $ref: test.cycle.a

@@ -19,8 +19,7 @@ domain:
   size: [1.0, 1.0]
   mesh_resolution: [80, 80]
 time:
-  dt: 0.01
-  t_end: 1.0
+  $ref: time.unit_interval_dt_0p01
 inputs:
   u:
     source:
@@ -34,33 +33,11 @@ inputs:
         center: [0.22, 0.34]
 boundary_conditions:
   u:
-    x-:
-      - operator: periodic
-        pair_with: x+
-    x+:
-      - operator: periodic
-        pair_with: x-
-    y-:
-      - operator: periodic
-        pair_with: y+
-    y+:
-      - operator: periodic
-        pair_with: y-
+    $ref: boundary_field.scalar.full_periodic_2d
 solver:
-  strategy: constant_lhs_scalar_nonsymmetric
-  serial:
-    ksp_type: preonly
-    pc_type: lu
-  mpi:
-    ksp_type: gmres
-    pc_type: hypre
-    pc_hypre_type: boomeramg
-    ksp_rtol: 1.0e-9
-    ksp_error_if_not_converged: 1
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 output:
+  $ref: output.template.scalar_u
   resolution: [96, 96]
   num_frames: 21
-  formats: [numpy, gif]
-  fields:
-    u: scalar
 seed: 42

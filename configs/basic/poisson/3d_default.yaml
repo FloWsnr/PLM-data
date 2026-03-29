@@ -17,39 +17,11 @@ inputs:
         kz: 1
 boundary_conditions:
   u:
-    x-:
-      - operator: dirichlet
-        value: 0.0
-    x+:
-      - operator: dirichlet
-        value: 0.0
-    y-:
-      - operator: dirichlet
-        value: 0.0
-    y+:
-      - operator: dirichlet
-        value: 0.0
-    z-:
-      - operator: dirichlet
-        value: 0.0
-    z+:
-      - operator: dirichlet
-        value: 0.0
+    $ref: boundary_field.scalar.homogeneous_dirichlet_3d
 solver:
-  strategy: stationary_scalar_spd
-  serial:
-    ksp_type: preonly
-    pc_type: lu
-  mpi:
-    ksp_type: cg
-    pc_type: hypre
-    pc_hypre_type: boomeramg
-    ksp_rtol: 1.0e-10
-    ksp_error_if_not_converged: 1
+  $ref: solver.profile.stationary_scalar_spd
 output:
+  $ref: output.template.scalar_u
   resolution: [16, 16, 16]
   num_frames: 1
-  formats: [numpy, gif]
-  fields:
-    u: scalar
 seed: 42
