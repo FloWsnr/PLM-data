@@ -8,6 +8,7 @@ from typing import Any
 
 import numpy as np
 from dolfinx import fem
+from mpi4py import MPI
 
 from plm_data.core.config import SimulationConfig
 from plm_data.core.diagnostics import build_stagnation_report
@@ -59,6 +60,7 @@ class FrameWriter:
         self.spec = spec
         self.frame_count = 0
         self.frame_times: list[float] = []
+        self._rank = MPI.COMM_WORLD.rank
         self._logger = get_logger("output")
         self._resolution = tuple(self.config.output.resolution)
         self._timings = OutputTimingStats()
@@ -265,8 +267,9 @@ class FrameWriter:
                     )
                     self._timings.grid_interpolation_calls += 1
                     field_name = output_group.concrete_outputs[0].name
-                    self._record_diagnostic_field(field_name, arr)
-                    if self._grid_writers:
+                    if self._rank == 0:
+                        self._record_diagnostic_field(field_name, arr)
+                    if self._rank == 0 and self._grid_writers:
                         self._dispatch_grid_field(field_name, arr, t)
                     continue
 
@@ -304,8 +307,11 @@ class FrameWriter:
                 for concrete_output, component_grid in zip(
                     output_group.concrete_outputs, grid
                 ):
-                    self._record_diagnostic_field(concrete_output.name, component_grid)
-                    if self._grid_writers:
+                    if self._rank == 0:
+                        self._record_diagnostic_field(
+                            concrete_output.name, component_grid
+                        )
+                    if self._rank == 0 and self._grid_writers:
                         self._dispatch_grid_field(
                             concrete_output.name, component_grid, t
                         )
@@ -331,6 +337,9 @@ class FrameWriter:
             elapsed = time.perf_counter() - finalize_start
             self._timings.writer_finalize_seconds += elapsed
             self._timings.format_finalize_seconds[writer_name] = elapsed
+
+        if self._rank != 0:
+            return
 
         self._logger.info(
             "  Saved %d frames (%s) to %s",

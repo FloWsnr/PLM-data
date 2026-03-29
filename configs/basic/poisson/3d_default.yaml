@@ -36,8 +36,16 @@ boundary_conditions:
       - operator: dirichlet
         value: 0.0
 solver:
-  ksp_type: preonly
-  pc_type: lu
+  strategy: stationary_scalar_spd
+  serial:
+    ksp_type: preonly
+    pc_type: lu
+  mpi:
+    ksp_type: cg
+    pc_type: hypre
+    pc_hypre_type: boomeramg
+    ksp_rtol: 1.0e-10
+    ksp_error_if_not_converged: 1
 output:
   resolution: [16, 16, 16]
   num_frames: 1

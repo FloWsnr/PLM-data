@@ -4,7 +4,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from mpi4py import MPI
 import yaml
+
+from plm_data.core.solver_strategies import ALL_SOLVER_STRATEGIES
 
 _COMPONENT_LABELS = ("x", "y", "z")
 _VALID_FORMATS = {"numpy", "gif", "video", "vtk"}
@@ -171,9 +174,33 @@ class OutputConfig:
 
 @dataclass
 class SolverConfig:
-    """PETSc solver options (keys without prefix)."""
+    """PETSc solver strategy and explicit serial / MPI option profiles."""
 
-    options: dict[str, str]
+    strategy: str
+    serial: dict[str, str]
+    mpi: dict[str, str]
+
+    def options_for_size(self, comm_size: int) -> dict[str, str]:
+        """Return the active PETSc options for the communicator size."""
+        if comm_size > 1:
+            return self.mpi
+        return self.serial
+
+    def profile_name_for_size(self, comm_size: int) -> str:
+        """Return the active solver-profile name for the communicator size."""
+        if comm_size > 1:
+            return "mpi"
+        return "serial"
+
+    @property
+    def options(self) -> dict[str, str]:
+        """Return the active PETSc options for the current communicator."""
+        return self.options_for_size(MPI.COMM_WORLD.size)
+
+    @property
+    def profile_name(self) -> str:
+        """Return the active profile name for the current communicator."""
+        return self.profile_name_for_size(MPI.COMM_WORLD.size)
 
 
 @dataclass
@@ -668,7 +695,34 @@ def load_config(path: str | Path) -> SimulationConfig:
         raise ValueError("output.formats contains duplicates")
 
     solver_raw = _as_mapping(_require(raw, "solver"), "solver")
-    solver = SolverConfig(options={str(k): str(v) for k, v in solver_raw.items()})
+    strategy = str(_require(solver_raw, "strategy", "solver"))
+    if strategy not in ALL_SOLVER_STRATEGIES:
+        raise ValueError(
+            f"solver.strategy must be one of {sorted(ALL_SOLVER_STRATEGIES)}. "
+            f"Got '{strategy}'."
+        )
+    unexpected_solver_keys = set(solver_raw) - {"strategy", "serial", "mpi"}
+    if unexpected_solver_keys:
+        raise ValueError(
+            f"solver has unsupported keys {sorted(unexpected_solver_keys)}."
+        )
+    solver = SolverConfig(
+        strategy=strategy,
+        serial={
+            str(k): str(v)
+            for k, v in _as_mapping(
+                _require(solver_raw, "serial", "solver"),
+                "solver.serial",
+            ).items()
+        },
+        mpi={
+            str(k): str(v)
+            for k, v in _as_mapping(
+                _require(solver_raw, "mpi", "solver"),
+                "solver.mpi",
+            ).items()
+        },
+    )
 
     if spec.steady_state:
         if "time" in raw:

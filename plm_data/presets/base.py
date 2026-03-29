@@ -1,6 +1,7 @@
 """Base contracts for presets and reusable problem engines."""
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -8,11 +9,14 @@ import numpy as np
 from dolfinx import fem
 from dolfinx.fem.petsc import LinearProblem as DolfinxLinearProblem
 from dolfinx.fem.petsc import NonlinearProblem as DolfinxNonlinearProblem
+from mpi4py import MPI
 
 from plm_data.core.config import BoundaryFieldConfig, SimulationConfig
+from plm_data.core.linear_problem import ManagedLinearProblem
 from plm_data.core.logging import get_logger
 from plm_data.core.mesh import DomainGeometry, create_domain
 from plm_data.core.periodic import build_periodic_mpc, require_dolfinx_mpc
+from plm_data.core.solver_strategies import CONSTANT_LHS_STRATEGIES
 from plm_data.presets.metadata import PresetSpec
 
 if TYPE_CHECKING:
@@ -33,10 +37,30 @@ class RunResult:
 class ProblemInstance(ABC):
     """Executable runtime object for a single simulation configuration."""
 
+    supported_solver_strategies: tuple[str, ...] = ()
+
     def __init__(self, spec: PresetSpec, config: SimulationConfig):
         self.spec = spec
         self.config = config
-        self._solver_options = config.solver.options
+        self._comm_size = MPI.COMM_WORLD.size
+        self._solver_profile_name = config.solver.profile_name_for_size(self._comm_size)
+        self._solver_options = config.solver.options_for_size(self._comm_size)
+        self._validate_solver_strategy()
+
+    def _validate_solver_strategy(self) -> None:
+        """Validate that the configured strategy is supported by the preset."""
+        supported = self.supported_solver_strategies
+        if supported and self.config.solver.strategy not in supported:
+            raise ValueError(
+                f"Preset '{self.spec.name}' does not support solver strategy "
+                f"'{self.config.solver.strategy}'. Allowed strategies: "
+                f"{sorted(supported)}."
+            )
+
+    @property
+    def using_mpi_solver_profile(self) -> bool:
+        """Return whether the MPI solver profile is active."""
+        return self._comm_size > 1
 
     def validate_boundary_conditions(self, domain_geom: DomainGeometry) -> None:
         """Validate boundary-condition semantics for this preset."""
@@ -74,7 +98,8 @@ class ProblemInstance(ABC):
                 kwargs["kind"] = kind
             if P is not None:
                 kwargs["P"] = P
-            return DolfinxLinearProblem(a, L, **kwargs)
+            problem = DolfinxLinearProblem(a, L, **kwargs)
+            return self._wrap_linear_problem(problem, kind=kind, mpc=mpc)
 
         dolfinx_mpc = require_dolfinx_mpc()
         kwargs = {
@@ -87,6 +112,37 @@ class ProblemInstance(ABC):
         if P is not None:
             kwargs["P"] = P
         return dolfinx_mpc.LinearProblem(a, L, mpc, **kwargs)
+
+    def should_reuse_linear_lhs(self, *, mpc=None) -> bool:
+        """Return whether the LHS matrix should be assembled only once."""
+        return mpc is None and self.config.solver.strategy in CONSTANT_LHS_STRATEGIES
+
+    def linear_problem_after_lhs_assembled(
+        self,
+        *,
+        kind=None,
+        mpc=None,
+    ) -> Callable[[ManagedLinearProblem], None] | None:
+        """Return an optional hook to run after each LHS assembly."""
+        return None
+
+    def _wrap_linear_problem(self, problem, *, kind=None, mpc=None):
+        """Wrap a linear problem with runtime-managed assembly behavior."""
+        if mpc is not None:
+            return problem
+
+        after_lhs_assembled = self.linear_problem_after_lhs_assembled(
+            kind=kind,
+            mpc=mpc,
+        )
+        reuse_lhs = self.should_reuse_linear_lhs(mpc=mpc)
+        if not reuse_lhs and after_lhs_assembled is None:
+            return problem
+        return ManagedLinearProblem(
+            problem,
+            reuse_lhs=reuse_lhs,
+            after_lhs_assembled=after_lhs_assembled,
+        )
 
     def create_periodic_constraint(
         self,

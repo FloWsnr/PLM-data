@@ -4,6 +4,7 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem
 from plm_data.core.initial_conditions import apply_ic
+from plm_data.core.solver_strategies import NONLINEAR_MIXED_DIRECT
 from plm_data.presets import register_preset
 from plm_data.presets.base import (
     PDEPreset,
@@ -73,6 +74,8 @@ _CAHN_HILLIARD_SPEC = PresetSpec(
 
 
 class _CahnHilliardProblem(TransientNonlinearProblem):
+    supported_solver_strategies = (NONLINEAR_MIXED_DIRECT,)
+
     def validate_boundary_conditions(self, domain_geom):
         validate_boundary_field_structure(
             preset_name=self.spec.name,

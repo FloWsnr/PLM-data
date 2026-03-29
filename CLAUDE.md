@@ -42,8 +42,8 @@ The system has three layers:
    - `formats/` — Output format writers: `NumpyWriter` (.npy arrays), `GifWriter` (animated .gif), `VideoWriter` (.mp4), `VTKWriter` (pyvista .vtu/.pvd for Paraview). Grid writers (numpy/gif/video) share the interpolation pipeline; VTK writes FEM functions directly
    - `interpolation.py` — `function_to_array()` maps DOLFINx FEM functions onto regular numpy grids via point evaluation
 
-3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, explicit coefficients, domain geometry, explicit `inputs`, explicit `boundary_conditions`, optional `time`, solver options, output settings, and seed.
-   The current schema uses top-level `coefficients`, `inputs`, `boundary_conditions`, and `output.fields`.
+3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, explicit coefficients, domain geometry, explicit `inputs`, explicit `boundary_conditions`, optional `time`, solver strategy/profile settings, output settings, and seed.
+   The current schema uses top-level `coefficients`, `inputs`, `boundary_conditions`, `output.fields`, and an explicit `solver` block with `strategy`, `serial`, and `mpi`.
 
 ## Adding a New PDE Preset
 
@@ -61,6 +61,7 @@ The system has three layers:
 ## Key Conventions
 
 - YAML configs must be fully explicit — no hidden defaults in code
+- Solver configs must declare `solver.strategy`, `solver.serial`, and `solver.mpi` explicitly; the runtime selects the serial or MPI profile from communicator size
 - Periodic constraints are declared with `boundary_conditions.<field>.<side>.[].operator: periodic`; optional `domain.periodic_maps` can add custom geometric pairings beyond the built-in domain maps
 - Config validation is spec-driven: parameter names, input names, boundary field names, output names, allowed sections, boundary operators, output modes, and supported dimensions are checked before solving
 - Output goes to `output/<category>/<preset>/` with format-specific files: `.npy` arrays, `.gif`/`.mp4` animations, and `paraview/` directory with `.pvd`+`.vtu` files for Paraview

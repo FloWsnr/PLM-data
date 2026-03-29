@@ -4,6 +4,8 @@ import logging
 import sys
 from pathlib import Path
 
+from mpi4py import MPI
+
 _PACKAGE_LOGGER_NAME = "plm_data"
 _LOG_FILE_NAME = "simulation.log"
 
@@ -28,6 +30,10 @@ def setup_logging(output_dir: Path, console_level: int = logging.INFO) -> None:
         logger.removeHandler(handler)
 
     logger.setLevel(logging.DEBUG)
+    rank = MPI.COMM_WORLD.rank
+
+    if rank != 0:
+        return
 
     # Console handler — clean output matching previous print() style
     console = logging.StreamHandler(sys.stderr)

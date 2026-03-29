@@ -10,6 +10,7 @@ from plm_data.core.boundary_conditions import (
     build_vector_natural_bc_forms,
 )
 from plm_data.core.initial_conditions import apply_ic, apply_vector_ic
+from plm_data.core.solver_strategies import TRANSIENT_MIXED_DIRECT
 from plm_data.core.source_terms import build_source_form, build_vector_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
@@ -236,6 +237,8 @@ def _conductive_noise_interpolator(
 
 
 class _ThermalConvectionProblem(TransientLinearProblem):
+    supported_solver_strategies = (TRANSIENT_MIXED_DIRECT,)
+
     def validate_boundary_conditions(self, domain_geom):
         velocity_boundary_field = self.config.boundary_field("velocity")
         temperature_boundary_field = self.config.boundary_field("temperature")

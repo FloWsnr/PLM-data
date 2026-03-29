@@ -7,7 +7,9 @@ import ufl
 from dolfinx import default_real_type, fem
 
 from plm_data.core.boundary_conditions import build_vector_natural_bc_forms
+from plm_data.core.linear_problem import configure_nested_problem
 from plm_data.core.logging import get_logger
+from plm_data.core.solver_strategies import STEADY_SADDLE_POINT
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import CustomProblem, PDEPreset, ProblemInstance, RunResult
@@ -88,6 +90,8 @@ _STOKES_SPEC = PresetSpec(
 
 
 class _StokesProblem(CustomProblem):
+    supported_solver_strategies = (STEADY_SADDLE_POINT,)
+
     def validate_boundary_conditions(self, domain_geom):
         validate_vector_standard_boundary_field(
             preset_name=self.spec.name,
@@ -121,6 +125,16 @@ class _StokesProblem(CustomProblem):
             - ufl.inner(p, ufl.div(v)) * ufl.dx
             - ufl.inner(ufl.div(u), q) * ufl.dx
         )
+        preconditioner_form = [
+            [
+                nu * ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx,
+                None,
+            ],
+            [
+                None,
+                ufl.inner(p, q) * ufl.dx,
+            ],
+        ]
 
         L_form = (
             ufl.inner(
@@ -158,6 +172,7 @@ class _StokesProblem(CustomProblem):
             velocity=u_h,
             pressure=p_h,
             petsc_options_prefix="plm_stokes_",
+            preconditioner_form=preconditioner_form,
         )
         problem.solve()
 
@@ -170,6 +185,20 @@ class _StokesProblem(CustomProblem):
         output.write_frame({"velocity": u_h, "pressure": p_h}, t=0.0)
         logger.info("  Solve complete (converged)")
         return RunResult(num_dofs=num_dofs, solver_converged=True)
+
+    def linear_problem_after_lhs_assembled(self, *, kind=None, mpc=None):
+        if kind != "nest" or mpc is not None:
+            return None
+
+        def _configure(problem) -> None:
+            configure_nested_problem(
+                problem,
+                pressure_block=1,
+                system_spd_blocks=(0,),
+                preconditioner_spd_blocks=(0, 1),
+            )
+
+        return _configure
 
 
 @register_preset("stokes")

@@ -10,6 +10,7 @@ from plm_data.core.boundary_conditions import apply_vector_dirichlet_bcs
 from plm_data.core.config import BoundaryFieldConfig
 from plm_data.core.fem_utils import domain_average
 from plm_data.core.mesh import DomainGeometry
+from plm_data.core.solver_strategies import NESTED_MIXED_STRATEGIES
 
 
 @dataclass
@@ -108,16 +109,35 @@ def create_taylor_hood_linear_problem(
     velocity: fem.Function,
     pressure: fem.Function,
     petsc_options_prefix: str,
+    preconditioner_form=None,
 ):
     """Create a blocked Taylor-Hood linear problem with optional MPCs."""
+
+    def _as_block_forms(form):
+        if isinstance(form, (list, tuple)):
+            return form
+        return ufl.extract_blocks(form)
+
+    use_nested_mixed_solver = (
+        problem_instance.using_mpi_solver_profile
+        and problem_instance.config.solver.strategy in NESTED_MIXED_STRATEGIES
+        and system.mpcs is None
+    )
+    kind = "nest" if use_nested_mixed_solver else "mpi"
+
     return problem_instance.create_linear_problem(
-        ufl.extract_blocks(a_form),
-        ufl.extract_blocks(L_form),
+        _as_block_forms(a_form),
+        _as_block_forms(L_form),
         u=[velocity, pressure],
         bcs=system.bcs,
         petsc_options_prefix=petsc_options_prefix,
-        kind="mpi",
+        kind=kind,
         mpc=system.mpcs,
+        P=(
+            _as_block_forms(preconditioner_form)
+            if preconditioner_form is not None and use_nested_mixed_solver
+            else None
+        ),
     )
 
 

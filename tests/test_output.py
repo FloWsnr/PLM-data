@@ -16,14 +16,19 @@ from plm_data.core.config import (
     InputConfig,
     OutputConfig,
     SimulationConfig,
-    SolverConfig,
     TimeConfig,
 )
 from plm_data.core.mesh import create_domain
 from plm_data.core.output import FrameWriter
+from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
 from plm_data.presets import get_preset
 from tests.conftest import output_fields, scalar_expr
-from tests.preset_matrix import boundary_field_config, constant
+from tests.preset_matrix import (
+    boundary_field_config,
+    constant,
+    flow_solver_config,
+    solver_config,
+)
 
 _has_ffmpeg = shutil.which("ffmpeg") is not None
 
@@ -63,7 +68,10 @@ def _scalar_heat_config(tmp_path, formats):
             formats=formats,
             fields=output_fields(u="scalar"),
         ),
-        solver=SolverConfig(options={"ksp_type": "preonly", "pc_type": "lu"}),
+        solver=solver_config(
+            CONSTANT_LHS_SCALAR_SPD,
+            serial={"ksp_type": "preonly", "pc_type": "lu"},
+        ),
         time=TimeConfig(dt=0.01, t_end=0.01),
         seed=42,
         coefficients={"kappa": constant(0.01)},
@@ -102,17 +110,7 @@ def _vector_stokes_config(tmp_path, formats):
             formats=formats,
             fields=output_fields(velocity="components", pressure="scalar"),
         ),
-        solver=SolverConfig(
-            options={
-                "ksp_type": "preonly",
-                "pc_type": "lu",
-                "pc_factor_mat_solver_type": "mumps",
-                "mat_mumps_icntl_14": "80",
-                "mat_mumps_icntl_24": "1",
-                "mat_mumps_icntl_25": "0",
-                "ksp_error_if_not_converged": "1",
-            }
-        ),
+        solver=flow_solver_config(),
         seed=42,
     )
 

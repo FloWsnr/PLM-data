@@ -18,12 +18,18 @@ from plm_data.core.config import (
     OutputConfig,
     OutputSelectionConfig,
     SimulationConfig,
-    SolverConfig,
     TimeConfig,
 )
 from plm_data.core.mesh import create_domain
 from plm_data.core.output import FrameWriter
 from plm_data.core.runtime import is_complex_runtime
+from plm_data.core.solver_strategies import (
+    CONSTANT_LHS_CURL_DIRECT,
+    STATIONARY_INDEFINITE_DIRECT,
+    STEADY_SADDLE_POINT,
+    TRANSIENT_MIXED_DIRECT,
+    TRANSIENT_SADDLE_POINT,
+)
 from plm_data.presets import get_preset
 from plm_data.presets.base import StationaryLinearProblem, TransientLinearProblem
 from plm_data.presets.basic.helmholtz import _check_resonance
@@ -35,6 +41,8 @@ from plm_data.presets.metadata import (
 from tests.preset_matrix import (
     boundary_field_config,
     constant,
+    direct_solver_config,
+    flow_solver_config,
     make_wave_config,
     output_fields,
     run_preset,
@@ -205,12 +213,7 @@ def _make_maxwell_pulse_config(tmp_path, *, gdim: int):
             formats=["numpy"],
             fields=output_fields(electric_field="components"),
         ),
-        solver=SolverConfig(
-            options={
-                "ksp_type": "preonly",
-                "pc_type": "lu",
-            }
-        ),
+        solver=direct_solver_config(CONSTANT_LHS_CURL_DIRECT),
         time=TimeConfig(dt=0.02, t_end=0.02),
         seed=42,
     )
@@ -280,12 +283,7 @@ def _make_maxwell_config(tmp_path, *, gdim: int):
             formats=["numpy"],
             fields=output_fields(electric_field="components"),
         ),
-        solver=SolverConfig(
-            options={
-                "ksp_type": "preonly",
-                "pc_type": "lu",
-            }
-        ),
+        solver=direct_solver_config(STATIONARY_INDEFINITE_DIRECT),
         seed=42,
     )
 
@@ -356,17 +354,7 @@ def _make_ns_config(tmp_path, *, initial_condition, source=None, parameters=None
             formats=["numpy"],
             fields=output_fields(velocity="components", pressure="scalar"),
         ),
-        solver=SolverConfig(
-            options={
-                "ksp_type": "preonly",
-                "pc_type": "lu",
-                "pc_factor_mat_solver_type": "mumps",
-                "mat_mumps_icntl_14": "80",
-                "mat_mumps_icntl_24": "1",
-                "mat_mumps_icntl_25": "0",
-                "ksp_error_if_not_converged": "1",
-            }
-        ),
+        solver=flow_solver_config(TRANSIENT_SADDLE_POINT),
         time=TimeConfig(dt=0.1, t_end=0.1),
         seed=42,
     )
@@ -420,17 +408,7 @@ def _make_stokes_config(tmp_path, *, source=None, parameters=None):
             formats=["numpy"],
             fields=output_fields(velocity="components", pressure="scalar"),
         ),
-        solver=SolverConfig(
-            options={
-                "ksp_type": "preonly",
-                "pc_type": "lu",
-                "pc_factor_mat_solver_type": "mumps",
-                "mat_mumps_icntl_14": "80",
-                "mat_mumps_icntl_24": "1",
-                "mat_mumps_icntl_25": "0",
-                "ksp_error_if_not_converged": "1",
-            }
-        ),
+        solver=flow_solver_config(STEADY_SADDLE_POINT),
         seed=42,
     )
 
@@ -516,17 +494,7 @@ def _make_thermal_convection_config(tmp_path, *, gdim: int):
                 temperature="scalar",
             ),
         ),
-        solver=SolverConfig(
-            options={
-                "ksp_type": "preonly",
-                "pc_type": "lu",
-                "pc_factor_mat_solver_type": "mumps",
-                "mat_mumps_icntl_14": "80",
-                "mat_mumps_icntl_24": "1",
-                "mat_mumps_icntl_25": "0",
-                "ksp_error_if_not_converged": "1",
-            }
-        ),
+        solver=flow_solver_config(TRANSIENT_MIXED_DIRECT),
         time=TimeConfig(dt=0.05, t_end=0.05),
         seed=42,
     )
@@ -594,17 +562,7 @@ def test_stokes_3d(tmp_path):
             formats=["numpy"],
             fields=output_fields(velocity="components", pressure="scalar"),
         ),
-        solver=SolverConfig(
-            options={
-                "ksp_type": "preonly",
-                "pc_type": "lu",
-                "pc_factor_mat_solver_type": "mumps",
-                "mat_mumps_icntl_14": "80",
-                "mat_mumps_icntl_24": "1",
-                "mat_mumps_icntl_25": "0",
-                "ksp_error_if_not_converged": "1",
-            }
-        ),
+        solver=flow_solver_config(STEADY_SADDLE_POINT),
         seed=42,
     )
     result, output_dir = _run_preset(config)

@@ -6,6 +6,7 @@ from dolfinx import default_scalar_type, fem
 
 from plm_data.core.periodic import require_unverified_periodic_support
 from plm_data.core.runtime import require_complex_runtime
+from plm_data.core.solver_strategies import STATIONARY_INDEFINITE_DIRECT
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, StationaryLinearProblem
@@ -74,6 +75,8 @@ _MAXWELL_SPEC = PresetSpec(
 
 
 class _MaxwellProblem(StationaryLinearProblem):
+    supported_solver_strategies = (STATIONARY_INDEFINITE_DIRECT,)
+
     def validate_boundary_conditions(self, domain_geom):
         validate_vector_standard_boundary_field(
             preset_name=self.spec.name,

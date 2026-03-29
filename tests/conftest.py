@@ -8,12 +8,13 @@ from plm_data.core.config import (
     InputConfig,
     OutputConfig,
     SimulationConfig,
-    SolverConfig,
     TimeConfig,
 )
+from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
 from tests.preset_matrix import (
     boundary_field_config,
     constant,
+    direct_solver_config,
     output_fields,
     scalar_expr,
 )
@@ -29,7 +30,7 @@ def rectangle_domain():
 
 @pytest.fixture
 def direct_solver():
-    return SolverConfig(options={"ksp_type": "preonly", "pc_type": "lu"})
+    return direct_solver_config(CONSTANT_LHS_SCALAR_SPD)
 
 
 @pytest.fixture

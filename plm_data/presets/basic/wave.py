@@ -9,6 +9,7 @@ from plm_data.core.boundary_conditions import (
     build_natural_bc_forms,
 )
 from plm_data.core.initial_conditions import apply_ic
+from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
 from plm_data.core.source_terms import build_source_form
 from plm_data.core.spatial_fields import build_ufl_field, scalar_expression_to_config
 from plm_data.presets import register_preset
@@ -113,6 +114,8 @@ def _zero_dirichlet_bcs(
 
 
 class _WaveProblem(TransientLinearProblem):
+    supported_solver_strategies = (CONSTANT_LHS_SCALAR_SPD,)
+
     def validate_boundary_conditions(self, domain_geom):
         validate_scalar_standard_boundary_field(
             preset_name=self.spec.name,

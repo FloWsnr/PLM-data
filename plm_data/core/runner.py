@@ -50,6 +50,11 @@ class SimulationRunner:
                     self.config.time.dt,
                 )
             logger.debug("  Seed: %s", self.config.seed)
+            logger.info(
+                "  Solver: strategy=%s, profile=%s",
+                self.config.solver.strategy,
+                self.config.solver.profile_name,
+            )
             logger.debug("  Solver options: %s", self.config.solver.options)
 
             if self.config.seed is not None:

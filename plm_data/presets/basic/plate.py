@@ -7,6 +7,7 @@ from dolfinx import default_real_type, fem
 from plm_data.core.config import BoundaryFieldConfig
 from plm_data.core.initial_conditions import apply_ic
 from plm_data.core.mesh import DomainGeometry
+from plm_data.core.solver_strategies import CONSTANT_LHS_BLOCK_DIRECT
 from plm_data.core.source_terms import build_source_form
 from plm_data.core.spatial_fields import (
     build_ufl_field,
@@ -198,6 +199,8 @@ def _build_scalar_coefficient(problem: ProblemInstance, name: str):
 
 
 class _PlateProblem(TransientLinearProblem):
+    supported_solver_strategies = (CONSTANT_LHS_BLOCK_DIRECT,)
+
     def validate_boundary_conditions(self, domain_geom):
         if domain_geom.mesh.geometry.dim != 2:
             raise ValueError(

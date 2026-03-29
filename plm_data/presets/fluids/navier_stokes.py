@@ -5,6 +5,11 @@ import ufl
 from dolfinx import default_real_type, fem
 from plm_data.core.boundary_conditions import build_vector_natural_bc_forms
 from plm_data.core.initial_conditions import apply_vector_ic
+from plm_data.core.linear_problem import configure_nested_problem
+from plm_data.core.solver_strategies import (
+    TRANSIENT_MIXED_DIRECT,
+    TRANSIENT_SADDLE_POINT,
+)
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.presets.fluids._taylor_hood import (
     create_taylor_hood_linear_problem,
@@ -83,6 +88,11 @@ _NAVIER_STOKES_SPEC = PresetSpec(
 
 
 class _NavierStokesProblem(TransientLinearProblem):
+    supported_solver_strategies = (
+        TRANSIENT_SADDLE_POINT,
+        TRANSIENT_MIXED_DIRECT,
+    )
+
     def validate_boundary_conditions(self, domain_geom):
         validate_vector_standard_boundary_field(
             preset_name=self.spec.name,
@@ -191,6 +201,17 @@ class _NavierStokesProblem(TransientLinearProblem):
             - ufl.inner(p, ufl.div(v)) * ufl.dx
             - ufl.inner(ufl.div(u), q) * ufl.dx
         )
+        preconditioner_form = [
+            [
+                ufl.inner(u / delta_t, v) * ufl.dx
+                + (1.0 / Re) * ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx,
+                None,
+            ],
+            [
+                None,
+                ufl.inner(p, q) * ufl.dx,
+            ],
+        ]
         L_ns = ufl.inner(self.u_n / delta_t, v) * ufl.dx + base_rhs
 
         self._ns_problem = create_taylor_hood_linear_problem(
@@ -201,6 +222,7 @@ class _NavierStokesProblem(TransientLinearProblem):
             velocity=self.u_h,
             pressure=self.p_h,
             petsc_options_prefix="plm_ns_",
+            preconditioner_form=preconditioner_form,
         )
 
     def step(self, t: float, dt: float) -> bool:
@@ -215,6 +237,19 @@ class _NavierStokesProblem(TransientLinearProblem):
 
     def get_num_dofs(self) -> int:
         return self._num_dofs
+
+    def linear_problem_after_lhs_assembled(self, *, kind=None, mpc=None):
+        if kind != "nest" or mpc is not None:
+            return None
+
+        def _configure(problem) -> None:
+            configure_nested_problem(
+                problem,
+                pressure_block=1,
+                preconditioner_spd_blocks=(0, 1),
+            )
+
+        return _configure
 
 
 @register_preset("navier_stokes")

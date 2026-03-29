@@ -4,6 +4,28 @@ import pytest
 import yaml
 
 from plm_data.core.config import load_config
+from plm_data.core.solver_strategies import (
+    CONSTANT_LHS_CURL_DIRECT,
+    CONSTANT_LHS_SCALAR_SPD,
+    STATIONARY_SCALAR_SPD,
+    STEADY_SADDLE_POINT,
+    TRANSIENT_MIXED_DIRECT,
+)
+
+
+def _solver_block(
+    strategy: str,
+    *,
+    serial: dict[str, str] | None = None,
+    mpi: dict[str, str] | None = None,
+) -> dict[str, object]:
+    return {
+        "strategy": strategy,
+        "serial": {"ksp_type": "preonly", "pc_type": "lu"}
+        if serial is None
+        else serial,
+        "mpi": {"ksp_type": "preonly", "pc_type": "lu"} if mpi is None else mpi,
+    }
 
 
 def test_load_config():
@@ -21,6 +43,10 @@ def test_load_config():
     assert cfg.input("u").source.type == "none"
     assert cfg.output_mode("u") == "scalar"
     assert cfg.boundary_field("u").side_conditions("x-")[0].type == "neumann"
+    assert cfg.solver.strategy == CONSTANT_LHS_SCALAR_SPD
+    assert cfg.solver.profile_name == "serial"
+    assert cfg.solver.serial["pc_type"] == "lu"
+    assert cfg.solver.mpi["pc_type"] == "hypre"
 
 
 def test_load_config_periodic_field():
@@ -43,6 +69,7 @@ def test_load_config_boundary_field_sections():
     assert set(u_boundary.sides) == {"x-", "x+", "y-", "y+"}
     assert cfg.input("u").source.type == "sine_product"
     assert cfg.output_mode("u") == "scalar"
+    assert cfg.solver.strategy == STATIONARY_SCALAR_SPD
 
 
 def test_load_config_vector_input():
@@ -57,6 +84,7 @@ def test_load_config_vector_input():
         velocity_bcs.side_conditions("y+")[0].value.components["x"].params["value"]
         == 1.0
     )
+    assert cfg.solver.profile_name == "serial"
 
 
 def test_load_config_thermal_convection_2d():
@@ -74,6 +102,7 @@ def test_load_config_thermal_convection_2d():
         cfg.boundary_field("temperature").side_conditions("y-")[0].value.params["value"]
         == 1.0
     )
+    assert cfg.solver.strategy == TRANSIENT_MIXED_DIRECT
 
 
 def test_load_config_thermal_convection_3d():
@@ -97,6 +126,7 @@ def test_load_config_maxwell_pulse():
     assert electric_field.initial_condition.type == "zero"
     assert boundary_field.side_conditions("x-")[0].type == "absorbing"
     assert boundary_field.side_conditions("y-")[0].type == "dirichlet"
+    assert cfg.solver.strategy == CONSTANT_LHS_CURL_DIRECT
 
 
 def test_load_config_wave():
@@ -162,8 +192,7 @@ def _base_yaml_dict():
             "fields": {"u": "scalar"},
         },
         "solver": {
-            "ksp_type": "preonly",
-            "pc_type": "lu",
+            **_solver_block(STATIONARY_SCALAR_SPD),
         },
     }
 
@@ -197,8 +226,7 @@ def _base_stokes_yaml_dict():
             "fields": {"velocity": "components", "pressure": "scalar"},
         },
         "solver": {
-            "ksp_type": "preonly",
-            "pc_type": "lu",
+            **_solver_block(STEADY_SADDLE_POINT),
         },
     }
 
@@ -257,8 +285,7 @@ def _base_maxwell_pulse_yaml_dict():
             "fields": {"electric_field": "components"},
         },
         "solver": {
-            "ksp_type": "preonly",
-            "pc_type": "lu",
+            **_solver_block(CONSTANT_LHS_CURL_DIRECT),
         },
         "time": {"dt": 0.05, "t_end": 0.1},
     }
@@ -313,8 +340,7 @@ def test_missing_coefficients_section(tmp_path):
             "fields": {"u": "scalar"},
         },
         "solver": {
-            "ksp_type": "preonly",
-            "pc_type": "lu",
+            **_solver_block(CONSTANT_LHS_SCALAR_SPD),
         },
         "seed": 42,
     }
@@ -330,6 +356,24 @@ def test_missing_boundary_conditions_section(tmp_path):
     p = tmp_path / "no_boundary_conditions.yaml"
     p.write_text(yaml.dump(data))
     with pytest.raises(ValueError, match="boundary_conditions"):
+        load_config(p)
+
+
+def test_missing_solver_strategy(tmp_path):
+    data = _base_yaml_dict()
+    del data["solver"]["strategy"]
+    p = tmp_path / "no_strategy.yaml"
+    p.write_text(yaml.dump(data))
+    with pytest.raises(ValueError, match="Missing required field 'strategy' in solver"):
+        load_config(p)
+
+
+def test_missing_solver_profile(tmp_path):
+    data = _base_yaml_dict()
+    del data["solver"]["mpi"]
+    p = tmp_path / "no_solver_mpi.yaml"
+    p.write_text(yaml.dump(data))
+    with pytest.raises(ValueError, match="Missing required field 'mpi' in solver"):
         load_config(p)
 
 

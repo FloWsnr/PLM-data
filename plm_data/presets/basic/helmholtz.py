@@ -10,6 +10,7 @@ from plm_data.core.boundary_conditions import (
     apply_dirichlet_bcs,
     build_natural_bc_forms,
 )
+from plm_data.core.solver_strategies import STATIONARY_INDEFINITE_DIRECT
 from plm_data.core.source_terms import build_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, StationaryLinearProblem
@@ -96,6 +97,8 @@ def _check_resonance(k: float, domain_size: list[float]) -> None:
 
 
 class _HelmholtzProblem(StationaryLinearProblem):
+    supported_solver_strategies = (STATIONARY_INDEFINITE_DIRECT,)
+
     def validate_boundary_conditions(self, domain_geom):
         validate_scalar_standard_boundary_field(
             preset_name=self.spec.name,

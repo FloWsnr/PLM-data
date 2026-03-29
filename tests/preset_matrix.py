@@ -22,6 +22,17 @@ from plm_data.core.config import (
 )
 from plm_data.core.output import FrameWriter
 from plm_data.core.runtime import is_complex_runtime
+from plm_data.core.solver_strategies import (
+    CONSTANT_LHS_BLOCK_DIRECT,
+    CONSTANT_LHS_CURL_DIRECT,
+    CONSTANT_LHS_SCALAR_SPD,
+    NONLINEAR_MIXED_DIRECT,
+    STATIONARY_INDEFINITE_DIRECT,
+    STATIONARY_SCALAR_SPD,
+    STEADY_SADDLE_POINT,
+    TRANSIENT_MIXED_DIRECT,
+    TRANSIENT_SADDLE_POINT,
+)
 from plm_data.presets import get_preset
 from plm_data.presets.base import RunResult
 
@@ -89,32 +100,115 @@ def box_domain(
     )
 
 
-def direct_solver_config() -> SolverConfig:
-    return SolverConfig(options={"ksp_type": "preonly", "pc_type": "lu"})
-
-
-def flow_solver_config() -> SolverConfig:
+def solver_config(
+    strategy: str,
+    *,
+    serial: dict[str, str],
+    mpi: dict[str, str] | None = None,
+) -> SolverConfig:
     return SolverConfig(
-        options={
-            "ksp_type": "preonly",
-            "pc_type": "lu",
-            "pc_factor_mat_solver_type": "mumps",
-            "mat_mumps_icntl_14": "80",
-            "mat_mumps_icntl_24": "1",
-            "mat_mumps_icntl_25": "0",
+        strategy=strategy,
+        serial=serial,
+        mpi=serial if mpi is None else mpi,
+    )
+
+
+def direct_solver_config(strategy: str = STATIONARY_SCALAR_SPD) -> SolverConfig:
+    mpi = {
+        "ksp_type": "preonly",
+        "pc_type": "lu",
+        "pc_factor_mat_solver_type": "mumps",
+        "mat_mumps_icntl_14": "80",
+        "mat_mumps_icntl_24": "1",
+        "mat_mumps_icntl_25": "0",
+        "ksp_error_if_not_converged": "1",
+    }
+    if strategy in {STATIONARY_SCALAR_SPD, CONSTANT_LHS_SCALAR_SPD}:
+        mpi = {
+            "ksp_type": "cg",
+            "pc_type": "hypre",
+            "pc_hypre_type": "boomeramg",
+            "ksp_rtol": "1.0e-10",
             "ksp_error_if_not_converged": "1",
         }
+    return solver_config(
+        strategy,
+        serial={"ksp_type": "preonly", "pc_type": "lu"},
+        mpi=mpi,
+    )
+
+
+def flow_solver_config(
+    strategy: str = STEADY_SADDLE_POINT,
+) -> SolverConfig:
+    serial = {
+        "ksp_type": "preonly",
+        "pc_type": "lu",
+        "pc_factor_mat_solver_type": "mumps",
+        "mat_mumps_icntl_14": "80",
+        "mat_mumps_icntl_24": "1",
+        "mat_mumps_icntl_25": "0",
+        "ksp_error_if_not_converged": "1",
+    }
+    mpi = {
+        "ksp_type": "preonly",
+        "pc_type": "lu",
+        "pc_factor_mat_solver_type": "mumps",
+        "mat_mumps_icntl_14": "80",
+        "mat_mumps_icntl_24": "1",
+        "mat_mumps_icntl_25": "0",
+        "ksp_error_if_not_converged": "1",
+    }
+    if strategy == STEADY_SADDLE_POINT:
+        mpi = {
+            "ksp_type": "minres",
+            "ksp_rtol": "1.0e-9",
+            "ksp_error_if_not_converged": "1",
+            "pc_type": "fieldsplit",
+            "pc_fieldsplit_type": "additive",
+            "fieldsplit_velocity_0_ksp_type": "preonly",
+            "fieldsplit_velocity_0_pc_type": "gamg",
+            "fieldsplit_pressure_1_ksp_type": "preonly",
+            "fieldsplit_pressure_1_pc_type": "jacobi",
+        }
+    elif strategy == TRANSIENT_SADDLE_POINT:
+        mpi = {
+            "ksp_type": "gmres",
+            "ksp_rtol": "1.0e-8",
+            "ksp_error_if_not_converged": "1",
+            "pc_type": "fieldsplit",
+            "pc_fieldsplit_type": "schur",
+            "pc_fieldsplit_schur_fact_type": "upper",
+            "pc_fieldsplit_schur_precondition": "selfp",
+            "fieldsplit_velocity_0_ksp_type": "preonly",
+            "fieldsplit_velocity_0_pc_type": "gamg",
+            "fieldsplit_pressure_1_ksp_type": "preonly",
+            "fieldsplit_pressure_1_pc_type": "jacobi",
+        }
+    return solver_config(
+        strategy,
+        serial=serial,
+        mpi=mpi,
     )
 
 
 def cahn_hilliard_solver_config() -> SolverConfig:
-    return SolverConfig(
-        options={
+    return solver_config(
+        NONLINEAR_MIXED_DIRECT,
+        serial={
             "snes_type": "newtonls",
             "snes_linesearch_type": "none",
             "ksp_type": "preonly",
             "pc_type": "lu",
-        }
+        },
+        mpi={
+            "snes_type": "newtonls",
+            "snes_linesearch_type": "none",
+            "ksp_type": "preonly",
+            "pc_type": "lu",
+            "pc_factor_mat_solver_type": "mumps",
+            "ksp_error_if_not_converged": "1",
+        },
     )
 
 
@@ -157,7 +251,14 @@ def make_scalar_preset_config(
             formats=["numpy"],
             fields=output_fields(u="scalar"),
         ),
-        solver=solver or direct_solver_config(),
+        solver=solver
+        or direct_solver_config(
+            {
+                "poisson": STATIONARY_SCALAR_SPD,
+                "heat": CONSTANT_LHS_SCALAR_SPD,
+                "helmholtz": STATIONARY_INDEFINITE_DIRECT,
+            }[preset]
+        ),
         time=time,
         seed=seed,
         coefficients={} if coefficients is None else coefficients,
@@ -201,7 +302,13 @@ def make_flow_preset_config(
             formats=["numpy"],
             fields=output_fields(velocity="components", pressure="scalar"),
         ),
-        solver=flow_solver_config(),
+        solver=flow_solver_config(
+            STEADY_SADDLE_POINT
+            if preset == "stokes"
+            else TRANSIENT_SADDLE_POINT
+            if not periodic_axes
+            else TRANSIENT_MIXED_DIRECT
+        ),
         time=time,
         seed=seed,
     )
@@ -272,7 +379,7 @@ def make_thermal_convection_config(
                 temperature="scalar",
             ),
         ),
-        solver=flow_solver_config(),
+        solver=flow_solver_config(TRANSIENT_MIXED_DIRECT),
         time=time,
         seed=seed,
     )
@@ -350,7 +457,7 @@ def make_maxwell_config(
             formats=["numpy"],
             fields=output_fields(electric_field="components"),
         ),
-        solver=direct_solver_config(),
+        solver=direct_solver_config(STATIONARY_INDEFINITE_DIRECT),
         seed=seed,
     )
 
@@ -397,7 +504,7 @@ def make_maxwell_pulse_config(
             formats=["numpy"],
             fields=output_fields(electric_field="components"),
         ),
-        solver=direct_solver_config(),
+        solver=direct_solver_config(CONSTANT_LHS_CURL_DIRECT),
         time=TimeConfig(dt=0.02, t_end=0.02),
         seed=seed,
     )
@@ -446,7 +553,7 @@ def make_plate_config(
             formats=["numpy"],
             fields=output_fields(deflection="scalar", velocity="scalar"),
         ),
-        solver=direct_solver_config(),
+        solver=direct_solver_config(CONSTANT_LHS_BLOCK_DIRECT),
         time=time,
         seed=seed,
         coefficients=(
@@ -510,7 +617,7 @@ def make_wave_config(
             formats=["numpy"],
             fields=output_fields(u="scalar", v="scalar"),
         ),
-        solver=direct_solver_config(),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
         time=time,
         seed=seed,
         coefficients={"c_sq": constant(1.0) if c_sq is None else c_sq},
