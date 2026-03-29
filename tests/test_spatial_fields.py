@@ -4,10 +4,12 @@ import numpy as np
 import pytest
 import ufl
 
+from plm_data.core.config import FieldExpressionConfig
 from plm_data.core.mesh import create_domain
 from plm_data.core.spatial_fields import (
     build_interpolator,
     build_ufl_field,
+    build_vector_ufl_field,
     normalize_field_config,
     resolve_param_ref,
 )
@@ -248,6 +250,15 @@ class TestBuildUflField:
         with pytest.raises(ValueError, match="3 components but mesh is 2D"):
             build_ufl_field(mesh_2d, cfg, params)
 
+    def test_affine(self, mesh_2d, params):
+        cfg = {
+            "type": "affine",
+            "params": {"constant": 1.0, "x": 2.0, "y": -0.5},
+        }
+        result = build_ufl_field(mesh_2d, cfg, params)
+        assert result is not None
+        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
+
     def test_step_2d(self, mesh_2d, params):
         cfg = {
             "type": "step",
@@ -283,6 +294,23 @@ class TestBuildUflField:
     def test_unknown_type_raises(self, mesh_2d, params):
         with pytest.raises(ValueError, match="Unknown field type"):
             build_ufl_field(mesh_2d, {"type": "bogus_type"}, params)
+
+    def test_build_vector_ufl_field(self, mesh_2d):
+        expr = FieldExpressionConfig(
+            components={
+                "x": FieldExpressionConfig(
+                    type="affine",
+                    params={"constant": -0.5, "y": 1.0},
+                ),
+                "y": FieldExpressionConfig(
+                    type="affine",
+                    params={"constant": 0.5, "x": -1.0},
+                ),
+            }
+        )
+        result = build_vector_ufl_field(mesh_2d, expr, {})
+        assert result is not None
+        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
 
 
 # ===========================================================================
@@ -469,6 +497,17 @@ class TestBuildInterpolator:
         result = fn(points_2d)
         dists = np.sqrt((points_2d[0] - 0.5) ** 2 + (points_2d[1] - 0.5) ** 2)
         expected = 0.8 + 0.2 * np.cos(2.0 * dists)
+        np.testing.assert_allclose(result, expected, atol=1e-14)
+
+    def test_affine(self, points_2d):
+        cfg = {
+            "type": "affine",
+            "params": {"constant": 1.0, "x": 2.0, "y": -0.5},
+        }
+        fn = build_interpolator(cfg, {})
+        assert fn is not None
+        result = fn(points_2d)
+        expected = 1.0 + 2.0 * points_2d[0] - 0.5 * points_2d[1]
         np.testing.assert_allclose(result, expected, atol=1e-14)
 
     def test_step_x_axis(self, points_2d):

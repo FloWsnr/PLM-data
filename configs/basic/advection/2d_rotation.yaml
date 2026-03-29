@@ -1,0 +1,69 @@
+preset: advection
+parameters: {}
+coefficients:
+  velocity:
+    components:
+      x:
+        type: affine
+        params:
+          constant: -0.65
+          y: 1.3
+      y:
+        type: affine
+        params:
+          constant: 0.65
+          x: -1.3
+  diffusivity:
+    type: constant
+    params:
+      value: 0.002
+domain:
+  type: rectangle
+  size: [1.0, 1.0]
+  mesh_resolution: [96, 96]
+time:
+  dt: 0.01
+  t_end: 1.6
+inputs:
+  u:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: gaussian_bump
+      params:
+        sigma: 0.06
+        amplitude: 1.0
+        center: [0.72, 0.5]
+boundary_conditions:
+  u:
+    x-:
+      - operator: neumann
+        value: 0.0
+    x+:
+      - operator: neumann
+        value: 0.0
+    y-:
+      - operator: neumann
+        value: 0.0
+    y+:
+      - operator: neumann
+        value: 0.0
+solver:
+  strategy: constant_lhs_scalar_nonsymmetric
+  serial:
+    ksp_type: preonly
+    pc_type: lu
+  mpi:
+    ksp_type: gmres
+    pc_type: hypre
+    pc_hypre_type: boomeramg
+    ksp_rtol: 1.0e-9
+    ksp_error_if_not_converged: 1
+output:
+  resolution: [96, 96]
+  num_frames: 33
+  formats: [numpy, gif]
+  fields:
+    u: scalar
+seed: 42

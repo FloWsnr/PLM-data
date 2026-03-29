@@ -25,6 +25,7 @@ from plm_data.core.runtime import is_complex_runtime
 from plm_data.core.solver_strategies import (
     CONSTANT_LHS_BLOCK_DIRECT,
     CONSTANT_LHS_CURL_DIRECT,
+    CONSTANT_LHS_SCALAR_NONSYMMETRIC,
     CONSTANT_LHS_SCALAR_SPD,
     NONLINEAR_MIXED_DIRECT,
     STATIONARY_INDEFINITE_DIRECT,
@@ -129,6 +130,14 @@ def direct_solver_config(strategy: str = STATIONARY_SCALAR_SPD) -> SolverConfig:
             "pc_type": "hypre",
             "pc_hypre_type": "boomeramg",
             "ksp_rtol": "1.0e-10",
+            "ksp_error_if_not_converged": "1",
+        }
+    elif strategy == CONSTANT_LHS_SCALAR_NONSYMMETRIC:
+        mpi = {
+            "ksp_type": "gmres",
+            "pc_type": "hypre",
+            "pc_hypre_type": "boomeramg",
+            "ksp_rtol": "1.0e-9",
             "ksp_error_if_not_converged": "1",
         }
     return solver_config(
@@ -254,6 +263,7 @@ def make_scalar_preset_config(
         solver=solver
         or direct_solver_config(
             {
+                "advection": CONSTANT_LHS_SCALAR_NONSYMMETRIC,
                 "poisson": STATIONARY_SCALAR_SPD,
                 "heat": CONSTANT_LHS_SCALAR_SPD,
                 "helmholtz": STATIONARY_INDEFINITE_DIRECT,
@@ -262,6 +272,66 @@ def make_scalar_preset_config(
         time=time,
         seed=seed,
         coefficients={} if coefficients is None else coefficients,
+    )
+
+
+def make_advection_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    velocity: FieldExpressionConfig,
+    diffusivity: FieldExpressionConfig,
+    boundary_conditions: dict[str, BoundaryConditionConfig],
+    source: FieldExpressionConfig,
+    initial_condition: FieldExpressionConfig,
+    periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    solver: SolverConfig | None = None,
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(f"Advection test helper only supports 2D/3D, got {gdim}D")
+
+    return SimulationConfig(
+        preset="advection",
+        parameters={},
+        domain=domain,
+        inputs={
+            "u": InputConfig(
+                source=source,
+                initial_condition=initial_condition,
+            )
+        },
+        boundary_conditions={
+            "u": boundary_field_config(
+                boundary_conditions,
+                periodic_axes=periodic_axes,
+            )
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(u="scalar"),
+        ),
+        solver=solver or direct_solver_config(CONSTANT_LHS_SCALAR_NONSYMMETRIC),
+        time=time,
+        seed=seed,
+        coefficients={
+            "velocity": velocity,
+            "diffusivity": diffusivity,
+        },
     )
 
 

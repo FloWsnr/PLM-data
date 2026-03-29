@@ -6,6 +6,7 @@ import yaml
 from plm_data.core.config import load_config
 from plm_data.core.solver_strategies import (
     CONSTANT_LHS_CURL_DIRECT,
+    CONSTANT_LHS_SCALAR_NONSYMMETRIC,
     CONSTANT_LHS_SCALAR_SPD,
     STATIONARY_SCALAR_SPD,
     STEADY_SADDLE_POINT,
@@ -116,6 +117,30 @@ def test_load_config_thermal_convection_3d():
         cfg.boundary_field("temperature").side_conditions("z+")[0].value.params["value"]
         == 0.0
     )
+
+
+def test_load_config_advection_2d():
+    cfg = load_config("configs/basic/advection/2d_default.yaml")
+    assert cfg.preset == "advection"
+    assert cfg.domain.dimension == 2
+    assert cfg.output_mode("u") == "scalar"
+    assert cfg.input("u").initial_condition.type == "gaussian_bump"
+    assert cfg.boundary_field("u").side_conditions("x-")[0].type == "periodic"
+    assert cfg.coefficient("diffusivity").params["value"] == 0.0005
+    velocity = cfg.coefficient("velocity")
+    assert velocity.components["x"].type == "sine_product"
+    assert velocity.components["y"].params["amplitude"] == -1.25
+    assert cfg.solver.strategy == CONSTANT_LHS_SCALAR_NONSYMMETRIC
+    assert cfg.solver.mpi["ksp_type"] == "gmres"
+
+
+def test_load_config_advection_3d():
+    cfg = load_config("configs/basic/advection/3d_default.yaml")
+    assert cfg.preset == "advection"
+    assert cfg.domain.dimension == 3
+    assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.coefficient("velocity").components["z"].params["kx"] == 2.0
+    assert cfg.boundary_field("u").side_conditions("z+")[0].pair_with == "z-"
 
 
 def test_load_config_maxwell_pulse():

@@ -161,6 +161,40 @@ def _build_axis_trig_interpolator(
     return _axis_trig
 
 
+def _build_affine_expression(
+    x,
+    params: dict,
+    parameters: dict[str, float],
+):
+    expr = ufl.as_ufl(resolve_param_ref(params.get("constant", 0.0), parameters))
+    axis_keys = {"x": 0, "y": 1, "z": 2}
+    for key, axis in axis_keys.items():
+        if key not in params:
+            continue
+        expr = expr + resolve_param_ref(params[key], parameters) * x[axis]
+    return expr
+
+
+def _build_affine_interpolator(
+    params: dict,
+    parameters: dict[str, float],
+) -> Callable[[np.ndarray], np.ndarray]:
+    constant = resolve_param_ref(params.get("constant", 0.0), parameters)
+    axis_coefficients = {
+        axis: resolve_param_ref(params[label], parameters)
+        for label, axis in {"x": 0, "y": 1, "z": 2}.items()
+        if label in params
+    }
+
+    def _affine(x, c=constant, coeffs=axis_coefficients):
+        result = np.full(x.shape[1], c)
+        for axis, coefficient in coeffs.items():
+            result = result + coefficient * x[axis]
+        return result
+
+    return _affine
+
+
 # ---------------------------------------------------------------------------
 # UFL renderer — produces symbolic expressions for variational forms
 # ---------------------------------------------------------------------------
@@ -241,6 +275,9 @@ def build_ufl_field(
         r = ufl.sqrt(sum((x[i] - center[i]) ** 2 for i in range(gdim)))
         return ufl.as_ufl(base) + amplitude * ufl.cos(frequency * r)
 
+    elif field_type == "affine":
+        return _build_affine_expression(x, p, parameters)
+
     elif field_type == "step":
         value_left = resolve_param_ref(
             _require_param(p, "value_left", field_type), parameters
@@ -259,6 +296,35 @@ def build_ufl_field(
 
     else:
         raise ValueError(f"Unknown field type: '{field_type}'")
+
+
+def build_vector_ufl_field(
+    msh: dmesh.Mesh,
+    expr: FieldExpressionConfig,
+    parameters: dict[str, float],
+) -> "ufl.core.expr.Expr | None":  # type: ignore[reportAttributeAccessIssue]
+    """Build a vector-valued UFL expression from a field expression config."""
+    gdim = msh.geometry.dim
+    if not expr.is_componentwise:
+        if expr.type in {"none", "zero"}:
+            return ufl.as_vector([ufl.as_ufl(0.0)] * gdim)
+        if expr.type == "custom":
+            return None
+
+    components = component_expressions(expr, gdim)
+    component_exprs = []
+    for label in component_labels_for_dim(gdim):
+        scalar_expr = build_ufl_field(
+            msh,
+            scalar_expression_to_config(components[label]),
+            parameters,
+        )
+        if scalar_expr is None:
+            raise ValueError(
+                f"Component '{label}' cannot use 'custom' inside a vector expression"
+            )
+        component_exprs.append(scalar_expr)
+    return ufl.as_vector(component_exprs)
 
 
 # ---------------------------------------------------------------------------
@@ -340,6 +406,9 @@ def build_interpolator(
             return base_value + amp * np.cos(freq * r)
 
         return _radial_cosine
+
+    elif field_type == "affine":
+        return _build_affine_interpolator(p, parameters)
 
     elif field_type == "step":
         value_left = resolve_param_ref(

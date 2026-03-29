@@ -25,6 +25,8 @@ from plm_data.core.output import FrameWriter
 from plm_data.core.runtime import is_complex_runtime
 from plm_data.core.solver_strategies import (
     CONSTANT_LHS_CURL_DIRECT,
+    CONSTANT_LHS_SCALAR_NONSYMMETRIC,
+    CONSTANT_LHS_SCALAR_SPD,
     STATIONARY_INDEFINITE_DIRECT,
     STEADY_SADDLE_POINT,
     TRANSIENT_MIXED_DIRECT,
@@ -42,6 +44,7 @@ from tests.preset_matrix import (
     boundary_field_config,
     constant,
     direct_solver_config,
+    make_advection_config,
     flow_solver_config,
     make_wave_config,
     output_fields,
@@ -747,6 +750,100 @@ def test_periodic_heat_requires_dolfinx_mpc(monkeypatch, tmp_path, direct_solver
 
     with pytest.raises(RuntimeError, match="dolfinx_mpc"):
         _run_preset(config)
+
+
+@pytest.mark.skipif(
+    not HAS_DOLFINX_MPC,
+    reason="periodic advection solve requires dolfinx_mpc",
+)
+def test_advection_periodic_pure_advection_single_step(tmp_path):
+    config = make_advection_config(
+        tmp_path,
+        gdim=2,
+        velocity=vector_expr(
+            x=constant(1.0),
+            y=constant(0.35),
+        ),
+        diffusivity=scalar_expr("zero"),
+        boundary_conditions={},
+        source=scalar_expr("none"),
+        initial_condition=scalar_expr(
+            "gaussian_bump",
+            sigma=0.08,
+            amplitude=1.0,
+            center=[0.25, 0.4],
+        ),
+        periodic_axes=(0, 1),
+        mesh_resolution=(16, 16),
+        output_resolution=(8, 8),
+        time=TimeConfig(dt=0.01, t_end=0.01),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    arr = np.load(output_dir / "u.npy")
+    assert np.allclose(arr[-1, :, 0], arr[-1, :, -1], atol=1e-4)
+    assert np.allclose(arr[-1, 0, :], arr[-1, -1, :], atol=1e-4)
+
+
+def test_advection_rejects_spd_solver_strategy(tmp_path):
+    config = make_advection_config(
+        tmp_path,
+        gdim=2,
+        velocity=vector_expr(
+            x=constant(1.0),
+            y=constant(0.0),
+        ),
+        diffusivity=constant(0.01),
+        boundary_conditions={
+            "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+        },
+        source=scalar_expr("none"),
+        initial_condition=scalar_expr("constant", value=0.0),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
+        time=TimeConfig(dt=0.01, t_end=0.01),
+    )
+
+    with pytest.raises(ValueError, match="does not support solver strategy"):
+        get_preset("advection").build_problem(config)
+
+
+def test_advection_affine_velocity_single_step(tmp_path):
+    config = make_advection_config(
+        tmp_path,
+        gdim=2,
+        velocity=vector_expr(
+            x=scalar_expr("affine", constant=-0.5, y=1.0),
+            y=scalar_expr("affine", constant=0.5, x=-1.0),
+        ),
+        diffusivity=constant(0.005),
+        boundary_conditions={
+            "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+        },
+        source=scalar_expr("none"),
+        initial_condition=scalar_expr(
+            "gaussian_bump",
+            sigma=0.08,
+            amplitude=1.0,
+            center=[0.7, 0.5],
+        ),
+        mesh_resolution=(20, 20),
+        output_resolution=(8, 8),
+        time=TimeConfig(dt=0.01, t_end=0.01),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_NONSYMMETRIC),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    arr = np.load(output_dir / "u.npy")
+    assert np.max(np.abs(arr[-1] - arr[0])) > 1e-6
 
 
 def test_heat_manufactured_source_approaches_expected_profile(tmp_path, direct_solver):

@@ -10,6 +10,7 @@ from tests.preset_matrix import (
     assert_nontrivial,
     assert_periodic_axis,
     constant,
+    make_advection_config,
     make_cahn_hilliard_config,
     make_flow_preset_config,
     make_maxwell_config,
@@ -232,6 +233,23 @@ def _assert_heat_periodic_x(config, result, output_dir):
     assert_periodic_axis(arrays["u"], axis=0)
 
 
+def _assert_advection_periodic_xy(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["u"])
+    assert_periodic_axis(arrays["u"], axis=0)
+    assert_periodic_axis(arrays["u"], axis=1)
+
+
+def _assert_advection_periodic_xyz(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["u"])
+    assert_periodic_axis(arrays["u"], axis=0)
+    assert_periodic_axis(arrays["u"], axis=1)
+    assert_periodic_axis(arrays["u"], axis=2)
+
+
 def _assert_plate_case(config, result, output_dir):
     arrays = _assert_success(config, result, output_dir)
     assert result.num_timesteps == 1
@@ -424,6 +442,58 @@ SUCCESS_CASES = (
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
+        name="advection_periodic_xy_pure",
+        make_config=lambda tmp_path: make_advection_config(
+            tmp_path,
+            gdim=2,
+            velocity=vector_expr(
+                x=constant(1.0),
+                y=constant(0.35),
+            ),
+            diffusivity=scalar_expr("zero"),
+            boundary_conditions={},
+            source=scalar_expr("none"),
+            initial_condition=scalar_expr(
+                "gaussian_bump",
+                amplitude=1.0,
+                sigma=0.08,
+                center=[0.24, 0.39],
+            ),
+            periodic_axes=(0, 1),
+            mesh_resolution=(14, 14),
+            output_resolution=(6, 6),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_advection_periodic_xy,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="advection_periodic_xy_diffusive",
+        make_config=lambda tmp_path: make_advection_config(
+            tmp_path,
+            gdim=2,
+            velocity=vector_expr(
+                x=scalar_expr("sine_product", amplitude=1.0, ky=2.0),
+                y=scalar_expr("sine_product", amplitude=-1.0, kx=2.0),
+            ),
+            diffusivity=constant(0.001),
+            boundary_conditions={},
+            source=scalar_expr("none"),
+            initial_condition=scalar_expr(
+                "gaussian_bump",
+                amplitude=1.0,
+                sigma=0.08,
+                center=[0.31, 0.57],
+            ),
+            periodic_axes=(0, 1),
+            mesh_resolution=(14, 14),
+            output_resolution=(6, 6),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_advection_periodic_xy,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
         name="poisson_mixed_scalar_bc",
         make_config=lambda tmp_path: make_scalar_preset_config(
             tmp_path,
@@ -609,6 +679,33 @@ SUCCESS_CASES = (
             time=TimeConfig(dt=0.05, t_end=0.05),
         ),
         assert_result=_assert_thermal_convection_3d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="advection_3d_periodic_xyz",
+        make_config=lambda tmp_path: make_advection_config(
+            tmp_path,
+            gdim=3,
+            velocity=vector_expr(
+                x=scalar_expr("sine_product", amplitude=0.9, ky=2.0),
+                y=scalar_expr("sine_product", amplitude=0.9, kz=2.0),
+                z=scalar_expr("sine_product", amplitude=0.9, kx=2.0),
+            ),
+            diffusivity=constant(0.001),
+            boundary_conditions={},
+            source=scalar_expr("none"),
+            initial_condition=scalar_expr(
+                "gaussian_bump",
+                amplitude=1.0,
+                sigma=0.1,
+                center=[0.3, 0.45, 0.6],
+            ),
+            periodic_axes=(0, 1, 2),
+            mesh_resolution=(8, 8, 8),
+            output_resolution=(4, 4, 4),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_advection_periodic_xyz,
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
