@@ -344,6 +344,14 @@ output:
           $ref: output.mode.components
         pressure:
           $ref: output.mode.scalar
+    height_velocity:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        height:
+          $ref: output.mode.scalar
+        velocity:
+          $ref: output.mode.components
     velocity_pressure_numpy:
       formats:
         $ref: output.formats.numpy

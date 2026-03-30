@@ -202,6 +202,10 @@ def flow_solver_config(
 
 
 def cahn_hilliard_solver_config() -> SolverConfig:
+    return nonlinear_mixed_direct_solver_config()
+
+
+def nonlinear_mixed_direct_solver_config() -> SolverConfig:
     return solver_config(
         NONLINEAR_MIXED_DIRECT,
         serial={
@@ -542,6 +546,54 @@ def make_cahn_hilliard_config(
         solver=cahn_hilliard_solver_config(),
         time=TimeConfig(dt=5e-6, t_end=5e-6),
         seed=seed,
+    )
+
+
+def make_shallow_water_config(
+    tmp_path: Path,
+    *,
+    parameters: dict[str, float],
+    bathymetry: FieldExpressionConfig,
+    initial_height: FieldExpressionConfig,
+    initial_velocity: FieldExpressionConfig,
+    height_boundary_conditions: dict[str, BoundaryConditionConfig],
+    velocity_boundary_conditions: dict[str, BoundaryConditionConfig],
+    height_periodic_axes: tuple[int, ...] = (),
+    velocity_periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, int] = (8, 8),
+    output_resolution: tuple[int, int] = (4, 4),
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    return SimulationConfig(
+        preset="shallow_water",
+        parameters=parameters,
+        domain=rectangle_domain(mesh_resolution=mesh_resolution),
+        inputs={
+            "height": InputConfig(initial_condition=initial_height),
+            "velocity": InputConfig(initial_condition=initial_velocity),
+        },
+        boundary_conditions={
+            "height": boundary_field_config(
+                height_boundary_conditions,
+                periodic_axes=height_periodic_axes,
+            ),
+            "velocity": boundary_field_config(
+                velocity_boundary_conditions,
+                periodic_axes=velocity_periodic_axes,
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(height="scalar", velocity="components"),
+        ),
+        solver=nonlinear_mixed_direct_solver_config(),
+        time=time,
+        seed=seed,
+        coefficients={"bathymetry": bathymetry},
     )
 
 

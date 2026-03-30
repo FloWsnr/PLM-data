@@ -1,0 +1,43 @@
+preset: shallow_water
+parameters:
+  gravity: 1.0
+  mean_depth: 1.0
+  drag: 0.01
+  viscosity: 0.002
+  coriolis: 0.5
+coefficients:
+  bathymetry:
+    type: constant
+    params:
+      value: 0.0
+domain:
+  type: rectangle
+  size: [1.0, 1.0]
+  mesh_resolution: [64, 64]
+time:
+  dt: 0.005
+  t_end: 2.0
+inputs:
+  height:
+    initial_condition:
+      type: gaussian_bump
+      params:
+        amplitude: 0.15
+        sigma: 0.06
+        center: [0.31, 0.43]
+  velocity:
+    initial_condition:
+      type: zero
+      params: {}
+boundary_conditions:
+  height:
+    $ref: boundary_field.scalar.full_periodic_2d
+  velocity:
+    $ref: boundary_field.vector.full_periodic_2d
+output:
+  $ref: output.template.height_velocity
+  resolution: [96, 96]
+  num_frames: 41
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42
