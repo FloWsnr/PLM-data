@@ -1,0 +1,42 @@
+preset: gray_scott
+parameters:
+  Du: 2.0e-05
+  Dv: 1.0e-05
+  F: 0.037
+  k: 0.06
+domain:
+  type: box
+  size: [2.5, 2.5, 2.5]
+  mesh_resolution: [20, 20, 20]
+time:
+  dt: 1.0
+  t_end: 600.0
+inputs:
+  u:
+    initial_condition:
+      type: gray_scott_patch
+      params:
+        background: 1.0
+        patch_value: 0.5
+        center: [1.25, 1.25, 1.25]
+        half_width: [0.25, 0.25, 0.25]
+  v:
+    initial_condition:
+      type: gray_scott_patch
+      params:
+        background: 0.0
+        patch_value: 0.25
+        center: [1.25, 1.25, 1.25]
+        half_width: [0.25, 0.25, 0.25]
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.full_periodic_3d
+  v:
+    $ref: boundary_field.scalar.full_periodic_3d
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  resolution: [20, 20, 20]
+  num_frames: 30
+seed: 42
