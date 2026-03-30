@@ -1,0 +1,38 @@
+preset: schnakenberg
+parameters:
+  Du: 0.05
+  Dv: 2.0
+  a: 0.1
+  b: 0.9
+domain:
+  type: box
+  size: [10.0, 10.0, 10.0]
+  mesh_resolution: [32, 32, 32]
+time:
+  dt: 0.01
+  t_end: 20.0
+inputs:
+  u:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 1.0
+        std: 0.05
+  v:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 0.9
+        std: 0.05
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.full_periodic_3d
+  v:
+    $ref: boundary_field.scalar.full_periodic_3d
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  resolution: [20, 20, 20]
+  num_frames: 30
+seed: 42
