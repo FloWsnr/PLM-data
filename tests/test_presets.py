@@ -1036,6 +1036,102 @@ def test_wave_preset_3d_single_step(tmp_path):
         assert np.all(np.isfinite(arr))
 
 
+def test_wave_inhomogeneous_medium_2d_stays_nontrivial(tmp_path):
+    config = make_wave_config(
+        tmp_path,
+        gdim=2,
+        boundary_conditions={
+            "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+        },
+        initial_displacement=constant(0.0),
+        initial_velocity=scalar_expr(
+            "gaussian_bump",
+            amplitude=12.0,
+            sigma=0.06,
+            center=[0.28, 0.44],
+        ),
+        forcing=scalar_expr("none"),
+        mesh_resolution=(56, 56),
+        output_resolution=(48, 48),
+        damping=0.01,
+        c_sq=scalar_expr(
+            "radial_cosine",
+            base=1.8,
+            amplitude=0.65,
+            frequency=18.0,
+            center=[0.5, 0.5],
+        ),
+        time=TimeConfig(dt=0.004, t_end=0.8),
+    )
+    config.output.num_frames = 25
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 200
+
+    arr_u = np.load(output_dir / "u.npy")
+    arr_v = np.load(output_dir / "v.npy")
+
+    assert np.all(np.isfinite(arr_u))
+    assert np.all(np.isfinite(arr_v))
+    assert np.max(arr_u) > 0.15
+    assert np.std(arr_u[-1]) > 1.0e-2
+    assert np.std(arr_v[-1]) > 1.0e-2
+    assert np.linalg.norm(arr_u[-1] - arr_u[len(arr_u) // 2]) > 1.0
+
+
+def test_wave_inhomogeneous_medium_3d_short_run(tmp_path):
+    config = make_wave_config(
+        tmp_path,
+        gdim=3,
+        boundary_conditions={
+            "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "z-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "z+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+        },
+        initial_displacement=constant(0.0),
+        initial_velocity=scalar_expr(
+            "gaussian_bump",
+            amplitude=8.0,
+            sigma=0.08,
+            center=[0.3, 0.42, 0.55],
+        ),
+        forcing=scalar_expr("none"),
+        mesh_resolution=(16, 16, 16),
+        output_resolution=(20, 20, 20),
+        damping=0.01,
+        c_sq=scalar_expr(
+            "radial_cosine",
+            base=1.8,
+            amplitude=0.55,
+            frequency=16.0,
+            center=[0.5, 0.5, 0.5],
+        ),
+        time=TimeConfig(dt=0.01, t_end=0.25),
+    )
+    config.output.num_frames = 10
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 25
+
+    arr_u = np.load(output_dir / "u.npy")
+    arr_v = np.load(output_dir / "v.npy")
+
+    assert arr_u.shape == (10, *config.output.resolution)
+    assert arr_v.shape == (10, *config.output.resolution)
+    assert np.all(np.isfinite(arr_u))
+    assert np.all(np.isfinite(arr_v))
+    assert np.std(arr_u[-1]) > 5.0e-3
+    assert np.std(arr_v[-1]) > 5.0e-3
+
+
 @pytest.mark.skipif(
     not HAS_DOLFINX_MPC,
     reason="periodic Navier-Stokes solve requires dolfinx_mpc",

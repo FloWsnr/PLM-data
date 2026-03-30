@@ -164,15 +164,17 @@ def test_load_config_wave():
     cfg = load_config("configs/basic/wave/2d_default.yaml")
     boundary_field = cfg.boundary_field("u")
     assert cfg.preset == "wave"
-    assert cfg.parameters["damping"] == 0.03
-    assert cfg.coefficient("c_sq").type == "constant"
-    assert cfg.coefficient("c_sq").params["value"] == 4.0
+    assert cfg.parameters["damping"] == 0.01
+    assert cfg.coefficient("c_sq").type == "radial_cosine"
+    assert cfg.coefficient("c_sq").params["base"] == 1.8
+    assert cfg.coefficient("c_sq").params["amplitude"] == 0.65
     assert cfg.input("u").initial_condition.type == "zero"
     assert cfg.input("v").initial_condition.type == "gaussian_bump"
+    assert cfg.input("v").initial_condition.params["center"] == [0.28, 0.44]
     assert cfg.input("forcing").source.type == "none"
     assert cfg.output_mode("u") == "scalar"
     assert cfg.output_mode("v") == "scalar"
-    assert boundary_field.side_conditions("x-")[0].type == "dirichlet"
+    assert boundary_field.side_conditions("x-")[0].type == "neumann"
     assert boundary_field.side_conditions("y-")[0].type == "neumann"
 
 

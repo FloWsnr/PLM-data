@@ -1,18 +1,21 @@
 preset: wave
 parameters:
-  damping: 0.03
+  damping: 0.01
 coefficients:
   c_sq:
-    type: constant
+    type: radial_cosine
     params:
-      value: 4.0
+      base: 1.8
+      amplitude: 0.65
+      frequency: 18.0
+      center: [0.5, 0.5]
 domain:
   type: rectangle
   size: [1.0, 1.0]
   mesh_resolution: [64, 64]
 time:
-  dt: 0.005
-  t_end: 1.0
+  dt: 0.004
+  t_end: 0.8
 inputs:
   u:
     initial_condition:
@@ -22,31 +25,20 @@ inputs:
     initial_condition:
       type: gaussian_bump
       params:
-        sigma: 0.05
-        amplitude: 18.0
-        center: [0.32, 0.46]
+        sigma: 0.06
+        amplitude: 12.0
+        center: [0.28, 0.44]
   forcing:
     source:
       type: none
       params: {}
 boundary_conditions:
   u:
-    x-:
-      - operator: dirichlet
-        value: 0.0
-    x+:
-      - operator: dirichlet
-        value: 0.0
-    y-:
-      - operator: neumann
-        value: 0.0
-    y+:
-      - operator: neumann
-        value: 0.0
+    $ref: boundary_field.scalar.homogeneous_neumann_2d
 solver:
   $ref: solver.profile.constant_lhs_scalar_spd
 output:
   $ref: output.template.scalar_uv
   resolution: [64, 64]
-  num_frames: 31
+  num_frames: 25
 seed: 42
