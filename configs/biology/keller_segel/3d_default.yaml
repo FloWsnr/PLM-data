@@ -1,0 +1,48 @@
+preset: keller_segel
+
+parameters:
+  D_rho: 1.0
+  D_c: 0.5
+  chi0: 10.0
+  alpha: 1.0
+  beta: 1.0
+  r: 1.0
+
+domain:
+  type: box
+  size: [40.0, 40.0, 40.0]
+  mesh_resolution: [48, 48, 48]
+
+time:
+  dt: 0.01
+  t_end: 20.0
+
+inputs:
+  rho:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 1.0
+        std: 0.05
+  c:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 1.0
+        std: 0.05
+
+boundary_conditions:
+  rho:
+    $ref: boundary_field.scalar.full_periodic_3d
+  c:
+    $ref: boundary_field.scalar.full_periodic_3d
+
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+
+output:
+  $ref: output.template.scalar_rho_c
+  resolution: [48, 48, 48]
+  num_frames: 50
+
+seed: 42

@@ -340,6 +340,14 @@ output:
           $ref: output.mode.scalar
         z:
           $ref: output.mode.scalar
+    scalar_rho_c:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        rho:
+          $ref: output.mode.scalar
+        c:
+          $ref: output.mode.scalar
     scalar_c:
       formats:
         $ref: output.formats.numpy_gif
