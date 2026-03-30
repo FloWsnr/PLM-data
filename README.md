@@ -4,29 +4,30 @@ Generate PDE simulation datasets using [DOLFINx](https://github.com/FEniCS/dolfi
 
 ## Installation
 
-### DOLFINx (FEniCSx)
+### DOLFINx (FEniCSx) — real-valued (default)
 
 Create a conda environment with DOLFINx and its dependencies:
 
 ```bash
-conda create -n fenicsx-env
+conda create -n fenicsx-env -c conda-forge fenics-dolfinx mpich python=3.12 ffmpeg
 conda activate fenicsx-env
-conda install -c conda-forge fenics-dolfinx mpich  # Linux and macOS
+pip install pyyaml pytest pytest-xdist pyright matplotlib pyvista dolfinx_mpc
 ```
 
 See the [DOLFINx README](https://github.com/FEniCS/dolfinx#installation) for alternative installation methods (Docker, apt, Spack, Windows).
 
-### Python dependencies
+### DOLFINx (FEniCSx) — complex-valued (for Maxwell)
 
-With the conda environment activated, install the remaining packages:
+The time-harmonic `maxwell` preset requires complex-valued PETSc. Create a separate environment:
 
 ```bash
-pip install pyyaml pytest pytest-xdist pyright
-# Required for configs that use periodic boundary operators
-pip install dolfinx_mpc
-# Required for mp4/video output
-conda install -c conda-forge ffmpeg
+conda create -n fenicsx-env-complex -c conda-forge fenics-dolfinx mpich "petsc=*=complex*" python=3.12 ffmpeg
+conda activate fenicsx-env-complex
+pip install pyyaml pytest pytest-xdist pyright matplotlib pyvista
 ```
+
+Do not install `dolfinx_mpc` in the complex environment — no complex builds exist.
+Use `PLM_CONDA_ENV=fenicsx-env-complex` when running Maxwell configs (see Usage below).
 
 ## Architecture
 

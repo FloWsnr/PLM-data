@@ -27,6 +27,10 @@ def render_animation(
     import matplotlib.animation as animation
     import matplotlib.pyplot as plt
 
+    # Complex-valued fields (e.g. time-harmonic Maxwell): render magnitude.
+    if np.iscomplexobj(data):
+        data = np.abs(data)
+
     ndim = data.ndim - 1  # spatial dimensions (exclude frame axis)
     vmin, vmax = float(data.min()), float(data.max())
 

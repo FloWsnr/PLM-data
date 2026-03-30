@@ -19,6 +19,17 @@ PLM-data generates PDE simulation datasets using DOLFINx (FEniCSx). It produces 
 
 Tests run via `python -m pytest tests/`. pytest is configured to use 4 parallel processes (`-n 4` via `pytest-xdist`) by default. The project runs directly as a Python module. DOLFINx and its dependencies (PETSc, mpi4py, UFL) must be installed in the environment.
 
+## Conda Environments
+
+Two conda environments exist:
+- `fenicsx-env` — real-valued PETSc (default). Used by all presets except `maxwell`.
+- `fenicsx-env-complex` — complex-valued PETSc (`petsc=*=complex*`). Required by the `maxwell` preset. Does not have `dolfinx_mpc`.
+
+Override the environment via `PLM_CONDA_ENV`:
+```bash
+PLM_CONDA_ENV=fenicsx-env-complex ./run.sh -n 4 run configs/physics/maxwell/2d_default.yaml --output-dir ./output
+```
+
 ## Architecture
 
 The system has three layers:
