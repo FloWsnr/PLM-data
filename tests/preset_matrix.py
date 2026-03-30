@@ -388,10 +388,6 @@ def make_flow_preset_config(
     )
 
 
-def make_thermal_convection_config(
-    tmp_path: Path,
-    *,
-    gdim: int,
 def make_burgers_config(
     tmp_path: Path,
     *,
@@ -447,6 +443,10 @@ def make_burgers_config(
     )
 
 
+def make_thermal_convection_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
     parameters: dict[str, float],
     velocity_boundary_conditions: dict[str, BoundaryConditionConfig],
     temperature_boundary_conditions: dict[str, BoundaryConditionConfig],
