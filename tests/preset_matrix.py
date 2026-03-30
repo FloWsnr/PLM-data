@@ -510,6 +510,36 @@ def make_thermal_convection_config(
     )
 
 
+def make_kuramoto_sivashinsky_config(
+    tmp_path: Path,
+    *,
+    initial_condition: FieldExpressionConfig,
+    periodic_axes: tuple[int, ...] = (0, 1),
+    mesh_resolution: tuple[int, int] = (6, 6),
+    output_resolution: tuple[int, int] = (4, 4),
+    seed: int | None = 42,
+) -> SimulationConfig:
+    return SimulationConfig(
+        preset="kuramoto_sivashinsky",
+        parameters={"theta": 0.5},
+        domain=rectangle_domain(mesh_resolution=mesh_resolution),
+        inputs={"u": InputConfig(initial_condition=initial_condition)},
+        boundary_conditions={
+            "u": boundary_field_config({}, periodic_axes=periodic_axes)
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(u="scalar", v="scalar"),
+        ),
+        solver=nonlinear_mixed_direct_solver_config(),
+        time=TimeConfig(dt=0.05, t_end=0.05),
+        seed=seed,
+    )
+
+
 def make_cahn_hilliard_config(
     tmp_path: Path,
     *,
@@ -600,6 +630,76 @@ def make_gray_scott_config(
             num_frames=2 if time is not None else 1,
             formats=["numpy"],
             fields=output_fields(u="scalar", v="scalar"),
+        ),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
+        time=time,
+        seed=seed,
+    )
+
+
+def make_lorenz_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    x_initial_condition: FieldExpressionConfig,
+    y_initial_condition: FieldExpressionConfig,
+    z_initial_condition: FieldExpressionConfig,
+    x_boundary_conditions: dict[str, BoundaryConditionConfig],
+    y_boundary_conditions: dict[str, BoundaryConditionConfig],
+    z_boundary_conditions: dict[str, BoundaryConditionConfig],
+    x_periodic_axes: tuple[int, ...] = (),
+    y_periodic_axes: tuple[int, ...] = (),
+    z_periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(f"Lorenz test helper only supports 2D/3D, got {gdim}D")
+
+    return SimulationConfig(
+        preset="lorenz",
+        parameters={
+            "sigma": 10.0,
+            "rho": 28.0,
+            "beta": 2.6667,
+            "D": 1.0,
+        },
+        domain=domain,
+        inputs={
+            "x": InputConfig(initial_condition=x_initial_condition),
+            "y": InputConfig(initial_condition=y_initial_condition),
+            "z": InputConfig(initial_condition=z_initial_condition),
+        },
+        boundary_conditions={
+            "x": boundary_field_config(
+                x_boundary_conditions,
+                periodic_axes=x_periodic_axes,
+            ),
+            "y": boundary_field_config(
+                y_boundary_conditions,
+                periodic_axes=y_periodic_axes,
+            ),
+            "z": boundary_field_config(
+                z_boundary_conditions,
+                periodic_axes=z_periodic_axes,
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(x="scalar", y="scalar", z="scalar"),
         ),
         solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
         time=time,

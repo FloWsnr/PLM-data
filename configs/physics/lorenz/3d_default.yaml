@@ -1,0 +1,46 @@
+preset: lorenz
+parameters:
+  sigma: 10.0
+  rho: 28.0
+  beta: 2.6667
+  D: 1.0
+domain:
+  type: box
+  size: [10.0, 10.0, 10.0]
+  mesh_resolution: [32, 32, 32]
+time:
+  dt: 0.001
+  t_end: 2.0
+inputs:
+  x:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 0.0
+        std: 1.0
+  y:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 0.0
+        std: 1.0
+  z:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 0.0
+        std: 1.0
+boundary_conditions:
+  x:
+    $ref: boundary_field.scalar.full_periodic_3d
+  y:
+    $ref: boundary_field.scalar.full_periodic_3d
+  z:
+    $ref: boundary_field.scalar.full_periodic_3d
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_xyz
+  resolution: [20, 20, 20]
+  num_frames: 30
+seed: 42

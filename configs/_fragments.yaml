@@ -330,6 +330,16 @@ output:
           $ref: output.mode.scalar
         v:
           $ref: output.mode.scalar
+    scalar_xyz:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        x:
+          $ref: output.mode.scalar
+        y:
+          $ref: output.mode.scalar
+        z:
+          $ref: output.mode.scalar
     scalar_c:
       formats:
         $ref: output.formats.numpy_gif
@@ -402,6 +412,9 @@ time:
   cahn_hilliard_default:
     dt: 5.0e-06
     t_end: 2.5e-04
+  ks_default:
+    dt: 0.05
+    t_end: 50.0
 
 test:
   cycle:

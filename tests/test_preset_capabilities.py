@@ -13,8 +13,10 @@ from tests.preset_matrix import (
     make_advection_config,
     make_burgers_config,
     make_cahn_hilliard_config,
+    make_kuramoto_sivashinsky_config,
     make_flow_preset_config,
     make_gray_scott_config,
+    make_lorenz_config,
     make_maxwell_config,
     make_maxwell_pulse_config,
     make_plate_config,
@@ -361,6 +363,20 @@ def _assert_burgers_periodic_3d(config, result, output_dir):
         assert_periodic_axis(arrays[field_name], axis=2)
 
 
+def _assert_ks_constant_ic(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert np.allclose(arrays["u"][0], 0.0, atol=0.05)
+    assert_periodic_axis(arrays["u"], axis=0)
+    assert_periodic_axis(arrays["u"], axis=1)
+
+
+def _assert_ks_random_ic(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert np.all(np.isfinite(arrays["u"]))
+
+
 def _assert_cahn_constant_ic(config, result, output_dir):
     arrays = _assert_success(config, result, output_dir)
     assert result.num_timesteps == 1
@@ -392,6 +408,25 @@ def _assert_gray_scott_3d(config, result, output_dir):
     assert_nontrivial(arrays["u"])
     assert_nontrivial(arrays["v"])
     for field_name in ("u", "v"):
+        assert_periodic_axis(arrays[field_name], axis=0)
+        assert_periodic_axis(arrays[field_name], axis=1)
+        assert_periodic_axis(arrays[field_name], axis=2)
+
+
+def _assert_lorenz_2d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("x", "y", "z"):
+        assert_nontrivial(arrays[field_name])
+        assert_periodic_axis(arrays[field_name], axis=0)
+        assert_periodic_axis(arrays[field_name], axis=1)
+
+
+def _assert_lorenz_3d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("x", "y", "z"):
+        assert_nontrivial(arrays[field_name])
         assert_periodic_axis(arrays[field_name], axis=0)
         assert_periodic_axis(arrays[field_name], axis=1)
         assert_periodic_axis(arrays[field_name], axis=2)
@@ -894,6 +929,28 @@ SUCCESS_CASES = (
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
+        name="kuramoto_sivashinsky_constant_ic",
+        make_config=lambda tmp_path: make_kuramoto_sivashinsky_config(
+            tmp_path,
+            initial_condition=constant(0.0),
+        ),
+        assert_result=_assert_ks_constant_ic,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="kuramoto_sivashinsky_random_perturbation_ic",
+        make_config=lambda tmp_path: make_kuramoto_sivashinsky_config(
+            tmp_path,
+            initial_condition=scalar_expr(
+                "random_perturbation",
+                mean=0.0,
+                std=0.01,
+            ),
+        ),
+        assert_result=_assert_ks_random_ic,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
         name="cahn_hilliard_constant_ic",
         make_config=lambda tmp_path: make_cahn_hilliard_config(
             tmp_path,
@@ -973,6 +1030,48 @@ SUCCESS_CASES = (
             time=TimeConfig(dt=1.0, t_end=1.0),
         ),
         assert_result=_assert_gray_scott_3d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="lorenz_2d_periodic_xy",
+        make_config=lambda tmp_path: make_lorenz_config(
+            tmp_path,
+            gdim=2,
+            x_initial_condition=scalar_expr("random_perturbation", mean=0.0, std=1.0),
+            y_initial_condition=scalar_expr("random_perturbation", mean=0.0, std=1.0),
+            z_initial_condition=scalar_expr("random_perturbation", mean=0.0, std=1.0),
+            x_boundary_conditions={},
+            y_boundary_conditions={},
+            z_boundary_conditions={},
+            x_periodic_axes=(0, 1),
+            y_periodic_axes=(0, 1),
+            z_periodic_axes=(0, 1),
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.001, t_end=0.001),
+        ),
+        assert_result=_assert_lorenz_2d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="lorenz_3d_periodic_xyz",
+        make_config=lambda tmp_path: make_lorenz_config(
+            tmp_path,
+            gdim=3,
+            x_initial_condition=scalar_expr("random_perturbation", mean=0.0, std=1.0),
+            y_initial_condition=scalar_expr("random_perturbation", mean=0.0, std=1.0),
+            z_initial_condition=scalar_expr("random_perturbation", mean=0.0, std=1.0),
+            x_boundary_conditions={},
+            y_boundary_conditions={},
+            z_boundary_conditions={},
+            x_periodic_axes=(0, 1, 2),
+            y_periodic_axes=(0, 1, 2),
+            z_periodic_axes=(0, 1, 2),
+            mesh_resolution=(5, 5, 5),
+            output_resolution=(3, 3, 3),
+            time=TimeConfig(dt=0.001, t_end=0.001),
+        ),
+        assert_result=_assert_lorenz_3d,
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
