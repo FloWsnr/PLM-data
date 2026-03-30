@@ -21,7 +21,7 @@ See the [DOLFINx README](https://github.com/FEniCS/dolfinx#installation) for alt
 With the conda environment activated, install the remaining packages:
 
 ```bash
-pip install pyyaml pytest pyright
+pip install pyyaml pytest pytest-xdist pyright
 # Required for configs that use periodic boundary operators
 pip install dolfinx_mpc
 # Required for mp4/video output

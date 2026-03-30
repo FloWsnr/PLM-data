@@ -17,7 +17,7 @@ PLM-data generates PDE simulation datasets using DOLFINx (FEniCSx). It produces 
 ./run.sh list
 ```
 
-Tests run via `python -m pytest tests/`. The project runs directly as a Python module. DOLFINx and its dependencies (PETSc, mpi4py, UFL) must be installed in the environment.
+Tests run via `python -m pytest tests/`. pytest is configured to use 4 parallel processes (`-n 4` via `pytest-xdist`) by default. The project runs directly as a Python module. DOLFINx and its dependencies (PETSc, mpi4py, UFL) must be installed in the environment.
 
 ## Architecture
 
