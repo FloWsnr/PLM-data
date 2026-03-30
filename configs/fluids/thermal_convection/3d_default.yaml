@@ -67,7 +67,7 @@ boundary_conditions:
       - operator: dirichlet
         value: 0.0
 output:
-  $ref: output.template.velocity_pressure_temperature_numpy
+  $ref: output.template.velocity_pressure_temperature
   resolution: [16, 16, 8]
   num_frames: 5
 solver:
