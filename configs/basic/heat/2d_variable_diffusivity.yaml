@@ -14,16 +14,19 @@ domain:
   mesh_resolution: [128, 128]
 time:
   dt: 0.005
-  t_end: 0.5
+  t_end: 0.8
 inputs:
   u:
     source:
       type: none
       params: {}
     initial_condition:
-      type: constant
+      type: radial_cosine
       params:
-        value: 1.0
+        base: 0.5
+        amplitude: 0.5
+        frequency: 25.132741228718345
+        center: [0.38, 0.62]
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.homogeneous_dirichlet_2d
@@ -32,5 +35,5 @@ solver:
 output:
   $ref: output.template.scalar_u
   resolution: [64, 64]
-  num_frames: 20
+  num_frames: 24
 seed: 42
