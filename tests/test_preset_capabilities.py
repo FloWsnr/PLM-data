@@ -11,11 +11,14 @@ from tests.preset_matrix import (
     assert_periodic_axis,
     constant,
     make_advection_config,
+    make_burgers_config,
     make_cahn_hilliard_config,
     make_flow_preset_config,
+    make_gray_scott_config,
     make_maxwell_config,
     make_maxwell_pulse_config,
     make_plate_config,
+    make_shallow_water_config,
     make_scalar_preset_config,
     make_thermal_convection_config,
     make_wave_config,
@@ -97,6 +100,40 @@ def _periodic_maxwell_boundary_conditions() -> dict[str, BoundaryConditionConfig
         "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
         "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
     }
+
+
+def _mixed_burgers_boundary_conditions() -> dict[str, BoundaryConditionConfig]:
+    return {
+        "x-": BoundaryConditionConfig(
+            type="dirichlet",
+            value=vector_expr(x=constant(0.0), y=constant(0.0)),
+        ),
+        "x+": BoundaryConditionConfig(
+            type="neumann",
+            value=vector_expr(x=constant(0.15), y=constant(-0.05)),
+        ),
+        "y-": BoundaryConditionConfig(
+            type="neumann",
+            value=vector_expr(x=constant(0.0), y=constant(0.0)),
+        ),
+        "y+": BoundaryConditionConfig(
+            type="dirichlet",
+            value=vector_expr(x=constant(0.0), y=constant(0.0)),
+        ),
+    }
+
+
+def _burgers_periodic_ic(*, gdim: int):
+    if gdim == 2:
+        return vector_expr(
+            x=scalar_expr("sine_product", amplitude=1.0, ky=2.0),
+            y=scalar_expr("sine_product", amplitude=-1.0, kx=2.0),
+        )
+    return vector_expr(
+        x=scalar_expr("sine_product", amplitude=0.9, ky=2.0),
+        y=scalar_expr("sine_product", amplitude=0.9, kz=2.0),
+        z=scalar_expr("sine_product", amplitude=-0.9, kx=2.0),
+    )
 
 
 def _thermal_velocity_boundary_conditions(
@@ -298,6 +335,32 @@ def _assert_navier_periodic_x(config, result, output_dir):
     assert_periodic_axis(arrays["pressure"], axis=0)
 
 
+def _assert_burgers_mixed_bc(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["velocity_x"])
+    assert_nontrivial(arrays["velocity_y"])
+
+
+def _assert_burgers_periodic_2d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("velocity_x", "velocity_y"):
+        assert_nontrivial(arrays[field_name])
+        assert_periodic_axis(arrays[field_name], axis=0)
+        assert_periodic_axis(arrays[field_name], axis=1)
+
+
+def _assert_burgers_periodic_3d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("velocity_x", "velocity_y", "velocity_z"):
+        assert_nontrivial(arrays[field_name])
+        assert_periodic_axis(arrays[field_name], axis=0)
+        assert_periodic_axis(arrays[field_name], axis=1)
+        assert_periodic_axis(arrays[field_name], axis=2)
+
+
 def _assert_cahn_constant_ic(config, result, output_dir):
     arrays = _assert_success(config, result, output_dir)
     assert result.num_timesteps == 1
@@ -310,6 +373,28 @@ def _assert_cahn_random_ic(config, result, output_dir):
     arrays = _assert_success(config, result, output_dir)
     assert result.num_timesteps == 1
     assert 0.0 < float(np.asarray(arrays["c"]).mean()) < 1.0
+
+
+def _assert_gray_scott_2d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["u"])
+    assert_nontrivial(arrays["v"])
+    assert_periodic_axis(arrays["u"], axis=0)
+    assert_periodic_axis(arrays["u"], axis=1)
+    assert_periodic_axis(arrays["v"], axis=0)
+    assert_periodic_axis(arrays["v"], axis=1)
+
+
+def _assert_gray_scott_3d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["u"])
+    assert_nontrivial(arrays["v"])
+    for field_name in ("u", "v"):
+        assert_periodic_axis(arrays[field_name], axis=0)
+        assert_periodic_axis(arrays[field_name], axis=1)
+        assert_periodic_axis(arrays[field_name], axis=2)
 
 
 def _assert_maxwell_case(config, result, output_dir):
@@ -347,6 +432,19 @@ def _assert_thermal_convection_3d(config, result, output_dir):
     ):
         assert_periodic_axis(arrays[field_name], axis=0)
         assert_periodic_axis(arrays[field_name], axis=1)
+
+
+def _assert_shallow_water_periodic_xy(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["height"])
+    assert_nontrivial(arrays["velocity_x"])
+    assert_periodic_axis(arrays["height"], axis=0)
+    assert_periodic_axis(arrays["height"], axis=1)
+    assert_periodic_axis(arrays["velocity_x"], axis=0)
+    assert_periodic_axis(arrays["velocity_x"], axis=1)
+    assert_periodic_axis(arrays["velocity_y"], axis=0)
+    assert_periodic_axis(arrays["velocity_y"], axis=1)
 
 
 SUCCESS_CASES = (
@@ -622,6 +720,63 @@ SUCCESS_CASES = (
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
+        name="burgers_mixed_vector_bc",
+        make_config=lambda tmp_path: make_burgers_config(
+            tmp_path,
+            gdim=2,
+            parameters={"nu": 0.02},
+            boundary_conditions=_mixed_burgers_boundary_conditions(),
+            source=scalar_expr("none"),
+            initial_condition=vector_expr(
+                x=scalar_expr(
+                    "gaussian_bump",
+                    amplitude=0.8,
+                    sigma=0.12,
+                    center=[0.35, 0.45],
+                ),
+                y=scalar_expr("sine_product", amplitude=0.2, kx=1.0, ky=1.0),
+            ),
+            mesh_resolution=(12, 12),
+            output_resolution=(6, 6),
+            time=TimeConfig(dt=0.02, t_end=0.02),
+        ),
+        assert_result=_assert_burgers_mixed_bc,
+    ),
+    RuntimePresetCase(
+        name="burgers_2d_periodic_xy",
+        make_config=lambda tmp_path: make_burgers_config(
+            tmp_path,
+            gdim=2,
+            parameters={"nu": 0.005},
+            boundary_conditions={},
+            source=scalar_expr("none"),
+            initial_condition=_burgers_periodic_ic(gdim=2),
+            periodic_axes=(0, 1),
+            mesh_resolution=(12, 12),
+            output_resolution=(6, 6),
+            time=TimeConfig(dt=0.02, t_end=0.02),
+        ),
+        assert_result=_assert_burgers_periodic_2d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="burgers_3d_periodic_xyz",
+        make_config=lambda tmp_path: make_burgers_config(
+            tmp_path,
+            gdim=3,
+            parameters={"nu": 0.01},
+            boundary_conditions={},
+            source=scalar_expr("none"),
+            initial_condition=_burgers_periodic_ic(gdim=3),
+            periodic_axes=(0, 1, 2),
+            mesh_resolution=(6, 6, 6),
+            output_resolution=(4, 4, 4),
+            time=TimeConfig(dt=0.02, t_end=0.02),
+        ),
+        assert_result=_assert_burgers_periodic_3d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
         name="thermal_convection_2d_periodic_x",
         make_config=lambda tmp_path: make_thermal_convection_config(
             tmp_path,
@@ -682,6 +837,36 @@ SUCCESS_CASES = (
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
+        name="shallow_water_periodic_xy",
+        make_config=lambda tmp_path: make_shallow_water_config(
+            tmp_path,
+            parameters={
+                "gravity": 1.0,
+                "mean_depth": 1.0,
+                "drag": 0.01,
+                "viscosity": 0.002,
+                "coriolis": 0.2,
+            },
+            bathymetry=constant(0.0),
+            initial_height=scalar_expr(
+                "gaussian_bump",
+                amplitude=0.08,
+                sigma=0.1,
+                center=[0.35, 0.45],
+            ),
+            initial_velocity=vector_zero(),
+            height_boundary_conditions={},
+            velocity_boundary_conditions={},
+            height_periodic_axes=(0, 1),
+            velocity_periodic_axes=(0, 1),
+            mesh_resolution=(8, 8),
+            output_resolution=(5, 5),
+            time=TimeConfig(dt=0.02, t_end=0.02),
+        ),
+        assert_result=_assert_shallow_water_periodic_xy,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
         name="advection_3d_periodic_xyz",
         make_config=lambda tmp_path: make_advection_config(
             tmp_path,
@@ -728,6 +913,66 @@ SUCCESS_CASES = (
             ),
         ),
         assert_result=_assert_cahn_random_ic,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="gray_scott_2d_periodic_xy",
+        make_config=lambda tmp_path: make_gray_scott_config(
+            tmp_path,
+            gdim=2,
+            u_initial_condition=scalar_expr(
+                "gray_scott_patch",
+                background=1.0,
+                patch_value=0.5,
+                center=[0.5, 0.5],
+                half_width=[0.15, 0.15],
+            ),
+            v_initial_condition=scalar_expr(
+                "gray_scott_patch",
+                background=0.0,
+                patch_value=0.25,
+                center=[0.5, 0.5],
+                half_width=[0.15, 0.15],
+            ),
+            u_boundary_conditions={},
+            v_boundary_conditions={},
+            u_periodic_axes=(0, 1),
+            v_periodic_axes=(0, 1),
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=1.0, t_end=1.0),
+        ),
+        assert_result=_assert_gray_scott_2d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="gray_scott_3d_periodic_xyz",
+        make_config=lambda tmp_path: make_gray_scott_config(
+            tmp_path,
+            gdim=3,
+            u_initial_condition=scalar_expr(
+                "gray_scott_patch",
+                background=1.0,
+                patch_value=0.5,
+                center=[0.5, 0.5, 0.5],
+                half_width=[0.15, 0.15, 0.15],
+            ),
+            v_initial_condition=scalar_expr(
+                "gray_scott_patch",
+                background=0.0,
+                patch_value=0.25,
+                center=[0.5, 0.5, 0.5],
+                half_width=[0.15, 0.15, 0.15],
+            ),
+            u_boundary_conditions={},
+            v_boundary_conditions={},
+            u_periodic_axes=(0, 1, 2),
+            v_periodic_axes=(0, 1, 2),
+            mesh_resolution=(5, 5, 5),
+            output_resolution=(3, 3, 3),
+            time=TimeConfig(dt=1.0, t_end=1.0),
+        ),
+        assert_result=_assert_gray_scott_3d,
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
@@ -828,6 +1073,33 @@ REJECTION_CASES = (
         ),
         expected_error=NotImplementedError,
         expected_error_match="N1curl spaces",
+    ),
+    RuntimePresetCase(
+        name="shallow_water_nonperiodic_height_rejected",
+        make_config=lambda tmp_path: make_shallow_water_config(
+            tmp_path,
+            parameters={
+                "gravity": 1.0,
+                "mean_depth": 1.0,
+                "drag": 0.01,
+                "viscosity": 0.002,
+                "coriolis": 0.0,
+            },
+            bathymetry=constant(0.0),
+            initial_height=constant(0.0),
+            initial_velocity=vector_zero(),
+            height_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            },
+            velocity_boundary_conditions={},
+            velocity_periodic_axes=(0, 1),
+            time=TimeConfig(dt=0.02, t_end=0.02),
+        ),
+        expected_error=ValueError,
+        expected_error_match="unsupported operator 'dirichlet'",
     ),
 )
 

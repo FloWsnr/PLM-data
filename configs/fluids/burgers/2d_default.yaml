@@ -1,0 +1,40 @@
+preset: burgers
+parameters:
+  nu: 0.003
+domain:
+  type: rectangle
+  size: [1.0, 1.0]
+  mesh_resolution: [80, 80]
+time:
+  dt: 0.005
+  t_end: 1.0
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: sine_product
+          params:
+            amplitude: 1.0
+            ky: 2.0
+        y:
+          type: sine_product
+          params:
+            amplitude: -1.0
+            kx: 2.0
+boundary_conditions:
+  velocity:
+    $ref: boundary_field.vector.full_periodic_2d
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+output:
+  resolution: [96, 96]
+  num_frames: 31
+  formats: [numpy, gif]
+  fields:
+    velocity:
+      mode: components
+seed: 42

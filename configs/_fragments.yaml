@@ -224,6 +224,38 @@ boundary_field:
         - operator: periodic
           pair_with: z-
   vector:
+    full_periodic_2d:
+      x-:
+        - operator: periodic
+          pair_with: x+
+      x+:
+        - operator: periodic
+          pair_with: x-
+      y-:
+        - operator: periodic
+          pair_with: y+
+      y+:
+        - operator: periodic
+          pair_with: y-
+    full_periodic_3d:
+      x-:
+        - operator: periodic
+          pair_with: x+
+      x+:
+        - operator: periodic
+          pair_with: x-
+      y-:
+        - operator: periodic
+          pair_with: y+
+      y+:
+        - operator: periodic
+          pair_with: y-
+      z-:
+        - operator: periodic
+          pair_with: z+
+      z+:
+        - operator: periodic
+          pair_with: z-
     lid_driven_cavity_2d:
       x-:
         - operator: dirichlet

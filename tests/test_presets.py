@@ -17,6 +17,7 @@ from plm_data.core.config import (
     InputConfig,
     OutputConfig,
     OutputSelectionConfig,
+    PeriodicMapConfig,
     SimulationConfig,
     TimeConfig,
 )
@@ -42,11 +43,15 @@ from plm_data.presets.metadata import (
 )
 from tests.preset_matrix import (
     boundary_field_config,
+    cahn_hilliard_solver_config,
     constant,
     direct_solver_config,
     make_advection_config,
+    make_burgers_config,
     flow_solver_config,
+    make_shallow_water_config,
     make_wave_config,
+    nonlinear_mixed_direct_solver_config,
     output_fields,
     run_preset,
     scalar_expr,
@@ -416,6 +421,40 @@ def _make_stokes_config(tmp_path, *, source=None, parameters=None):
     )
 
 
+def _burgers_periodic_ic(*, gdim: int):
+    if gdim == 2:
+        return vector_expr(
+            x=scalar_expr("sine_product", amplitude=1.0, ky=2.0),
+            y=scalar_expr("sine_product", amplitude=-1.0, kx=2.0),
+        )
+    return vector_expr(
+        x=scalar_expr("sine_product", amplitude=0.9, ky=2.0),
+        y=scalar_expr("sine_product", amplitude=0.9, kz=2.0),
+        z=scalar_expr("sine_product", amplitude=-0.9, kx=2.0),
+    )
+
+
+def _mixed_burgers_boundary_conditions():
+    return {
+        "x-": BoundaryConditionConfig(
+            type="dirichlet",
+            value=vector_expr(x=constant(0.0), y=constant(0.0)),
+        ),
+        "x+": BoundaryConditionConfig(
+            type="neumann",
+            value=vector_expr(x=constant(0.15), y=constant(-0.05)),
+        ),
+        "y-": BoundaryConditionConfig(
+            type="neumann",
+            value=vector_expr(x=constant(0.0), y=constant(0.0)),
+        ),
+        "y+": BoundaryConditionConfig(
+            type="dirichlet",
+            value=vector_expr(x=constant(0.0), y=constant(0.0)),
+        ),
+    }
+
+
 def _make_thermal_convection_config(tmp_path, *, gdim: int):
     if gdim == 2:
         domain = DomainConfig(
@@ -500,6 +539,34 @@ def _make_thermal_convection_config(tmp_path, *, gdim: int):
         solver=flow_solver_config(TRANSIENT_MIXED_DIRECT),
         time=TimeConfig(dt=0.05, t_end=0.05),
         seed=42,
+    )
+
+
+def _make_shallow_water_runtime_config(tmp_path):
+    return make_shallow_water_config(
+        tmp_path,
+        parameters={
+            "gravity": 1.0,
+            "mean_depth": 1.0,
+            "drag": 0.01,
+            "viscosity": 0.002,
+            "coriolis": 0.5,
+        },
+        bathymetry=constant(0.0),
+        initial_height=scalar_expr(
+            "gaussian_bump",
+            amplitude=0.15,
+            sigma=0.06,
+            center=[0.31, 0.43],
+        ),
+        initial_velocity=vector_zero(),
+        height_boundary_conditions={},
+        velocity_boundary_conditions={},
+        height_periodic_axes=(0, 1),
+        velocity_periodic_axes=(0, 1),
+        mesh_resolution=(40, 40),
+        output_resolution=(24, 24),
+        time=TimeConfig(dt=0.01, t_end=0.4),
     )
 
 
@@ -812,6 +879,30 @@ def test_advection_rejects_spd_solver_strategy(tmp_path):
         get_preset("advection").build_problem(config)
 
 
+def test_burgers_rejects_transient_saddle_point_strategy(tmp_path):
+    config = make_burgers_config(
+        tmp_path,
+        gdim=2,
+        parameters={"nu": 0.01},
+        boundary_conditions=_mixed_burgers_boundary_conditions(),
+        source=scalar_expr("none"),
+        initial_condition=vector_expr(
+            x=scalar_expr(
+                "gaussian_bump",
+                amplitude=0.8,
+                sigma=0.12,
+                center=[0.35, 0.45],
+            ),
+            y=scalar_expr("sine_product", amplitude=0.2, kx=1.0, ky=1.0),
+        ),
+        time=TimeConfig(dt=0.02, t_end=0.02),
+        solver=flow_solver_config(TRANSIENT_SADDLE_POINT),
+    )
+
+    with pytest.raises(ValueError, match="does not support solver strategy"):
+        get_preset("burgers").build_problem(config)
+
+
 def test_advection_affine_velocity_single_step(tmp_path):
     config = make_advection_config(
         tmp_path,
@@ -844,6 +935,37 @@ def test_advection_affine_velocity_single_step(tmp_path):
     assert result.solver_converged is True
     arr = np.load(output_dir / "u.npy")
     assert np.max(np.abs(arr[-1] - arr[0])) > 1e-6
+
+
+def test_burgers_mixed_vector_boundary_conditions_single_step(tmp_path):
+    config = make_burgers_config(
+        tmp_path,
+        gdim=2,
+        parameters={"nu": 0.02},
+        boundary_conditions=_mixed_burgers_boundary_conditions(),
+        source=scalar_expr("none"),
+        initial_condition=vector_expr(
+            x=scalar_expr(
+                "gaussian_bump",
+                amplitude=0.8,
+                sigma=0.12,
+                center=[0.35, 0.45],
+            ),
+            y=scalar_expr("sine_product", amplitude=0.2, kx=1.0, ky=1.0),
+        ),
+        mesh_resolution=(16, 16),
+        output_resolution=(8, 8),
+        time=TimeConfig(dt=0.02, t_end=0.02),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 1
+
+    velocity_x = np.load(output_dir / "velocity_x.npy")
+    velocity_y = np.load(output_dir / "velocity_y.npy")
+    assert np.max(np.abs(velocity_x[-1] - velocity_x[0])) > 1e-6
+    assert np.max(np.abs(velocity_y[-1] - velocity_y[0])) > 1e-6
 
 
 def test_heat_manufactured_source_approaches_expected_profile(tmp_path, direct_solver):
@@ -1170,6 +1292,36 @@ def test_navier_stokes_fully_periodic_domain(tmp_path):
     assert np.allclose(pressure[-1, :, 0], pressure[-1, :, -1], atol=1e-4)
 
 
+@pytest.mark.skipif(
+    not HAS_DOLFINX_MPC,
+    reason="periodic Burgers solve requires dolfinx_mpc",
+)
+def test_burgers_fully_periodic_domain_3d(tmp_path):
+    config = make_burgers_config(
+        tmp_path,
+        gdim=3,
+        parameters={"nu": 0.01},
+        boundary_conditions={},
+        source=scalar_expr("none"),
+        initial_condition=_burgers_periodic_ic(gdim=3),
+        periodic_axes=(0, 1, 2),
+        mesh_resolution=(6, 6, 6),
+        output_resolution=(4, 4, 4),
+        time=TimeConfig(dt=0.02, t_end=0.02),
+        solver=cahn_hilliard_solver_config(),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    for field_name in ("velocity_x", "velocity_y", "velocity_z"):
+        arr = np.load(output_dir / f"{field_name}.npy")
+        assert np.max(np.abs(arr[-1] - arr[0])) > 1e-6
+        assert np.allclose(arr[-1, 0, :, :], arr[-1, -1, :, :], atol=1e-4)
+        assert np.allclose(arr[-1, :, 0, :], arr[-1, :, -1, :], atol=1e-4)
+        assert np.allclose(arr[-1, :, :, 0], arr[-1, :, :, -1], atol=1e-4)
+
+
 def test_thermal_convection_rejects_mismatched_periodic_fields(tmp_path):
     config = _make_thermal_convection_config(tmp_path, gdim=2)
     config.boundary_conditions["temperature"] = boundary_field_config(
@@ -1233,6 +1385,132 @@ def test_thermal_convection_requires_standard_boundary_names(tmp_path):
 
     with pytest.raises(ValueError, match="requires standard boundary names"):
         problem.validate_boundary_conditions(domain_geom)
+
+
+@pytest.mark.skipif(
+    not HAS_DOLFINX_MPC,
+    reason="periodic shallow-water solve requires dolfinx_mpc",
+)
+def test_shallow_water_periodic_run_stays_nontrivial_and_positive(tmp_path):
+    config = _make_shallow_water_runtime_config(tmp_path)
+    config.output.num_frames = 9
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 40
+
+    height = np.load(output_dir / "height.npy")
+    velocity_x = np.load(output_dir / "velocity_x.npy")
+    velocity_y = np.load(output_dir / "velocity_y.npy")
+
+    assert np.all(np.isfinite(height))
+    assert np.all(np.isfinite(velocity_x))
+    assert np.all(np.isfinite(velocity_y))
+    assert np.min(1.0 + height) > 0.0
+    assert np.std(height[-1]) > 1.0e-3
+    assert np.std(velocity_x[-1]) > 1.0e-3
+    assert np.linalg.norm(height[-1] - height[len(height) // 2]) > 1.0e-1
+
+
+def test_shallow_water_3d_domain_rejected(tmp_path):
+    config = SimulationConfig(
+        preset="shallow_water",
+        parameters={
+            "gravity": 1.0,
+            "mean_depth": 1.0,
+            "drag": 0.01,
+            "viscosity": 0.002,
+            "coriolis": 0.0,
+        },
+        domain=DomainConfig(
+            type="box",
+            params={"size": [1.0, 1.0, 1.0], "mesh_resolution": [4, 4, 4]},
+        ),
+        inputs={
+            "height": InputConfig(initial_condition=constant(0.0)),
+            "velocity": InputConfig(initial_condition=vector_zero()),
+        },
+        boundary_conditions={
+            "height": boundary_field_config({}, periodic_axes=(0, 1, 2)),
+            "velocity": boundary_field_config({}, periodic_axes=(0, 1, 2)),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[4, 4, 4],
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(height="scalar", velocity="components"),
+        ),
+        solver=nonlinear_mixed_direct_solver_config(),
+        time=TimeConfig(dt=0.02, t_end=0.02),
+        seed=42,
+        coefficients={"bathymetry": constant(0.0)},
+    )
+
+    with pytest.raises(ValueError, match="only supports 2D domains"):
+        _run_preset(config)
+
+
+def test_shallow_water_rejects_mismatched_periodic_fields(tmp_path):
+    config = SimulationConfig(
+        preset="shallow_water",
+        parameters={
+            "gravity": 1.0,
+            "mean_depth": 1.0,
+            "drag": 0.01,
+            "viscosity": 0.002,
+            "coriolis": 0.0,
+        },
+        domain=DomainConfig(
+            type="rectangle",
+            params={"size": [1.0, 1.0], "mesh_resolution": [6, 6]},
+            periodic_maps={
+                "bottom_left": PeriodicMapConfig(
+                    slave="x-",
+                    master="y-",
+                    matrix=[[0.0, 1.0], [1.0, 0.0]],
+                    offset=[0.0, 0.0],
+                ),
+                "top_right": PeriodicMapConfig(
+                    slave="x+",
+                    master="y+",
+                    matrix=[[0.0, 1.0], [1.0, 0.0]],
+                    offset=[0.0, 0.0],
+                ),
+            },
+        ),
+        inputs={
+            "height": InputConfig(initial_condition=constant(0.0)),
+            "velocity": InputConfig(initial_condition=vector_zero()),
+        },
+        boundary_conditions={
+            "height": boundary_field_config({}, periodic_axes=(0, 1)),
+            "velocity": BoundaryFieldConfig(
+                sides={
+                    "x-": [BoundaryConditionConfig(type="periodic", pair_with="y-")],
+                    "x+": [BoundaryConditionConfig(type="periodic", pair_with="y+")],
+                    "y-": [BoundaryConditionConfig(type="periodic", pair_with="x-")],
+                    "y+": [BoundaryConditionConfig(type="periodic", pair_with="x+")],
+                }
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[4, 4],
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(height="scalar", velocity="components"),
+        ),
+        solver=nonlinear_mixed_direct_solver_config(),
+        time=TimeConfig(dt=0.02, t_end=0.02),
+        seed=42,
+        coefficients={"bathymetry": constant(0.0)},
+    )
+
+    preset = get_preset(config.preset)
+    problem = preset.build_problem(config)
+    with pytest.raises(ValueError, match="identical periodic side pairs"):
+        problem.load_domain_geometry()
 
 
 def test_maxwell_pulse_preset_3d_single_step(tmp_path):

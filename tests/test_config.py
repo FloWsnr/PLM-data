@@ -8,6 +8,7 @@ from plm_data.core.solver_strategies import (
     CONSTANT_LHS_CURL_DIRECT,
     CONSTANT_LHS_SCALAR_NONSYMMETRIC,
     CONSTANT_LHS_SCALAR_SPD,
+    NONLINEAR_MIXED_DIRECT,
     STATIONARY_SCALAR_SPD,
     STEADY_SADDLE_POINT,
     TRANSIENT_MIXED_DIRECT,
@@ -125,6 +126,53 @@ def test_load_config_thermal_convection_3d():
     )
 
 
+def test_load_config_gray_scott_2d():
+    cfg = load_config("configs/physics/gray_scott/2d_default.yaml")
+    assert cfg.preset == "gray_scott"
+    assert cfg.domain.dimension == 2
+    assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.parameters["Du"] == 2.0e-5
+    assert cfg.parameters["Dv"] == 1.0e-5
+    assert cfg.parameters["F"] == 0.037
+    assert cfg.parameters["k"] == 0.06
+    assert cfg.input("u").initial_condition.type == "gray_scott_patch"
+    assert cfg.input("v").initial_condition.type == "gray_scott_patch"
+    assert cfg.output_mode("u") == "scalar"
+    assert cfg.output_mode("v") == "scalar"
+    assert cfg.boundary_field("u").side_conditions("x-")[0].type == "periodic"
+    assert cfg.boundary_field("v").side_conditions("y+")[0].pair_with == "y-"
+
+
+def test_load_config_gray_scott_3d():
+    cfg = load_config("configs/physics/gray_scott/3d_default.yaml")
+    assert cfg.preset == "gray_scott"
+    assert cfg.domain.dimension == 3
+    assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.input("u").initial_condition.params["center"] == [1.25, 1.25, 1.25]
+    assert cfg.input("v").initial_condition.params["half_width"] == [0.25, 0.25, 0.25]
+    assert cfg.boundary_field("u").side_conditions("z+")[0].pair_with == "z-"
+    assert cfg.boundary_field("v").side_conditions("x-")[0].pair_with == "x+"
+
+
+def test_load_config_shallow_water():
+    cfg = load_config("configs/fluids/shallow_water/2d_default.yaml")
+    assert cfg.preset == "shallow_water"
+    assert cfg.domain.dimension == 2
+    assert cfg.parameters["gravity"] == 1.0
+    assert cfg.parameters["mean_depth"] == 1.0
+    assert cfg.coefficient("bathymetry").type == "constant"
+    assert cfg.coefficient("bathymetry").params["value"] == 0.0
+    assert cfg.input("height").initial_condition.type == "gaussian_bump"
+    assert cfg.input("height").initial_condition.params["center"] == [0.31, 0.43]
+    assert cfg.input("velocity").initial_condition.type == "zero"
+    assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.boundary_field("height").side_conditions("x-")[0].pair_with == "x+"
+    assert cfg.boundary_field("velocity").side_conditions("y+")[0].pair_with == "y-"
+    assert cfg.output_mode("height") == "scalar"
+    assert cfg.output_mode("velocity") == "components"
+    assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
+
+
 def test_load_config_advection_2d():
     cfg = load_config("configs/basic/advection/2d_default.yaml")
     assert cfg.preset == "advection"
@@ -147,6 +195,35 @@ def test_load_config_advection_3d():
     assert cfg.has_periodic_boundary_conditions is True
     assert cfg.coefficient("velocity").components["z"].params["kx"] == 2.0
     assert cfg.boundary_field("u").side_conditions("z+")[0].pair_with == "z-"
+
+
+def test_load_config_burgers_2d():
+    cfg = load_config("configs/fluids/burgers/2d_default.yaml")
+    velocity = cfg.input("velocity")
+    assert cfg.preset == "burgers"
+    assert cfg.domain.dimension == 2
+    assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.parameters["nu"] == 0.003
+    assert cfg.output_mode("velocity") == "components"
+    assert velocity.source.type == "none"
+    assert velocity.initial_condition.components["x"].params["ky"] == 2.0
+    assert velocity.initial_condition.components["y"].params["amplitude"] == -1.0
+    assert cfg.boundary_field("velocity").side_conditions("x-")[0].pair_with == "x+"
+    assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
+
+
+def test_load_config_burgers_3d():
+    cfg = load_config("configs/fluids/burgers/3d_default.yaml")
+    velocity = cfg.input("velocity")
+    assert cfg.preset == "burgers"
+    assert cfg.domain.dimension == 3
+    assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.parameters["nu"] == 0.004
+    assert cfg.output_mode("velocity") == "components"
+    assert velocity.initial_condition.components["y"].params["kz"] == 2.0
+    assert velocity.initial_condition.components["z"].params["amplitude"] == -0.9
+    assert cfg.boundary_field("velocity").side_conditions("z+")[0].pair_with == "z-"
+    assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
 
 
 def test_load_config_maxwell_pulse():

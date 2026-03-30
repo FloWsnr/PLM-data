@@ -388,6 +388,61 @@ def make_thermal_convection_config(
     tmp_path: Path,
     *,
     gdim: int,
+def make_burgers_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    parameters: dict[str, float],
+    boundary_conditions: dict[str, BoundaryConditionConfig],
+    source: FieldExpressionConfig,
+    initial_condition: FieldExpressionConfig,
+    periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    solver: SolverConfig | None = None,
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(f"Burgers test helper only supports 2D/3D, got {gdim}D")
+
+    return SimulationConfig(
+        preset="burgers",
+        parameters=parameters,
+        domain=domain,
+        inputs={
+            "velocity": InputConfig(
+                source=source,
+                initial_condition=initial_condition,
+            )
+        },
+        boundary_conditions={
+            "velocity": boundary_field_config(
+                boundary_conditions,
+                periodic_axes=periodic_axes,
+            )
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(velocity="components"),
+        ),
+        solver=solver or cahn_hilliard_solver_config(),
+        time=time,
+        seed=seed,
+    )
+
+
     parameters: dict[str, float],
     velocity_boundary_conditions: dict[str, BoundaryConditionConfig],
     temperature_boundary_conditions: dict[str, BoundaryConditionConfig],
