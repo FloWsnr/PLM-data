@@ -15,5 +15,9 @@ fi
 if [[ "$NPROCS" -eq 1 ]]; then
     python -m plm_data "$@"
 else
+    # Bind OpenMP threads to avoid oversubscription with MPI ranks.
+    # Each rank gets (total_cores / nprocs) threads.
+    TOTAL_CORES=$(nproc)
+    export OMP_NUM_THREADS=$(( TOTAL_CORES / NPROCS ))
     mpirun -n "$NPROCS" python -m plm_data "$@"
 fi

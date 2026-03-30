@@ -117,6 +117,10 @@ class ProblemInstance(ABC):
         """Return whether the LHS matrix should be assembled only once."""
         return mpc is None and self.config.solver.strategy in CONSTANT_LHS_STRATEGIES
 
+    def should_reuse_preconditioner(self, *, mpc=None) -> bool:
+        """Return whether the preconditioner matrix should be assembled only once."""
+        return False
+
     def linear_problem_after_lhs_assembled(
         self,
         *,
@@ -136,11 +140,13 @@ class ProblemInstance(ABC):
             mpc=mpc,
         )
         reuse_lhs = self.should_reuse_linear_lhs(mpc=mpc)
-        if not reuse_lhs and after_lhs_assembled is None:
+        reuse_preconditioner = self.should_reuse_preconditioner(mpc=mpc)
+        if not reuse_lhs and not reuse_preconditioner and after_lhs_assembled is None:
             return problem
         return ManagedLinearProblem(
             problem,
             reuse_lhs=reuse_lhs,
+            reuse_preconditioner=reuse_preconditioner,
             after_lhs_assembled=after_lhs_assembled,
         )
 

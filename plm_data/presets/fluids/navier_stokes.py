@@ -251,6 +251,9 @@ class _NavierStokesProblem(TransientLinearProblem):
 
         return _configure
 
+    def should_reuse_preconditioner(self, *, mpc=None) -> bool:
+        return mpc is None
+
 
 @register_preset("navier_stokes")
 class NavierStokesPreset(PDEPreset):

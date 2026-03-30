@@ -182,17 +182,13 @@ def flow_solver_config(
         }
     elif strategy == TRANSIENT_SADDLE_POINT:
         mpi = {
-            "ksp_type": "gmres",
-            "ksp_rtol": "1.0e-8",
+            "ksp_type": "preonly",
+            "pc_type": "lu",
+            "pc_factor_mat_solver_type": "mumps",
+            "mat_mumps_icntl_14": "80",
+            "mat_mumps_icntl_24": "1",
+            "mat_mumps_icntl_25": "0",
             "ksp_error_if_not_converged": "1",
-            "pc_type": "fieldsplit",
-            "pc_fieldsplit_type": "schur",
-            "pc_fieldsplit_schur_fact_type": "upper",
-            "pc_fieldsplit_schur_precondition": "selfp",
-            "fieldsplit_velocity_0_ksp_type": "preonly",
-            "fieldsplit_velocity_0_pc_type": "gamg",
-            "fieldsplit_pressure_1_ksp_type": "preonly",
-            "fieldsplit_pressure_1_pc_type": "jacobi",
         }
     return solver_config(
         strategy,

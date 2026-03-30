@@ -23,12 +23,16 @@ class ManagedLinearProblem:
         problem: Any,
         *,
         reuse_lhs: bool = False,
+        reuse_preconditioner: bool = False,
         after_lhs_assembled: Callable[["ManagedLinearProblem"], None] | None = None,
     ):
         self._problem = problem
         self._reuse_lhs = reuse_lhs
+        self._reuse_preconditioner = reuse_preconditioner
         self._after_lhs_assembled = after_lhs_assembled
         self._lhs_ready = False
+        self._preconditioner_ready = False
+        self._pc_reuse_set = False
 
     @property
     def a(self):
@@ -91,12 +95,18 @@ class ManagedLinearProblem:
         self.A.assemble()
 
         if self.P_mat is not None:
-            self.P_mat.zeroEntries()
-            assemble_matrix(self.P_mat, self.preconditioner, bcs=self.bcs)
-            self.P_mat.assemble()
+            if not self._reuse_preconditioner or not self._preconditioner_ready:
+                self.P_mat.zeroEntries()
+                assemble_matrix(self.P_mat, self.preconditioner, bcs=self.bcs)
+                self.P_mat.assemble()
+                self._preconditioner_ready = True
 
         if self._after_lhs_assembled is not None:
             self._after_lhs_assembled(self)
+
+        if self._reuse_preconditioner and self._preconditioner_ready and not self._pc_reuse_set:
+            self.solver.getPC().setReusePreconditioner(True)
+            self._pc_reuse_set = True
 
     def _assemble_rhs(self) -> None:
         dolfinx.la.petsc._zero_vector(self.b)

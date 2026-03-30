@@ -48,7 +48,7 @@ solver:
       pc_type: fieldsplit
       pc_fieldsplit_type: schur
       pc_fieldsplit_schur_fact_type: upper
-      pc_fieldsplit_schur_precondition: selfp
+      pc_fieldsplit_schur_precondition: a11
       fieldsplit_velocity_0_ksp_type: preonly
       fieldsplit_velocity_0_pc_type: gamg
       fieldsplit_pressure_1_ksp_type: preonly
@@ -117,7 +117,7 @@ solver:
       serial:
         $ref: solver.serial.direct_mumps
       mpi:
-        $ref: solver.mpi.transient_saddle_point
+        $ref: solver.mpi.direct_mumps
     nonlinear_mixed_direct:
       strategy: nonlinear_mixed_direct
       serial:
