@@ -1,0 +1,42 @@
+preset: cgl
+parameters:
+  # Canonical CGL: D_r=1, D_i=b, a_r=r, a_i=0, b_r=-1, b_i=-c
+  # Using r=1, b=2, c=-1.2 => 1+bc = 1+2*(-1.2) = -1.4 < 0 (Benjamin-Feir unstable)
+  D_r: 1.0
+  D_i: 2.0
+  a_r: 1.0
+  a_i: 0.0
+  b_r: -1.0
+  b_i: 1.2
+  theta: 0.5
+domain:
+  type: rectangle
+  size: [100.0, 100.0]
+  mesh_resolution: [256, 256]
+time:
+  $ref: time.cgl_default
+inputs:
+  u:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 1.0
+        std: 0.05
+  v:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 0.0
+        std: 0.05
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.full_periodic_2d
+  v:
+    $ref: boundary_field.scalar.full_periodic_2d
+output:
+  $ref: output.template.cgl
+  resolution: [128, 128]
+  num_frames: 100
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

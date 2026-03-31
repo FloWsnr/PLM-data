@@ -412,6 +412,16 @@ output:
           $ref: output.mode.scalar
         velocity:
           $ref: output.mode.scalar
+    cgl:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        u:
+          $ref: output.mode.scalar
+        v:
+          $ref: output.mode.scalar
+        amplitude:
+          $ref: output.mode.scalar
 
 time:
   unit_interval_dt_0p01:
@@ -423,6 +433,9 @@ time:
   ks_default:
     dt: 0.05
     t_end: 50.0
+  cgl_default:
+    dt: 0.1
+    t_end: 100.0
 
 test:
   cycle:

@@ -13,6 +13,7 @@ from tests.preset_matrix import (
     make_advection_config,
     make_burgers_config,
     make_cahn_hilliard_config,
+    make_cgl_config,
     make_kuramoto_sivashinsky_config,
     make_flow_preset_config,
     make_gray_scott_config,
@@ -361,6 +362,25 @@ def _assert_burgers_periodic_3d(config, result, output_dir):
         assert_periodic_axis(arrays[field_name], axis=0)
         assert_periodic_axis(arrays[field_name], axis=1)
         assert_periodic_axis(arrays[field_name], axis=2)
+
+
+def _assert_cgl_constant_ic(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert np.allclose(arrays["u"][0], 1.0, atol=0.1)
+    assert np.allclose(arrays["v"][0], 0.0, atol=0.1)
+    assert np.all(np.isfinite(arrays["amplitude"]))
+    assert_periodic_axis(arrays["u"], axis=0)
+    assert_periodic_axis(arrays["u"], axis=1)
+
+
+def _assert_cgl_random_ic(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert np.all(np.isfinite(arrays["u"]))
+    assert np.all(np.isfinite(arrays["v"]))
+    assert np.all(np.isfinite(arrays["amplitude"]))
+    assert np.all(arrays["amplitude"] >= 0)
 
 
 def _assert_ks_constant_ic(config, result, output_dir):
@@ -926,6 +946,34 @@ SUCCESS_CASES = (
             time=TimeConfig(dt=0.01, t_end=0.01),
         ),
         assert_result=_assert_advection_periodic_xyz,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="cgl_constant_ic",
+        make_config=lambda tmp_path: make_cgl_config(
+            tmp_path,
+            u_initial_condition=constant(1.0),
+            v_initial_condition=constant(0.0),
+        ),
+        assert_result=_assert_cgl_constant_ic,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="cgl_random_perturbation_ic",
+        make_config=lambda tmp_path: make_cgl_config(
+            tmp_path,
+            u_initial_condition=scalar_expr(
+                "random_perturbation",
+                mean=1.0,
+                std=0.05,
+            ),
+            v_initial_condition=scalar_expr(
+                "random_perturbation",
+                mean=0.0,
+                std=0.05,
+            ),
+        ),
+        assert_result=_assert_cgl_random_ic,
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(

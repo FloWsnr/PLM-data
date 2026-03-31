@@ -540,6 +540,49 @@ def make_kuramoto_sivashinsky_config(
     )
 
 
+def make_cgl_config(
+    tmp_path: Path,
+    *,
+    u_initial_condition: FieldExpressionConfig,
+    v_initial_condition: FieldExpressionConfig,
+    periodic_axes: tuple[int, ...] = (0, 1),
+    mesh_resolution: tuple[int, int] = (6, 6),
+    output_resolution: tuple[int, int] = (4, 4),
+    seed: int | None = 42,
+) -> SimulationConfig:
+    return SimulationConfig(
+        preset="cgl",
+        parameters={
+            "D_r": 1.0,
+            "D_i": 2.0,
+            "a_r": 1.0,
+            "a_i": 0.0,
+            "b_r": -1.0,
+            "b_i": 1.2,
+            "theta": 0.5,
+        },
+        domain=rectangle_domain(mesh_resolution=mesh_resolution),
+        inputs={
+            "u": InputConfig(initial_condition=u_initial_condition),
+            "v": InputConfig(initial_condition=v_initial_condition),
+        },
+        boundary_conditions={
+            "u": boundary_field_config({}, periodic_axes=periodic_axes),
+            "v": boundary_field_config({}, periodic_axes=periodic_axes),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(u="scalar", v="scalar", amplitude="scalar"),
+        ),
+        solver=nonlinear_mixed_direct_solver_config(),
+        time=TimeConfig(dt=0.1, t_end=0.1),
+        seed=seed,
+    )
+
+
 def make_cahn_hilliard_config(
     tmp_path: Path,
     *,
