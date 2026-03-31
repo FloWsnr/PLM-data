@@ -19,6 +19,25 @@ ALL_CONFIGS = sorted(
     path for path in CONFIGS_DIR.rglob("*.yaml") if not path.name.startswith("_")
 )
 HAS_DOLFINX_MPC = importlib.util.find_spec("dolfinx_mpc") is not None
+SMOKE_MESH_RESOLUTION_CAP = 4
+
+
+def _prepare_smoke_run_config(cfg, output_path: Path) -> None:
+    """Keep config coverage broad without paying production-scale solve costs."""
+
+    ndim = cfg.domain.dimension
+    cfg.output.resolution = [4] * ndim
+    cfg.output.path = output_path
+    cfg.output.num_frames = 2
+
+    mesh_resolution = cfg.domain.params.get("mesh_resolution")
+    if mesh_resolution is not None:
+        cfg.domain.params["mesh_resolution"] = [
+            min(int(value), SMOKE_MESH_RESOLUTION_CAP) for value in mesh_resolution
+        ]
+
+    if cfg.time is not None:
+        cfg.time.t_end = cfg.time.dt  # single timestep
 
 
 @pytest.mark.parametrize(
@@ -33,13 +52,8 @@ def test_config_runs(config_path, tmp_path):
     if cfg.has_periodic_boundary_conditions and not HAS_DOLFINX_MPC:
         pytest.skip("periodic configs require dolfinx_mpc")
 
-    # Shrink to minimal run (match dimensionality of the domain)
-    ndim = cfg.domain.dimension
-    cfg.output.resolution = [4] * ndim
-    cfg.output.path = tmp_path
-    cfg.output.num_frames = 2
-    if cfg.time is not None:
-        cfg.time.t_end = cfg.time.dt  # single timestep
+    # This is a parser/build/solve smoke sweep, not a fidelity benchmark.
+    _prepare_smoke_run_config(cfg, tmp_path)
 
     preset = get_preset(cfg.preset)
     output_dir = tmp_path / "out"
