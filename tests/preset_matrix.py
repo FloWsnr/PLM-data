@@ -750,6 +750,98 @@ def make_lorenz_config(
     )
 
 
+def make_superlattice_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    u_1_initial_condition: FieldExpressionConfig,
+    v_1_initial_condition: FieldExpressionConfig,
+    u_2_initial_condition: FieldExpressionConfig,
+    v_2_initial_condition: FieldExpressionConfig,
+    u_1_boundary_conditions: dict[str, BoundaryConditionConfig],
+    v_1_boundary_conditions: dict[str, BoundaryConditionConfig],
+    u_2_boundary_conditions: dict[str, BoundaryConditionConfig],
+    v_2_boundary_conditions: dict[str, BoundaryConditionConfig],
+    u_1_periodic_axes: tuple[int, ...] = (),
+    v_1_periodic_axes: tuple[int, ...] = (),
+    u_2_periodic_axes: tuple[int, ...] = (),
+    v_2_periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+    parameters: dict[str, float] | None = None,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(f"Superlattice test helper only supports 2D/3D, got {gdim}D")
+
+    if parameters is None:
+        parameters = {
+            "D_u1": 4.3,
+            "D_v1": 50.0,
+            "D_u2": 22.0,
+            "D_v2": 660.0,
+            "a": 3.0,
+            "b": 9.0,
+            "c": 15.0,
+            "d": 9.0,
+            "alpha": 0.15,
+        }
+
+    return SimulationConfig(
+        preset="superlattice",
+        parameters=parameters,
+        domain=domain,
+        inputs={
+            "u_1": InputConfig(initial_condition=u_1_initial_condition),
+            "v_1": InputConfig(initial_condition=v_1_initial_condition),
+            "u_2": InputConfig(initial_condition=u_2_initial_condition),
+            "v_2": InputConfig(initial_condition=v_2_initial_condition),
+        },
+        boundary_conditions={
+            "u_1": boundary_field_config(
+                u_1_boundary_conditions,
+                periodic_axes=u_1_periodic_axes,
+            ),
+            "v_1": boundary_field_config(
+                v_1_boundary_conditions,
+                periodic_axes=v_1_periodic_axes,
+            ),
+            "u_2": boundary_field_config(
+                u_2_boundary_conditions,
+                periodic_axes=u_2_periodic_axes,
+            ),
+            "v_2": boundary_field_config(
+                v_2_boundary_conditions,
+                periodic_axes=v_2_periodic_axes,
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(
+                u_1="scalar",
+                v_1="scalar",
+                u_2="scalar",
+                v_2="scalar",
+            ),
+        ),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
+        time=time,
+        seed=seed,
+    )
+
+
 def make_shallow_water_config(
     tmp_path: Path,
     *,

@@ -50,6 +50,7 @@ from tests.preset_matrix import (
     make_burgers_config,
     flow_solver_config,
     make_shallow_water_config,
+    make_superlattice_config,
     make_wave_config,
     nonlinear_mixed_direct_solver_config,
     output_fields,
@@ -1369,6 +1370,47 @@ def test_burgers_fully_periodic_domain_3d(tmp_path):
         assert np.allclose(arr[-1, 0, :, :], arr[-1, -1, :, :], atol=1e-4)
         assert np.allclose(arr[-1, :, 0, :], arr[-1, :, -1, :], atol=1e-4)
         assert np.allclose(arr[-1, :, :, 0], arr[-1, :, :, -1], atol=1e-4)
+
+
+@pytest.mark.skipif(
+    not HAS_DOLFINX_MPC,
+    reason="periodic superlattice solve requires dolfinx_mpc",
+)
+def test_superlattice_periodic_equilibrium_is_preserved(tmp_path):
+    config = make_superlattice_config(
+        tmp_path,
+        gdim=2,
+        u_1_initial_condition=constant(3.0),
+        v_1_initial_condition=constant(3.0),
+        u_2_initial_condition=constant(3.0),
+        v_2_initial_condition=constant(10.0),
+        u_1_boundary_conditions={},
+        v_1_boundary_conditions={},
+        u_2_boundary_conditions={},
+        v_2_boundary_conditions={},
+        u_1_periodic_axes=(0, 1),
+        v_1_periodic_axes=(0, 1),
+        u_2_periodic_axes=(0, 1),
+        v_2_periodic_axes=(0, 1),
+        mesh_resolution=(8, 8),
+        output_resolution=(6, 6),
+        time=TimeConfig(dt=0.01, t_end=0.01),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 1
+
+    expected_values = {
+        "u_1": 3.0,
+        "v_1": 3.0,
+        "u_2": 3.0,
+        "v_2": 10.0,
+    }
+    for field_name, expected in expected_values.items():
+        arr = np.load(output_dir / f"{field_name}.npy")
+        assert np.allclose(arr[0], expected, atol=1e-8)
+        assert np.allclose(arr[-1], expected, atol=1e-8)
 
 
 def test_thermal_convection_rejects_mismatched_periodic_fields(tmp_path):

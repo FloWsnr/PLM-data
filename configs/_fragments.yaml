@@ -330,6 +330,18 @@ output:
           $ref: output.mode.scalar
         v:
           $ref: output.mode.scalar
+    scalar_u1_v1_u2_v2:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        u_1:
+          $ref: output.mode.scalar
+        v_1:
+          $ref: output.mode.scalar
+        u_2:
+          $ref: output.mode.scalar
+        v_2:
+          $ref: output.mode.scalar
     scalar_xyz:
       formats:
         $ref: output.formats.numpy_gif
