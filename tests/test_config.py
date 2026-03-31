@@ -154,6 +154,20 @@ def test_load_config_gray_scott_3d():
     assert cfg.boundary_field("v").side_conditions("x-")[0].pair_with == "x+"
 
 
+def test_load_config_keller_segel_2d():
+    cfg = load_config("configs/biology/keller_segel/2d_default.yaml")
+    assert cfg.preset == "keller_segel"
+    assert cfg.domain.dimension == 2
+    assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.parameters["chi0"] == 10.0
+    assert cfg.input("rho").initial_condition.type == "random_perturbation"
+    assert cfg.input("c").initial_condition.params["mean"] == 1.0
+    assert cfg.boundary_field("rho").side_conditions("x-")[0].type == "periodic"
+    assert cfg.boundary_field("c").side_conditions("y+")[0].pair_with == "y-"
+    assert cfg.output_mode("rho") == "scalar"
+    assert cfg.output_mode("c") == "scalar"
+
+
 def test_load_config_shallow_water():
     cfg = load_config("configs/fluids/shallow_water/2d_default.yaml")
     assert cfg.preset == "shallow_water"

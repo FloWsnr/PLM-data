@@ -12,7 +12,7 @@ from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
 from plm_data.presets.boundary_validation import (
-    validate_scalar_standard_boundary_field,
+    validate_boundary_field_structure,
 )
 from plm_data.presets.metadata import (
     BoundaryFieldSpec,
@@ -23,6 +23,10 @@ from plm_data.presets.metadata import (
     SCALAR_STANDARD_BOUNDARY_OPERATORS,
     StateSpec,
 )
+
+_KELLER_SEGEL_BOUNDARY_OPERATORS = {
+    "periodic": SCALAR_STANDARD_BOUNDARY_OPERATORS["periodic"]
+}
 
 _KELLER_SEGEL_SPEC = PresetSpec(
     name="keller_segel",
@@ -66,14 +70,14 @@ _KELLER_SEGEL_SPEC = PresetSpec(
         "rho": BoundaryFieldSpec(
             name="rho",
             shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for cell density rho.",
+            operators=_KELLER_SEGEL_BOUNDARY_OPERATORS,
+            description="Periodic boundary conditions for cell density rho.",
         ),
         "c": BoundaryFieldSpec(
             name="c",
             shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for chemoattractant c.",
+            operators=_KELLER_SEGEL_BOUNDARY_OPERATORS,
+            description="Periodic boundary conditions for chemoattractant c.",
         ),
     },
     states={
@@ -108,18 +112,32 @@ class _KellerSegelProblem(TransientLinearProblem):
     supported_solver_strategies = (CONSTANT_LHS_SCALAR_SPD,)
 
     def validate_boundary_conditions(self, domain_geom):
-        validate_scalar_standard_boundary_field(
+        rho_boundary_field = self.config.boundary_field("rho")
+        c_boundary_field = self.config.boundary_field("c")
+
+        validate_boundary_field_structure(
             preset_name=self.spec.name,
             field_name="rho",
-            boundary_field=self.config.boundary_field("rho"),
+            boundary_field=rho_boundary_field,
             domain_geom=domain_geom,
+            allowed_operators={"periodic"},
         )
-        validate_scalar_standard_boundary_field(
+        validate_boundary_field_structure(
             preset_name=self.spec.name,
             field_name="c",
-            boundary_field=self.config.boundary_field("c"),
+            boundary_field=c_boundary_field,
             domain_geom=domain_geom,
+            allowed_operators={"periodic"},
         )
+
+        if (
+            rho_boundary_field.periodic_pair_keys()
+            != c_boundary_field.periodic_pair_keys()
+        ):
+            raise ValueError(
+                "Keller-Segel boundary conditions for 'rho' and 'c' must use "
+                "identical periodic side pairs."
+            )
 
     def setup(self) -> None:
         domain_geom = self.load_domain_geometry()

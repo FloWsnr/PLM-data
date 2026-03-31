@@ -121,6 +121,7 @@ class _KuramotoSivashinskyProblem(TransientNonlinearProblem):
         )
         self.u.x.scatter_forward()
         self.u0.x.array[:] = self.u.x.array
+        self.u0.x.scatter_forward()
 
         u, v = ufl.split(self.u)
         u0, v0 = ufl.split(self.u0)
@@ -157,13 +158,21 @@ class _KuramotoSivashinskyProblem(TransientNonlinearProblem):
         self.v_out = fem.Function(V1, name="v")
 
     def step(self, t: float, dt: float) -> bool:
+        self.u.x.scatter_forward()
         self.u0.x.array[:] = self.u.x.array
+        self.u0.x.scatter_forward()
         self.problem.solve()
-        return self.problem.solver.getConvergedReason() > 0
+        converged = self.problem.solver.getConvergedReason() > 0
+        if converged:
+            self.u.x.scatter_forward()
+        return converged
 
     def get_output_fields(self) -> dict[str, fem.Function]:
+        self.u.x.scatter_forward()
         self.u_out.x.array[:] = self.u.x.array[self._u_dofs]
         self.v_out.x.array[:] = self.u.x.array[self._v_dofs]
+        self.u_out.x.scatter_forward()
+        self.v_out.x.scatter_forward()
         return {"u": self.u_out, "v": self.v_out}
 
     def get_num_dofs(self) -> int:

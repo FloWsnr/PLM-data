@@ -570,6 +570,55 @@ def _make_shallow_water_runtime_config(tmp_path):
     )
 
 
+def _make_keller_segel_config(
+    tmp_path,
+    *,
+    rho_boundary_conditions,
+    c_boundary_conditions,
+    rho_periodic_axes=(),
+    c_periodic_axes=(),
+):
+    return SimulationConfig(
+        preset="keller_segel",
+        parameters={
+            "D_rho": 1.0,
+            "D_c": 0.5,
+            "chi0": 10.0,
+            "alpha": 1.0,
+            "beta": 1.0,
+            "r": 1.0,
+        },
+        domain=DomainConfig(
+            type="rectangle",
+            params={"size": [1.0, 1.0], "mesh_resolution": [6, 6]},
+        ),
+        inputs={
+            "rho": InputConfig(initial_condition=constant(1.0)),
+            "c": InputConfig(initial_condition=constant(1.0)),
+        },
+        boundary_conditions={
+            "rho": boundary_field_config(
+                rho_boundary_conditions,
+                periodic_axes=rho_periodic_axes,
+            ),
+            "c": boundary_field_config(
+                c_boundary_conditions,
+                periodic_axes=c_periodic_axes,
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[4, 4],
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(rho="scalar", c="scalar"),
+        ),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
+        time=TimeConfig(dt=0.02, t_end=0.02),
+        seed=42,
+    )
+
+
 def test_stokes_3d(tmp_path):
     config = SimulationConfig(
         preset="stokes",
@@ -1505,6 +1554,92 @@ def test_shallow_water_rejects_mismatched_periodic_fields(tmp_path):
         time=TimeConfig(dt=0.02, t_end=0.02),
         seed=42,
         coefficients={"bathymetry": constant(0.0)},
+    )
+
+    preset = get_preset(config.preset)
+    problem = preset.build_problem(config)
+    with pytest.raises(ValueError, match="identical periodic side pairs"):
+        problem.load_domain_geometry()
+
+
+def test_keller_segel_rejects_nonperiodic_boundaries(tmp_path):
+    dirichlet_bc = BoundaryConditionConfig(type="dirichlet", value=constant(1.0))
+    config = _make_keller_segel_config(
+        tmp_path,
+        rho_boundary_conditions={
+            "x-": dirichlet_bc,
+            "x+": dirichlet_bc,
+            "y-": dirichlet_bc,
+            "y+": dirichlet_bc,
+        },
+        c_boundary_conditions={
+            "x-": dirichlet_bc,
+            "x+": dirichlet_bc,
+            "y-": dirichlet_bc,
+            "y+": dirichlet_bc,
+        },
+    )
+
+    preset = get_preset(config.preset)
+    problem = preset.build_problem(config)
+    with pytest.raises(ValueError, match="unsupported operator 'dirichlet'"):
+        problem.load_domain_geometry()
+
+
+def test_keller_segel_rejects_mismatched_periodic_fields(tmp_path):
+    config = SimulationConfig(
+        preset="keller_segel",
+        parameters={
+            "D_rho": 1.0,
+            "D_c": 0.5,
+            "chi0": 10.0,
+            "alpha": 1.0,
+            "beta": 1.0,
+            "r": 1.0,
+        },
+        domain=DomainConfig(
+            type="rectangle",
+            params={"size": [1.0, 1.0], "mesh_resolution": [6, 6]},
+            periodic_maps={
+                "bottom_left": PeriodicMapConfig(
+                    slave="x-",
+                    master="y-",
+                    matrix=[[0.0, 1.0], [1.0, 0.0]],
+                    offset=[0.0, 0.0],
+                ),
+                "top_right": PeriodicMapConfig(
+                    slave="x+",
+                    master="y+",
+                    matrix=[[0.0, 1.0], [1.0, 0.0]],
+                    offset=[0.0, 0.0],
+                ),
+            },
+        ),
+        inputs={
+            "rho": InputConfig(initial_condition=constant(1.0)),
+            "c": InputConfig(initial_condition=constant(1.0)),
+        },
+        boundary_conditions={
+            "rho": boundary_field_config({}, periodic_axes=(0, 1)),
+            "c": BoundaryFieldConfig(
+                sides={
+                    "x-": [BoundaryConditionConfig(type="periodic", pair_with="y-")],
+                    "x+": [BoundaryConditionConfig(type="periodic", pair_with="y+")],
+                    "y-": [BoundaryConditionConfig(type="periodic", pair_with="x-")],
+                    "y+": [BoundaryConditionConfig(type="periodic", pair_with="x+")],
+                }
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[4, 4],
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(rho="scalar", c="scalar"),
+        ),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
+        time=TimeConfig(dt=0.02, t_end=0.02),
+        seed=42,
     )
 
     preset = get_preset(config.preset)
