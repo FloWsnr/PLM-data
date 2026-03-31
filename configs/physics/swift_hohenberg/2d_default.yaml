@@ -1,0 +1,35 @@
+preset: swift_hohenberg
+parameters:
+  r: 0.3
+  q0: 1.0
+  alpha: 0.0
+  beta: -1.0
+  gamma: 0.0
+  theta: 0.5
+domain:
+  type: rectangle
+  size: [40.0, 40.0]
+  mesh_resolution: [128, 128]
+time:
+  $ref: time.sh_default
+inputs:
+  u:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 0.0
+        std: 0.01
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.full_periodic_2d
+output:
+  formats:
+    $ref: output.formats.numpy_gif
+  fields:
+    u:
+      $ref: output.mode.scalar
+  resolution: [64, 64]
+  num_frames: 20
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

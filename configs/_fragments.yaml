@@ -448,6 +448,9 @@ time:
   cgl_default:
     dt: 0.1
     t_end: 100.0
+  sh_default:
+    dt: 0.1
+    t_end: 100.0
 
 test:
   cycle:
