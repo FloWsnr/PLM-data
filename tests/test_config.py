@@ -171,7 +171,6 @@ def test_load_config_van_der_pol_2d():
     assert cfg.boundary_field("v").side_conditions("y+")[0].pair_with == "y-"
 
 
-
 def test_load_config_van_der_pol_3d():
     cfg = load_config("configs/physics/van_der_pol/3d_default.yaml")
     assert cfg.preset == "van_der_pol"
@@ -196,6 +195,24 @@ def test_load_config_keller_segel_2d():
     assert cfg.boundary_field("c").side_conditions("y+")[0].pair_with == "y-"
     assert cfg.output_mode("rho") == "scalar"
     assert cfg.output_mode("c") == "scalar"
+
+
+def test_load_config_cyclic_competition_2d():
+    cfg = load_config("configs/biology/cyclic_competition/2d_default.yaml")
+    assert cfg.preset == "cyclic_competition"
+    assert cfg.domain.dimension == 2
+    assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.parameters["Du"] == 0.2
+    assert cfg.parameters["a"] == 0.5
+    assert cfg.parameters["b"] == 2.0
+    assert cfg.input("u").initial_condition.type == "random_perturbation"
+    assert cfg.input("v").initial_condition.params["mean"] == 0.286
+    assert cfg.input("w").initial_condition.params["std"] == 0.1
+    assert cfg.boundary_field("u").side_conditions("x-")[0].type == "periodic"
+    assert cfg.boundary_field("w").side_conditions("y+")[0].pair_with == "y-"
+    assert cfg.output_mode("u") == "scalar"
+    assert cfg.output_mode("v") == "scalar"
+    assert cfg.output_mode("w") == "scalar"
 
 
 def test_load_config_shallow_water():

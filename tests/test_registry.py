@@ -17,12 +17,13 @@ def test_list_presets():
     assert "poisson" in presets
     assert "cahn_hilliard" in presets
     assert "cgl" in presets
+    assert "van_der_pol" in presets
     assert "maxwell" in presets
     assert "maxwell_pulse" in presets
-    assert "van_der_pol" in presets
     assert "navier_stokes" in presets
     assert "stokes" in presets
     assert "thermal_convection" in presets
+    assert "cyclic_competition" in presets
 
 
 def test_get_preset():

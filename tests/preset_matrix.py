@@ -540,6 +540,36 @@ def make_kuramoto_sivashinsky_config(
     )
 
 
+def make_zakharov_kuznetsov_config(
+    tmp_path: Path,
+    *,
+    initial_condition: FieldExpressionConfig,
+    periodic_axes: tuple[int, ...] = (0, 1),
+    mesh_resolution: tuple[int, int] = (6, 6),
+    output_resolution: tuple[int, int] = (4, 4),
+    seed: int | None = 42,
+) -> SimulationConfig:
+    return SimulationConfig(
+        preset="zakharov_kuznetsov",
+        parameters={"alpha": 6.0, "theta": 0.5},
+        domain=rectangle_domain(mesh_resolution=mesh_resolution),
+        inputs={"u": InputConfig(initial_condition=initial_condition)},
+        boundary_conditions={
+            "u": boundary_field_config({}, periodic_axes=periodic_axes)
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(u="scalar"),
+        ),
+        solver=nonlinear_mixed_direct_solver_config(),
+        time=TimeConfig(dt=0.01, t_end=0.01),
+        seed=seed,
+    )
+
+
 def make_cgl_config(
     tmp_path: Path,
     *,
@@ -808,6 +838,83 @@ def make_van_der_pol_config(
             num_frames=2 if time is not None else 1,
             formats=["numpy"],
             fields=output_fields(u="scalar", v="scalar"),
+        ),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
+        time=time,
+        seed=seed,
+    )
+
+
+def make_cyclic_competition_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    u_initial_condition: FieldExpressionConfig,
+    v_initial_condition: FieldExpressionConfig,
+    w_initial_condition: FieldExpressionConfig,
+    u_boundary_conditions: dict[str, BoundaryConditionConfig],
+    v_boundary_conditions: dict[str, BoundaryConditionConfig],
+    w_boundary_conditions: dict[str, BoundaryConditionConfig],
+    u_periodic_axes: tuple[int, ...] = (),
+    v_periodic_axes: tuple[int, ...] = (),
+    w_periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+    parameters: dict[str, float] | None = None,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(
+            f"Cyclic competition test helper only supports 2D/3D, got {gdim}D"
+        )
+
+    if parameters is None:
+        parameters = {
+            "Du": 1.0,
+            "Dv": 0.5,
+            "Dw": 0.25,
+            "a": 0.4,
+            "b": 1.2,
+        }
+
+    return SimulationConfig(
+        preset="cyclic_competition",
+        parameters=parameters,
+        domain=domain,
+        inputs={
+            "u": InputConfig(initial_condition=u_initial_condition),
+            "v": InputConfig(initial_condition=v_initial_condition),
+            "w": InputConfig(initial_condition=w_initial_condition),
+        },
+        boundary_conditions={
+            "u": boundary_field_config(
+                u_boundary_conditions,
+                periodic_axes=u_periodic_axes,
+            ),
+            "v": boundary_field_config(
+                v_boundary_conditions,
+                periodic_axes=v_periodic_axes,
+            ),
+            "w": boundary_field_config(
+                w_boundary_conditions,
+                periodic_axes=w_periodic_axes,
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(u="scalar", v="scalar", w="scalar"),
         ),
         solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
         time=time,

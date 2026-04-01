@@ -12,9 +12,11 @@ from tests.preset_matrix import (
     constant,
     make_advection_config,
     make_burgers_config,
+    make_cyclic_competition_config,
     make_cahn_hilliard_config,
     make_cgl_config,
     make_kuramoto_sivashinsky_config,
+    make_zakharov_kuznetsov_config,
     make_flow_preset_config,
     make_gray_scott_config,
     make_lorenz_config,
@@ -399,6 +401,20 @@ def _assert_ks_random_ic(config, result, output_dir):
     assert np.all(np.isfinite(arrays["u"]))
 
 
+def _assert_zk_constant_ic(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert np.allclose(arrays["u"][0], 0.0, atol=0.05)
+    assert_periodic_axis(arrays["u"], axis=0)
+    assert_periodic_axis(arrays["u"], axis=1)
+
+
+def _assert_zk_random_ic(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert np.all(np.isfinite(arrays["u"]))
+
+
 def _assert_cahn_constant_ic(config, result, output_dir):
     arrays = _assert_success(config, result, output_dir)
     assert result.num_timesteps == 1
@@ -454,6 +470,42 @@ def _assert_lorenz_3d(config, result, output_dir):
         assert_periodic_axis(arrays[field_name], axis=2)
 
 
+def _assert_cyclic_competition_2d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("u", "v", "w"):
+        assert_nontrivial(arrays[field_name])
+        assert_periodic_axis(arrays[field_name], axis=0, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=1, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=0)
+        assert_periodic_axis(arrays[field_name], axis=1)
+
+
+def _assert_cyclic_competition_3d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("u", "v", "w"):
+        assert_nontrivial(arrays[field_name])
+        assert_periodic_axis(arrays[field_name], axis=0, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=1, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=2, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=0)
+        assert_periodic_axis(arrays[field_name], axis=1)
+        assert_periodic_axis(arrays[field_name], axis=2)
+
+
+def _assert_cyclic_competition_mixed_bc(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("u", "v", "w"):
+        assert_nontrivial(arrays[field_name])
+    # w has Dirichlet zero on all sides
+    assert np.allclose(arrays["w"][-1, 0, :], 0.0, atol=5e-3)
+    assert np.allclose(arrays["w"][-1, -1, :], 0.0, atol=5e-3)
+    assert np.allclose(arrays["w"][-1, :, 0], 0.0, atol=5e-3)
+    assert np.allclose(arrays["w"][-1, :, -1], 0.0, atol=5e-3)
+
+
 def _assert_van_der_pol_2d(config, result, output_dir):
     arrays = _assert_success(config, result, output_dir)
     assert result.num_timesteps == 1
@@ -469,7 +521,6 @@ def _assert_van_der_pol_2d(config, result, output_dir):
     assert_periodic_axis(arrays["v"], axis=1)
 
 
-
 def _assert_van_der_pol_3d(config, result, output_dir):
     arrays = _assert_success(config, result, output_dir)
     assert result.num_timesteps == 1
@@ -481,7 +532,6 @@ def _assert_van_der_pol_3d(config, result, output_dir):
         assert_periodic_axis(arrays[field_name], axis=0)
         assert_periodic_axis(arrays[field_name], axis=1)
         assert_periodic_axis(arrays[field_name], axis=2)
-
 
 
 def _assert_van_der_pol_mixed_bc(config, result, output_dir):
@@ -1068,6 +1118,28 @@ SUCCESS_CASES = (
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
+        name="zakharov_kuznetsov_constant_ic",
+        make_config=lambda tmp_path: make_zakharov_kuznetsov_config(
+            tmp_path,
+            initial_condition=constant(0.0),
+        ),
+        assert_result=_assert_zk_constant_ic,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="zakharov_kuznetsov_random_perturbation_ic",
+        make_config=lambda tmp_path: make_zakharov_kuznetsov_config(
+            tmp_path,
+            initial_condition=scalar_expr(
+                "random_perturbation",
+                mean=0.0,
+                std=0.01,
+            ),
+        ),
+        assert_result=_assert_zk_random_ic,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
         name="cahn_hilliard_constant_ic",
         make_config=lambda tmp_path: make_cahn_hilliard_config(
             tmp_path,
@@ -1189,6 +1261,91 @@ SUCCESS_CASES = (
             time=TimeConfig(dt=0.001, t_end=0.001),
         ),
         assert_result=_assert_lorenz_3d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="cyclic_competition_2d_periodic_xy",
+        make_config=lambda tmp_path: make_cyclic_competition_config(
+            tmp_path,
+            gdim=2,
+            u_initial_condition=scalar_expr(
+                "random_perturbation", mean=0.385, std=0.05
+            ),
+            v_initial_condition=scalar_expr(
+                "random_perturbation", mean=0.385, std=0.05
+            ),
+            w_initial_condition=scalar_expr(
+                "random_perturbation", mean=0.385, std=0.05
+            ),
+            u_boundary_conditions={},
+            v_boundary_conditions={},
+            w_boundary_conditions={},
+            u_periodic_axes=(0, 1),
+            v_periodic_axes=(0, 1),
+            w_periodic_axes=(0, 1),
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_cyclic_competition_2d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="cyclic_competition_3d_periodic_xyz",
+        make_config=lambda tmp_path: make_cyclic_competition_config(
+            tmp_path,
+            gdim=3,
+            u_initial_condition=scalar_expr(
+                "random_perturbation", mean=0.385, std=0.05
+            ),
+            v_initial_condition=scalar_expr(
+                "random_perturbation", mean=0.385, std=0.05
+            ),
+            w_initial_condition=scalar_expr(
+                "random_perturbation", mean=0.385, std=0.05
+            ),
+            u_boundary_conditions={},
+            v_boundary_conditions={},
+            w_boundary_conditions={},
+            u_periodic_axes=(0, 1, 2),
+            v_periodic_axes=(0, 1, 2),
+            w_periodic_axes=(0, 1, 2),
+            mesh_resolution=(5, 5, 5),
+            output_resolution=(3, 3, 3),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_cyclic_competition_3d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="cyclic_competition_2d_field_specific_scalar_boundaries",
+        make_config=lambda tmp_path: make_cyclic_competition_config(
+            tmp_path,
+            gdim=2,
+            u_initial_condition=scalar_expr(
+                "random_perturbation", mean=0.385, std=0.05
+            ),
+            v_initial_condition=scalar_expr(
+                "random_perturbation", mean=0.385, std=0.05
+            ),
+            w_initial_condition=scalar_expr(
+                "random_perturbation", mean=0.385, std=0.05
+            ),
+            u_boundary_conditions={},
+            v_boundary_conditions={},
+            w_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            },
+            u_periodic_axes=(0, 1),
+            v_periodic_axes=(0, 1),
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_cyclic_competition_mixed_bc,
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(

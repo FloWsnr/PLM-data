@@ -330,6 +330,16 @@ output:
           $ref: output.mode.scalar
         v:
           $ref: output.mode.scalar
+    scalar_uvw:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        u:
+          $ref: output.mode.scalar
+        v:
+          $ref: output.mode.scalar
+        w:
+          $ref: output.mode.scalar
     scalar_u1_v1_u2_v2:
       formats:
         $ref: output.formats.numpy_gif
@@ -451,6 +461,9 @@ time:
   sh_default:
     dt: 0.1
     t_end: 100.0
+  zk_default:
+    dt: 0.01
+    t_end: 8.0
 
 test:
   cycle:

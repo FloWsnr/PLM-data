@@ -1,0 +1,47 @@
+preset: cyclic_competition
+parameters:
+  Du: 0.2
+  Dv: 0.2
+  Dw: 0.2
+  a: 0.5
+  b: 2.0
+domain:
+  type: rectangle
+  size: [100.0, 100.0]
+  mesh_resolution: [192, 192]
+time:
+  dt: 0.02
+  t_end: 200.0
+inputs:
+  u:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 0.286
+        std: 0.1
+  v:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 0.286
+        std: 0.1
+  w:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 0.286
+        std: 0.1
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.full_periodic_2d
+  v:
+    $ref: boundary_field.scalar.full_periodic_2d
+  w:
+    $ref: boundary_field.scalar.full_periodic_2d
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uvw
+  resolution: [96, 96]
+  num_frames: 100
+seed: 42
