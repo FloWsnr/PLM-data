@@ -5,11 +5,26 @@ from dolfinx import mesh as dmesh
 
 from plm_data.core.config import FieldExpressionConfig
 from plm_data.core.spatial_fields import (
+    build_ufl_field,
     component_expressions,
     component_labels_for_dim,
-    build_ufl_field,
+    resolve_param_ref,
     scalar_expression_to_config,
 )
+
+
+def _is_trivially_zero_scalar_field(
+    source_config: FieldExpressionConfig,
+    parameters: dict[str, float],
+) -> bool:
+    """Return whether a scalar field config contributes identically zero."""
+    if source_config.is_componentwise:
+        raise ValueError("Expected a scalar field expression")
+    if source_config.type in ("none", "zero", "custom"):
+        return True
+    if source_config.type == "constant":
+        return resolve_param_ref(source_config.params["value"], parameters) == 0.0
+    return False
 
 
 def build_source_form(
@@ -22,7 +37,7 @@ def build_source_form(
     if source_config.is_componentwise:
         raise ValueError("build_source_form expects a scalar source config")
 
-    if source_config.type in ("none", "custom"):
+    if _is_trivially_zero_scalar_field(source_config, parameters):
         return None
 
     f = build_ufl_field(msh, scalar_expression_to_config(source_config), parameters)
@@ -36,7 +51,11 @@ def build_vector_source_form(
     parameters: dict[str, float],
 ) -> ufl.Form | None:
     """Build a vector source term from a vector field config."""
-    if not source_config.is_componentwise and source_config.type in ("none", "custom"):
+    if not source_config.is_componentwise and source_config.type in (
+        "none",
+        "zero",
+        "custom",
+    ):
         return None
 
     gdim = msh.geometry.dim
@@ -46,7 +65,7 @@ def build_vector_source_form(
     has_nonzero = False
     for label in component_labels_for_dim(gdim):
         component_config = components[label]
-        if component_config.type in ("none", "custom"):
+        if _is_trivially_zero_scalar_field(component_config, parameters):
             component_exprs.append(ufl.as_ufl(0.0))
             continue
 

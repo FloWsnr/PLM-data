@@ -49,6 +49,7 @@ from tests.preset_matrix import (
     make_advection_config,
     make_burgers_config,
     make_gray_scott_config,
+    make_mhd_config,
     flow_solver_config,
     make_shallow_water_config,
     make_swift_hohenberg_config,
@@ -543,6 +544,80 @@ def _make_thermal_convection_config(tmp_path, *, gdim: int):
         solver=flow_solver_config(TRANSIENT_MIXED_DIRECT),
         time=TimeConfig(dt=0.05, t_end=0.05),
         seed=42,
+    )
+
+
+def _make_mhd_runtime_config(
+    tmp_path,
+    *,
+    gdim: int,
+    periodic: bool = True,
+    hidden_lagrange_outputs: bool = False,
+):
+    if gdim == 2:
+        zero_vector_bc = {
+            "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+        }
+        velocity_ic = vector_expr(
+            x=scalar_expr("sine_product", amplitude=0.4, ky=2.0),
+            y=scalar_expr("sine_product", amplitude=-0.4, kx=2.0),
+        )
+        magnetic_ic = vector_expr(
+            x=scalar_expr("sine_product", amplitude=0.3, ky=2.0),
+            y=scalar_expr("sine_product", amplitude=0.3, kx=4.0),
+        )
+        periodic_axes = (0, 1) if periodic else ()
+        mesh_resolution = (8, 8)
+        output_resolution = (6, 6)
+        time = TimeConfig(dt=0.02, t_end=0.04 if periodic else 0.02)
+    else:
+        zero_vector_bc = {
+            "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "z-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "z+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+        }
+        velocity_ic = vector_expr(
+            x=scalar_expr("sine_product", amplitude=0.2, ky=2.0),
+            y=scalar_expr("sine_product", amplitude=0.2, kz=2.0),
+            z=scalar_expr("sine_product", amplitude=0.2, kx=2.0),
+        )
+        magnetic_ic = vector_expr(
+            x=scalar_expr("cosine_product", amplitude=0.15, ky=2.0),
+            y=scalar_expr("cosine_product", amplitude=0.15, kz=2.0),
+            z=scalar_expr("cosine_product", amplitude=0.15, kx=2.0),
+        )
+        periodic_axes = (0, 1, 2) if periodic else ()
+        mesh_resolution = (4, 4, 4)
+        output_resolution = (4, 4, 4)
+        time = TimeConfig(dt=0.02, t_end=0.02)
+
+    output_modes = output_fields(
+        velocity="components",
+        pressure="hidden" if hidden_lagrange_outputs else "scalar",
+        magnetic_field="components",
+        magnetic_constraint="hidden" if hidden_lagrange_outputs else "scalar",
+    )
+    return make_mhd_config(
+        tmp_path,
+        gdim=gdim,
+        parameters={"Re": 30.0, "Rm": 25.0, "k": 1.0},
+        velocity_boundary_conditions=zero_vector_bc,
+        magnetic_boundary_conditions=zero_vector_bc,
+        velocity_source=vector_zero(),
+        velocity_initial_condition=velocity_ic,
+        magnetic_source=vector_zero(),
+        magnetic_initial_condition=magnetic_ic,
+        velocity_periodic_axes=periodic_axes,
+        mesh_resolution=mesh_resolution,
+        output_resolution=output_resolution,
+        output_modes=output_modes,
+        time=time,
     )
 
 
@@ -1590,6 +1665,177 @@ def test_thermal_convection_requires_standard_boundary_names(tmp_path):
 
     with pytest.raises(ValueError, match="requires standard boundary names"):
         problem.validate_boundary_conditions(domain_geom)
+
+
+def test_mhd_accepts_standard_vector_boundary_fields(tmp_path):
+    config = make_mhd_config(
+        tmp_path,
+        gdim=2,
+        parameters={"Re": 20.0, "Rm": 15.0, "k": 1.0},
+        velocity_boundary_conditions={
+            "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+        },
+        magnetic_boundary_conditions={
+            "x-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+        },
+        velocity_source=vector_zero(),
+        velocity_initial_condition=vector_zero(),
+        magnetic_source=vector_zero(),
+        magnetic_initial_condition=vector_zero(),
+        mesh_resolution=(6, 6),
+        output_resolution=(4, 4),
+        time=TimeConfig(dt=0.02, t_end=0.02),
+    )
+
+    preset = get_preset(config.preset)
+    problem = preset.build_problem(config)
+    problem.load_domain_geometry()
+
+
+def test_mhd_rejects_mismatched_periodic_fields(tmp_path):
+    config = _make_mhd_runtime_config(tmp_path, gdim=2, periodic=True)
+    config.boundary_conditions["magnetic_field"] = boundary_field_config(
+        {
+            "x-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+        }
+    )
+
+    preset = get_preset(config.preset)
+    problem = preset.build_problem(config)
+    with pytest.raises(ValueError, match="identical periodic side pairs"):
+        problem.load_domain_geometry()
+
+
+def test_mhd_hidden_lagrange_multiplier_outputs(tmp_path):
+    config = _make_mhd_runtime_config(
+        tmp_path,
+        gdim=2,
+        periodic=False,
+        hidden_lagrange_outputs=True,
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    assert (output_dir / "velocity_x.npy").exists()
+    assert (output_dir / "velocity_y.npy").exists()
+    assert (output_dir / "magnetic_field_x.npy").exists()
+    assert (output_dir / "magnetic_field_y.npy").exists()
+    assert not (output_dir / "pressure.npy").exists()
+    assert not (output_dir / "magnetic_constraint.npy").exists()
+
+
+def test_mhd_nonperiodic_run_stays_finite_and_nontrivial(tmp_path):
+    config = make_mhd_config(
+        tmp_path,
+        gdim=2,
+        parameters={"Re": 18.0, "Rm": 14.0, "k": 1.0},
+        velocity_boundary_conditions={
+            "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+        },
+        magnetic_boundary_conditions={
+            "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+        },
+        velocity_source=vector_expr(
+            x=scalar_expr(
+                "gaussian_bump", amplitude=1.2, sigma=0.1, center=[0.35, 0.5]
+            ),
+            y=constant(0.0),
+        ),
+        velocity_initial_condition=vector_zero(),
+        magnetic_source=vector_expr(
+            x=constant(0.0),
+            y=scalar_expr(
+                "gaussian_bump", amplitude=0.8, sigma=0.12, center=[0.65, 0.5]
+            ),
+        ),
+        magnetic_initial_condition=vector_zero(),
+        mesh_resolution=(8, 8),
+        output_resolution=(6, 6),
+        time=TimeConfig(dt=0.02, t_end=0.02),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 1
+
+    for field_name in (
+        "velocity_x",
+        "velocity_y",
+        "pressure",
+        "magnetic_field_x",
+        "magnetic_field_y",
+        "magnetic_constraint",
+    ):
+        arr = np.load(output_dir / f"{field_name}.npy")
+        assert np.all(np.isfinite(arr))
+
+    assert np.std(np.load(output_dir / "velocity_x.npy")[-1]) > 1.0e-4
+    assert np.std(np.load(output_dir / "magnetic_field_y.npy")[-1]) > 1.0e-4
+
+
+@pytest.mark.skipif(
+    not HAS_DOLFINX_MPC,
+    reason="periodic MHD solve requires dolfinx_mpc",
+)
+def test_mhd_periodic_2d_run_stays_nontrivial(tmp_path):
+    config = _make_mhd_runtime_config(tmp_path, gdim=2, periodic=True)
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 2
+
+    velocity_x = np.load(output_dir / "velocity_x.npy")
+    magnetic_y = np.load(output_dir / "magnetic_field_y.npy")
+    pressure = np.load(output_dir / "pressure.npy")
+
+    assert np.all(np.isfinite(velocity_x))
+    assert np.all(np.isfinite(magnetic_y))
+    assert np.all(np.isfinite(pressure))
+    assert np.std(velocity_x[-1]) > 1.0e-4
+    assert np.std(magnetic_y[-1]) > 1.0e-4
+    assert np.linalg.norm(velocity_x[-1] - velocity_x[0]) > 1.0e-4
+
+
+@pytest.mark.skipif(
+    not HAS_DOLFINX_MPC,
+    reason="periodic MHD solve requires dolfinx_mpc",
+)
+def test_mhd_periodic_3d_run_stays_finite(tmp_path):
+    config = _make_mhd_runtime_config(tmp_path, gdim=3, periodic=True)
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 1
+
+    for field_name in (
+        "velocity_x",
+        "velocity_y",
+        "velocity_z",
+        "magnetic_field_x",
+        "magnetic_field_y",
+        "magnetic_field_z",
+        "pressure",
+        "magnetic_constraint",
+    ):
+        arr = np.load(output_dir / f"{field_name}.npy")
+        assert np.all(np.isfinite(arr))
+
+    assert np.std(np.load(output_dir / "velocity_x.npy")[-1]) > 1.0e-5
+    assert np.std(np.load(output_dir / "magnetic_field_z.npy")[-1]) > 1.0e-5
 
 
 @pytest.mark.skipif(

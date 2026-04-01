@@ -510,6 +510,88 @@ def make_thermal_convection_config(
     )
 
 
+def make_mhd_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    parameters: dict[str, float],
+    velocity_boundary_conditions: dict[str, BoundaryConditionConfig],
+    magnetic_boundary_conditions: dict[str, BoundaryConditionConfig],
+    velocity_source: FieldExpressionConfig,
+    velocity_initial_condition: FieldExpressionConfig,
+    magnetic_source: FieldExpressionConfig,
+    magnetic_initial_condition: FieldExpressionConfig,
+    velocity_periodic_axes: tuple[int, ...] = (),
+    magnetic_periodic_axes: tuple[int, ...] | None = None,
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    output_modes: dict[str, OutputSelectionConfig] | None = None,
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(f"MHD test helper only supports 2D/3D, got {gdim}D")
+
+    selected_output_modes = (
+        output_fields(
+            velocity="components",
+            pressure="scalar",
+            magnetic_field="components",
+            magnetic_constraint="scalar",
+        )
+        if output_modes is None
+        else output_modes
+    )
+
+    return SimulationConfig(
+        preset="mhd",
+        parameters=parameters,
+        domain=domain,
+        inputs={
+            "velocity": InputConfig(
+                source=velocity_source,
+                initial_condition=velocity_initial_condition,
+            ),
+            "magnetic_field": InputConfig(
+                source=magnetic_source,
+                initial_condition=magnetic_initial_condition,
+            ),
+        },
+        boundary_conditions={
+            "velocity": boundary_field_config(
+                velocity_boundary_conditions,
+                periodic_axes=velocity_periodic_axes,
+            ),
+            "magnetic_field": boundary_field_config(
+                magnetic_boundary_conditions,
+                periodic_axes=(
+                    velocity_periodic_axes
+                    if magnetic_periodic_axes is None
+                    else magnetic_periodic_axes
+                ),
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=selected_output_modes,
+        ),
+        solver=flow_solver_config(TRANSIENT_MIXED_DIRECT),
+        time=time,
+        seed=seed,
+    )
+
+
 def make_kuramoto_sivashinsky_config(
     tmp_path: Path,
     *,

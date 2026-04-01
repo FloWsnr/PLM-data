@@ -1,0 +1,75 @@
+preset: mhd
+parameters:
+  Re: 50.0
+  Rm: 55.0
+  k: 1.0
+domain:
+  type: box
+  size: [1.0, 1.0, 1.0]
+  mesh_resolution: [10, 10, 10]
+time:
+  dt: 0.01
+  t_end: 0.12
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: sine_product
+          params:
+            amplitude: 0.18
+            kz: 2.0
+        y:
+          type: sine_product
+          params:
+            amplitude: 0.18
+            kx: 2.0
+        z:
+          type: sine_product
+          params:
+            amplitude: 0.18
+            ky: 2.0
+  magnetic_field:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: cosine_product
+          params:
+            amplitude: 0.28
+            kz: 2.0
+        y:
+          type: cosine_product
+          params:
+            amplitude: 0.28
+            kx: 2.0
+        z:
+          type: cosine_product
+          params:
+            amplitude: 0.28
+            ky: 2.0
+boundary_conditions:
+  velocity:
+    $ref: boundary_field.vector.full_periodic_3d
+  magnetic_field:
+    $ref: boundary_field.vector.full_periodic_3d
+output:
+  formats:
+    $ref: output.formats.numpy
+  fields:
+    velocity:
+      $ref: output.mode.components
+    pressure: hidden
+    magnetic_field:
+      $ref: output.mode.components
+    magnetic_constraint: hidden
+  resolution: [24, 24, 24]
+  num_frames: 12
+solver:
+  $ref: solver.profile.transient_mixed_direct
+seed: 11
