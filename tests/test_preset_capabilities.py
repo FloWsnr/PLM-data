@@ -34,7 +34,6 @@ from tests.preset_matrix import (
     make_wave_config,
     run_preset,
     scalar_expr,
-    skip_without_complex_runtime,
     skip_without_mpc,
     vector_expr,
     vector_zero,
@@ -679,8 +678,10 @@ def _assert_superlattice_mixed_bc(config, result, output_dir):
 
 def _assert_maxwell_case(config, result, output_dir):
     arrays = _assert_success(config, result, output_dir)
-    assert np.iscomplexobj(arrays["electric_field_x"])
-    assert_nontrivial(arrays["electric_field_x"])
+    assert not np.iscomplexobj(arrays["electric_field_real_x"])
+    assert not np.iscomplexobj(arrays["electric_field_imag_x"])
+    assert_nontrivial(arrays["electric_field_real_x"])
+    assert_nontrivial(arrays["electric_field_imag_x"])
 
 
 def _assert_maxwell_pulse_case(config, result, output_dir):
@@ -1903,7 +1904,6 @@ SUCCESS_CASES = (
             source=_maxwell_source(),
         ),
         assert_result=_assert_maxwell_case,
-        skip_reason=skip_without_complex_runtime,
     ),
     RuntimePresetCase(
         name="maxwell_pulse_mixed_boundaries",
@@ -1980,7 +1980,6 @@ REJECTION_CASES = (
         ),
         expected_error=NotImplementedError,
         expected_error_match="N1curl spaces",
-        skip_reason=skip_without_complex_runtime,
     ),
     RuntimePresetCase(
         name="maxwell_pulse_periodic_domain_rejected",

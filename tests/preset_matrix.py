@@ -21,7 +21,6 @@ from plm_data.core.config import (
     TimeConfig,
 )
 from plm_data.core.output import FrameWriter
-from plm_data.core.runtime import is_complex_runtime
 from plm_data.core.solver_strategies import (
     CONSTANT_LHS_BLOCK_DIRECT,
     CONSTANT_LHS_CURL_DIRECT,
@@ -1397,7 +1396,10 @@ def make_maxwell_config(
             resolution=list(output_resolution),
             num_frames=1,
             formats=["numpy"],
-            fields=output_fields(electric_field="components"),
+            fields=output_fields(
+                electric_field_real="components",
+                electric_field_imag="components",
+            ),
         ),
         solver=direct_solver_config(STATIONARY_INDEFINITE_DIRECT),
         seed=seed,
@@ -1624,12 +1626,6 @@ def skip_without_mpc() -> str | None:
     if HAS_DOLFINX_MPC:
         return None
     return "periodic coverage requires dolfinx_mpc"
-
-
-def skip_without_complex_runtime() -> str | None:
-    if is_complex_runtime():
-        return None
-    return "harmonic Maxwell requires a complex-valued runtime"
 
 
 def _never_skip() -> str | None:

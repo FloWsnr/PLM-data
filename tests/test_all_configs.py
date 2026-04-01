@@ -11,7 +11,6 @@ import pytest
 
 from plm_data.core.config import load_config
 from plm_data.core.output import FrameWriter
-from plm_data.core.runtime import is_complex_runtime
 from plm_data.presets import get_preset
 
 CONFIGS_DIR = Path(__file__).resolve().parent.parent / "configs"
@@ -47,8 +46,6 @@ def _prepare_smoke_run_config(cfg, output_path: Path) -> None:
 )
 def test_config_runs(config_path, tmp_path):
     cfg = load_config(config_path)
-    if cfg.preset == "maxwell" and not is_complex_runtime():
-        pytest.skip("harmonic Maxwell requires a complex-valued runtime")
     if cfg.has_periodic_boundary_conditions and not HAS_DOLFINX_MPC:
         pytest.skip("periodic configs require dolfinx_mpc")
 

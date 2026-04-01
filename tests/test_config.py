@@ -9,6 +9,7 @@ from plm_data.core.solver_strategies import (
     CONSTANT_LHS_SCALAR_NONSYMMETRIC,
     CONSTANT_LHS_SCALAR_SPD,
     NONLINEAR_MIXED_DIRECT,
+    STATIONARY_INDEFINITE_DIRECT,
     STATIONARY_SCALAR_SPD,
     STEADY_SADDLE_POINT,
     TRANSIENT_MIXED_DIRECT,
@@ -376,6 +377,17 @@ def test_load_config_burgers_3d():
     )
     assert cfg.boundary_field("velocity").side_conditions("z+")[0].pair_with == "z-"
     assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
+
+
+def test_load_config_maxwell():
+    cfg = load_config("configs/physics/maxwell/2d_default.yaml")
+    electric_field = cfg.input("electric_field")
+    boundary_field = cfg.boundary_field("electric_field")
+    assert cfg.output_mode("electric_field_real") == "components"
+    assert cfg.output_mode("electric_field_imag") == "components"
+    assert electric_field.source.components["x"].type == "gaussian_bump"
+    assert boundary_field.side_conditions("x-")[0].type == "absorbing"
+    assert cfg.solver.strategy == STATIONARY_INDEFINITE_DIRECT
 
 
 def test_load_config_maxwell_pulse():

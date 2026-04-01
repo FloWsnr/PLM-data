@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # Activate conda environment.
-# Override with PLM_CONDA_ENV for complex-valued PETSc, e.g.:
-#   PLM_CONDA_ENV=fenicsx-env-complex ./run.sh -n 4 run configs/physics/maxwell/2d_default.yaml --output-dir ./output
+# Override with PLM_CONDA_ENV to use a non-default environment, e.g.:
+#   PLM_CONDA_ENV=fenicsx-env-complex ./run.sh -n 4 run configs/basic/poisson/2d_default.yaml --output-dir ./output
 eval "$(conda shell.bash hook)"
 conda activate "${PLM_CONDA_ENV:-fenicsx-env}"
 

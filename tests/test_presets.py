@@ -23,7 +23,6 @@ from plm_data.core.config import (
 )
 from plm_data.core.mesh import create_domain
 from plm_data.core.output import FrameWriter
-from plm_data.core.runtime import is_complex_runtime
 from plm_data.core.solver_strategies import (
     CONSTANT_LHS_CURL_DIRECT,
     CONSTANT_LHS_SCALAR_NONSYMMETRIC,
@@ -294,7 +293,10 @@ def _make_maxwell_config(tmp_path, *, gdim: int):
             resolution=[4] * gdim,
             num_frames=1,
             formats=["numpy"],
-            fields=output_fields(electric_field="components"),
+            fields=output_fields(
+                electric_field_real="components",
+                electric_field_imag="components",
+            ),
         ),
         solver=direct_solver_config(STATIONARY_INDEFINITE_DIRECT),
         seed=42,
@@ -2061,25 +2063,35 @@ def test_maxwell_pulse_preset_3d_single_step(tmp_path):
         assert arr.shape == (2, *config.output.resolution)
 
 
-def test_maxwell_preset_requires_complex_runtime(tmp_path):
-    if is_complex_runtime():
-        pytest.skip("runtime is already complex-capable")
+def test_maxwell_preset_2d(tmp_path):
     config = _make_maxwell_config(tmp_path, gdim=2)
-    preset = get_preset(config.preset)
-    with pytest.raises(RuntimeError, match="complex-valued DOLFINx/PETSc build"):
-        preset.build_problem(config)
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    for field in [
+        "electric_field_real_x",
+        "electric_field_real_y",
+        "electric_field_imag_x",
+        "electric_field_imag_y",
+    ]:
+        arr = np.load(output_dir / f"{field}.npy")
+        assert arr.shape == (1, *config.output.resolution)
+        assert not np.iscomplexobj(arr)
 
 
-@pytest.mark.skipif(
-    not is_complex_runtime(),
-    reason="harmonic Maxwell requires a complex-valued runtime",
-)
 def test_maxwell_preset_3d(tmp_path):
     config = _make_maxwell_config(tmp_path, gdim=3)
     result, output_dir = _run_preset(config)
     assert result.solver_converged is True
 
-    for field in ["electric_field_x", "electric_field_y", "electric_field_z"]:
+    for field in [
+        "electric_field_real_x",
+        "electric_field_real_y",
+        "electric_field_real_z",
+        "electric_field_imag_x",
+        "electric_field_imag_y",
+        "electric_field_imag_z",
+    ]:
         arr = np.load(output_dir / f"{field}.npy")
         assert arr.shape == (1, *config.output.resolution)
-        assert np.iscomplexobj(arr)
+        assert not np.iscomplexobj(arr)

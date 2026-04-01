@@ -47,7 +47,7 @@ boundary_conditions:
 solver:
   $ref: solver.profile.stationary_indefinite_direct
 output:
-  $ref: output.template.electric_field
+  $ref: output.template.harmonic_maxwell
   resolution: [24, 24, 24]
   num_frames: 1
 seed: 42

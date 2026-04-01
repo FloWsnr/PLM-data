@@ -22,12 +22,12 @@ Tests run via `python -m pytest tests/`. pytest is configured to use 4 parallel 
 ## Conda Environments
 
 Two conda environments exist:
-- `fenicsx-env` — real-valued PETSc (default). Used by all presets except `maxwell`.
-- `fenicsx-env-complex` — complex-valued PETSc (`petsc=*=complex*`). Required by the `maxwell` preset. Does not have `dolfinx_mpc`.
+- `fenicsx-env` — real-valued PETSc (default). Used by the shipped presets, including `maxwell`.
+- `fenicsx-env-complex` — complex-valued PETSc (`petsc=*=complex*`). Optional for separate experiments. Does not have `dolfinx_mpc`.
 
 Override the environment via `PLM_CONDA_ENV`:
 ```bash
-PLM_CONDA_ENV=fenicsx-env-complex ./run.sh -n 4 run configs/physics/maxwell/2d_default.yaml --output-dir ./output
+PLM_CONDA_ENV=fenicsx-env-complex ./run.sh -n 4 run configs/basic/heat/2d_default.yaml --output-dir ./output
 ```
 
 ## Architecture

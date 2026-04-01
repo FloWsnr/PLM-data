@@ -7,6 +7,7 @@ from plm_data.core.boundary_conditions import apply_vector_dirichlet_bcs
 from plm_data.core.config import BoundaryFieldConfig, FieldExpressionConfig
 from plm_data.core.mesh import DomainGeometry
 from plm_data.core.spatial_fields import (
+    build_vector_interpolator,
     component_expressions,
     component_labels_for_dim,
     resolve_param_ref,
@@ -41,6 +42,56 @@ def apply_maxwell_dirichlet_bcs(
         allowed={"dirichlet", "absorbing", "periodic"},
     )
     return apply_vector_dirichlet_bcs(V, domain_geom, boundary_field, parameters)
+
+
+def apply_split_maxwell_dirichlet_bcs(
+    mixed_space: fem.FunctionSpace,
+    domain_geom: DomainGeometry,
+    boundary_field: BoundaryFieldConfig,
+    parameters: dict[str, float],
+) -> list[fem.DirichletBC]:
+    """Apply PEC-style Dirichlet data to the real part and zero to the imaginary."""
+    _validate_boundary_types(
+        boundary_field,
+        allowed={"dirichlet", "absorbing", "periodic"},
+    )
+
+    gdim = domain_geom.mesh.geometry.dim
+    fdim = domain_geom.mesh.topology.dim - 1
+    real_subspace = mixed_space.sub(0)
+    real_space, _ = real_subspace.collapse()
+    imag_subspace = mixed_space.sub(1)
+    imag_space, _ = imag_subspace.collapse()
+    bcs: list[fem.DirichletBC] = []
+
+    for name, entries in boundary_field.sides.items():
+        for bc in entries:
+            if bc.type != "dirichlet":
+                continue
+            if bc.value is None:
+                raise ValueError(f"Dirichlet BC on '{name}' requires a value")
+
+            facets = domain_geom.facet_tags.find(domain_geom.boundary_names[name])
+            real_dofs = fem.locate_dofs_topological(
+                (real_subspace, real_space), fdim, facets
+            )
+            imag_dofs = fem.locate_dofs_topological(
+                (imag_subspace, imag_space), fdim, facets
+            )
+
+            interp = build_vector_interpolator(bc.value, gdim, parameters)
+            if interp is None:
+                raise ValueError(f"Dirichlet BC on '{name}' cannot use custom values")
+
+            real_bc = fem.Function(real_space)
+            real_bc.interpolate(interp)
+            bcs.append(fem.dirichletbc(real_bc, real_dofs, real_subspace))
+
+            imag_bc = fem.Function(imag_space)
+            imag_bc.x.array[:] = 0.0
+            bcs.append(fem.dirichletbc(imag_bc, imag_dofs, imag_subspace))
+
+    return bcs
 
 
 def build_absorbing_boundary_form(

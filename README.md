@@ -16,9 +16,11 @@ pip install pyyaml pytest pytest-xdist pyright matplotlib pyvista dolfinx_mpc
 
 See the [DOLFINx README](https://github.com/FEniCS/dolfinx#installation) for alternative installation methods (Docker, apt, Spack, Windows).
 
-### DOLFINx (FEniCSx) — complex-valued (for Maxwell)
+### DOLFINx (FEniCSx) — complex-valued (optional)
 
-The time-harmonic `maxwell` preset requires complex-valued PETSc. Create a separate environment:
+Most presets run in the standard real-valued environment above. If you want a
+separate complex-valued PETSc build for other experiments, create an additional
+environment:
 
 ```bash
 conda create -n fenicsx-env-complex -c conda-forge fenics-dolfinx mpich "petsc=*=complex*" python=3.12 ffmpeg
@@ -27,7 +29,6 @@ pip install pyyaml pytest pytest-xdist pyright matplotlib pyvista
 ```
 
 Do not install `dolfinx_mpc` in the complex environment — no complex builds exist.
-Use `PLM_CONDA_ENV=fenicsx-env-complex` when running Maxwell configs (see Usage below).
 
 ## Architecture
 
@@ -51,12 +52,13 @@ Use the `run.sh` wrapper script, which activates the `fenicsx-env` conda environ
 # List available presets
 ./run.sh list
 
-# Use a different conda environment, e.g. a complex-valued DOLFINx build
-PLM_CONDA_ENV=fenicsx-env-complex ./run.sh run configs/physics/maxwell/2d_default.yaml --output-dir ./output
+# Use a different conda environment if needed
+PLM_CONDA_ENV=fenicsx-env-complex ./run.sh run configs/basic/poisson/2d_default.yaml --output-dir ./output
 ```
 
-The transient `maxwell_pulse` preset runs in the standard real-valued build. The
-time-harmonic `maxwell` preset requires a complex-valued DOLFINx/PETSc environment.
+Both `maxwell_pulse` and the time-harmonic `maxwell` preset run in the standard
+real-valued build. The `PLM_CONDA_ENV` override remains available if you want to
+activate a different environment explicitly.
 
 ## Adding a new PDE
 

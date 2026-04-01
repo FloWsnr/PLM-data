@@ -456,6 +456,14 @@ output:
       fields:
         electric_field:
           $ref: output.mode.components
+    harmonic_maxwell:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        electric_field_real:
+          $ref: output.mode.components
+        electric_field_imag:
+          $ref: output.mode.components
     deflection_velocity:
       formats:
         $ref: output.formats.numpy_gif
