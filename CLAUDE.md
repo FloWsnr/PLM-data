@@ -96,4 +96,4 @@ The system has three layers:
 - Use 4 CPUs for all simulations runs by default to speed up data generation.
 - use the `./output` directory for all simulation outputs
 - create a new subdirectory under `./output` for each new simulation run, following the pattern `./output/<category>/<preset>/`
-- Delete old simulations if they are no longer needed to avoid cluttering the output directory
+- Delete old simulations if they are no longer needed to avoid cluttering the output directory. However, when creating new PDE presets, you need to keep the working 2D output so the developer can visually verify the new preset is working correctly.
