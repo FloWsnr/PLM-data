@@ -191,6 +191,28 @@ boundary_field:
       z+:
         - operator: dirichlet
           value: 0.0
+    simply_supported_2d:
+      x-:
+        - operator: simply_supported
+      x+:
+        - operator: simply_supported
+      y-:
+        - operator: simply_supported
+      y+:
+        - operator: simply_supported
+    simply_supported_3d:
+      x-:
+        - operator: simply_supported
+      x+:
+        - operator: simply_supported
+      y-:
+        - operator: simply_supported
+      y+:
+        - operator: simply_supported
+      z-:
+        - operator: simply_supported
+      z+:
+        - operator: simply_supported
     full_periodic_2d:
       x-:
         - operator: periodic
@@ -329,6 +351,14 @@ output:
         u:
           $ref: output.mode.scalar
         v:
+          $ref: output.mode.scalar
+    scalar_ah:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        a:
+          $ref: output.mode.scalar
+        h:
           $ref: output.mode.scalar
     scalar_uvw:
       formats:

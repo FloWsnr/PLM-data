@@ -13,6 +13,8 @@ from tests.preset_matrix import (
     make_advection_config,
     make_burgers_config,
     make_cyclic_competition_config,
+    make_gierer_meinhardt_config,
+    make_immunotherapy_config,
     make_cahn_hilliard_config,
     make_cgl_config,
     make_kuramoto_sivashinsky_config,
@@ -25,6 +27,7 @@ from tests.preset_matrix import (
     make_plate_config,
     make_shallow_water_config,
     make_scalar_preset_config,
+    make_swift_hohenberg_config,
     make_superlattice_config,
     make_thermal_convection_config,
     make_van_der_pol_config,
@@ -451,6 +454,36 @@ def _assert_gray_scott_3d(config, result, output_dir):
         assert_periodic_axis(arrays[field_name], axis=2)
 
 
+def _assert_swift_hohenberg_periodic_2d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["u"])
+    assert_periodic_axis(arrays["u"], axis=0)
+    assert_periodic_axis(arrays["u"], axis=1)
+
+
+def _assert_swift_hohenberg_periodic_3d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["u"])
+    assert_periodic_axis(arrays["u"], axis=0)
+    assert_periodic_axis(arrays["u"], axis=1)
+    assert_periodic_axis(arrays["u"], axis=2)
+
+
+def _assert_swift_hohenberg_wall_2d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["u"])
+    edge_max = max(
+        float(np.max(np.abs(arrays["u"][-1, 0, :]))),
+        float(np.max(np.abs(arrays["u"][-1, -1, :]))),
+        float(np.max(np.abs(arrays["u"][-1, :, 0]))),
+        float(np.max(np.abs(arrays["u"][-1, :, -1]))),
+    )
+    assert edge_max < 5.0e-2
+
+
 def _assert_lorenz_2d(config, result, output_dir):
     arrays = _assert_success(config, result, output_dir)
     assert result.num_timesteps == 1
@@ -468,6 +501,42 @@ def _assert_lorenz_3d(config, result, output_dir):
         assert_periodic_axis(arrays[field_name], axis=0)
         assert_periodic_axis(arrays[field_name], axis=1)
         assert_periodic_axis(arrays[field_name], axis=2)
+
+
+def _assert_gierer_meinhardt_2d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("a", "h"):
+        assert_nontrivial(arrays[field_name])
+        assert_periodic_axis(arrays[field_name], axis=0, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=1, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=0)
+        assert_periodic_axis(arrays[field_name], axis=1)
+
+
+def _assert_gierer_meinhardt_3d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("a", "h"):
+        assert_nontrivial(arrays[field_name])
+        assert_periodic_axis(arrays[field_name], axis=0, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=1, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=2, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=0)
+        assert_periodic_axis(arrays[field_name], axis=1)
+        assert_periodic_axis(arrays[field_name], axis=2)
+
+
+def _assert_gierer_meinhardt_mixed_bc(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("a", "h"):
+        assert_nontrivial(arrays[field_name])
+    # h has Dirichlet zero on all sides
+    assert np.allclose(arrays["h"][-1, 0, :], 0.0, atol=5e-3)
+    assert np.allclose(arrays["h"][-1, -1, :], 0.0, atol=5e-3)
+    assert np.allclose(arrays["h"][-1, :, 0], 0.0, atol=5e-3)
+    assert np.allclose(arrays["h"][-1, :, -1], 0.0, atol=5e-3)
 
 
 def _assert_cyclic_competition_2d(config, result, output_dir):
@@ -495,6 +564,43 @@ def _assert_cyclic_competition_3d(config, result, output_dir):
 
 
 def _assert_cyclic_competition_mixed_bc(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("u", "v", "w"):
+        assert_nontrivial(arrays[field_name])
+    # w has Dirichlet zero on all sides
+    assert np.allclose(arrays["w"][-1, 0, :], 0.0, atol=5e-3)
+    assert np.allclose(arrays["w"][-1, -1, :], 0.0, atol=5e-3)
+    assert np.allclose(arrays["w"][-1, :, 0], 0.0, atol=5e-3)
+    assert np.allclose(arrays["w"][-1, :, -1], 0.0, atol=5e-3)
+
+
+def _assert_immunotherapy_2d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("u", "v", "w"):
+        assert_nontrivial(arrays[field_name])
+
+
+def _assert_immunotherapy_3d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("u", "v", "w"):
+        assert_nontrivial(arrays[field_name])
+
+
+def _assert_immunotherapy_periodic(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("u", "v", "w"):
+        assert_nontrivial(arrays[field_name])
+        assert_periodic_axis(arrays[field_name], axis=0, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=1, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=0)
+        assert_periodic_axis(arrays[field_name], axis=1)
+
+
+def _assert_immunotherapy_mixed_bc(config, result, output_dir):
     arrays = _assert_success(config, result, output_dir)
     assert result.num_timesteps == 1
     for field_name in ("u", "v", "w"):
@@ -1166,6 +1272,7 @@ SUCCESS_CASES = (
         make_config=lambda tmp_path: make_gray_scott_config(
             tmp_path,
             gdim=2,
+            velocity=vector_expr(x=constant(0.35), y=constant(0.0)),
             u_initial_condition=scalar_expr(
                 "gray_scott_patch",
                 background=1.0,
@@ -1196,6 +1303,11 @@ SUCCESS_CASES = (
         make_config=lambda tmp_path: make_gray_scott_config(
             tmp_path,
             gdim=3,
+            velocity=vector_expr(
+                x=constant(0.2),
+                y=constant(0.0),
+                z=constant(0.1),
+            ),
             u_initial_condition=scalar_expr(
                 "gray_scott_patch",
                 background=1.0,
@@ -1219,6 +1331,74 @@ SUCCESS_CASES = (
             time=TimeConfig(dt=1.0, t_end=1.0),
         ),
         assert_result=_assert_gray_scott_3d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="swift_hohenberg_2d_periodic_xy",
+        make_config=lambda tmp_path: make_swift_hohenberg_config(
+            tmp_path,
+            gdim=2,
+            initial_condition=scalar_expr(
+                "gaussian_bump",
+                amplitude=1.0,
+                sigma=0.12,
+                center=[0.5, 0.5],
+            ),
+            velocity=vector_expr(x=constant(0.6), y=constant(-0.25)),
+            boundary_conditions={},
+            periodic_axes=(0, 1),
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.05, t_end=0.05),
+        ),
+        assert_result=_assert_swift_hohenberg_periodic_2d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="swift_hohenberg_2d_simply_supported",
+        make_config=lambda tmp_path: make_swift_hohenberg_config(
+            tmp_path,
+            gdim=2,
+            initial_condition=scalar_expr(
+                "gaussian_bump",
+                amplitude=1.0,
+                sigma=0.12,
+                center=[0.5, 0.5],
+            ),
+            velocity=vector_expr(
+                x=scalar_expr("affine", constant=0.15, y=-0.3),
+                y=scalar_expr("affine", constant=-0.15, x=0.3),
+            ),
+            boundary_conditions=_simply_supported_plate_boundary_conditions(gdim=2),
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.05, t_end=0.05),
+        ),
+        assert_result=_assert_swift_hohenberg_wall_2d,
+    ),
+    RuntimePresetCase(
+        name="swift_hohenberg_3d_periodic_xyz",
+        make_config=lambda tmp_path: make_swift_hohenberg_config(
+            tmp_path,
+            gdim=3,
+            initial_condition=scalar_expr(
+                "gaussian_bump",
+                amplitude=1.0,
+                sigma=0.18,
+                center=[0.5, 0.5, 0.5],
+            ),
+            velocity=vector_expr(
+                x=constant(0.25),
+                y=constant(-0.1),
+                z=constant(0.15),
+            ),
+            boundary_conditions={},
+            periodic_axes=(0, 1, 2),
+            mesh_resolution=(5, 5, 5),
+            output_resolution=(3, 3, 3),
+            time=TimeConfig(dt=0.05, t_end=0.05),
+        ),
+        assert_result=_assert_swift_hohenberg_periodic_3d,
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
@@ -1261,6 +1441,64 @@ SUCCESS_CASES = (
             time=TimeConfig(dt=0.001, t_end=0.001),
         ),
         assert_result=_assert_lorenz_3d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="gierer_meinhardt_2d_periodic_xy",
+        make_config=lambda tmp_path: make_gierer_meinhardt_config(
+            tmp_path,
+            gdim=2,
+            a_initial_condition=scalar_expr("random_perturbation", mean=1.0, std=0.05),
+            h_initial_condition=scalar_expr("random_perturbation", mean=1.0, std=0.05),
+            a_boundary_conditions={},
+            h_boundary_conditions={},
+            a_periodic_axes=(0, 1),
+            h_periodic_axes=(0, 1),
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_gierer_meinhardt_2d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="gierer_meinhardt_3d_periodic_xyz",
+        make_config=lambda tmp_path: make_gierer_meinhardt_config(
+            tmp_path,
+            gdim=3,
+            a_initial_condition=scalar_expr("random_perturbation", mean=1.0, std=0.05),
+            h_initial_condition=scalar_expr("random_perturbation", mean=1.0, std=0.05),
+            a_boundary_conditions={},
+            h_boundary_conditions={},
+            a_periodic_axes=(0, 1, 2),
+            h_periodic_axes=(0, 1, 2),
+            mesh_resolution=(5, 5, 5),
+            output_resolution=(3, 3, 3),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_gierer_meinhardt_3d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="gierer_meinhardt_2d_field_specific_scalar_boundaries",
+        make_config=lambda tmp_path: make_gierer_meinhardt_config(
+            tmp_path,
+            gdim=2,
+            a_initial_condition=scalar_expr("random_perturbation", mean=1.0, std=0.05),
+            h_initial_condition=scalar_expr("random_perturbation", mean=1.0, std=0.05),
+            a_boundary_conditions={},
+            h_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            },
+            a_periodic_axes=(0, 1),
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_gierer_meinhardt_mixed_bc,
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
@@ -1347,6 +1585,138 @@ SUCCESS_CASES = (
         ),
         assert_result=_assert_cyclic_competition_mixed_bc,
         skip_reason=skip_without_mpc,
+    ),
+    # --- immunotherapy ---
+    RuntimePresetCase(
+        name="immunotherapy_2d_neumann",
+        make_config=lambda tmp_path: make_immunotherapy_config(
+            tmp_path,
+            gdim=2,
+            u_initial_condition=scalar_expr("random_perturbation", mean=0.3, std=0.05),
+            v_initial_condition=scalar_expr("random_perturbation", mean=0.9, std=0.05),
+            w_initial_condition=scalar_expr(
+                "random_perturbation", mean=0.01, std=0.002
+            ),
+            u_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            },
+            v_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            },
+            w_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            },
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.1, t_end=0.1),
+        ),
+        assert_result=_assert_immunotherapy_2d,
+    ),
+    RuntimePresetCase(
+        name="immunotherapy_3d_neumann",
+        make_config=lambda tmp_path: make_immunotherapy_config(
+            tmp_path,
+            gdim=3,
+            u_initial_condition=scalar_expr("random_perturbation", mean=0.3, std=0.05),
+            v_initial_condition=scalar_expr("random_perturbation", mean=0.9, std=0.05),
+            w_initial_condition=scalar_expr(
+                "random_perturbation", mean=0.01, std=0.002
+            ),
+            u_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "z-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "z+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            },
+            v_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "z-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "z+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            },
+            w_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "z-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "z+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            },
+            mesh_resolution=(5, 5, 5),
+            output_resolution=(3, 3, 3),
+            time=TimeConfig(dt=0.1, t_end=0.1),
+        ),
+        assert_result=_assert_immunotherapy_3d,
+    ),
+    RuntimePresetCase(
+        name="immunotherapy_2d_periodic_xy",
+        make_config=lambda tmp_path: make_immunotherapy_config(
+            tmp_path,
+            gdim=2,
+            u_initial_condition=scalar_expr("random_perturbation", mean=0.3, std=0.05),
+            v_initial_condition=scalar_expr("random_perturbation", mean=0.9, std=0.05),
+            w_initial_condition=scalar_expr(
+                "random_perturbation", mean=0.01, std=0.002
+            ),
+            u_boundary_conditions={},
+            v_boundary_conditions={},
+            w_boundary_conditions={},
+            u_periodic_axes=(0, 1),
+            v_periodic_axes=(0, 1),
+            w_periodic_axes=(0, 1),
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.1, t_end=0.1),
+        ),
+        assert_result=_assert_immunotherapy_periodic,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="immunotherapy_2d_mixed_bc",
+        make_config=lambda tmp_path: make_immunotherapy_config(
+            tmp_path,
+            gdim=2,
+            u_initial_condition=scalar_expr("random_perturbation", mean=0.3, std=0.05),
+            v_initial_condition=scalar_expr("random_perturbation", mean=0.9, std=0.05),
+            w_initial_condition=scalar_expr(
+                "random_perturbation", mean=0.01, std=0.002
+            ),
+            u_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            },
+            v_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            },
+            w_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            },
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.1, t_end=0.1),
+        ),
+        assert_result=_assert_immunotherapy_mixed_bc,
     ),
     RuntimePresetCase(
         name="van_der_pol_2d_periodic_xy",

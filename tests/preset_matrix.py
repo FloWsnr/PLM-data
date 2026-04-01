@@ -540,6 +540,64 @@ def make_kuramoto_sivashinsky_config(
     )
 
 
+def make_swift_hohenberg_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    initial_condition: FieldExpressionConfig,
+    velocity: FieldExpressionConfig,
+    boundary_conditions: dict[str, BoundaryConditionConfig],
+    periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (6, 6),
+    output_resolution: tuple[int, ...] = (4, 4),
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(
+            f"Swift-Hohenberg test helper only supports 2D/3D, got {gdim}D"
+        )
+
+    return SimulationConfig(
+        preset="swift_hohenberg",
+        parameters={
+            "r": -0.28,
+            "q0": 1.0,
+            "alpha": 1.6,
+            "beta": -1.0,
+            "gamma": -1.0,
+            "theta": 0.5,
+        },
+        domain=domain,
+        inputs={"u": InputConfig(initial_condition=initial_condition)},
+        boundary_conditions={
+            "u": boundary_field_config(
+                boundary_conditions,
+                periodic_axes=periodic_axes,
+            )
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(u="scalar"),
+        ),
+        solver=nonlinear_mixed_direct_solver_config(),
+        time=time or TimeConfig(dt=0.1, t_end=0.1),
+        seed=seed,
+        coefficients={"velocity": velocity},
+    )
+
+
 def make_zakharov_kuznetsov_config(
     tmp_path: Path,
     *,
@@ -652,6 +710,7 @@ def make_gray_scott_config(
     tmp_path: Path,
     *,
     gdim: int,
+    velocity: FieldExpressionConfig,
     u_initial_condition: FieldExpressionConfig,
     v_initial_condition: FieldExpressionConfig,
     u_boundary_conditions: dict[str, BoundaryConditionConfig],
@@ -660,6 +719,7 @@ def make_gray_scott_config(
     v_periodic_axes: tuple[int, ...] = (),
     mesh_resolution: tuple[int, ...] = (8, 8),
     output_resolution: tuple[int, ...] = (4, 4),
+    solver: SolverConfig | None = None,
     time: TimeConfig | None = None,
     seed: int | None = 42,
 ) -> SimulationConfig:
@@ -704,9 +764,10 @@ def make_gray_scott_config(
             formats=["numpy"],
             fields=output_fields(u="scalar", v="scalar"),
         ),
-        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
+        solver=solver or direct_solver_config(CONSTANT_LHS_SCALAR_NONSYMMETRIC),
         time=time,
         seed=seed,
+        coefficients={"velocity": velocity},
     )
 
 
@@ -915,6 +976,163 @@ def make_cyclic_competition_config(
             num_frames=2 if time is not None else 1,
             formats=["numpy"],
             fields=output_fields(u="scalar", v="scalar", w="scalar"),
+        ),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
+        time=time,
+        seed=seed,
+    )
+
+
+def make_immunotherapy_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    u_initial_condition: FieldExpressionConfig,
+    v_initial_condition: FieldExpressionConfig,
+    w_initial_condition: FieldExpressionConfig,
+    u_boundary_conditions: dict[str, BoundaryConditionConfig],
+    v_boundary_conditions: dict[str, BoundaryConditionConfig],
+    w_boundary_conditions: dict[str, BoundaryConditionConfig],
+    u_periodic_axes: tuple[int, ...] = (),
+    v_periodic_axes: tuple[int, ...] = (),
+    w_periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+    parameters: dict[str, float] | None = None,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(f"Immunotherapy test helper only supports 2D/3D, got {gdim}D")
+
+    if parameters is None:
+        parameters = {
+            "Du": 100.0,
+            "Dv": 1.0,
+            "Dw": 100.0,
+            "alpha": 0.1,
+            "mu_u": 0.167,
+            "rho_u": 0.692,
+            "gamma_v": 0.1,
+            "rho_w": 2.5,
+            "gamma_w": 0.001,
+            "mu_w": 55.56,
+            "sigma_u": 0.015,
+            "Ku": 0.0001,
+            "sigma_w": 0.0,
+            "Kw": 0.0,
+        }
+
+    return SimulationConfig(
+        preset="immunotherapy",
+        parameters=parameters,
+        domain=domain,
+        inputs={
+            "u": InputConfig(initial_condition=u_initial_condition),
+            "v": InputConfig(initial_condition=v_initial_condition),
+            "w": InputConfig(initial_condition=w_initial_condition),
+        },
+        boundary_conditions={
+            "u": boundary_field_config(
+                u_boundary_conditions,
+                periodic_axes=u_periodic_axes,
+            ),
+            "v": boundary_field_config(
+                v_boundary_conditions,
+                periodic_axes=v_periodic_axes,
+            ),
+            "w": boundary_field_config(
+                w_boundary_conditions,
+                periodic_axes=w_periodic_axes,
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(u="scalar", v="scalar", w="scalar"),
+        ),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
+        time=time,
+        seed=seed,
+    )
+
+
+def make_gierer_meinhardt_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    a_initial_condition: FieldExpressionConfig,
+    h_initial_condition: FieldExpressionConfig,
+    a_boundary_conditions: dict[str, BoundaryConditionConfig],
+    h_boundary_conditions: dict[str, BoundaryConditionConfig],
+    a_periodic_axes: tuple[int, ...] = (),
+    h_periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+    parameters: dict[str, float] | None = None,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(
+            f"Gierer-Meinhardt test helper only supports 2D/3D, got {gdim}D"
+        )
+
+    if parameters is None:
+        parameters = {
+            "Da": 0.05,
+            "Dh": 2.0,
+            "rho_a": 1.0,
+            "rho_h": 1.0,
+            "mu_a": 1.0,
+            "mu_h": 1.0,
+            "sigma_a": 0.01,
+            "sigma_h": 0.0,
+            "tau": 1.0,
+        }
+
+    return SimulationConfig(
+        preset="gierer_meinhardt",
+        parameters=parameters,
+        domain=domain,
+        inputs={
+            "a": InputConfig(initial_condition=a_initial_condition),
+            "h": InputConfig(initial_condition=h_initial_condition),
+        },
+        boundary_conditions={
+            "a": boundary_field_config(
+                a_boundary_conditions,
+                periodic_axes=a_periodic_axes,
+            ),
+            "h": boundary_field_config(
+                h_boundary_conditions,
+                periodic_axes=h_periodic_axes,
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(a="scalar", h="scalar"),
         ),
         solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
         time=time,

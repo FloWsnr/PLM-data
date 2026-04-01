@@ -1,0 +1,43 @@
+preset: gierer_meinhardt
+parameters:
+  Da: 0.05
+  Dh: 2.0
+  rho_a: 1.0
+  rho_h: 1.0
+  mu_a: 1.0
+  mu_h: 1.0
+  sigma_a: 0.01
+  sigma_h: 0.0
+  tau: 1.0
+domain:
+  type: rectangle
+  size: [20.0, 20.0]
+  mesh_resolution: [128, 128]
+time:
+  dt: 0.01
+  t_end: 20.0
+inputs:
+  a:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 1.0
+        std: 0.05
+  h:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 1.0
+        std: 0.05
+boundary_conditions:
+  a:
+    $ref: boundary_field.scalar.full_periodic_2d
+  h:
+    $ref: boundary_field.scalar.full_periodic_2d
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_ah
+  resolution: [96, 96]
+  num_frames: 100
+seed: 42
