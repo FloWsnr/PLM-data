@@ -35,11 +35,13 @@ inputs:
       type: none
       params: {}
     initial_condition:
-      type: gaussian_bump
+      type: gaussian_blobs
       params:
-        sigma: 0.08
-        amplitude: 1.0
-        center: [0.28, 0.42, 0.61]
+        background: 0.0
+        blobs:
+          - amplitude: 1.0
+            sigma: 0.08
+            center: [0.28, 0.42, 0.61]
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.full_periodic_3d

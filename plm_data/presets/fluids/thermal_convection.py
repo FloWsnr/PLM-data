@@ -128,114 +128,6 @@ def _space_num_dofs(V: fem.FunctionSpace) -> int:
     return V.dofmap.index_map.size_global * V.dofmap.index_map_bs
 
 
-def _constant_dirichlet_value(
-    *,
-    boundary_field,
-    side_name: str,
-    parameters: dict[str, float],
-) -> float:
-    entries = boundary_field.side_conditions(side_name)
-    if len(entries) != 1 or entries[0].type != "dirichlet":
-        raise ValueError(
-            "conductive_noise initial conditions require constant Dirichlet "
-            f"temperature values on '{side_name}'."
-        )
-
-    entry = entries[0]
-    assert entry.value is not None
-    if entry.value.is_componentwise:
-        raise ValueError(
-            f"Temperature boundary '{side_name}' must be scalar for conductive_noise."
-        )
-    if entry.value.type != "constant":
-        raise ValueError(
-            "conductive_noise initial conditions require constant Dirichlet "
-            f"temperature values on '{side_name}'."
-        )
-
-    raw_value = entry.value.params["value"]
-    if isinstance(raw_value, str) and raw_value.startswith("param:"):
-        parameter_name = raw_value.split(":", maxsplit=1)[1]
-        return parameters[parameter_name]
-    return float(raw_value)
-
-
-def _conductive_noise_interpolator(
-    *,
-    domain_geom,
-    temperature_boundary_field,
-    parameters: dict[str, float],
-    amplitude: float,
-    num_modes: int,
-    seed: int | None,
-):
-    gdim = domain_geom.mesh.geometry.dim
-    vertical_axis = _vertical_axis(gdim)
-    vertical_minus = "y-" if gdim == 2 else "z-"
-    vertical_plus = "y+" if gdim == 2 else "z+"
-
-    bottom_temperature = _constant_dirichlet_value(
-        boundary_field=temperature_boundary_field,
-        side_name=vertical_minus,
-        parameters=parameters,
-    )
-    top_temperature = _constant_dirichlet_value(
-        boundary_field=temperature_boundary_field,
-        side_name=vertical_plus,
-        parameters=parameters,
-    )
-
-    coordinates = domain_geom.mesh.geometry.x
-    lower_bounds = coordinates.min(axis=0)
-    upper_bounds = coordinates.max(axis=0)
-    spans = upper_bounds - lower_bounds
-    horizontal_axes = [axis for axis in range(gdim) if axis != vertical_axis]
-
-    rng = np.random.default_rng(seed)
-    if gdim == 2:
-        coefficients = rng.normal(size=num_modes)
-        coefficient_scale = max(1.0, np.sqrt(float(num_modes)))
-    else:
-        coefficients = rng.normal(size=(num_modes, num_modes))
-        coefficient_scale = max(1.0, np.sqrt(float(num_modes * num_modes)))
-
-    def _interpolator(x: np.ndarray) -> np.ndarray:
-        eta = (x[vertical_axis] - lower_bounds[vertical_axis]) / spans[vertical_axis]
-        base_profile = bottom_temperature + (top_temperature - bottom_temperature) * eta
-        vertical_envelope = np.sin(np.pi * eta)
-
-        perturbation = np.zeros(x.shape[1], dtype=float)
-        if gdim == 2:
-            xi = (x[horizontal_axes[0]] - lower_bounds[horizontal_axes[0]]) / spans[
-                horizontal_axes[0]
-            ]
-            for mode_index in range(num_modes):
-                wave_number = mode_index + 1
-                perturbation += coefficients[mode_index] * np.sin(
-                    2.0 * np.pi * wave_number * xi
-                )
-        else:
-            xi = (x[horizontal_axes[0]] - lower_bounds[horizontal_axes[0]]) / spans[
-                horizontal_axes[0]
-            ]
-            zeta = (x[horizontal_axes[1]] - lower_bounds[horizontal_axes[1]]) / spans[
-                horizontal_axes[1]
-            ]
-            for mode_x in range(num_modes):
-                for mode_y in range(num_modes):
-                    perturbation += (
-                        coefficients[mode_x, mode_y]
-                        * np.sin(2.0 * np.pi * (mode_x + 1) * xi)
-                        * np.sin(2.0 * np.pi * (mode_y + 1) * zeta)
-                    )
-
-        return base_profile + amplitude * vertical_envelope * (
-            perturbation / coefficient_scale
-        )
-
-    return _interpolator
-
-
 class _ThermalConvectionProblem(TransientLinearProblem):
     supported_solver_strategies = (TRANSIENT_MIXED_DIRECT,)
 
@@ -345,26 +237,12 @@ class _ThermalConvectionProblem(TransientLinearProblem):
         self.p_h.x.scatter_forward()
 
         assert temperature_field.initial_condition is not None
-        if temperature_field.initial_condition.type == "conductive_noise":
-            amplitude = float(temperature_field.initial_condition.params["amplitude"])
-            num_modes = int(temperature_field.initial_condition.params["num_modes"])
-            self.T_h.interpolate(
-                _conductive_noise_interpolator(
-                    domain_geom=domain_geom,
-                    temperature_boundary_field=temperature_boundary_field,
-                    parameters=self.config.parameters,
-                    amplitude=amplitude,
-                    num_modes=num_modes,
-                    seed=self.config.seed,
-                )
-            )
-        else:
-            apply_ic(
-                self.T_h,
-                temperature_field.initial_condition,
-                self.config.parameters,
-                seed=self.config.seed,
-            )
+        apply_ic(
+            self.T_h,
+            temperature_field.initial_condition,
+            self.config.parameters,
+            seed=self.config.seed,
+        )
         self.T_h.x.scatter_forward()
         self.T_n.x.array[:] = self.T_h.x.array
         self.T_n.x.scatter_forward()

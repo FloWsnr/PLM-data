@@ -1,6 +1,5 @@
 """Gray-Scott reaction-diffusion preset."""
 
-import numpy as np
 import ufl
 from dolfinx import default_real_type, fem
 
@@ -113,56 +112,6 @@ def _space_num_dofs(V: fem.FunctionSpace) -> int:
     return V.dofmap.index_map.size_global * V.dofmap.index_map_bs
 
 
-def _gray_scott_patch_interpolator(*, ic_config, gdim: int):
-    center = ic_config.params["center"]
-    half_width = ic_config.params["half_width"]
-    background = float(ic_config.params["background"])
-    patch_value = float(ic_config.params["patch_value"])
-
-    if len(center) != gdim:
-        raise ValueError(
-            f"gray_scott_patch center must have {gdim} entries in {gdim}D. "
-            f"Got {center!r}."
-        )
-    if len(half_width) != gdim:
-        raise ValueError(
-            f"gray_scott_patch half_width must have {gdim} entries in {gdim}D. "
-            f"Got {half_width!r}."
-        )
-
-    center_array = np.asarray(center, dtype=float)
-    half_width_array = np.asarray(half_width, dtype=float)
-
-    def _interpolator(x: np.ndarray) -> np.ndarray:
-        inside_patch = np.ones(x.shape[1], dtype=bool)
-        for axis in range(gdim):
-            inside_patch &= (
-                np.abs(x[axis] - center_array[axis]) <= half_width_array[axis]
-            )
-        return np.where(inside_patch, patch_value, background)
-
-    return _interpolator
-
-
-def _apply_gray_scott_ic(
-    func: fem.Function,
-    *,
-    ic_config,
-    parameters: dict[str, float],
-    seed: int | None,
-) -> None:
-    if ic_config.type == "gray_scott_patch":
-        func.interpolate(
-            _gray_scott_patch_interpolator(
-                ic_config=ic_config,
-                gdim=func.function_space.mesh.geometry.dim,
-            )
-        )
-        return
-
-    apply_ic(func, ic_config, parameters, seed=seed)
-
-
 class _GrayScottProblem(TransientLinearProblem):
     supported_solver_strategies = (
         CONSTANT_LHS_SCALAR_SPD,
@@ -260,17 +209,17 @@ class _GrayScottProblem(TransientLinearProblem):
         self.v_h = fem.Function(self.V_v, name="v_next")
 
         assert u_input.initial_condition is not None
-        _apply_gray_scott_ic(
+        apply_ic(
             self.u_n,
-            ic_config=u_input.initial_condition,
-            parameters=self.config.parameters,
+            u_input.initial_condition,
+            self.config.parameters,
             seed=self.config.seed,
         )
         assert v_input.initial_condition is not None
-        _apply_gray_scott_ic(
+        apply_ic(
             self.v_n,
-            ic_config=v_input.initial_condition,
-            parameters=self.config.parameters,
+            v_input.initial_condition,
+            self.config.parameters,
             seed=self.config.seed,
         )
         self.u_n.x.scatter_forward()

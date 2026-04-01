@@ -13,14 +13,75 @@ time:
 inputs:
   u:
     initial_condition:
-      type: periodic_random_modes
+      type: sine_waves
       params:
-        amplitude: 0.05
-        num_modes: 8
-        max_wavenumber: 4
+        background: 0.0
+        modes:
+          - amplitude:
+              sample: uniform
+              min: -0.03
+              max: 0.03
+            cycles:
+              - sample: randint
+                min: 1
+                max: 4
+              - sample: randint
+                min: 1
+                max: 4
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185307179586
+          - amplitude:
+              sample: uniform
+              min: -0.03
+              max: 0.03
+            cycles:
+              - sample: randint
+                min: 1
+                max: 4
+              - sample: randint
+                min: 1
+                max: 4
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185307179586
+          - amplitude:
+              sample: uniform
+              min: -0.03
+              max: 0.03
+            cycles:
+              - sample: randint
+                min: 1
+                max: 4
+              - sample: randint
+                min: 1
+                max: 4
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185307179586
+          - amplitude:
+              sample: uniform
+              min: -0.03
+              max: 0.03
+            cycles:
+              - sample: randint
+                min: 1
+                max: 4
+              - sample: randint
+                min: 1
+                max: 4
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185307179586
   v:
     initial_condition:
-      type: zero
+      type: constant
+      params:
+        value: 0.0
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.full_periodic_2d

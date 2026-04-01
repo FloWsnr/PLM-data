@@ -15,19 +15,19 @@ time:
 inputs:
   u:
     initial_condition:
-      type: random_perturbation
+      type: gaussian_noise
       params:
         mean: 0.286
         std: 0.1
   v:
     initial_condition:
-      type: random_perturbation
+      type: gaussian_noise
       params:
         mean: 0.286
         std: 0.1
   w:
     initial_condition:
-      type: random_perturbation
+      type: gaussian_noise
       params:
         mean: 0.286
         std: 0.1

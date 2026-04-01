@@ -25,8 +25,15 @@ inputs:
           type: zero
           params: {}
     initial_condition:
-      type: zero
-      params: {}
+      components:
+        x:
+          type: constant
+          params:
+            value: 0.0
+        y:
+          type: constant
+          params:
+            value: 0.0
 boundary_conditions:
   electric_field:
     x-:

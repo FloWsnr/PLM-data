@@ -15,8 +15,15 @@ inputs:
       type: none
       params: {}
     initial_condition:
-      type: custom
-      params: {}
+      components:
+        x:
+          type: constant
+          params:
+            value: 0.0
+        y:
+          type: constant
+          params:
+            value: 0.0
 boundary_conditions:
   velocity:
     $ref: boundary_field.vector.lid_driven_cavity_2d

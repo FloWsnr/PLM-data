@@ -20,15 +20,24 @@ time:
 inputs:
   height:
     initial_condition:
-      type: gaussian_bump
+      type: gaussian_blobs
       params:
-        amplitude: 0.15
-        sigma: 0.06
-        center: [0.31, 0.43]
+        background: 0.0
+        blobs:
+          - amplitude: 0.15
+            sigma: 0.06
+            center: [0.31, 0.43]
   velocity:
     initial_condition:
-      type: zero
-      params: {}
+      components:
+        x:
+          type: constant
+          params:
+            value: 0.0
+        y:
+          type: constant
+          params:
+            value: 0.0
 boundary_conditions:
   height:
     $ref: boundary_field.scalar.full_periodic_2d

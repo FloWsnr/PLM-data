@@ -47,7 +47,8 @@ def test_load_config():
     assert cfg.time.dt == 0.01
     assert cfg.time.t_end == 1.0
     assert cfg.has_periodic_boundary_conditions is False
-    assert cfg.input("u").initial_condition.type == "gaussian_bump"
+    assert cfg.input("u").initial_condition.type == "gaussian_blobs"
+    assert cfg.input("u").initial_condition.params["blobs"][0]["center"] == [0.5, 0.5]
     assert cfg.input("u").source.type == "none"
     assert cfg.output_mode("u") == "scalar"
     assert cfg.boundary_field("u").side_conditions("x-")[0].type == "neumann"
@@ -87,7 +88,9 @@ def test_load_config_vector_input():
     assert cfg.output_mode("velocity") == "components"
     assert cfg.output_mode("pressure") == "scalar"
     assert velocity.source.type == "none"
-    assert velocity.initial_condition.type == "custom"
+    assert velocity.initial_condition.components["x"].type == "constant"
+    assert velocity.initial_condition.components["x"].params["value"] == 0.0
+    assert velocity.initial_condition.components["y"].params["value"] == 0.0
     assert (
         velocity_bcs.side_conditions("y+")[0].value.components["x"].params["value"]
         == 1.0
@@ -102,9 +105,13 @@ def test_load_config_thermal_convection_2d():
     assert cfg.output_mode("velocity") == "components"
     assert cfg.output_mode("pressure") == "scalar"
     assert cfg.output_mode("temperature") == "scalar"
-    assert cfg.input("velocity").initial_condition.type == "zero"
-    assert cfg.input("temperature").initial_condition.type == "conductive_noise"
-    assert cfg.input("temperature").initial_condition.params["amplitude"] == 0.15
+    assert cfg.input("velocity").initial_condition.components["x"].type == "constant"
+    assert (
+        cfg.input("velocity").initial_condition.components["y"].params["value"] == 0.0
+    )
+    assert cfg.input("temperature").initial_condition.type == "gaussian_noise"
+    assert cfg.input("temperature").initial_condition.params["mean"] == 0.5
+    assert cfg.input("temperature").initial_condition.params["std"] == 0.15
     assert cfg.boundary_field("velocity").side_conditions("x-")[0].type == "periodic"
     assert (
         cfg.boundary_field("temperature").side_conditions("y-")[0].value.params["value"]
@@ -118,7 +125,8 @@ def test_load_config_thermal_convection_3d():
     assert cfg.preset == "thermal_convection"
     assert cfg.domain.dimension == 3
     assert cfg.has_periodic_boundary_conditions is True
-    assert cfg.input("temperature").initial_condition.type == "conductive_noise"
+    assert cfg.input("temperature").initial_condition.type == "gaussian_noise"
+    assert cfg.input("temperature").initial_condition.params["std"] == 0.18
     assert cfg.boundary_field("velocity").side_conditions("y+")[0].pair_with == "y-"
     assert (
         cfg.boundary_field("temperature").side_conditions("z+")[0].value.params["value"]
@@ -137,8 +145,8 @@ def test_load_config_gray_scott_2d():
     assert cfg.parameters["k"] == 0.06
     assert cfg.coefficient("velocity").components["x"].params["value"] == 0.01
     assert cfg.coefficient("velocity").components["y"].params["value"] == 0.0
-    assert cfg.input("u").initial_condition.type == "gray_scott_patch"
-    assert cfg.input("v").initial_condition.type == "gray_scott_patch"
+    assert cfg.input("u").initial_condition.type == "gaussian_blobs"
+    assert cfg.input("v").initial_condition.type == "gaussian_blobs"
     assert cfg.output_mode("u") == "scalar"
     assert cfg.output_mode("v") == "scalar"
     assert cfg.boundary_field("u").side_conditions("x-")[0].type == "periodic"
@@ -153,8 +161,15 @@ def test_load_config_gray_scott_3d():
     assert cfg.coefficient("velocity").components["x"].params["value"] == 0.01
     assert cfg.coefficient("velocity").components["y"].params["value"] == 0.0
     assert cfg.coefficient("velocity").components["z"].params["value"] == 0.005
-    assert cfg.input("u").initial_condition.params["center"] == [1.25, 1.25, 1.25]
-    assert cfg.input("v").initial_condition.params["half_width"] == [0.25, 0.25, 0.25]
+    assert len(cfg.input("u").initial_condition.params["blobs"]) == 2
+    assert (
+        cfg.input("u").initial_condition.params["blobs"][0]["center"][0]["sample"]
+        == "uniform"
+    )
+    assert (
+        cfg.input("v").initial_condition.params["blobs"][1]["sigma"]["sample"]
+        == "uniform"
+    )
     assert cfg.boundary_field("u").side_conditions("z+")[0].pair_with == "z-"
     assert cfg.boundary_field("v").side_conditions("x-")[0].pair_with == "x+"
 
@@ -170,7 +185,7 @@ def test_load_config_swift_hohenberg_2d_default():
     assert cfg.parameters["gamma"] == -1.0
     assert cfg.coefficient("velocity").components["x"].params["value"] == 0.6
     assert cfg.coefficient("velocity").components["y"].params["value"] == -0.25
-    assert cfg.input("u").initial_condition.type == "gaussian_bump"
+    assert cfg.input("u").initial_condition.type == "gaussian_blobs"
     assert cfg.boundary_field("u").side_conditions("x-")[0].type == "periodic"
 
 
@@ -181,7 +196,7 @@ def test_load_config_swift_hohenberg_2d_rotational():
     assert cfg.has_periodic_boundary_conditions is False
     assert cfg.coefficient("velocity").components["x"].type == "affine"
     assert cfg.coefficient("velocity").components["y"].type == "affine"
-    assert cfg.input("u").initial_condition.type == "random_perturbation"
+    assert cfg.input("u").initial_condition.type == "gaussian_noise"
     assert cfg.boundary_field("u").side_conditions("x-")[0].type == "simply_supported"
 
 
@@ -213,9 +228,11 @@ def test_load_config_van_der_pol_2d():
     assert cfg.parameters["Du"] == 0.2
     assert cfg.parameters["Dv"] == 0.02
     assert cfg.parameters["mu"] == 4.0
-    assert cfg.input("u").initial_condition.type == "periodic_random_modes"
-    assert cfg.input("u").initial_condition.params["amplitude"] == 0.05
-    assert cfg.input("v").initial_condition.type == "zero"
+    assert cfg.input("u").initial_condition.type == "sine_waves"
+    assert cfg.input("u").initial_condition.params["background"] == 0.0
+    assert len(cfg.input("u").initial_condition.params["modes"]) == 4
+    assert cfg.input("v").initial_condition.type == "constant"
+    assert cfg.input("v").initial_condition.params["value"] == 0.0
     assert cfg.output_mode("u") == "scalar"
     assert cfg.output_mode("v") == "scalar"
     assert cfg.boundary_field("u").side_conditions("x-")[0].pair_with == "x+"
@@ -227,9 +244,11 @@ def test_load_config_van_der_pol_3d():
     assert cfg.preset == "van_der_pol"
     assert cfg.domain.dimension == 3
     assert cfg.has_periodic_boundary_conditions is True
-    assert cfg.input("u").initial_condition.type == "periodic_random_modes"
-    assert cfg.input("u").initial_condition.params["max_wavenumber"] == 4
-    assert cfg.input("v").initial_condition.type == "zero"
+    assert cfg.input("u").initial_condition.type == "sine_waves"
+    assert len(cfg.input("u").initial_condition.params["modes"][0]["cycles"]) == 3
+    assert cfg.input("u").initial_condition.params["modes"][0]["cycles"][0]["max"] == 4
+    assert cfg.input("v").initial_condition.type == "constant"
+    assert cfg.input("v").initial_condition.params["value"] == 0.0
     assert cfg.boundary_field("u").side_conditions("z+")[0].pair_with == "z-"
     assert cfg.boundary_field("v").side_conditions("x-")[0].pair_with == "x+"
 
@@ -240,7 +259,7 @@ def test_load_config_keller_segel_2d():
     assert cfg.domain.dimension == 2
     assert cfg.has_periodic_boundary_conditions is True
     assert cfg.parameters["chi0"] == 10.0
-    assert cfg.input("rho").initial_condition.type == "random_perturbation"
+    assert cfg.input("rho").initial_condition.type == "gaussian_noise"
     assert cfg.input("c").initial_condition.params["mean"] == 1.0
     assert cfg.boundary_field("rho").side_conditions("x-")[0].type == "periodic"
     assert cfg.boundary_field("c").side_conditions("y+")[0].pair_with == "y-"
@@ -256,7 +275,7 @@ def test_load_config_cyclic_competition_2d():
     assert cfg.parameters["Du"] == 0.2
     assert cfg.parameters["a"] == 0.5
     assert cfg.parameters["b"] == 2.0
-    assert cfg.input("u").initial_condition.type == "random_perturbation"
+    assert cfg.input("u").initial_condition.type == "gaussian_noise"
     assert cfg.input("v").initial_condition.params["mean"] == 0.286
     assert cfg.input("w").initial_condition.params["std"] == 0.1
     assert cfg.boundary_field("u").side_conditions("x-")[0].type == "periodic"
@@ -274,9 +293,15 @@ def test_load_config_shallow_water():
     assert cfg.parameters["mean_depth"] == 1.0
     assert cfg.coefficient("bathymetry").type == "constant"
     assert cfg.coefficient("bathymetry").params["value"] == 0.0
-    assert cfg.input("height").initial_condition.type == "gaussian_bump"
-    assert cfg.input("height").initial_condition.params["center"] == [0.31, 0.43]
-    assert cfg.input("velocity").initial_condition.type == "zero"
+    assert cfg.input("height").initial_condition.type == "gaussian_blobs"
+    assert cfg.input("height").initial_condition.params["blobs"][0]["center"] == [
+        0.31,
+        0.43,
+    ]
+    assert cfg.input("velocity").initial_condition.components["x"].type == "constant"
+    assert (
+        cfg.input("velocity").initial_condition.components["y"].params["value"] == 0.0
+    )
     assert cfg.has_periodic_boundary_conditions is True
     assert cfg.boundary_field("height").side_conditions("x-")[0].pair_with == "x+"
     assert cfg.boundary_field("velocity").side_conditions("y+")[0].pair_with == "y-"
@@ -290,7 +315,7 @@ def test_load_config_advection_2d():
     assert cfg.preset == "advection"
     assert cfg.domain.dimension == 2
     assert cfg.output_mode("u") == "scalar"
-    assert cfg.input("u").initial_condition.type == "gaussian_bump"
+    assert cfg.input("u").initial_condition.type == "gaussian_blobs"
     assert cfg.boundary_field("u").side_conditions("x-")[0].type == "periodic"
     assert cfg.coefficient("diffusivity").params["value"] == 0.0005
     velocity = cfg.coefficient("velocity")
@@ -318,8 +343,15 @@ def test_load_config_burgers_2d():
     assert cfg.parameters["nu"] == 0.003
     assert cfg.output_mode("velocity") == "components"
     assert velocity.source.type == "none"
-    assert velocity.initial_condition.components["x"].params["ky"] == 2.0
-    assert velocity.initial_condition.components["y"].params["amplitude"] == -1.0
+    assert velocity.initial_condition.components["x"].type == "sine_waves"
+    assert velocity.initial_condition.components["x"].params["modes"][0]["cycles"] == [
+        0,
+        2,
+    ]
+    assert (
+        velocity.initial_condition.components["y"].params["modes"][0]["amplitude"]
+        == -1.0
+    )
     assert cfg.boundary_field("velocity").side_conditions("x-")[0].pair_with == "x+"
     assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
 
@@ -332,8 +364,16 @@ def test_load_config_burgers_3d():
     assert cfg.has_periodic_boundary_conditions is True
     assert cfg.parameters["nu"] == 0.004
     assert cfg.output_mode("velocity") == "components"
-    assert velocity.initial_condition.components["y"].params["kz"] == 2.0
-    assert velocity.initial_condition.components["z"].params["amplitude"] == -0.9
+    assert velocity.initial_condition.components["y"].type == "sine_waves"
+    assert velocity.initial_condition.components["y"].params["modes"][0]["cycles"] == [
+        0,
+        0,
+        2,
+    ]
+    assert (
+        velocity.initial_condition.components["z"].params["modes"][0]["amplitude"]
+        == -0.9
+    )
     assert cfg.boundary_field("velocity").side_conditions("z+")[0].pair_with == "z-"
     assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
 
@@ -343,7 +383,8 @@ def test_load_config_maxwell_pulse():
     electric_field = cfg.input("electric_field")
     boundary_field = cfg.boundary_field("electric_field")
     assert cfg.output_mode("electric_field") == "components"
-    assert electric_field.initial_condition.type == "zero"
+    assert electric_field.initial_condition.components["x"].type == "constant"
+    assert electric_field.initial_condition.components["y"].params["value"] == 0.0
     assert boundary_field.side_conditions("x-")[0].type == "absorbing"
     assert boundary_field.side_conditions("y-")[0].type == "dirichlet"
     assert cfg.solver.strategy == CONSTANT_LHS_CURL_DIRECT
@@ -357,9 +398,10 @@ def test_load_config_wave():
     assert cfg.coefficient("c_sq").type == "radial_cosine"
     assert cfg.coefficient("c_sq").params["base"] == 1.8
     assert cfg.coefficient("c_sq").params["amplitude"] == 0.65
-    assert cfg.input("u").initial_condition.type == "zero"
-    assert cfg.input("v").initial_condition.type == "gaussian_bump"
-    assert cfg.input("v").initial_condition.params["center"] == [0.28, 0.44]
+    assert cfg.input("u").initial_condition.type == "constant"
+    assert cfg.input("u").initial_condition.params["value"] == 0.0
+    assert cfg.input("v").initial_condition.type == "gaussian_blobs"
+    assert cfg.input("v").initial_condition.params["blobs"][0]["center"] == [0.28, 0.44]
     assert cfg.input("forcing").source.type == "none"
     assert cfg.output_mode("u") == "scalar"
     assert cfg.output_mode("v") == "scalar"
@@ -375,9 +417,12 @@ def test_load_config_plate():
     assert cfg.coefficient("rho_h").type == "constant"
     assert cfg.coefficient("damping").params["value"] == 0.0
     assert cfg.coefficient("rigidity").params["value"] == 0.2
-    assert cfg.input("deflection").initial_condition.type == "sine_product"
-    assert cfg.input("deflection").initial_condition.params["amplitude"] == 0.1
-    assert cfg.input("velocity").initial_condition.type == "zero"
+    assert cfg.input("deflection").initial_condition.type == "sine_waves"
+    assert (
+        cfg.input("deflection").initial_condition.params["modes"][0]["amplitude"] == 0.1
+    )
+    assert cfg.input("velocity").initial_condition.type == "constant"
+    assert cfg.input("velocity").initial_condition.params["value"] == 0.0
     assert cfg.input("load").source.type == "none"
     assert cfg.output_mode("deflection") == "scalar"
     assert cfg.output_mode("velocity") == "scalar"
@@ -416,6 +461,49 @@ def _base_yaml_dict():
         "solver": {
             **_solver_block(STATIONARY_SCALAR_SPD),
         },
+    }
+
+
+def _base_heat_yaml_dict():
+    return {
+        "preset": "heat",
+        "parameters": {},
+        "coefficients": {
+            "kappa": {"type": "constant", "params": {"value": 0.01}},
+        },
+        "domain": {
+            "type": "rectangle",
+            "size": [1.0, 1.0],
+            "mesh_resolution": [4, 4],
+        },
+        "time": {"dt": 0.01, "t_end": 0.01},
+        "inputs": {
+            "u": {
+                "source": {"type": "none", "params": {}},
+                "initial_condition": {
+                    "type": "constant",
+                    "params": {"value": 0.0},
+                },
+            }
+        },
+        "boundary_conditions": {
+            "u": {
+                "x-": [{"operator": "neumann", "value": 0.0}],
+                "x+": [{"operator": "neumann", "value": 0.0}],
+                "y-": [{"operator": "neumann", "value": 0.0}],
+                "y+": [{"operator": "neumann", "value": 0.0}],
+            }
+        },
+        "output": {
+            "resolution": [8, 8],
+            "num_frames": 2,
+            "formats": ["numpy"],
+            "fields": {"u": "scalar"},
+        },
+        "solver": {
+            **_solver_block(CONSTANT_LHS_SCALAR_SPD),
+        },
+        "seed": 42,
     }
 
 
@@ -530,40 +618,8 @@ def test_missing_inputs_section(tmp_path):
 
 
 def test_missing_coefficients_section(tmp_path):
-    data = {
-        "preset": "heat",
-        "parameters": {},
-        "domain": {
-            "type": "rectangle",
-            "size": [1.0, 1.0],
-            "mesh_resolution": [4, 4],
-        },
-        "time": {"dt": 0.01, "t_end": 0.01},
-        "inputs": {
-            "u": {
-                "source": {"type": "none", "params": {}},
-                "initial_condition": {"type": "constant", "params": {"value": 0.0}},
-            }
-        },
-        "boundary_conditions": {
-            "u": {
-                "x-": [{"operator": "neumann", "value": 0.0}],
-                "x+": [{"operator": "neumann", "value": 0.0}],
-                "y-": [{"operator": "neumann", "value": 0.0}],
-                "y+": [{"operator": "neumann", "value": 0.0}],
-            }
-        },
-        "output": {
-            "resolution": [8, 8],
-            "num_frames": 2,
-            "formats": ["numpy"],
-            "fields": {"u": "scalar"},
-        },
-        "solver": {
-            **_solver_block(CONSTANT_LHS_SCALAR_SPD),
-        },
-        "seed": 42,
-    }
+    data = _base_heat_yaml_dict()
+    del data["coefficients"]
     p = _write_yaml(tmp_path, "no_coefficients.yaml", data)
     with pytest.raises(ValueError, match="coefficients"):
         load_config(p)
@@ -574,6 +630,41 @@ def test_missing_boundary_conditions_section(tmp_path):
     del data["boundary_conditions"]
     p = _write_yaml(tmp_path, "no_boundary_conditions.yaml", data)
     with pytest.raises(ValueError, match="boundary_conditions"):
+        load_config(p)
+
+
+def test_invalid_initial_condition_sampler_is_rejected(tmp_path):
+    data = _base_heat_yaml_dict()
+    data["inputs"]["u"]["initial_condition"] = {
+        "type": "constant",
+        "params": {
+            "value": {
+                "sample": "uniform",
+                "min": 0.0,
+                "upper": 1.0,
+            }
+        },
+    }
+    p = _write_yaml(tmp_path, "bad_ic_sampler.yaml", data)
+    with pytest.raises(ValueError, match="uniform sampler"):
+        load_config(p)
+
+
+def test_invalid_quadrants_region_values_are_rejected(tmp_path):
+    data = _base_heat_yaml_dict()
+    data["inputs"]["u"]["initial_condition"] = {
+        "type": "quadrants",
+        "params": {
+            "split": [0.5, 0.5],
+            "region_values": {
+                "00": 0.0,
+                "01": 1.0,
+                "10": 2.0,
+            },
+        },
+    }
+    p = _write_yaml(tmp_path, "bad_quadrants.yaml", data)
+    with pytest.raises(ValueError, match="region_values must contain exactly"):
         load_config(p)
 
 

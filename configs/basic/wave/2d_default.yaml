@@ -19,15 +19,18 @@ time:
 inputs:
   u:
     initial_condition:
-      type: zero
-      params: {}
+      type: constant
+      params:
+        value: 0.0
   v:
     initial_condition:
-      type: gaussian_bump
+      type: gaussian_blobs
       params:
-        sigma: 0.06
-        amplitude: 12.0
-        center: [0.28, 0.44]
+        background: 0.0
+        blobs:
+          - amplitude: 12.0
+            sigma: 0.06
+            center: [0.28, 0.44]
   forcing:
     source:
       type: none

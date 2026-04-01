@@ -17,11 +17,13 @@ inputs:
       type: none
       params: {}
     initial_condition:
-      type: gaussian_bump
+      type: gaussian_blobs
       params:
-        sigma: 0.1
-        amplitude: 1.0
-        center: [0.5, 0.5]
+        background: 0.0
+        blobs:
+          - amplitude: 1.0
+            sigma: 0.1
+            center: [0.5, 0.5]
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.homogeneous_neumann_2d

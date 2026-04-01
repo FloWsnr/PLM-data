@@ -1074,7 +1074,7 @@ SUCCESS_CASES = (
             velocity_initial_condition=vector_zero(),
             temperature_source=scalar_expr("none"),
             temperature_initial_condition=scalar_expr(
-                "random_perturbation",
+                "gaussian_noise",
                 mean=0.5,
                 std=0.02,
             ),
@@ -1104,7 +1104,7 @@ SUCCESS_CASES = (
             velocity_initial_condition=vector_zero(),
             temperature_source=scalar_expr("none"),
             temperature_initial_condition=scalar_expr(
-                "random_perturbation",
+                "gaussian_noise",
                 mean=0.5,
                 std=0.02,
             ),
@@ -1184,16 +1184,16 @@ SUCCESS_CASES = (
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
-        name="cgl_random_perturbation_ic",
+        name="cgl_gaussian_noise_ic",
         make_config=lambda tmp_path: make_cgl_config(
             tmp_path,
             u_initial_condition=scalar_expr(
-                "random_perturbation",
+                "gaussian_noise",
                 mean=1.0,
                 std=0.05,
             ),
             v_initial_condition=scalar_expr(
-                "random_perturbation",
+                "gaussian_noise",
                 mean=0.0,
                 std=0.05,
             ),
@@ -1211,11 +1211,11 @@ SUCCESS_CASES = (
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
-        name="kuramoto_sivashinsky_random_perturbation_ic",
+        name="kuramoto_sivashinsky_gaussian_noise_ic",
         make_config=lambda tmp_path: make_kuramoto_sivashinsky_config(
             tmp_path,
             initial_condition=scalar_expr(
-                "random_perturbation",
+                "gaussian_noise",
                 mean=0.0,
                 std=0.01,
             ),
@@ -1233,11 +1233,11 @@ SUCCESS_CASES = (
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
-        name="zakharov_kuznetsov_random_perturbation_ic",
+        name="zakharov_kuznetsov_gaussian_noise_ic",
         make_config=lambda tmp_path: make_zakharov_kuznetsov_config(
             tmp_path,
             initial_condition=scalar_expr(
-                "random_perturbation",
+                "gaussian_noise",
                 mean=0.0,
                 std=0.01,
             ),
@@ -1255,11 +1255,11 @@ SUCCESS_CASES = (
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
-        name="cahn_hilliard_random_perturbation_ic",
+        name="cahn_hilliard_gaussian_noise_ic",
         make_config=lambda tmp_path: make_cahn_hilliard_config(
             tmp_path,
             initial_condition=scalar_expr(
-                "random_perturbation",
+                "gaussian_noise",
                 mean=0.63,
                 std=0.02,
             ),
@@ -1274,18 +1274,14 @@ SUCCESS_CASES = (
             gdim=2,
             velocity=vector_expr(x=constant(0.35), y=constant(0.0)),
             u_initial_condition=scalar_expr(
-                "gray_scott_patch",
+                "gaussian_blobs",
                 background=1.0,
-                patch_value=0.5,
-                center=[0.5, 0.5],
-                half_width=[0.15, 0.15],
+                blobs=[{"amplitude": -0.5, "sigma": 0.08, "center": [0.5, 0.5]}],
             ),
             v_initial_condition=scalar_expr(
-                "gray_scott_patch",
+                "gaussian_blobs",
                 background=0.0,
-                patch_value=0.25,
-                center=[0.5, 0.5],
-                half_width=[0.15, 0.15],
+                blobs=[{"amplitude": 0.25, "sigma": 0.08, "center": [0.5, 0.5]}],
             ),
             u_boundary_conditions={},
             v_boundary_conditions={},
@@ -1309,18 +1305,26 @@ SUCCESS_CASES = (
                 z=constant(0.1),
             ),
             u_initial_condition=scalar_expr(
-                "gray_scott_patch",
+                "gaussian_blobs",
                 background=1.0,
-                patch_value=0.5,
-                center=[0.5, 0.5, 0.5],
-                half_width=[0.15, 0.15, 0.15],
+                blobs=[
+                    {
+                        "amplitude": -0.5,
+                        "sigma": 0.08,
+                        "center": [0.5, 0.5, 0.5],
+                    }
+                ],
             ),
             v_initial_condition=scalar_expr(
-                "gray_scott_patch",
+                "gaussian_blobs",
                 background=0.0,
-                patch_value=0.25,
-                center=[0.5, 0.5, 0.5],
-                half_width=[0.15, 0.15, 0.15],
+                blobs=[
+                    {
+                        "amplitude": 0.25,
+                        "sigma": 0.08,
+                        "center": [0.5, 0.5, 0.5],
+                    }
+                ],
             ),
             u_boundary_conditions={},
             v_boundary_conditions={},
@@ -1406,9 +1410,9 @@ SUCCESS_CASES = (
         make_config=lambda tmp_path: make_lorenz_config(
             tmp_path,
             gdim=2,
-            x_initial_condition=scalar_expr("random_perturbation", mean=0.0, std=1.0),
-            y_initial_condition=scalar_expr("random_perturbation", mean=0.0, std=1.0),
-            z_initial_condition=scalar_expr("random_perturbation", mean=0.0, std=1.0),
+            x_initial_condition=scalar_expr("gaussian_noise", mean=0.0, std=1.0),
+            y_initial_condition=scalar_expr("gaussian_noise", mean=0.0, std=1.0),
+            z_initial_condition=scalar_expr("gaussian_noise", mean=0.0, std=1.0),
             x_boundary_conditions={},
             y_boundary_conditions={},
             z_boundary_conditions={},
@@ -1427,9 +1431,9 @@ SUCCESS_CASES = (
         make_config=lambda tmp_path: make_lorenz_config(
             tmp_path,
             gdim=3,
-            x_initial_condition=scalar_expr("random_perturbation", mean=0.0, std=1.0),
-            y_initial_condition=scalar_expr("random_perturbation", mean=0.0, std=1.0),
-            z_initial_condition=scalar_expr("random_perturbation", mean=0.0, std=1.0),
+            x_initial_condition=scalar_expr("gaussian_noise", mean=0.0, std=1.0),
+            y_initial_condition=scalar_expr("gaussian_noise", mean=0.0, std=1.0),
+            z_initial_condition=scalar_expr("gaussian_noise", mean=0.0, std=1.0),
             x_boundary_conditions={},
             y_boundary_conditions={},
             z_boundary_conditions={},
@@ -1448,8 +1452,8 @@ SUCCESS_CASES = (
         make_config=lambda tmp_path: make_gierer_meinhardt_config(
             tmp_path,
             gdim=2,
-            a_initial_condition=scalar_expr("random_perturbation", mean=1.0, std=0.05),
-            h_initial_condition=scalar_expr("random_perturbation", mean=1.0, std=0.05),
+            a_initial_condition=scalar_expr("gaussian_noise", mean=1.0, std=0.05),
+            h_initial_condition=scalar_expr("gaussian_noise", mean=1.0, std=0.05),
             a_boundary_conditions={},
             h_boundary_conditions={},
             a_periodic_axes=(0, 1),
@@ -1466,8 +1470,8 @@ SUCCESS_CASES = (
         make_config=lambda tmp_path: make_gierer_meinhardt_config(
             tmp_path,
             gdim=3,
-            a_initial_condition=scalar_expr("random_perturbation", mean=1.0, std=0.05),
-            h_initial_condition=scalar_expr("random_perturbation", mean=1.0, std=0.05),
+            a_initial_condition=scalar_expr("gaussian_noise", mean=1.0, std=0.05),
+            h_initial_condition=scalar_expr("gaussian_noise", mean=1.0, std=0.05),
             a_boundary_conditions={},
             h_boundary_conditions={},
             a_periodic_axes=(0, 1, 2),
@@ -1484,8 +1488,8 @@ SUCCESS_CASES = (
         make_config=lambda tmp_path: make_gierer_meinhardt_config(
             tmp_path,
             gdim=2,
-            a_initial_condition=scalar_expr("random_perturbation", mean=1.0, std=0.05),
-            h_initial_condition=scalar_expr("random_perturbation", mean=1.0, std=0.05),
+            a_initial_condition=scalar_expr("gaussian_noise", mean=1.0, std=0.05),
+            h_initial_condition=scalar_expr("gaussian_noise", mean=1.0, std=0.05),
             a_boundary_conditions={},
             h_boundary_conditions={
                 "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
@@ -1506,15 +1510,9 @@ SUCCESS_CASES = (
         make_config=lambda tmp_path: make_cyclic_competition_config(
             tmp_path,
             gdim=2,
-            u_initial_condition=scalar_expr(
-                "random_perturbation", mean=0.385, std=0.05
-            ),
-            v_initial_condition=scalar_expr(
-                "random_perturbation", mean=0.385, std=0.05
-            ),
-            w_initial_condition=scalar_expr(
-                "random_perturbation", mean=0.385, std=0.05
-            ),
+            u_initial_condition=scalar_expr("gaussian_noise", mean=0.385, std=0.05),
+            v_initial_condition=scalar_expr("gaussian_noise", mean=0.385, std=0.05),
+            w_initial_condition=scalar_expr("gaussian_noise", mean=0.385, std=0.05),
             u_boundary_conditions={},
             v_boundary_conditions={},
             w_boundary_conditions={},
@@ -1533,15 +1531,9 @@ SUCCESS_CASES = (
         make_config=lambda tmp_path: make_cyclic_competition_config(
             tmp_path,
             gdim=3,
-            u_initial_condition=scalar_expr(
-                "random_perturbation", mean=0.385, std=0.05
-            ),
-            v_initial_condition=scalar_expr(
-                "random_perturbation", mean=0.385, std=0.05
-            ),
-            w_initial_condition=scalar_expr(
-                "random_perturbation", mean=0.385, std=0.05
-            ),
+            u_initial_condition=scalar_expr("gaussian_noise", mean=0.385, std=0.05),
+            v_initial_condition=scalar_expr("gaussian_noise", mean=0.385, std=0.05),
+            w_initial_condition=scalar_expr("gaussian_noise", mean=0.385, std=0.05),
             u_boundary_conditions={},
             v_boundary_conditions={},
             w_boundary_conditions={},
@@ -1560,15 +1552,9 @@ SUCCESS_CASES = (
         make_config=lambda tmp_path: make_cyclic_competition_config(
             tmp_path,
             gdim=2,
-            u_initial_condition=scalar_expr(
-                "random_perturbation", mean=0.385, std=0.05
-            ),
-            v_initial_condition=scalar_expr(
-                "random_perturbation", mean=0.385, std=0.05
-            ),
-            w_initial_condition=scalar_expr(
-                "random_perturbation", mean=0.385, std=0.05
-            ),
+            u_initial_condition=scalar_expr("gaussian_noise", mean=0.385, std=0.05),
+            v_initial_condition=scalar_expr("gaussian_noise", mean=0.385, std=0.05),
+            w_initial_condition=scalar_expr("gaussian_noise", mean=0.385, std=0.05),
             u_boundary_conditions={},
             v_boundary_conditions={},
             w_boundary_conditions={
@@ -1592,11 +1578,9 @@ SUCCESS_CASES = (
         make_config=lambda tmp_path: make_immunotherapy_config(
             tmp_path,
             gdim=2,
-            u_initial_condition=scalar_expr("random_perturbation", mean=0.3, std=0.05),
-            v_initial_condition=scalar_expr("random_perturbation", mean=0.9, std=0.05),
-            w_initial_condition=scalar_expr(
-                "random_perturbation", mean=0.01, std=0.002
-            ),
+            u_initial_condition=scalar_expr("gaussian_noise", mean=0.3, std=0.05),
+            v_initial_condition=scalar_expr("gaussian_noise", mean=0.9, std=0.05),
+            w_initial_condition=scalar_expr("gaussian_noise", mean=0.01, std=0.002),
             u_boundary_conditions={
                 "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
                 "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
@@ -1626,11 +1610,9 @@ SUCCESS_CASES = (
         make_config=lambda tmp_path: make_immunotherapy_config(
             tmp_path,
             gdim=3,
-            u_initial_condition=scalar_expr("random_perturbation", mean=0.3, std=0.05),
-            v_initial_condition=scalar_expr("random_perturbation", mean=0.9, std=0.05),
-            w_initial_condition=scalar_expr(
-                "random_perturbation", mean=0.01, std=0.002
-            ),
+            u_initial_condition=scalar_expr("gaussian_noise", mean=0.3, std=0.05),
+            v_initial_condition=scalar_expr("gaussian_noise", mean=0.9, std=0.05),
+            w_initial_condition=scalar_expr("gaussian_noise", mean=0.01, std=0.002),
             u_boundary_conditions={
                 "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
                 "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
@@ -1666,11 +1648,9 @@ SUCCESS_CASES = (
         make_config=lambda tmp_path: make_immunotherapy_config(
             tmp_path,
             gdim=2,
-            u_initial_condition=scalar_expr("random_perturbation", mean=0.3, std=0.05),
-            v_initial_condition=scalar_expr("random_perturbation", mean=0.9, std=0.05),
-            w_initial_condition=scalar_expr(
-                "random_perturbation", mean=0.01, std=0.002
-            ),
+            u_initial_condition=scalar_expr("gaussian_noise", mean=0.3, std=0.05),
+            v_initial_condition=scalar_expr("gaussian_noise", mean=0.9, std=0.05),
+            w_initial_condition=scalar_expr("gaussian_noise", mean=0.01, std=0.002),
             u_boundary_conditions={},
             v_boundary_conditions={},
             w_boundary_conditions={},
@@ -1689,11 +1669,9 @@ SUCCESS_CASES = (
         make_config=lambda tmp_path: make_immunotherapy_config(
             tmp_path,
             gdim=2,
-            u_initial_condition=scalar_expr("random_perturbation", mean=0.3, std=0.05),
-            v_initial_condition=scalar_expr("random_perturbation", mean=0.9, std=0.05),
-            w_initial_condition=scalar_expr(
-                "random_perturbation", mean=0.01, std=0.002
-            ),
+            u_initial_condition=scalar_expr("gaussian_noise", mean=0.3, std=0.05),
+            v_initial_condition=scalar_expr("gaussian_noise", mean=0.9, std=0.05),
+            w_initial_condition=scalar_expr("gaussian_noise", mean=0.01, std=0.002),
             u_boundary_conditions={
                 "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
                 "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
@@ -1724,10 +1702,13 @@ SUCCESS_CASES = (
             tmp_path,
             gdim=2,
             u_initial_condition=scalar_expr(
-                "periodic_random_modes",
-                amplitude=0.05,
-                num_modes=6,
-                max_wavenumber=3,
+                "sine_waves",
+                background=0.0,
+                modes=[
+                    {"amplitude": 0.03, "cycles": [1, 2], "phase": 0.0},
+                    {"amplitude": -0.02, "cycles": [2, 1], "phase": 1.0},
+                    {"amplitude": 0.01, "cycles": [3, 2], "phase": 0.5},
+                ],
             ),
             v_initial_condition=constant(0.0),
             u_boundary_conditions={},
@@ -1747,10 +1728,13 @@ SUCCESS_CASES = (
             tmp_path,
             gdim=3,
             u_initial_condition=scalar_expr(
-                "periodic_random_modes",
-                amplitude=0.05,
-                num_modes=6,
-                max_wavenumber=3,
+                "sine_waves",
+                background=0.0,
+                modes=[
+                    {"amplitude": 0.03, "cycles": [1, 2, 1], "phase": 0.0},
+                    {"amplitude": -0.02, "cycles": [2, 1, 2], "phase": 1.0},
+                    {"amplitude": 0.01, "cycles": [3, 2, 1], "phase": 0.5},
+                ],
             ),
             v_initial_condition=constant(0.0),
             u_boundary_conditions={},
@@ -1770,7 +1754,7 @@ SUCCESS_CASES = (
             tmp_path,
             gdim=2,
             u_initial_condition=scalar_expr(
-                "random_perturbation",
+                "gaussian_noise",
                 mean=0.0,
                 std=0.05,
             ),
@@ -1799,7 +1783,7 @@ SUCCESS_CASES = (
             tmp_path,
             gdim=2,
             u_1_initial_condition=scalar_expr(
-                "random_perturbation",
+                "gaussian_noise",
                 mean=3.0,
                 std=0.1,
             ),
@@ -1827,7 +1811,7 @@ SUCCESS_CASES = (
             tmp_path,
             gdim=3,
             u_1_initial_condition=scalar_expr(
-                "random_perturbation",
+                "gaussian_noise",
                 mean=3.0,
                 std=0.1,
             ),
@@ -1855,22 +1839,22 @@ SUCCESS_CASES = (
             tmp_path,
             gdim=2,
             u_1_initial_condition=scalar_expr(
-                "random_perturbation",
+                "gaussian_noise",
                 mean=3.0,
                 std=0.05,
             ),
             v_1_initial_condition=scalar_expr(
-                "random_perturbation",
+                "gaussian_noise",
                 mean=3.0,
                 std=0.05,
             ),
             u_2_initial_condition=scalar_expr(
-                "random_perturbation",
+                "gaussian_noise",
                 mean=3.0,
                 std=0.05,
             ),
             v_2_initial_condition=scalar_expr(
-                "random_perturbation",
+                "gaussian_noise",
                 mean=10.0,
                 std=0.05,
             ),

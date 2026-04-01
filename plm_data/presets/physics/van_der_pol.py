@@ -1,9 +1,7 @@
 """Diffusively coupled Van der Pol oscillator preset."""
 
-import numpy as np
 import ufl
 from dolfinx import fem
-from mpi4py import MPI
 
 from plm_data.core.boundary_conditions import (
     apply_dirichlet_bcs,
@@ -100,94 +98,6 @@ def _space_num_dofs(V: fem.FunctionSpace) -> int:
     return V.dofmap.index_map.size_global * V.dofmap.index_map_bs
 
 
-def _global_axis_bounds(msh) -> tuple[tuple[float, float], ...]:
-    coords = msh.geometry.x
-    comm = msh.comm
-    bounds: list[tuple[float, float]] = []
-    for axis in range(msh.geometry.dim):
-        local_min = float(coords[:, axis].min()) if coords.size > 0 else np.inf
-        local_max = float(coords[:, axis].max()) if coords.size > 0 else -np.inf
-        bounds.append(
-            (
-                comm.allreduce(local_min, op=MPI.MIN),
-                comm.allreduce(local_max, op=MPI.MAX),
-            )
-        )
-    return tuple(bounds)
-
-
-def _periodic_random_modes_interpolator(
-    *,
-    amplitude: float,
-    num_modes: int,
-    max_wavenumber: int,
-    seed: int | None,
-    bounds: tuple[tuple[float, float], ...],
-):
-    if num_modes <= 0:
-        raise ValueError("periodic_random_modes requires num_modes > 0")
-    if max_wavenumber <= 0:
-        raise ValueError("periodic_random_modes requires max_wavenumber > 0")
-
-    rng = np.random.default_rng(seed)
-    gdim = len(bounds)
-    offsets = np.array([lower for lower, _ in bounds], dtype=float)
-    lengths = np.array([upper - lower for lower, upper in bounds], dtype=float)
-    if np.any(lengths <= 0.0):
-        raise ValueError("periodic_random_modes requires positive domain lengths")
-
-    wave_numbers = rng.integers(1, max_wavenumber + 1, size=(num_modes, gdim))
-    trig_selector = rng.integers(0, 2, size=(num_modes, gdim))
-    coefficients = rng.normal(size=num_modes)
-    coefficients /= max(float(np.linalg.norm(coefficients)), 1.0)
-    angular_frequencies = 2.0 * np.pi * wave_numbers / lengths
-
-    def _interpolator(x: np.ndarray) -> np.ndarray:
-        shifted = x[:gdim, :] - offsets[:, None]
-        values = np.zeros(x.shape[1], dtype=float)
-        for mode in range(num_modes):
-            mode_values = np.ones(x.shape[1], dtype=float)
-            for axis in range(gdim):
-                argument = angular_frequencies[mode, axis] * shifted[axis]
-                trig_fn = np.cos if trig_selector[mode, axis] else np.sin
-                mode_values *= trig_fn(argument)
-            values += coefficients[mode] * mode_values
-        return amplitude * values
-
-    return _interpolator
-
-
-def _apply_van_der_pol_ic(
-    func: fem.Function,
-    *,
-    ic_config,
-    parameters: dict[str, float],
-    seed: int | None,
-    bounds: tuple[tuple[float, float], ...],
-) -> None:
-    if ic_config.type == "periodic_random_modes":
-        amplitude = float(ic_config.params["amplitude"])
-        num_modes = int(ic_config.params["num_modes"])
-        max_wavenumber = int(ic_config.params["max_wavenumber"])
-        func.interpolate(
-            _periodic_random_modes_interpolator(
-                amplitude=amplitude,
-                num_modes=num_modes,
-                max_wavenumber=max_wavenumber,
-                seed=seed,
-                bounds=bounds,
-            )
-        )
-        return
-
-    apply_ic(
-        func,
-        ic_config,
-        parameters,
-        seed=seed,
-    )
-
-
 class _VanDerPolProblem(TransientLinearProblem):
     supported_solver_strategies = (CONSTANT_LHS_SCALAR_SPD,)
 
@@ -208,7 +118,6 @@ class _VanDerPolProblem(TransientLinearProblem):
     def setup(self) -> None:
         domain_geom = self.load_domain_geometry()
         self.msh = domain_geom.mesh
-        bounds = _global_axis_bounds(self.msh)
         V = fem.functionspace(self.msh, ("Lagrange", 1))
 
         dt = self.config.time.dt
@@ -254,22 +163,20 @@ class _VanDerPolProblem(TransientLinearProblem):
         v_initial_condition = self.config.input("v").initial_condition
         assert u_initial_condition is not None
         assert v_initial_condition is not None
-        _apply_van_der_pol_ic(
+        apply_ic(
             self.u_n,
-            ic_config=u_initial_condition,
-            parameters=params,
+            u_initial_condition,
+            params,
             seed=self.config.seed,
-            bounds=bounds,
         )
         self.u_n.x.scatter_forward()
         if u_mpc is not None:
             u_mpc.backsubstitution(self.u_n)
-        _apply_van_der_pol_ic(
+        apply_ic(
             self.v_n,
-            ic_config=v_initial_condition,
-            parameters=params,
+            v_initial_condition,
+            params,
             seed=(self.config.seed + 1) if self.config.seed is not None else None,
-            bounds=bounds,
         )
         self.v_n.x.scatter_forward()
         if v_mpc is not None:

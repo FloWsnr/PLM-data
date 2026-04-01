@@ -21,12 +21,13 @@ inputs:
       type: none
       params: {}
     initial_condition:
-      type: radial_cosine
+      type: gaussian_blobs
       params:
-        base: 0.5
-        amplitude: 0.5
-        frequency: 25.132741228718345
-        center: [0.38, 0.62]
+        background: 0.5
+        blobs:
+          - amplitude: 0.5
+            sigma: 0.12
+            center: [0.38, 0.62]
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.homogeneous_dirichlet_2d

@@ -23,15 +23,18 @@ time:
 inputs:
   deflection:
     initial_condition:
-      type: sine_product
+      type: sine_waves
       params:
-        amplitude: 0.1
-        kx: 1
-        ky: 1
+        background: 0.0
+        modes:
+          - amplitude: 0.1
+            cycles: [1, 1]
+            phase: 0.0
   velocity:
     initial_condition:
-      type: zero
-      params: {}
+      type: constant
+      params:
+        value: 0.0
   load:
     source:
       type: none

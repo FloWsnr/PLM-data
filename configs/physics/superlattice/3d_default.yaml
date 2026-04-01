@@ -19,7 +19,7 @@ time:
 inputs:
   u_1:
     initial_condition:
-      type: random_perturbation
+      type: gaussian_noise
       params:
         mean: 3.0
         std: 0.1

@@ -16,6 +16,22 @@ _GRID_FORMATS = {"numpy", "gif", "video"}
 _REF_KEY = "$ref"
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _FRAGMENT_CATALOG_PATH = _REPO_ROOT / "configs" / "_fragments.yaml"
+_INITIAL_CONDITION_EXPR_TYPES = {
+    "none",
+    "zero",
+    "custom",
+    "constant",
+    "sine_product",
+    "cosine_product",
+    "gaussian_bump",
+    "radial_cosine",
+    "affine",
+    "step",
+    "gaussian_noise",
+    "gaussian_blobs",
+    "sine_waves",
+    "quadrants",
+}
 _TOP_LEVEL_CONFIG_KEYS = {
     "preset",
     "parameters",
@@ -47,6 +63,305 @@ def _as_mapping(raw: Any, context: str) -> dict[str, Any]:
 def _component_labels(gdim: int) -> tuple[str, ...]:
     """Return active vector component labels for the dimension."""
     return _COMPONENT_LABELS[:gdim]
+
+
+def _is_param_ref(value: Any) -> bool:
+    return isinstance(value, str) and value.startswith("param:")
+
+
+def _validate_numeric_literal_or_param_ref(value: Any, context: str) -> None:
+    if isinstance(value, (int, float)) or _is_param_ref(value):
+        return
+    raise ValueError(
+        f"{context} must be a number or 'param:<name>' reference. Got {value!r}."
+    )
+
+
+def _validate_sampleable_numeric(
+    value: Any,
+    context: str,
+) -> None:
+    if not isinstance(value, dict) or "sample" not in value:
+        _validate_numeric_literal_or_param_ref(value, context)
+        return
+
+    sample_type = _require(value, "sample", context)
+    if sample_type == "uniform":
+        if set(value) != {"sample", "min", "max"}:
+            raise ValueError(
+                f"{context} uniform sampler must contain exactly ['max', 'min', "
+                f"'sample']. Got {sorted(value)}."
+            )
+        _validate_numeric_literal_or_param_ref(value["min"], f"{context}.min")
+        _validate_numeric_literal_or_param_ref(value["max"], f"{context}.max")
+        return
+
+    if sample_type == "normal":
+        if set(value) != {"sample", "mean", "std"}:
+            raise ValueError(
+                f"{context} normal sampler must contain exactly ['mean', 'sample', "
+                f"'std']. Got {sorted(value)}."
+            )
+        _validate_numeric_literal_or_param_ref(value["mean"], f"{context}.mean")
+        _validate_numeric_literal_or_param_ref(value["std"], f"{context}.std")
+        return
+
+    if sample_type == "randint":
+        if set(value) != {"sample", "min", "max"}:
+            raise ValueError(
+                f"{context} randint sampler must contain exactly ['max', 'min', "
+                f"'sample']. Got {sorted(value)}."
+            )
+        _validate_numeric_literal_or_param_ref(value["min"], f"{context}.min")
+        _validate_numeric_literal_or_param_ref(value["max"], f"{context}.max")
+        return
+
+    raise ValueError(f"{context} uses unknown sampler '{sample_type}'.")
+
+
+def _validate_sampleable_vector(
+    values: Any,
+    context: str,
+    *,
+    gdim: int,
+) -> None:
+    if not isinstance(values, list) or len(values) != gdim:
+        raise ValueError(
+            f"{context} must have {gdim} entries in {gdim}D. Got {values!r}."
+        )
+    for index, value in enumerate(values):
+        _validate_sampleable_numeric(value, f"{context}[{index}]")
+
+
+def _validate_initial_condition_scalar_expression(
+    expr,
+    context: str,
+    *,
+    gdim: int,
+) -> None:
+    if expr.type not in _INITIAL_CONDITION_EXPR_TYPES:
+        raise ValueError(
+            f"{context} uses unsupported initial_condition type '{expr.type}'. "
+            f"Allowed types: {sorted(_INITIAL_CONDITION_EXPR_TYPES)}."
+        )
+
+    params = expr.params
+    expr_type = expr.type
+    axis_frequency_keys = ("kx", "ky", "kz")[:gdim]
+    coordinate_keys = {"x", "y", "z"} & set(_component_labels(gdim))
+
+    if expr_type in {"none", "zero", "custom"}:
+        if params not in ({}, None):
+            raise ValueError(f"{context}.params must be empty for type '{expr_type}'.")
+        return
+
+    if expr_type == "constant":
+        if set(params) != {"value"}:
+            raise ValueError(
+                f"{context}.params must contain exactly ['value'] for type "
+                f"'{expr_type}'. Got {sorted(params)}."
+            )
+        _validate_sampleable_numeric(params["value"], f"{context}.params.value")
+        return
+
+    if expr_type in {"sine_product", "cosine_product"}:
+        allowed_keys = {"amplitude", *axis_frequency_keys}
+        if set(params) - allowed_keys:
+            raise ValueError(
+                f"{context}.params for type '{expr_type}' allows only "
+                f"{sorted(allowed_keys)}. Got {sorted(params)}."
+            )
+        if "amplitude" not in params:
+            raise ValueError(f"{context}.params requires 'amplitude'.")
+        if not any(key in params for key in axis_frequency_keys):
+            raise ValueError(
+                f"{context}.params for type '{expr_type}' requires at least one of "
+                f"{list(axis_frequency_keys)}."
+            )
+        for key, value in params.items():
+            _validate_sampleable_numeric(value, f"{context}.params.{key}")
+        return
+
+    if expr_type == "gaussian_bump":
+        if set(params) != {"amplitude", "sigma", "center"}:
+            raise ValueError(
+                f"{context}.params must contain exactly ['amplitude', 'center', "
+                f"'sigma'] for type '{expr_type}'. Got {sorted(params)}."
+            )
+        _validate_sampleable_numeric(params["amplitude"], f"{context}.params.amplitude")
+        _validate_sampleable_numeric(params["sigma"], f"{context}.params.sigma")
+        _validate_sampleable_vector(
+            params["center"],
+            f"{context}.params.center",
+            gdim=gdim,
+        )
+        return
+
+    if expr_type == "radial_cosine":
+        if set(params) != {"base", "amplitude", "frequency", "center"}:
+            raise ValueError(
+                f"{context}.params must contain exactly ['amplitude', 'base', "
+                f"'center', 'frequency'] for type '{expr_type}'. Got "
+                f"{sorted(params)}."
+            )
+        _validate_sampleable_numeric(params["base"], f"{context}.params.base")
+        _validate_sampleable_numeric(params["amplitude"], f"{context}.params.amplitude")
+        _validate_sampleable_numeric(params["frequency"], f"{context}.params.frequency")
+        _validate_sampleable_vector(
+            params["center"],
+            f"{context}.params.center",
+            gdim=gdim,
+        )
+        return
+
+    if expr_type == "affine":
+        allowed_keys = {"constant", *coordinate_keys}
+        if set(params) - allowed_keys:
+            raise ValueError(
+                f"{context}.params for type '{expr_type}' allows only "
+                f"{sorted(allowed_keys)}. Got {sorted(params)}."
+            )
+        for key, value in params.items():
+            _validate_sampleable_numeric(value, f"{context}.params.{key}")
+        return
+
+    if expr_type == "step":
+        if set(params) != {"value_left", "value_right", "x_split", "axis"}:
+            raise ValueError(
+                f"{context}.params must contain exactly ['axis', 'value_left', "
+                f"'value_right', 'x_split'] for type '{expr_type}'. Got "
+                f"{sorted(params)}."
+            )
+        _validate_sampleable_numeric(
+            params["value_left"], f"{context}.params.value_left"
+        )
+        _validate_sampleable_numeric(
+            params["value_right"], f"{context}.params.value_right"
+        )
+        _validate_sampleable_numeric(params["x_split"], f"{context}.params.x_split")
+        _validate_sampleable_numeric(params["axis"], f"{context}.params.axis")
+        return
+
+    if expr_type == "gaussian_noise":
+        if set(params) != {"mean", "std"}:
+            raise ValueError(
+                f"{context}.params must contain exactly ['mean', 'std'] for type "
+                f"'{expr_type}'. Got {sorted(params)}."
+            )
+        _validate_sampleable_numeric(params["mean"], f"{context}.params.mean")
+        _validate_sampleable_numeric(params["std"], f"{context}.params.std")
+        return
+
+    if expr_type == "gaussian_blobs":
+        if set(params) != {"background", "blobs"}:
+            raise ValueError(
+                f"{context}.params must contain exactly ['background', 'blobs'] for "
+                f"type '{expr_type}'. Got {sorted(params)}."
+            )
+        _validate_sampleable_numeric(
+            params["background"], f"{context}.params.background"
+        )
+        blobs = params["blobs"]
+        if not isinstance(blobs, list) or not blobs:
+            raise ValueError(f"{context}.params.blobs must be a non-empty list.")
+        for index, blob in enumerate(blobs):
+            blob_context = f"{context}.params.blobs[{index}]"
+            blob_mapping = _as_mapping(blob, blob_context)
+            if set(blob_mapping) != {"amplitude", "sigma", "center"}:
+                raise ValueError(
+                    f"{blob_context} must contain exactly ['amplitude', 'center', "
+                    f"'sigma']. Got {sorted(blob_mapping)}."
+                )
+            _validate_sampleable_numeric(
+                blob_mapping["amplitude"], f"{blob_context}.amplitude"
+            )
+            _validate_sampleable_numeric(blob_mapping["sigma"], f"{blob_context}.sigma")
+            _validate_sampleable_vector(
+                blob_mapping["center"],
+                f"{blob_context}.center",
+                gdim=gdim,
+            )
+        return
+
+    if expr_type == "sine_waves":
+        if set(params) != {"background", "modes"}:
+            raise ValueError(
+                f"{context}.params must contain exactly ['background', 'modes'] for "
+                f"type '{expr_type}'. Got {sorted(params)}."
+            )
+        _validate_sampleable_numeric(
+            params["background"], f"{context}.params.background"
+        )
+        modes = params["modes"]
+        if not isinstance(modes, list) or not modes:
+            raise ValueError(f"{context}.params.modes must be a non-empty list.")
+        for index, mode in enumerate(modes):
+            mode_context = f"{context}.params.modes[{index}]"
+            mode_mapping = _as_mapping(mode, mode_context)
+            if set(mode_mapping) != {"amplitude", "cycles", "phase"}:
+                raise ValueError(
+                    f"{mode_context} must contain exactly ['amplitude', 'cycles', "
+                    f"'phase']. Got {sorted(mode_mapping)}."
+                )
+            _validate_sampleable_numeric(
+                mode_mapping["amplitude"], f"{mode_context}.amplitude"
+            )
+            _validate_sampleable_vector(
+                mode_mapping["cycles"],
+                f"{mode_context}.cycles",
+                gdim=gdim,
+            )
+            _validate_sampleable_numeric(mode_mapping["phase"], f"{mode_context}.phase")
+        return
+
+    if expr_type == "quadrants":
+        if set(params) != {"split", "region_values"}:
+            raise ValueError(
+                f"{context}.params must contain exactly ['region_values', 'split'] "
+                f"for type '{expr_type}'. Got {sorted(params)}."
+            )
+        _validate_sampleable_vector(
+            params["split"],
+            f"{context}.params.split",
+            gdim=gdim,
+        )
+        region_values = _as_mapping(
+            params["region_values"],
+            f"{context}.params.region_values",
+        )
+        expected_region_keys = {format(index, f"0{gdim}b") for index in range(2**gdim)}
+        if set(region_values) != expected_region_keys:
+            raise ValueError(
+                f"{context}.params.region_values must contain exactly "
+                f"{sorted(expected_region_keys)}. Got {sorted(region_values)}."
+            )
+        for key, value in region_values.items():
+            _validate_sampleable_numeric(
+                value,
+                f"{context}.params.region_values.{key}",
+            )
+        return
+
+    raise ValueError(
+        f"{context} uses unsupported initial_condition type '{expr_type}'."
+    )
+
+
+def _validate_initial_condition_expression(
+    expr,
+    context: str,
+    *,
+    gdim: int,
+) -> None:
+    if expr.is_componentwise:
+        for label, component in expr.components.items():
+            _validate_initial_condition_scalar_expression(
+                component,
+                f"{context}.components.{label}",
+                gdim=gdim,
+            )
+        return
+    _validate_initial_condition_scalar_expression(expr, context, gdim=gdim)
 
 
 def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
@@ -96,11 +411,7 @@ def _merge_mappings(
     """Recursively merge config mappings with override values winning."""
     merged = {key: deepcopy(value) for key, value in base.items()}
     for key, value in overrides.items():
-        if (
-            key in merged
-            and isinstance(merged[key], dict)
-            and isinstance(value, dict)
-        ):
+        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
             merged[key] = _merge_mappings(merged[key], value)
         else:
             merged[key] = deepcopy(value)
@@ -913,6 +1224,11 @@ def load_config(path: str | Path) -> SimulationConfig:
                 f"{context}.initial_condition",
                 input_spec.shape,
                 gdim,
+            )
+            _validate_initial_condition_expression(
+                initial_condition,
+                f"{context}.initial_condition",
+                gdim=gdim,
             )
         else:
             initial_condition = None

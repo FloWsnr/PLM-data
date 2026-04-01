@@ -13,7 +13,7 @@ time:
 inputs:
   c:
     initial_condition:
-      type: random_perturbation
+      type: gaussian_noise
       params:
         mean: 0.63
         std: 0.02

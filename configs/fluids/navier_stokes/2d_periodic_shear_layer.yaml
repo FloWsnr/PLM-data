@@ -17,18 +17,22 @@ inputs:
     initial_condition:
       components:
         x:
-          type: step
+          type: quadrants
           params:
-            value_left: 1.0
-            value_right: -1.0
-            x_split: 0.5
-            axis: 1
+            split: [0.5, 0.5]
+            region_values:
+              "00": 1.0
+              "01": -1.0
+              "10": 1.0
+              "11": -1.0
         y:
-          type: sine_product
+          type: sine_waves
           params:
-            amplitude: 0.08
-            kx: 4.0
-            ky: 1.0
+            background: 0.0
+            modes:
+              - amplitude: 0.08
+                cycles: [4, 0]
+                phase: 1.5707963267948966
 boundary_conditions:
   velocity:
     $ref: boundary_field.vector.periodic_shear_layer_2d

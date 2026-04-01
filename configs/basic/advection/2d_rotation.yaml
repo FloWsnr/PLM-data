@@ -30,11 +30,13 @@ inputs:
       type: none
       params: {}
     initial_condition:
-      type: gaussian_bump
+      type: gaussian_blobs
       params:
-        sigma: 0.035
-        amplitude: 1.0
-        center: [0.78, 0.42]
+        background: 0.0
+        blobs:
+          - amplitude: 1.0
+            sigma: 0.035
+            center: [0.78, 0.42]
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.homogeneous_neumann_2d

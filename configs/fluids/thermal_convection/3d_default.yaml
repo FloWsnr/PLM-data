@@ -16,17 +16,28 @@ inputs:
       type: none
       params: {}
     initial_condition:
-      type: zero
-      params: {}
+      components:
+        x:
+          type: constant
+          params:
+            value: 0.0
+        y:
+          type: constant
+          params:
+            value: 0.0
+        z:
+          type: constant
+          params:
+            value: 0.0
   temperature:
     source:
       type: none
       params: {}
     initial_condition:
-      type: conductive_noise
+      type: gaussian_noise
       params:
-        amplitude: 0.18
-        num_modes: 4
+        mean: 0.5
+        std: 0.18
 boundary_conditions:
   velocity:
     x-:
