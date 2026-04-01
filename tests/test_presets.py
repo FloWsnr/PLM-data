@@ -51,6 +51,7 @@ from tests.preset_matrix import (
     flow_solver_config,
     make_shallow_water_config,
     make_superlattice_config,
+    make_van_der_pol_config,
     make_wave_config,
     nonlinear_mixed_direct_solver_config,
     output_fields,
@@ -1411,6 +1412,39 @@ def test_superlattice_periodic_equilibrium_is_preserved(tmp_path):
         arr = np.load(output_dir / f"{field_name}.npy")
         assert np.allclose(arr[0], expected, atol=1e-8)
         assert np.allclose(arr[-1], expected, atol=1e-8)
+
+
+def test_van_der_pol_zero_equilibrium_is_preserved(tmp_path):
+    config = make_van_der_pol_config(
+        tmp_path,
+        gdim=2,
+        u_initial_condition=constant(0.0),
+        v_initial_condition=constant(0.0),
+        u_boundary_conditions={
+            "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+        },
+        v_boundary_conditions={
+            "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+        },
+        mesh_resolution=(8, 8),
+        output_resolution=(6, 6),
+        time=TimeConfig(dt=0.01, t_end=0.01),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 1
+
+    for field_name in ("u", "v"):
+        arr = np.load(output_dir / f"{field_name}.npy")
+        assert np.allclose(arr[0], 0.0, atol=1e-10)
+        assert np.allclose(arr[-1], 0.0, atol=1e-10)
 
 
 def test_thermal_convection_rejects_mismatched_periodic_fields(tmp_path):

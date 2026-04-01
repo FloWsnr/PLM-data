@@ -154,6 +154,36 @@ def test_load_config_gray_scott_3d():
     assert cfg.boundary_field("v").side_conditions("x-")[0].pair_with == "x+"
 
 
+def test_load_config_van_der_pol_2d():
+    cfg = load_config("configs/physics/van_der_pol/2d_default.yaml")
+    assert cfg.preset == "van_der_pol"
+    assert cfg.domain.dimension == 2
+    assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.parameters["Du"] == 0.2
+    assert cfg.parameters["Dv"] == 0.02
+    assert cfg.parameters["mu"] == 4.0
+    assert cfg.input("u").initial_condition.type == "periodic_random_modes"
+    assert cfg.input("u").initial_condition.params["amplitude"] == 0.05
+    assert cfg.input("v").initial_condition.type == "zero"
+    assert cfg.output_mode("u") == "scalar"
+    assert cfg.output_mode("v") == "scalar"
+    assert cfg.boundary_field("u").side_conditions("x-")[0].pair_with == "x+"
+    assert cfg.boundary_field("v").side_conditions("y+")[0].pair_with == "y-"
+
+
+
+def test_load_config_van_der_pol_3d():
+    cfg = load_config("configs/physics/van_der_pol/3d_default.yaml")
+    assert cfg.preset == "van_der_pol"
+    assert cfg.domain.dimension == 3
+    assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.input("u").initial_condition.type == "periodic_random_modes"
+    assert cfg.input("u").initial_condition.params["max_wavenumber"] == 4
+    assert cfg.input("v").initial_condition.type == "zero"
+    assert cfg.boundary_field("u").side_conditions("z+")[0].pair_with == "z-"
+    assert cfg.boundary_field("v").side_conditions("x-")[0].pair_with == "x+"
+
+
 def test_load_config_keller_segel_2d():
     cfg = load_config("configs/biology/keller_segel/2d_default.yaml")
     assert cfg.preset == "keller_segel"

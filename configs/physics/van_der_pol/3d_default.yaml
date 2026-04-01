@@ -1,0 +1,35 @@
+preset: van_der_pol
+parameters:
+  Du: 0.2
+  Dv: 0.02
+  mu: 4.0
+domain:
+  type: box
+  size: [20.0, 20.0, 20.0]
+  mesh_resolution: [32, 32, 32]
+time:
+  dt: 0.005
+  t_end: 15.0
+inputs:
+  u:
+    initial_condition:
+      type: periodic_random_modes
+      params:
+        amplitude: 0.05
+        num_modes: 8
+        max_wavenumber: 4
+  v:
+    initial_condition:
+      type: zero
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.full_periodic_3d
+  v:
+    $ref: boundary_field.scalar.full_periodic_3d
+output:
+  $ref: output.template.scalar_uv
+  resolution: [20, 20, 20]
+  num_frames: 40
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+seed: 42
