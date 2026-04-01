@@ -1,0 +1,32 @@
+preset: zakharov_kuznetsov
+parameters:
+  alpha: 6.0
+  theta: 0.5
+domain:
+  type: rectangle
+  size: [40.0, 40.0]
+  mesh_resolution: [96, 96]
+time:
+  $ref: time.zk_default
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_bump
+      params:
+        amplitude: 1.0
+        sigma: 3.0
+        center: [20.0, 20.0]
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.full_periodic_2d
+output:
+  formats:
+    $ref: output.formats.numpy_gif
+  fields:
+    u:
+      $ref: output.mode.scalar
+  resolution: [64, 64]
+  num_frames: 20
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42
