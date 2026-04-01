@@ -1,0 +1,56 @@
+preset: immunotherapy
+parameters:
+  Du: 100.0
+  Dv: 1.0
+  Dw: 100.0
+  alpha: 0.1
+  mu_u: 0.167
+  rho_u: 0.692
+  gamma_v: 0.1
+  rho_w: 2.5
+  gamma_w: 0.001
+  mu_w: 55.56
+  sigma_u: 0.0
+  Ku: 0.0001
+  sigma_w: 0.0
+  Kw: 0.0
+domain:
+  type: box
+  size: [40.0, 40.0, 40.0]
+  mesh_resolution: [40, 40, 40]
+time:
+  dt: 0.1
+  t_end: 300.0
+inputs:
+  u:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 0.3
+        std: 0.05
+  v:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 0.5
+        std: 0.05
+  w:
+    initial_condition:
+      type: random_perturbation
+      params:
+        mean: 0.005
+        std: 0.001
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_neumann_3d
+  v:
+    $ref: boundary_field.scalar.homogeneous_neumann_3d
+  w:
+    $ref: boundary_field.scalar.homogeneous_neumann_3d
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uvw
+  resolution: [16, 16, 16]
+  num_frames: 50
+seed: 42
