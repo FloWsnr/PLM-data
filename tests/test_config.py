@@ -135,6 +135,8 @@ def test_load_config_gray_scott_2d():
     assert cfg.parameters["Dv"] == 1.0e-5
     assert cfg.parameters["F"] == 0.037
     assert cfg.parameters["k"] == 0.06
+    assert cfg.coefficient("velocity").components["x"].params["value"] == 0.01
+    assert cfg.coefficient("velocity").components["y"].params["value"] == 0.0
     assert cfg.input("u").initial_condition.type == "gray_scott_patch"
     assert cfg.input("v").initial_condition.type == "gray_scott_patch"
     assert cfg.output_mode("u") == "scalar"
@@ -148,10 +150,59 @@ def test_load_config_gray_scott_3d():
     assert cfg.preset == "gray_scott"
     assert cfg.domain.dimension == 3
     assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.coefficient("velocity").components["x"].params["value"] == 0.01
+    assert cfg.coefficient("velocity").components["y"].params["value"] == 0.0
+    assert cfg.coefficient("velocity").components["z"].params["value"] == 0.005
     assert cfg.input("u").initial_condition.params["center"] == [1.25, 1.25, 1.25]
     assert cfg.input("v").initial_condition.params["half_width"] == [0.25, 0.25, 0.25]
     assert cfg.boundary_field("u").side_conditions("z+")[0].pair_with == "z-"
     assert cfg.boundary_field("v").side_conditions("x-")[0].pair_with == "x+"
+
+
+def test_load_config_swift_hohenberg_2d_default():
+    cfg = load_config("configs/physics/swift_hohenberg/2d_default.yaml")
+    assert cfg.preset == "swift_hohenberg"
+    assert cfg.domain.dimension == 2
+    assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.parameters["r"] == -0.28
+    assert cfg.parameters["alpha"] == 1.6
+    assert cfg.parameters["beta"] == -1.0
+    assert cfg.parameters["gamma"] == -1.0
+    assert cfg.coefficient("velocity").components["x"].params["value"] == 0.6
+    assert cfg.coefficient("velocity").components["y"].params["value"] == -0.25
+    assert cfg.input("u").initial_condition.type == "gaussian_bump"
+    assert cfg.boundary_field("u").side_conditions("x-")[0].type == "periodic"
+
+
+def test_load_config_swift_hohenberg_2d_rotational():
+    cfg = load_config("configs/physics/swift_hohenberg/2d_rotational.yaml")
+    assert cfg.preset == "swift_hohenberg"
+    assert cfg.domain.dimension == 2
+    assert cfg.has_periodic_boundary_conditions is False
+    assert cfg.coefficient("velocity").components["x"].type == "affine"
+    assert cfg.coefficient("velocity").components["y"].type == "affine"
+    assert cfg.input("u").initial_condition.type == "random_perturbation"
+    assert cfg.boundary_field("u").side_conditions("x-")[0].type == "simply_supported"
+
+
+def test_load_config_swift_hohenberg_2d_directed():
+    cfg = load_config("configs/physics/swift_hohenberg/2d_directed.yaml")
+    assert cfg.preset == "swift_hohenberg"
+    assert cfg.domain.dimension == 2
+    assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.coefficient("velocity").components["x"].params["value"] == 0.9
+    assert cfg.coefficient("velocity").components["y"].params["value"] == -0.4
+    assert cfg.boundary_field("u").side_conditions("x-")[0].type == "periodic"
+
+
+def test_load_config_swift_hohenberg_3d_default():
+    cfg = load_config("configs/physics/swift_hohenberg/3d_default.yaml")
+    assert cfg.preset == "swift_hohenberg"
+    assert cfg.domain.dimension == 3
+    assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.parameters["r"] == -0.28
+    assert cfg.coefficient("velocity").components["z"].params["value"] == 0.15
+    assert cfg.boundary_field("u").side_conditions("z+")[0].pair_with == "z-"
 
 
 def test_load_config_van_der_pol_2d():

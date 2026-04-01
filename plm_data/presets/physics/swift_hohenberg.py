@@ -3,8 +3,10 @@
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem
+from plm_data.core.config import BoundaryFieldConfig
 from plm_data.core.initial_conditions import apply_ic
 from plm_data.core.solver_strategies import NONLINEAR_MIXED_DIRECT
+from plm_data.core.spatial_fields import build_vector_ufl_field
 from plm_data.presets import register_preset
 from plm_data.presets.base import (
     PDEPreset,
@@ -13,7 +15,9 @@ from plm_data.presets.base import (
 )
 from plm_data.presets.boundary_validation import validate_boundary_field_structure
 from plm_data.presets.metadata import (
+    BoundaryOperatorSpec,
     BoundaryFieldSpec,
+    CoefficientSpec,
     InputSpec,
     OutputSpec,
     PDEParameter,
@@ -21,6 +25,15 @@ from plm_data.presets.metadata import (
     SCALAR_STANDARD_BOUNDARY_OPERATORS,
     StateSpec,
 )
+
+_SWIFT_HOHENBERG_BOUNDARY_OPERATORS = {
+    "periodic": SCALAR_STANDARD_BOUNDARY_OPERATORS["periodic"],
+    "simply_supported": BoundaryOperatorSpec(
+        name="simply_supported",
+        value_shape=None,
+        description="Homogeneous simply supported wall: u = 0 and (q0^2*u + laplacian(u)) = 0.",
+    ),
+}
 
 _SWIFT_HOHENBERG_SPEC = PresetSpec(
     name="swift_hohenberg",
@@ -30,7 +43,10 @@ _SWIFT_HOHENBERG_SPEC = PresetSpec(
         "u/w formulation where w = (q0^2 + laplacian)(u)."
     ),
     equations={
-        "u": "du/dt = r*u - q0^2*w - laplacian(w) + alpha*u^2 + beta*u^3 + gamma*u^5",
+        "u": (
+            "du/dt + velocity·grad(u) = "
+            "r*u - q0^2*w - laplacian(w) + alpha*u^2 + beta*u^3 + gamma*u^5"
+        ),
         "w": "w = q0^2*u + laplacian(u)",
     },
     parameters=[
@@ -53,7 +69,7 @@ _SWIFT_HOHENBERG_SPEC = PresetSpec(
         "u": BoundaryFieldSpec(
             name="u",
             shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
+            operators=_SWIFT_HOHENBERG_BOUNDARY_OPERATORS,
             description="Boundary conditions for the primary field u.",
         )
     },
@@ -72,7 +88,46 @@ _SWIFT_HOHENBERG_SPEC = PresetSpec(
     static_fields=[],
     steady_state=False,
     supported_dimensions=[2, 3],
+    coefficients={
+        "velocity": CoefficientSpec(
+            name="velocity",
+            shape="vector",
+            description="Prescribed advection velocity applied to the primary field u.",
+        )
+    },
 )
+
+
+def _boundary_mode(boundary_field: BoundaryFieldConfig) -> str:
+    boundary_types = {
+        entry.type for entries in boundary_field.sides.values() for entry in entries
+    }
+    if len(boundary_types) != 1:
+        raise ValueError(
+            "Swift-Hohenberg requires one global boundary mode: all sides must "
+            "be periodic or all sides must be simply_supported."
+        )
+    return next(iter(boundary_types))
+
+
+def _build_mixed_zero_dirichlet_bcs(
+    mixed_space: fem.FunctionSpace,
+    domain_geom,
+    boundary_field: BoundaryFieldConfig,
+) -> list[fem.DirichletBC]:
+    """Build zero Dirichlet BCs on both mixed scalar subspaces."""
+    bcs: list[fem.DirichletBC] = []
+    fdim = domain_geom.mesh.topology.dim - 1
+
+    for subspace in (mixed_space.sub(0), mixed_space.sub(1)):
+        for side_name, entries in boundary_field.sides.items():
+            if entries[0].type != "simply_supported":
+                continue
+            facets = domain_geom.facet_tags.find(domain_geom.boundary_names[side_name])
+            dofs = fem.locate_dofs_topological(subspace, fdim, facets)
+            bcs.append(fem.dirichletbc(default_real_type(0.0), dofs, subspace))
+
+    return bcs
 
 
 class _SwiftHohenbergProblem(TransientNonlinearProblem):
@@ -84,8 +139,9 @@ class _SwiftHohenbergProblem(TransientNonlinearProblem):
             field_name="u",
             boundary_field=self.config.boundary_field("u"),
             domain_geom=domain_geom,
-            allowed_operators={"periodic"},
+            allowed_operators={"periodic", "simply_supported"},
         )
+        _boundary_mode(self.config.boundary_field("u"))
 
     def setup(self) -> None:
         domain_geom = self.load_domain_geometry()
@@ -102,14 +158,30 @@ class _SwiftHohenbergProblem(TransientNonlinearProblem):
         gamma = self.config.parameters["gamma"]
         theta = self.config.parameters["theta"]
         dt = self.config.time.dt
-
-        mpc = self.create_periodic_constraint(
-            ME,
-            domain_geom,
-            boundary_field,
-            [],
-            constrained_spaces=[ME.sub(0), ME.sub(1)],
+        velocity = build_vector_ufl_field(
+            self.msh,
+            self.config.coefficient("velocity"),
+            self.config.parameters,
         )
+        if velocity is None:
+            raise ValueError(
+                "Swift-Hohenberg coefficient 'velocity' cannot use a custom expression"
+            )
+
+        boundary_mode = _boundary_mode(boundary_field)
+        bcs: list[fem.DirichletBC] = []
+        if boundary_mode == "periodic":
+            mpc = self.create_periodic_constraint(
+                ME,
+                domain_geom,
+                boundary_field,
+                [],
+                constrained_spaces=[ME.sub(0), ME.sub(1)],
+            )
+        else:
+            mpc = None
+            bcs = _build_mixed_zero_dirichlet_bcs(ME, domain_geom, boundary_field)
+
         solution_space = ME if mpc is None else mpc.function_space
 
         self.u = fem.Function(solution_space)
@@ -123,8 +195,12 @@ class _SwiftHohenbergProblem(TransientNonlinearProblem):
             self.config.parameters,
             seed=self.config.seed,
         )
+        for bc in bcs:
+            bc.set(self.u.x.array)
         self.u.x.scatter_forward()
         self.u0.x.array[:] = self.u.x.array
+        for bc in bcs:
+            bc.set(self.u0.x.array)
         self.u0.x.scatter_forward()
 
         u, w = ufl.split(self.u)
@@ -145,6 +221,7 @@ class _SwiftHohenbergProblem(TransientNonlinearProblem):
         F0 = (
             ufl.inner(u, phi) * ufl.dx
             - ufl.inner(u0, phi) * ufl.dx
+            + dt_c * ufl.inner(velocity, ufl.grad(u)) * phi * ufl.dx
             - dt_c * r * ufl.inner(u, phi) * ufl.dx
             + dt_c * q0**2 * ufl.inner(w_theta, phi) * ufl.dx
             - dt_c * ufl.inner(ufl.grad(w_theta), ufl.grad(phi)) * ufl.dx
@@ -165,7 +242,7 @@ class _SwiftHohenbergProblem(TransientNonlinearProblem):
         self.problem = self.create_nonlinear_problem(
             F,
             self.u,
-            bcs=[],
+            bcs=bcs,
             petsc_options_prefix="plm_sh_",
             J=J,
             mpc=mpc,

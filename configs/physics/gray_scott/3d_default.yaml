@@ -4,13 +4,28 @@ parameters:
   Dv: 1.0e-05
   F: 0.037
   k: 0.06
+coefficients:
+  velocity:
+    components:
+      x:
+        type: constant
+        params:
+          value: 0.01
+      y:
+        type: constant
+        params:
+          value: 0.0
+      z:
+        type: constant
+        params:
+          value: 0.005
 domain:
   type: box
   size: [2.5, 2.5, 2.5]
-  mesh_resolution: [20, 20, 20]
+  mesh_resolution: [18, 18, 18]
 time:
   dt: 1.0
-  t_end: 600.0
+  t_end: 120.0
 inputs:
   u:
     initial_condition:
@@ -34,9 +49,9 @@ boundary_conditions:
   v:
     $ref: boundary_field.scalar.full_periodic_3d
 solver:
-  $ref: solver.profile.constant_lhs_scalar_spd
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 output:
   $ref: output.template.scalar_uv
-  resolution: [20, 20, 20]
-  num_frames: 30
+  resolution: [18, 18, 18]
+  num_frames: 12
 seed: 42

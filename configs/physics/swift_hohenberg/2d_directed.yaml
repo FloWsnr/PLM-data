@@ -12,41 +12,37 @@ coefficients:
       x:
         type: constant
         params:
-          value: 0.25
+          value: 0.9
       y:
         type: constant
         params:
-          value: -0.1
-      z:
-        type: constant
-        params:
-          value: 0.15
+          value: -0.4
 domain:
-  type: box
-  size: [20.0, 20.0, 20.0]
-  mesh_resolution: [12, 12, 12]
+  type: rectangle
+  size: [40.0, 40.0]
+  mesh_resolution: [128, 128]
 time:
   dt: 0.1
-  t_end: 1.0
+  t_end: 20.0
 inputs:
   u:
     initial_condition:
       type: gaussian_bump
       params:
         amplitude: 1.0
-        sigma: 2.5
-        center: [10.0, 10.0, 10.0]
+        sigma: 3.0
+        center: [20.0, 20.0]
 boundary_conditions:
   u:
-    $ref: boundary_field.scalar.full_periodic_3d
+    $ref: boundary_field.scalar.full_periodic_2d
 output:
   formats:
-    $ref: output.formats.numpy
+    $ref: output.formats.numpy_gif
   fields:
     u:
       $ref: output.mode.scalar
-  resolution: [12, 12, 12]
-  num_frames: 4
+  resolution: [64, 64]
+  num_frames: 10
 solver:
   $ref: solver.profile.nonlinear_mixed_direct
 seed: 42

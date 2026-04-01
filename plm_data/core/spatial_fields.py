@@ -327,6 +327,31 @@ def build_vector_ufl_field(
     return ufl.as_vector(component_exprs)
 
 
+def is_exact_zero_field_expression(
+    expr: FieldExpressionConfig,
+    parameters: dict[str, float],
+) -> bool:
+    """Return whether a field config is exactly zero after parameter resolution."""
+    if expr.is_componentwise:
+        return all(
+            is_exact_zero_field_expression(component, parameters)
+            for component in expr.components.values()
+        )
+
+    if expr.type in {"none", "zero"}:
+        return True
+
+    if expr.type == "constant":
+        return (
+            resolve_param_ref(
+                _require_param(expr.params, "value", expr.type), parameters
+            )
+            == 0.0
+        )
+
+    return False
+
+
 # ---------------------------------------------------------------------------
 # Numpy interpolation renderer — produces callables for Function.interpolate()
 # ---------------------------------------------------------------------------

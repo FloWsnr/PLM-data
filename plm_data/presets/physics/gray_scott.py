@@ -2,14 +2,21 @@
 
 import numpy as np
 import ufl
-from dolfinx import fem
+from dolfinx import default_real_type, fem
 
 from plm_data.core.boundary_conditions import (
     apply_dirichlet_bcs,
     build_natural_bc_forms,
 )
 from plm_data.core.initial_conditions import apply_ic
-from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
+from plm_data.core.solver_strategies import (
+    CONSTANT_LHS_SCALAR_NONSYMMETRIC,
+    CONSTANT_LHS_SCALAR_SPD,
+)
+from plm_data.core.spatial_fields import (
+    build_vector_ufl_field,
+    is_exact_zero_field_expression,
+)
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
 from plm_data.presets.boundary_validation import (
@@ -17,6 +24,7 @@ from plm_data.presets.boundary_validation import (
 )
 from plm_data.presets.metadata import (
     BoundaryFieldSpec,
+    CoefficientSpec,
     InputSpec,
     OutputSpec,
     PDEParameter,
@@ -33,7 +41,7 @@ _GRAY_SCOTT_SPEC = PresetSpec(
         "pattern formation."
     ),
     equations={
-        "u": "du/dt = Du * laplacian(u) - u * v^2 + F * (1 - u)",
+        "u": "du/dt + velocity·grad(u) = Du * laplacian(u) - u * v^2 + F * (1 - u)",
         "v": "dv/dt = Dv * laplacian(v) + u * v^2 - (F + k) * v",
     },
     parameters=[
@@ -91,6 +99,13 @@ _GRAY_SCOTT_SPEC = PresetSpec(
     static_fields=[],
     steady_state=False,
     supported_dimensions=[2, 3],
+    coefficients={
+        "velocity": CoefficientSpec(
+            name="velocity",
+            shape="vector",
+            description="Prescribed advection velocity applied to the substrate field u.",
+        )
+    },
 )
 
 
@@ -149,7 +164,25 @@ def _apply_gray_scott_ic(
 
 
 class _GrayScottProblem(TransientLinearProblem):
-    supported_solver_strategies = (CONSTANT_LHS_SCALAR_SPD,)
+    supported_solver_strategies = (
+        CONSTANT_LHS_SCALAR_SPD,
+        CONSTANT_LHS_SCALAR_NONSYMMETRIC,
+    )
+
+    def _validate_solver_strategy(self) -> None:
+        super()._validate_solver_strategy()
+        has_advection = not is_exact_zero_field_expression(
+            self.config.coefficient("velocity"),
+            self.config.parameters,
+        )
+        if (
+            has_advection
+            and self.config.solver.strategy != CONSTANT_LHS_SCALAR_NONSYMMETRIC
+        ):
+            raise ValueError(
+                "Gray-Scott with nonzero velocity requires solver strategy "
+                f"'{CONSTANT_LHS_SCALAR_NONSYMMETRIC}'."
+            )
 
     def validate_boundary_conditions(self, domain_geom):
         validate_scalar_standard_boundary_field(
@@ -180,6 +213,17 @@ class _GrayScottProblem(TransientLinearProblem):
         Dv = self.config.parameters["Dv"]
         F = self.config.parameters["F"]
         k = self.config.parameters["k"]
+        dt_c = fem.Constant(self.msh, default_real_type(dt))
+        zero = fem.Constant(self.msh, default_real_type(0.0))
+        velocity = build_vector_ufl_field(
+            self.msh,
+            self.config.coefficient("velocity"),
+            self.config.parameters,
+        )
+        if velocity is None:
+            raise ValueError(
+                "Gray-Scott coefficient 'velocity' cannot use a custom expression"
+            )
 
         u_bcs = apply_dirichlet_bcs(
             V,
@@ -241,23 +285,43 @@ class _GrayScottProblem(TransientLinearProblem):
 
         a_u = (
             ufl.inner(u_trial, u_test) * ufl.dx
-            + dt * Du * ufl.inner(ufl.grad(u_trial), ufl.grad(u_test)) * ufl.dx
-            + dt * F * ufl.inner(u_trial, u_test) * ufl.dx
+            + dt_c * ufl.inner(velocity, ufl.grad(u_trial)) * u_test * ufl.dx
+            + dt_c * Du * ufl.inner(ufl.grad(u_trial), ufl.grad(u_test)) * ufl.dx
+            + dt_c * F * ufl.inner(u_trial, u_test) * ufl.dx
         )
         L_u = (
             ufl.inner(self.u_n, u_test) * ufl.dx
-            + dt * ufl.inner(F - cubic_reaction, u_test) * ufl.dx
+            + dt_c * ufl.inner(F - cubic_reaction, u_test) * ufl.dx
         )
 
         a_v = (
             ufl.inner(v_trial, v_test) * ufl.dx
-            + dt * Dv * ufl.inner(ufl.grad(v_trial), ufl.grad(v_test)) * ufl.dx
-            + dt * (F + k) * ufl.inner(v_trial, v_test) * ufl.dx
+            + dt_c * Dv * ufl.inner(ufl.grad(v_trial), ufl.grad(v_test)) * ufl.dx
+            + dt_c * (F + k) * ufl.inner(v_trial, v_test) * ufl.dx
         )
         L_v = (
             ufl.inner(self.v_n, v_test) * ufl.dx
-            + dt * ufl.inner(cubic_reaction, v_test) * ufl.dx
+            + dt_c * ufl.inner(cubic_reaction, v_test) * ufl.dx
         )
+
+        h = ufl.CellDiameter(self.msh)
+        velocity_norm = ufl.sqrt(ufl.inner(velocity, velocity))
+        stabilized_diffusivity = ufl.max_value(ufl.as_ufl(Du), zero)
+        tau = 1.0 / ufl.sqrt(
+            (2.0 / dt_c) ** 2
+            + (2.0 * velocity_norm / h) ** 2
+            + (4.0 * stabilized_diffusivity / (h**2)) ** 2
+        )
+        streamline_test = ufl.inner(velocity, ufl.grad(u_test))
+        lhs_residual = (
+            u_trial / dt_c
+            + ufl.inner(velocity, ufl.grad(u_trial))
+            - ufl.div(Du * ufl.grad(u_trial))
+            + F * u_trial
+        )
+        rhs_residual = self.u_n / dt_c + F - cubic_reaction
+        a_u = a_u + dt_c * tau * lhs_residual * streamline_test * ufl.dx
+        L_u = L_u + dt_c * tau * rhs_residual * streamline_test * ufl.dx
 
         a_u_bc, L_u_bc = build_natural_bc_forms(
             u_trial,
@@ -267,9 +331,9 @@ class _GrayScottProblem(TransientLinearProblem):
             self.config.parameters,
         )
         if a_u_bc is not None:
-            a_u = a_u + dt * a_u_bc
+            a_u = a_u + dt_c * a_u_bc
         if L_u_bc is not None:
-            L_u = L_u + dt * L_u_bc
+            L_u = L_u + dt_c * L_u_bc
 
         a_v_bc, L_v_bc = build_natural_bc_forms(
             v_trial,
@@ -279,9 +343,9 @@ class _GrayScottProblem(TransientLinearProblem):
             self.config.parameters,
         )
         if a_v_bc is not None:
-            a_v = a_v + dt * a_v_bc
+            a_v = a_v + dt_c * a_v_bc
         if L_v_bc is not None:
-            L_v = L_v + dt * L_v_bc
+            L_v = L_v + dt_c * L_v_bc
 
         self._u_problem = self.create_linear_problem(
             a_u,

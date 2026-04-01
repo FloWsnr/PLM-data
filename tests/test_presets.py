@@ -48,8 +48,10 @@ from tests.preset_matrix import (
     direct_solver_config,
     make_advection_config,
     make_burgers_config,
+    make_gray_scott_config,
     flow_solver_config,
     make_shallow_water_config,
+    make_swift_hohenberg_config,
     make_superlattice_config,
     make_van_der_pol_config,
     make_wave_config,
@@ -928,6 +930,92 @@ def test_advection_rejects_spd_solver_strategy(tmp_path):
 
     with pytest.raises(ValueError, match="does not support solver strategy"):
         get_preset("advection").build_problem(config)
+
+
+def test_gray_scott_rejects_spd_solver_strategy_with_advection(tmp_path):
+    config = make_gray_scott_config(
+        tmp_path,
+        gdim=2,
+        velocity=vector_expr(x=constant(1.0), y=constant(0.0)),
+        u_initial_condition=scalar_expr(
+            "gray_scott_patch",
+            background=1.0,
+            patch_value=0.5,
+            center=[0.5, 0.5],
+            half_width=[0.15, 0.15],
+        ),
+        v_initial_condition=scalar_expr(
+            "gray_scott_patch",
+            background=0.0,
+            patch_value=0.25,
+            center=[0.5, 0.5],
+            half_width=[0.15, 0.15],
+        ),
+        u_boundary_conditions={},
+        v_boundary_conditions={},
+        u_periodic_axes=(0, 1),
+        v_periodic_axes=(0, 1),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
+        time=TimeConfig(dt=1.0, t_end=1.0),
+    )
+
+    with pytest.raises(ValueError, match="requires solver strategy"):
+        get_preset("gray_scott").build_problem(config)
+
+
+def test_gray_scott_accepts_spd_solver_strategy_with_zero_velocity(tmp_path):
+    config = make_gray_scott_config(
+        tmp_path,
+        gdim=2,
+        velocity=vector_zero(),
+        u_initial_condition=scalar_expr(
+            "gray_scott_patch",
+            background=1.0,
+            patch_value=0.5,
+            center=[0.5, 0.5],
+            half_width=[0.15, 0.15],
+        ),
+        v_initial_condition=scalar_expr(
+            "gray_scott_patch",
+            background=0.0,
+            patch_value=0.25,
+            center=[0.5, 0.5],
+            half_width=[0.15, 0.15],
+        ),
+        u_boundary_conditions={},
+        v_boundary_conditions={},
+        u_periodic_axes=(0, 1),
+        v_periodic_axes=(0, 1),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
+        time=TimeConfig(dt=1.0, t_end=1.0),
+    )
+
+    get_preset("gray_scott").build_problem(config)
+
+
+def test_swift_hohenberg_rejects_mixed_boundary_modes(tmp_path):
+    config = make_swift_hohenberg_config(
+        tmp_path,
+        gdim=2,
+        initial_condition=scalar_expr(
+            "gaussian_bump",
+            amplitude=1.0,
+            sigma=0.12,
+            center=[0.5, 0.5],
+        ),
+        velocity=vector_expr(x=constant(0.4), y=constant(0.0)),
+        boundary_conditions={
+            "y-": BoundaryConditionConfig(type="simply_supported"),
+            "y+": BoundaryConditionConfig(type="simply_supported"),
+        },
+        periodic_axes=(0,),
+        mesh_resolution=(8, 8),
+        output_resolution=(4, 4),
+        time=TimeConfig(dt=0.05, t_end=0.05),
+    )
+
+    with pytest.raises(ValueError, match="global boundary mode"):
+        _run_preset(config)
 
 
 def test_burgers_rejects_transient_saddle_point_strategy(tmp_path):

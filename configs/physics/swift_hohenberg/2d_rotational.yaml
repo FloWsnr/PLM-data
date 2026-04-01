@@ -10,31 +10,32 @@ coefficients:
   velocity:
     components:
       x:
-        type: constant
+        type: affine
         params:
-          value: 0.6
+          constant: -2.0
+          y: 0.1
       y:
-        type: constant
+        type: affine
         params:
-          value: -0.25
+          constant: 2.0
+          x: -0.1
 domain:
   type: rectangle
   size: [40.0, 40.0]
   mesh_resolution: [128, 128]
 time:
   dt: 0.1
-  t_end: 10.0
+  t_end: 20.0
 inputs:
   u:
     initial_condition:
-      type: gaussian_bump
+      type: random_perturbation
       params:
-        amplitude: 1.0
-        sigma: 3.0
-        center: [20.0, 20.0]
+        mean: 0.0
+        std: 0.2
 boundary_conditions:
   u:
-    $ref: boundary_field.scalar.full_periodic_2d
+    $ref: boundary_field.scalar.simply_supported_2d
 output:
   formats:
     $ref: output.formats.numpy_gif
