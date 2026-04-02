@@ -16,6 +16,7 @@ def test_list_presets():
     assert "shallow_water" in presets
     assert "heat" in presets
     assert "plate" in presets
+    assert "schrodinger" in presets
     assert "wave" in presets
     assert "poisson" in presets
     assert "cahn_hilliard" in presets

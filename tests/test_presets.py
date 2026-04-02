@@ -52,6 +52,7 @@ from tests.preset_matrix import (
     make_fisher_kpp_config,
     make_gray_scott_config,
     make_mhd_config,
+    make_schrodinger_config,
     flow_solver_config,
     make_shallow_water_config,
     make_swift_hohenberg_config,
@@ -1598,6 +1599,102 @@ def test_wave_preset_3d_single_step(tmp_path):
         assert np.all(np.isfinite(arr))
 
 
+def test_schrodinger_periodic_packet_translates_in_positive_x(tmp_path):
+    config = make_schrodinger_config(
+        tmp_path,
+        gdim=2,
+        u_initial_condition=scalar_expr(
+            "gaussian_wave_packet",
+            amplitude=1.0,
+            sigma=0.07,
+            center=[0.25, 0.5],
+            wavevector=[10.0, 0.0],
+            phase=0.0,
+        ),
+        v_initial_condition=scalar_expr(
+            "gaussian_wave_packet",
+            amplitude=1.0,
+            sigma=0.07,
+            center=[0.25, 0.5],
+            wavevector=[10.0, 0.0],
+            phase=-np.pi / 2.0,
+        ),
+        u_boundary_conditions={},
+        v_boundary_conditions={},
+        u_periodic_axes=(0, 1),
+        v_periodic_axes=(0, 1),
+        potential=constant(0.0),
+        mesh_resolution=(40, 40),
+        output_resolution=(48, 48),
+        time=TimeConfig(dt=0.01, t_end=0.15),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    density = np.load(output_dir / "density.npy")
+    x = np.linspace(0.0, 1.0, config.output.resolution[0])
+    x_grid = x[:, None]
+    mass0 = np.sum(density[0])
+    mass1 = np.sum(density[-1])
+    x_cm_initial = float(np.sum(x_grid * density[0]) / mass0)
+    x_cm_final = float(np.sum(x_grid * density[-1]) / mass1)
+
+    assert x_cm_final > x_cm_initial + 0.05
+    assert np.min(density) >= -1e-10
+
+
+def test_schrodinger_preset_3d_single_step(tmp_path):
+    config = make_schrodinger_config(
+        tmp_path,
+        gdim=3,
+        u_initial_condition=scalar_expr(
+            "gaussian_wave_packet",
+            amplitude=1.0,
+            sigma=0.08,
+            center=[0.25, 0.5, 0.5],
+            wavevector=[8.0, 0.0, 0.0],
+            phase=0.0,
+        ),
+        v_initial_condition=scalar_expr(
+            "gaussian_wave_packet",
+            amplitude=1.0,
+            sigma=0.08,
+            center=[0.25, 0.5, 0.5],
+            wavevector=[8.0, 0.0, 0.0],
+            phase=-np.pi / 2.0,
+        ),
+        u_boundary_conditions={
+            "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            "z-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            "z+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+        },
+        v_boundary_conditions={
+            "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            "z-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            "z+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+        },
+        mesh_resolution=(4, 4, 4),
+        output_resolution=(4, 4, 4),
+        time=TimeConfig(dt=0.02, t_end=0.02),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 1
+
+    for field in ["u", "v", "density", "potential"]:
+        arr = np.load(output_dir / f"{field}.npy")
+        assert arr.shape == (2, *config.output.resolution)
+        assert np.all(np.isfinite(arr))
+
+
 def test_wave_inhomogeneous_medium_2d_stays_nontrivial(tmp_path):
     config = make_wave_config(
         tmp_path,
@@ -2385,6 +2482,44 @@ def test_keller_segel_rejects_mismatched_periodic_fields(tmp_path):
         solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
         time=TimeConfig(dt=0.02, t_end=0.02),
         seed=42,
+    )
+
+    preset = get_preset(config.preset)
+    problem = preset.build_problem(config)
+    with pytest.raises(ValueError, match="identical periodic side pairs"):
+        problem.load_domain_geometry()
+
+
+def test_schrodinger_rejects_mismatched_periodic_fields(tmp_path):
+    config = make_schrodinger_config(
+        tmp_path,
+        gdim=2,
+        u_initial_condition=scalar_expr(
+            "gaussian_wave_packet",
+            amplitude=1.0,
+            sigma=0.08,
+            center=[0.25, 0.5],
+            wavevector=[8.0, 0.0],
+            phase=0.0,
+        ),
+        v_initial_condition=scalar_expr(
+            "gaussian_wave_packet",
+            amplitude=1.0,
+            sigma=0.08,
+            center=[0.25, 0.5],
+            wavevector=[8.0, 0.0],
+            phase=-np.pi / 2.0,
+        ),
+        u_boundary_conditions={
+            "y-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+        },
+        v_boundary_conditions={
+            "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+        },
+        u_periodic_axes=(0,),
+        v_periodic_axes=(1,),
     )
 
     preset = get_preset(config.preset)

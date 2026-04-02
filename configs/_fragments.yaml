@@ -499,6 +499,18 @@ output:
           $ref: output.mode.scalar
         amplitude:
           $ref: output.mode.scalar
+    schrodinger:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        u:
+          $ref: output.mode.scalar
+        v:
+          $ref: output.mode.scalar
+        density:
+          $ref: output.mode.scalar
+        potential:
+          $ref: output.mode.scalar
     darcy:
       formats:
         $ref: output.formats.numpy_gif
@@ -525,6 +537,9 @@ time:
   cgl_default:
     dt: 0.1
     t_end: 100.0
+  schrodinger_default:
+    dt: 0.002
+    t_end: 0.5
   sh_default:
     dt: 0.1
     t_end: 100.0

@@ -1,0 +1,48 @@
+preset: schrodinger
+parameters:
+  D: 0.05
+  theta: 0.5
+coefficients:
+  potential:
+    type: gaussian_bump
+    params:
+      amplitude: 8.0
+      sigma: 0.05
+      center: [0.55, 0.5]
+domain:
+  type: rectangle
+  size: [1.0, 1.0]
+  mesh_resolution: [96, 96]
+time:
+  $ref: time.schrodinger_default
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_wave_packet
+      params:
+        amplitude: 1.0
+        sigma: 0.07
+        center: [0.25, 0.5]
+        wavevector: [14.0, 0.0]
+        phase: 0.0
+  v:
+    initial_condition:
+      type: gaussian_wave_packet
+      params:
+        amplitude: 1.0
+        sigma: 0.07
+        center: [0.25, 0.5]
+        wavevector: [14.0, 0.0]
+        phase: -1.5707963267948966
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_dirichlet_2d
+  v:
+    $ref: boundary_field.scalar.homogeneous_dirichlet_2d
+output:
+  $ref: output.template.schrodinger
+  resolution: [128, 128]
+  num_frames: 64
+solver:
+  $ref: solver.profile.constant_lhs_block_direct
+seed: 42

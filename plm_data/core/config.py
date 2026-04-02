@@ -29,6 +29,7 @@ _INITIAL_CONDITION_EXPR_TYPES = {
     "step",
     "gaussian_noise",
     "gaussian_blobs",
+    "gaussian_wave_packet",
     "sine_waves",
     "quadrants",
 }
@@ -311,6 +312,37 @@ def _validate_initial_condition_scalar_expression(
                 f"{blob_context}.center",
                 gdim=gdim,
             )
+        return
+
+    if expr_type == "gaussian_wave_packet":
+        if set(params) != {"amplitude", "sigma", "center", "wavevector", "phase"}:
+            raise ValueError(
+                f"{context}.params must contain exactly ['amplitude', 'center', "
+                f"'phase', 'sigma', 'wavevector'] for type '{expr_type}'. Got "
+                f"{sorted(params)}."
+            )
+        _validate_sampleable_numeric(
+            params["amplitude"],
+            f"{context}.params.amplitude",
+        )
+        _validate_sampleable_numeric(
+            params["sigma"],
+            f"{context}.params.sigma",
+        )
+        _validate_sampleable_numeric(
+            params["phase"],
+            f"{context}.params.phase",
+        )
+        _validate_sampleable_vector(
+            params["center"],
+            f"{context}.params.center",
+            gdim=gdim,
+        )
+        _validate_sampleable_vector(
+            params["wavevector"],
+            f"{context}.params.wavevector",
+            gdim=gdim,
+        )
         return
 
     if expr_type == "sine_waves":

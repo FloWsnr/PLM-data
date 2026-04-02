@@ -310,6 +310,41 @@ def _resolved_scalar_ic(
             "blobs": resolved_blobs,
         }
 
+    if ic_type == "gaussian_wave_packet":
+        return ic_type, {
+            "amplitude": _sample_number(
+                _require_param(params, "amplitude", ic_type),
+                parameters=parameters,
+                rng=rng,
+            ),
+            "sigma": _sample_number(
+                _require_param(params, "sigma", ic_type),
+                parameters=parameters,
+                rng=rng,
+            ),
+            "center": _sample_coordinate_list(
+                _require_param(params, "center", ic_type),
+                gdim=gdim,
+                parameters=parameters,
+                rng=rng,
+                field_type=ic_type,
+                field_name="center",
+            ),
+            "wavevector": _sample_coordinate_list(
+                _require_param(params, "wavevector", ic_type),
+                gdim=gdim,
+                parameters=parameters,
+                rng=rng,
+                field_type=ic_type,
+                field_name="wavevector",
+            ),
+            "phase": _sample_number(
+                _require_param(params, "phase", ic_type),
+                parameters=parameters,
+                rng=rng,
+            ),
+        }
+
     if ic_type == "sine_waves":
         raw_modes = _require_param(params, "modes", ic_type)
         if not isinstance(raw_modes, list) or not raw_modes:
@@ -420,6 +455,27 @@ def _build_gaussian_blobs_interpolator(
     return _interpolator
 
 
+def _build_gaussian_wave_packet_interpolator(
+    *,
+    amplitude: float,
+    sigma: float,
+    center: list[float],
+    wavevector: list[float],
+    phase: float,
+) -> Callable[[np.ndarray], np.ndarray]:
+    center_array = np.asarray(center, dtype=float)
+    wavevector_array = np.asarray(wavevector, dtype=float)
+
+    def _interpolator(x: np.ndarray) -> np.ndarray:
+        shifted = x[: center_array.shape[0], :] - center_array[:, None]
+        radius_squared = np.sum(shifted**2, axis=0)
+        envelope = amplitude * np.exp(-radius_squared / (2.0 * sigma**2))
+        carrier_phase = wavevector_array @ shifted + phase
+        return envelope * np.cos(carrier_phase)
+
+    return _interpolator
+
+
 def _build_sine_waves_interpolator(
     *,
     background: float,
@@ -498,6 +554,15 @@ def _build_resolved_scalar_interpolator(
         return _build_gaussian_blobs_interpolator(
             background=float(resolved_params["background"]),
             blobs=list(resolved_params["blobs"]),
+        )
+
+    if ic_type == "gaussian_wave_packet":
+        return _build_gaussian_wave_packet_interpolator(
+            amplitude=float(resolved_params["amplitude"]),
+            sigma=float(resolved_params["sigma"]),
+            center=list(resolved_params["center"]),
+            wavevector=list(resolved_params["wavevector"]),
+            phase=float(resolved_params["phase"]),
         )
 
     if ic_type == "sine_waves":

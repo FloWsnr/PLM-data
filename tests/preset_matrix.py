@@ -829,6 +829,78 @@ def make_cgl_config(
     )
 
 
+def make_schrodinger_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    u_initial_condition: FieldExpressionConfig,
+    v_initial_condition: FieldExpressionConfig,
+    u_boundary_conditions: dict[str, BoundaryConditionConfig],
+    v_boundary_conditions: dict[str, BoundaryConditionConfig],
+    u_periodic_axes: tuple[int, ...] = (),
+    v_periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+    potential: FieldExpressionConfig | None = None,
+    parameters: dict[str, float] | None = None,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(f"Schrodinger test helper only supports 2D/3D, got {gdim}D")
+
+    if parameters is None:
+        parameters = {"D": 0.05, "theta": 0.5}
+    if time is None:
+        time = TimeConfig(dt=0.01, t_end=0.01)
+
+    return SimulationConfig(
+        preset="schrodinger",
+        parameters=parameters,
+        domain=domain,
+        inputs={
+            "u": InputConfig(initial_condition=u_initial_condition),
+            "v": InputConfig(initial_condition=v_initial_condition),
+        },
+        boundary_conditions={
+            "u": boundary_field_config(
+                u_boundary_conditions,
+                periodic_axes=u_periodic_axes,
+            ),
+            "v": boundary_field_config(
+                v_boundary_conditions,
+                periodic_axes=v_periodic_axes,
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2,
+            formats=["numpy"],
+            fields=output_fields(
+                u="scalar",
+                v="scalar",
+                density="scalar",
+                potential="scalar",
+            ),
+        ),
+        solver=direct_solver_config(CONSTANT_LHS_BLOCK_DIRECT),
+        time=time,
+        seed=seed,
+        coefficients={
+            "potential": constant(0.0) if potential is None else potential,
+        },
+    )
+
+
 def make_cahn_hilliard_config(
     tmp_path: Path,
     *,

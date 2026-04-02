@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 import ufl
+from dolfinx import fem
 
 from plm_data.core.config import FieldExpressionConfig
 from plm_data.core.mesh import create_domain
@@ -146,23 +147,31 @@ class TestBuildUflField:
         result = build_ufl_field(mesh_2d, {"type": "none"}, params)
         assert result is not None
         assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
+        assert isinstance(result, fem.Constant)
+        assert result.ufl_domain() == mesh_2d.ufl_domain()
 
     def test_type_zero(self, mesh_2d, params):
         result = build_ufl_field(mesh_2d, {"type": "zero"}, params)
         assert result is not None
         assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
+        assert isinstance(result, fem.Constant)
+        assert result.ufl_domain() == mesh_2d.ufl_domain()
 
     def test_constant_literal(self, mesh_2d, params):
         cfg = {"type": "constant", "params": {"value": 42.0}}
         result = build_ufl_field(mesh_2d, cfg, params)
         assert result is not None
         assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
+        assert isinstance(result, fem.Constant)
+        assert result.ufl_domain() == mesh_2d.ufl_domain()
 
     def test_constant_param_ref(self, mesh_2d, params):
         cfg = {"type": "constant", "params": {"value": "param:kappa"}}
         result = build_ufl_field(mesh_2d, cfg, params)
         assert result is not None
         assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
+        assert isinstance(result, fem.Constant)
+        assert result.ufl_domain() == mesh_2d.ufl_domain()
 
     def test_sine_product_kx_only(self, mesh_2d, params):
         cfg = {"type": "sine_product", "params": {"amplitude": 1.0, "kx": 2.0}}

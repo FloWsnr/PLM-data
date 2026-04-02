@@ -476,6 +476,37 @@ def test_load_config_wave():
     assert boundary_field.side_conditions("y-")[0].type == "neumann"
 
 
+def test_load_config_schrodinger():
+    cfg = load_config("configs/basic/schrodinger/2d_default.yaml")
+    boundary_field_u = cfg.boundary_field("u")
+    boundary_field_v = cfg.boundary_field("v")
+    assert cfg.preset == "schrodinger"
+    assert cfg.parameters["D"] == 0.05
+    assert cfg.parameters["theta"] == 0.5
+    assert cfg.coefficient("potential").type == "gaussian_bump"
+    assert cfg.coefficient("potential").params["amplitude"] == 8.0
+    assert cfg.input("u").initial_condition.type == "gaussian_wave_packet"
+    assert cfg.input("u").initial_condition.params["wavevector"] == [14.0, 0.0]
+    assert cfg.input("v").initial_condition.params["phase"] == pytest.approx(
+        -1.5707963267948966
+    )
+    assert cfg.output_mode("u") == "scalar"
+    assert cfg.output_mode("v") == "scalar"
+    assert cfg.output_mode("density") == "scalar"
+    assert cfg.output_mode("potential") == "scalar"
+    assert boundary_field_u.side_conditions("x-")[0].type == "dirichlet"
+    assert boundary_field_v.side_conditions("y+")[0].type == "dirichlet"
+    assert cfg.solver.strategy == CONSTANT_LHS_BLOCK_DIRECT
+
+
+def test_load_config_schrodinger_3d():
+    cfg = load_config("configs/basic/schrodinger/3d_default.yaml")
+    assert cfg.domain.dimension == 3
+    assert cfg.input("u").initial_condition.params["center"] == [0.25, 0.5, 0.5]
+    assert cfg.output.formats == ["numpy"]
+    assert cfg.boundary_field("u").side_conditions("z+")[0].type == "dirichlet"
+
+
 def test_load_config_plate():
     cfg = load_config("configs/basic/plate/2d_default.yaml")
     boundary_field = cfg.boundary_field("deflection")

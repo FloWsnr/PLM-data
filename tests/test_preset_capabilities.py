@@ -31,6 +31,7 @@ from tests.preset_matrix import (
     make_maxwell_pulse_config,
     make_plate_config,
     make_shallow_water_config,
+    make_schrodinger_config,
     make_scalar_preset_config,
     make_swift_hohenberg_config,
     make_superlattice_config,
@@ -451,6 +452,28 @@ def _assert_cgl_random_ic(config, result, output_dir):
     assert np.all(np.isfinite(arrays["v"]))
     assert np.all(np.isfinite(arrays["amplitude"]))
     assert np.all(arrays["amplitude"] >= 0)
+
+
+def _assert_schrodinger_barrier_case(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert np.all(np.isfinite(arrays["u"]))
+    assert np.all(np.isfinite(arrays["v"]))
+    assert np.min(arrays["density"]) >= -1e-10
+    assert_nontrivial(arrays["density"])
+    assert np.allclose(arrays["potential"][0], arrays["potential"][-1])
+
+
+def _assert_schrodinger_periodic_case(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert np.min(arrays["density"]) >= -1e-10
+    assert_periodic_axis(arrays["u"], axis=0)
+    assert_periodic_axis(arrays["u"], axis=1)
+    assert_periodic_axis(arrays["v"], axis=0)
+    assert_periodic_axis(arrays["v"], axis=1)
+    assert_periodic_axis(arrays["density"], axis=0)
+    assert_periodic_axis(arrays["density"], axis=1)
 
 
 def _assert_ks_constant_ic(config, result, output_dir):
@@ -1465,6 +1488,80 @@ SUCCESS_CASES = (
             ),
         ),
         assert_result=_assert_cgl_random_ic,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="schrodinger_barrier_dirichlet",
+        make_config=lambda tmp_path: make_schrodinger_config(
+            tmp_path,
+            gdim=2,
+            u_initial_condition=scalar_expr(
+                "gaussian_wave_packet",
+                amplitude=1.0,
+                sigma=0.08,
+                center=[0.3, 0.5],
+                wavevector=[10.0, 0.0],
+                phase=0.0,
+            ),
+            v_initial_condition=scalar_expr(
+                "gaussian_wave_packet",
+                amplitude=1.0,
+                sigma=0.08,
+                center=[0.3, 0.5],
+                wavevector=[10.0, 0.0],
+                phase=-np.pi / 2.0,
+            ),
+            u_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            },
+            v_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            },
+            potential=scalar_expr(
+                "gaussian_bump",
+                amplitude=6.0,
+                sigma=0.08,
+                center=[0.55, 0.5],
+            ),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_schrodinger_barrier_case,
+    ),
+    RuntimePresetCase(
+        name="schrodinger_periodic_free_packet",
+        make_config=lambda tmp_path: make_schrodinger_config(
+            tmp_path,
+            gdim=2,
+            u_initial_condition=scalar_expr(
+                "gaussian_wave_packet",
+                amplitude=1.0,
+                sigma=0.08,
+                center=[0.3, 0.5],
+                wavevector=[8.0, 0.0],
+                phase=0.0,
+            ),
+            v_initial_condition=scalar_expr(
+                "gaussian_wave_packet",
+                amplitude=1.0,
+                sigma=0.08,
+                center=[0.3, 0.5],
+                wavevector=[8.0, 0.0],
+                phase=-np.pi / 2.0,
+            ),
+            u_boundary_conditions={},
+            v_boundary_conditions={},
+            u_periodic_axes=(0, 1),
+            v_periodic_axes=(0, 1),
+            potential=constant(0.0),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_schrodinger_periodic_case,
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(

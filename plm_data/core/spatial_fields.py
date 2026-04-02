@@ -4,6 +4,7 @@ from typing import Any, Callable
 
 import numpy as np
 import ufl
+from dolfinx import default_real_type, fem
 from dolfinx import mesh as dmesh
 
 from plm_data.core.config import FieldExpressionConfig
@@ -220,11 +221,11 @@ def build_ufl_field(
     x = ufl.SpatialCoordinate(msh)
 
     if field_type in ("none", "zero"):
-        return ufl.as_ufl(0.0)
+        return fem.Constant(msh, default_real_type(0.0))
 
     elif field_type == "constant":
         value = resolve_param_ref(_require_param(p, "value", field_type), parameters)
-        return ufl.as_ufl(value)
+        return fem.Constant(msh, default_real_type(value))
 
     elif field_type == "sine_product":
         return _build_axis_trig_expression(
@@ -307,7 +308,7 @@ def build_vector_ufl_field(
     gdim = msh.geometry.dim
     if not expr.is_componentwise:
         if expr.type in {"none", "zero"}:
-            return ufl.as_vector([ufl.as_ufl(0.0)] * gdim)
+            return fem.Constant(msh, np.zeros(gdim, dtype=default_real_type))
         if expr.type == "custom":
             return None
 

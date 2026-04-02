@@ -79,6 +79,28 @@ def test_apply_gaussian_blobs(rectangle_domain):
     assert np.min(f.x.array) < 0.2
 
 
+def test_apply_gaussian_wave_packet(rectangle_domain):
+    f = _make_function(rectangle_domain)
+    ic = FieldExpressionConfig(
+        type="gaussian_wave_packet",
+        params={
+            "amplitude": 1.0,
+            "sigma": 0.08,
+            "center": [0.5, 0.5],
+            "wavevector": [16.0, 0.0],
+            "phase": 0.0,
+        },
+    )
+    apply_ic(f, ic, {})
+
+    coords = f.function_space.tabulate_dof_coordinates()
+    near = np.linalg.norm(coords[:, :2] - np.array([0.5, 0.5]), axis=1) < 0.18
+    far = np.linalg.norm(coords[:, :2] - np.array([0.5, 0.5]), axis=1) > 0.35
+    assert np.mean(np.abs(f.x.array[near])) > 10.0 * np.mean(np.abs(f.x.array[far]))
+    assert np.max(f.x.array) > 0.2
+    assert np.min(f.x.array) < -0.05
+
+
 def test_apply_sine_waves(rectangle_domain):
     f = _make_function(rectangle_domain)
     ic = FieldExpressionConfig(
