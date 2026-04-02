@@ -1221,6 +1221,75 @@ def make_gierer_meinhardt_config(
     )
 
 
+def make_fitzhugh_nagumo_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    u_initial_condition: FieldExpressionConfig,
+    v_initial_condition: FieldExpressionConfig,
+    u_boundary_conditions: dict[str, BoundaryConditionConfig],
+    v_boundary_conditions: dict[str, BoundaryConditionConfig],
+    u_periodic_axes: tuple[int, ...] = (),
+    v_periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+    parameters: dict[str, float] | None = None,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(
+            f"FitzHugh-Nagumo test helper only supports 2D/3D, got {gdim}D"
+        )
+
+    if parameters is None:
+        parameters = {
+            "Du": 1.0,
+            "Dv": 50.0,
+            "tau": 0.1,
+            "b": 0.5,
+            "a": 0.0,
+        }
+
+    return SimulationConfig(
+        preset="fitzhugh_nagumo",
+        parameters=parameters,
+        domain=domain,
+        inputs={
+            "u": InputConfig(initial_condition=u_initial_condition),
+            "v": InputConfig(initial_condition=v_initial_condition),
+        },
+        boundary_conditions={
+            "u": boundary_field_config(
+                u_boundary_conditions,
+                periodic_axes=u_periodic_axes,
+            ),
+            "v": boundary_field_config(
+                v_boundary_conditions,
+                periodic_axes=v_periodic_axes,
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(u="scalar", v="scalar"),
+        ),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
+        time=time,
+        seed=seed,
+    )
+
+
 def make_superlattice_config(
     tmp_path: Path,
     *,

@@ -13,6 +13,7 @@ from tests.preset_matrix import (
     make_advection_config,
     make_burgers_config,
     make_cyclic_competition_config,
+    make_fitzhugh_nagumo_config,
     make_gierer_meinhardt_config,
     make_immunotherapy_config,
     make_cahn_hilliard_config,
@@ -500,6 +501,42 @@ def _assert_lorenz_3d(config, result, output_dir):
         assert_periodic_axis(arrays[field_name], axis=0)
         assert_periodic_axis(arrays[field_name], axis=1)
         assert_periodic_axis(arrays[field_name], axis=2)
+
+
+def _assert_fitzhugh_nagumo_2d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("u", "v"):
+        assert_nontrivial(arrays[field_name])
+        assert_periodic_axis(arrays[field_name], axis=0, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=1, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=0)
+        assert_periodic_axis(arrays[field_name], axis=1)
+
+
+def _assert_fitzhugh_nagumo_3d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("u", "v"):
+        assert_nontrivial(arrays[field_name])
+        assert_periodic_axis(arrays[field_name], axis=0, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=1, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=2, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=0)
+        assert_periodic_axis(arrays[field_name], axis=1)
+        assert_periodic_axis(arrays[field_name], axis=2)
+
+
+def _assert_fitzhugh_nagumo_mixed_bc(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("u", "v"):
+        assert_nontrivial(arrays[field_name])
+    # v has Dirichlet zero on all sides
+    assert np.allclose(arrays["v"][-1, 0, :], 0.0, atol=5e-3)
+    assert np.allclose(arrays["v"][-1, -1, :], 0.0, atol=5e-3)
+    assert np.allclose(arrays["v"][-1, :, 0], 0.0, atol=5e-3)
+    assert np.allclose(arrays["v"][-1, :, -1], 0.0, atol=5e-3)
 
 
 def _assert_gierer_meinhardt_2d(config, result, output_dir):
@@ -1446,6 +1483,64 @@ SUCCESS_CASES = (
             time=TimeConfig(dt=0.001, t_end=0.001),
         ),
         assert_result=_assert_lorenz_3d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="fitzhugh_nagumo_2d_periodic_xy",
+        make_config=lambda tmp_path: make_fitzhugh_nagumo_config(
+            tmp_path,
+            gdim=2,
+            u_initial_condition=scalar_expr("gaussian_noise", mean=0.0, std=0.05),
+            v_initial_condition=scalar_expr("gaussian_noise", mean=0.0, std=0.05),
+            u_boundary_conditions={},
+            v_boundary_conditions={},
+            u_periodic_axes=(0, 1),
+            v_periodic_axes=(0, 1),
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_fitzhugh_nagumo_2d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="fitzhugh_nagumo_3d_periodic_xyz",
+        make_config=lambda tmp_path: make_fitzhugh_nagumo_config(
+            tmp_path,
+            gdim=3,
+            u_initial_condition=scalar_expr("gaussian_noise", mean=0.0, std=0.05),
+            v_initial_condition=scalar_expr("gaussian_noise", mean=0.0, std=0.05),
+            u_boundary_conditions={},
+            v_boundary_conditions={},
+            u_periodic_axes=(0, 1, 2),
+            v_periodic_axes=(0, 1, 2),
+            mesh_resolution=(5, 5, 5),
+            output_resolution=(3, 3, 3),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_fitzhugh_nagumo_3d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="fitzhugh_nagumo_2d_field_specific_scalar_boundaries",
+        make_config=lambda tmp_path: make_fitzhugh_nagumo_config(
+            tmp_path,
+            gdim=2,
+            u_initial_condition=scalar_expr("gaussian_noise", mean=0.0, std=0.05),
+            v_initial_condition=scalar_expr("gaussian_noise", mean=0.0, std=0.05),
+            u_boundary_conditions={},
+            v_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+            },
+            u_periodic_axes=(0, 1),
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_fitzhugh_nagumo_mixed_bc,
         skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
