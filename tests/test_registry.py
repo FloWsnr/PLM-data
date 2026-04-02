@@ -19,6 +19,7 @@ def test_list_presets():
     assert "poisson" in presets
     assert "cahn_hilliard" in presets
     assert "cgl" in presets
+    assert "darcy" in presets
     assert "van_der_pol" in presets
     assert "maxwell" in presets
     assert "maxwell_pulse" in presets

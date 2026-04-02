@@ -334,6 +334,83 @@ def make_advection_config(
     )
 
 
+def make_darcy_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    parameters: dict[str, float],
+    mobility: FieldExpressionConfig,
+    dispersion: FieldExpressionConfig,
+    pressure_boundary_conditions: dict[str, BoundaryConditionConfig],
+    concentration_boundary_conditions: dict[str, BoundaryConditionConfig],
+    pressure_source: FieldExpressionConfig,
+    pressure_initial_condition: FieldExpressionConfig,
+    concentration_source: FieldExpressionConfig,
+    concentration_initial_condition: FieldExpressionConfig,
+    periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    solver: SolverConfig | None = None,
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(f"Darcy test helper only supports 2D/3D, got {gdim}D")
+
+    return SimulationConfig(
+        preset="darcy",
+        parameters=parameters,
+        domain=domain,
+        inputs={
+            "pressure": InputConfig(
+                source=pressure_source,
+                initial_condition=pressure_initial_condition,
+            ),
+            "concentration": InputConfig(
+                source=concentration_source,
+                initial_condition=concentration_initial_condition,
+            ),
+        },
+        boundary_conditions={
+            "pressure": boundary_field_config(
+                pressure_boundary_conditions,
+                periodic_axes=periodic_axes,
+            ),
+            "concentration": boundary_field_config(
+                concentration_boundary_conditions,
+                periodic_axes=periodic_axes,
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(
+                pressure="scalar",
+                concentration="scalar",
+                velocity="components",
+                speed="scalar",
+            ),
+        ),
+        solver=solver or direct_solver_config(CONSTANT_LHS_SCALAR_NONSYMMETRIC),
+        time=time,
+        seed=seed,
+        coefficients={
+            "mobility": mobility,
+            "dispersion": dispersion,
+        },
+    )
+
+
 def make_flow_preset_config(
     tmp_path: Path,
     *,

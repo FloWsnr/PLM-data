@@ -14,6 +14,7 @@ from tests.preset_matrix import (
     make_bistable_travelling_waves_config,
     make_burgers_config,
     make_cyclic_competition_config,
+    make_darcy_config,
     make_fisher_kpp_config,
     make_fitzhugh_nagumo_config,
     make_gierer_meinhardt_config,
@@ -316,6 +317,15 @@ def _assert_advection_periodic_xyz(config, result, output_dir):
     assert_periodic_axis(arrays["u"], axis=0)
     assert_periodic_axis(arrays["u"], axis=1)
     assert_periodic_axis(arrays["u"], axis=2)
+
+
+def _assert_darcy_case(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["pressure"])
+    assert_nontrivial(arrays["concentration"])
+    assert_nontrivial(arrays["velocity_x"])
+    assert np.all(arrays["speed"] >= 0.0)
 
 
 def _assert_plate_case(config, result, output_dir):
@@ -891,9 +901,7 @@ SUCCESS_CASES = (
                 x_split=0.35,
                 axis=0,
             ),
-            boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(
-                gdim=2
-            ),
+            boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(gdim=2),
             mesh_resolution=(8, 8),
             output_resolution=(4, 4),
             time=TimeConfig(dt=0.05, t_end=0.05),
@@ -913,9 +921,7 @@ SUCCESS_CASES = (
                 x_split=0.35,
                 axis=0,
             ),
-            boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(
-                gdim=3
-            ),
+            boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(gdim=3),
             mesh_resolution=(6, 5, 4),
             output_resolution=(4, 4, 4),
             time=TimeConfig(dt=0.05, t_end=0.05),
@@ -935,9 +941,7 @@ SUCCESS_CASES = (
                 x_split=0.35,
                 axis=0,
             ),
-            boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(
-                gdim=2
-            ),
+            boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(gdim=2),
             mesh_resolution=(8, 8),
             output_resolution=(4, 4),
             time=TimeConfig(dt=0.05, t_end=0.05),
@@ -957,9 +961,7 @@ SUCCESS_CASES = (
                 x_split=0.35,
                 axis=0,
             ),
-            boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(
-                gdim=3
-            ),
+            boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(gdim=3),
             mesh_resolution=(6, 5, 4),
             output_resolution=(4, 4, 4),
             time=TimeConfig(dt=0.05, t_end=0.05),
@@ -1017,6 +1019,44 @@ SUCCESS_CASES = (
         ),
         assert_result=_assert_advection_periodic_xy,
         skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="darcy_pressure_driven_transport",
+        make_config=lambda tmp_path: make_darcy_config(
+            tmp_path,
+            gdim=2,
+            parameters={
+                "storage": 0.2,
+                "porosity": 0.35,
+            },
+            mobility=constant(0.2),
+            dispersion=constant(0.002),
+            pressure_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            },
+            concentration_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            },
+            pressure_source=scalar_expr("none"),
+            pressure_initial_condition=constant(0.0),
+            concentration_source=scalar_expr("none"),
+            concentration_initial_condition=scalar_expr(
+                "gaussian_bump",
+                amplitude=1.0,
+                sigma=0.08,
+                center=[0.3, 0.5],
+            ),
+            mesh_resolution=(10, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_darcy_case,
     ),
     RuntimePresetCase(
         name="poisson_mixed_scalar_bc",

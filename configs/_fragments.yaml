@@ -399,6 +399,16 @@ output:
           $ref: output.mode.scalar
         z:
           $ref: output.mode.scalar
+    scalar_wn_topography:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        w:
+          $ref: output.mode.scalar
+        n:
+          $ref: output.mode.scalar
+        topography:
+          $ref: output.mode.scalar
     scalar_rho_c:
       formats:
         $ref: output.formats.numpy_gif
@@ -488,6 +498,18 @@ output:
         v:
           $ref: output.mode.scalar
         amplitude:
+          $ref: output.mode.scalar
+    darcy:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        pressure:
+          $ref: output.mode.scalar
+        concentration:
+          $ref: output.mode.scalar
+        velocity:
+          $ref: output.mode.components
+        speed:
           $ref: output.mode.scalar
 
 time:
