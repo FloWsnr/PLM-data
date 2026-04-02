@@ -9,6 +9,7 @@ from plm_data.core.boundary_conditions import (
 )
 from plm_data.core.initial_conditions import apply_ic
 from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
+from plm_data.core.stochastic import build_scalar_state_stochastic_term
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
 from plm_data.presets.boundary_validation import (
@@ -16,6 +17,7 @@ from plm_data.presets.boundary_validation import (
 )
 from plm_data.presets.metadata import (
     BoundaryFieldSpec,
+    GENERIC_STOCHASTIC_COUPLINGS,
     InputSpec,
     OutputSpec,
     PDEParameter,
@@ -73,8 +75,16 @@ _FITZHUGH_NAGUMO_SPEC = PresetSpec(
         ),
     },
     states={
-        "u": StateSpec(name="u", shape="scalar"),
-        "v": StateSpec(name="v", shape="scalar"),
+        "u": StateSpec(
+            name="u",
+            shape="scalar",
+            stochastic_couplings=GENERIC_STOCHASTIC_COUPLINGS,
+        ),
+        "v": StateSpec(
+            name="v",
+            shape="scalar",
+            stochastic_couplings=GENERIC_STOCHASTIC_COUPLINGS,
+        ),
     },
     outputs={
         "u": OutputSpec(
@@ -217,6 +227,29 @@ class _FitzHughNagumoProblem(TransientLinearProblem):
             tau * ufl.inner(self.v_n, v_test) * ufl.dx
             + dt * ufl.inner(self.u_n + a, v_test) * ufl.dx
         )
+
+        self._dynamic_noise_runtimes = []
+        u_stochastic_term, u_stochastic_runtime = build_scalar_state_stochastic_term(
+            self,
+            state_name="u",
+            previous_state=self.u_n,
+            test=u_test,
+            dt=dt,
+        )
+        if u_stochastic_term is not None and u_stochastic_runtime is not None:
+            rhs_u = rhs_u + u_stochastic_term
+            self._dynamic_noise_runtimes.append(u_stochastic_runtime)
+
+        v_stochastic_term, v_stochastic_runtime = build_scalar_state_stochastic_term(
+            self,
+            state_name="v",
+            previous_state=self.v_n,
+            test=v_test,
+            dt=dt,
+        )
+        if v_stochastic_term is not None and v_stochastic_runtime is not None:
+            rhs_v = rhs_v + v_stochastic_term
+            self._dynamic_noise_runtimes.append(v_stochastic_runtime)
 
         lhs_u_bc, rhs_u_bc = build_natural_bc_forms(
             u_trial,

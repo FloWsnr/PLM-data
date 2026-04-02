@@ -8,6 +8,7 @@ from plm_data.core.boundary_conditions import (
     build_natural_bc_forms,
 )
 from plm_data.core.initial_conditions import apply_ic
+from plm_data.core.stochastic import build_scalar_state_stochastic_term
 from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
@@ -16,6 +17,7 @@ from plm_data.presets.boundary_validation import (
 )
 from plm_data.presets.metadata import (
     BoundaryFieldSpec,
+    GENERIC_STOCHASTIC_COUPLINGS,
     InputSpec,
     OutputSpec,
     PDEParameter,
@@ -83,9 +85,21 @@ _LORENZ_SPEC = PresetSpec(
         ),
     },
     states={
-        "x": StateSpec(name="x", shape="scalar"),
-        "y": StateSpec(name="y", shape="scalar"),
-        "z": StateSpec(name="z", shape="scalar"),
+        "x": StateSpec(
+            name="x",
+            shape="scalar",
+            stochastic_couplings=GENERIC_STOCHASTIC_COUPLINGS,
+        ),
+        "y": StateSpec(
+            name="y",
+            shape="scalar",
+            stochastic_couplings=GENERIC_STOCHASTIC_COUPLINGS,
+        ),
+        "z": StateSpec(
+            name="z",
+            shape="scalar",
+            stochastic_couplings=GENERIC_STOCHASTIC_COUPLINGS,
+        ),
     },
     outputs={
         "x": OutputSpec(
@@ -271,6 +285,38 @@ class _LorenzProblem(TransientLinearProblem):
             a_z = a_z + dt * a_z_bc
         if L_z_bc is not None:
             L_z = L_z + dt * L_z_bc
+
+        self._dynamic_noise_runtimes = []
+        stochastic_x, runtime_x = build_scalar_state_stochastic_term(
+            self,
+            state_name="x",
+            previous_state=self.x_n,
+            test=x_test,
+            dt=dt,
+        )
+        if stochastic_x is not None and runtime_x is not None:
+            L_x = L_x + stochastic_x
+            self._dynamic_noise_runtimes.append(runtime_x)
+        stochastic_y, runtime_y = build_scalar_state_stochastic_term(
+            self,
+            state_name="y",
+            previous_state=self.y_n,
+            test=y_test,
+            dt=dt,
+        )
+        if stochastic_y is not None and runtime_y is not None:
+            L_y = L_y + stochastic_y
+            self._dynamic_noise_runtimes.append(runtime_y)
+        stochastic_z, runtime_z = build_scalar_state_stochastic_term(
+            self,
+            state_name="z",
+            previous_state=self.z_n,
+            test=z_test,
+            dt=dt,
+        )
+        if stochastic_z is not None and runtime_z is not None:
+            L_z = L_z + stochastic_z
+            self._dynamic_noise_runtimes.append(runtime_z)
 
         # Create linear solvers
         self._x_problem = self.create_linear_problem(

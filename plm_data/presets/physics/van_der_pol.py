@@ -8,6 +8,7 @@ from plm_data.core.boundary_conditions import (
     build_natural_bc_forms,
 )
 from plm_data.core.initial_conditions import apply_ic
+from plm_data.core.stochastic import build_scalar_state_stochastic_term
 from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
@@ -16,6 +17,7 @@ from plm_data.presets.boundary_validation import (
 )
 from plm_data.presets.metadata import (
     BoundaryFieldSpec,
+    GENERIC_STOCHASTIC_COUPLINGS,
     InputSpec,
     OutputSpec,
     PDEParameter,
@@ -71,8 +73,16 @@ _VAN_DER_POL_SPEC = PresetSpec(
         ),
     },
     states={
-        "u": StateSpec(name="u", shape="scalar"),
-        "v": StateSpec(name="v", shape="scalar"),
+        "u": StateSpec(
+            name="u",
+            shape="scalar",
+            stochastic_couplings=GENERIC_STOCHASTIC_COUPLINGS,
+        ),
+        "v": StateSpec(
+            name="v",
+            shape="scalar",
+            stochastic_couplings=GENERIC_STOCHASTIC_COUPLINGS,
+        ),
     },
     outputs={
         "u": OutputSpec(
@@ -235,6 +245,28 @@ class _VanDerPolProblem(TransientLinearProblem):
             a_v = a_v + dt * a_v_bc
         if L_v_bc is not None:
             L_v = L_v + dt * L_v_bc
+
+        self._dynamic_noise_runtimes = []
+        stochastic_u, runtime_u = build_scalar_state_stochastic_term(
+            self,
+            state_name="u",
+            previous_state=self.u_n,
+            test=u_test,
+            dt=dt,
+        )
+        if stochastic_u is not None and runtime_u is not None:
+            L_u = L_u + stochastic_u
+            self._dynamic_noise_runtimes.append(runtime_u)
+        stochastic_v, runtime_v = build_scalar_state_stochastic_term(
+            self,
+            state_name="v",
+            previous_state=self.v_n,
+            test=v_test,
+            dt=dt,
+        )
+        if stochastic_v is not None and runtime_v is not None:
+            L_v = L_v + stochastic_v
+            self._dynamic_noise_runtimes.append(runtime_v)
 
         self._u_problem = self.create_linear_problem(
             a_u,

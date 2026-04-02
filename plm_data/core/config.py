@@ -43,6 +43,16 @@ _TOP_LEVEL_CONFIG_KEYS = {
     "solver",
     "time",
     "seed",
+    "stochastic",
+}
+_VALID_STOCHASTIC_STATE_COUPLINGS = {
+    "additive",
+    "multiplicative_self",
+    "saturating_self",
+}
+_VALID_STOCHASTIC_COEFFICIENT_MODES = {
+    "additive",
+    "multiplicative",
 }
 
 
@@ -72,6 +82,26 @@ def _is_param_ref(value: Any) -> bool:
 def _validate_numeric_literal_or_param_ref(value: Any, context: str) -> None:
     if isinstance(value, (int, float)) or _is_param_ref(value):
         return
+    raise ValueError(
+        f"{context} must be a number or 'param:<name>' reference. Got {value!r}."
+    )
+
+
+def _resolve_numeric_literal_or_param_ref(
+    value: Any,
+    parameters: dict[str, float],
+    context: str,
+) -> float:
+    if isinstance(value, (int, float)):
+        return float(value)
+    if _is_param_ref(value):
+        parameter_name = value[len("param:") :]
+        if parameter_name not in parameters:
+            raise ValueError(
+                f"{context} references unknown parameter '{parameter_name}'. "
+                f"Available parameters: {sorted(parameters)}."
+            )
+        return float(parameters[parameter_name])
     raise ValueError(
         f"{context} must be a number or 'param:<name>' reference. Got {value!r}."
     )
@@ -652,6 +682,46 @@ class TimeConfig:
 
 
 @dataclass
+class StateStochasticConfig:
+    """Dynamic stochastic forcing for one state variable."""
+
+    coupling: str
+    intensity: float
+    offset: float | None = None
+
+
+@dataclass
+class CoefficientSmoothingConfig:
+    """Optional diffusion-style smoothing for static random media."""
+
+    pseudo_dt: float
+    steps: int
+
+
+@dataclass
+class CoefficientStochasticConfig:
+    """Static stochastic overlay for one scalar coefficient."""
+
+    mode: str
+    std: float
+    smoothing: CoefficientSmoothingConfig | None = None
+    clamp_min: float | None = None
+
+
+@dataclass
+class StochasticConfig:
+    """Validated stochastic runtime configuration."""
+
+    states: dict[str, StateStochasticConfig] = field(default_factory=dict)
+    coefficients: dict[str, CoefficientStochasticConfig] = field(default_factory=dict)
+
+    @property
+    def enabled(self) -> bool:
+        """Return whether any stochastic feature is active."""
+        return bool(self.states or self.coefficients)
+
+
+@dataclass
 class SimulationConfig:
     """Validated simulation configuration."""
 
@@ -665,6 +735,7 @@ class SimulationConfig:
     time: TimeConfig | None = None
     seed: int | None = None
     coefficients: dict[str, FieldExpressionConfig] = field(default_factory=dict)
+    stochastic: StochasticConfig = field(default_factory=StochasticConfig)
 
     @property
     def dt(self) -> float | None:
@@ -712,6 +783,19 @@ class SimulationConfig:
         if name not in self.output.fields:
             raise KeyError(f"Unknown output '{name}'")
         return self.output.fields[name].mode
+
+    def stochastic_state(self, name: str) -> StateStochasticConfig | None:
+        """Return the stochastic forcing configured for one state, if any."""
+        return self.stochastic.states.get(name)
+
+    def stochastic_coefficient(self, name: str) -> CoefficientStochasticConfig | None:
+        """Return the stochastic overlay configured for one coefficient, if any."""
+        return self.stochastic.coefficients.get(name)
+
+    @property
+    def has_stochastic(self) -> bool:
+        """Return whether stochastic forcing or random media are enabled."""
+        return self.stochastic.enabled
 
     @property
     def has_periodic_boundary_conditions(self) -> bool:
@@ -1014,6 +1098,202 @@ def _parse_periodic_maps(
     }
 
 
+def _parse_state_stochastic(
+    raw: Any,
+    context: str,
+    *,
+    parameters: dict[str, float],
+    allowed_couplings: tuple[str, ...],
+) -> StateStochasticConfig:
+    """Parse one state-level stochastic forcing block."""
+    mapping = _as_mapping(raw, context)
+    unexpected_keys = set(mapping) - {"coupling", "intensity", "offset"}
+    if unexpected_keys:
+        raise ValueError(f"{context} has unsupported keys {sorted(unexpected_keys)}.")
+
+    coupling = str(_require(mapping, "coupling", context))
+    if coupling not in _VALID_STOCHASTIC_STATE_COUPLINGS:
+        raise ValueError(
+            f"{context}.coupling must be one of "
+            f"{sorted(_VALID_STOCHASTIC_STATE_COUPLINGS)}. Got '{coupling}'."
+        )
+    if coupling not in allowed_couplings:
+        raise ValueError(
+            f"{context}.coupling '{coupling}' is not supported by this state. "
+            f"Allowed couplings: {sorted(allowed_couplings)}."
+        )
+
+    intensity = _resolve_numeric_literal_or_param_ref(
+        _require(mapping, "intensity", context),
+        parameters,
+        f"{context}.intensity",
+    )
+    if intensity < 0.0:
+        raise ValueError(f"{context}.intensity must be non-negative.")
+
+    raw_offset = mapping.get("offset")
+    if coupling == "saturating_self":
+        if raw_offset is None:
+            raise ValueError(
+                f"{context} with coupling 'saturating_self' requires 'offset'."
+            )
+        offset = _resolve_numeric_literal_or_param_ref(
+            raw_offset,
+            parameters,
+            f"{context}.offset",
+        )
+        if offset <= 0.0:
+            raise ValueError(f"{context}.offset must be positive.")
+    else:
+        if raw_offset is not None:
+            raise ValueError(
+                f"{context}.offset is only valid when coupling is 'saturating_self'."
+            )
+        offset = None
+
+    return StateStochasticConfig(
+        coupling=coupling,
+        intensity=intensity,
+        offset=offset,
+    )
+
+
+def _parse_coefficient_stochastic(
+    raw: Any,
+    context: str,
+    *,
+    parameters: dict[str, float],
+) -> CoefficientStochasticConfig:
+    """Parse one coefficient-level stochastic randomization block."""
+    mapping = _as_mapping(raw, context)
+    unexpected_keys = set(mapping) - {"mode", "std", "smoothing", "clamp_min"}
+    if unexpected_keys:
+        raise ValueError(f"{context} has unsupported keys {sorted(unexpected_keys)}.")
+
+    mode = str(_require(mapping, "mode", context))
+    if mode not in _VALID_STOCHASTIC_COEFFICIENT_MODES:
+        raise ValueError(
+            f"{context}.mode must be one of "
+            f"{sorted(_VALID_STOCHASTIC_COEFFICIENT_MODES)}. Got '{mode}'."
+        )
+
+    std = _resolve_numeric_literal_or_param_ref(
+        _require(mapping, "std", context),
+        parameters,
+        f"{context}.std",
+    )
+    if std < 0.0:
+        raise ValueError(f"{context}.std must be non-negative.")
+
+    clamp_min = mapping.get("clamp_min")
+    if clamp_min is not None:
+        clamp_min = _resolve_numeric_literal_or_param_ref(
+            clamp_min,
+            parameters,
+            f"{context}.clamp_min",
+        )
+
+    smoothing_raw = mapping.get("smoothing")
+    if smoothing_raw is None:
+        smoothing = None
+    else:
+        smoothing_context = f"{context}.smoothing"
+        smoothing_mapping = _as_mapping(smoothing_raw, smoothing_context)
+        if set(smoothing_mapping) != {"pseudo_dt", "steps"}:
+            raise ValueError(
+                f"{smoothing_context} must contain exactly ['pseudo_dt', 'steps']. "
+                f"Got {sorted(smoothing_mapping)}."
+            )
+        pseudo_dt = _resolve_numeric_literal_or_param_ref(
+            smoothing_mapping["pseudo_dt"],
+            parameters,
+            f"{smoothing_context}.pseudo_dt",
+        )
+        if pseudo_dt <= 0.0:
+            raise ValueError(f"{smoothing_context}.pseudo_dt must be positive.")
+        steps = int(smoothing_mapping["steps"])
+        if steps <= 0:
+            raise ValueError(f"{smoothing_context}.steps must be positive.")
+        smoothing = CoefficientSmoothingConfig(
+            pseudo_dt=pseudo_dt,
+            steps=steps,
+        )
+
+    return CoefficientStochasticConfig(
+        mode=mode,
+        std=std,
+        smoothing=smoothing,
+        clamp_min=clamp_min,
+    )
+
+
+def _parse_stochastic(
+    raw: Any,
+    *,
+    spec,
+    parameters: dict[str, float],
+) -> StochasticConfig:
+    """Parse the top-level stochastic configuration block."""
+    if raw is None:
+        return StochasticConfig()
+
+    mapping = _as_mapping(raw, "stochastic")
+    unexpected_keys = set(mapping) - {"states", "coefficients"}
+    if unexpected_keys:
+        raise ValueError(f"stochastic has unsupported keys {sorted(unexpected_keys)}.")
+
+    states_raw = _as_mapping(mapping.get("states", {}), "stochastic.states")
+    coefficients_raw = _as_mapping(
+        mapping.get("coefficients", {}),
+        "stochastic.coefficients",
+    )
+
+    state_configs: dict[str, StateStochasticConfig] = {}
+    for state_name, state_raw in states_raw.items():
+        if state_name not in spec.states:
+            raise ValueError(
+                f"stochastic.states references unknown state '{state_name}'. "
+                f"Available states: {sorted(spec.states)}."
+            )
+        state_spec = spec.states[state_name]
+        if not state_spec.stochastic_couplings:
+            raise ValueError(
+                f"Preset '{spec.name}' state '{state_name}' does not support "
+                "stochastic forcing."
+            )
+        state_configs[state_name] = _parse_state_stochastic(
+            state_raw,
+            f"stochastic.states.{state_name}",
+            parameters=parameters,
+            allowed_couplings=state_spec.stochastic_couplings,
+        )
+
+    coefficient_configs: dict[str, CoefficientStochasticConfig] = {}
+    for coefficient_name, coefficient_raw in coefficients_raw.items():
+        if coefficient_name not in spec.coefficients:
+            raise ValueError(
+                f"stochastic.coefficients references unknown coefficient "
+                f"'{coefficient_name}'. Available coefficients: "
+                f"{sorted(spec.coefficients)}."
+            )
+        coefficient_spec = spec.coefficients[coefficient_name]
+        if not coefficient_spec.allow_randomization:
+            raise ValueError(
+                f"Preset '{spec.name}' coefficient '{coefficient_name}' does not "
+                "support stochastic randomization."
+            )
+        coefficient_configs[coefficient_name] = _parse_coefficient_stochastic(
+            coefficient_raw,
+            f"stochastic.coefficients.{coefficient_name}",
+            parameters=parameters,
+        )
+
+    return StochasticConfig(
+        states=state_configs,
+        coefficients=coefficient_configs,
+    )
+
+
 def load_config(path: str | Path) -> SimulationConfig:
     """Load and validate a simulation config from YAML."""
     path = Path(path)
@@ -1089,6 +1369,12 @@ def load_config(path: str | Path) -> SimulationConfig:
         if coefficients_raw not in (None, {}):
             raise ValueError(f"Preset '{preset_name}' does not support coefficients.")
         coefficients = {}
+
+    stochastic = _parse_stochastic(
+        raw.get("stochastic"),
+        spec=spec,
+        parameters=parameters,
+    )
 
     output_raw = _as_mapping(_require(raw, "output"), "output")
     unexpected_output_keys = set(output_raw) - {
@@ -1278,4 +1564,5 @@ def load_config(path: str | Path) -> SimulationConfig:
         time=time,
         seed=raw.get("seed"),
         coefficients=coefficients,
+        stochastic=stochastic,
     )

@@ -12,6 +12,7 @@ from plm_data.core.solver_strategies import (
     CONSTANT_LHS_SCALAR_NONSYMMETRIC,
     CONSTANT_LHS_SCALAR_SPD,
 )
+from plm_data.core.stochastic import build_scalar_state_stochastic_term
 from plm_data.core.spatial_fields import (
     build_vector_ufl_field,
     is_exact_zero_field_expression,
@@ -28,6 +29,7 @@ from plm_data.presets.metadata import (
     OutputSpec,
     PDEParameter,
     PresetSpec,
+    SATURATING_STOCHASTIC_COUPLINGS,
     SCALAR_STANDARD_BOUNDARY_OPERATORS,
     StateSpec,
 )
@@ -78,8 +80,16 @@ _GRAY_SCOTT_SPEC = PresetSpec(
         ),
     },
     states={
-        "u": StateSpec(name="u", shape="scalar"),
-        "v": StateSpec(name="v", shape="scalar"),
+        "u": StateSpec(
+            name="u",
+            shape="scalar",
+            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
+        ),
+        "v": StateSpec(
+            name="v",
+            shape="scalar",
+            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
+        ),
     },
     outputs={
         "u": OutputSpec(
@@ -257,6 +267,29 @@ class _GrayScottProblem(TransientLinearProblem):
             ufl.inner(self.v_n, v_test) * ufl.dx
             + dt_c * ufl.inner(cubic_reaction, v_test) * ufl.dx
         )
+
+        self._dynamic_noise_runtimes = []
+        u_stochastic_term, u_stochastic_runtime = build_scalar_state_stochastic_term(
+            self,
+            state_name="u",
+            previous_state=self.u_n,
+            test=u_test,
+            dt=dt,
+        )
+        if u_stochastic_term is not None and u_stochastic_runtime is not None:
+            L_u = L_u + u_stochastic_term
+            self._dynamic_noise_runtimes.append(u_stochastic_runtime)
+
+        v_stochastic_term, v_stochastic_runtime = build_scalar_state_stochastic_term(
+            self,
+            state_name="v",
+            previous_state=self.v_n,
+            test=v_test,
+            dt=dt,
+        )
+        if v_stochastic_term is not None and v_stochastic_runtime is not None:
+            L_v = L_v + v_stochastic_term
+            self._dynamic_noise_runtimes.append(v_stochastic_runtime)
 
         if has_advection:
             h = ufl.CellDiameter(self.msh)

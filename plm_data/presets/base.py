@@ -319,6 +319,12 @@ class _TransientProblemBase(ProblemInstance):
     def get_output_fields(self) -> dict[str, fem.Function]:
         """Return base output fields for the current state."""
 
+    def prepare_step(self, step_index: int, t: float, dt: float) -> None:
+        """Update any transient runtime state before one timestep solve."""
+        dynamic_noise_runtimes = getattr(self, "_dynamic_noise_runtimes", ())
+        for runtime in dynamic_noise_runtimes:
+            runtime.update(step_index)
+
     def get_num_dofs(self) -> int:
         """Return the total number of degrees of freedom."""
         return 0
@@ -357,6 +363,7 @@ class _TransientProblemBase(ProblemInstance):
         t = 0.0
         num_steps = 0
         for num_steps in range(1, total_steps + 1):
+            self.prepare_step(num_steps, t, dt)
             converged = self.step(t, dt)
             t = num_steps * dt
 

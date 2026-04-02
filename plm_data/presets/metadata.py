@@ -3,6 +3,17 @@
 from dataclasses import dataclass, field
 
 _COMPONENT_LABELS = ("x", "y", "z")
+_VALID_STOCHASTIC_COUPLINGS = {
+    "additive",
+    "multiplicative_self",
+    "saturating_self",
+}
+GENERIC_STOCHASTIC_COUPLINGS = ("additive", "multiplicative_self")
+SATURATING_STOCHASTIC_COUPLINGS = (
+    "additive",
+    "multiplicative_self",
+    "saturating_self",
+)
 
 
 def _component_labels(gdim: int) -> tuple[str, ...]:
@@ -24,6 +35,7 @@ class CoefficientSpec:
     name: str
     shape: str
     description: str = ""
+    allow_randomization: bool = False
 
     def component_labels(self, gdim: int) -> tuple[str, ...]:
         if self.shape != "vector":
@@ -52,6 +64,7 @@ class StateSpec:
 
     name: str
     shape: str
+    stochastic_couplings: tuple[str, ...] = ()
 
     def component_labels(self, gdim: int) -> tuple[str, ...]:
         if self.shape != "vector":
@@ -164,6 +177,11 @@ class PresetSpec:
                     f"Preset '{self.name}' coefficient '{name}' has unsupported "
                     f"shape '{spec.shape}'"
                 )
+            if spec.allow_randomization and spec.shape != "scalar":
+                raise ValueError(
+                    f"Preset '{self.name}' coefficient '{name}' enables stochastic "
+                    "randomization, but v1 only supports scalar coefficients."
+                )
 
         for name, spec in self.inputs.items():
             if name != spec.name:
@@ -196,6 +214,23 @@ class PresetSpec:
                 raise ValueError(
                     f"Preset '{self.name}' state key '{name}' does not match "
                     f"StateSpec.name '{spec.name}'"
+                )
+            invalid_couplings = (
+                set(spec.stochastic_couplings) - _VALID_STOCHASTIC_COUPLINGS
+            )
+            if invalid_couplings:
+                raise ValueError(
+                    f"Preset '{self.name}' state '{name}' has unsupported stochastic "
+                    f"couplings {sorted(invalid_couplings)}."
+                )
+            if (
+                spec.shape != "scalar"
+                and "saturating_self" in spec.stochastic_couplings
+            ):
+                raise ValueError(
+                    f"Preset '{self.name}' state '{name}' uses "
+                    "'saturating_self', but v1 only supports that coupling for "
+                    "scalar states."
                 )
 
         for name, spec in self.outputs.items():

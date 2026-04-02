@@ -9,6 +9,7 @@ from plm_data.core.boundary_conditions import (
 )
 from plm_data.core.initial_conditions import apply_ic
 from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
+from plm_data.core.stochastic import build_scalar_state_stochastic_term
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
 from plm_data.presets.boundary_validation import (
@@ -20,6 +21,7 @@ from plm_data.presets.metadata import (
     OutputSpec,
     PDEParameter,
     PresetSpec,
+    SATURATING_STOCHASTIC_COUPLINGS,
     SCALAR_STANDARD_BOUNDARY_OPERATORS,
     StateSpec,
 )
@@ -81,8 +83,16 @@ _KELLER_SEGEL_SPEC = PresetSpec(
         ),
     },
     states={
-        "rho": StateSpec(name="rho", shape="scalar"),
-        "c": StateSpec(name="c", shape="scalar"),
+        "rho": StateSpec(
+            name="rho",
+            shape="scalar",
+            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
+        ),
+        "c": StateSpec(
+            name="c",
+            shape="scalar",
+            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
+        ),
     },
     outputs={
         "rho": OutputSpec(
@@ -234,6 +244,31 @@ class _KellerSegelProblem(TransientLinearProblem):
             ufl.inner(self.c_n, c_test) * ufl.dx
             + dt * alpha * ufl.inner(self.rho_n, c_test) * ufl.dx
         )
+
+        self._dynamic_noise_runtimes = []
+        rho_stochastic_term, rho_stochastic_runtime = (
+            build_scalar_state_stochastic_term(
+                self,
+                state_name="rho",
+                previous_state=self.rho_n,
+                test=rho_test,
+                dt=dt,
+            )
+        )
+        if rho_stochastic_term is not None and rho_stochastic_runtime is not None:
+            L_rho = L_rho + rho_stochastic_term
+            self._dynamic_noise_runtimes.append(rho_stochastic_runtime)
+
+        c_stochastic_term, c_stochastic_runtime = build_scalar_state_stochastic_term(
+            self,
+            state_name="c",
+            previous_state=self.c_n,
+            test=c_test,
+            dt=dt,
+        )
+        if c_stochastic_term is not None and c_stochastic_runtime is not None:
+            L_c = L_c + c_stochastic_term
+            self._dynamic_noise_runtimes.append(c_stochastic_runtime)
 
         # Add natural boundary condition contributions
         a_rho_bc, L_rho_bc = build_natural_bc_forms(

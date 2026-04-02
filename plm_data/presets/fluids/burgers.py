@@ -9,6 +9,7 @@ from plm_data.core.boundary_conditions import (
 )
 from plm_data.core.initial_conditions import apply_vector_ic
 from plm_data.core.solver_strategies import NONLINEAR_MIXED_DIRECT
+from plm_data.core.stochastic import build_vector_state_stochastic_term
 from plm_data.core.source_terms import build_vector_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientNonlinearProblem
@@ -17,6 +18,7 @@ from plm_data.presets.boundary_validation import (
 )
 from plm_data.presets.metadata import (
     BoundaryFieldSpec,
+    GENERIC_STOCHASTIC_COUPLINGS,
     InputSpec,
     OutputSpec,
     PDEParameter,
@@ -54,7 +56,11 @@ _BURGERS_SPEC = PresetSpec(
         ),
     },
     states={
-        "velocity": StateSpec(name="velocity", shape="vector"),
+        "velocity": StateSpec(
+            name="velocity",
+            shape="vector",
+            stochastic_couplings=GENERIC_STOCHASTIC_COUPLINGS,
+        ),
     },
     outputs={
         "velocity": OutputSpec(
@@ -140,6 +146,18 @@ class _BurgersProblem(TransientNonlinearProblem):
         )
         if source_form is not None:
             F = F - source_form
+
+        stochastic_term, stochastic_runtime = build_vector_state_stochastic_term(
+            self,
+            state_name="velocity",
+            previous_state=self.u_n,
+            test=v,
+            dt=dt,
+        )
+        self._dynamic_noise_runtimes = []
+        if stochastic_term is not None and stochastic_runtime is not None:
+            F = F - stochastic_term
+            self._dynamic_noise_runtimes.append(stochastic_runtime)
 
         traction_form = build_vector_natural_bc_forms(
             v,

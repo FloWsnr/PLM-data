@@ -10,6 +10,7 @@ from plm_data.core.boundary_conditions import (
     build_natural_bc_forms,
 )
 from plm_data.core.initial_conditions import apply_ic
+from plm_data.core.stochastic import build_scalar_state_stochastic_term
 from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
@@ -22,6 +23,7 @@ from plm_data.presets.metadata import (
     OutputSpec,
     PDEParameter,
     PresetSpec,
+    SATURATING_STOCHASTIC_COUPLINGS,
     SCALAR_STANDARD_BOUNDARY_OPERATORS,
     StateSpec,
 )
@@ -77,7 +79,11 @@ _SUPERLATTICE_SPEC = PresetSpec(
         for field_name in _FIELD_NAMES
     },
     states={
-        field_name: StateSpec(name=field_name, shape="scalar")
+        field_name: StateSpec(
+            name=field_name,
+            shape="scalar",
+            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
+        )
         for field_name in _FIELD_NAMES
     },
     outputs={
@@ -275,6 +281,7 @@ class _SuperlatticeProblem(TransientLinearProblem):
         }
 
         self._problems = {}
+        self._dynamic_noise_runtimes = []
         for field_name, (trial, test, a_form, L_form, prefix) in forms.items():
             boundary_field = self.config.boundary_field(field_name)
             a_bc, L_bc = build_natural_bc_forms(
@@ -288,6 +295,16 @@ class _SuperlatticeProblem(TransientLinearProblem):
                 a_form = a_form + dt * a_bc
             if L_bc is not None:
                 L_form = L_form + dt * L_bc
+            stochastic_term, runtime = build_scalar_state_stochastic_term(
+                self,
+                state_name=field_name,
+                previous_state=self._fields[field_name].current,
+                test=test,
+                dt=dt,
+            )
+            if stochastic_term is not None and runtime is not None:
+                L_form = L_form + stochastic_term
+                self._dynamic_noise_runtimes.append(runtime)
 
             field_state = self._fields[field_name]
             self._problems[field_name] = self.create_linear_problem(

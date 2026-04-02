@@ -9,7 +9,10 @@ from plm_data.core.boundary_conditions import (
 )
 from plm_data.core.initial_conditions import apply_ic
 from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
-from plm_data.core.spatial_fields import build_ufl_field, scalar_expression_to_config
+from plm_data.core.stochastic import (
+    build_scalar_coefficient,
+    build_scalar_state_stochastic_term,
+)
 from plm_data.core.source_terms import build_source_form
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
@@ -19,6 +22,7 @@ from plm_data.presets.boundary_validation import (
 from plm_data.presets.metadata import (
     BoundaryFieldSpec,
     CoefficientSpec,
+    GENERIC_STOCHASTIC_COUPLINGS,
     InputSpec,
     OutputSpec,
     PresetSpec,
@@ -48,7 +52,13 @@ _HEAT_SPEC = PresetSpec(
             description="Boundary conditions for the scalar temperature field.",
         )
     },
-    states={"u": StateSpec(name="u", shape="scalar")},
+    states={
+        "u": StateSpec(
+            name="u",
+            shape="scalar",
+            stochastic_couplings=GENERIC_STOCHASTIC_COUPLINGS,
+        )
+    },
     outputs={
         "u": OutputSpec(
             name="u",
@@ -65,6 +75,7 @@ _HEAT_SPEC = PresetSpec(
             name="kappa",
             shape="scalar",
             description="Thermal diffusivity coefficient field.",
+            allow_randomization=True,
         )
     },
 )
@@ -87,7 +98,6 @@ class _HeatProblem(TransientLinearProblem):
         V = fem.functionspace(self.msh, ("Lagrange", 1))
 
         field_config = self.config.input("u")
-        kappa_config = self.config.coefficient("kappa")
         boundary_field = self.config.boundary_field("u")
         dt = self.config.time.dt
         bcs = apply_dirichlet_bcs(
@@ -113,11 +123,7 @@ class _HeatProblem(TransientLinearProblem):
         u = ufl.TrialFunction(V)
         v = ufl.TestFunction(V)
         dt_c = fem.Constant(self.msh, np.float64(dt))
-        kappa = build_ufl_field(
-            self.msh,
-            scalar_expression_to_config(kappa_config),
-            self.config.parameters,
-        )
+        kappa = build_scalar_coefficient(self, "kappa")
         if kappa is None:
             raise ValueError("Heat coefficient 'kappa' cannot use a custom expression")
 
@@ -136,6 +142,18 @@ class _HeatProblem(TransientLinearProblem):
         )
         if source is not None:
             L = L + dt_c * source
+
+        stochastic_term, stochastic_runtime = build_scalar_state_stochastic_term(
+            self,
+            state_name="u",
+            previous_state=self.u_n,
+            test=v,
+            dt=dt,
+        )
+        self._dynamic_noise_runtimes = []
+        if stochastic_term is not None and stochastic_runtime is not None:
+            L = L + stochastic_term
+            self._dynamic_noise_runtimes.append(stochastic_runtime)
 
         a_bc, L_bc = build_natural_bc_forms(
             u,

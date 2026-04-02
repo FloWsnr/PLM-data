@@ -12,6 +12,10 @@ from plm_data.core.solver_strategies import (
     CONSTANT_LHS_SCALAR_NONSYMMETRIC,
     TRANSIENT_MIXED_DIRECT,
 )
+from plm_data.core.stochastic import (
+    build_scalar_coefficient,
+    build_scalar_state_stochastic_term,
+)
 from plm_data.core.spatial_fields import (
     build_ufl_field,
     is_exact_zero_field_expression,
@@ -25,6 +29,7 @@ from plm_data.presets.boundary_validation import (
 from plm_data.presets.metadata import (
     BoundaryFieldSpec,
     CoefficientSpec,
+    GENERIC_STOCHASTIC_COUPLINGS,
     InputSpec,
     OutputSpec,
     PDEParameter,
@@ -81,8 +86,16 @@ _DARCY_SPEC = PresetSpec(
         ),
     },
     states={
-        "pressure": StateSpec(name="pressure", shape="scalar"),
-        "concentration": StateSpec(name="concentration", shape="scalar"),
+        "pressure": StateSpec(
+            name="pressure",
+            shape="scalar",
+            stochastic_couplings=GENERIC_STOCHASTIC_COUPLINGS,
+        ),
+        "concentration": StateSpec(
+            name="concentration",
+            shape="scalar",
+            stochastic_couplings=GENERIC_STOCHASTIC_COUPLINGS,
+        ),
     },
     outputs={
         "pressure": OutputSpec(
@@ -120,11 +133,13 @@ _DARCY_SPEC = PresetSpec(
             name="mobility",
             shape="scalar",
             description="Darcy mobility field, e.g. permeability divided by viscosity.",
+            allow_randomization=True,
         ),
         "dispersion": CoefficientSpec(
             name="dispersion",
             shape="scalar",
             description="Tracer diffusion/dispersion coefficient field.",
+            allow_randomization=True,
         ),
     },
 )
@@ -259,21 +274,13 @@ class _DarcyProblem(TransientLinearProblem):
         storage_c = fem.Constant(self.msh, default_real_type(storage))
         porosity_c = fem.Constant(self.msh, default_real_type(porosity))
 
-        mobility = build_ufl_field(
-            self.msh,
-            scalar_expression_to_config(self.config.coefficient("mobility")),
-            self.config.parameters,
-        )
+        mobility = build_scalar_coefficient(self, "mobility")
         if mobility is None:
             raise ValueError(
                 "Darcy coefficient 'mobility' cannot use a custom expression"
             )
 
-        dispersion = build_ufl_field(
-            self.msh,
-            scalar_expression_to_config(self.config.coefficient("dispersion")),
-            self.config.parameters,
-        )
+        dispersion = build_scalar_coefficient(self, "dispersion")
         if dispersion is None:
             raise ValueError(
                 "Darcy coefficient 'dispersion' cannot use a custom expression"
@@ -319,6 +326,23 @@ class _DarcyProblem(TransientLinearProblem):
         if not pressure_source_is_zero:
             L_pressure = L_pressure + dt_c * pressure_source * pressure_test * ufl.dx
 
+        pressure_stochastic_term, pressure_stochastic_runtime = (
+            build_scalar_state_stochastic_term(
+                self,
+                state_name="pressure",
+                previous_state=self.pressure_n,
+                test=pressure_test,
+                dt=self.config.time.dt,
+            )
+        )
+        self._dynamic_noise_runtimes = []
+        if (
+            pressure_stochastic_term is not None
+            and pressure_stochastic_runtime is not None
+        ):
+            L_pressure = L_pressure + pressure_stochastic_term
+            self._dynamic_noise_runtimes.append(pressure_stochastic_runtime)
+
         a_pressure_bc, L_pressure_bc = build_natural_bc_forms(
             pressure_trial,
             pressure_test,
@@ -361,6 +385,22 @@ class _DarcyProblem(TransientLinearProblem):
                 L_concentration
                 + dt_c * concentration_source * concentration_test * ufl.dx
             )
+
+        concentration_stochastic_term, concentration_stochastic_runtime = (
+            build_scalar_state_stochastic_term(
+                self,
+                state_name="concentration",
+                previous_state=self.concentration_n,
+                test=concentration_test,
+                dt=self.config.time.dt,
+            )
+        )
+        if (
+            concentration_stochastic_term is not None
+            and concentration_stochastic_runtime is not None
+        ):
+            L_concentration = L_concentration + concentration_stochastic_term
+            self._dynamic_noise_runtimes.append(concentration_stochastic_runtime)
 
         a_concentration_bc, L_concentration_bc = build_natural_bc_forms(
             concentration_trial,

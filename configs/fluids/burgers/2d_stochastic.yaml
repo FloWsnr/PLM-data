@@ -1,0 +1,51 @@
+preset: burgers
+parameters:
+  nu: 0.003
+domain:
+  type: rectangle
+  size: [1.0, 1.0]
+  mesh_resolution: [72, 72]
+time:
+  dt: 0.005
+  t_end: 0.6
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: sine_waves
+          params:
+            background: 0.0
+            modes:
+              - amplitude: 1.0
+                cycles: [0, 2]
+                phase: 1.5707963267948966
+        y:
+          type: sine_waves
+          params:
+            background: 0.0
+            modes:
+              - amplitude: -1.0
+                cycles: [2, 0]
+                phase: 1.5707963267948966
+boundary_conditions:
+  velocity:
+    $ref: boundary_field.vector.full_periodic_2d
+stochastic:
+  states:
+    velocity:
+      coupling: additive
+      intensity: 0.02
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+output:
+  resolution: [96, 96]
+  num_frames: 31
+  formats: [numpy, gif]
+  fields:
+    velocity:
+      mode: components
+seed: 42

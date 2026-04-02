@@ -13,6 +13,7 @@ from plm_data.core.initial_conditions import apply_ic
 from plm_data.core.solver_strategies import (
     NONLINEAR_MIXED_DIRECT,
 )
+from plm_data.core.stochastic import build_scalar_state_stochastic_term
 from plm_data.core.spatial_fields import (
     build_vector_ufl_field,
     is_exact_zero_field_expression,
@@ -24,6 +25,7 @@ from plm_data.presets.boundary_validation import (
 from plm_data.presets.metadata import (
     BoundaryFieldSpec,
     CoefficientSpec,
+    GENERIC_STOCHASTIC_COUPLINGS,
     InputSpec,
     OutputSpec,
     PDEParameter,
@@ -65,7 +67,13 @@ def build_scalar_reaction_diffusion_spec(
                 description="Boundary conditions for the scalar population field.",
             )
         },
-        states={"u": StateSpec(name="u", shape="scalar")},
+        states={
+            "u": StateSpec(
+                name="u",
+                shape="scalar",
+                stochastic_couplings=GENERIC_STOCHASTIC_COUPLINGS,
+            )
+        },
         outputs={
             "u": OutputSpec(
                 name="u",
@@ -198,6 +206,18 @@ class ScalarReactionDiffusionProblem(TransientNonlinearProblem, ABC):
                 - self.reaction_term(self.u)
             )
             F = F + dt_c * tau * strong_residual * streamline_test * ufl.dx
+
+        stochastic_term, stochastic_runtime = build_scalar_state_stochastic_term(
+            self,
+            state_name="u",
+            previous_state=self.u_n,
+            test=w,
+            dt=dt,
+        )
+        self._dynamic_noise_runtimes = []
+        if stochastic_term is not None and stochastic_runtime is not None:
+            F = F - stochastic_term
+            self._dynamic_noise_runtimes.append(stochastic_runtime)
 
         J = ufl.derivative(F, self.u, ufl.TrialFunction(V))
 

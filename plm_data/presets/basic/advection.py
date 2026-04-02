@@ -9,6 +9,10 @@ from plm_data.core.boundary_conditions import (
 )
 from plm_data.core.initial_conditions import apply_ic
 from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_NONSYMMETRIC
+from plm_data.core.stochastic import (
+    build_scalar_coefficient,
+    build_scalar_state_stochastic_term,
+)
 from plm_data.core.spatial_fields import (
     build_ufl_field,
     build_vector_ufl_field,
@@ -22,6 +26,7 @@ from plm_data.presets.boundary_validation import (
 from plm_data.presets.metadata import (
     BoundaryFieldSpec,
     CoefficientSpec,
+    GENERIC_STOCHASTIC_COUPLINGS,
     InputSpec,
     OutputSpec,
     PresetSpec,
@@ -56,7 +61,13 @@ _ADVECTION_SPEC = PresetSpec(
             description="Boundary conditions for the transported scalar field.",
         )
     },
-    states={"u": StateSpec(name="u", shape="scalar")},
+    states={
+        "u": StateSpec(
+            name="u",
+            shape="scalar",
+            stochastic_couplings=GENERIC_STOCHASTIC_COUPLINGS,
+        )
+    },
     outputs={
         "u": OutputSpec(
             name="u",
@@ -78,6 +89,7 @@ _ADVECTION_SPEC = PresetSpec(
             name="diffusivity",
             shape="scalar",
             description="Scalar diffusion coefficient field.",
+            allow_randomization=True,
         ),
     },
 )
@@ -137,11 +149,7 @@ class _AdvectionProblem(TransientLinearProblem):
                 "Advection coefficient 'velocity' cannot use a custom expression"
             )
 
-        diffusivity = build_ufl_field(
-            self.msh,
-            scalar_expression_to_config(self.config.coefficient("diffusivity")),
-            self.config.parameters,
-        )
+        diffusivity = build_scalar_coefficient(self, "diffusivity")
         if diffusivity is None:
             raise ValueError(
                 "Advection coefficient 'diffusivity' cannot use a custom expression"
@@ -168,6 +176,18 @@ class _AdvectionProblem(TransientLinearProblem):
             + dt_c * (advection_term * w + diffusion_term) * ufl.dx
         )
         L = (ufl.inner(self.u_n, w) + dt_c * ufl.inner(source, w)) * ufl.dx
+
+        stochastic_term, stochastic_runtime = build_scalar_state_stochastic_term(
+            self,
+            state_name="u",
+            previous_state=self.u_n,
+            test=w,
+            dt=dt,
+        )
+        self._dynamic_noise_runtimes = []
+        if stochastic_term is not None and stochastic_runtime is not None:
+            L = L + stochastic_term
+            self._dynamic_noise_runtimes.append(stochastic_runtime)
 
         a_bc, L_bc = build_natural_bc_forms(
             u,

@@ -8,6 +8,7 @@ from plm_data.core.boundary_conditions import (
     build_natural_bc_forms,
 )
 from plm_data.core.initial_conditions import apply_ic
+from plm_data.core.stochastic import build_scalar_state_stochastic_term
 from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
@@ -20,6 +21,7 @@ from plm_data.presets.metadata import (
     OutputSpec,
     PDEParameter,
     PresetSpec,
+    SATURATING_STOCHASTIC_COUPLINGS,
     SCALAR_STANDARD_BOUNDARY_OPERATORS,
     StateSpec,
 )
@@ -76,8 +78,16 @@ _GIERER_MEINHARDT_SPEC = PresetSpec(
         ),
     },
     states={
-        "a": StateSpec(name="a", shape="scalar"),
-        "h": StateSpec(name="h", shape="scalar"),
+        "a": StateSpec(
+            name="a",
+            shape="scalar",
+            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
+        ),
+        "h": StateSpec(
+            name="h",
+            shape="scalar",
+            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
+        ),
     },
     outputs={
         "a": OutputSpec(
@@ -252,6 +262,28 @@ class _GiererMeinhardtProblem(TransientLinearProblem):
             lhs_h = lhs_h + dt * lhs_h_bc
         if rhs_h_bc is not None:
             rhs_h = rhs_h + dt * rhs_h_bc
+
+        self._dynamic_noise_runtimes = []
+        stochastic_a, runtime_a = build_scalar_state_stochastic_term(
+            self,
+            state_name="a",
+            previous_state=self.a_n,
+            test=a_test,
+            dt=dt,
+        )
+        if stochastic_a is not None and runtime_a is not None:
+            rhs_a = rhs_a + stochastic_a
+            self._dynamic_noise_runtimes.append(runtime_a)
+        stochastic_h, runtime_h = build_scalar_state_stochastic_term(
+            self,
+            state_name="h",
+            previous_state=self.h_n,
+            test=h_test,
+            dt=dt,
+        )
+        if stochastic_h is not None and runtime_h is not None:
+            rhs_h = rhs_h + stochastic_h
+            self._dynamic_noise_runtimes.append(runtime_h)
 
         self._a_problem = self.create_linear_problem(
             lhs_a,

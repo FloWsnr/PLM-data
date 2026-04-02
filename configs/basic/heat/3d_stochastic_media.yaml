@@ -1,0 +1,53 @@
+preset: heat
+parameters: {}
+coefficients:
+  kappa:
+    type: constant
+    params:
+      value: 0.03
+domain:
+  type: box
+  size: [1.0, 1.0, 1.0]
+  mesh_resolution: [20, 20, 20]
+time:
+  dt: 0.01
+  t_end: 0.08
+inputs:
+  u:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        blobs:
+          - amplitude: 1.0
+            sigma: 0.12
+            center: [0.38, 0.45, 0.55]
+          - amplitude: -0.4
+            sigma: 0.08
+            center: [0.68, 0.55, 0.35]
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_neumann_3d
+stochastic:
+  states:
+    u:
+      coupling: additive
+      intensity: 0.03
+  coefficients:
+    kappa:
+      mode: multiplicative
+      std: 0.25
+      smoothing:
+        pseudo_dt: 0.005
+        steps: 2
+      clamp_min: 0.008
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_u_numpy
+  resolution: [24, 24, 24]
+  num_frames: 8
+seed: 42
