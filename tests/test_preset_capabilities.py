@@ -15,6 +15,7 @@ from tests.preset_matrix import (
     make_burgers_config,
     make_cyclic_competition_config,
     make_darcy_config,
+    make_elasticity_config,
     make_fisher_kpp_config,
     make_fitzhugh_nagumo_config,
     make_gierer_meinhardt_config,
@@ -83,6 +84,28 @@ def _simply_supported_plate_boundary_conditions(
     else:
         raise ValueError(f"Plate boundary helper only supports 2D/3D, got {gdim}D")
     return {side: BoundaryConditionConfig(type="simply_supported") for side in sides}
+
+
+def _cantilever_elasticity_boundary_conditions(
+    *, gdim: int
+) -> dict[str, BoundaryConditionConfig]:
+    if gdim == 2:
+        return {
+            "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+        }
+    if gdim == 3:
+        return {
+            "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "z-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "z+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+        }
+    raise ValueError(f"Elasticity boundary helper only supports 2D/3D, got {gdim}D")
 
 
 def _lid_velocity_boundary_conditions(
@@ -333,6 +356,15 @@ def _assert_plate_case(config, result, output_dir):
     assert result.num_timesteps == 1
     assert_nontrivial(arrays["deflection"])
     assert_nontrivial(arrays["velocity"])
+
+
+def _assert_elasticity_case(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["displacement_y"])
+    assert_nontrivial(arrays["velocity_y"])
+    assert_nontrivial(arrays["von_mises"])
+    assert np.all(arrays["von_mises"] >= 0.0)
 
 
 def _assert_wave_case(config, result, output_dir):
@@ -866,6 +898,53 @@ SUCCESS_CASES = (
             time=TimeConfig(dt=0.05, t_end=0.05),
         ),
         assert_result=_assert_plate_case,
+    ),
+    RuntimePresetCase(
+        name="elasticity_cantilever_2d",
+        make_config=lambda tmp_path: make_elasticity_config(
+            tmp_path,
+            gdim=2,
+            boundary_conditions=_cantilever_elasticity_boundary_conditions(gdim=2),
+            initial_displacement=vector_zero(),
+            initial_velocity=vector_expr(
+                x=constant(0.0),
+                y=scalar_expr(
+                    "gaussian_bump",
+                    amplitude=0.8,
+                    sigma=0.08,
+                    center=[0.78, 0.5],
+                ),
+            ),
+            forcing=vector_zero(),
+            mesh_resolution=(8, 4),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.02, t_end=0.02),
+        ),
+        assert_result=_assert_elasticity_case,
+    ),
+    RuntimePresetCase(
+        name="elasticity_cantilever_3d",
+        make_config=lambda tmp_path: make_elasticity_config(
+            tmp_path,
+            gdim=3,
+            boundary_conditions=_cantilever_elasticity_boundary_conditions(gdim=3),
+            initial_displacement=vector_zero(),
+            initial_velocity=vector_expr(
+                x=constant(0.0),
+                y=scalar_expr(
+                    "gaussian_bump",
+                    amplitude=0.8,
+                    sigma=0.12,
+                    center=[0.78, 0.5, 0.5],
+                ),
+                z=constant(0.0),
+            ),
+            forcing=vector_zero(),
+            mesh_resolution=(4, 4, 4),
+            output_resolution=(3, 3, 3),
+            time=TimeConfig(dt=0.02, t_end=0.02),
+        ),
+        assert_result=_assert_elasticity_case,
     ),
     RuntimePresetCase(
         name="heat_periodic_x",
@@ -2213,6 +2292,43 @@ REJECTION_CASES = (
         ),
         expected_error=ValueError,
         expected_error_match="must configure exactly the domain sides",
+    ),
+    RuntimePresetCase(
+        name="elasticity_periodic_rejected",
+        make_config=lambda tmp_path: make_elasticity_config(
+            tmp_path,
+            gdim=2,
+            boundary_conditions={
+                "y-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+                "y+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            },
+            initial_displacement=vector_zero(),
+            initial_velocity=vector_zero(),
+            forcing=vector_zero(),
+            periodic_axes=(0,),
+            time=TimeConfig(dt=0.02, t_end=0.02),
+        ),
+        expected_error=ValueError,
+        expected_error_match="unsupported operator 'periodic'",
+    ),
+    RuntimePresetCase(
+        name="elasticity_all_neumann_rejected",
+        make_config=lambda tmp_path: make_elasticity_config(
+            tmp_path,
+            gdim=2,
+            boundary_conditions={
+                "x-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+                "x+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+                "y-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+                "y+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            },
+            initial_displacement=vector_zero(),
+            initial_velocity=vector_zero(),
+            forcing=vector_zero(),
+            time=TimeConfig(dt=0.02, t_end=0.02),
+        ),
+        expected_error=ValueError,
+        expected_error_match="at least one Dirichlet boundary condition",
     ),
     RuntimePresetCase(
         name="maxwell_periodic_domain_rejected",

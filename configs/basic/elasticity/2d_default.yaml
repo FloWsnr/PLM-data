@@ -1,0 +1,61 @@
+preset: elasticity
+parameters:
+  young_modulus: 6.0
+  poisson_ratio: 0.3
+  density: 1.0
+  eta_mass: 0.02
+  eta_stiffness: 0.002
+domain:
+  type: rectangle
+  size: [2.0, 0.4]
+  mesh_resolution: [96, 24]
+time:
+  dt: 0.004
+  t_end: 1.0
+inputs:
+  displacement:
+    initial_condition:
+      type: zero
+      params: {}
+  velocity:
+    initial_condition:
+      components:
+        x:
+          type: constant
+          params:
+            value: 0.0
+        y:
+          type: gaussian_bump
+          params:
+            amplitude: 1.4
+            sigma: 0.08
+            center: [1.55, 0.2]
+  forcing:
+    source:
+      type: zero
+      params: {}
+boundary_conditions:
+  displacement:
+    x-:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+    x+:
+      - operator: neumann
+        value: [0.0, 0.0]
+    y-:
+      - operator: neumann
+        value: [0.0, 0.0]
+    y+:
+      - operator: neumann
+        value: [0.0, 0.0]
+solver:
+  $ref: solver.profile.constant_lhs_block_direct
+output:
+  resolution: [128, 40]
+  num_frames: 32
+  formats: [numpy, gif]
+  fields:
+    displacement: components
+    velocity: components
+    von_mises: scalar
+seed: 42

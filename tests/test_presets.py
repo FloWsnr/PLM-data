@@ -48,6 +48,7 @@ from tests.preset_matrix import (
     direct_solver_config,
     make_advection_config,
     make_burgers_config,
+    make_elasticity_config,
     make_fisher_kpp_config,
     make_gray_scott_config,
     make_mhd_config,
@@ -173,6 +174,26 @@ def _homogeneous_scalar_neumann_boundary_conditions(*, gdim: int):
         side: BoundaryConditionConfig(type="neumann", value=constant(0.0))
         for side in sides
     }
+
+
+def _cantilever_elasticity_boundary_conditions(*, gdim: int):
+    if gdim == 2:
+        return {
+            "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+        }
+    if gdim == 3:
+        return {
+            "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "z-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "z+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+        }
+    raise ValueError(f"Elasticity boundary helper only supports 2D/3D, got {gdim}D")
 
 
 def _make_maxwell_pulse_config(tmp_path, *, gdim: int):
@@ -1671,6 +1692,115 @@ def test_wave_inhomogeneous_medium_3d_short_run(tmp_path):
     assert np.all(np.isfinite(arr_v))
     assert np.std(arr_u[-1]) > 5.0e-3
     assert np.std(arr_v[-1]) > 5.0e-3
+
+
+def test_elasticity_cantilever_2d_stays_nontrivial_and_clamped(tmp_path):
+    config = make_elasticity_config(
+        tmp_path,
+        gdim=2,
+        boundary_conditions=_cantilever_elasticity_boundary_conditions(gdim=2),
+        initial_displacement=vector_zero(),
+        initial_velocity=vector_expr(
+            x=constant(0.0),
+            y=scalar_expr(
+                "gaussian_bump",
+                amplitude=1.0,
+                sigma=0.08,
+                center=[0.78, 0.5],
+            ),
+        ),
+        forcing=vector_zero(),
+        mesh_resolution=(48, 12),
+        output_resolution=(48, 16),
+        time=TimeConfig(dt=0.01, t_end=0.12),
+    )
+    config.output.num_frames = 6
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 12
+
+    displacement_x = np.load(output_dir / "displacement_x.npy")
+    displacement_y = np.load(output_dir / "displacement_y.npy")
+    velocity_y = np.load(output_dir / "velocity_y.npy")
+    von_mises = np.load(output_dir / "von_mises.npy")
+
+    assert np.all(np.isfinite(displacement_x))
+    assert np.all(np.isfinite(displacement_y))
+    assert np.all(np.isfinite(velocity_y))
+    assert np.all(np.isfinite(von_mises))
+    assert np.std(displacement_y[-1]) > 1.0e-4
+    assert np.std(velocity_y[-1]) > 1.0e-4
+    assert np.max(von_mises) > 0.0
+    assert np.all(von_mises >= 0.0)
+    assert np.allclose(displacement_x[:, 0, :], 0.0, atol=1.0e-8)
+    assert np.allclose(displacement_y[:, 0, :], 0.0, atol=1.0e-8)
+    assert np.allclose(velocity_y[:, 0, :], 0.0, atol=1.0e-7)
+
+
+def test_elasticity_preset_3d_single_step_outputs_finite(tmp_path):
+    config = make_elasticity_config(
+        tmp_path,
+        gdim=3,
+        boundary_conditions=_cantilever_elasticity_boundary_conditions(gdim=3),
+        initial_displacement=vector_zero(),
+        initial_velocity=vector_expr(
+            x=constant(0.0),
+            y=scalar_expr(
+                "gaussian_bump",
+                amplitude=0.8,
+                sigma=0.12,
+                center=[0.78, 0.5, 0.5],
+            ),
+            z=constant(0.0),
+        ),
+        forcing=vector_zero(),
+        mesh_resolution=(4, 4, 4),
+        output_resolution=(4, 4, 4),
+        time=TimeConfig(dt=0.02, t_end=0.02),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 1
+
+    for field_name in (
+        "displacement_x",
+        "displacement_y",
+        "displacement_z",
+        "velocity_x",
+        "velocity_y",
+        "velocity_z",
+        "von_mises",
+    ):
+        arr = np.load(output_dir / f"{field_name}.npy")
+        assert arr.shape == (2, *config.output.resolution)
+        assert np.all(np.isfinite(arr))
+
+    assert np.std(np.load(output_dir / "displacement_y.npy")[-1]) > 1.0e-6
+    assert np.max(np.load(output_dir / "von_mises.npy")) > 0.0
+
+
+def test_elasticity_requires_at_least_one_dirichlet_boundary(tmp_path):
+    config = make_elasticity_config(
+        tmp_path,
+        gdim=2,
+        boundary_conditions={
+            "x-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+        },
+        initial_displacement=vector_zero(),
+        initial_velocity=vector_zero(),
+        forcing=vector_zero(),
+        time=TimeConfig(dt=0.02, t_end=0.02),
+    )
+
+    preset = get_preset(config.preset)
+    problem = preset.build_problem(config)
+    with pytest.raises(ValueError, match="at least one Dirichlet boundary condition"):
+        problem.load_domain_geometry()
 
 
 @pytest.mark.skipif(

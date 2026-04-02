@@ -5,6 +5,7 @@ import yaml
 
 from plm_data.core.config import load_config
 from plm_data.core.solver_strategies import (
+    CONSTANT_LHS_BLOCK_DIRECT,
     CONSTANT_LHS_CURL_DIRECT,
     CONSTANT_LHS_SCALAR_NONSYMMETRIC,
     CONSTANT_LHS_SCALAR_SPD,
@@ -493,6 +494,44 @@ def test_load_config_plate():
     assert cfg.output_mode("deflection") == "scalar"
     assert cfg.output_mode("velocity") == "scalar"
     assert boundary_field.side_conditions("x-")[0].type == "simply_supported"
+
+
+def test_load_config_elasticity_2d():
+    cfg = load_config("configs/basic/elasticity/2d_default.yaml")
+    boundary_field = cfg.boundary_field("displacement")
+    velocity = cfg.input("velocity")
+    assert cfg.preset == "elasticity"
+    assert cfg.domain.dimension == 2
+    assert cfg.parameters["young_modulus"] == 6.0
+    assert cfg.parameters["poisson_ratio"] == 0.3
+    assert cfg.parameters["density"] == 1.0
+    assert cfg.parameters["eta_mass"] == 0.02
+    assert cfg.parameters["eta_stiffness"] == 0.002
+    assert cfg.input("displacement").initial_condition.type == "zero"
+    assert velocity.initial_condition.components["x"].params["value"] == 0.0
+    assert velocity.initial_condition.components["y"].type == "gaussian_bump"
+    assert velocity.initial_condition.components["y"].params["center"] == [1.55, 0.2]
+    assert cfg.input("forcing").source.type == "zero"
+    assert cfg.output_mode("displacement") == "components"
+    assert cfg.output_mode("velocity") == "components"
+    assert cfg.output_mode("von_mises") == "scalar"
+    assert boundary_field.side_conditions("x-")[0].type == "dirichlet"
+    assert boundary_field.side_conditions("y+")[0].type == "neumann"
+    assert cfg.solver.strategy == CONSTANT_LHS_BLOCK_DIRECT
+
+
+def test_load_config_elasticity_3d():
+    cfg = load_config("configs/basic/elasticity/3d_default.yaml")
+    boundary_field = cfg.boundary_field("displacement")
+    velocity = cfg.input("velocity")
+    assert cfg.preset == "elasticity"
+    assert cfg.domain.dimension == 3
+    assert cfg.output.resolution == [64, 16, 16]
+    assert velocity.initial_condition.components["y"].type == "gaussian_bump"
+    assert velocity.initial_condition.components["z"].params["value"] == 0.0
+    assert boundary_field.side_conditions("x-")[0].type == "dirichlet"
+    assert boundary_field.side_conditions("z+")[0].type == "neumann"
+    assert cfg.solver.strategy == CONSTANT_LHS_BLOCK_DIRECT
 
 
 def _base_yaml_dict():

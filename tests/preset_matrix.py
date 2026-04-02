@@ -1774,6 +1774,74 @@ def make_plate_config(
     )
 
 
+def make_elasticity_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    boundary_conditions: dict[str, BoundaryConditionConfig],
+    initial_displacement: FieldExpressionConfig,
+    initial_velocity: FieldExpressionConfig,
+    forcing: FieldExpressionConfig,
+    periodic_axes: tuple[int, ...] = (),
+    parameters: dict[str, float] | None = None,
+    mesh_resolution: tuple[int, ...] = (6, 6),
+    output_resolution: tuple[int, ...] = (4, 4),
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(f"Elasticity test helper only supports 2D/3D, got {gdim}D")
+
+    return SimulationConfig(
+        preset="elasticity",
+        parameters=(
+            {
+                "young_modulus": 6.0,
+                "poisson_ratio": 0.3,
+                "density": 1.0,
+                "eta_mass": 0.02,
+                "eta_stiffness": 0.002,
+            }
+            if parameters is None
+            else parameters
+        ),
+        domain=domain,
+        inputs={
+            "displacement": InputConfig(initial_condition=initial_displacement),
+            "velocity": InputConfig(initial_condition=initial_velocity),
+            "forcing": InputConfig(source=forcing),
+        },
+        boundary_conditions={
+            "displacement": boundary_field_config(
+                boundary_conditions,
+                periodic_axes=periodic_axes,
+            )
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(
+                displacement="components",
+                velocity="components",
+                von_mises="scalar",
+            ),
+        ),
+        solver=direct_solver_config(CONSTANT_LHS_BLOCK_DIRECT),
+        time=time,
+        seed=seed,
+    )
+
+
 def make_wave_config(
     tmp_path: Path,
     *,
