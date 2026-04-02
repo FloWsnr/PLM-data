@@ -11,8 +11,10 @@ from tests.preset_matrix import (
     assert_periodic_axis,
     constant,
     make_advection_config,
+    make_bistable_travelling_waves_config,
     make_burgers_config,
     make_cyclic_competition_config,
+    make_fisher_kpp_config,
     make_fitzhugh_nagumo_config,
     make_gierer_meinhardt_config,
     make_immunotherapy_config,
@@ -54,6 +56,19 @@ def _periodic_scalar_boundary_conditions() -> dict[str, BoundaryConditionConfig]
     return {
         "y-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
         "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+    }
+
+
+def _homogeneous_scalar_neumann_boundary_conditions(
+    *, gdim: int
+) -> dict[str, BoundaryConditionConfig]:
+    if gdim == 2:
+        sides = ("x-", "x+", "y-", "y+")
+    else:
+        sides = ("x-", "x+", "y-", "y+", "z-", "z+")
+    return {
+        side: BoundaryConditionConfig(type="neumann", value=constant(0.0))
+        for side in sides
     }
 
 
@@ -278,6 +293,12 @@ def _assert_heat_periodic_x(config, result, output_dir):
     assert result.num_timesteps == 1
     assert_nontrivial(arrays["u"])
     assert_periodic_axis(arrays["u"], axis=0)
+
+
+def _assert_scalar_reaction_diffusion_case(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["u"])
 
 
 def _assert_advection_periodic_xy(config, result, output_dir):
@@ -856,6 +877,94 @@ SUCCESS_CASES = (
         ),
         assert_result=_assert_heat_periodic_x,
         skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="fisher_kpp_2d_neumann_front",
+        make_config=lambda tmp_path: make_fisher_kpp_config(
+            tmp_path,
+            gdim=2,
+            velocity=vector_zero(),
+            initial_condition=scalar_expr(
+                "step",
+                value_left=1.0,
+                value_right=0.0,
+                x_split=0.35,
+                axis=0,
+            ),
+            boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(
+                gdim=2
+            ),
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.05, t_end=0.05),
+        ),
+        assert_result=_assert_scalar_reaction_diffusion_case,
+    ),
+    RuntimePresetCase(
+        name="fisher_kpp_3d_neumann_front",
+        make_config=lambda tmp_path: make_fisher_kpp_config(
+            tmp_path,
+            gdim=3,
+            velocity=vector_zero(),
+            initial_condition=scalar_expr(
+                "step",
+                value_left=1.0,
+                value_right=0.0,
+                x_split=0.35,
+                axis=0,
+            ),
+            boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(
+                gdim=3
+            ),
+            mesh_resolution=(6, 5, 4),
+            output_resolution=(4, 4, 4),
+            time=TimeConfig(dt=0.05, t_end=0.05),
+        ),
+        assert_result=_assert_scalar_reaction_diffusion_case,
+    ),
+    RuntimePresetCase(
+        name="bistable_travelling_waves_2d_neumann_front",
+        make_config=lambda tmp_path: make_bistable_travelling_waves_config(
+            tmp_path,
+            gdim=2,
+            velocity=vector_zero(),
+            initial_condition=scalar_expr(
+                "step",
+                value_left=1.0,
+                value_right=0.0,
+                x_split=0.35,
+                axis=0,
+            ),
+            boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(
+                gdim=2
+            ),
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.05, t_end=0.05),
+        ),
+        assert_result=_assert_scalar_reaction_diffusion_case,
+    ),
+    RuntimePresetCase(
+        name="bistable_travelling_waves_3d_neumann_front",
+        make_config=lambda tmp_path: make_bistable_travelling_waves_config(
+            tmp_path,
+            gdim=3,
+            velocity=vector_zero(),
+            initial_condition=scalar_expr(
+                "step",
+                value_left=1.0,
+                value_right=0.0,
+                x_split=0.35,
+                axis=0,
+            ),
+            boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(
+                gdim=3
+            ),
+            mesh_resolution=(6, 5, 4),
+            output_resolution=(4, 4, 4),
+            time=TimeConfig(dt=0.05, t_end=0.05),
+        ),
+        assert_result=_assert_scalar_reaction_diffusion_case,
     ),
     RuntimePresetCase(
         name="advection_periodic_xy_pure",

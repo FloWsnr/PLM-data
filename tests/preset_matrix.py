@@ -852,6 +852,122 @@ def make_gray_scott_config(
     )
 
 
+def make_scalar_reaction_diffusion_config(
+    tmp_path: Path,
+    *,
+    preset: str,
+    gdim: int,
+    parameters: dict[str, float],
+    velocity: FieldExpressionConfig,
+    initial_condition: FieldExpressionConfig,
+    boundary_conditions: dict[str, BoundaryConditionConfig],
+    periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    solver: SolverConfig | None = None,
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(
+            f"Scalar reaction-diffusion helper only supports 2D/3D, got {gdim}D"
+        )
+
+    return SimulationConfig(
+        preset=preset,
+        parameters=parameters,
+        domain=domain,
+        inputs={"u": InputConfig(initial_condition=initial_condition)},
+        boundary_conditions={
+            "u": boundary_field_config(
+                boundary_conditions,
+                periodic_axes=periodic_axes,
+            )
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(u="scalar"),
+        ),
+        solver=solver or nonlinear_mixed_direct_solver_config(),
+        time=time,
+        seed=seed,
+        coefficients={"velocity": velocity},
+    )
+
+
+def make_fisher_kpp_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    velocity: FieldExpressionConfig,
+    initial_condition: FieldExpressionConfig,
+    boundary_conditions: dict[str, BoundaryConditionConfig],
+    periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    solver: SolverConfig | None = None,
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    return make_scalar_reaction_diffusion_config(
+        tmp_path,
+        preset="fisher_kpp",
+        gdim=gdim,
+        parameters={"D": 0.1, "r": 1.0, "K": 1.0},
+        velocity=velocity,
+        initial_condition=initial_condition,
+        boundary_conditions=boundary_conditions,
+        periodic_axes=periodic_axes,
+        mesh_resolution=mesh_resolution,
+        output_resolution=output_resolution,
+        solver=solver,
+        time=time,
+        seed=seed,
+    )
+
+
+def make_bistable_travelling_waves_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    velocity: FieldExpressionConfig,
+    initial_condition: FieldExpressionConfig,
+    boundary_conditions: dict[str, BoundaryConditionConfig],
+    periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    solver: SolverConfig | None = None,
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    return make_scalar_reaction_diffusion_config(
+        tmp_path,
+        preset="bistable_travelling_waves",
+        gdim=gdim,
+        parameters={"D": 1.0, "a": 0.3},
+        velocity=velocity,
+        initial_condition=initial_condition,
+        boundary_conditions=boundary_conditions,
+        periodic_axes=periodic_axes,
+        mesh_resolution=mesh_resolution,
+        output_resolution=output_resolution,
+        solver=solver,
+        time=time,
+        seed=seed,
+    )
+
+
 def make_lorenz_config(
     tmp_path: Path,
     *,

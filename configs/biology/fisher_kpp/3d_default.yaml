@@ -1,0 +1,35 @@
+preset: fisher_kpp
+parameters:
+  D: 0.1
+  r: 1.0
+  K: 1.0
+coefficients:
+  velocity:
+    type: zero
+    params: {}
+domain:
+  type: box
+  size: [8.0, 5.0, 5.0]
+  mesh_resolution: [32, 20, 20]
+time:
+  dt: 0.02
+  t_end: 8.0
+inputs:
+  u:
+    initial_condition:
+      type: step
+      params:
+        value_left: param:K
+        value_right: 0.0
+        x_split: 1.5
+        axis: 0
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_neumann_3d
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+output:
+  $ref: output.template.scalar_u_numpy
+  resolution: [32, 20, 20]
+  num_frames: 24
+seed: 42

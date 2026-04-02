@@ -66,6 +66,60 @@ def test_load_config_periodic_field():
     assert cfg.boundary_field("c").side_conditions("y+")[0].type == "periodic"
 
 
+def test_load_config_fisher_kpp_2d():
+    cfg = load_config("configs/biology/fisher_kpp/2d_default.yaml")
+    assert cfg.preset == "fisher_kpp"
+    assert cfg.domain.dimension == 2
+    assert cfg.parameters["D"] == 0.1
+    assert cfg.parameters["r"] == 1.0
+    assert cfg.parameters["K"] == 1.0
+    assert cfg.coefficient("velocity").type == "zero"
+    assert cfg.input("u").initial_condition.type == "step"
+    assert cfg.input("u").initial_condition.params["x_split"] == 2.0
+    assert cfg.boundary_field("u").side_conditions("x-")[0].type == "neumann"
+    assert cfg.output_mode("u") == "scalar"
+    assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
+
+
+def test_load_config_fisher_kpp_3d():
+    cfg = load_config("configs/biology/fisher_kpp/3d_default.yaml")
+    assert cfg.preset == "fisher_kpp"
+    assert cfg.domain.dimension == 3
+    assert cfg.has_periodic_boundary_conditions is False
+    assert cfg.coefficient("velocity").type == "zero"
+    assert cfg.input("u").initial_condition.params["axis"] == 0
+    assert cfg.input("u").initial_condition.params["x_split"] == 1.5
+    assert cfg.boundary_field("u").side_conditions("z+")[0].type == "neumann"
+    assert cfg.output.formats == ["numpy"]
+    assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
+
+
+def test_load_config_bistable_travelling_waves_2d():
+    cfg = load_config("configs/biology/bistable_travelling_waves/2d_default.yaml")
+    assert cfg.preset == "bistable_travelling_waves"
+    assert cfg.domain.dimension == 2
+    assert cfg.parameters["D"] == 1.0
+    assert cfg.parameters["a"] == 0.3
+    assert cfg.coefficient("velocity").type == "zero"
+    assert cfg.input("u").initial_condition.type == "step"
+    assert cfg.input("u").initial_condition.params["value_left"] == 1.0
+    assert cfg.boundary_field("u").side_conditions("y+")[0].type == "neumann"
+    assert cfg.output_mode("u") == "scalar"
+    assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
+
+
+def test_load_config_bistable_travelling_waves_3d():
+    cfg = load_config("configs/biology/bistable_travelling_waves/3d_default.yaml")
+    assert cfg.preset == "bistable_travelling_waves"
+    assert cfg.domain.dimension == 3
+    assert cfg.has_periodic_boundary_conditions is False
+    assert cfg.coefficient("velocity").type == "zero"
+    assert cfg.input("u").initial_condition.params["x_split"] == 2.5
+    assert cfg.boundary_field("u").side_conditions("z-")[0].type == "neumann"
+    assert cfg.output.formats == ["numpy"]
+    assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
+
+
 def test_load_config_missing_field(tmp_path):
     bad_yaml = tmp_path / "bad.yaml"
     bad_yaml.write_text(yaml.dump({"parameters": {"k": 1.0}}))

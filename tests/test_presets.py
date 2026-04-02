@@ -42,11 +42,13 @@ from plm_data.presets.metadata import (
 )
 from tests.preset_matrix import (
     boundary_field_config,
+    make_bistable_travelling_waves_config,
     cahn_hilliard_solver_config,
     constant,
     direct_solver_config,
     make_advection_config,
     make_burgers_config,
+    make_fisher_kpp_config,
     make_gray_scott_config,
     make_mhd_config,
     flow_solver_config,
@@ -158,6 +160,19 @@ class _DummyScalarTransientProblem(TransientLinearProblem):
 
 
 _run_preset = run_preset
+
+
+def _homogeneous_scalar_neumann_boundary_conditions(*, gdim: int):
+    if gdim == 2:
+        sides = ("x-", "x+", "y-", "y+")
+    elif gdim == 3:
+        sides = ("x-", "x+", "y-", "y+", "z-", "z+")
+    else:
+        raise ValueError(f"Scalar boundary helper only supports 2D/3D, got {gdim}D")
+    return {
+        side: BoundaryConditionConfig(type="neumann", value=constant(0.0))
+        for side in sides
+    }
 
 
 def _make_maxwell_pulse_config(tmp_path, *, gdim: int):
@@ -1060,6 +1075,202 @@ def test_gray_scott_accepts_spd_solver_strategy_with_zero_velocity(tmp_path):
     )
 
     get_preset("gray_scott").build_problem(config)
+
+
+def test_fisher_kpp_rejects_linear_solver_strategy(tmp_path):
+    config = make_fisher_kpp_config(
+        tmp_path,
+        gdim=2,
+        velocity=vector_expr(x=constant(1.0), y=constant(0.0)),
+        initial_condition=scalar_expr(
+            "step",
+            value_left=1.0,
+            value_right=0.0,
+            x_split=0.35,
+            axis=0,
+        ),
+        boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(gdim=2),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
+        time=TimeConfig(dt=0.05, t_end=0.05),
+    )
+
+    with pytest.raises(ValueError, match="does not support solver strategy"):
+        get_preset("fisher_kpp").build_problem(config)
+
+
+def test_fisher_kpp_accepts_nonlinear_solver_strategy_with_advection(tmp_path):
+    config = make_fisher_kpp_config(
+        tmp_path,
+        gdim=2,
+        velocity=vector_expr(x=constant(1.0), y=constant(0.0)),
+        initial_condition=scalar_expr(
+            "step",
+            value_left=1.0,
+            value_right=0.0,
+            x_split=0.35,
+            axis=0,
+        ),
+        boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(gdim=2),
+        solver=nonlinear_mixed_direct_solver_config(),
+        time=TimeConfig(dt=0.05, t_end=0.05),
+    )
+
+    get_preset("fisher_kpp").build_problem(config)
+
+
+def test_bistable_travelling_waves_rejects_linear_solver_strategy(tmp_path):
+    config = make_bistable_travelling_waves_config(
+        tmp_path,
+        gdim=2,
+        velocity=vector_expr(x=constant(1.0), y=constant(0.0)),
+        initial_condition=scalar_expr(
+            "step",
+            value_left=1.0,
+            value_right=0.0,
+            x_split=0.35,
+            axis=0,
+        ),
+        boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(gdim=2),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
+        time=TimeConfig(dt=0.05, t_end=0.05),
+    )
+
+    with pytest.raises(ValueError, match="does not support solver strategy"):
+        get_preset("bistable_travelling_waves").build_problem(config)
+
+
+def test_bistable_travelling_waves_accepts_nonlinear_solver_strategy_with_advection(
+    tmp_path,
+):
+    config = make_bistable_travelling_waves_config(
+        tmp_path,
+        gdim=2,
+        velocity=vector_expr(x=constant(1.0), y=constant(0.0)),
+        initial_condition=scalar_expr(
+            "step",
+            value_left=1.0,
+            value_right=0.0,
+            x_split=0.35,
+            axis=0,
+        ),
+        boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(gdim=2),
+        solver=nonlinear_mixed_direct_solver_config(),
+        time=TimeConfig(dt=0.05, t_end=0.05),
+    )
+
+    get_preset("bistable_travelling_waves").build_problem(config)
+
+
+def test_fisher_kpp_front_expands_under_neumann_bc(tmp_path):
+    config = make_fisher_kpp_config(
+        tmp_path,
+        gdim=2,
+        velocity=vector_zero(),
+        initial_condition=scalar_expr(
+            "step",
+            value_left=1.0,
+            value_right=0.0,
+            x_split=0.35,
+            axis=0,
+        ),
+        boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(gdim=2),
+        mesh_resolution=(24, 16),
+        output_resolution=(12, 8),
+        solver=nonlinear_mixed_direct_solver_config(),
+        time=TimeConfig(dt=0.05, t_end=0.5),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 10
+
+    u = np.load(output_dir / "u.npy")
+    assert np.all(np.isfinite(u))
+    assert float(np.mean(u[-1])) > float(np.mean(u[0])) + 1.0e-3
+
+
+def test_bistable_travelling_waves_front_expands_for_subcritical_threshold(tmp_path):
+    config = make_bistable_travelling_waves_config(
+        tmp_path,
+        gdim=2,
+        velocity=vector_zero(),
+        initial_condition=scalar_expr(
+            "step",
+            value_left=1.0,
+            value_right=0.0,
+            x_split=0.35,
+            axis=0,
+        ),
+        boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(gdim=2),
+        mesh_resolution=(24, 16),
+        output_resolution=(12, 8),
+        solver=nonlinear_mixed_direct_solver_config(),
+        time=TimeConfig(dt=0.05, t_end=0.5),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 10
+
+    u = np.load(output_dir / "u.npy")
+    assert np.all(np.isfinite(u))
+    assert float(np.mean(u[-1])) > float(np.mean(u[0])) + 1.0e-3
+
+
+def test_fisher_kpp_3d_run_stays_finite(tmp_path):
+    config = make_fisher_kpp_config(
+        tmp_path,
+        gdim=3,
+        velocity=vector_zero(),
+        initial_condition=scalar_expr(
+            "step",
+            value_left=1.0,
+            value_right=0.0,
+            x_split=0.35,
+            axis=0,
+        ),
+        boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(gdim=3),
+        mesh_resolution=(6, 5, 4),
+        output_resolution=(4, 4, 4),
+        solver=nonlinear_mixed_direct_solver_config(),
+        time=TimeConfig(dt=0.05, t_end=0.05),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 1
+
+    u = np.load(output_dir / "u.npy")
+    assert np.all(np.isfinite(u))
+    assert np.std(u[-1]) > 1.0e-4
+
+
+def test_bistable_travelling_waves_3d_run_stays_finite(tmp_path):
+    config = make_bistable_travelling_waves_config(
+        tmp_path,
+        gdim=3,
+        velocity=vector_zero(),
+        initial_condition=scalar_expr(
+            "step",
+            value_left=1.0,
+            value_right=0.0,
+            x_split=0.35,
+            axis=0,
+        ),
+        boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(gdim=3),
+        mesh_resolution=(6, 5, 4),
+        output_resolution=(4, 4, 4),
+        solver=nonlinear_mixed_direct_solver_config(),
+        time=TimeConfig(dt=0.05, t_end=0.05),
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 1
+
+    u = np.load(output_dir / "u.npy")
+    assert np.all(np.isfinite(u))
+    assert np.std(u[-1]) > 1.0e-4
 
 
 def test_swift_hohenberg_rejects_mixed_boundary_modes(tmp_path):

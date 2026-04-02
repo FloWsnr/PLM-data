@@ -9,7 +9,9 @@ from plm_data.presets.base import PDEPreset
 def test_list_presets():
     presets = list_presets()
     assert "advection" in presets
+    assert "bistable_travelling_waves" in presets
     assert "burgers" in presets
+    assert "fisher_kpp" in presets
     assert "shallow_water" in presets
     assert "heat" in presets
     assert "plate" in presets
