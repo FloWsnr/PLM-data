@@ -1,0 +1,60 @@
+preset: klausmeier_topography
+
+parameters:
+  a: 1.1
+  m: 0.63
+  D: 2.0
+  Dn: 1.0
+  V: 100.0
+
+# VisualPDE-style hillslope: terrain height T = 0.2*x increases with x, so
+# grad(T) = (0.2, 0) and water flows DOWNHILL in the -x direction while
+# vegetation bands migrate uphill (+x).
+coefficients:
+  topography:
+    type: affine
+    params:
+      x: 0.2
+
+domain:
+  type: rectangle
+  size: [100.0, 100.0]
+  mesh_resolution: [128, 128]
+
+time:
+  dt: 0.01
+  t_end: 40.0
+
+# VisualPDE seeds biomass from a nonnegative random field and water from a
+# nearly uniform background. Starting near the old sparse-vegetation saddle
+# drives this discretization into the wrong basin; a denser noisy biomass seed
+# produces the migrating band dynamics instead of rapid collapse to a uniform
+# state.
+inputs:
+  w:
+    initial_condition:
+      type: constant
+      params:
+        value: 1.0
+  n:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean: 1.0
+        std: 0.2
+
+boundary_conditions:
+  w:
+    $ref: boundary_field.scalar.full_periodic_2d
+  n:
+    $ref: boundary_field.scalar.full_periodic_2d
+
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+
+output:
+  $ref: output.template.scalar_wn_topography
+  resolution: [96, 96]
+  num_frames: 200
+
+seed: 42

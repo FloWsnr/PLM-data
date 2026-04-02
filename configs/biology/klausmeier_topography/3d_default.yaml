@@ -1,0 +1,59 @@
+preset: klausmeier_topography
+
+parameters:
+  a: 2.0
+  m: 0.45
+  D: 10.0
+  Dn: 1.0
+  V: 50.0
+
+# Uniform linear hillslope in z: T = 0.1*z increases with z, so
+# grad(T) = (0, 0, 0.1) and water flows DOWNHILL in the -z direction.
+# Effective advection speed: V * |grad(T)| = 50 * 0.1 = 5.
+# Vegetation bands form perpendicular to z and migrate uphill (+z direction).
+# CFL: dt * V * |grad(T)| / h = 0.05 * 5 / 1.25 = 0.2 (stable).
+coefficients:
+  topography:
+    type: affine
+    params:
+      z: 0.1
+
+domain:
+  type: box
+  size: [40.0, 40.0, 40.0]
+  mesh_resolution: [32, 32, 32]
+
+time:
+  dt: 0.05
+  t_end: 200.0
+
+# Initial conditions near the lower steady state (a=2.0, m=0.45 → n*≈0.5, w*≈0.9).
+inputs:
+  w:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean: 1.8
+        std: 0.05
+  n:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean: 0.3
+        std: 0.02
+
+boundary_conditions:
+  w:
+    $ref: boundary_field.scalar.homogeneous_neumann_3d
+  n:
+    $ref: boundary_field.scalar.homogeneous_neumann_3d
+
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+
+output:
+  $ref: output.template.scalar_wn_topography
+  resolution: [20, 20, 20]
+  num_frames: 50
+
+seed: 42

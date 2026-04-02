@@ -1295,6 +1295,57 @@ def test_bistable_travelling_waves_3d_run_stays_finite(tmp_path):
     assert np.std(u[-1]) > 1.0e-4
 
 
+def test_klausmeier_topography_visualpde_regime_maintains_spatial_structure(tmp_path):
+    config = SimulationConfig(
+        preset="klausmeier_topography",
+        parameters={
+            "a": 1.1,
+            "m": 0.63,
+            "D": 2.0,
+            "Dn": 1.0,
+            "V": 100.0,
+        },
+        domain=DomainConfig(
+            type="rectangle",
+            params={"size": [100.0, 100.0], "mesh_resolution": [32, 32]},
+        ),
+        inputs={
+            "w": InputConfig(initial_condition=scalar_expr("constant", value=1.0)),
+            "n": InputConfig(
+                initial_condition=scalar_expr("gaussian_noise", mean=1.0, std=0.2)
+            ),
+        },
+        boundary_conditions={
+            "w": boundary_field_config({}, periodic_axes=(0, 1)),
+            "n": boundary_field_config({}, periodic_axes=(0, 1)),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=[16, 16],
+            num_frames=10,
+            formats=["numpy"],
+            fields=output_fields(w="scalar", n="scalar", topography="scalar"),
+        ),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_NONSYMMETRIC),
+        time=TimeConfig(dt=0.01, t_end=8.0),
+        seed=42,
+        coefficients={"topography": scalar_expr("affine", x=0.2)},
+    )
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 800
+
+    n = np.load(output_dir / "n.npy")
+    w = np.load(output_dir / "w.npy")
+
+    assert np.all(np.isfinite(n))
+    assert np.all(np.isfinite(w))
+    assert float(np.nanstd(n[-1])) > 0.4
+    assert float(np.nanmean(n[-1])) > 0.2
+    assert float(np.nanstd(w[-1])) > 0.05
+
+
 def test_swift_hohenberg_rejects_mixed_boundary_modes(tmp_path):
     config = make_swift_hohenberg_config(
         tmp_path,
