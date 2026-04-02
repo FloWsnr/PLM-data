@@ -19,6 +19,7 @@ from tests.preset_matrix import (
     make_fisher_kpp_config,
     make_fitzhugh_nagumo_config,
     make_gierer_meinhardt_config,
+    make_klausmeier_topography_config,
     make_immunotherapy_config,
     make_cahn_hilliard_config,
     make_cgl_config,
@@ -623,6 +624,38 @@ def _assert_fitzhugh_nagumo_mixed_bc(config, result, output_dir):
     assert np.allclose(arrays["v"][-1, -1, :], 0.0, atol=5e-3)
     assert np.allclose(arrays["v"][-1, :, 0], 0.0, atol=5e-3)
     assert np.allclose(arrays["v"][-1, :, -1], 0.0, atol=5e-3)
+
+
+def _assert_klausmeier_topography_neumann(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("w", "n"):
+        assert_nontrivial(arrays[field_name])
+    assert_nontrivial(arrays["topography"])
+    # Topography is a static field — must be identical across all frames.
+    assert np.allclose(arrays["topography"][0], arrays["topography"][-1], atol=1e-10)
+
+
+def _assert_klausmeier_topography_2d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("w", "n"):
+        assert_nontrivial(arrays[field_name])
+        assert_periodic_axis(arrays[field_name], axis=0, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=1, frame=0)
+        assert_periodic_axis(arrays[field_name], axis=0)
+        assert_periodic_axis(arrays[field_name], axis=1)
+    assert_nontrivial(arrays["topography"])
+    assert np.allclose(arrays["topography"][0], arrays["topography"][-1], atol=1e-10)
+
+
+def _assert_klausmeier_topography_3d(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    for field_name in ("w", "n"):
+        assert_nontrivial(arrays[field_name])
+    assert_nontrivial(arrays["topography"])
+    assert np.allclose(arrays["topography"][0], arrays["topography"][-1], atol=1e-10)
 
 
 def _assert_gierer_meinhardt_2d(config, result, output_dir):
@@ -2334,6 +2367,81 @@ SUCCESS_CASES = (
             initial_condition=vector_zero(),
         ),
         assert_result=_assert_maxwell_pulse_case,
+    ),
+    # --- klausmeier_topography ---
+    RuntimePresetCase(
+        name="klausmeier_topography_2d_neumann",
+        make_config=lambda tmp_path: make_klausmeier_topography_config(
+            tmp_path,
+            gdim=2,
+            topography=scalar_expr(
+                "gaussian_bump",
+                amplitude=2.0,
+                sigma=0.3,
+                center=[0.25, 0.75],
+            ),
+            w_initial_condition=scalar_expr("gaussian_noise", mean=2.0, std=0.1),
+            n_initial_condition=scalar_expr("gaussian_noise", mean=1.0, std=0.1),
+            w_boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(
+                gdim=2
+            ),
+            n_boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(
+                gdim=2
+            ),
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_klausmeier_topography_neumann,
+    ),
+    RuntimePresetCase(
+        name="klausmeier_topography_2d_periodic_xy",
+        make_config=lambda tmp_path: make_klausmeier_topography_config(
+            tmp_path,
+            gdim=2,
+            topography=scalar_expr(
+                "gaussian_bump",
+                amplitude=2.0,
+                sigma=0.3,
+                center=[0.25, 0.75],
+            ),
+            w_initial_condition=scalar_expr("gaussian_noise", mean=2.0, std=0.1),
+            n_initial_condition=scalar_expr("gaussian_noise", mean=1.0, std=0.1),
+            w_boundary_conditions={},
+            n_boundary_conditions={},
+            w_periodic_axes=(0, 1),
+            n_periodic_axes=(0, 1),
+            mesh_resolution=(8, 8),
+            output_resolution=(4, 4),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_klausmeier_topography_2d,
+        skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="klausmeier_topography_3d_neumann",
+        make_config=lambda tmp_path: make_klausmeier_topography_config(
+            tmp_path,
+            gdim=3,
+            topography=scalar_expr(
+                "gaussian_bump",
+                amplitude=2.0,
+                sigma=0.2,
+                center=[0.25, 0.75, 0.5],
+            ),
+            w_initial_condition=scalar_expr("gaussian_noise", mean=2.0, std=0.1),
+            n_initial_condition=scalar_expr("gaussian_noise", mean=1.0, std=0.1),
+            w_boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(
+                gdim=3
+            ),
+            n_boundary_conditions=_homogeneous_scalar_neumann_boundary_conditions(
+                gdim=3
+            ),
+            mesh_resolution=(5, 5, 5),
+            output_resolution=(3, 3, 3),
+            time=TimeConfig(dt=0.01, t_end=0.01),
+        ),
+        assert_result=_assert_klausmeier_topography_3d,
     ),
 )
 

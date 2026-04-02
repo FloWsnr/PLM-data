@@ -1555,6 +1555,77 @@ def make_fitzhugh_nagumo_config(
     )
 
 
+def make_klausmeier_topography_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    topography: FieldExpressionConfig,
+    w_initial_condition: FieldExpressionConfig,
+    n_initial_condition: FieldExpressionConfig,
+    w_boundary_conditions: dict[str, BoundaryConditionConfig],
+    n_boundary_conditions: dict[str, BoundaryConditionConfig],
+    w_periodic_axes: tuple[int, ...] = (),
+    n_periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+    parameters: dict[str, float] | None = None,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(
+            f"Klausmeier topography test helper only supports 2D/3D, got {gdim}D"
+        )
+
+    if parameters is None:
+        parameters = {
+            "a": 2.0,
+            "m": 0.45,
+            "D": 10.0,
+            "Dn": 1.0,
+            "V": 50.0,
+        }
+
+    return SimulationConfig(
+        preset="klausmeier_topography",
+        parameters=parameters,
+        domain=domain,
+        inputs={
+            "w": InputConfig(initial_condition=w_initial_condition),
+            "n": InputConfig(initial_condition=n_initial_condition),
+        },
+        boundary_conditions={
+            "w": boundary_field_config(
+                w_boundary_conditions,
+                periodic_axes=w_periodic_axes,
+            ),
+            "n": boundary_field_config(
+                n_boundary_conditions,
+                periodic_axes=n_periodic_axes,
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=output_fields(w="scalar", n="scalar", topography="scalar"),
+        ),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
+        time=time,
+        seed=seed,
+        coefficients={"topography": topography},
+    )
+
+
 def make_superlattice_config(
     tmp_path: Path,
     *,
