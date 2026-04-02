@@ -163,7 +163,6 @@ class _GrayScottProblem(TransientLinearProblem):
         F = self.config.parameters["F"]
         k = self.config.parameters["k"]
         dt_c = fem.Constant(self.msh, default_real_type(dt))
-        zero = fem.Constant(self.msh, default_real_type(0.0))
         velocity = build_vector_ufl_field(
             self.msh,
             self.config.coefficient("velocity"),
@@ -173,6 +172,10 @@ class _GrayScottProblem(TransientLinearProblem):
             raise ValueError(
                 "Gray-Scott coefficient 'velocity' cannot use a custom expression"
             )
+        has_advection = not is_exact_zero_field_expression(
+            self.config.coefficient("velocity"),
+            self.config.parameters,
+        )
 
         u_bcs = apply_dirichlet_bcs(
             V,
@@ -234,7 +237,6 @@ class _GrayScottProblem(TransientLinearProblem):
 
         a_u = (
             ufl.inner(u_trial, u_test) * ufl.dx
-            + dt_c * ufl.inner(velocity, ufl.grad(u_trial)) * u_test * ufl.dx
             + dt_c * Du * ufl.inner(ufl.grad(u_trial), ufl.grad(u_test)) * ufl.dx
             + dt_c * F * ufl.inner(u_trial, u_test) * ufl.dx
         )
@@ -242,6 +244,9 @@ class _GrayScottProblem(TransientLinearProblem):
             ufl.inner(self.u_n, u_test) * ufl.dx
             + dt_c * ufl.inner(F - cubic_reaction, u_test) * ufl.dx
         )
+
+        if has_advection:
+            a_u = a_u + dt_c * ufl.inner(velocity, ufl.grad(u_trial)) * u_test * ufl.dx
 
         a_v = (
             ufl.inner(v_trial, v_test) * ufl.dx
@@ -253,24 +258,26 @@ class _GrayScottProblem(TransientLinearProblem):
             + dt_c * ufl.inner(cubic_reaction, v_test) * ufl.dx
         )
 
-        h = ufl.CellDiameter(self.msh)
-        velocity_norm = ufl.sqrt(ufl.inner(velocity, velocity))
-        stabilized_diffusivity = ufl.max_value(ufl.as_ufl(Du), zero)
-        tau = 1.0 / ufl.sqrt(
-            (2.0 / dt_c) ** 2
-            + (2.0 * velocity_norm / h) ** 2
-            + (4.0 * stabilized_diffusivity / (h**2)) ** 2
-        )
-        streamline_test = ufl.inner(velocity, ufl.grad(u_test))
-        lhs_residual = (
-            u_trial / dt_c
-            + ufl.inner(velocity, ufl.grad(u_trial))
-            - ufl.div(Du * ufl.grad(u_trial))
-            + F * u_trial
-        )
-        rhs_residual = self.u_n / dt_c + F - cubic_reaction
-        a_u = a_u + dt_c * tau * lhs_residual * streamline_test * ufl.dx
-        L_u = L_u + dt_c * tau * rhs_residual * streamline_test * ufl.dx
+        if has_advection:
+            h = ufl.CellDiameter(self.msh)
+            velocity_norm = ufl.sqrt(ufl.inner(velocity, velocity))
+            zero = fem.Constant(self.msh, default_real_type(0.0))
+            stabilized_diffusivity = ufl.max_value(ufl.as_ufl(Du), zero)
+            tau = 1.0 / ufl.sqrt(
+                (2.0 / dt_c) ** 2
+                + (2.0 * velocity_norm / h) ** 2
+                + (4.0 * stabilized_diffusivity / (h**2)) ** 2
+            )
+            streamline_test = ufl.inner(velocity, ufl.grad(u_test))
+            lhs_residual = (
+                u_trial / dt_c
+                + ufl.inner(velocity, ufl.grad(u_trial))
+                - ufl.div(Du * ufl.grad(u_trial))
+                + F * u_trial
+            )
+            rhs_residual = self.u_n / dt_c + F - cubic_reaction
+            a_u = a_u + dt_c * tau * lhs_residual * streamline_test * ufl.dx
+            L_u = L_u + dt_c * tau * rhs_residual * streamline_test * ufl.dx
 
         a_u_bc, L_u_bc = build_natural_bc_forms(
             u_trial,

@@ -366,3 +366,73 @@ def _create_box(domain: DomainConfig) -> DomainGeometry:
         ds=ds,
         periodic_maps=periodic_maps,
     )
+
+
+@register_domain("annulus")
+def _create_annulus(domain: DomainConfig) -> DomainGeometry:
+    import gmsh
+    from dolfinx.io.gmsh import model_to_mesh
+
+    p = domain.params
+    inner_radius = float(_require_param(p, "inner_radius", domain.type))
+    outer_radius = float(_require_param(p, "outer_radius", domain.type))
+    mesh_size = float(_require_param(p, "mesh_size", domain.type))
+
+    comm = MPI.COMM_WORLD
+    gmsh.initialize()
+    try:
+        gmsh.option.setNumber("General.Terminal", 0)
+        model = gmsh.model
+        model.add("annulus")
+        model.setCurrent("annulus")
+
+        if comm.rank == 0:
+            outer_disk = model.occ.addDisk(0.0, 0.0, 0.0, outer_radius, outer_radius)
+            inner_disk = model.occ.addDisk(0.0, 0.0, 0.0, inner_radius, inner_radius)
+            model.occ.cut([(2, outer_disk)], [(2, inner_disk)])
+            model.occ.synchronize()
+
+            surfaces = [e[1] for e in model.getEntities(2)]
+            model.addPhysicalGroup(2, surfaces, tag=1)
+            model.setPhysicalName(2, 1, "surface")
+
+            boundary = model.getBoundary([(2, s) for s in surfaces], oriented=False)
+            r_mid = inner_radius + outer_radius
+            inner_curves: list[int] = []
+            outer_curves: list[int] = []
+            for dim, tag in boundary:
+                bb = model.occ.getBoundingBox(dim, tag)
+                extent = max(bb[3] - bb[0], bb[4] - bb[1])
+                if extent < r_mid:
+                    inner_curves.append(tag)
+                else:
+                    outer_curves.append(tag)
+
+            model.addPhysicalGroup(1, inner_curves, tag=1)
+            model.setPhysicalName(1, 1, "inner")
+            model.addPhysicalGroup(1, outer_curves, tag=2)
+            model.setPhysicalName(1, 2, "outer")
+
+            model.mesh.setSize(model.getEntities(0), mesh_size)
+            model.mesh.generate(2)
+
+        mesh_data = model_to_mesh(model, comm, rank=0, gdim=2)
+    finally:
+        gmsh.finalize()
+
+    msh = mesh_data.mesh
+    boundary_names: dict[str, int] = {}
+    for name, pg in mesh_data.physical_groups.items():
+        if pg.dim == 1:
+            boundary_names[name] = pg.tag
+
+    ft = mesh_data.facet_tags
+    assert ft is not None, "Gmsh model produced no facet tags for the annulus."
+    ds = ufl.Measure("ds", domain=msh, subdomain_data=ft)
+
+    return DomainGeometry(
+        mesh=msh,
+        facet_tags=ft,
+        boundary_names=boundary_names,
+        ds=ds,
+    )

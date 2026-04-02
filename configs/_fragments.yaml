@@ -213,6 +213,13 @@ boundary_field:
         - operator: simply_supported
       z+:
         - operator: simply_supported
+    homogeneous_neumann_annulus:
+      inner:
+        - operator: neumann
+          value: 0.0
+      outer:
+        - operator: neumann
+          value: 0.0
     full_periodic_2d:
       x-:
         - operator: periodic

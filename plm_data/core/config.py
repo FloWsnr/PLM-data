@@ -370,6 +370,7 @@ def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
         "interval": 1,
         "rectangle": 2,
         "box": 3,
+        "annulus": 2,
     }
     if domain_type in builtin_dims:
         return builtin_dims[domain_type]

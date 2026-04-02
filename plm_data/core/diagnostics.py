@@ -73,7 +73,7 @@ def build_stagnation_report(
 
         relative_changes: list[float] = []
         for i in range(num_frames - 1):
-            abs_diff = float(np.max(np.abs(frames[i + 1] - frames[i])))
+            abs_diff = float(np.nanmax(np.abs(frames[i + 1] - frames[i])))
             relative_changes.append(abs_diff / field_scale)
 
         trailing_stagnant = 0
@@ -120,8 +120,8 @@ def _field_scale(frames: Sequence[np.ndarray]) -> float:
     """Return the normalization scale for one field trajectory."""
 
     if any(np.iscomplexobj(frame) for frame in frames):
-        return max(float(np.max(np.abs(frame))) for frame in frames)
+        return max(float(np.nanmax(np.abs(frame))) for frame in frames)
 
-    global_min = min(float(np.min(frame)) for frame in frames)
-    global_max = max(float(np.max(frame)) for frame in frames)
+    global_min = min(float(np.nanmin(frame)) for frame in frames)
+    global_max = max(float(np.nanmax(frame)) for frame in frames)
     return global_max - global_min

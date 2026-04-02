@@ -32,7 +32,7 @@ def render_animation(
         data = np.abs(data)
 
     ndim = data.ndim - 1  # spatial dimensions (exclude frame axis)
-    vmin, vmax = float(data.min()), float(data.max())
+    vmin, vmax = float(np.nanmin(data)), float(np.nanmax(data))
 
     if ndim == 2:
         fig, ax = plt.subplots(figsize=(6, 5))

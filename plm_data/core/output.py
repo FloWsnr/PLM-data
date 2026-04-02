@@ -66,6 +66,7 @@ class FrameWriter:
         self._timings = OutputTimingStats()
 
         self._interp_cache: InterpolationCache | None = None
+        self._mask_dispatched = False
         self._vector_vis_cache: dict[str, fem.Function] = {}
 
         output_modes = {
@@ -192,6 +193,18 @@ class FrameWriter:
             writer.on_frame_field(name, arr, t)
         self._timings.grid_dispatch_seconds += time.perf_counter() - dispatch_start
 
+    def _maybe_dispatch_domain_mask(self) -> None:
+        """Save a domain validity mask once after the first interpolation."""
+        if self._mask_dispatched or self._interp_cache is None:
+            return
+        self._mask_dispatched = True
+        if self._interp_cache.outside_mask is None:
+            return
+        mask = ~self._interp_cache.outside_mask.reshape(self._resolution)
+        for writer in self._grid_writers:
+            if isinstance(writer, NumpyWriter):
+                writer.save_mask(mask)
+
     def _needs_grid_sampling(self) -> bool:
         """Return whether this run needs grid interpolation work."""
         return bool(self._grid_writers or self._checked_diagnostic_fields)
@@ -315,6 +328,9 @@ class FrameWriter:
                         self._dispatch_grid_field(
                             concrete_output.name, component_grid, t
                         )
+
+            if self._rank == 0:
+                self._maybe_dispatch_domain_mask()
 
         self.frame_times.append(t)
         self.frame_count += 1

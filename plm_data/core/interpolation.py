@@ -29,11 +29,12 @@ class InterpolationCache:
     """
 
     points: np.ndarray  # (N_local, 3) evaluation points owned by this rank
-    cells: np.ndarray  # (N_local,) local owning cell index per point
+    cells: np.ndarray  # (N_local,) local owning cell index per point (-1 = outside)
     resolution: tuple[int, ...]
     gdim: int
     total_points: int
     root_point_indices: tuple[np.ndarray, ...] | None = None
+    outside_mask: np.ndarray | None = None  # (total_points,) True for out-of-domain
 
 
 def _global_bounds(src_mesh: dmesh.Mesh) -> tuple[tuple[float, float], ...]:
@@ -106,12 +107,8 @@ def _create_serial_cache(
         links = colliding.links(i)
         cells[i] = links[0] if links.size > 0 else -1
 
-    missing = int((cells < 0).sum())
-    if missing > 0:
-        raise RuntimeError(
-            f"{missing}/{points.shape[0]} grid points found no owning cell. "
-            "Check domain bounds vs mesh geometry."
-        )
+    outside = cells < 0
+    outside_mask = np.asarray(outside) if outside.any() else None
 
     return InterpolationCache(
         points=points,
@@ -120,6 +117,7 @@ def _create_serial_cache(
         gdim=gdim,
         total_points=points.shape[0],
         root_point_indices=(np.arange(points.shape[0], dtype=np.int32),),
+        outside_mask=outside_mask,
     )
 
 
@@ -141,18 +139,17 @@ def _create_parallel_cache(
     )
 
     root_point_indices: tuple[np.ndarray, ...] | None = None
+    outside_mask_local: np.ndarray | None = None
     if rank == 0:
         src_owner = np.asarray(ownership.src_owner, dtype=np.int32)
-        missing = int((src_owner < 0).sum())
-        if missing > 0:
-            raise RuntimeError(
-                f"{missing}/{points.shape[0]} grid points found no owning cell. "
-                "Check domain bounds vs mesh geometry."
-            )
+        outside = src_owner < 0
+        outside_mask_local = np.asarray(outside) if outside.any() else None
         root_point_indices = tuple(
             np.flatnonzero(src_owner == owner).astype(np.int32)
             for owner in range(comm.size)
         )
+
+    outside_mask_local = comm.bcast(outside_mask_local, root=0)
 
     return InterpolationCache(
         points=np.asarray(ownership.dest_points, dtype=points.dtype).copy(),
@@ -161,6 +158,7 @@ def _create_parallel_cache(
         gdim=gdim,
         total_points=points.shape[0],
         root_point_indices=root_point_indices,
+        outside_mask=outside_mask_local,
     )
 
 
@@ -183,8 +181,16 @@ def _evaluate_points(
     if points.shape[0] == 0:
         return np.empty((0, value_size), dtype=func.dtype)
 
-    values = np.asarray(func.eval(points, cells))
-    return values.reshape(points.shape[0], value_size)
+    valid = cells >= 0
+    if valid.all():
+        values = np.asarray(func.eval(points, cells))
+        return values.reshape(points.shape[0], value_size)
+
+    result = np.full((points.shape[0], value_size), np.nan, dtype=np.float64)
+    if valid.any():
+        valid_values = np.asarray(func.eval(points[valid], cells[valid]))
+        result[valid] = valid_values.reshape(int(valid.sum()), value_size)
+    return result
 
 
 def _gather_parallel_values(
@@ -200,8 +206,8 @@ def _gather_parallel_values(
                 "Parallel interpolation cache missing root point indices."
             )
         value_size = local_values.shape[1]
-        root_values = np.empty(
-            (cache.total_points, value_size), dtype=local_values.dtype
+        root_values = np.full(
+            (cache.total_points, value_size), np.nan, dtype=local_values.dtype
         )
         for owner, owner_values in enumerate(gathered):
             point_indices = cache.root_point_indices[owner]
@@ -264,12 +270,6 @@ def function_to_grid(
         values = _gather_parallel_values(src_mesh.comm, cache, values)
     result = _reshape_grid_values(values, cache.resolution)
 
-    nan_count = int(np.isnan(result).sum())
-    if nan_count > 0:
-        raise RuntimeError(
-            f"Interpolation produced {nan_count}/{result.size} NaN values. "
-            "This may indicate solver divergence or points outside the mesh."
-        )
     return result, cache
 
 

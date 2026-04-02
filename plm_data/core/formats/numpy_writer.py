@@ -20,6 +20,11 @@ class NumpyWriter:
         """Accumulate one interpolated field array."""
         self._field_frames.setdefault(name, []).append(arr)
 
+    def save_mask(self, mask: np.ndarray) -> None:
+        """Save a domain validity mask (True = inside) alongside field arrays."""
+        np.save(self._output_dir / "domain_mask.npy", mask)
+        self._logger.info("  Saved domain_mask.npy to %s", self._output_dir)
+
     def finalize(self) -> None:
         """Stack all frames per field and save as .npy files."""
         for name, frames in self._field_frames.items():

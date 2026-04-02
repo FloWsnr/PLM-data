@@ -18,7 +18,9 @@ ALL_CONFIGS = sorted(
     path for path in CONFIGS_DIR.rglob("*.yaml") if not path.name.startswith("_")
 )
 HAS_DOLFINX_MPC = importlib.util.find_spec("dolfinx_mpc") is not None
+HAS_GMSH = importlib.util.find_spec("gmsh") is not None
 SMOKE_MESH_RESOLUTION_CAP = 4
+GMSH_DOMAIN_TYPES = {"annulus"}
 
 
 def _prepare_smoke_run_config(cfg, output_path: Path) -> None:
@@ -35,6 +37,10 @@ def _prepare_smoke_run_config(cfg, output_path: Path) -> None:
             min(int(value), SMOKE_MESH_RESOLUTION_CAP) for value in mesh_resolution
         ]
 
+    mesh_size = cfg.domain.params.get("mesh_size")
+    if mesh_size is not None:
+        cfg.domain.params["mesh_size"] = max(float(mesh_size), 0.3)
+
     if cfg.time is not None:
         cfg.time.t_end = cfg.time.dt  # single timestep
 
@@ -48,6 +54,8 @@ def test_config_runs(config_path, tmp_path):
     cfg = load_config(config_path)
     if cfg.has_periodic_boundary_conditions and not HAS_DOLFINX_MPC:
         pytest.skip("periodic configs require dolfinx_mpc")
+    if cfg.domain.type in GMSH_DOMAIN_TYPES and not HAS_GMSH:
+        pytest.skip("gmsh domain requires python-gmsh")
 
     # This is a parser/build/solve smoke sweep, not a fidelity benchmark.
     _prepare_smoke_run_config(cfg, tmp_path)
