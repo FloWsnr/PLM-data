@@ -13,7 +13,7 @@ def cmd_run(args):
     runner.run(console_level=level)
 
 
-def cmd_list(args):
+def cmd_list(_args):
     from plm_data.presets import list_presets
 
     presets = list_presets()
@@ -22,7 +22,7 @@ def cmd_list(args):
         return
 
     by_category: dict[str, list] = {}
-    for name, cls in sorted(presets.items()):
+    for _, cls in sorted(presets.items()):
         spec = cls().spec
         by_category.setdefault(spec.category, []).append(spec)
 

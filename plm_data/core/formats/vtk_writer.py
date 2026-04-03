@@ -1,5 +1,6 @@
 """VTK/Paraview output format using pyvista."""
 
+import importlib
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -30,7 +31,7 @@ class VTKWriter:
     """Writes FEM fields to .vtu files with a .pvd collection for Paraview."""
 
     def __init__(self, output_dir: Path):
-        import pyvista  # noqa: F401 — fail fast if not installed
+        importlib.import_module("pyvista")
 
         self._paraview_dir = output_dir / "paraview"
         self._logger = get_logger("output.vtk")
@@ -39,7 +40,7 @@ class VTKWriter:
 
     def on_frame(self, fields: dict[str, fem.Function], t: float) -> None:
         """Write one frame of base fields to .vtu files."""
-        import pyvista
+        pyvista = importlib.import_module("pyvista")
 
         self._paraview_dir.mkdir(parents=True, exist_ok=True)
 

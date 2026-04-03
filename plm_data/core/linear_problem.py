@@ -104,7 +104,11 @@ class ManagedLinearProblem:
         if self._after_lhs_assembled is not None:
             self._after_lhs_assembled(self)
 
-        if self._reuse_preconditioner and self._preconditioner_ready and not self._pc_reuse_set:
+        if (
+            self._reuse_preconditioner
+            and self._preconditioner_ready
+            and not self._pc_reuse_set
+        ):
             self.solver.getPC().setReusePreconditioner(True)
             self._pc_reuse_set = True
 

@@ -1,5 +1,6 @@
 """MP4 video output format."""
 
+import importlib
 import shutil
 from pathlib import Path
 
@@ -15,7 +16,7 @@ class VideoWriter:
 
     def __init__(self, output_dir: Path):
         try:
-            import matplotlib  # noqa: F401
+            importlib.import_module("matplotlib")
         except ImportError:
             raise ImportError(
                 "Video output format requires matplotlib: pip install matplotlib"

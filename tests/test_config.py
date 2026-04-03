@@ -102,7 +102,9 @@ def test_load_config_fisher_kpp_3d():
 
 
 def test_load_config_bistable_travelling_waves_2d():
-    cfg = load_config("configs/biology/bistable_travelling_waves/2d_planar_invasion_front.yaml")
+    cfg = load_config(
+        "configs/biology/bistable_travelling_waves/2d_planar_invasion_front.yaml"
+    )
     assert cfg.preset == "bistable_travelling_waves"
     assert cfg.domain.dimension == 2
     assert cfg.parameters["D"] == 1.0
@@ -116,7 +118,9 @@ def test_load_config_bistable_travelling_waves_2d():
 
 
 def test_load_config_bistable_travelling_waves_3d():
-    cfg = load_config("configs/biology/bistable_travelling_waves/3d_planar_invasion_front.yaml")
+    cfg = load_config(
+        "configs/biology/bistable_travelling_waves/3d_planar_invasion_front.yaml"
+    )
     assert cfg.preset == "bistable_travelling_waves"
     assert cfg.domain.dimension == 3
     assert cfg.has_periodic_boundary_conditions is False
@@ -136,7 +140,9 @@ def test_load_config_missing_field(tmp_path):
 
 def test_load_config_rejects_invalid_annulus_geometry(tmp_path):
     data = yaml.safe_load(
-        Path("configs/physics/gray_scott/2d_annular_spot_stripe_patterns.yaml").read_text()
+        Path(
+            "configs/physics/gray_scott/2d_annular_spot_stripe_patterns.yaml"
+        ).read_text()
     )
     data["domain"]["inner_radius"] = 1.25
     data["domain"]["outer_radius"] = 1.0
@@ -196,7 +202,9 @@ def test_load_config_thermal_convection_2d():
 
 
 def test_load_config_thermal_convection_3d():
-    cfg = load_config("configs/fluids/thermal_convection/3d_rayleigh_benard_plumes.yaml")
+    cfg = load_config(
+        "configs/fluids/thermal_convection/3d_rayleigh_benard_plumes.yaml"
+    )
     assert cfg.preset == "thermal_convection"
     assert cfg.domain.dimension == 3
     assert cfg.has_periodic_boundary_conditions is True
@@ -210,7 +218,9 @@ def test_load_config_thermal_convection_3d():
 
 
 def test_load_config_gray_scott_2d():
-    cfg = load_config("configs/physics/gray_scott/2d_drifting_spot_stripe_patterns.yaml")
+    cfg = load_config(
+        "configs/physics/gray_scott/2d_drifting_spot_stripe_patterns.yaml"
+    )
     assert cfg.preset == "gray_scott"
     assert cfg.domain.dimension == 2
     assert cfg.has_periodic_boundary_conditions is True
@@ -361,7 +371,9 @@ def test_load_config_cyclic_competition_2d():
 
 
 def test_load_config_shallow_water():
-    cfg = load_config("configs/fluids/shallow_water/2d_rotating_gravity_wave_pulse.yaml")
+    cfg = load_config(
+        "configs/fluids/shallow_water/2d_rotating_gravity_wave_pulse.yaml"
+    )
     assert cfg.preset == "shallow_water"
     assert cfg.domain.dimension == 2
     assert cfg.parameters["gravity"] == 1.0

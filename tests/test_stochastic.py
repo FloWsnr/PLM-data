@@ -136,7 +136,9 @@ def test_load_config_parses_stochastic_state_and_coefficient_sections(tmp_path):
 
 
 def test_load_config_rejects_missing_saturating_offset(tmp_path):
-    data = _load_config_dict("configs/physics/gray_scott/2d_drifting_spot_stripe_patterns.yaml")
+    data = _load_config_dict(
+        "configs/physics/gray_scott/2d_drifting_spot_stripe_patterns.yaml"
+    )
     data["stochastic"] = {
         "states": {"u": {"coupling": "saturating_self", "intensity": 0.05}}
     }
@@ -147,7 +149,9 @@ def test_load_config_rejects_missing_saturating_offset(tmp_path):
 
 
 def test_load_config_rejects_vector_coefficient_randomization(tmp_path):
-    data = _load_config_dict("configs/physics/gray_scott/2d_drifting_spot_stripe_patterns.yaml")
+    data = _load_config_dict(
+        "configs/physics/gray_scott/2d_drifting_spot_stripe_patterns.yaml"
+    )
     data["stochastic"] = {
         "coefficients": {"velocity": {"mode": "additive", "std": 0.1}}
     }

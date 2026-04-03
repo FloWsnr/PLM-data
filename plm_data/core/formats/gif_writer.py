@@ -1,5 +1,6 @@
 """GIF animation output format."""
 
+import importlib
 from pathlib import Path
 
 import numpy as np
@@ -14,7 +15,7 @@ class GifWriter:
 
     def __init__(self, output_dir: Path):
         try:
-            import matplotlib  # noqa: F401
+            importlib.import_module("matplotlib")
         except ImportError:
             raise ImportError(
                 "GIF output format requires matplotlib: pip install matplotlib"
