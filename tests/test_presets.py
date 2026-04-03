@@ -45,6 +45,7 @@ from tests.preset_matrix import (
     make_bistable_travelling_waves_config,
     cahn_hilliard_solver_config,
     constant,
+    make_compressible_navier_stokes_config,
     direct_solver_config,
     make_advection_config,
     make_burgers_config,
@@ -583,6 +584,123 @@ def _make_thermal_convection_config(tmp_path, *, gdim: int):
         solver=flow_solver_config(TRANSIENT_MIXED_DIRECT),
         time=TimeConfig(dt=0.05, t_end=0.05),
         seed=42,
+    )
+
+
+def _make_compressible_ns_runtime_config(
+    tmp_path,
+    *,
+    gdim: int,
+    periodic: bool = False,
+):
+    if gdim == 2:
+        density_bc = (
+            {}
+            if periodic
+            else {
+                "x-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "y-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "y+": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+            }
+        )
+        velocity_bc = (
+            {}
+            if periodic
+            else {
+                "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+                "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+                "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            }
+        )
+        temperature_bc = (
+            {}
+            if periodic
+            else {
+                "x-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "y-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "y+": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+            }
+        )
+        periodic_axes = (0, 1) if periodic else ()
+        mesh_resolution = (8, 8)
+        output_resolution = (6, 6)
+        temperature_center = [0.35, 0.5]
+        time = TimeConfig(dt=0.02, t_end=0.04)
+    else:
+        density_bc = (
+            {}
+            if periodic
+            else {
+                "x-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "y-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "y+": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "z-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "z+": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+            }
+        )
+        velocity_bc = (
+            {}
+            if periodic
+            else {
+                "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+                "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+                "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+                "z-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+                "z+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            }
+        )
+        temperature_bc = (
+            {}
+            if periodic
+            else {
+                "x-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "y-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "y+": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "z-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+                "z+": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+            }
+        )
+        periodic_axes = (0, 1, 2) if periodic else ()
+        mesh_resolution = (4, 4, 4)
+        output_resolution = (4, 4, 4)
+        temperature_center = [0.35, 0.5, 0.5]
+        time = TimeConfig(dt=0.02, t_end=0.02)
+
+    return make_compressible_navier_stokes_config(
+        tmp_path,
+        gdim=gdim,
+        parameters={
+            "gas_constant": 1.0,
+            "c_v": 1.5,
+            "mu": 0.03,
+            "bulk_viscosity": 0.015,
+            "thermal_conductivity": 0.04,
+            "k": 1.0,
+        },
+        density_boundary_conditions=density_bc,
+        velocity_boundary_conditions=velocity_bc,
+        temperature_boundary_conditions=temperature_bc,
+        density_source=scalar_expr("none"),
+        density_initial_condition=constant(1.0),
+        velocity_source=vector_zero(),
+        velocity_initial_condition=vector_zero(),
+        temperature_source=scalar_expr(
+            "gaussian_bump",
+            amplitude=2.5,
+            sigma=0.12,
+            center=temperature_center,
+        ),
+        temperature_initial_condition=constant(1.0),
+        periodic_axes=periodic_axes,
+        mesh_resolution=mesh_resolution,
+        output_resolution=output_resolution,
+        time=time,
     )
 
 
@@ -2156,6 +2274,57 @@ def test_thermal_convection_requires_standard_boundary_names(tmp_path):
 
     with pytest.raises(ValueError, match="requires standard boundary names"):
         problem.validate_boundary_conditions(domain_geom)
+
+
+def test_compressible_navier_stokes_rejects_mismatched_periodic_fields(tmp_path):
+    config = _make_compressible_ns_runtime_config(tmp_path, gdim=2, periodic=True)
+    config.boundary_conditions["temperature"] = boundary_field_config(
+        {
+            "x-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+            "x+": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+            "y-": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=constant(1.0)),
+        }
+    )
+
+    preset = get_preset(config.preset)
+    problem = preset.build_problem(config)
+    with pytest.raises(ValueError, match="identical periodic side pairs"):
+        problem.load_domain_geometry()
+
+
+def test_compressible_navier_stokes_nonperiodic_run_stays_finite_and_positive(tmp_path):
+    config = _make_compressible_ns_runtime_config(tmp_path, gdim=2, periodic=False)
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 2
+
+    density = np.load(output_dir / "density.npy")
+    velocity_x = np.load(output_dir / "velocity_x.npy")
+    velocity_y = np.load(output_dir / "velocity_y.npy")
+    temperature = np.load(output_dir / "temperature.npy")
+    pressure = np.load(output_dir / "pressure.npy")
+
+    assert np.all(np.isfinite(density))
+    assert np.all(np.isfinite(velocity_x))
+    assert np.all(np.isfinite(velocity_y))
+    assert np.all(np.isfinite(temperature))
+    assert np.all(np.isfinite(pressure))
+    assert np.min(density) > 0.0
+    assert np.min(temperature) > 0.0
+    assert np.min(pressure) > 0.0
+    assert np.std(temperature[-1]) > 1.0e-4
+    assert np.linalg.norm(pressure[-1] - pressure[0]) > 1.0e-4
+    assert np.linalg.norm(velocity_x[-1]) > 1.0e-5
+
+
+def test_compressible_navier_stokes_3d_accepts_standard_boundary_fields(tmp_path):
+    config = _make_compressible_ns_runtime_config(tmp_path, gdim=3, periodic=False)
+
+    preset = get_preset(config.preset)
+    problem = preset.build_problem(config)
+    problem.load_domain_geometry()
 
 
 def test_mhd_accepts_standard_vector_boundary_fields(tmp_path):

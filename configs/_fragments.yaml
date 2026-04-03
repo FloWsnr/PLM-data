@@ -253,6 +253,38 @@ boundary_field:
         - operator: periodic
           pair_with: z-
   vector:
+    homogeneous_dirichlet_2d:
+      x-:
+        - operator: dirichlet
+          value: [0.0, 0.0]
+      x+:
+        - operator: dirichlet
+          value: [0.0, 0.0]
+      y-:
+        - operator: dirichlet
+          value: [0.0, 0.0]
+      y+:
+        - operator: dirichlet
+          value: [0.0, 0.0]
+    homogeneous_dirichlet_3d:
+      x-:
+        - operator: dirichlet
+          value: [0.0, 0.0, 0.0]
+      x+:
+        - operator: dirichlet
+          value: [0.0, 0.0, 0.0]
+      y-:
+        - operator: dirichlet
+          value: [0.0, 0.0, 0.0]
+      y+:
+        - operator: dirichlet
+          value: [0.0, 0.0, 0.0]
+      z-:
+        - operator: dirichlet
+          value: [0.0, 0.0, 0.0]
+      z+:
+        - operator: dirichlet
+          value: [0.0, 0.0, 0.0]
     full_periodic_2d:
       x-:
         - operator: periodic
@@ -461,6 +493,30 @@ output:
       formats:
         $ref: output.formats.numpy
       fields:
+        velocity:
+          $ref: output.mode.components
+        pressure:
+          $ref: output.mode.scalar
+        temperature:
+          $ref: output.mode.scalar
+    density_velocity_pressure_temperature:
+      formats:
+        $ref: output.formats.numpy_gif
+      fields:
+        density:
+          $ref: output.mode.scalar
+        velocity:
+          $ref: output.mode.components
+        pressure:
+          $ref: output.mode.scalar
+        temperature:
+          $ref: output.mode.scalar
+    density_velocity_pressure_temperature_numpy:
+      formats:
+        $ref: output.formats.numpy
+      fields:
+        density:
+          $ref: output.mode.scalar
         velocity:
           $ref: output.mode.components
         pressure:

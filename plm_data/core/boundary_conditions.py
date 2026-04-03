@@ -38,6 +38,25 @@ def _locate_boundary_dofs(
     return fem.locate_dofs_topological(V=V, entity_dim=fdim, entities=facets)
 
 
+def _locate_subspace_boundary_dofs(
+    subspace,
+    collapsed_space: fem.FunctionSpace,
+    domain_geom: DomainGeometry,
+    name: str,
+):
+    """Locate mixed-subspace DOFs on a named boundary."""
+    msh = domain_geom.mesh
+    tdim = msh.topology.dim
+    fdim = tdim - 1
+    tag = domain_geom.boundary_names[name]
+    facets = domain_geom.facet_tags.find(tag)
+    return fem.locate_dofs_topological(
+        (subspace, collapsed_space),
+        entity_dim=fdim,
+        entities=facets,
+    )
+
+
 def _operator_parameter(
     bc: BoundaryConditionConfig,
     name: str,
@@ -125,6 +144,87 @@ def apply_vector_dirichlet_bcs(
             bc_func = fem.Function(V)
             bc_func.interpolate(interp)
             bcs.append(fem.dirichletbc(value=bc_func, dofs=dofs))
+
+    return bcs
+
+
+def apply_dirichlet_bcs_to_subspace(
+    subspace,
+    domain_geom: DomainGeometry,
+    boundary_field: BoundaryFieldConfig,
+    parameters: dict[str, float],
+) -> list[fem.DirichletBC]:
+    """Create scalar Dirichlet BCs on one mixed scalar subspace."""
+    collapsed_space, _ = subspace.collapse()
+    bcs = []
+
+    for name, entries in boundary_field.sides.items():
+        _validate_boundary_name(name, domain_geom)
+        dofs = None
+        for bc in entries:
+            if bc.type != "dirichlet":
+                continue
+            if bc.value is None:
+                raise ValueError(f"Dirichlet BC on '{name}' requires a value")
+            if bc.value.is_componentwise:
+                raise ValueError(
+                    "Scalar Dirichlet BCs cannot use component-wise values"
+                )
+            if dofs is None:
+                dofs = _locate_subspace_boundary_dofs(
+                    subspace,
+                    collapsed_space,
+                    domain_geom,
+                    name,
+                )
+
+            interp = build_interpolator(
+                scalar_expression_to_config(bc.value),
+                parameters,
+            )
+            if interp is None:
+                raise ValueError(f"Dirichlet BC on '{name}' cannot use custom values")
+
+            bc_func = fem.Function(collapsed_space)
+            bc_func.interpolate(interp)
+            bcs.append(fem.dirichletbc(value=bc_func, dofs=dofs, V=subspace))
+
+    return bcs
+
+
+def apply_vector_dirichlet_bcs_to_subspace(
+    subspace,
+    domain_geom: DomainGeometry,
+    boundary_field: BoundaryFieldConfig,
+    parameters: dict[str, float],
+) -> list[fem.DirichletBC]:
+    """Create vector Dirichlet BCs on one mixed vector subspace."""
+    gdim = domain_geom.mesh.geometry.dim
+    collapsed_space, _ = subspace.collapse()
+    bcs = []
+
+    for name, entries in boundary_field.sides.items():
+        _validate_boundary_name(name, domain_geom)
+        dofs = None
+        for bc in entries:
+            if bc.type != "dirichlet":
+                continue
+            if bc.value is None:
+                raise ValueError(f"Dirichlet BC on '{name}' requires a value")
+            if dofs is None:
+                dofs = _locate_subspace_boundary_dofs(
+                    subspace,
+                    collapsed_space,
+                    domain_geom,
+                    name,
+                )
+            interp = build_vector_interpolator(bc.value, gdim, parameters)
+            if interp is None:
+                raise ValueError(f"Dirichlet BC on '{name}' cannot use custom values")
+
+            bc_func = fem.Function(collapsed_space)
+            bc_func.interpolate(interp)
+            bcs.append(fem.dirichletbc(value=bc_func, dofs=dofs, V=subspace))
 
     return bcs
 
