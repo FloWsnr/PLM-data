@@ -9,15 +9,21 @@ coefficients:
       base: 0.16
       amplitude: 0.06
       frequency: 14.0
-      center: [0.9, 0.5]
+      center:
+      - 0.9
+      - 0.5
   dispersion:
     type: constant
     params:
       value: 0.0025
 domain:
   type: rectangle
-  size: [2.0, 1.0]
-  mesh_resolution: [96, 48]
+  size:
+  - 2.0
+  - 1.0
+  mesh_resolution:
+  - 96
+  - 48
 time:
   dt: 0.01
   t_end: 1.0
@@ -38,40 +44,55 @@ inputs:
       type: gaussian_blobs
       params:
         background: 0.0
-        blobs:
-          - amplitude: 1.0
-            sigma: 0.07
-            center: [0.32, 0.5]
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.85
+            max: 1.15
+          sigma:
+            sample: uniform
+            min: 0.05
+            max: 0.09
+          center:
+          - sample: uniform
+            min: 0.16
+            max: 0.48
+          - sample: uniform
+            min: 0.395
+            max: 0.605
 boundary_conditions:
   pressure:
     x-:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     x+:
-      - operator: dirichlet
-        value: 0.0
+    - operator: dirichlet
+      value: 0.0
     y-:
-      - operator: neumann
-        value: 0.0
+    - operator: neumann
+      value: 0.0
     y+:
-      - operator: neumann
-        value: 0.0
+    - operator: neumann
+      value: 0.0
   concentration:
     x-:
-      - operator: dirichlet
-        value: 0.0
+    - operator: dirichlet
+      value: 0.0
     x+:
-      - operator: neumann
-        value: 0.0
+    - operator: neumann
+      value: 0.0
     y-:
-      - operator: neumann
-        value: 0.0
+    - operator: neumann
+      value: 0.0
     y+:
-      - operator: neumann
-        value: 0.0
+    - operator: neumann
+      value: 0.0
 output:
   $ref: output.template.darcy
-  resolution: [128, 64]
+  resolution:
+  - 128
+  - 64
   num_frames: 25
 solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric

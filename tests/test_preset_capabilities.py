@@ -1672,12 +1672,26 @@ SUCCESS_CASES = (
             u_initial_condition=scalar_expr(
                 "gaussian_blobs",
                 background=1.0,
-                blobs=[{"amplitude": -0.5, "sigma": 0.08, "center": [0.5, 0.5]}],
+                generators=[
+                    {
+                        "count": 1,
+                        "amplitude": -0.5,
+                        "sigma": 0.08,
+                        "center": [0.5, 0.5],
+                    }
+                ],
             ),
             v_initial_condition=scalar_expr(
                 "gaussian_blobs",
                 background=0.0,
-                blobs=[{"amplitude": 0.25, "sigma": 0.08, "center": [0.5, 0.5]}],
+                generators=[
+                    {
+                        "count": 1,
+                        "amplitude": 0.25,
+                        "sigma": 0.08,
+                        "center": [0.5, 0.5],
+                    }
+                ],
             ),
             u_boundary_conditions={},
             v_boundary_conditions={},
@@ -1703,8 +1717,9 @@ SUCCESS_CASES = (
             u_initial_condition=scalar_expr(
                 "gaussian_blobs",
                 background=1.0,
-                blobs=[
+                generators=[
                     {
+                        "count": 1,
                         "amplitude": -0.5,
                         "sigma": 0.08,
                         "center": [0.5, 0.5, 0.5],
@@ -1714,8 +1729,9 @@ SUCCESS_CASES = (
             v_initial_condition=scalar_expr(
                 "gaussian_blobs",
                 background=0.0,
-                blobs=[
+                generators=[
                     {
+                        "count": 1,
                         "amplitude": 0.25,
                         "sigma": 0.08,
                         "center": [0.5, 0.5, 0.5],

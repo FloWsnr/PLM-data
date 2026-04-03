@@ -4,8 +4,14 @@ parameters:
   theta: 0.5
 domain:
   type: box
-  size: [20.0, 20.0, 20.0]
-  mesh_resolution: [20, 20, 20]
+  size:
+  - 20.0
+  - 20.0
+  - 20.0
+  mesh_resolution:
+  - 20
+  - 20
+  - 20
 time:
   $ref: time.zk_default
 inputs:
@@ -14,10 +20,26 @@ inputs:
       type: gaussian_blobs
       params:
         background: 0.0
-        blobs:
-          - amplitude: 1.0
-            sigma: 3.0
-            center: [10.0, 10.0, 10.0]
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.85
+            max: 1.15
+          sigma:
+            sample: uniform
+            min: 2.4
+            max: 3.6
+          center:
+          - sample: uniform
+            min: 5.5
+            max: 14.5
+          - sample: uniform
+            min: 5.5
+            max: 14.5
+          - sample: uniform
+            min: 5.5
+            max: 14.5
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.full_periodic_3d
@@ -27,7 +49,10 @@ output:
   fields:
     u:
       $ref: output.mode.scalar
-  resolution: [16, 16, 16]
+  resolution:
+  - 16
+  - 16
+  - 16
   num_frames: 5
 solver:
   $ref: solver.profile.nonlinear_mixed_direct

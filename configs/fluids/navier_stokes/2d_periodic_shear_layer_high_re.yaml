@@ -4,8 +4,12 @@ parameters:
   k: 1.0
 domain:
   type: rectangle
-  size: [1.0, 1.0]
-  mesh_resolution: [64, 64]
+  size:
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 64
+  - 64
 time:
   dt: 0.0015
   t_end: 0.75
@@ -19,26 +23,42 @@ inputs:
         x:
           type: quadrants
           params:
-            split: [0.5, 0.5]
+            split:
+            - sample: uniform
+              min: 0.42
+              max: 0.58
+            - sample: uniform
+              min: 0.42
+              max: 0.58
             region_values:
-              "00": 1.0
-              "01": -1.0
-              "10": 1.0
-              "11": -1.0
+              '00': 1.0
+              '01': -1.0
+              '10': 1.0
+              '11': -1.0
         y:
           type: sine_waves
           params:
             background: 0.0
             modes:
-              - amplitude: 0.12
-                cycles: [6, 0]
-                phase: 1.5707963267948966
+            - amplitude:
+                sample: uniform
+                min: 0.0984
+                max: 0.1416
+              cycles:
+              - 6
+              - 0
+              phase:
+                sample: uniform
+                min: 0.0
+                max: 6.283185
 boundary_conditions:
   velocity:
     $ref: boundary_field.vector.periodic_shear_layer_2d
 output:
   $ref: output.template.velocity_pressure
-  resolution: [128, 128]
+  resolution:
+  - 128
+  - 128
   num_frames: 30
 solver:
   $ref: solver.profile.transient_mixed_direct

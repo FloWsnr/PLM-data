@@ -8,8 +8,14 @@ parameters:
   k: 1.0
 domain:
   type: box
-  size: [1.0, 1.0, 1.0]
-  mesh_resolution: [4, 4, 4]
+  size:
+  - 1.0
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 4
+  - 4
+  - 4
 time:
   dt: 0.02
   t_end: 0.08
@@ -46,72 +52,116 @@ inputs:
       params:
         amplitude: 1.5
         sigma: 0.12
-        center: [0.35, 0.5, 0.5]
+        center:
+        - 0.35
+        - 0.5
+        - 0.5
     initial_condition:
-      type: constant
+      type: gaussian_blobs
       params:
-        value: 1.0
+        background: 1.0
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.12
+            max: 0.24
+          sigma:
+            sample: uniform
+            min: 0.096
+            max: 0.144
+          center:
+          - sample: uniform
+            min: 0.17
+            max: 0.53
+          - sample: uniform
+            min: 0.32
+            max: 0.68
+          - sample: uniform
+            min: 0.32
+            max: 0.68
 boundary_conditions:
   density:
     x-:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     x+:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     y-:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     y+:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     z-:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     z+:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
   velocity:
     x-:
-      - operator: dirichlet
-        value: [0.0, 0.0, 0.0]
+    - operator: dirichlet
+      value:
+      - 0.0
+      - 0.0
+      - 0.0
     x+:
-      - operator: dirichlet
-        value: [0.0, 0.0, 0.0]
+    - operator: dirichlet
+      value:
+      - 0.0
+      - 0.0
+      - 0.0
     y-:
-      - operator: dirichlet
-        value: [0.0, 0.0, 0.0]
+    - operator: dirichlet
+      value:
+      - 0.0
+      - 0.0
+      - 0.0
     y+:
-      - operator: dirichlet
-        value: [0.0, 0.0, 0.0]
+    - operator: dirichlet
+      value:
+      - 0.0
+      - 0.0
+      - 0.0
     z-:
-      - operator: dirichlet
-        value: [0.0, 0.0, 0.0]
+    - operator: dirichlet
+      value:
+      - 0.0
+      - 0.0
+      - 0.0
     z+:
-      - operator: dirichlet
-        value: [0.0, 0.0, 0.0]
+    - operator: dirichlet
+      value:
+      - 0.0
+      - 0.0
+      - 0.0
   temperature:
     x-:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     x+:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     y-:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     y+:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     z-:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     z+:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
 output:
   $ref: output.template.density_velocity_pressure_temperature
-  resolution: [12, 12, 12]
+  resolution:
+  - 12
+  - 12
+  - 12
   num_frames: 5
 solver:
   $ref: solver.profile.nonlinear_mixed_direct

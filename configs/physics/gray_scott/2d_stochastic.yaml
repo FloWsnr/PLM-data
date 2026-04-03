@@ -17,8 +17,12 @@ coefficients:
           value: 0.0
 domain:
   type: rectangle
-  size: [2.5, 2.5]
-  mesh_resolution: [96, 96]
+  size:
+  - 2.5
+  - 2.5
+  mesh_resolution:
+  - 96
+  - 96
 time:
   dt: 1.0
   t_end: 180.0
@@ -28,25 +32,77 @@ inputs:
       type: gaussian_blobs
       params:
         background: 1.0
-        blobs:
-          - amplitude: -0.32
-            sigma: 0.14
-            center: [1.0, 1.05]
-          - amplitude: -0.18
-            sigma: 0.11
-            center: [1.55, 1.35]
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: -0.368
+            max: -0.272
+          sigma:
+            sample: uniform
+            min: 0.1148
+            max: 0.1652
+          center:
+          - sample: uniform
+            min: 0.79
+            max: 1.21
+          - sample: uniform
+            min: 0.84
+            max: 1.26
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: -0.207
+            max: -0.153
+          sigma:
+            sample: uniform
+            min: 0.09
+            max: 0.13
+          center:
+          - sample: uniform
+            min: 1.35
+            max: 1.75
+          - sample: uniform
+            min: 1.15
+            max: 1.55
   v:
     initial_condition:
       type: gaussian_blobs
       params:
         background: 0.0
-        blobs:
-          - amplitude: 0.22
-            sigma: 0.12
-            center: [1.0, 1.05]
-          - amplitude: 0.1
-            sigma: 0.1
-            center: [1.55, 1.35]
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.187
+            max: 0.253
+          sigma:
+            sample: uniform
+            min: 0.0984
+            max: 0.1416
+          center:
+          - sample: uniform
+            min: 0.8
+            max: 1.2
+          - sample: uniform
+            min: 0.85
+            max: 1.25
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.08
+            max: 0.12
+          sigma:
+            sample: uniform
+            min: 0.08
+            max: 0.12
+          center:
+          - sample: uniform
+            min: 1.35
+            max: 1.75
+          - sample: uniform
+            min: 1.15
+            max: 1.55
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.full_periodic_2d
@@ -66,6 +122,8 @@ solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 output:
   $ref: output.template.scalar_uv
-  resolution: [96, 96]
+  resolution:
+  - 96
+  - 96
   num_frames: 36
 seed: 42

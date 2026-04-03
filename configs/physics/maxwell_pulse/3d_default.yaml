@@ -9,8 +9,14 @@ parameters:
   pulse_delay: 0.2
 domain:
   type: box
-  size: [1.0, 1.0, 1.0]
-  mesh_resolution: [10, 10, 10]
+  size:
+  - 1.0
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 10
+  - 10
+  - 10
 inputs:
   electric_field:
     source:
@@ -20,7 +26,10 @@ inputs:
           params:
             amplitude: 1.0
             sigma: 0.08
-            center: [0.25, 0.5, 0.5]
+            center:
+            - 0.25
+            - 0.5
+            - 0.5
         y:
           type: zero
           params: {}
@@ -30,9 +39,10 @@ inputs:
     initial_condition:
       components:
         x:
-          type: constant
+          type: gaussian_noise
           params:
-            value: 0.0
+            mean: 0.0
+            std: 0.02
         y:
           type: constant
           params:
@@ -44,23 +54,37 @@ inputs:
 boundary_conditions:
   electric_field:
     x-:
-      - operator: absorbing
-        value: {type: zero, params: {}}
+    - operator: absorbing
+      value:
+        type: zero
+        params: {}
     x+:
-      - operator: absorbing
-        value: {type: zero, params: {}}
+    - operator: absorbing
+      value:
+        type: zero
+        params: {}
     y-:
-      - operator: absorbing
-        value: {type: zero, params: {}}
+    - operator: absorbing
+      value:
+        type: zero
+        params: {}
     y+:
-      - operator: absorbing
-        value: {type: zero, params: {}}
+    - operator: absorbing
+      value:
+        type: zero
+        params: {}
     z-:
-      - operator: dirichlet
-        value: [0.0, 0.0, 0.0]
+    - operator: dirichlet
+      value:
+      - 0.0
+      - 0.0
+      - 0.0
     z+:
-      - operator: dirichlet
-        value: [0.0, 0.0, 0.0]
+    - operator: dirichlet
+      value:
+      - 0.0
+      - 0.0
+      - 0.0
 time:
   dt: 0.015
   t_end: 0.45
@@ -68,6 +92,9 @@ solver:
   $ref: solver.profile.constant_lhs_curl_direct
 output:
   $ref: output.template.electric_field
-  resolution: [24, 24, 24]
+  resolution:
+  - 24
+  - 24
+  - 24
   num_frames: 12
 seed: 42

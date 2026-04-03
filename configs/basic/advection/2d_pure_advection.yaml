@@ -16,8 +16,12 @@ coefficients:
     params: {}
 domain:
   type: rectangle
-  size: [1.0, 1.0]
-  mesh_resolution: [80, 80]
+  size:
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 80
+  - 80
 time:
   $ref: time.unit_interval_dt_0p01
 inputs:
@@ -29,10 +33,23 @@ inputs:
       type: gaussian_blobs
       params:
         background: 0.0
-        blobs:
-          - amplitude: 1.0
-            sigma: 0.06
-            center: [0.22, 0.34]
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.85
+            max: 1.15
+          sigma:
+            sample: uniform
+            min: 0.04
+            max: 0.08
+          center:
+          - sample: uniform
+            min: 0.13
+            max: 0.31
+          - sample: uniform
+            min: 0.25
+            max: 0.43
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.full_periodic_2d
@@ -40,6 +57,8 @@ solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 output:
   $ref: output.template.scalar_u
-  resolution: [96, 96]
+  resolution:
+  - 96
+  - 96
   num_frames: 21
 seed: 42

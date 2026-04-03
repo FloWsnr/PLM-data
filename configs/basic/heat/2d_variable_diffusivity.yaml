@@ -7,11 +7,17 @@ coefficients:
       base: 0.05
       amplitude: 0.03
       frequency: 12.566370614359172
-      center: [0.5, 0.5]
+      center:
+      - 0.5
+      - 0.5
 domain:
   type: rectangle
-  size: [1.0, 1.0]
-  mesh_resolution: [128, 128]
+  size:
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 128
+  - 128
 time:
   dt: 0.005
   t_end: 0.8
@@ -24,10 +30,23 @@ inputs:
       type: gaussian_blobs
       params:
         background: 0.5
-        blobs:
-          - amplitude: 0.5
-            sigma: 0.12
-            center: [0.38, 0.62]
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.425
+            max: 0.575
+          sigma:
+            sample: uniform
+            min: 0.096
+            max: 0.144
+          center:
+          - sample: uniform
+            min: 0.2
+            max: 0.56
+          - sample: uniform
+            min: 0.44
+            max: 0.8
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.homogeneous_dirichlet_2d
@@ -35,6 +54,8 @@ solver:
   $ref: solver.profile.constant_lhs_scalar_spd
 output:
   $ref: output.template.scalar_u
-  resolution: [64, 64]
+  resolution:
+  - 64
+  - 64
   num_frames: 24
 seed: 42

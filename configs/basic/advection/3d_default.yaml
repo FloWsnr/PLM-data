@@ -24,8 +24,14 @@ coefficients:
       value: 0.001
 domain:
   type: box
-  size: [1.0, 1.0, 1.0]
-  mesh_resolution: [18, 18, 18]
+  size:
+  - 1.0
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 18
+  - 18
+  - 18
 time:
   dt: 0.02
   t_end: 1.2
@@ -38,10 +44,26 @@ inputs:
       type: gaussian_blobs
       params:
         background: 0.0
-        blobs:
-          - amplitude: 1.0
-            sigma: 0.08
-            center: [0.28, 0.42, 0.61]
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.85
+            max: 1.15
+          sigma:
+            sample: uniform
+            min: 0.06
+            max: 0.1
+          center:
+          - sample: uniform
+            min: 0.16
+            max: 0.4
+          - sample: uniform
+            min: 0.3
+            max: 0.54
+          - sample: uniform
+            min: 0.49
+            max: 0.73
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.full_periodic_3d
@@ -49,6 +71,9 @@ solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 output:
   $ref: output.template.scalar_u
-  resolution: [48, 48, 48]
+  resolution:
+  - 48
+  - 48
+  - 48
   num_frames: 19
 seed: 42

@@ -9,8 +9,12 @@ parameters:
   pulse_delay: 0.18
 domain:
   type: rectangle
-  size: [1.0, 1.0]
-  mesh_resolution: [32, 32]
+  size:
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 32
+  - 32
 inputs:
   electric_field:
     source:
@@ -20,16 +24,19 @@ inputs:
           params:
             amplitude: 1.0
             sigma: 0.05
-            center: [0.25, 0.5]
+            center:
+            - 0.25
+            - 0.5
         y:
           type: zero
           params: {}
     initial_condition:
       components:
         x:
-          type: constant
+          type: gaussian_noise
           params:
-            value: 0.0
+            mean: 0.0
+            std: 0.03
         y:
           type: constant
           params:
@@ -37,17 +44,25 @@ inputs:
 boundary_conditions:
   electric_field:
     x-:
-      - operator: absorbing
-        value: {type: zero, params: {}}
+    - operator: absorbing
+      value:
+        type: zero
+        params: {}
     x+:
-      - operator: absorbing
-        value: {type: zero, params: {}}
+    - operator: absorbing
+      value:
+        type: zero
+        params: {}
     y-:
-      - operator: dirichlet
-        value: [0.0, 0.0]
+    - operator: dirichlet
+      value:
+      - 0.0
+      - 0.0
     y+:
-      - operator: dirichlet
-        value: [0.0, 0.0]
+    - operator: dirichlet
+      value:
+      - 0.0
+      - 0.0
 time:
   dt: 0.01
   t_end: 0.4
@@ -55,6 +70,8 @@ solver:
   $ref: solver.profile.constant_lhs_curl_direct
 output:
   $ref: output.template.electric_field
-  resolution: [64, 64]
+  resolution:
+  - 64
+  - 64
   num_frames: 12
 seed: 42

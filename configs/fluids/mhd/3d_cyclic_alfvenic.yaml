@@ -5,8 +5,14 @@ parameters:
   k: 1.0
 domain:
   type: box
-  size: [1.0, 1.0, 1.0]
-  mesh_resolution: [10, 10, 10]
+  size:
+  - 1.0
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 10
+  - 10
+  - 10
 time:
   dt: 0.01
   t_end: 0.12
@@ -20,17 +26,26 @@ inputs:
         x:
           type: sine_product
           params:
-            amplitude: 0.25
+            amplitude:
+              sample: uniform
+              min: 0.2125
+              max: 0.2875
             ky: 2.0
         y:
           type: sine_product
           params:
-            amplitude: 0.25
+            amplitude:
+              sample: uniform
+              min: 0.2125
+              max: 0.2875
             kz: 2.0
         z:
           type: sine_product
           params:
-            amplitude: 0.25
+            amplitude:
+              sample: uniform
+              min: 0.2125
+              max: 0.2875
             kx: 2.0
   magnetic_field:
     source:
@@ -41,17 +56,26 @@ inputs:
         x:
           type: cosine_product
           params:
-            amplitude: 0.2
+            amplitude:
+              sample: uniform
+              min: 0.17
+              max: 0.23
             ky: 2.0
         y:
           type: cosine_product
           params:
-            amplitude: 0.2
+            amplitude:
+              sample: uniform
+              min: 0.17
+              max: 0.23
             kz: 2.0
         z:
           type: cosine_product
           params:
-            amplitude: 0.2
+            amplitude:
+              sample: uniform
+              min: 0.17
+              max: 0.23
             kx: 2.0
 boundary_conditions:
   velocity:
@@ -68,7 +92,10 @@ output:
     magnetic_field:
       $ref: output.mode.components
     magnetic_constraint: hidden
-  resolution: [24, 24, 24]
+  resolution:
+  - 24
+  - 24
+  - 24
   num_frames: 12
 solver:
   $ref: solver.profile.transient_mixed_direct

@@ -8,11 +8,17 @@ coefficients:
     params:
       amplitude: 8.0
       sigma: 0.05
-      center: [0.55, 0.5]
+      center:
+      - 0.55
+      - 0.5
 domain:
   type: rectangle
-  size: [1.0, 1.0]
-  mesh_resolution: [96, 96]
+  size:
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 96
+  - 96
 time:
   $ref: time.schrodinger_default
 inputs:
@@ -20,19 +26,51 @@ inputs:
     initial_condition:
       type: gaussian_wave_packet
       params:
-        amplitude: 1.0
-        sigma: 0.07
-        center: [0.25, 0.5]
-        wavevector: [14.0, 0.0]
+        amplitude:
+          sample: uniform
+          min: 0.9
+          max: 1.1
+        sigma:
+          sample: uniform
+          min: 0.05
+          max: 0.09
+        center:
+        - sample: uniform
+          min: 0.145
+          max: 0.355
+        - sample: uniform
+          min: 0.395
+          max: 0.605
+        wavevector:
+        - sample: uniform
+          min: 12.32
+          max: 15.68
+        - 0.0
         phase: 0.0
   v:
     initial_condition:
       type: gaussian_wave_packet
       params:
-        amplitude: 1.0
-        sigma: 0.07
-        center: [0.25, 0.5]
-        wavevector: [14.0, 0.0]
+        amplitude:
+          sample: uniform
+          min: 0.9
+          max: 1.1
+        sigma:
+          sample: uniform
+          min: 0.05
+          max: 0.09
+        center:
+        - sample: uniform
+          min: 0.145
+          max: 0.355
+        - sample: uniform
+          min: 0.395
+          max: 0.605
+        wavevector:
+        - sample: uniform
+          min: 12.32
+          max: 15.68
+        - 0.0
         phase: -1.5707963267948966
 boundary_conditions:
   u:
@@ -41,7 +79,9 @@ boundary_conditions:
     $ref: boundary_field.scalar.homogeneous_dirichlet_2d
 output:
   $ref: output.template.schrodinger
-  resolution: [128, 128]
+  resolution:
+  - 128
+  - 128
   num_frames: 64
 solver:
   $ref: solver.profile.constant_lhs_block_direct

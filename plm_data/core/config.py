@@ -89,6 +89,18 @@ def _validate_numeric_literal_or_param_ref(value: Any, context: str) -> None:
     )
 
 
+def _validate_integer_literal_or_param_ref(value: Any, context: str) -> None:
+    if isinstance(value, int):
+        return
+    if isinstance(value, float) and value.is_integer():
+        return
+    if _is_param_ref(value):
+        return
+    raise ValueError(
+        f"{context} must be an integer or 'param:<name>' reference. Got {value!r}."
+    )
+
+
 def _resolve_numeric_literal_or_param_ref(
     value: Any,
     parameters: dict[str, float],
@@ -149,6 +161,16 @@ def _validate_sampleable_numeric(
         return
 
     raise ValueError(f"{context} uses unknown sampler '{sample_type}'.")
+
+
+def _validate_sampleable_integer(
+    value: Any,
+    context: str,
+) -> None:
+    if not isinstance(value, dict) or "sample" not in value:
+        _validate_integer_literal_or_param_ref(value, context)
+        return
+    _validate_sampleable_numeric(value, context)
 
 
 def _validate_sampleable_vector(
@@ -271,7 +293,7 @@ def _validate_initial_condition_scalar_expression(
             params["value_right"], f"{context}.params.value_right"
         )
         _validate_sampleable_numeric(params["x_split"], f"{context}.params.x_split")
-        _validate_sampleable_numeric(params["axis"], f"{context}.params.axis")
+        _validate_sampleable_integer(params["axis"], f"{context}.params.axis")
         return
 
     if expr_type == "gaussian_noise":
@@ -285,32 +307,37 @@ def _validate_initial_condition_scalar_expression(
         return
 
     if expr_type == "gaussian_blobs":
-        if set(params) != {"background", "blobs"}:
+        if set(params) != {"background", "generators"}:
             raise ValueError(
-                f"{context}.params must contain exactly ['background', 'blobs'] for "
-                f"type '{expr_type}'. Got {sorted(params)}."
+                f"{context}.params must contain exactly ['background', "
+                f"'generators'] for type '{expr_type}'. Got {sorted(params)}."
             )
         _validate_sampleable_numeric(
             params["background"], f"{context}.params.background"
         )
-        blobs = params["blobs"]
-        if not isinstance(blobs, list) or not blobs:
-            raise ValueError(f"{context}.params.blobs must be a non-empty list.")
-        for index, blob in enumerate(blobs):
-            blob_context = f"{context}.params.blobs[{index}]"
-            blob_mapping = _as_mapping(blob, blob_context)
-            if set(blob_mapping) != {"amplitude", "sigma", "center"}:
+        generators = params["generators"]
+        if not isinstance(generators, list) or not generators:
+            raise ValueError(f"{context}.params.generators must be a non-empty list.")
+        for index, generator in enumerate(generators):
+            generator_context = f"{context}.params.generators[{index}]"
+            generator_mapping = _as_mapping(generator, generator_context)
+            if set(generator_mapping) != {"count", "amplitude", "sigma", "center"}:
                 raise ValueError(
-                    f"{blob_context} must contain exactly ['amplitude', 'center', "
-                    f"'sigma']. Got {sorted(blob_mapping)}."
+                    f"{generator_context} must contain exactly ['amplitude', "
+                    f"'center', 'count', 'sigma']. Got {sorted(generator_mapping)}."
                 )
-            _validate_sampleable_numeric(
-                blob_mapping["amplitude"], f"{blob_context}.amplitude"
+            _validate_sampleable_integer(
+                generator_mapping["count"], f"{generator_context}.count"
             )
-            _validate_sampleable_numeric(blob_mapping["sigma"], f"{blob_context}.sigma")
+            _validate_sampleable_numeric(
+                generator_mapping["amplitude"], f"{generator_context}.amplitude"
+            )
+            _validate_sampleable_numeric(
+                generator_mapping["sigma"], f"{generator_context}.sigma"
+            )
             _validate_sampleable_vector(
-                blob_mapping["center"],
-                f"{blob_context}.center",
+                generator_mapping["center"],
+                f"{generator_context}.center",
                 gdim=gdim,
             )
         return
@@ -369,11 +396,17 @@ def _validate_initial_condition_scalar_expression(
             _validate_sampleable_numeric(
                 mode_mapping["amplitude"], f"{mode_context}.amplitude"
             )
-            _validate_sampleable_vector(
-                mode_mapping["cycles"],
-                f"{mode_context}.cycles",
-                gdim=gdim,
-            )
+            cycles = mode_mapping["cycles"]
+            if not isinstance(cycles, list) or len(cycles) != gdim:
+                raise ValueError(
+                    f"{mode_context}.cycles must have {gdim} entries in {gdim}D. "
+                    f"Got {cycles!r}."
+                )
+            for axis, cycle_value in enumerate(cycles):
+                _validate_sampleable_integer(
+                    cycle_value,
+                    f"{mode_context}.cycles[{axis}]",
+                )
             _validate_sampleable_numeric(mode_mapping["phase"], f"{mode_context}.phase")
         return
 

@@ -3,8 +3,12 @@ parameters:
   nu: 0.003
 domain:
   type: rectangle
-  size: [1.0, 1.0]
-  mesh_resolution: [72, 72]
+  size:
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 72
+  - 72
 time:
   dt: 0.005
   t_end: 0.6
@@ -20,17 +24,33 @@ inputs:
           params:
             background: 0.0
             modes:
-              - amplitude: 1.0
-                cycles: [0, 2]
-                phase: 1.5707963267948966
+            - amplitude:
+                sample: uniform
+                min: 0.85
+                max: 1.15
+              cycles:
+              - 0
+              - 2
+              phase:
+                sample: uniform
+                min: 0.0
+                max: 6.283185
         y:
           type: sine_waves
           params:
             background: 0.0
             modes:
-              - amplitude: -1.0
-                cycles: [2, 0]
-                phase: 1.5707963267948966
+            - amplitude:
+                sample: uniform
+                min: -1.15
+                max: -0.85
+              cycles:
+              - 2
+              - 0
+              phase:
+                sample: uniform
+                min: 0.0
+                max: 6.283185
 boundary_conditions:
   velocity:
     $ref: boundary_field.vector.full_periodic_2d
@@ -42,9 +62,13 @@ stochastic:
 solver:
   $ref: solver.profile.nonlinear_mixed_direct
 output:
-  resolution: [96, 96]
+  resolution:
+  - 96
+  - 96
   num_frames: 31
-  formats: [numpy, gif]
+  formats:
+  - numpy
+  - gif
   fields:
     velocity:
       mode: components

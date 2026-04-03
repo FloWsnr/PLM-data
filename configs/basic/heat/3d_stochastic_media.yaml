@@ -7,8 +7,14 @@ coefficients:
       value: 0.03
 domain:
   type: box
-  size: [1.0, 1.0, 1.0]
-  mesh_resolution: [20, 20, 20]
+  size:
+  - 1.0
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 20
+  - 20
+  - 20
 time:
   dt: 0.01
   t_end: 0.08
@@ -21,13 +27,45 @@ inputs:
       type: gaussian_blobs
       params:
         background: 0.0
-        blobs:
-          - amplitude: 1.0
-            sigma: 0.12
-            center: [0.38, 0.45, 0.55]
-          - amplitude: -0.4
-            sigma: 0.08
-            center: [0.68, 0.55, 0.35]
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.85
+            max: 1.15
+          sigma:
+            sample: uniform
+            min: 0.096
+            max: 0.144
+          center:
+          - sample: uniform
+            min: 0.2
+            max: 0.56
+          - sample: uniform
+            min: 0.27
+            max: 0.63
+          - sample: uniform
+            min: 0.37
+            max: 0.73
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: -0.46
+            max: -0.34
+          sigma:
+            sample: uniform
+            min: 0.06
+            max: 0.1
+          center:
+          - sample: uniform
+            min: 0.56
+            max: 0.8
+          - sample: uniform
+            min: 0.43
+            max: 0.67
+          - sample: uniform
+            min: 0.23
+            max: 0.47
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.homogeneous_neumann_3d
@@ -48,6 +86,9 @@ solver:
   $ref: solver.profile.constant_lhs_scalar_spd
 output:
   $ref: output.template.scalar_u_numpy
-  resolution: [24, 24, 24]
+  resolution:
+  - 24
+  - 24
+  - 24
   num_frames: 8
 seed: 42

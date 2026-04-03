@@ -267,39 +267,49 @@ def _resolved_scalar_ic(
         }
 
     if ic_type == "gaussian_blobs":
-        raw_blobs = _require_param(params, "blobs", ic_type)
-        if not isinstance(raw_blobs, list) or not raw_blobs:
-            raise ValueError("gaussian_blobs requires a non-empty 'blobs' list.")
+        raw_generators = _require_param(params, "generators", ic_type)
+        if not isinstance(raw_generators, list) or not raw_generators:
+            raise ValueError("gaussian_blobs requires a non-empty 'generators' list.")
 
         resolved_blobs = []
-        for blob in raw_blobs:
-            if not isinstance(blob, dict):
+        for generator in raw_generators:
+            if not isinstance(generator, dict):
                 raise ValueError(
-                    "gaussian_blobs blobs must be mappings with amplitude, sigma, "
-                    "and center."
+                    "gaussian_blobs generators must be mappings with count, "
+                    "amplitude, sigma, and center."
                 )
-            resolved_blobs.append(
-                {
-                    "amplitude": _sample_number(
-                        _require_param(blob, "amplitude", ic_type),
-                        parameters=parameters,
-                        rng=rng,
-                    ),
-                    "sigma": _sample_number(
-                        _require_param(blob, "sigma", ic_type),
-                        parameters=parameters,
-                        rng=rng,
-                    ),
-                    "center": _sample_coordinate_list(
-                        _require_param(blob, "center", ic_type),
-                        gdim=gdim,
-                        parameters=parameters,
-                        rng=rng,
-                        field_type=ic_type,
-                        field_name="center",
-                    ),
-                }
+            count = _sample_integer(
+                _require_param(generator, "count", ic_type),
+                parameters=parameters,
+                rng=rng,
             )
+            if count <= 0:
+                raise ValueError(
+                    f"gaussian_blobs generator count must be positive. Got {count}."
+                )
+            for _ in range(count):
+                resolved_blobs.append(
+                    {
+                        "amplitude": _sample_number(
+                            _require_param(generator, "amplitude", ic_type),
+                            parameters=parameters,
+                            rng=rng,
+                        ),
+                        "sigma": _sample_number(
+                            _require_param(generator, "sigma", ic_type),
+                            parameters=parameters,
+                            rng=rng,
+                        ),
+                        "center": _sample_coordinate_list(
+                            _require_param(generator, "center", ic_type),
+                            gdim=gdim,
+                            parameters=parameters,
+                            rng=rng,
+                            field_type=ic_type,
+                            field_name="center",
+                        ),
+                    }
+                )
 
         return ic_type, {
             "background": _sample_number(

@@ -4,8 +4,12 @@ parameters:
   k: 1.0
 domain:
   type: rectangle
-  size: [1.0, 1.0]
-  mesh_resolution: [48, 48]
+  size:
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 48
+  - 48
 time:
   dt: 0.005
   t_end: 6.0
@@ -17,19 +21,23 @@ inputs:
     initial_condition:
       components:
         x:
-          type: constant
+          type: gaussian_noise
           params:
-            value: 0.0
+            mean: 0.0
+            std: 0.03
         y:
-          type: constant
+          type: gaussian_noise
           params:
-            value: 0.0
+            mean: 0.0
+            std: 0.03
 boundary_conditions:
   velocity:
     $ref: boundary_field.vector.lid_driven_cavity_2d
 output:
   $ref: output.template.velocity_pressure
-  resolution: [96, 96]
+  resolution:
+  - 96
+  - 96
   num_frames: 30
 solver:
   $ref: solver.profile.transient_saddle_point

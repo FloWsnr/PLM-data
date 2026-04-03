@@ -5,8 +5,12 @@ parameters:
   k: 1.0
 domain:
   type: rectangle
-  size: [1.0, 1.0]
-  mesh_resolution: [28, 28]
+  size:
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 28
+  - 28
 time:
   dt: 0.01
   t_end: 0.5
@@ -20,12 +24,18 @@ inputs:
         x:
           type: sine_product
           params:
-            amplitude: -1.0
+            amplitude:
+              sample: uniform
+              min: -1.15
+              max: -0.85
             ky: 2.0
         y:
           type: sine_product
           params:
-            amplitude: 1.0
+            amplitude:
+              sample: uniform
+              min: 0.85
+              max: 1.15
             kx: 2.0
   magnetic_field:
     source:
@@ -36,12 +46,18 @@ inputs:
         x:
           type: sine_product
           params:
-            amplitude: -0.85
+            amplitude:
+              sample: uniform
+              min: -0.9775
+              max: -0.7225
             ky: 2.0
         y:
           type: sine_product
           params:
-            amplitude: 0.85
+            amplitude:
+              sample: uniform
+              min: 0.7225
+              max: 0.9775
             kx: 4.0
 boundary_conditions:
   velocity:
@@ -58,7 +74,9 @@ output:
     magnetic_field:
       $ref: output.mode.components
     magnetic_constraint: hidden
-  resolution: [96, 96]
+  resolution:
+  - 96
+  - 96
   num_frames: 32
 solver:
   $ref: solver.profile.transient_mixed_direct

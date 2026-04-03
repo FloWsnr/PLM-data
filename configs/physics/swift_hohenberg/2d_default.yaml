@@ -19,8 +19,12 @@ coefficients:
           value: -0.25
 domain:
   type: rectangle
-  size: [40.0, 40.0]
-  mesh_resolution: [128, 128]
+  size:
+  - 40.0
+  - 40.0
+  mesh_resolution:
+  - 128
+  - 128
 time:
   dt: 0.1
   t_end: 10.0
@@ -30,10 +34,23 @@ inputs:
       type: gaussian_blobs
       params:
         background: 0.0
-        blobs:
-          - amplitude: 1.0
-            sigma: 3.0
-            center: [20.0, 20.0]
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.85
+            max: 1.15
+          sigma:
+            sample: uniform
+            min: 2.4
+            max: 3.6
+          center:
+          - sample: uniform
+            min: 15.5
+            max: 24.5
+          - sample: uniform
+            min: 15.5
+            max: 24.5
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.full_periodic_2d
@@ -43,7 +60,9 @@ output:
   fields:
     u:
       $ref: output.mode.scalar
-  resolution: [64, 64]
+  resolution:
+  - 64
+  - 64
   num_frames: 10
 solver:
   $ref: solver.profile.nonlinear_mixed_direct

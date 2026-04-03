@@ -68,15 +68,51 @@ def test_apply_gaussian_blobs(rectangle_domain):
         type="gaussian_blobs",
         params={
             "background": 0.2,
-            "blobs": [
-                {"amplitude": 1.0, "sigma": 0.08, "center": [0.3, 0.4]},
-                {"amplitude": -0.4, "sigma": 0.05, "center": [0.7, 0.6]},
+            "generators": [
+                {
+                    "count": 1,
+                    "amplitude": 1.0,
+                    "sigma": 0.08,
+                    "center": [0.3, 0.4],
+                },
+                {
+                    "count": 1,
+                    "amplitude": -0.4,
+                    "sigma": 0.05,
+                    "center": [0.7, 0.6],
+                },
             ],
         },
     )
     apply_ic(f, ic, {})
     assert np.max(f.x.array) > 0.8
     assert np.min(f.x.array) < 0.2
+
+
+def test_apply_gaussian_blobs_generator_count_is_reproducible(rectangle_domain):
+    f1 = _make_function(rectangle_domain)
+    f2 = _make_function(rectangle_domain)
+    ic = FieldExpressionConfig(
+        type="gaussian_blobs",
+        params={
+            "background": 0.0,
+            "generators": [
+                {
+                    "count": 2,
+                    "amplitude": {"sample": "uniform", "min": 0.8, "max": 1.2},
+                    "sigma": {"sample": "uniform", "min": 0.05, "max": 0.09},
+                    "center": [
+                        {"sample": "uniform", "min": 0.2, "max": 0.8},
+                        {"sample": "uniform", "min": 0.2, "max": 0.8},
+                    ],
+                }
+            ],
+        },
+    )
+    apply_ic(f1, ic, {}, seed=42, stream_id="u")
+    apply_ic(f2, ic, {}, seed=42, stream_id="u")
+    np.testing.assert_allclose(f1.x.array, f2.x.array)
+    assert np.max(f1.x.array) > 0.2
 
 
 def test_apply_gaussian_wave_packet(rectangle_domain):

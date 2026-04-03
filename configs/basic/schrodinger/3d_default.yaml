@@ -8,11 +8,20 @@ coefficients:
     params:
       amplitude: 8.0
       sigma: 0.08
-      center: [0.55, 0.5, 0.5]
+      center:
+      - 0.55
+      - 0.5
+      - 0.5
 domain:
   type: box
-  size: [1.0, 1.0, 1.0]
-  mesh_resolution: [20, 20, 20]
+  size:
+  - 1.0
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 20
+  - 20
+  - 20
 time:
   dt: 0.004
   t_end: 0.24
@@ -21,19 +30,59 @@ inputs:
     initial_condition:
       type: gaussian_wave_packet
       params:
-        amplitude: 1.0
-        sigma: 0.08
-        center: [0.25, 0.5, 0.5]
-        wavevector: [10.0, 0.0, 0.0]
+        amplitude:
+          sample: uniform
+          min: 0.9
+          max: 1.1
+        sigma:
+          sample: uniform
+          min: 0.06
+          max: 0.1
+        center:
+        - sample: uniform
+          min: 0.13
+          max: 0.37
+        - sample: uniform
+          min: 0.38
+          max: 0.62
+        - sample: uniform
+          min: 0.38
+          max: 0.62
+        wavevector:
+        - sample: uniform
+          min: 8.8
+          max: 11.2
+        - 0.0
+        - 0.0
         phase: 0.0
   v:
     initial_condition:
       type: gaussian_wave_packet
       params:
-        amplitude: 1.0
-        sigma: 0.08
-        center: [0.25, 0.5, 0.5]
-        wavevector: [10.0, 0.0, 0.0]
+        amplitude:
+          sample: uniform
+          min: 0.9
+          max: 1.1
+        sigma:
+          sample: uniform
+          min: 0.06
+          max: 0.1
+        center:
+        - sample: uniform
+          min: 0.13
+          max: 0.37
+        - sample: uniform
+          min: 0.38
+          max: 0.62
+        - sample: uniform
+          min: 0.38
+          max: 0.62
+        wavevector:
+        - sample: uniform
+          min: 8.8
+          max: 11.2
+        - 0.0
+        - 0.0
         phase: -1.5707963267948966
 boundary_conditions:
   u:
@@ -44,7 +93,10 @@ output:
   $ref: output.template.schrodinger
   formats:
     $ref: output.formats.numpy
-  resolution: [32, 32, 32]
+  resolution:
+  - 32
+  - 32
+  - 32
   num_frames: 18
 solver:
   $ref: solver.profile.constant_lhs_block_direct

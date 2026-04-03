@@ -52,7 +52,11 @@ def test_load_config():
     assert cfg.time.t_end == 1.0
     assert cfg.has_periodic_boundary_conditions is False
     assert cfg.input("u").initial_condition.type == "gaussian_blobs"
-    assert cfg.input("u").initial_condition.params["blobs"][0]["center"] == [0.5, 0.5]
+    assert cfg.input("u").initial_condition.params["generators"][0]["count"] == 1
+    assert (
+        cfg.input("u").initial_condition.params["generators"][0]["center"][0]["sample"]
+        == "uniform"
+    )
     assert cfg.input("u").source.type == "none"
     assert cfg.output_mode("u") == "scalar"
     assert cfg.boundary_field("u").side_conditions("x-")[0].type == "neumann"
@@ -78,7 +82,7 @@ def test_load_config_fisher_kpp_2d():
     assert cfg.parameters["K"] == 1.0
     assert cfg.coefficient("velocity").type == "zero"
     assert cfg.input("u").initial_condition.type == "step"
-    assert cfg.input("u").initial_condition.params["x_split"] == 2.0
+    assert cfg.input("u").initial_condition.params["x_split"]["sample"] == "uniform"
     assert cfg.boundary_field("u").side_conditions("x-")[0].type == "neumann"
     assert cfg.output_mode("u") == "scalar"
     assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
@@ -91,7 +95,7 @@ def test_load_config_fisher_kpp_3d():
     assert cfg.has_periodic_boundary_conditions is False
     assert cfg.coefficient("velocity").type == "zero"
     assert cfg.input("u").initial_condition.params["axis"] == 0
-    assert cfg.input("u").initial_condition.params["x_split"] == 1.5
+    assert cfg.input("u").initial_condition.params["x_split"]["sample"] == "uniform"
     assert cfg.boundary_field("u").side_conditions("z+")[0].type == "neumann"
     assert cfg.output.formats == ["numpy"]
     assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
@@ -117,7 +121,7 @@ def test_load_config_bistable_travelling_waves_3d():
     assert cfg.domain.dimension == 3
     assert cfg.has_periodic_boundary_conditions is False
     assert cfg.coefficient("velocity").type == "zero"
-    assert cfg.input("u").initial_condition.params["x_split"] == 2.5
+    assert cfg.input("u").initial_condition.params["x_split"]["sample"] == "uniform"
     assert cfg.boundary_field("u").side_conditions("z-")[0].type == "neumann"
     assert cfg.output.formats == ["numpy"]
     assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
@@ -159,9 +163,9 @@ def test_load_config_vector_input():
     assert cfg.output_mode("velocity") == "components"
     assert cfg.output_mode("pressure") == "scalar"
     assert velocity.source.type == "none"
-    assert velocity.initial_condition.components["x"].type == "constant"
-    assert velocity.initial_condition.components["x"].params["value"] == 0.0
-    assert velocity.initial_condition.components["y"].params["value"] == 0.0
+    assert velocity.initial_condition.components["x"].type == "gaussian_noise"
+    assert velocity.initial_condition.components["x"].params["std"] == 0.03
+    assert velocity.initial_condition.components["y"].params["std"] == 0.03
     assert (
         velocity_bcs.side_conditions("y+")[0].value.components["x"].params["value"]
         == 1.0
@@ -232,13 +236,13 @@ def test_load_config_gray_scott_3d():
     assert cfg.coefficient("velocity").components["x"].params["value"] == 0.01
     assert cfg.coefficient("velocity").components["y"].params["value"] == 0.0
     assert cfg.coefficient("velocity").components["z"].params["value"] == 0.005
-    assert len(cfg.input("u").initial_condition.params["blobs"]) == 2
+    assert len(cfg.input("u").initial_condition.params["generators"]) == 2
     assert (
-        cfg.input("u").initial_condition.params["blobs"][0]["center"][0]["sample"]
+        cfg.input("u").initial_condition.params["generators"][0]["center"][0]["sample"]
         == "uniform"
     )
     assert (
-        cfg.input("v").initial_condition.params["blobs"][1]["sigma"]["sample"]
+        cfg.input("v").initial_condition.params["generators"][1]["sigma"]["sample"]
         == "uniform"
     )
     assert cfg.boundary_field("u").side_conditions("z+")[0].pair_with == "z-"
@@ -365,10 +369,7 @@ def test_load_config_shallow_water():
     assert cfg.coefficient("bathymetry").type == "constant"
     assert cfg.coefficient("bathymetry").params["value"] == 0.0
     assert cfg.input("height").initial_condition.type == "gaussian_blobs"
-    assert cfg.input("height").initial_condition.params["blobs"][0]["center"] == [
-        0.31,
-        0.43,
-    ]
+    assert cfg.input("height").initial_condition.params["generators"][0]["count"] == 1
     assert cfg.input("velocity").initial_condition.components["x"].type == "constant"
     assert (
         cfg.input("velocity").initial_condition.components["y"].params["value"] == 0.0
@@ -420,8 +421,10 @@ def test_load_config_burgers_2d():
         2,
     ]
     assert (
-        velocity.initial_condition.components["y"].params["modes"][0]["amplitude"]
-        == -1.0
+        velocity.initial_condition.components["y"].params["modes"][0]["amplitude"][
+            "sample"
+        ]
+        == "uniform"
     )
     assert cfg.boundary_field("velocity").side_conditions("x-")[0].pair_with == "x+"
     assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
@@ -442,8 +445,10 @@ def test_load_config_burgers_3d():
         2,
     ]
     assert (
-        velocity.initial_condition.components["z"].params["modes"][0]["amplitude"]
-        == -0.9
+        velocity.initial_condition.components["z"].params["modes"][0]["amplitude"][
+            "sample"
+        ]
+        == "uniform"
     )
     assert cfg.boundary_field("velocity").side_conditions("z+")[0].pair_with == "z-"
     assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
@@ -465,7 +470,7 @@ def test_load_config_maxwell_pulse():
     electric_field = cfg.input("electric_field")
     boundary_field = cfg.boundary_field("electric_field")
     assert cfg.output_mode("electric_field") == "components"
-    assert electric_field.initial_condition.components["x"].type == "constant"
+    assert electric_field.initial_condition.components["x"].type == "gaussian_noise"
     assert electric_field.initial_condition.components["y"].params["value"] == 0.0
     assert boundary_field.side_conditions("x-")[0].type == "absorbing"
     assert boundary_field.side_conditions("y-")[0].type == "dirichlet"
@@ -483,7 +488,7 @@ def test_load_config_wave():
     assert cfg.input("u").initial_condition.type == "constant"
     assert cfg.input("u").initial_condition.params["value"] == 0.0
     assert cfg.input("v").initial_condition.type == "gaussian_blobs"
-    assert cfg.input("v").initial_condition.params["blobs"][0]["center"] == [0.28, 0.44]
+    assert cfg.input("v").initial_condition.params["generators"][0]["count"] == 1
     assert cfg.input("forcing").source.type == "none"
     assert cfg.output_mode("u") == "scalar"
     assert cfg.output_mode("v") == "scalar"
@@ -501,7 +506,9 @@ def test_load_config_schrodinger():
     assert cfg.coefficient("potential").type == "gaussian_bump"
     assert cfg.coefficient("potential").params["amplitude"] == 8.0
     assert cfg.input("u").initial_condition.type == "gaussian_wave_packet"
-    assert cfg.input("u").initial_condition.params["wavevector"] == [14.0, 0.0]
+    assert (
+        cfg.input("u").initial_condition.params["wavevector"][0]["sample"] == "uniform"
+    )
     assert cfg.input("v").initial_condition.params["phase"] == pytest.approx(
         -1.5707963267948966
     )
@@ -517,7 +524,7 @@ def test_load_config_schrodinger():
 def test_load_config_schrodinger_3d():
     cfg = load_config("configs/basic/schrodinger/3d_default.yaml")
     assert cfg.domain.dimension == 3
-    assert cfg.input("u").initial_condition.params["center"] == [0.25, 0.5, 0.5]
+    assert cfg.input("u").initial_condition.params["center"][0]["sample"] == "uniform"
     assert cfg.output.formats == ["numpy"]
     assert cfg.boundary_field("u").side_conditions("z+")[0].type == "dirichlet"
 
@@ -532,7 +539,10 @@ def test_load_config_plate():
     assert cfg.coefficient("rigidity").params["value"] == 0.2
     assert cfg.input("deflection").initial_condition.type == "sine_waves"
     assert (
-        cfg.input("deflection").initial_condition.params["modes"][0]["amplitude"] == 0.1
+        cfg.input("deflection").initial_condition.params["modes"][0]["amplitude"][
+            "sample"
+        ]
+        == "uniform"
     )
     assert cfg.input("velocity").initial_condition.type == "constant"
     assert cfg.input("velocity").initial_condition.params["value"] == 0.0
@@ -556,7 +566,10 @@ def test_load_config_elasticity_2d():
     assert cfg.input("displacement").initial_condition.type == "zero"
     assert velocity.initial_condition.components["x"].params["value"] == 0.0
     assert velocity.initial_condition.components["y"].type == "gaussian_bump"
-    assert velocity.initial_condition.components["y"].params["center"] == [1.55, 0.2]
+    assert (
+        velocity.initial_condition.components["y"].params["center"][0]["sample"]
+        == "uniform"
+    )
     assert cfg.input("forcing").source.type == "zero"
     assert cfg.output_mode("displacement") == "components"
     assert cfg.output_mode("velocity") == "components"

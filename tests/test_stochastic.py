@@ -326,8 +326,9 @@ def test_gray_scott_saturating_noise_run_stays_finite(tmp_path):
         u_initial_condition=scalar_expr(
             "gaussian_blobs",
             background=1.0,
-            blobs=[
+            generators=[
                 {
+                    "count": 1,
                     "amplitude": -0.35,
                     "sigma": 0.12,
                     "center": [0.5, 0.5],
@@ -337,8 +338,9 @@ def test_gray_scott_saturating_noise_run_stays_finite(tmp_path):
         v_initial_condition=scalar_expr(
             "gaussian_blobs",
             background=0.0,
-            blobs=[
+            generators=[
                 {
+                    "count": 1,
                     "amplitude": 0.22,
                     "sigma": 0.1,
                     "center": [0.5, 0.5],

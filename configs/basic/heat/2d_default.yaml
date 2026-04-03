@@ -7,8 +7,12 @@ coefficients:
       value: 0.01
 domain:
   type: rectangle
-  size: [1.0, 1.0]
-  mesh_resolution: [128, 128]
+  size:
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 128
+  - 128
 time:
   $ref: time.unit_interval_dt_0p01
 inputs:
@@ -20,10 +24,23 @@ inputs:
       type: gaussian_blobs
       params:
         background: 0.0
-        blobs:
-          - amplitude: 1.0
-            sigma: 0.1
-            center: [0.5, 0.5]
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.85
+            max: 1.15
+          sigma:
+            sample: uniform
+            min: 0.08
+            max: 0.12
+          center:
+          - sample: uniform
+            min: 0.35
+            max: 0.65
+          - sample: uniform
+            min: 0.35
+            max: 0.65
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.homogeneous_neumann_2d
@@ -31,6 +48,8 @@ solver:
   $ref: solver.profile.constant_lhs_scalar_spd
 output:
   $ref: output.template.scalar_u
-  resolution: [64, 64]
+  resolution:
+  - 64
+  - 64
   num_frames: 20
 seed: 42

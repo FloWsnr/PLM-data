@@ -12,8 +12,12 @@ coefficients:
       value: 0.0
 domain:
   type: rectangle
-  size: [1.0, 1.0]
-  mesh_resolution: [64, 64]
+  size:
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 64
+  - 64
 time:
   dt: 0.005
   t_end: 2.0
@@ -23,10 +27,23 @@ inputs:
       type: gaussian_blobs
       params:
         background: 0.0
-        blobs:
-          - amplitude: 0.15
-            sigma: 0.06
-            center: [0.31, 0.43]
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.1275
+            max: 0.1725
+          sigma:
+            sample: uniform
+            min: 0.04
+            max: 0.08
+          center:
+          - sample: uniform
+            min: 0.22
+            max: 0.4
+          - sample: uniform
+            min: 0.34
+            max: 0.52
   velocity:
     initial_condition:
       components:
@@ -45,7 +62,9 @@ boundary_conditions:
     $ref: boundary_field.vector.full_periodic_2d
 output:
   $ref: output.template.height_velocity
-  resolution: [96, 96]
+  resolution:
+  - 96
+  - 96
   num_frames: 41
 solver:
   $ref: solver.profile.nonlinear_mixed_direct

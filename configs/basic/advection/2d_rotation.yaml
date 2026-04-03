@@ -19,8 +19,12 @@ coefficients:
       value: 0.0004
 domain:
   type: rectangle
-  size: [1.0, 1.0]
-  mesh_resolution: [96, 96]
+  size:
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 96
+  - 96
 time:
   dt: 0.01
   t_end: 2.4
@@ -33,10 +37,23 @@ inputs:
       type: gaussian_blobs
       params:
         background: 0.0
-        blobs:
-          - amplitude: 1.0
-            sigma: 0.035
-            center: [0.78, 0.42]
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.85
+            max: 1.15
+          sigma:
+            sample: uniform
+            min: 0.015
+            max: 0.055
+          center:
+          - sample: uniform
+            min: 0.7
+            max: 0.86
+          - sample: uniform
+            min: 0.34
+            max: 0.5
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.homogeneous_neumann_2d
@@ -44,6 +61,8 @@ solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 output:
   $ref: output.template.scalar_u
-  resolution: [96, 96]
+  resolution:
+  - 96
+  - 96
   num_frames: 49
 seed: 42

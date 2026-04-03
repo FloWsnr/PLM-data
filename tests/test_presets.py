@@ -1172,12 +1172,26 @@ def test_gray_scott_rejects_spd_solver_strategy_with_advection(tmp_path):
         u_initial_condition=scalar_expr(
             "gaussian_blobs",
             background=1.0,
-            blobs=[{"amplitude": -0.5, "sigma": 0.08, "center": [0.5, 0.5]}],
+            generators=[
+                {
+                    "count": 1,
+                    "amplitude": -0.5,
+                    "sigma": 0.08,
+                    "center": [0.5, 0.5],
+                }
+            ],
         ),
         v_initial_condition=scalar_expr(
             "gaussian_blobs",
             background=0.0,
-            blobs=[{"amplitude": 0.25, "sigma": 0.08, "center": [0.5, 0.5]}],
+            generators=[
+                {
+                    "count": 1,
+                    "amplitude": 0.25,
+                    "sigma": 0.08,
+                    "center": [0.5, 0.5],
+                }
+            ],
         ),
         u_boundary_conditions={},
         v_boundary_conditions={},
@@ -1199,12 +1213,26 @@ def test_gray_scott_accepts_spd_solver_strategy_with_zero_velocity(tmp_path):
         u_initial_condition=scalar_expr(
             "gaussian_blobs",
             background=1.0,
-            blobs=[{"amplitude": -0.5, "sigma": 0.08, "center": [0.5, 0.5]}],
+            generators=[
+                {
+                    "count": 1,
+                    "amplitude": -0.5,
+                    "sigma": 0.08,
+                    "center": [0.5, 0.5],
+                }
+            ],
         ),
         v_initial_condition=scalar_expr(
             "gaussian_blobs",
             background=0.0,
-            blobs=[{"amplitude": 0.25, "sigma": 0.08, "center": [0.5, 0.5]}],
+            generators=[
+                {
+                    "count": 1,
+                    "amplitude": 0.25,
+                    "sigma": 0.08,
+                    "center": [0.5, 0.5],
+                }
+            ],
         ),
         u_boundary_conditions={},
         v_boundary_conditions={},

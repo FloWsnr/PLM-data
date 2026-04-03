@@ -3,8 +3,14 @@ parameters:
   nu: 0.004
 domain:
   type: box
-  size: [1.0, 1.0, 1.0]
-  mesh_resolution: [18, 18, 18]
+  size:
+  - 1.0
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 18
+  - 18
+  - 18
 time:
   dt: 0.01
   t_end: 0.6
@@ -20,34 +26,66 @@ inputs:
           params:
             background: 0.0
             modes:
-              - amplitude: 0.9
-                cycles: [0, 2, 0]
-                phase: 1.5707963267948966
+            - amplitude:
+                sample: uniform
+                min: 0.765
+                max: 1.035
+              cycles:
+              - 0
+              - 2
+              - 0
+              phase:
+                sample: uniform
+                min: 0.0
+                max: 6.283185
         y:
           type: sine_waves
           params:
             background: 0.0
             modes:
-              - amplitude: 0.9
-                cycles: [0, 0, 2]
-                phase: 1.5707963267948966
+            - amplitude:
+                sample: uniform
+                min: 0.765
+                max: 1.035
+              cycles:
+              - 0
+              - 0
+              - 2
+              phase:
+                sample: uniform
+                min: 0.0
+                max: 6.283185
         z:
           type: sine_waves
           params:
             background: 0.0
             modes:
-              - amplitude: -0.9
-                cycles: [2, 0, 0]
-                phase: 1.5707963267948966
+            - amplitude:
+                sample: uniform
+                min: -1.035
+                max: -0.765
+              cycles:
+              - 2
+              - 0
+              - 0
+              phase:
+                sample: uniform
+                min: 0.0
+                max: 6.283185
 boundary_conditions:
   velocity:
     $ref: boundary_field.vector.full_periodic_3d
 solver:
   $ref: solver.profile.nonlinear_mixed_direct
 output:
-  resolution: [24, 24, 24]
+  resolution:
+  - 24
+  - 24
+  - 24
   num_frames: 16
-  formats: [numpy, gif]
+  formats:
+  - numpy
+  - gif
   fields:
     velocity:
       mode: components

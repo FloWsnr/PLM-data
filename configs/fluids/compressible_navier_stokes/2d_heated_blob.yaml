@@ -8,8 +8,12 @@ parameters:
   k: 1.0
 domain:
   type: rectangle
-  size: [1.0, 1.0]
-  mesh_resolution: [32, 32]
+  size:
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 32
+  - 32
 time:
   dt: 0.01
   t_end: 0.2
@@ -42,43 +46,64 @@ inputs:
       params:
         amplitude: 2.5
         sigma: 0.1
-        center: [0.35, 0.5]
+        center:
+        - 0.35
+        - 0.5
     initial_condition:
-      type: constant
+      type: gaussian_blobs
       params:
-        value: 1.0
+        background: 1.0
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.2
+            max: 0.4
+          sigma:
+            sample: uniform
+            min: 0.08
+            max: 0.12
+          center:
+          - sample: uniform
+            min: 0.2
+            max: 0.5
+          - sample: uniform
+            min: 0.35
+            max: 0.65
 boundary_conditions:
   density:
     x-:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     x+:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     y-:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     y+:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
   velocity:
     $ref: boundary_field.vector.homogeneous_dirichlet_2d
   temperature:
     x-:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     x+:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     y-:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
     y+:
-      - operator: dirichlet
-        value: 1.0
+    - operator: dirichlet
+      value: 1.0
 output:
   $ref: output.template.density_velocity_pressure_temperature
-  resolution: [96, 96]
+  resolution:
+  - 96
+  - 96
   num_frames: 24
 solver:
   $ref: solver.profile.nonlinear_mixed_direct
