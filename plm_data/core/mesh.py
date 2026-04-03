@@ -9,7 +9,11 @@ from dolfinx import mesh
 from dolfinx.mesh import CellType, GhostMode, locate_entities_boundary, meshtags
 from mpi4py import MPI
 
-from plm_data.core.config import DomainConfig, PeriodicMapConfig
+from plm_data.core.config import (
+    DomainConfig,
+    PeriodicMapConfig,
+    validate_domain_params,
+)
 
 
 @dataclass
@@ -199,6 +203,14 @@ def _builtin_periodic_map(
     }
 
 
+def _model_to_mesh_shared_facet(model, comm: MPI.Intracomm, *, rank: int, gdim: int):
+    """Import a Gmsh model using shared-facet ghosting for parallel runs."""
+    from dolfinx.io.gmsh import model_to_mesh
+
+    partitioner = mesh.create_cell_partitioner(GhostMode.shared_facet, 2)
+    return model_to_mesh(model, comm, rank=rank, gdim=gdim, partitioner=partitioner)
+
+
 @register_domain("interval")
 def _create_interval(domain: DomainConfig) -> DomainGeometry:
     p = domain.params
@@ -371,12 +383,12 @@ def _create_box(domain: DomainConfig) -> DomainGeometry:
 @register_domain("annulus")
 def _create_annulus(domain: DomainConfig) -> DomainGeometry:
     import gmsh
-    from dolfinx.io.gmsh import model_to_mesh
 
     p = domain.params
     inner_radius = float(_require_param(p, "inner_radius", domain.type))
     outer_radius = float(_require_param(p, "outer_radius", domain.type))
     mesh_size = float(_require_param(p, "mesh_size", domain.type))
+    validate_domain_params(domain.type, p)
 
     comm = MPI.COMM_WORLD
     gmsh.initialize()
@@ -416,7 +428,7 @@ def _create_annulus(domain: DomainConfig) -> DomainGeometry:
             model.mesh.setSize(model.getEntities(0), mesh_size)
             model.mesh.generate(2)
 
-        mesh_data = model_to_mesh(model, comm, rank=0, gdim=2)
+        mesh_data = _model_to_mesh_shared_facet(model, comm, rank=0, gdim=2)
     finally:
         gmsh.finalize()
 

@@ -1,5 +1,7 @@
 """Tests for plm_data.core.config."""
 
+from pathlib import Path
+
 import pytest
 import yaml
 
@@ -126,6 +128,19 @@ def test_load_config_missing_field(tmp_path):
     bad_yaml.write_text(yaml.dump({"parameters": {"k": 1.0}}))
     with pytest.raises(ValueError, match="preset"):
         load_config(bad_yaml)
+
+
+def test_load_config_rejects_invalid_annulus_geometry(tmp_path):
+    data = yaml.safe_load(
+        Path("configs/physics/gray_scott/2d_annulus.yaml").read_text()
+    )
+    data["domain"]["inner_radius"] = 1.25
+    data["domain"]["outer_radius"] = 1.0
+
+    path = _write_yaml(tmp_path, "bad_annulus.yaml", data)
+
+    with pytest.raises(ValueError, match="inner_radius' < 'outer_radius"):
+        load_config(path)
 
 
 def test_load_config_boundary_field_sections():

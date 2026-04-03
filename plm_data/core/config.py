@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 from dataclasses import dataclass, field
+import math
 from pathlib import Path
 from typing import Any
 
@@ -447,6 +448,44 @@ def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
     )
 
 
+def validate_domain_params(domain_type: str, params: dict[str, Any]) -> None:
+    """Validate built-in domain parameters before mesh creation."""
+    if domain_type != "annulus":
+        return
+
+    required = ("inner_radius", "outer_radius", "mesh_size")
+    missing = [name for name in required if name not in params]
+    if missing:
+        raise ValueError(
+            f"Annulus domain requires parameters {sorted(required)}. "
+            f"Missing {sorted(missing)}."
+        )
+
+    inner_radius = float(params["inner_radius"])
+    outer_radius = float(params["outer_radius"])
+    mesh_size = float(params["mesh_size"])
+
+    for name, value in (
+        ("inner_radius", inner_radius),
+        ("outer_radius", outer_radius),
+        ("mesh_size", mesh_size),
+    ):
+        if not math.isfinite(value):
+            raise ValueError(
+                f"Annulus domain parameter '{name}' must be finite. Got {value}."
+            )
+        if value <= 0.0:
+            raise ValueError(
+                f"Annulus domain parameter '{name}' must be > 0. Got {value}."
+            )
+
+    if inner_radius >= outer_radius:
+        raise ValueError(
+            "Annulus domain requires 'inner_radius' < 'outer_radius'. "
+            f"Got inner_radius={inner_radius} and outer_radius={outer_radius}."
+        )
+
+
 def _load_fragment_catalog() -> dict[str, Any]:
     """Load the shared config-fragment catalog."""
     with open(_FRAGMENT_CATALOG_PATH) as f:
@@ -636,6 +675,9 @@ class DomainConfig:
     type: str
     params: dict[str, Any]
     periodic_maps: dict[str, PeriodicMapConfig] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        validate_domain_params(self.type, self.params)
 
     @property
     def dimension(self) -> int:
