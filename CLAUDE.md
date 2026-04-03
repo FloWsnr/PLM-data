@@ -8,10 +8,10 @@ PLM-data generates PDE simulation datasets using DOLFINx (FEniCSx). It produces 
 
 ```bash
 # Run a simulation (single core)
-./run.sh run configs/basic/heat/2d_default.yaml --output-dir ./output
+./run.sh run configs/basic/heat/2d_single_blob_diffusion.yaml --output-dir ./output
 
 # Run a simulation with multiple MPI ranks
-./run.sh -n 4 run configs/basic/heat/2d_default.yaml --output-dir ./output
+./run.sh -n 4 run configs/basic/heat/2d_single_blob_diffusion.yaml --output-dir ./output
 
 # List registered presets
 ./run.sh list
@@ -27,7 +27,7 @@ Two conda environments exist:
 
 Override the environment via `PLM_CONDA_ENV`:
 ```bash
-PLM_CONDA_ENV=fenicsx-env-complex ./run.sh -n 4 run configs/basic/heat/2d_default.yaml --output-dir ./output
+PLM_CONDA_ENV=fenicsx-env-complex ./run.sh -n 4 run configs/basic/heat/2d_single_blob_diffusion.yaml --output-dir ./output
 ```
 
 ## Architecture

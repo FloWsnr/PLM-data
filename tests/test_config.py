@@ -41,7 +41,7 @@ def _write_yaml(tmp_path, name: str, data: dict[str, object]):
 
 
 def test_load_config():
-    cfg = load_config("configs/basic/heat/2d_default.yaml")
+    cfg = load_config("configs/basic/heat/2d_single_blob_diffusion.yaml")
     assert cfg.preset == "heat"
     assert cfg.parameters == {}
     assert cfg.coefficient("kappa").type == "constant"
@@ -67,14 +67,14 @@ def test_load_config():
 
 
 def test_load_config_periodic_field():
-    cfg = load_config("configs/physics/cahn_hilliard/2d_default.yaml")
+    cfg = load_config("configs/physics/cahn_hilliard/2d_spinodal_decomposition.yaml")
     assert cfg.has_periodic_boundary_conditions is True
     assert cfg.boundary_field("c").side_conditions("x-")[0].pair_with == "x+"
     assert cfg.boundary_field("c").side_conditions("y+")[0].type == "periodic"
 
 
 def test_load_config_fisher_kpp_2d():
-    cfg = load_config("configs/biology/fisher_kpp/2d_default.yaml")
+    cfg = load_config("configs/biology/fisher_kpp/2d_logistic_invasion_front.yaml")
     assert cfg.preset == "fisher_kpp"
     assert cfg.domain.dimension == 2
     assert cfg.parameters["D"] == 0.1
@@ -89,7 +89,7 @@ def test_load_config_fisher_kpp_2d():
 
 
 def test_load_config_fisher_kpp_3d():
-    cfg = load_config("configs/biology/fisher_kpp/3d_default.yaml")
+    cfg = load_config("configs/biology/fisher_kpp/3d_logistic_invasion_front.yaml")
     assert cfg.preset == "fisher_kpp"
     assert cfg.domain.dimension == 3
     assert cfg.has_periodic_boundary_conditions is False
@@ -102,7 +102,7 @@ def test_load_config_fisher_kpp_3d():
 
 
 def test_load_config_bistable_travelling_waves_2d():
-    cfg = load_config("configs/biology/bistable_travelling_waves/2d_default.yaml")
+    cfg = load_config("configs/biology/bistable_travelling_waves/2d_planar_invasion_front.yaml")
     assert cfg.preset == "bistable_travelling_waves"
     assert cfg.domain.dimension == 2
     assert cfg.parameters["D"] == 1.0
@@ -116,7 +116,7 @@ def test_load_config_bistable_travelling_waves_2d():
 
 
 def test_load_config_bistable_travelling_waves_3d():
-    cfg = load_config("configs/biology/bistable_travelling_waves/3d_default.yaml")
+    cfg = load_config("configs/biology/bistable_travelling_waves/3d_planar_invasion_front.yaml")
     assert cfg.preset == "bistable_travelling_waves"
     assert cfg.domain.dimension == 3
     assert cfg.has_periodic_boundary_conditions is False
@@ -136,7 +136,7 @@ def test_load_config_missing_field(tmp_path):
 
 def test_load_config_rejects_invalid_annulus_geometry(tmp_path):
     data = yaml.safe_load(
-        Path("configs/physics/gray_scott/2d_annulus.yaml").read_text()
+        Path("configs/physics/gray_scott/2d_annular_spot_stripe_patterns.yaml").read_text()
     )
     data["domain"]["inner_radius"] = 1.25
     data["domain"]["outer_radius"] = 1.0
@@ -148,7 +148,7 @@ def test_load_config_rejects_invalid_annulus_geometry(tmp_path):
 
 
 def test_load_config_boundary_field_sections():
-    cfg = load_config("configs/basic/poisson/2d_default.yaml")
+    cfg = load_config("configs/basic/poisson/2d_sinusoidal_source_response.yaml")
     u_boundary = cfg.boundary_field("u")
     assert set(u_boundary.sides) == {"x-", "x+", "y-", "y+"}
     assert cfg.input("u").source.type == "sine_product"
@@ -157,7 +157,7 @@ def test_load_config_boundary_field_sections():
 
 
 def test_load_config_vector_input():
-    cfg = load_config("configs/fluids/navier_stokes/2d_cavity_re400.yaml")
+    cfg = load_config("configs/fluids/navier_stokes/2d_lid_driven_cavity_vortices.yaml")
     velocity = cfg.input("velocity")
     velocity_bcs = cfg.boundary_field("velocity")
     assert cfg.output_mode("velocity") == "components"
@@ -174,7 +174,7 @@ def test_load_config_vector_input():
 
 
 def test_load_config_thermal_convection_2d():
-    cfg = load_config("configs/fluids/thermal_convection/2d_default.yaml")
+    cfg = load_config("configs/fluids/thermal_convection/2d_rayleigh_benard_rolls.yaml")
     assert cfg.preset == "thermal_convection"
     assert cfg.domain.dimension == 2
     assert cfg.output_mode("velocity") == "components"
@@ -196,7 +196,7 @@ def test_load_config_thermal_convection_2d():
 
 
 def test_load_config_thermal_convection_3d():
-    cfg = load_config("configs/fluids/thermal_convection/3d_default.yaml")
+    cfg = load_config("configs/fluids/thermal_convection/3d_rayleigh_benard_plumes.yaml")
     assert cfg.preset == "thermal_convection"
     assert cfg.domain.dimension == 3
     assert cfg.has_periodic_boundary_conditions is True
@@ -210,7 +210,7 @@ def test_load_config_thermal_convection_3d():
 
 
 def test_load_config_gray_scott_2d():
-    cfg = load_config("configs/physics/gray_scott/2d_default.yaml")
+    cfg = load_config("configs/physics/gray_scott/2d_drifting_spot_stripe_patterns.yaml")
     assert cfg.preset == "gray_scott"
     assert cfg.domain.dimension == 2
     assert cfg.has_periodic_boundary_conditions is True
@@ -229,7 +229,7 @@ def test_load_config_gray_scott_2d():
 
 
 def test_load_config_gray_scott_3d():
-    cfg = load_config("configs/physics/gray_scott/3d_default.yaml")
+    cfg = load_config("configs/physics/gray_scott/3d_spot_blob_patterns.yaml")
     assert cfg.preset == "gray_scott"
     assert cfg.domain.dimension == 3
     assert cfg.has_periodic_boundary_conditions is True
@@ -250,7 +250,7 @@ def test_load_config_gray_scott_3d():
 
 
 def test_load_config_swift_hohenberg_2d_default():
-    cfg = load_config("configs/physics/swift_hohenberg/2d_default.yaml")
+    cfg = load_config("configs/physics/swift_hohenberg/2d_advected_roll_growth.yaml")
     assert cfg.preset == "swift_hohenberg"
     assert cfg.domain.dimension == 2
     assert cfg.has_periodic_boundary_conditions is True
@@ -265,7 +265,7 @@ def test_load_config_swift_hohenberg_2d_default():
 
 
 def test_load_config_swift_hohenberg_2d_rotational():
-    cfg = load_config("configs/physics/swift_hohenberg/2d_rotational.yaml")
+    cfg = load_config("configs/physics/swift_hohenberg/2d_rotating_roll_patterns.yaml")
     assert cfg.preset == "swift_hohenberg"
     assert cfg.domain.dimension == 2
     assert cfg.has_periodic_boundary_conditions is False
@@ -276,7 +276,7 @@ def test_load_config_swift_hohenberg_2d_rotational():
 
 
 def test_load_config_swift_hohenberg_2d_directed():
-    cfg = load_config("configs/physics/swift_hohenberg/2d_directed.yaml")
+    cfg = load_config("configs/physics/swift_hohenberg/2d_directed_roll_growth.yaml")
     assert cfg.preset == "swift_hohenberg"
     assert cfg.domain.dimension == 2
     assert cfg.has_periodic_boundary_conditions is True
@@ -286,7 +286,7 @@ def test_load_config_swift_hohenberg_2d_directed():
 
 
 def test_load_config_swift_hohenberg_3d_default():
-    cfg = load_config("configs/physics/swift_hohenberg/3d_default.yaml")
+    cfg = load_config("configs/physics/swift_hohenberg/3d_advected_pattern_growth.yaml")
     assert cfg.preset == "swift_hohenberg"
     assert cfg.domain.dimension == 3
     assert cfg.has_periodic_boundary_conditions is True
@@ -296,7 +296,7 @@ def test_load_config_swift_hohenberg_3d_default():
 
 
 def test_load_config_van_der_pol_2d():
-    cfg = load_config("configs/physics/van_der_pol/2d_default.yaml")
+    cfg = load_config("configs/physics/van_der_pol/2d_oscillatory_wave_relaxation.yaml")
     assert cfg.preset == "van_der_pol"
     assert cfg.domain.dimension == 2
     assert cfg.has_periodic_boundary_conditions is True
@@ -315,7 +315,7 @@ def test_load_config_van_der_pol_2d():
 
 
 def test_load_config_van_der_pol_3d():
-    cfg = load_config("configs/physics/van_der_pol/3d_default.yaml")
+    cfg = load_config("configs/physics/van_der_pol/3d_oscillatory_wave_relaxation.yaml")
     assert cfg.preset == "van_der_pol"
     assert cfg.domain.dimension == 3
     assert cfg.has_periodic_boundary_conditions is True
@@ -329,7 +329,7 @@ def test_load_config_van_der_pol_3d():
 
 
 def test_load_config_keller_segel_2d():
-    cfg = load_config("configs/biology/keller_segel/2d_default.yaml")
+    cfg = load_config("configs/biology/keller_segel/2d_chemotactic_aggregation.yaml")
     assert cfg.preset == "keller_segel"
     assert cfg.domain.dimension == 2
     assert cfg.has_periodic_boundary_conditions is True
@@ -343,7 +343,7 @@ def test_load_config_keller_segel_2d():
 
 
 def test_load_config_cyclic_competition_2d():
-    cfg = load_config("configs/biology/cyclic_competition/2d_default.yaml")
+    cfg = load_config("configs/biology/cyclic_competition/2d_spatial_rps_domains.yaml")
     assert cfg.preset == "cyclic_competition"
     assert cfg.domain.dimension == 2
     assert cfg.has_periodic_boundary_conditions is True
@@ -361,7 +361,7 @@ def test_load_config_cyclic_competition_2d():
 
 
 def test_load_config_shallow_water():
-    cfg = load_config("configs/fluids/shallow_water/2d_default.yaml")
+    cfg = load_config("configs/fluids/shallow_water/2d_rotating_gravity_wave_pulse.yaml")
     assert cfg.preset == "shallow_water"
     assert cfg.domain.dimension == 2
     assert cfg.parameters["gravity"] == 1.0
@@ -383,7 +383,7 @@ def test_load_config_shallow_water():
 
 
 def test_load_config_advection_2d():
-    cfg = load_config("configs/basic/advection/2d_default.yaml")
+    cfg = load_config("configs/basic/advection/2d_cellular_blob_advection.yaml")
     assert cfg.preset == "advection"
     assert cfg.domain.dimension == 2
     assert cfg.output_mode("u") == "scalar"
@@ -398,7 +398,7 @@ def test_load_config_advection_2d():
 
 
 def test_load_config_advection_3d():
-    cfg = load_config("configs/basic/advection/3d_default.yaml")
+    cfg = load_config("configs/basic/advection/3d_swirling_blob_advection.yaml")
     assert cfg.preset == "advection"
     assert cfg.domain.dimension == 3
     assert cfg.has_periodic_boundary_conditions is True
@@ -407,7 +407,7 @@ def test_load_config_advection_3d():
 
 
 def test_load_config_burgers_2d():
-    cfg = load_config("configs/fluids/burgers/2d_default.yaml")
+    cfg = load_config("configs/fluids/burgers/2d_shear_mode_interaction.yaml")
     velocity = cfg.input("velocity")
     assert cfg.preset == "burgers"
     assert cfg.domain.dimension == 2
@@ -431,7 +431,7 @@ def test_load_config_burgers_2d():
 
 
 def test_load_config_burgers_3d():
-    cfg = load_config("configs/fluids/burgers/3d_default.yaml")
+    cfg = load_config("configs/fluids/burgers/3d_shear_mode_interaction.yaml")
     velocity = cfg.input("velocity")
     assert cfg.preset == "burgers"
     assert cfg.domain.dimension == 3
@@ -455,7 +455,7 @@ def test_load_config_burgers_3d():
 
 
 def test_load_config_maxwell():
-    cfg = load_config("configs/physics/maxwell/2d_default.yaml")
+    cfg = load_config("configs/physics/maxwell/2d_localized_em_radiation.yaml")
     electric_field = cfg.input("electric_field")
     boundary_field = cfg.boundary_field("electric_field")
     assert cfg.output_mode("electric_field_real") == "components"
@@ -466,7 +466,7 @@ def test_load_config_maxwell():
 
 
 def test_load_config_maxwell_pulse():
-    cfg = load_config("configs/physics/maxwell_pulse/2d_default.yaml")
+    cfg = load_config("configs/physics/maxwell_pulse/2d_guided_em_pulse.yaml")
     electric_field = cfg.input("electric_field")
     boundary_field = cfg.boundary_field("electric_field")
     assert cfg.output_mode("electric_field") == "components"
@@ -478,7 +478,7 @@ def test_load_config_maxwell_pulse():
 
 
 def test_load_config_wave():
-    cfg = load_config("configs/basic/wave/2d_default.yaml")
+    cfg = load_config("configs/basic/wave/2d_localized_pulse_propagation.yaml")
     boundary_field = cfg.boundary_field("u")
     assert cfg.preset == "wave"
     assert cfg.parameters["damping"] == 0.01
@@ -497,7 +497,7 @@ def test_load_config_wave():
 
 
 def test_load_config_schrodinger():
-    cfg = load_config("configs/basic/schrodinger/2d_default.yaml")
+    cfg = load_config("configs/basic/schrodinger/2d_wavepacket_barrier_scattering.yaml")
     boundary_field_u = cfg.boundary_field("u")
     boundary_field_v = cfg.boundary_field("v")
     assert cfg.preset == "schrodinger"
@@ -522,7 +522,7 @@ def test_load_config_schrodinger():
 
 
 def test_load_config_schrodinger_3d():
-    cfg = load_config("configs/basic/schrodinger/3d_default.yaml")
+    cfg = load_config("configs/basic/schrodinger/3d_wavepacket_barrier_scattering.yaml")
     assert cfg.domain.dimension == 3
     assert cfg.input("u").initial_condition.params["center"][0]["sample"] == "uniform"
     assert cfg.output.formats == ["numpy"]
@@ -530,7 +530,7 @@ def test_load_config_schrodinger_3d():
 
 
 def test_load_config_plate():
-    cfg = load_config("configs/basic/plate/2d_default.yaml")
+    cfg = load_config("configs/basic/plate/2d_simply_supported_mode_vibration.yaml")
     boundary_field = cfg.boundary_field("deflection")
     assert cfg.preset == "plate"
     assert cfg.parameters["theta"] == 0.5
@@ -553,7 +553,7 @@ def test_load_config_plate():
 
 
 def test_load_config_elasticity_2d():
-    cfg = load_config("configs/basic/elasticity/2d_default.yaml")
+    cfg = load_config("configs/basic/elasticity/2d_cantilever_impulse_ringdown.yaml")
     boundary_field = cfg.boundary_field("displacement")
     velocity = cfg.input("velocity")
     assert cfg.preset == "elasticity"
@@ -580,7 +580,7 @@ def test_load_config_elasticity_2d():
 
 
 def test_load_config_elasticity_3d():
-    cfg = load_config("configs/basic/elasticity/3d_default.yaml")
+    cfg = load_config("configs/basic/elasticity/3d_cantilever_impulse_ringdown.yaml")
     boundary_field = cfg.boundary_field("displacement")
     velocity = cfg.input("velocity")
     assert cfg.preset == "elasticity"

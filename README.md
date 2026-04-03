@@ -44,16 +44,16 @@ Use the `run.sh` wrapper script, which activates the `fenicsx-env` conda environ
 
 ```bash
 # Run a simulation (single core)
-./run.sh run configs/basic/poisson/2d_default.yaml --output-dir ./output
+./run.sh run configs/basic/poisson/2d_sinusoidal_source_response.yaml --output-dir ./output
 
 # Run a simulation with multiple MPI ranks
-./run.sh -n 4 run configs/basic/poisson/2d_default.yaml --output-dir ./output
+./run.sh -n 4 run configs/basic/poisson/2d_sinusoidal_source_response.yaml --output-dir ./output
 
 # List available presets
 ./run.sh list
 
 # Use a different conda environment if needed
-PLM_CONDA_ENV=fenicsx-env-complex ./run.sh run configs/basic/poisson/2d_default.yaml --output-dir ./output
+PLM_CONDA_ENV=fenicsx-env-complex ./run.sh run configs/basic/poisson/2d_sinusoidal_source_response.yaml --output-dir ./output
 ```
 
 Both `maxwell_pulse` and the time-harmonic `maxwell` preset run in the standard

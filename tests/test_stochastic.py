@@ -104,7 +104,7 @@ def _box_mesh():
 
 
 def test_load_config_parses_stochastic_state_and_coefficient_sections(tmp_path):
-    data = _load_config_dict("configs/basic/heat/2d_default.yaml")
+    data = _load_config_dict("configs/basic/heat/2d_single_blob_diffusion.yaml")
     data["stochastic"] = {
         "states": {"u": {"coupling": "additive", "intensity": 0.2}},
         "coefficients": {
@@ -136,7 +136,7 @@ def test_load_config_parses_stochastic_state_and_coefficient_sections(tmp_path):
 
 
 def test_load_config_rejects_missing_saturating_offset(tmp_path):
-    data = _load_config_dict("configs/physics/gray_scott/2d_default.yaml")
+    data = _load_config_dict("configs/physics/gray_scott/2d_drifting_spot_stripe_patterns.yaml")
     data["stochastic"] = {
         "states": {"u": {"coupling": "saturating_self", "intensity": 0.05}}
     }
@@ -147,7 +147,7 @@ def test_load_config_rejects_missing_saturating_offset(tmp_path):
 
 
 def test_load_config_rejects_vector_coefficient_randomization(tmp_path):
-    data = _load_config_dict("configs/physics/gray_scott/2d_default.yaml")
+    data = _load_config_dict("configs/physics/gray_scott/2d_drifting_spot_stripe_patterns.yaml")
     data["stochastic"] = {
         "coefficients": {"velocity": {"mode": "additive", "std": 0.1}}
     }
@@ -158,7 +158,7 @@ def test_load_config_rejects_vector_coefficient_randomization(tmp_path):
 
 
 def test_load_config_rejects_stochastic_on_unsupported_preset(tmp_path):
-    data = _load_config_dict("configs/basic/wave/2d_default.yaml")
+    data = _load_config_dict("configs/basic/wave/2d_localized_pulse_propagation.yaml")
     data["stochastic"] = {"states": {"u": {"coupling": "additive", "intensity": 0.1}}}
 
     path = _write_yaml(tmp_path, "wave_stochastic.yaml", data)
