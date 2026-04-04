@@ -84,8 +84,7 @@ output:
   - 24
   num_frames: 16
   formats:
-  - numpy
-  - gif
+    $ref: output.formats.standard
   fields:
     velocity:
       mode: components

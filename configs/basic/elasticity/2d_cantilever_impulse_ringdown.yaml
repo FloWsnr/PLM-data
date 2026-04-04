@@ -80,8 +80,7 @@ output:
   - 40
   num_frames: 32
   formats:
-  - numpy
-  - gif
+    $ref: output.formats.standard
   fields:
     displacement: components
     velocity: components

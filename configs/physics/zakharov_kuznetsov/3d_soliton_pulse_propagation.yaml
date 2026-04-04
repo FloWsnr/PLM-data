@@ -45,7 +45,7 @@ boundary_conditions:
     $ref: boundary_field.scalar.full_periodic_3d
 output:
   formats:
-    $ref: output.formats.numpy
+    $ref: output.formats.standard
   fields:
     u:
       $ref: output.mode.scalar

@@ -84,7 +84,7 @@ boundary_conditions:
     $ref: boundary_field.vector.full_periodic_3d
 output:
   formats:
-    $ref: output.formats.numpy
+    $ref: output.formats.standard
   fields:
     velocity:
       $ref: output.mode.components

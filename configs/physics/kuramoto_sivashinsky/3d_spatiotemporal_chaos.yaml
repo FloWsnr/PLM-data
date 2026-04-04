@@ -20,7 +20,7 @@ boundary_conditions:
 output:
   $ref: output.template.scalar_uv
   formats:
-    $ref: output.formats.numpy
+    $ref: output.formats.standard
   resolution: [16, 16, 16]
   num_frames: 5
 solver:

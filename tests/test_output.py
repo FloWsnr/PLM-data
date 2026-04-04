@@ -18,6 +18,7 @@ from plm_data.core.config import (
     SimulationConfig,
     TimeConfig,
 )
+from plm_data.core.formats.vtk_writer import VTKWriter
 from plm_data.core.mesh import create_domain
 from plm_data.core.output import FrameWriter
 from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
@@ -281,6 +282,46 @@ class TestGifWriter:
             path = output_dir / filename
             assert path.exists()
             assert path.stat().st_size > 0
+
+
+class TestVTKWriter:
+    def test_scalar_output_uses_native_fem_mesh(self, tmp_path):
+        config = _scalar_heat_config(tmp_path, formats=["vtk"])
+        output_dir = tmp_path / "out"
+        spec = get_preset("heat").spec
+        writer = FrameWriter(output_dir, config, spec)
+
+        func = _create_scalar_function(config)
+        _write_scalar_frames(writer, func, num_frames=2)
+
+        paraview_dir = output_dir / "paraview"
+        assert (paraview_dir / "solution.pvd").exists()
+        assert any(path.suffix in {".vtu", ".pvtu"} for path in paraview_dir.iterdir())
+        assert not (output_dir / "u.npy").exists()
+
+        meta = json.loads((output_dir / "frames_meta.json").read_text())
+        assert meta["timings"]["vtk_write_seconds"] > 0.0
+
+    def test_noncg_fields_are_visualized_on_same_mesh(self, tmp_path):
+        domain = create_domain(
+            DomainConfig(
+                type="rectangle",
+                params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
+            )
+        )
+        V = fem.functionspace(domain.mesh, ("N1curl", 1))
+        field = fem.Function(V, name="electric_field")
+        field.interpolate(
+            lambda x: np.vstack((np.zeros_like(x[0]), np.ones_like(x[1])))
+        )
+
+        writer = VTKWriter(tmp_path)
+        writer.on_frame({"electric_field": field}, t=0.0)
+        writer.finalize()
+
+        paraview_dir = tmp_path / "paraview"
+        assert (paraview_dir / "solution.pvd").exists()
+        assert any(path.suffix in {".vtu", ".pvtu"} for path in paraview_dir.iterdir())
 
 
 @pytest.mark.skipif(not _has_ffmpeg, reason="ffmpeg not installed")

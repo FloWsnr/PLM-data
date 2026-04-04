@@ -97,7 +97,7 @@ def test_load_config_fisher_kpp_3d():
     assert cfg.input("u").initial_condition.params["axis"] == 0
     assert cfg.input("u").initial_condition.params["x_split"]["sample"] == "uniform"
     assert cfg.boundary_field("u").side_conditions("z+")[0].type == "neumann"
-    assert cfg.output.formats == ["numpy"]
+    assert cfg.output.formats == ["numpy", "gif", "vtk"]
     assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
 
 
@@ -127,7 +127,7 @@ def test_load_config_bistable_travelling_waves_3d():
     assert cfg.coefficient("velocity").type == "zero"
     assert cfg.input("u").initial_condition.params["x_split"]["sample"] == "uniform"
     assert cfg.boundary_field("u").side_conditions("z-")[0].type == "neumann"
-    assert cfg.output.formats == ["numpy"]
+    assert cfg.output.formats == ["numpy", "gif", "vtk"]
     assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
 
 
@@ -537,7 +537,7 @@ def test_load_config_schrodinger_3d():
     cfg = load_config("configs/basic/schrodinger/3d_wavepacket_barrier_scattering.yaml")
     assert cfg.domain.dimension == 3
     assert cfg.input("u").initial_condition.params["center"][0]["sample"] == "uniform"
-    assert cfg.output.formats == ["numpy"]
+    assert cfg.output.formats == ["numpy", "gif", "vtk"]
     assert cfg.boundary_field("u").side_conditions("z+")[0].type == "dirichlet"
 
 
@@ -968,14 +968,14 @@ def test_load_config_resolves_list_and_scalar_fragment_refs(tmp_path):
     data["output"] = {
         "resolution": [8, 8],
         "num_frames": 1,
-        "formats": {"$ref": "output.formats.numpy_gif"},
+        "formats": {"$ref": "output.formats.standard"},
         "fields": {"u": {"$ref": "output.mode.scalar"}},
     }
     p = _write_yaml(tmp_path, "output_ref.yaml", data)
 
     cfg = load_config(p)
 
-    assert cfg.output.formats == ["numpy", "gif"]
+    assert cfg.output.formats == ["numpy", "gif", "vtk"]
     assert cfg.output_mode("u") == "scalar"
 
 

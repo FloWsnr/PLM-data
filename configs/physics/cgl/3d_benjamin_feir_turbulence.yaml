@@ -37,7 +37,7 @@ boundary_conditions:
 output:
   $ref: output.template.cgl
   formats:
-    $ref: output.formats.numpy
+    $ref: output.formats.standard
   resolution: [32, 32, 32]
   num_frames: 5
 solver:

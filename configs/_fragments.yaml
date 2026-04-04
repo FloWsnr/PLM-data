@@ -365,27 +365,28 @@ boundary_field:
 
 output:
   formats:
-    numpy: [numpy]
-    numpy_gif: [numpy, gif]
+    standard: [numpy, gif, vtk]
+    numpy: [numpy, gif, vtk]
+    numpy_gif: [numpy, gif, vtk]
   mode:
     scalar: scalar
     components: components
   template:
     scalar_u:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         u:
           $ref: output.mode.scalar
     scalar_u_numpy:
       formats:
-        $ref: output.formats.numpy
+        $ref: output.formats.standard
       fields:
         u:
           $ref: output.mode.scalar
     scalar_uv:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         u:
           $ref: output.mode.scalar
@@ -393,7 +394,7 @@ output:
           $ref: output.mode.scalar
     scalar_ah:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         a:
           $ref: output.mode.scalar
@@ -401,7 +402,7 @@ output:
           $ref: output.mode.scalar
     scalar_uvw:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         u:
           $ref: output.mode.scalar
@@ -411,7 +412,7 @@ output:
           $ref: output.mode.scalar
     scalar_u1_v1_u2_v2:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         u_1:
           $ref: output.mode.scalar
@@ -423,7 +424,7 @@ output:
           $ref: output.mode.scalar
     scalar_xyz:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         x:
           $ref: output.mode.scalar
@@ -433,7 +434,7 @@ output:
           $ref: output.mode.scalar
     scalar_wn_topography:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         w:
           $ref: output.mode.scalar
@@ -443,7 +444,7 @@ output:
           $ref: output.mode.scalar
     scalar_rho_c:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         rho:
           $ref: output.mode.scalar
@@ -451,13 +452,13 @@ output:
           $ref: output.mode.scalar
     scalar_c:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         c:
           $ref: output.mode.scalar
     velocity_pressure:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         velocity:
           $ref: output.mode.components
@@ -465,7 +466,7 @@ output:
           $ref: output.mode.scalar
     height_velocity:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         height:
           $ref: output.mode.scalar
@@ -473,7 +474,7 @@ output:
           $ref: output.mode.components
     velocity_pressure_numpy:
       formats:
-        $ref: output.formats.numpy
+        $ref: output.formats.standard
       fields:
         velocity:
           $ref: output.mode.components
@@ -481,7 +482,7 @@ output:
           $ref: output.mode.scalar
     velocity_pressure_temperature:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         velocity:
           $ref: output.mode.components
@@ -491,7 +492,7 @@ output:
           $ref: output.mode.scalar
     velocity_pressure_temperature_numpy:
       formats:
-        $ref: output.formats.numpy
+        $ref: output.formats.standard
       fields:
         velocity:
           $ref: output.mode.components
@@ -501,7 +502,7 @@ output:
           $ref: output.mode.scalar
     density_velocity_pressure_temperature:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         density:
           $ref: output.mode.scalar
@@ -513,7 +514,7 @@ output:
           $ref: output.mode.scalar
     density_velocity_pressure_temperature_numpy:
       formats:
-        $ref: output.formats.numpy
+        $ref: output.formats.standard
       fields:
         density:
           $ref: output.mode.scalar
@@ -525,13 +526,13 @@ output:
           $ref: output.mode.scalar
     electric_field:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         electric_field:
           $ref: output.mode.components
     harmonic_maxwell:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         electric_field_real:
           $ref: output.mode.components
@@ -539,7 +540,7 @@ output:
           $ref: output.mode.components
     deflection_velocity:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         deflection:
           $ref: output.mode.scalar
@@ -547,7 +548,7 @@ output:
           $ref: output.mode.scalar
     cgl:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         u:
           $ref: output.mode.scalar
@@ -557,7 +558,7 @@ output:
           $ref: output.mode.scalar
     schrodinger:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         u:
           $ref: output.mode.scalar
@@ -569,7 +570,7 @@ output:
           $ref: output.mode.scalar
     darcy:
       formats:
-        $ref: output.formats.numpy_gif
+        $ref: output.formats.standard
       fields:
         pressure:
           $ref: output.mode.scalar
