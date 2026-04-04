@@ -1,0 +1,118 @@
+preset: gray_scott
+parameters:
+  Du: 2.0e-05
+  Dv: 1.0e-05
+  F: 0.062
+  k: 0.0609
+coefficients:
+  velocity:
+    components:
+      x:
+        type: constant
+        params:
+          value: 0.0
+      y:
+        type: constant
+        params:
+          value: 0.0
+domain:
+  type: dumbbell
+  left_center: [-0.7, 0.0]
+  right_center: [0.7, 0.0]
+  lobe_radius: 0.45
+  neck_width: 0.24
+  mesh_size: 0.02
+time:
+  dt: 1.0
+  t_end: 10000.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 1.0
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: -0.55
+            max: -0.45
+          sigma:
+            sample: uniform
+            min: 0.06
+            max: 0.1
+          center:
+          - sample: uniform
+            min: 0.5
+            max: 0.9
+          - sample: uniform
+            min: -0.3
+            max: 0.3
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: -0.55
+            max: -0.45
+          sigma:
+            sample: uniform
+            min: 0.06
+            max: 0.1
+          center:
+          - sample: uniform
+            min: -0.9
+            max: -0.5
+          - sample: uniform
+            min: -0.3
+            max: 0.3
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.2
+            max: 0.3
+          sigma:
+            sample: uniform
+            min: 0.06
+            max: 0.1
+          center:
+          - sample: uniform
+            min: 0.5
+            max: 0.9
+          - sample: uniform
+            min: -0.3
+            max: 0.3
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.2
+            max: 0.3
+          sigma:
+            sample: uniform
+            min: 0.06
+            max: 0.1
+          center:
+          - sample: uniform
+            min: -0.9
+            max: -0.5
+          - sample: uniform
+            min: -0.3
+            max: 0.3
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_neumann_outer
+  v:
+    $ref: boundary_field.scalar.homogeneous_neumann_outer
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  resolution:
+  - 128
+  - 128
+  num_frames: 80
+seed: 42

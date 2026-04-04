@@ -1,0 +1,43 @@
+preset: navier_stokes
+parameters:
+  Re: 400.0
+  k: 1.0
+domain:
+  type: channel_obstacle
+  length: 1.6
+  height: 1.0
+  obstacle_center: [0.75, 0.5]
+  obstacle_radius: 0.12
+  mesh_size: 0.03
+time:
+  dt: 0.005
+  t_end: 6.0
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: gaussian_noise
+          params:
+            mean: 0.0
+            std: 0.03
+        y:
+          type: gaussian_noise
+          params:
+            mean: 0.0
+            std: 0.03
+boundary_conditions:
+  velocity:
+    $ref: boundary_field.vector.channel_obstacle_flow_2d
+output:
+  $ref: output.template.velocity_pressure
+  resolution:
+  - 128
+  - 80
+  num_frames: 30
+solver:
+  $ref: solver.profile.transient_saddle_point
+seed: 42

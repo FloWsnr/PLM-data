@@ -1,0 +1,66 @@
+preset: elasticity
+parameters:
+  young_modulus: 6.0
+  poisson_ratio: 0.3
+  density: 1.0
+  eta_mass: 0.02
+  eta_stiffness: 0.002
+domain:
+  type: disk
+  center: [1.0, 0.2]
+  radius: 0.9
+  mesh_size: 0.03
+time:
+  dt: 0.004
+  t_end: 1.0
+inputs:
+  displacement:
+    initial_condition:
+      type: zero
+      params: {}
+  velocity:
+    initial_condition:
+      components:
+        x:
+          type: constant
+          params:
+            value: 0.0
+        y:
+          type: gaussian_bump
+          params:
+            amplitude:
+              sample: uniform
+              min: 1.19
+              max: 1.61
+            sigma:
+              sample: uniform
+              min: 0.06
+              max: 0.1
+            center:
+            - sample: uniform
+              min: 1.39
+              max: 1.71
+            - sample: uniform
+              min: 0.08
+              max: 0.32
+  forcing:
+    source:
+      type: zero
+      params: {}
+boundary_conditions:
+  displacement:
+    $ref: boundary_field.vector.homogeneous_dirichlet_outer
+solver:
+  $ref: solver.profile.constant_lhs_block_direct
+output:
+  resolution:
+  - 128
+  - 40
+  num_frames: 32
+  formats:
+    $ref: output.formats.standard
+  fields:
+    displacement: components
+    velocity: components
+    von_mises: scalar
+seed: 42

@@ -1,0 +1,28 @@
+preset: kuramoto_sivashinsky
+parameters:
+  theta: 0.5
+domain:
+  type: parallelogram
+  origin: [0.0, 0.0]
+  axis_x: [32.0, 0.0]
+  axis_y: [8.0, 32.0]
+  mesh_resolution: [128, 128]
+time:
+  $ref: time.ks_default
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean: 0.0
+        std: 0.01
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.full_periodic_2d
+output:
+  $ref: output.template.scalar_uv
+  resolution: [64, 64]
+  num_frames: 20
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

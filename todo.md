@@ -212,3 +212,84 @@ dynamics.
 
 1. `2d_soliton_pulse_propagation`: localized soliton-like pulse propagating and reshaping on a periodic domain.
 2. `3d_soliton_pulse_propagation`: 3D localized soliton-like pulse propagating and reshaping.
+
+## Geometry Expansion Roadmap
+
+The annulus unlocked two useful effects at once: curved boundaries and an interior
+obstacle. The next batch of domains should keep that spirit and target visibly
+different dynamics rather than just add geometric variety.
+
+### High-Priority Domains
+
+1. `disk` (`outer`): smooth closed 2D baseline for radial invasion, wave focusing, spiral anchoring, and edge-pinned patterns.
+2. `ellipse` (`outer`): almost as cheap as `disk`, but breaks rotational symmetry and splits otherwise degenerate modes.
+3. `stadium` (`outer`): chaotic-billiard cavity for Helmholtz, wave, Schrodinger, Maxwell, and passive-mixing examples.
+4. `l_shape` (`outer`): re-entrant corner for stress concentration, corner singularities, pinned fronts, and corner-driven diffusion.
+5. `dumbbell` (`outer`): two chambers coupled by a narrow neck, giving bottleneck transport, delayed synchronization, and chamber competition.
+6. `channel_obstacle` (`inlet`, `outlet`, `walls`, `obstacle`): canonical wake, diffraction, shielding, and bypass-flow geometry.
+7. `eccentric_annulus` (`inner`, `outer`): keeps the obstacle mechanics of the annulus, but breaks symmetry and creates preferred drift paths.
+8. `parallelogram` (`x-`, `x+`, `y-`, `y+`): lowest-risk non-orthogonal periodic cell for the periodic-only 2D families.
+9. `trapezoid` (`outer`, or segmented `uphill`, `downhill`, `left`, `right`): good for slope-driven ecology and plume steering.
+10. `cylinder` (`side`, `bottom`, `top`, or `inlet`, `outlet`, `side`): first useful smooth 3D domain for pulses, plumes, and cylindrical modes.
+11. `spherical_shell` (`inner`, `outer`): 3D annulus analogue for shell waves, patterning, and convection.
+12. `double_chamber_3d` (`outer`): 3D dumbbell / twin-lobe geometry for delayed exchange and filament transfer.
+13. `skew_box` (`x-`, `x+`, `y-`, `y+`, `z-`, `z+`): 3D periodic analogue of `parallelogram` for the periodic-only 3D presets.
+
+If the goal is maximum new-config coverage per unit of implementation work,
+`disk`, `dumbbell`, `parallelogram`, and `channel_obstacle` should come first.
+Together they cover most of the ideas below.
+
+Periodic-only presets (`cahn_hilliard`, `cgl`, `kuramoto_sivashinsky`,
+`lorenz`, `shallow_water`, and `zakharov_kuznetsov`) should mostly target
+`parallelogram` first, then `skew_box`.
+
+### Geometry-Driven Config Ideas By Preset
+
+#### Basic
+
+1. `advection` -> `2d_dumbbell_chamber_exchange`: a recirculating field moves a tracer blob between two lobes through a thin neck, highlighting residence times and incomplete mixing.
+2. `elasticity` -> `2d_l_shape_corner_ringdown`: impulse-driven vibration of an L-bracket, with strong corner stresses and richer mode coupling than the cantilever.
+3. `heat` -> `2d_dumbbell_bottleneck_diffusion`: one chamber starts hot and the neck controls the equilibration timescale between lobes.
+4. `helmholtz` -> `2d_stadium_cavity_response`: localized forcing inside a stadium should show scar-like hot spots and geometry-dependent resonance structure.
+5. `plate` -> `2d_disk_plate_mode_vibration`: circular plate modes give a very different vibration catalog from the current rectangular simply supported plate.
+6. `poisson` -> `2d_l_shape_source_response`: static potential on an L-shape to capture corner singularities and distorted equipotential contours.
+7. `schrodinger` -> `2d_stadium_wavepacket_billiard`: wave packet launched into a stadium cavity for quantum-billiard reflections and interference.
+8. `wave` -> `2d_dumbbell_pulse_transfer`: a localized pulse starts in one chamber and partly tunnels through the neck, producing delayed secondary arrivals.
+
+#### Biology
+
+1. `bistable_travelling_waves` -> `2d_dumbbell_front_switching`: a front invades one chamber, stalls at the neck, then either crosses or pins depending on curvature and width.
+2. `cyclic_competition` -> `2d_dumbbell_species_exchange`: spiral-like domains form independently in each lobe and intermittently invade through the bottleneck.
+3. `fisher_kpp` -> `2d_disk_radial_invasion`: colony growth from a central seed in a disk gives a clean curved-front benchmark instead of a planar front.
+4. `fitzhugh_nagumo` -> `2d_eccentric_annulus_reentry`: classic obstacle-anchored reentry, but with off-center geometry that biases drift and breakup.
+5. `gierer_meinhardt` -> `2d_disk_edge_pinned_spots`: smooth closed boundary should favor ring-aligned spots and boundary-pinned pattern selection.
+6. `immunotherapy` -> `2d_dumbbell_tumor_refuge_competition`: one lobe acts as an immune-privileged refuge while cells and cytokines leak through the neck.
+7. `keller_segel` -> `2d_disk_boundary_aggregation`: chemotactic collapse in a smooth bounded domain should accentuate radial aggregation and edge crowding.
+8. `klausmeier_topography` -> `2d_trapezoidal_hillslope_bands`: widening or narrowing slope geometry should bend vegetation bands and change migration speed across the domain.
+
+#### Fluids
+
+1. `burgers` -> `2d_parallelogram_shear_mode_interaction`: same steepening physics as the periodic box, but on a skew periodic cell that tilts shock alignment.
+2. `compressible_navier_stokes` -> `2d_channel_obstacle_heating_expansion`: localized heating upstream of an obstacle creates expanding waves, recirculation pockets, and thermal shadowing.
+3. `darcy` -> `2d_dumbbell_porous_exchange`: pressure-driven porous transport between two reservoirs connected by a thin throat.
+4. `mhd` -> `2d_parallelogram_alfven_wave_cells`: skew periodic geometry tests how magnetic and velocity structures align with a non-orthogonal lattice.
+5. `navier_stokes` -> `2d_cylinder_wake_rollup`: the obvious Gmsh-flow showcase, with vortex shedding and wake instability behind an obstacle.
+6. `shallow_water` -> `2d_parallelogram_rotating_gravity_wave_pulse`: periodic gravity waves on a skew cell should make wave crests and Coriolis deflection visually less axis-aligned.
+7. `stokes` -> `2d_creeping_flow_past_cylinder`: low-Re flow around an obstacle gives a clean steady benchmark before the full Navier-Stokes wake case.
+8. `thermal_convection` -> `3d_spherical_shell_convection_cells`: geophysically flavored shell convection with plume columns, boundary layers, and curved-cell organization.
+
+#### Physics
+
+1. `brusselator` -> `2d_dumbbell_turing_bridge`: Turing structures emerge in each chamber and either lock across the neck or remain phase-misaligned.
+2. `cahn_hilliard` -> `2d_parallelogram_spinodal_coarsening`: phase separation on a skew periodic cell tests whether coarsening statistics stay isotropic in the lattice basis.
+3. `cgl` -> `2d_parallelogram_phase_turbulence`: Benjamin-Feir turbulence on a skew torus should reduce obvious grid alignment in the complex-wave field.
+4. `gray_scott` -> `2d_dumbbell_spot_competition`: spot colonies nucleate in both lobes and compete for reagent flux through the connecting neck.
+5. `kuramoto_sivashinsky` -> `2d_parallelogram_spatiotemporal_chaos`: the same chaos as the periodic plane, but with oblique lattice directions to break rectangular bias.
+6. `lorenz` -> `2d_parallelogram_spatial_lorenz_chaos`: skew periodic geometry is a simple way to make the extended attractor less box-aligned.
+7. `maxwell` -> `2d_stadium_cavity_radiation`: time-harmonic EM forcing in a stadium should show geometry-controlled standing-wave scars and hot spots.
+8. `maxwell_pulse` -> `2d_dumbbell_em_pulse_transfer`: launch a pulse in one lobe and watch partial transmission, trapping, and reverberation through the neck.
+9. `schnakenberg` -> `2d_disk_edge_pinned_labyrinths`: smooth closed boundaries should bias stripe bending and spot pinning near the outer wall.
+10. `superlattice` -> `2d_disk_superlattice_targets`: circular geometry should favor concentric competition between the fast and slow pattern scales.
+11. `swift_hohenberg` -> `2d_eccentric_annulus_roll_pinning`: roll patterns and defects should lock to the broken-symmetry inner obstacle in a way the centered annulus cannot.
+12. `van_der_pol` -> `2d_disk_relaxation_targets`: relaxation oscillations in a disk may form cleaner target-like wave trains than the current box examples.
+13. `zakharov_kuznetsov` -> `2d_parallelogram_oblique_soliton_drift`: a skew periodic cell is the cleanest way to encourage oblique propagation without adding non-periodic boundaries.

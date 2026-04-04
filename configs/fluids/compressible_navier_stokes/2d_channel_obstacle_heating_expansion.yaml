@@ -1,0 +1,87 @@
+preset: compressible_navier_stokes
+parameters:
+  gas_constant: 1.0
+  c_v: 1.5
+  mu: 0.03
+  bulk_viscosity: 0.015
+  thermal_conductivity: 0.04
+  k: 1.0
+domain:
+  type: channel_obstacle
+  length: 1.4
+  height: 1.0
+  obstacle_center: [0.75, 0.5]
+  obstacle_radius: 0.12
+  mesh_size: 0.03
+time:
+  dt: 0.01
+  t_end: 0.2
+inputs:
+  density:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: constant
+      params:
+        value: 1.0
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: constant
+          params:
+            value: 0.0
+        y:
+          type: constant
+          params:
+            value: 0.0
+  temperature:
+    source:
+      type: gaussian_bump
+      params:
+        amplitude: 2.5
+        sigma: 0.1
+        center:
+        - 0.35
+        - 0.5
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 1.0
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.2
+            max: 0.4
+          sigma:
+            sample: uniform
+            min: 0.08
+            max: 0.12
+          center:
+          - sample: uniform
+            min: 0.2
+            max: 0.5
+          - sample: uniform
+            min: 0.35
+            max: 0.65
+boundary_conditions:
+  density:
+    $ref: boundary_field.scalar.unit_dirichlet_channel_obstacle
+  velocity:
+    $ref: boundary_field.vector.channel_obstacle_flow_2d
+  temperature:
+    $ref: boundary_field.scalar.unit_dirichlet_channel_obstacle
+output:
+  $ref: output.template.density_velocity_pressure_temperature
+  resolution:
+  - 128
+  - 80
+  num_frames: 24
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

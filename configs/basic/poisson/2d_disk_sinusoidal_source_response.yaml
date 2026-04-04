@@ -1,0 +1,27 @@
+preset: poisson
+parameters:
+  kappa: 1.0
+  f_amplitude: 10.0
+domain:
+  type: disk
+  center: [0.5, 0.5]
+  radius: 0.48
+  mesh_size: 0.02
+inputs:
+  u:
+    source:
+      type: sine_product
+      params:
+        amplitude: "param:f_amplitude"
+        kx: 4
+        ky: 3
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_dirichlet_outer
+solver:
+  $ref: solver.profile.stationary_scalar_spd
+output:
+  $ref: output.template.scalar_u
+  resolution: [64, 64]
+  num_frames: 1
+seed: 42

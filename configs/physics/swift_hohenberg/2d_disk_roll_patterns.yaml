@@ -1,0 +1,50 @@
+preset: swift_hohenberg
+parameters:
+  r: -0.28
+  q0: 1.0
+  alpha: 1.6
+  beta: -1.0
+  gamma: -1.0
+  theta: 0.5
+coefficients:
+  velocity:
+    components:
+      x:
+        type: affine
+        params:
+          constant: -2.0
+          y: 0.1
+      y:
+        type: affine
+        params:
+          constant: 2.0
+          x: -0.1
+domain:
+  type: disk
+  center: [20.0, 20.0]
+  radius: 18.5
+  mesh_size: 0.5
+time:
+  dt: 0.1
+  t_end: 20.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean: 0.0
+        std: 0.2
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.simply_supported_outer
+output:
+  formats:
+    $ref: output.formats.standard
+  fields:
+    u:
+      $ref: output.mode.scalar
+  resolution: [64, 64]
+  num_frames: 10
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

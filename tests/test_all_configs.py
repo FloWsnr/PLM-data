@@ -20,7 +20,7 @@ ALL_CONFIGS = sorted(
 HAS_DOLFINX_MPC = importlib.util.find_spec("dolfinx_mpc") is not None
 HAS_GMSH = importlib.util.find_spec("gmsh") is not None
 SMOKE_MESH_RESOLUTION_CAP = 4
-GMSH_DOMAIN_TYPES = {"annulus"}
+GMSH_DOMAIN_TYPES = {"annulus", "channel_obstacle", "disk", "dumbbell"}
 
 
 def _prepare_smoke_run_config(cfg, output_path: Path) -> None:

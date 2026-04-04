@@ -1,0 +1,98 @@
+preset: van_der_pol
+parameters:
+  Du: 0.2
+  Dv: 0.02
+  mu: 4.0
+domain:
+  type: parallelogram
+  origin: [0.0, 0.0]
+  axis_x: [40.0, 0.0]
+  axis_y: [10.0, 40.0]
+  mesh_resolution: [128, 128]
+time:
+  dt: 0.005
+  t_end: 30.0
+inputs:
+  u:
+    initial_condition:
+      type: sine_waves
+      params:
+        background: 0.0
+        modes:
+          - amplitude:
+              sample: uniform
+              min: -0.03
+              max: 0.03
+            cycles:
+              - sample: randint
+                min: 1
+                max: 4
+              - sample: randint
+                min: 1
+                max: 4
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185307179586
+          - amplitude:
+              sample: uniform
+              min: -0.03
+              max: 0.03
+            cycles:
+              - sample: randint
+                min: 1
+                max: 4
+              - sample: randint
+                min: 1
+                max: 4
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185307179586
+          - amplitude:
+              sample: uniform
+              min: -0.03
+              max: 0.03
+            cycles:
+              - sample: randint
+                min: 1
+                max: 4
+              - sample: randint
+                min: 1
+                max: 4
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185307179586
+          - amplitude:
+              sample: uniform
+              min: -0.03
+              max: 0.03
+            cycles:
+              - sample: randint
+                min: 1
+                max: 4
+              - sample: randint
+                min: 1
+                max: 4
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185307179586
+  v:
+    initial_condition:
+      type: constant
+      params:
+        value: 0.0
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.full_periodic_2d
+  v:
+    $ref: boundary_field.scalar.full_periodic_2d
+output:
+  $ref: output.template.scalar_uv
+  resolution: [96, 96]
+  num_frames: 80
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+seed: 42

@@ -1,0 +1,42 @@
+preset: bistable_travelling_waves
+parameters:
+  D: 1.0
+  a: 0.3
+coefficients:
+  velocity:
+    type: zero
+    params: {}
+domain:
+  type: dumbbell
+  left_center: [3.2, 3.0]
+  right_center: [6.8, 3.0]
+  lobe_radius: 1.8
+  neck_width: 0.9
+  mesh_size: 0.12
+time:
+  dt: 0.02
+  t_end: 14.0
+inputs:
+  u:
+    initial_condition:
+      type: step
+      params:
+        value_left: 1.0
+        value_right: 0.0
+        x_split:
+          sample: uniform
+          min: 1.2
+          max: 2.8
+        axis: 0
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_neumann_outer
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+output:
+  $ref: output.template.scalar_u
+  resolution:
+  - 128
+  - 96
+  num_frames: 80
+seed: 42

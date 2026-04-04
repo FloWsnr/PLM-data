@@ -1,0 +1,31 @@
+preset: cahn_hilliard
+parameters:
+  lmbda: 0.01
+  barrier_height: 100.0
+  mobility: 1.0
+  theta: 0.5
+domain:
+  type: parallelogram
+  origin: [0.0, 0.0]
+  axis_x: [1.0, 0.0]
+  axis_y: [0.25, 1.0]
+  mesh_resolution: [96, 96]
+time:
+  $ref: time.cahn_hilliard_default
+inputs:
+  c:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean: 0.63
+        std: 0.02
+boundary_conditions:
+  c:
+    $ref: boundary_field.scalar.full_periodic_2d
+output:
+  $ref: output.template.scalar_c
+  resolution: [64, 64]
+  num_frames: 20
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

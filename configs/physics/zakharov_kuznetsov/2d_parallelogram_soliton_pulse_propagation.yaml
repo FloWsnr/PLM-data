@@ -1,0 +1,53 @@
+preset: zakharov_kuznetsov
+parameters:
+  alpha: 6.0
+  theta: 0.5
+domain:
+  type: parallelogram
+  origin: [0.0, 0.0]
+  axis_x: [40.0, 0.0]
+  axis_y: [10.0, 40.0]
+  mesh_resolution:
+  - 96
+  - 96
+time:
+  $ref: time.zk_default
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.85
+            max: 1.15
+          sigma:
+            sample: uniform
+            min: 2.4
+            max: 3.6
+          center:
+          - sample: uniform
+            min: 15.5
+            max: 24.5
+          - sample: uniform
+            min: 15.5
+            max: 24.5
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.full_periodic_2d
+output:
+  formats:
+    $ref: output.formats.standard
+  fields:
+    u:
+      $ref: output.mode.scalar
+  resolution:
+  - 64
+  - 64
+  num_frames: 20
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

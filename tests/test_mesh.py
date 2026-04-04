@@ -32,6 +32,27 @@ def test_rectangle_boundary_tags(rectangle_domain):
         assert len(facets) > 0, f"No facets tagged for boundary '{name}'"
 
 
+def test_create_parallelogram_mesh():
+    domain = DomainConfig(
+        type="parallelogram",
+        params={
+            "origin": [0.0, 0.0],
+            "axis_x": [1.0, 0.0],
+            "axis_y": [0.35, 1.0],
+            "mesh_resolution": [8, 8],
+        },
+    )
+    domain_geom = create_domain(domain)
+    assert domain_geom.mesh.topology.dim == 2
+    assert domain_geom.mesh.geometry.dim == 2
+    assert set(domain_geom.boundary_names) == {"x-", "x+", "y-", "y+"}
+    assert domain_geom.has_periodic_maps is True
+    x_periodic = domain_geom.periodic_map("x-", "x+")
+    y_periodic = domain_geom.periodic_map("y-", "y+")
+    np.testing.assert_allclose(x_periodic.offset, np.array([-1.0, 0.0]))
+    np.testing.assert_allclose(y_periodic.offset, np.array([-0.35, -1.0]))
+
+
 @pytest.mark.skipif(not HAS_GMSH, reason="gmsh not installed")
 def test_create_annulus_mesh():
     domain = DomainConfig(
@@ -58,30 +79,129 @@ def test_annulus_boundary_tags():
         assert len(facets) > 0, f"No facets tagged for boundary '{name}'"
 
 
+@pytest.mark.skipif(not HAS_GMSH, reason="gmsh not installed")
 @pytest.mark.parametrize(
-    ("params", "match"),
+    ("domain_type", "params", "expected_boundaries"),
     [
         (
+            "disk",
+            {
+                "center": [0.5, 0.5],
+                "radius": 0.45,
+                "mesh_size": 0.2,
+            },
+            {"outer"},
+        ),
+        (
+            "dumbbell",
+            {
+                "left_center": [0.35, 0.5],
+                "right_center": [0.85, 0.5],
+                "lobe_radius": 0.22,
+                "neck_width": 0.12,
+                "mesh_size": 0.2,
+            },
+            {"outer"},
+        ),
+        (
+            "channel_obstacle",
+            {
+                "length": 1.4,
+                "height": 1.0,
+                "obstacle_center": [0.55, 0.5],
+                "obstacle_radius": 0.12,
+                "mesh_size": 0.2,
+            },
+            {"inlet", "outlet", "walls", "obstacle"},
+        ),
+    ],
+)
+def test_gmsh_domain_boundary_tags(domain_type, params, expected_boundaries):
+    domain_geom = create_domain(DomainConfig(type=domain_type, params=params))
+    assert domain_geom.mesh.topology.dim == 2
+    assert domain_geom.mesh.geometry.dim == 2
+    assert set(domain_geom.boundary_names.keys()) == expected_boundaries
+    for name, tag in domain_geom.boundary_names.items():
+        facets = domain_geom.facet_tags.find(tag)
+        assert len(facets) > 0, f"No facets tagged for boundary '{name}'"
+
+
+@pytest.mark.parametrize(
+    ("domain_type", "params", "match"),
+    [
+        (
+            "annulus",
             {"inner_radius": 0.0, "outer_radius": 1.0, "mesh_size": 0.2},
             "inner_radius",
         ),
         (
+            "annulus",
             {"inner_radius": 0.3, "outer_radius": -1.0, "mesh_size": 0.2},
             "outer_radius",
         ),
         (
+            "annulus",
             {"inner_radius": 1.0, "outer_radius": 1.0, "mesh_size": 0.2},
             "inner_radius' < 'outer_radius",
         ),
         (
+            "annulus",
             {"inner_radius": 0.3, "outer_radius": 1.0, "mesh_size": 0.0},
             "mesh_size",
         ),
+        (
+            "disk",
+            {"center": [0.5, 0.5], "radius": 0.0, "mesh_size": 0.2},
+            "radius",
+        ),
+        (
+            "dumbbell",
+            {
+                "left_center": [0.5, 0.5],
+                "right_center": [0.4, 0.5],
+                "lobe_radius": 0.2,
+                "neck_width": 0.1,
+                "mesh_size": 0.2,
+            },
+            "right_center",
+        ),
+        (
+            "dumbbell",
+            {
+                "left_center": [0.3, 0.4],
+                "right_center": [0.8, 0.5],
+                "lobe_radius": 0.2,
+                "neck_width": 0.1,
+                "mesh_size": 0.2,
+            },
+            "same y-coordinate",
+        ),
+        (
+            "parallelogram",
+            {
+                "origin": [0.0, 0.0],
+                "axis_x": [1.0, 0.0],
+                "axis_y": [2.0, 0.0],
+                "mesh_resolution": [8, 8],
+            },
+            "linearly independent",
+        ),
+        (
+            "channel_obstacle",
+            {
+                "length": 1.0,
+                "height": 1.0,
+                "obstacle_center": [0.08, 0.5],
+                "obstacle_radius": 0.12,
+                "mesh_size": 0.2,
+            },
+            "strictly inside the channel in x",
+        ),
     ],
 )
-def test_annulus_parameter_validation(params, match):
+def test_domain_parameter_validation(domain_type, params, match):
     with pytest.raises(ValueError, match=match):
-        create_domain(DomainConfig(type="annulus", params=params))
+        create_domain(DomainConfig(type=domain_type, params=params))
 
 
 def test_model_to_mesh_shared_facet_uses_partitioner(monkeypatch):

@@ -467,6 +467,10 @@ def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
         "rectangle": 2,
         "box": 3,
         "annulus": 2,
+        "disk": 2,
+        "dumbbell": 2,
+        "parallelogram": 2,
+        "channel_obstacle": 2,
     }
     if domain_type in builtin_dims:
         return builtin_dims[domain_type]
@@ -483,40 +487,149 @@ def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
 
 def validate_domain_params(domain_type: str, params: dict[str, Any]) -> None:
     """Validate built-in domain parameters before mesh creation."""
-    if domain_type != "annulus":
-        return
 
-    required = ("inner_radius", "outer_radius", "mesh_size")
-    missing = [name for name in required if name not in params]
-    if missing:
-        raise ValueError(
-            f"Annulus domain requires parameters {sorted(required)}. "
-            f"Missing {sorted(missing)}."
-        )
+    def _require_keys(*required: str) -> None:
+        missing = [name for name in required if name not in params]
+        if missing:
+            raise ValueError(
+                f"{domain_type.capitalize()} domain requires parameters "
+                f"{sorted(required)}. Missing {sorted(missing)}."
+            )
 
-    inner_radius = float(params["inner_radius"])
-    outer_radius = float(params["outer_radius"])
-    mesh_size = float(params["mesh_size"])
-
-    for name, value in (
-        ("inner_radius", inner_radius),
-        ("outer_radius", outer_radius),
-        ("mesh_size", mesh_size),
-    ):
+    def _float_param(name: str, *, positive: bool = False) -> float:
+        value = float(params[name])
         if not math.isfinite(value):
             raise ValueError(
-                f"Annulus domain parameter '{name}' must be finite. Got {value}."
+                f"{domain_type.capitalize()} domain parameter '{name}' must be "
+                f"finite. Got {value}."
             )
-        if value <= 0.0:
+        if positive and value <= 0.0:
             raise ValueError(
-                f"Annulus domain parameter '{name}' must be > 0. Got {value}."
+                f"{domain_type.capitalize()} domain parameter '{name}' must be > 0. "
+                f"Got {value}."
             )
+        return value
 
-    if inner_radius >= outer_radius:
-        raise ValueError(
-            "Annulus domain requires 'inner_radius' < 'outer_radius'. "
-            f"Got inner_radius={inner_radius} and outer_radius={outer_radius}."
+    def _vector_param(name: str, *, length: int) -> list[float]:
+        raw = params[name]
+        if not isinstance(raw, list) or len(raw) != length:
+            raise ValueError(
+                f"{domain_type.capitalize()} domain parameter '{name}' must be a "
+                f"list with {length} entries. Got {raw!r}."
+            )
+        values = [float(value) for value in raw]
+        if not all(math.isfinite(value) for value in values):
+            raise ValueError(
+                f"{domain_type.capitalize()} domain parameter '{name}' must contain "
+                f"only finite numbers. Got {raw!r}."
+            )
+        return values
+
+    def _positive_int_vector(name: str, *, length: int) -> list[int]:
+        raw = params[name]
+        if not isinstance(raw, list) or len(raw) != length:
+            raise ValueError(
+                f"{domain_type.capitalize()} domain parameter '{name}' must be a "
+                f"list with {length} entries. Got {raw!r}."
+            )
+        values: list[int] = []
+        for value in raw:
+            int_value = int(value)
+            if float(int_value) != float(value) or int_value <= 0:
+                raise ValueError(
+                    f"{domain_type.capitalize()} domain parameter '{name}' must "
+                    f"contain positive integers. Got {raw!r}."
+                )
+            values.append(int_value)
+        return values
+
+    if domain_type == "annulus":
+        _require_keys("inner_radius", "outer_radius", "mesh_size")
+        inner_radius = _float_param("inner_radius", positive=True)
+        outer_radius = _float_param("outer_radius", positive=True)
+        _float_param("mesh_size", positive=True)
+        if inner_radius >= outer_radius:
+            raise ValueError(
+                "Annulus domain requires 'inner_radius' < 'outer_radius'. "
+                f"Got inner_radius={inner_radius} and outer_radius={outer_radius}."
+            )
+        return
+
+    if domain_type == "disk":
+        _require_keys("center", "radius", "mesh_size")
+        _vector_param("center", length=2)
+        _float_param("radius", positive=True)
+        _float_param("mesh_size", positive=True)
+        return
+
+    if domain_type == "dumbbell":
+        _require_keys(
+            "left_center",
+            "right_center",
+            "lobe_radius",
+            "neck_width",
+            "mesh_size",
         )
+        left_center = _vector_param("left_center", length=2)
+        right_center = _vector_param("right_center", length=2)
+        lobe_radius = _float_param("lobe_radius", positive=True)
+        neck_width = _float_param("neck_width", positive=True)
+        _float_param("mesh_size", positive=True)
+        if not math.isclose(left_center[1], right_center[1], abs_tol=1.0e-12):
+            raise ValueError(
+                "Dumbbell domain requires 'left_center' and 'right_center' to "
+                "share the same y-coordinate."
+            )
+        if right_center[0] <= left_center[0]:
+            raise ValueError(
+                "Dumbbell domain requires 'right_center[0]' to be greater than "
+                "'left_center[0]'."
+            )
+        if neck_width > 2.0 * lobe_radius:
+            raise ValueError(
+                "Dumbbell domain requires 'neck_width' <= 2 * 'lobe_radius'. "
+                f"Got neck_width={neck_width} and lobe_radius={lobe_radius}."
+            )
+        return
+
+    if domain_type == "parallelogram":
+        _require_keys("origin", "axis_x", "axis_y", "mesh_resolution")
+        _vector_param("origin", length=2)
+        axis_x = _vector_param("axis_x", length=2)
+        axis_y = _vector_param("axis_y", length=2)
+        _positive_int_vector("mesh_resolution", length=2)
+        signed_area = axis_x[0] * axis_y[1] - axis_x[1] * axis_y[0]
+        if abs(signed_area) <= 1.0e-12:
+            raise ValueError(
+                "Parallelogram domain requires linearly independent 'axis_x' and "
+                "'axis_y' vectors."
+            )
+        return
+
+    if domain_type == "channel_obstacle":
+        _require_keys(
+            "length",
+            "height",
+            "obstacle_center",
+            "obstacle_radius",
+            "mesh_size",
+        )
+        length = _float_param("length", positive=True)
+        height = _float_param("height", positive=True)
+        obstacle_center = _vector_param("obstacle_center", length=2)
+        obstacle_radius = _float_param("obstacle_radius", positive=True)
+        _float_param("mesh_size", positive=True)
+        cx, cy = obstacle_center
+        if cx - obstacle_radius <= 0.0 or cx + obstacle_radius >= length:
+            raise ValueError(
+                "Channel_obstacle domain requires the circular obstacle to lie "
+                "strictly inside the channel in x."
+            )
+        if cy - obstacle_radius <= 0.0 or cy + obstacle_radius >= height:
+            raise ValueError(
+                "Channel_obstacle domain requires the circular obstacle to lie "
+                "strictly inside the channel in y."
+            )
 
 
 def _load_fragment_catalog() -> dict[str, Any]:

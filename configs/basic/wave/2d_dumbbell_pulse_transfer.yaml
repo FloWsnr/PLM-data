@@ -1,0 +1,67 @@
+preset: wave
+parameters:
+  damping: 0.01
+coefficients:
+  c_sq:
+    type: radial_cosine
+    params:
+      base: 1.8
+      amplitude: 0.65
+      frequency: 18.0
+      center:
+      - 0.5
+      - 0.5
+domain:
+  type: dumbbell
+  left_center: [0.3, 0.5]
+  right_center: [0.7, 0.5]
+  lobe_radius: 0.23
+  neck_width: 0.12
+  mesh_size: 0.018
+time:
+  dt: 0.004
+  t_end: 0.8
+inputs:
+  u:
+    initial_condition:
+      type: constant
+      params:
+        value: 0.0
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 10.2
+            max: 13.8
+          sigma:
+            sample: uniform
+            min: 0.04
+            max: 0.08
+          center:
+          - sample: uniform
+            min: 0.19
+            max: 0.37
+          - sample: uniform
+            min: 0.35
+            max: 0.53
+  forcing:
+    source:
+      type: none
+      params: {}
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_neumann_outer
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  resolution:
+  - 64
+  - 64
+  num_frames: 25
+seed: 42

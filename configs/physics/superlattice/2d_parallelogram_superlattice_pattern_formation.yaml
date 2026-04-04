@@ -1,0 +1,58 @@
+preset: superlattice
+parameters:
+  D_u1: 4.3
+  D_v1: 50.0
+  D_u2: 22.0
+  D_v2: 660.0
+  a: 3.0
+  b: 9.0
+  c: 15.0
+  d: 9.0
+  alpha: 0.15
+domain:
+  type: parallelogram
+  origin: [0.0, 0.0]
+  axis_x: [200.0, 0.0]
+  axis_y: [50.0, 200.0]
+  mesh_resolution: [128, 128]
+time:
+  dt: 0.02
+  t_end: 30.0
+inputs:
+  u_1:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean: 3.0
+        std: 0.1
+  v_1:
+    initial_condition:
+      type: constant
+      params:
+        value: 3.0
+  u_2:
+    initial_condition:
+      type: constant
+      params:
+        value: 3.0
+  v_2:
+    initial_condition:
+      type: constant
+      params:
+        value: 10.0
+boundary_conditions:
+  u_1:
+    $ref: boundary_field.scalar.full_periodic_2d
+  v_1:
+    $ref: boundary_field.scalar.full_periodic_2d
+  u_2:
+    $ref: boundary_field.scalar.full_periodic_2d
+  v_2:
+    $ref: boundary_field.scalar.full_periodic_2d
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_u1_v1_u2_v2
+  resolution: [128, 128]
+  num_frames: 100
+seed: 42

@@ -1,0 +1,41 @@
+preset: fitzhugh_nagumo
+parameters:
+  Du: 1.0
+  Dv: 50.0
+  tau: 0.1
+  b: 0.5
+  a: 0.0
+domain:
+  type: parallelogram
+  origin: [0.0, 0.0]
+  axis_x: [50.0, 0.0]
+  axis_y: [12.5, 50.0]
+  mesh_resolution: [128, 128]
+time:
+  dt: 0.01
+  t_end: 50.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean: 0.0
+        std: 0.05
+  v:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean: 0.0
+        std: 0.05
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.full_periodic_2d
+  v:
+    $ref: boundary_field.scalar.full_periodic_2d
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  resolution: [96, 96]
+  num_frames: 100
+seed: 42

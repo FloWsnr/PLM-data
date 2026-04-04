@@ -220,6 +220,47 @@ boundary_field:
       outer:
         - operator: neumann
           value: 0.0
+    homogeneous_neumann_outer:
+      outer:
+        - operator: neumann
+          value: 0.0
+    homogeneous_dirichlet_outer:
+      outer:
+        - operator: dirichlet
+          value: 0.0
+    homogeneous_neumann_channel_obstacle:
+      inlet:
+        - operator: neumann
+          value: 0.0
+      outlet:
+        - operator: neumann
+          value: 0.0
+      walls:
+        - operator: neumann
+          value: 0.0
+      obstacle:
+        - operator: neumann
+          value: 0.0
+    unit_dirichlet_outer:
+      outer:
+        - operator: dirichlet
+          value: 1.0
+    unit_dirichlet_channel_obstacle:
+      inlet:
+        - operator: dirichlet
+          value: 1.0
+      outlet:
+        - operator: dirichlet
+          value: 1.0
+      walls:
+        - operator: dirichlet
+          value: 1.0
+      obstacle:
+        - operator: dirichlet
+          value: 1.0
+    simply_supported_outer:
+      outer:
+        - operator: simply_supported
     full_periodic_2d:
       x-:
         - operator: periodic
@@ -317,6 +358,36 @@ boundary_field:
       z+:
         - operator: periodic
           pair_with: z-
+    homogeneous_dirichlet_outer:
+      outer:
+        - operator: dirichlet
+          value: [0.0, 0.0]
+    channel_obstacle_flow_2d:
+      inlet:
+        - operator: dirichlet
+          value: [1.0, 0.0]
+      outlet:
+        - operator: dirichlet
+          value: [1.0, 0.0]
+      walls:
+        - operator: dirichlet
+          value: [0.0, 0.0]
+      obstacle:
+        - operator: dirichlet
+          value: [0.0, 0.0]
+    homogeneous_dirichlet_channel_obstacle_2d:
+      inlet:
+        - operator: dirichlet
+          value: [0.0, 0.0]
+      outlet:
+        - operator: dirichlet
+          value: [0.0, 0.0]
+      walls:
+        - operator: dirichlet
+          value: [0.0, 0.0]
+      obstacle:
+        - operator: dirichlet
+          value: [0.0, 0.0]
     lid_driven_cavity_2d:
       x-:
         - operator: dirichlet

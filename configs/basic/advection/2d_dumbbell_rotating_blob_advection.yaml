@@ -1,0 +1,67 @@
+preset: advection
+parameters: {}
+coefficients:
+  velocity:
+    components:
+      x:
+        type: affine
+        params:
+          constant: -1.1
+          y: 2.2
+      y:
+        type: affine
+        params:
+          constant: 1.1
+          x: -2.2
+  diffusivity:
+    type: constant
+    params:
+      value: 0.0004
+domain:
+  type: dumbbell
+  left_center: [0.32, 0.5]
+  right_center: [0.68, 0.5]
+  lobe_radius: 0.24
+  neck_width: 0.14
+  mesh_size: 0.015
+time:
+  dt: 0.01
+  t_end: 2.4
+inputs:
+  u:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.85
+            max: 1.15
+          sigma:
+            sample: uniform
+            min: 0.015
+            max: 0.055
+          center:
+          - sample: uniform
+            min: 0.7
+            max: 0.86
+          - sample: uniform
+            min: 0.34
+            max: 0.5
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_neumann_outer
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+output:
+  $ref: output.template.scalar_u
+  resolution:
+  - 96
+  - 96
+  num_frames: 49
+seed: 42

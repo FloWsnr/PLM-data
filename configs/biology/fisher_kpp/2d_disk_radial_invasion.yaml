@@ -1,0 +1,52 @@
+preset: fisher_kpp
+parameters:
+  D: 0.1
+  r: 1.0
+  K: 1.0
+coefficients:
+  velocity:
+    type: zero
+    params: {}
+domain:
+  type: disk
+  center: [5.0, 3.0]
+  radius: 2.7
+  mesh_size: 0.12
+time:
+  dt: 0.02
+  t_end: 10.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.9
+            max: 1.1
+          sigma:
+            sample: uniform
+            min: 0.55
+            max: 0.85
+          center:
+          - sample: uniform
+            min: 4.4
+            max: 5.6
+          - sample: uniform
+            min: 2.4
+            max: 3.6
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_neumann_outer
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+output:
+  $ref: output.template.scalar_u
+  resolution:
+  - 112
+  - 112
+  num_frames: 60
+seed: 42

@@ -295,7 +295,8 @@ class TestVTKWriter:
         _write_scalar_frames(writer, func, num_frames=2)
 
         paraview_dir = output_dir / "paraview"
-        assert (paraview_dir / "solution.pvd").exists()
+        assert (paraview_dir / "u.pvd").exists()
+        assert not (paraview_dir / "solution.pvd").exists()
         assert any(path.suffix in {".vtu", ".pvtu"} for path in paraview_dir.iterdir())
         assert not (output_dir / "u.npy").exists()
 
@@ -320,7 +321,24 @@ class TestVTKWriter:
         writer.finalize()
 
         paraview_dir = tmp_path / "paraview"
-        assert (paraview_dir / "solution.pvd").exists()
+        assert (paraview_dir / "electric_field.pvd").exists()
+        assert any(path.suffix in {".vtu", ".pvtu"} for path in paraview_dir.iterdir())
+
+    def test_mixed_element_outputs_use_separate_series(self, tmp_path):
+        config = _vector_stokes_config(tmp_path, formats=["vtk"])
+        output_dir = tmp_path / "out"
+        spec = get_preset("stokes").spec
+
+        preset = get_preset("stokes")
+        problem = preset.build_problem(config)
+        writer = FrameWriter(output_dir, config, spec)
+        problem.run(writer)
+        writer.finalize()
+
+        paraview_dir = output_dir / "paraview"
+        assert (paraview_dir / "velocity.pvd").exists()
+        assert (paraview_dir / "pressure.pvd").exists()
+        assert not (paraview_dir / "solution.pvd").exists()
         assert any(path.suffix in {".vtu", ".pvtu"} for path in paraview_dir.iterdir())
 
 

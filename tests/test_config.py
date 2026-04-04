@@ -259,6 +259,43 @@ def test_load_config_gray_scott_3d():
     assert cfg.boundary_field("v").side_conditions("x-")[0].pair_with == "x+"
 
 
+def test_load_config_fisher_kpp_disk_domain():
+    cfg = load_config("configs/biology/fisher_kpp/2d_disk_radial_invasion.yaml")
+    assert cfg.domain.type == "disk"
+    assert cfg.domain.dimension == 2
+    assert cfg.input("u").initial_condition.type == "gaussian_blobs"
+    assert cfg.boundary_field("u").side_conditions("outer")[0].type == "neumann"
+
+
+def test_load_config_keller_segel_parallelogram_domain():
+    cfg = load_config(
+        "configs/biology/keller_segel/2d_parallelogram_chemotactic_aggregation.yaml"
+    )
+    assert cfg.domain.type == "parallelogram"
+    assert cfg.domain.dimension == 2
+    assert cfg.boundary_field("rho").side_conditions("x-")[0].pair_with == "x+"
+    assert cfg.boundary_field("c").side_conditions("y+")[0].pair_with == "y-"
+
+
+def test_load_config_darcy_channel_obstacle_domain():
+    cfg = load_config("configs/fluids/darcy/2d_channel_obstacle_tracer_transport.yaml")
+    assert cfg.domain.type == "channel_obstacle"
+    assert cfg.domain.dimension == 2
+    assert set(cfg.boundary_field("pressure").sides) == {
+        "inlet",
+        "outlet",
+        "walls",
+        "obstacle",
+    }
+    assert (
+        cfg.boundary_field("pressure").side_conditions("inlet")[0].type == "dirichlet"
+    )
+    assert (
+        cfg.boundary_field("concentration").side_conditions("obstacle")[0].type
+        == "neumann"
+    )
+
+
 def test_load_config_swift_hohenberg_2d_default():
     cfg = load_config("configs/physics/swift_hohenberg/2d_advected_roll_growth.yaml")
     assert cfg.preset == "swift_hohenberg"

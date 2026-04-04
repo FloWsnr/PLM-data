@@ -4,6 +4,7 @@ from pathlib import Path
 
 from dolfinx import fem
 from dolfinx.io import VTKFile
+from dolfinx.mesh import Mesh
 
 from plm_data.core.logging import get_logger
 
@@ -14,9 +15,10 @@ class VTKWriter:
     def __init__(self, output_dir: Path):
         self._paraview_dir = output_dir / "paraview"
         self._logger = get_logger("output.vtk")
-        self._writer: VTKFile | None = None
+        self._writers: dict[str, VTKFile] = {}
+        self._meshes: dict[str, Mesh] = {}
         self._frame_idx = 0
-        self._mesh_written = False
+        self._mesh_written: set[str] = set()
         self._vis_cache: dict[str, fem.Function] = {}
 
     def _is_vtk_native_function(self, func: fem.Function) -> bool:
@@ -29,6 +31,8 @@ class VTKWriter:
         self, output_name: str, func: fem.Function
     ) -> fem.Function:
         """Return a VTK-compatible function on the same mesh."""
+        mesh = self._ensure_output_mesh(output_name, func.function_space.mesh)
+
         if self._is_vtk_native_function(func):
             return func
 
@@ -40,12 +44,12 @@ class VTKWriter:
 
             if value_shape:
                 vis_space = fem.functionspace(
-                    func.function_space.mesh,
+                    mesh,
                     ("Discontinuous Lagrange", degree, value_shape),
                 )
             else:
                 vis_space = fem.functionspace(
-                    func.function_space.mesh,
+                    mesh,
                     ("Discontinuous Lagrange", degree),
                 )
             self._vis_cache[output_name] = fem.Function(vis_space, name=output_name)
@@ -54,6 +58,24 @@ class VTKWriter:
         vis_func.interpolate(func)
         return vis_func
 
+    def _ensure_output_mesh(self, output_name: str, mesh: Mesh) -> Mesh:
+        """Ensure a VTK series stays attached to one mesh for the whole run."""
+        existing_mesh = self._meshes.get(output_name)
+        if existing_mesh is None:
+            self._meshes[output_name] = mesh
+            return mesh
+        if existing_mesh is not mesh:
+            raise ValueError(f"VTK output '{output_name}' changed mesh during a run.")
+        return existing_mesh
+
+    def _writer_for_output(self, output_name: str, mesh: Mesh) -> VTKFile:
+        """Create or reuse the ParaView time series for one output field."""
+        writer = self._writers.get(output_name)
+        if writer is None:
+            writer = VTKFile(mesh.comm, self._paraview_dir / f"{output_name}.pvd", "w")
+            self._writers[output_name] = writer
+        return writer
+
     def on_frame(self, fields: dict[str, fem.Function], t: float) -> None:
         """Write one frame of FEM fields on the native DOLFINx mesh."""
         if not fields:
@@ -61,36 +83,27 @@ class VTKWriter:
 
         self._paraview_dir.mkdir(parents=True, exist_ok=True)
 
-        vtk_functions = [
-            self._visualization_function(output_name, func)
-            for output_name, func in fields.items()
-        ]
-        mesh = vtk_functions[0].function_space.mesh
-        if self._writer is None:
-            self._writer = VTKFile(mesh.comm, self._paraview_dir / "solution.pvd", "w")
+        for output_name, func in fields.items():
+            vis_func = self._visualization_function(output_name, func)
+            mesh = self._ensure_output_mesh(output_name, vis_func.function_space.mesh)
+            writer = self._writer_for_output(output_name, mesh)
 
-        for func in vtk_functions[1:]:
-            if func.function_space.mesh is not mesh:
-                raise ValueError("VTK output requires all functions to share one mesh.")
-
-        original_names = [func.name for func in vtk_functions]
-        try:
-            for output_name, func in zip(fields, vtk_functions):
-                func.name = output_name
-            if not self._mesh_written:
-                self._writer.write_mesh(mesh)
-                self._mesh_written = True
-            self._writer.write_function(vtk_functions, t)
-        finally:
-            for func, original_name in zip(vtk_functions, original_names):
-                func.name = original_name
+            original_name = vis_func.name
+            try:
+                vis_func.name = output_name
+                if output_name not in self._mesh_written:
+                    writer.write_mesh(mesh)
+                    self._mesh_written.add(output_name)
+                writer.write_function(vis_func, t)
+            finally:
+                vis_func.name = original_name
 
         self._frame_idx += 1
 
     def finalize(self) -> None:
         """Close the VTK writer and log the output location."""
-        if self._writer is not None:
-            self._writer.close()
+        for writer in self._writers.values():
+            writer.close()
 
         self._logger.info(
             "  VTK output: %d frame(s) → %s",

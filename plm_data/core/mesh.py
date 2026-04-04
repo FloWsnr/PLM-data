@@ -211,6 +211,67 @@ def _model_to_mesh_shared_facet(model, comm: MPI.Intracomm, *, rank: int, gdim: 
     return model_to_mesh(model, comm, rank=rank, gdim=gdim, partitioner=partitioner)
 
 
+def _domain_geometry_from_gmsh_mesh_data(mesh_data) -> DomainGeometry:
+    """Convert DOLFINx Gmsh import data into the shared domain container."""
+    msh = mesh_data.mesh
+    boundary_names = {
+        name: physical_group.tag
+        for name, physical_group in mesh_data.physical_groups.items()
+        if physical_group.dim == msh.topology.dim - 1
+    }
+    ft = mesh_data.facet_tags
+    if ft is None:
+        raise AssertionError("Gmsh model produced no facet tags for the domain.")
+    ds = ufl.Measure("ds", domain=msh, subdomain_data=ft)
+    return DomainGeometry(
+        mesh=msh,
+        facet_tags=ft,
+        boundary_names=boundary_names,
+        ds=ds,
+    )
+
+
+def _finalize_gmsh_domain(
+    model,
+    *,
+    name: str,
+    gdim: int,
+) -> DomainGeometry:
+    """Import one fully tagged Gmsh model and wrap it as DomainGeometry."""
+    comm = MPI.COMM_WORLD
+    mesh_data = _model_to_mesh_shared_facet(model, comm, rank=0, gdim=gdim)
+    domain_geom = _domain_geometry_from_gmsh_mesh_data(mesh_data)
+    if not domain_geom.boundary_names:
+        raise AssertionError(
+            f"Gmsh model '{name}' produced no named boundary physical groups."
+        )
+    return domain_geom
+
+
+def _tag_single_gmsh_boundary(
+    model, surface_tags: list[int], boundary_name: str
+) -> None:
+    """Attach one named physical group covering the full outer boundary."""
+    boundary = model.getBoundary(
+        [(2, surface_tag) for surface_tag in surface_tags],
+        oriented=False,
+    )
+    boundary_curves = [tag for dim, tag in boundary if dim == 1]
+    if not boundary_curves:
+        raise AssertionError("Gmsh surface produced no boundary curves.")
+    model.addPhysicalGroup(1, boundary_curves, tag=1)
+    model.setPhysicalName(1, 1, boundary_name)
+
+
+def _local_coordinates(
+    x: np.ndarray,
+    origin: np.ndarray,
+    inverse_basis: np.ndarray,
+) -> np.ndarray:
+    """Return local parallelogram coordinates for physical points."""
+    return inverse_basis @ (x[:2, :] - origin[:, None])
+
+
 @register_domain("interval")
 def _create_interval(domain: DomainConfig) -> DomainGeometry:
     p = domain.params
@@ -380,6 +441,281 @@ def _create_box(domain: DomainConfig) -> DomainGeometry:
     )
 
 
+@register_domain("disk")
+def _create_disk(domain: DomainConfig) -> DomainGeometry:
+    import gmsh
+
+    p = domain.params
+    center = np.asarray(_require_param(p, "center", domain.type), dtype=float)
+    radius = float(_require_param(p, "radius", domain.type))
+    mesh_size = float(_require_param(p, "mesh_size", domain.type))
+    validate_domain_params(domain.type, p)
+
+    gmsh.initialize()
+    try:
+        gmsh.option.setNumber("General.Terminal", 0)
+        model = gmsh.model
+        model.add("disk")
+        model.setCurrent("disk")
+
+        if MPI.COMM_WORLD.rank == 0:
+            disk = model.occ.addDisk(center[0], center[1], 0.0, radius, radius)
+            model.occ.synchronize()
+
+            model.addPhysicalGroup(2, [disk], tag=1)
+            model.setPhysicalName(2, 1, "surface")
+            _tag_single_gmsh_boundary(model, [disk], "outer")
+
+            model.mesh.setSize(model.getEntities(0), mesh_size)
+            model.mesh.generate(2)
+
+        return _finalize_gmsh_domain(model, name="disk", gdim=2)
+    finally:
+        gmsh.finalize()
+
+
+@register_domain("dumbbell")
+def _create_dumbbell(domain: DomainConfig) -> DomainGeometry:
+    import gmsh
+
+    p = domain.params
+    left_center = np.asarray(_require_param(p, "left_center", domain.type), dtype=float)
+    right_center = np.asarray(
+        _require_param(p, "right_center", domain.type),
+        dtype=float,
+    )
+    lobe_radius = float(_require_param(p, "lobe_radius", domain.type))
+    neck_width = float(_require_param(p, "neck_width", domain.type))
+    mesh_size = float(_require_param(p, "mesh_size", domain.type))
+    validate_domain_params(domain.type, p)
+
+    gmsh.initialize()
+    try:
+        gmsh.option.setNumber("General.Terminal", 0)
+        model = gmsh.model
+        model.add("dumbbell")
+        model.setCurrent("dumbbell")
+
+        if MPI.COMM_WORLD.rank == 0:
+            left_disk = model.occ.addDisk(
+                left_center[0],
+                left_center[1],
+                0.0,
+                lobe_radius,
+                lobe_radius,
+            )
+            right_disk = model.occ.addDisk(
+                right_center[0],
+                right_center[1],
+                0.0,
+                lobe_radius,
+                lobe_radius,
+            )
+            bridge = model.occ.addRectangle(
+                left_center[0],
+                left_center[1] - 0.5 * neck_width,
+                0.0,
+                right_center[0] - left_center[0],
+                neck_width,
+            )
+            model.occ.fuse(
+                [(2, left_disk), (2, right_disk)],
+                [(2, bridge)],
+                removeObject=True,
+                removeTool=True,
+            )
+            model.occ.synchronize()
+
+            surfaces = [entity[1] for entity in model.getEntities(2)]
+            model.addPhysicalGroup(2, surfaces, tag=1)
+            model.setPhysicalName(2, 1, "surface")
+            _tag_single_gmsh_boundary(model, surfaces, "outer")
+
+            model.mesh.setSize(model.getEntities(0), mesh_size)
+            model.mesh.generate(2)
+
+        return _finalize_gmsh_domain(model, name="dumbbell", gdim=2)
+    finally:
+        gmsh.finalize()
+
+
+@register_domain("parallelogram")
+def _create_parallelogram(domain: DomainConfig) -> DomainGeometry:
+    p = domain.params
+    origin = np.asarray(_require_param(p, "origin", domain.type), dtype=float)
+    axis_x = np.asarray(_require_param(p, "axis_x", domain.type), dtype=float)
+    axis_y = np.asarray(_require_param(p, "axis_y", domain.type), dtype=float)
+    res = _require_param(p, "mesh_resolution", domain.type)
+    validate_domain_params(domain.type, p)
+
+    msh = mesh.create_rectangle(
+        comm=MPI.COMM_WORLD,
+        points=((0.0, 0.0), (1.0, 1.0)),
+        n=(res[0], res[1]),
+        cell_type=CellType.triangle,
+        ghost_mode=GhostMode.shared_facet,
+    )
+
+    predicates = {
+        "x-": lambda x: np.isclose(x[0], 0.0),
+        "x+": lambda x: np.isclose(x[0], 1.0),
+        "y-": lambda x: np.isclose(x[1], 0.0),
+        "y+": lambda x: np.isclose(x[1], 1.0),
+    }
+    ft, boundary_names, ds = _tag_boundaries(msh, predicates)
+
+    reference_coords = msh.geometry.x[:, :2].copy()
+    transformed_coords = (
+        origin
+        + reference_coords[:, [0]] * axis_x[None, :]
+        + reference_coords[:, [1]] * axis_y[None, :]
+    )
+    msh.geometry.x[:, :2] = transformed_coords
+
+    inverse_basis = np.linalg.inv(np.column_stack((axis_x, axis_y)))
+    builtin_maps = _merge_periodic_maps(
+        _builtin_periodic_map(
+            name="x",
+            group_id="x",
+            slave_boundary="x+",
+            master_boundary="x-",
+            slave_selector=lambda x, tol: np.isclose(
+                _local_coordinates(x, origin, inverse_basis)[0],
+                1.0,
+                atol=tol,
+                rtol=tol,
+            ),
+            offset=tuple(-axis_x),
+        ),
+        _builtin_periodic_map(
+            name="y",
+            group_id="y",
+            slave_boundary="y+",
+            master_boundary="y-",
+            slave_selector=lambda x, tol: np.isclose(
+                _local_coordinates(x, origin, inverse_basis)[1],
+                1.0,
+                atol=tol,
+                rtol=tol,
+            ),
+            offset=tuple(-axis_y),
+        ),
+    )
+    periodic_maps = _merge_periodic_maps(
+        builtin_maps,
+        _compile_config_periodic_maps(domain.periodic_maps),
+    )
+    return DomainGeometry(
+        mesh=msh,
+        facet_tags=ft,
+        boundary_names=boundary_names,
+        ds=ds,
+        periodic_maps=periodic_maps,
+    )
+
+
+@register_domain("channel_obstacle")
+def _create_channel_obstacle(domain: DomainConfig) -> DomainGeometry:
+    import gmsh
+
+    p = domain.params
+    length = float(_require_param(p, "length", domain.type))
+    height = float(_require_param(p, "height", domain.type))
+    obstacle_center = np.asarray(
+        _require_param(p, "obstacle_center", domain.type),
+        dtype=float,
+    )
+    obstacle_radius = float(_require_param(p, "obstacle_radius", domain.type))
+    mesh_size = float(_require_param(p, "mesh_size", domain.type))
+    validate_domain_params(domain.type, p)
+
+    gmsh.initialize()
+    try:
+        gmsh.option.setNumber("General.Terminal", 0)
+        model = gmsh.model
+        model.add("channel_obstacle")
+        model.setCurrent("channel_obstacle")
+
+        if MPI.COMM_WORLD.rank == 0:
+            channel = model.occ.addRectangle(0.0, 0.0, 0.0, length, height)
+            obstacle = model.occ.addDisk(
+                obstacle_center[0],
+                obstacle_center[1],
+                0.0,
+                obstacle_radius,
+                obstacle_radius,
+            )
+            model.occ.cut(
+                [(2, channel)],
+                [(2, obstacle)],
+                removeObject=True,
+                removeTool=True,
+            )
+            model.occ.synchronize()
+
+            surfaces = [entity[1] for entity in model.getEntities(2)]
+            model.addPhysicalGroup(2, surfaces, tag=1)
+            model.setPhysicalName(2, 1, "surface")
+
+            tol = max(mesh_size, 1.0e-8)
+            inlet: list[int] = []
+            outlet: list[int] = []
+            walls: list[int] = []
+            obstacle_curves: list[int] = []
+            boundary = model.getBoundary(
+                [(2, surface_tag) for surface_tag in surfaces],
+                oriented=False,
+            )
+            for dim, tag in boundary:
+                if dim != 1:
+                    continue
+                bb = model.occ.getBoundingBox(dim, tag)
+                x_min, y_min, _, x_max, y_max, _ = bb
+                if np.isclose(x_min, 0.0, atol=tol) and np.isclose(
+                    x_max,
+                    0.0,
+                    atol=tol,
+                ):
+                    inlet.append(tag)
+                elif np.isclose(x_min, length, atol=tol) and np.isclose(
+                    x_max,
+                    length,
+                    atol=tol,
+                ):
+                    outlet.append(tag)
+                elif np.isclose(y_min, 0.0, atol=tol) or np.isclose(
+                    y_max,
+                    height,
+                    atol=tol,
+                ):
+                    walls.append(tag)
+                else:
+                    obstacle_curves.append(tag)
+
+            for physical_tag, (name, curve_tags) in enumerate(
+                (
+                    ("inlet", inlet),
+                    ("outlet", outlet),
+                    ("walls", walls),
+                    ("obstacle", obstacle_curves),
+                ),
+                start=1,
+            ):
+                if not curve_tags:
+                    raise AssertionError(
+                        f"Channel-obstacle domain produced no curves for '{name}'."
+                    )
+                model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
+                model.setPhysicalName(1, physical_tag, name)
+
+            model.mesh.setSize(model.getEntities(0), mesh_size)
+            model.mesh.generate(2)
+
+        return _finalize_gmsh_domain(model, name="channel_obstacle", gdim=2)
+    finally:
+        gmsh.finalize()
+
+
 @register_domain("annulus")
 def _create_annulus(domain: DomainConfig) -> DomainGeometry:
     import gmsh
@@ -431,20 +767,4 @@ def _create_annulus(domain: DomainConfig) -> DomainGeometry:
         mesh_data = _model_to_mesh_shared_facet(model, comm, rank=0, gdim=2)
     finally:
         gmsh.finalize()
-
-    msh = mesh_data.mesh
-    boundary_names: dict[str, int] = {}
-    for name, pg in mesh_data.physical_groups.items():
-        if pg.dim == 1:
-            boundary_names[name] = pg.tag
-
-    ft = mesh_data.facet_tags
-    assert ft is not None, "Gmsh model produced no facet tags for the annulus."
-    ds = ufl.Measure("ds", domain=msh, subdomain_data=ft)
-
-    return DomainGeometry(
-        mesh=msh,
-        facet_tags=ft,
-        boundary_names=boundary_names,
-        ds=ds,
-    )
+    return _domain_geometry_from_gmsh_mesh_data(mesh_data)
