@@ -117,7 +117,7 @@ solver:
       serial:
         $ref: solver.serial.direct_mumps
       mpi:
-        $ref: solver.mpi.direct_mumps
+        $ref: solver.mpi.transient_saddle_point
     nonlinear_mixed_direct:
       strategy: nonlinear_mixed_direct
       serial:

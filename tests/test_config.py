@@ -16,6 +16,7 @@ from plm_data.core.solver_strategies import (
     STATIONARY_SCALAR_SPD,
     STEADY_SADDLE_POINT,
     TRANSIENT_MIXED_DIRECT,
+    TRANSIENT_SADDLE_POINT,
 )
 
 
@@ -177,6 +178,32 @@ def test_load_config_vector_input():
         == 1.0
     )
     assert cfg.solver.profile_name == "serial"
+
+
+def test_load_config_transient_saddle_point_uses_fieldsplit_mpi_profile():
+    cfg = load_config("configs/fluids/navier_stokes/2d_lid_driven_cavity_vortices.yaml")
+
+    assert cfg.solver.strategy == TRANSIENT_SADDLE_POINT
+    assert cfg.solver.serial["pc_type"] == "lu"
+
+    mpi_options = cfg.solver.options_for_size(4)
+    assert mpi_options["pc_type"] == "fieldsplit"
+    assert mpi_options["pc_fieldsplit_type"] == "schur"
+    assert mpi_options["pc_fieldsplit_schur_fact_type"] == "upper"
+    assert mpi_options["pc_fieldsplit_schur_precondition"] == "a11"
+
+
+def test_load_config_navier_stokes_channel_obstacle_uses_transient_saddle_point():
+    cfg = load_config(
+        "configs/fluids/navier_stokes/2d_channel_obstacle_vortex_shedding.yaml"
+    )
+
+    assert cfg.solver.strategy == TRANSIENT_SADDLE_POINT
+    inlet = cfg.boundary_field("velocity").side_conditions("inlet")[0]
+    outlet = cfg.boundary_field("velocity").side_conditions("outlet")[0]
+    assert inlet.type == "dirichlet"
+    assert inlet.value.components["x"].type == "sine_product"
+    assert outlet.type == "neumann"
 
 
 def test_load_config_thermal_convection_2d():
