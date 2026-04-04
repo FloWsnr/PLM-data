@@ -156,7 +156,7 @@ class _ShallowWaterProblem(TransientNonlinearProblem):
         self.velocity_out.x.array[:] = self.solution.x.array[self._velocity_dofs]
         self.velocity_out.x.scatter_forward()
 
-    def _check_positive_depth(self, context: str) -> None:
+    def _positive_depth_metrics(self, context: str) -> dict[str, float]:
         self._update_output_views()
         local_height = self.height_out.x.array
         local_min_height = (
@@ -171,6 +171,10 @@ class _ShallowWaterProblem(TransientNonlinearProblem):
                 f"Preset '{self.spec.name}' produced non-positive total depth "
                 f"during {context}. Minimum depth: {min_depth:.6g}."
             )
+        return {"min_total_depth": min_depth}
+
+    def runtime_health_metrics(self, context: str) -> dict[str, float]:
+        return self._positive_depth_metrics(context)
 
     def setup(self) -> None:
         domain_geom = self.load_domain_geometry()
@@ -231,7 +235,6 @@ class _ShallowWaterProblem(TransientNonlinearProblem):
             seed=self.config.seed,
         )
         self.solution.x.scatter_forward()
-        self._check_positive_depth("initialization")
         self.previous.x.array[:] = self.solution.x.array
         self.previous.x.scatter_forward()
 
@@ -290,7 +293,6 @@ class _ShallowWaterProblem(TransientNonlinearProblem):
         converged = self.problem.solver.getConvergedReason() > 0
         if converged:
             self.solution.x.scatter_forward()
-            self._check_positive_depth(f"t={t + dt:.6g}")
         return converged
 
     def get_output_fields(self) -> dict[str, fem.Function]:

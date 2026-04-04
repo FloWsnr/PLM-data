@@ -175,16 +175,22 @@ class _StokesProblem(CustomProblem):
             preconditioner_form=preconditioner_form,
         )
         problem.solve()
+        self.record_solver_health("solve", targets={"problem": problem})
 
         reason = problem.solver.getConvergedReason()
         if reason <= 0:
             logger.error("  Solver did not converge (KSP reason=%s)", reason)
             raise RuntimeError(f"Stokes solver did not converge (KSP reason={reason})")
 
+        self.record_runtime_health("solve")
         normalize_pressure(msh, p_h)
         output.write_frame({"velocity": u_h, "pressure": p_h}, t=0.0)
         logger.info("  Solve complete (converged)")
-        return RunResult(num_dofs=num_dofs, solver_converged=True)
+        return RunResult(
+            num_dofs=num_dofs,
+            solver_converged=True,
+            diagnostics=self.build_health_diagnostics(),
+        )
 
     def linear_problem_after_lhs_assembled(self, *, kind=None, mpc=None):
         if kind != "nest" or mpc is not None:

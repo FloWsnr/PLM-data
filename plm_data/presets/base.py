@@ -1,7 +1,7 @@
 """Base contracts for presets and reusable problem engines."""
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -12,6 +12,11 @@ from dolfinx.fem.petsc import NonlinearProblem as DolfinxNonlinearProblem
 from mpi4py import MPI
 
 from plm_data.core.config import BoundaryFieldConfig, SimulationConfig
+from plm_data.core.health import (
+    RuntimeHealthTracker,
+    SolverHealthTracker,
+    discover_solver_targets,
+)
 from plm_data.core.linear_problem import ManagedLinearProblem
 from plm_data.core.logging import get_logger
 from plm_data.core.mesh import DomainGeometry, create_domain
@@ -45,6 +50,8 @@ class ProblemInstance(ABC):
         self._comm_size = MPI.COMM_WORLD.size
         self._solver_profile_name = config.solver.profile_name_for_size(self._comm_size)
         self._solver_options = config.solver.options_for_size(self._comm_size)
+        self._solver_health_tracker = SolverHealthTracker()
+        self._runtime_health_tracker = RuntimeHealthTracker()
         self._validate_solver_strategy()
 
     def _validate_solver_strategy(self) -> None:
@@ -207,6 +214,40 @@ class ProblemInstance(ABC):
             kwargs["kind"] = kind
         return dolfinx_mpc.NonlinearProblem(F, u, mpc, **kwargs)
 
+    def runtime_health_metrics(self, context: str) -> Mapping[str, float | int]:
+        """Return scalar runtime-health metrics for one checkpoint."""
+        return {}
+
+    def solver_health_targets(self) -> dict[str, Any]:
+        """Return runtime objects whose PETSc solvers should be tracked."""
+        return discover_solver_targets(self.__dict__)
+
+    def record_solver_health(
+        self,
+        context: str,
+        *,
+        targets: Mapping[str, Any] | None = None,
+    ) -> None:
+        """Observe the current solver state for tracked runtime solvers."""
+
+        if targets is None:
+            targets = self.solver_health_targets()
+        self._solver_health_tracker.record(context, targets)
+
+    def record_runtime_health(self, context: str) -> None:
+        """Validate and aggregate runtime-health metrics for one checkpoint."""
+
+        metrics = dict(self.runtime_health_metrics(context))
+        self._runtime_health_tracker.record(context, metrics)
+
+    def build_health_diagnostics(self) -> dict[str, Any]:
+        """Return aggregated solver and runtime-health diagnostics."""
+
+        return {
+            "solver_health": self._solver_health_tracker.build_report(),
+            "runtime_health": self._runtime_health_tracker.build_report(),
+        }
+
     @abstractmethod
     def run(self, output: "FrameWriter") -> RunResult:
         """Execute the simulation and write output frames."""
@@ -291,6 +332,7 @@ class StationaryLinearProblem(ProblemInstance):
             mpc=mpc,
         )
         solution = problem.solve()
+        self.record_solver_health("solve", targets={"problem": problem})
 
         reason = problem.solver.getConvergedReason()
         if reason <= 0:
@@ -299,9 +341,14 @@ class StationaryLinearProblem(ProblemInstance):
                 f"Stationary linear solver did not converge (KSP reason={reason})"
             )
 
+        self.record_runtime_health("solve")
         output.write_frame(self.export_solution_fields(solution), t=0.0)
         logger.info("  Solve complete (converged)")
-        return RunResult(num_dofs=num_dofs, solver_converged=True)
+        return RunResult(
+            num_dofs=num_dofs,
+            solver_converged=True,
+            diagnostics=self.build_health_diagnostics(),
+        )
 
 
 class _TransientProblemBase(ProblemInstance):
@@ -356,6 +403,7 @@ class _TransientProblemBase(ProblemInstance):
             "  Time stepping: %d steps, dt=%s, t_end=%s", total_steps, dt, t_end
         )
 
+        self.record_runtime_health("initialization")
         if self.emit_initial_frame() and next_output_idx < len(output_times):
             output.write_frame(self.get_output_fields(), t=0.0)
             next_output_idx += 1
@@ -366,6 +414,7 @@ class _TransientProblemBase(ProblemInstance):
             self.prepare_step(num_steps, t, dt)
             converged = self.step(t, dt)
             t = num_steps * dt
+            self.record_solver_health(f"step_{num_steps}")
 
             if not converged:
                 logger.error(
@@ -375,6 +424,7 @@ class _TransientProblemBase(ProblemInstance):
                     f"Solver did not converge at t={t:.6g} (step {num_steps})"
                 )
 
+            self.record_runtime_health(f"t={t:.6g}")
             if num_steps % log_every == 0 or num_steps == 1:
                 progress = t / t_end * 100
                 logger.info(
@@ -397,6 +447,7 @@ class _TransientProblemBase(ProblemInstance):
             num_dofs=self.get_num_dofs(),
             solver_converged=True,
             num_timesteps=num_steps,
+            diagnostics=self.build_health_diagnostics(),
         )
 
 

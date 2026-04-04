@@ -184,9 +184,12 @@ class TestNumpyWriter:
 
         meta = json.loads((output_dir / "frames_meta.json").read_text())
         stagnation = meta["diagnostics"]["stagnation"]
+        output_health = meta["diagnostics"]["output_health"]
         assert meta["num_frames"] == 3
         assert meta["times"] == [0.0, 1.0, 2.0]
         assert meta["field_names"] == ["u"]
+        assert meta["diagnostics"]["overall_health"]["status"] == "warn"
+        assert output_health["status"] == "warn"
         assert stagnation["applied"] is True
         assert stagnation["checked_fields"] == ["u"]
         assert stagnation["skipped_static_fields"] == []
@@ -214,12 +217,27 @@ class TestNumpyWriter:
 
         meta = json.loads((output_dir / "frames_meta.json").read_text())
         stagnation = meta["diagnostics"]["stagnation"]
+        output_health = meta["diagnostics"]["output_health"]
+        assert meta["diagnostics"]["overall_health"]["status"] == "pass"
+        assert output_health["status"] == "pass"
         assert stagnation["applied"] is True
         assert stagnation["reason"] is None
         assert stagnation["checked_fields"] == []
         assert stagnation["skipped_static_fields"] == ["u"]
         assert stagnation["stagnant_fields"] == []
         assert not any("Health check:" in record.message for record in caplog.records)
+
+    def test_nonfinite_base_field_fails_fast(self, tmp_path):
+        config = _scalar_heat_config(tmp_path, formats=["numpy"])
+        output_dir = tmp_path / "out"
+        spec = get_preset("heat").spec
+        writer = FrameWriter(output_dir, config, spec)
+
+        func = _create_scalar_function(config)
+        func.x.array[0] = np.nan
+
+        with pytest.raises(ValueError, match="Non-finite values detected"):
+            writer.write_frame({"u": func}, t=0.0)
 
     def test_vector_components_output(self, tmp_path):
         config = _vector_stokes_config(tmp_path, formats=["numpy"])

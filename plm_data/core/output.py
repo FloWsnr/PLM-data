@@ -11,11 +11,12 @@ from dolfinx import fem
 from mpi4py import MPI
 
 from plm_data.core.config import SimulationConfig
-from plm_data.core.diagnostics import build_stagnation_report
+from plm_data.core.diagnostics import build_output_health_report
 from plm_data.core.formats.gif_writer import GifWriter
 from plm_data.core.formats.numpy_writer import NumpyWriter
 from plm_data.core.formats.video_writer import VideoWriter
 from plm_data.core.formats.vtk_writer import VTKWriter
+from plm_data.core.health import combine_health_status
 from plm_data.core.interpolation import InterpolationCache, function_to_grid
 from plm_data.core.logging import get_logger
 from plm_data.presets.metadata import ConcreteOutputSpec, OutputSpec, PresetSpec
@@ -96,6 +97,7 @@ class FrameWriter:
             name: [] for name in self._checked_diagnostic_fields
         }
         self._stagnation_diagnostics: dict[str, Any] | None = None
+        self._output_health: dict[str, Any] | None = None
         self._grid_output_groups = [
             GridOutputGroup(
                 output_name=output_name,
@@ -209,26 +211,68 @@ class FrameWriter:
         """Return whether this run needs grid interpolation work."""
         return bool(self._grid_writers or self._checked_diagnostic_fields)
 
+    def _validate_finite_base_fields(
+        self,
+        fields: dict[str, fem.Function],
+        *,
+        t: float,
+    ) -> None:
+        """Fail fast if any base output field contains NaN / Inf DOF values."""
+
+        bad_fields: list[str] = []
+        for field_name, func in fields.items():
+            local_values = np.asarray(func.x.array)
+            local_bad_count = int(np.count_nonzero(~np.isfinite(local_values)))
+            bad_count = MPI.COMM_WORLD.allreduce(local_bad_count, op=MPI.SUM)
+            if bad_count == 0:
+                continue
+            bad_fields.append(f"{field_name} ({bad_count} non-finite DOFs)")
+
+        if bad_fields:
+            field_list = ", ".join(bad_fields)
+            raise ValueError(
+                f"Non-finite values detected in output field state at t={t:.6g}: "
+                f"{field_list}."
+            )
+
     def _record_diagnostic_field(self, name: str, arr: np.ndarray) -> None:
         """Store one concrete output trajectory for post-run diagnostics."""
         if name in self._diagnostic_frames:
             self._diagnostic_frames[name].append(arr)
 
-    def _compute_stagnation_diagnostics(self) -> dict[str, Any]:
-        """Build and cache the post-run stagnation diagnostics report."""
-        if self._stagnation_diagnostics is None:
-            self._stagnation_diagnostics = build_stagnation_report(
+    def _compute_output_health(self) -> dict[str, Any]:
+        """Build and cache the combined post-run output-health report."""
+
+        if self._output_health is None:
+            valid_mask = None
+            if (
+                self._interp_cache is not None
+                and self._interp_cache.outside_mask is not None
+            ):
+                valid_mask = ~self._interp_cache.outside_mask.reshape(self._resolution)
+            self._output_health = build_output_health_report(
                 self._diagnostic_frames,
                 num_frames=self.frame_count,
                 skipped_static_fields=self._skipped_static_fields,
+                valid_mask=valid_mask,
             )
+        return self._output_health
+
+    def _compute_stagnation_diagnostics(self) -> dict[str, Any]:
+        """Build and cache the post-run stagnation diagnostics report."""
+        if self._stagnation_diagnostics is None:
+            self._stagnation_diagnostics = self._compute_output_health()["checks"][
+                "stagnation"
+            ]
         return self._stagnation_diagnostics
 
-    def _log_stagnation_warnings(self, diagnostics: dict[str, Any]) -> None:
-        """Emit warnings for checked fields that became stagnant."""
-        if not diagnostics["applied"]:
+    def _log_output_health_warnings(self, output_health: dict[str, Any]) -> None:
+        """Emit warnings for non-fatal output-health issues."""
+
+        if not output_health["applied"]:
             return
 
+        diagnostics = output_health["checks"]["stagnation"]
         for field_name in diagnostics["stagnant_fields"]:
             info = diagnostics["fields"][field_name]
             if info["field_range"] == 0:
@@ -245,15 +289,47 @@ class FrameWriter:
                 info["trailing_stagnant_frames"],
             )
 
+        low_dynamic_range = output_health["checks"]["low_dynamic_range"]
+        for field_name in low_dynamic_range["low_dynamic_range_fields"]:
+            if field_name in diagnostics["stagnant_fields"]:
+                continue
+            info = low_dynamic_range["fields"][field_name]
+            self._logger.warning(
+                "  Health check: field '%s' has very low dynamic range "
+                "(range=%.3e, threshold=%.3e)",
+                field_name,
+                info["field_range"],
+                info["threshold"],
+            )
+
+        spatial_uniformity = output_health["checks"]["spatial_uniformity"]
+        for field_name in spatial_uniformity["spatially_uniform_fields"]:
+            if field_name in diagnostics["stagnant_fields"]:
+                continue
+            info = spatial_uniformity["fields"][field_name]
+            self._logger.warning(
+                "  Health check: field '%s' is nearly spatially uniform "
+                "(std=%.3e, threshold=%.3e)",
+                field_name,
+                info["max_spatial_std"],
+                info["threshold"],
+            )
+
     def timing_summary(self) -> dict[str, float | int | dict[str, float]]:
         """Return output timing counters for logs, metadata, and runner summaries."""
         summary = self._timings.as_dict()
         summary["frame_count"] = self.frame_count
         return summary
 
+    def health_summary(self) -> dict[str, Any]:
+        """Return the cached output-health report."""
+
+        return self._compute_output_health()
+
     def write_frame(self, fields: dict[str, fem.Function], t: float) -> None:
         """Capture a snapshot of one or more output fields."""
         frame_start = time.perf_counter()
+        self._validate_finite_base_fields(fields, t=t)
 
         if self._fem_writers:
             vtk_fields = self._selected_vtk_fields(fields)
@@ -337,7 +413,7 @@ class FrameWriter:
         self._timings.write_frame_seconds += time.perf_counter() - frame_start
         self._logger.debug("  Frame %d captured at t=%.6g", self.frame_count, t)
 
-    def finalize(self) -> None:
+    def finalize(self, run_diagnostics: dict[str, Any] | None = None) -> None:
         """Delegate finalization to all format writers and save metadata."""
         for writer in self._grid_writers:
             writer_name = type(writer).__name__.removesuffix("Writer").lower()
@@ -380,8 +456,55 @@ class FrameWriter:
             )
             self._logger.info("  Finalize by format: %s", format_breakdown)
 
-        stagnation = self._compute_stagnation_diagnostics()
-        self._log_stagnation_warnings(stagnation)
+        output_health = self._compute_output_health()
+        stagnation = output_health["checks"]["stagnation"]
+        self._log_output_health_warnings(output_health)
+
+        solver_health = None
+        runtime_health = None
+        if run_diagnostics is not None:
+            solver_health = run_diagnostics.get("solver_health")
+            runtime_health = run_diagnostics.get("runtime_health")
+
+        overall_status = combine_health_status(
+            output_health["status"],
+            solver_health["status"] if solver_health is not None else "pass",
+            runtime_health["status"] if runtime_health is not None else "pass",
+        )
+        overall_health = {
+            "status": overall_status,
+            "warning_sources": [
+                name
+                for name, status in (
+                    ("output_health", output_health["status"]),
+                    (
+                        "solver_health",
+                        "pass" if solver_health is None else solver_health["status"],
+                    ),
+                    (
+                        "runtime_health",
+                        "pass" if runtime_health is None else runtime_health["status"],
+                    ),
+                )
+                if status == "warn"
+            ],
+            "failing_sources": [
+                name
+                for name, status in (
+                    ("output_health", output_health["status"]),
+                    (
+                        "solver_health",
+                        "pass" if solver_health is None else solver_health["status"],
+                    ),
+                    (
+                        "runtime_health",
+                        "pass" if runtime_health is None else runtime_health["status"],
+                    ),
+                )
+                if status == "fail"
+            ],
+        }
+        self._logger.info("  Health summary: %s", overall_status)
 
         metadata = {
             "num_frames": self.frame_count,
@@ -400,9 +523,15 @@ class FrameWriter:
                 for output in self._expected_outputs
             ],
             "diagnostics": {
+                "overall_health": overall_health,
+                "output_health": output_health,
                 "stagnation": stagnation,
             },
             "timings": self.timing_summary(),
         }
+        if solver_health is not None:
+            metadata["diagnostics"]["solver_health"] = solver_health
+        if runtime_health is not None:
+            metadata["diagnostics"]["runtime_health"] = runtime_health
         with open(self.output_dir / "frames_meta.json", "w") as f:
             json.dump(metadata, f, indent=2)

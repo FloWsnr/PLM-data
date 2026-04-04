@@ -246,7 +246,7 @@ class _CompressibleNavierStokesProblem(TransientNonlinearProblem):
         self.pressure_out.interpolate(self._pressure_expr)
         self.pressure_out.x.scatter_forward()
 
-    def _check_physical_admissibility(self, context: str) -> None:
+    def _physical_admissibility_metrics(self, context: str) -> dict[str, float]:
         self._update_output_views()
 
         local_density = self.density_out.x.array
@@ -273,6 +273,13 @@ class _CompressibleNavierStokesProblem(TransientNonlinearProblem):
                 f"temperature during {context}. Minimum temperature: "
                 f"{min_temperature:.6g}."
             )
+        return {
+            "min_density": min_density,
+            "min_temperature": min_temperature,
+        }
+
+    def runtime_health_metrics(self, context: str) -> dict[str, float]:
+        return self._physical_admissibility_metrics(context)
 
     def setup(self) -> None:
         domain_geom = self.load_domain_geometry()
@@ -401,7 +408,6 @@ class _CompressibleNavierStokesProblem(TransientNonlinearProblem):
             seed=self.config.seed,
         )
         self.solution.x.scatter_forward()
-        self._check_physical_admissibility("initialization")
         self.previous.x.array[:] = self.solution.x.array
         self.previous.x.scatter_forward()
 
@@ -546,7 +552,6 @@ class _CompressibleNavierStokesProblem(TransientNonlinearProblem):
         converged = self.problem.solver.getConvergedReason() > 0
         if converged:
             self.solution.x.scatter_forward()
-            self._check_physical_admissibility(f"t={t + dt:.6g}")
         return converged
 
     def get_output_fields(self) -> dict[str, fem.Function]:
