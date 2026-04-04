@@ -19,6 +19,12 @@ from plm_data.core.spatial_fields import (
 _TAU = 2.0 * np.pi
 
 
+def _random_seed_required(context: str) -> ValueError:
+    return ValueError(
+        f"{context} requires an explicit seed from the config or '--seed'."
+    )
+
+
 def _require_param(params: dict[str, Any], key: str, field_type: str) -> Any:
     if key not in params:
         raise ValueError(
@@ -36,10 +42,13 @@ def _sample_number(
     value: Any,
     *,
     parameters: dict[str, float],
-    rng: np.random.Generator,
+    rng: np.random.Generator | None,
 ) -> float:
     if not _is_sampler_spec(value):
         return resolve_param_ref(value, parameters)
+
+    if rng is None:
+        raise _random_seed_required("Initial-condition parameter sampling")
 
     sample_type = value["sample"]
     if sample_type == "uniform":
@@ -62,7 +71,7 @@ def _sample_integer(
     value: Any,
     *,
     parameters: dict[str, float],
-    rng: np.random.Generator,
+    rng: np.random.Generator | None,
 ) -> int:
     sampled = _sample_number(value, parameters=parameters, rng=rng)
     integer = int(round(sampled))
@@ -78,7 +87,7 @@ def _sample_coordinate_list(
     *,
     gdim: int,
     parameters: dict[str, float],
-    rng: np.random.Generator,
+    rng: np.random.Generator | None,
     field_type: str,
     field_name: str,
 ) -> list[float]:
@@ -103,9 +112,7 @@ def _global_axis_bounds(msh) -> tuple[np.ndarray, np.ndarray]:
     return np.asarray(lower_bounds, dtype=float), np.asarray(upper_bounds, dtype=float)
 
 
-def _rng_for_stream(seed: int | None, stream_id: str | None) -> np.random.Generator:
-    if seed is None:
-        return np.random.default_rng()
+def _rng_for_stream(seed: int, stream_id: str | None) -> np.random.Generator:
     if not stream_id:
         return np.random.default_rng(seed)
 
@@ -121,7 +128,7 @@ def _resolved_scalar_ic(
     *,
     gdim: int,
     parameters: dict[str, float],
-    rng: np.random.Generator,
+    rng: np.random.Generator | None,
 ) -> tuple[str, dict[str, Any]]:
     if ic_config.is_componentwise:
         raise ValueError("Expected a scalar initial-condition config.")
@@ -540,13 +547,15 @@ def _build_resolved_scalar_interpolator(
     msh,
     ic_type: str,
     resolved_params: dict[str, Any],
-    rng: np.random.Generator,
+    rng: np.random.Generator | None,
     parameters: dict[str, float],
 ) -> Callable[[np.ndarray], np.ndarray] | None:
     if ic_type == "custom":
         return None
 
     if ic_type == "gaussian_noise":
+        if rng is None:
+            raise _random_seed_required("Initial-condition gaussian_noise")
         mean = float(resolved_params["mean"])
         std = float(resolved_params["std"])
 
@@ -609,7 +618,11 @@ def apply_ic(
         raise ValueError("apply_ic expects a scalar initial-condition config")
 
     gdim = func.function_space.mesh.geometry.dim
-    rng = _rng_for_stream(seed, stream_id or func.name or None)
+    rng = (
+        _rng_for_stream(seed, stream_id or func.name or None)
+        if seed is not None
+        else None
+    )
     ic_type, resolved_params = _resolved_scalar_ic(
         ic_config,
         gdim=gdim,
@@ -656,7 +669,11 @@ def apply_vector_ic(
             raise ValueError(
                 f"Component '{label}' cannot use 'custom' inside a vector expression"
             )
-        component_rng = _rng_for_stream(seed, f"{stream_root}.{label}")
+        component_rng = (
+            _rng_for_stream(seed, f"{stream_root}.{label}")
+            if seed is not None
+            else None
+        )
         ic_type, resolved_params = _resolved_scalar_ic(
             component,
             gdim=gdim,

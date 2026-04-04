@@ -1,5 +1,6 @@
 """Simulation runner."""
 
+from dataclasses import replace
 import logging
 import time
 from pathlib import Path
@@ -16,6 +17,10 @@ class SimulationRunner:
     """Orchestrates a single simulation run."""
 
     def __init__(self, config: SimulationConfig, output_root: str | Path | None = None):
+        if config.seed is None:
+            raise ValueError(
+                "Simulation runs require an explicit seed from the config or '--seed'."
+            )
         self.config = config
         self.preset = get_preset(config.preset)
         self.output_root = (
@@ -25,8 +30,17 @@ class SimulationRunner:
             raise ValueError("SimulationRunner requires an output root directory.")
 
     @classmethod
-    def from_yaml(cls, path: str | Path, output_root: str | Path) -> "SimulationRunner":
-        return cls(load_config(path), output_root)
+    def from_yaml(
+        cls,
+        path: str | Path,
+        output_root: str | Path,
+        *,
+        seed: int | None = None,
+    ) -> "SimulationRunner":
+        config = load_config(path)
+        if seed is not None:
+            config = replace(config, seed=seed)
+        return cls(config, output_root)
 
     def run(self, console_level: int = logging.INFO) -> dict:
         spec = self.preset.spec

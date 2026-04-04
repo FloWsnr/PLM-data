@@ -212,6 +212,19 @@ def test_scalar_cell_noise_changes_across_timesteps():
     assert not np.allclose(step_zero, step_one)
 
 
+def test_scalar_cell_noise_requires_seed():
+    mesh = _rectangle_mesh()
+    sampler = _ScalarCellNoise(
+        mesh,
+        seed=None,
+        stream_root="tests.seed_required",
+        volume_scaling=False,
+    )
+
+    with pytest.raises(ValueError, match="explicit seed"):
+        sampler.fill()
+
+
 @pytest.mark.parametrize("mesh_factory", [_rectangle_mesh, _box_mesh])
 def test_dynamic_noise_volume_scaling_matches_cell_volumes(mesh_factory):
     mesh = mesh_factory()

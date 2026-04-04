@@ -35,10 +35,9 @@ def _reference_cell_point(tdim: int) -> np.ndarray:
 
 def _stream_seed(seed: int | None, stream_id: str, comm) -> np.uint64:
     if seed is None:
-        local_seed = None
-        if comm.rank == 0:
-            local_seed = int(np.random.default_rng().integers(0, 2**63 - 1))
-        seed = int(comm.bcast(local_seed, root=0))
+        raise ValueError(
+            "Stochastic sampling requires an explicit seed from the config or '--seed'."
+        )
 
     digest = hashlib.blake2b(
         f"{seed}:{stream_id}".encode("utf-8"),

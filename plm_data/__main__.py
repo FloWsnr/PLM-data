@@ -9,7 +9,7 @@ def cmd_run(args):
     from plm_data.core.runner import SimulationRunner
 
     level = getattr(logging, args.log_level)
-    runner = SimulationRunner.from_yaml(args.config, args.output_dir)
+    runner = SimulationRunner.from_yaml(args.config, args.output_dir, seed=args.seed)
     runner.run(console_level=level)
 
 
@@ -52,6 +52,11 @@ def main():
         choices=["DEBUG", "INFO", "WARNING"],
         default="INFO",
         help="Console log level (file always logs DEBUG)",
+    )
+    p_run.add_argument(
+        "--seed",
+        type=int,
+        help="Override the config seed for this run.",
     )
     p_run.set_defaults(func=cmd_run)
 

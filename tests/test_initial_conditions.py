@@ -208,6 +208,34 @@ def test_apply_ic_with_sampled_params_is_reproducible(rectangle_domain):
     np.testing.assert_allclose(f1.x.array, f2.x.array)
 
 
+def test_apply_ic_with_sampled_params_requires_seed(rectangle_domain):
+    f = _make_function(rectangle_domain)
+    ic = FieldExpressionConfig(
+        type="constant",
+        params={
+            "value": {
+                "sample": "uniform",
+                "min": -1.0,
+                "max": 1.0,
+            }
+        },
+    )
+
+    with pytest.raises(ValueError, match="explicit seed"):
+        apply_ic(f, ic, {})
+
+
+def test_apply_gaussian_noise_requires_seed(rectangle_domain):
+    f = _make_function(rectangle_domain)
+    ic = FieldExpressionConfig(
+        type="gaussian_noise",
+        params={"mean": 0.0, "std": 0.1},
+    )
+
+    with pytest.raises(ValueError, match="explicit seed"):
+        apply_ic(f, ic, {})
+
+
 def test_apply_vector_ic_componentwise_gaussian_noise(rectangle_domain):
     f = _make_vector_function(rectangle_domain)
     ic = FieldExpressionConfig(
