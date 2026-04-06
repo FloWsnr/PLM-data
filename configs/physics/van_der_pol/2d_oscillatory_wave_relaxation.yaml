@@ -32,6 +32,7 @@ inputs:
               sample: uniform
               min: 0.0
               max: 6.283185307179586
+            angle: 0.0
           - amplitude:
               sample: uniform
               min: -0.03
@@ -47,6 +48,7 @@ inputs:
               sample: uniform
               min: 0.0
               max: 6.283185307179586
+            angle: 0.0
           - amplitude:
               sample: uniform
               min: -0.03
@@ -62,6 +64,7 @@ inputs:
               sample: uniform
               min: 0.0
               max: 6.283185307179586
+            angle: 0.0
           - amplitude:
               sample: uniform
               min: -0.03
@@ -77,6 +80,7 @@ inputs:
               sample: uniform
               min: 0.0
               max: 6.283185307179586
+            angle: 0.0
   v:
     initial_condition:
       type: constant

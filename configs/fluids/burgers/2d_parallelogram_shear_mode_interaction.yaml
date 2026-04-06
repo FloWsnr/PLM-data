@@ -35,6 +35,7 @@ inputs:
                 sample: uniform
                 min: 0.0
                 max: 6.283185
+              angle: 0.0
         y:
           type: sine_waves
           params:
@@ -51,6 +52,7 @@ inputs:
                 sample: uniform
                 min: 0.0
                 max: 6.283185
+              angle: 0.0
 boundary_conditions:
   velocity:
     $ref: boundary_field.vector.full_periodic_2d

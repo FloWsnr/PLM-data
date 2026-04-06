@@ -194,12 +194,52 @@ def test_apply_sine_waves(rectangle_domain):
         params={
             "background": 0.1,
             "modes": [
-                {"amplitude": 0.3, "cycles": [1, 2], "phase": 0.0},
-                {"amplitude": -0.15, "cycles": [2, 1], "phase": 0.5},
+                {"amplitude": 0.3, "cycles": [1, 2], "phase": 0.0, "angle": 0.0},
+                {"amplitude": -0.15, "cycles": [2, 1], "phase": 0.5, "angle": 0.0},
             ],
         },
     )
     apply_ic(f, ic, {})
+    assert np.max(f.x.array) > 0.1
+    assert np.min(f.x.array) < 0.1
+
+
+def test_apply_sine_waves_with_rotation(rectangle_domain):
+    """Test sine waves with explicit rotation angle."""
+    f = _make_function(rectangle_domain)
+    ic = FieldExpressionConfig(
+        type="sine_waves",
+        params={
+            "background": 0.1,
+            "modes": [
+                {"amplitude": 0.3, "cycles": [1, 2], "phase": 0.0, "angle": 1.57},  # 90 degrees
+                {"amplitude": -0.15, "cycles": [2, 1], "phase": 0.5, "angle": 0.0},  # No rotation
+            ],
+        },
+    )
+    apply_ic(f, ic, {})
+    assert np.max(f.x.array) > 0.1
+    assert np.min(f.x.array) < 0.1
+
+
+def test_apply_sine_waves_with_random_rotation(rectangle_domain):
+    """Test sine waves with randomized rotation angle."""
+    f = _make_function(rectangle_domain)
+    ic = FieldExpressionConfig(
+        type="sine_waves",
+        params={
+            "background": 0.1,
+            "modes": [
+                {
+                    "amplitude": 0.3,
+                    "cycles": [1, 2],
+                    "phase": 0.0,
+                    "angle": {"sample": "uniform", "min": 0.0, "max": 6.283185},  # 0 to 2π
+                },
+            ],
+        },
+    )
+    apply_ic(f, ic, {}, seed=42)
     assert np.max(f.x.array) > 0.1
     assert np.min(f.x.array) < 0.1
 

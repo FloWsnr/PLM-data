@@ -429,6 +429,12 @@ def _resolved_scalar_ic(
                     ),
                 }
             )
+            # Handle required angle parameter
+            resolved_modes[-1]["angle"] = _sample_number(
+                _require_param(mode, "angle", ic_type),
+                parameters=parameters,
+                rng=rng,
+            )
 
         return ic_type, {
             "background": _sample_number(
@@ -544,8 +550,29 @@ def _build_sine_waves_interpolator(
         for mode in modes:
             mode_values = np.full(x.shape[1], float(mode["amplitude"]), dtype=float)
             phase = float(mode["phase"])
+            angle = float(mode.get("angle", 0.0))
+            
+            # Apply rotation if angle is non-zero
+            if angle != 0.0 and lower_bounds.shape[0] >= 2:
+                # For 2D and 3D, rotate the coordinates
+                cos_a, sin_a = np.cos(angle), np.sin(angle)
+                if lower_bounds.shape[0] == 2:
+                    # 2D rotation
+                    x_rot = cos_a * normalized[0] - sin_a * normalized[1]
+                    y_rot = sin_a * normalized[0] + cos_a * normalized[1]
+                    rotated_normalized = np.array([x_rot, y_rot])
+                else:
+                    # 3D rotation around Z-axis (most intuitive for wave patterns)
+                    x_rot = cos_a * normalized[0] - sin_a * normalized[1]
+                    y_rot = sin_a * normalized[0] + cos_a * normalized[1]
+                    z_rot = normalized[2]  # Z coordinate unchanged
+                    rotated_normalized = np.array([x_rot, y_rot, z_rot])
+            else:
+                rotated_normalized = normalized
+            
+            # Use rotated coordinates for sine wave computation
             for axis, cycles in enumerate(mode["cycles"]):
-                mode_values *= np.sin(_TAU * int(cycles) * normalized[axis] + phase)
+                mode_values *= np.sin(_TAU * int(cycles) * rotated_normalized[axis] + phase)
             values = values + mode_values
         return values
 

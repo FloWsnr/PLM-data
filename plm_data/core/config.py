@@ -399,10 +399,11 @@ def _validate_initial_condition_scalar_expression(
         for index, mode in enumerate(modes):
             mode_context = f"{context}.params.modes[{index}]"
             mode_mapping = _as_mapping(mode, mode_context)
-            if set(mode_mapping) != {"amplitude", "cycles", "phase"}:
+            expected_keys = {"amplitude", "cycles", "phase", "angle"}
+            if set(mode_mapping) != expected_keys:
                 raise ValueError(
                     f"{mode_context} must contain exactly ['amplitude', 'cycles', "
-                    f"'phase']. Got {sorted(mode_mapping)}."
+                    f"'phase', 'angle']. Got {sorted(mode_mapping)}."
                 )
             _validate_sampleable_numeric(
                 mode_mapping["amplitude"], f"{mode_context}.amplitude"
@@ -419,6 +420,7 @@ def _validate_initial_condition_scalar_expression(
                     f"{mode_context}.cycles[{axis}]",
                 )
             _validate_sampleable_numeric(mode_mapping["phase"], f"{mode_context}.phase")
+            _validate_sampleable_numeric(mode_mapping["angle"], f"{mode_context}.angle")
         return
 
     if expr_type == "quadrants":

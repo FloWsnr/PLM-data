@@ -51,6 +51,7 @@ inputs:
                 sample: uniform
                 min: 0.0
                 max: 6.283185
+              angle: 0.0
 boundary_conditions:
   velocity:
     $ref: boundary_field.vector.periodic_shear_layer_2d
