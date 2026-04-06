@@ -22,7 +22,10 @@ inputs:
       params:
         background: 0.0
         generators:
-        - count: 1
+        - count:
+            sample: randint
+            min: 1
+            max: 2
           amplitude:
             sample: uniform
             min: 0.9

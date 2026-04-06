@@ -104,7 +104,7 @@ def _box_mesh():
 
 
 def test_load_config_parses_stochastic_state_and_coefficient_sections(tmp_path):
-    data = _load_config_dict("configs/basic/heat/2d_single_blob_diffusion.yaml")
+    data = _load_config_dict("configs/basic/heat/2d_localized_blob_diffusion.yaml")
     data["stochastic"] = {
         "states": {"u": {"coupling": "additive", "intensity": 0.2}},
         "coefficients": {

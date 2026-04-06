@@ -98,7 +98,7 @@ def test_apply_gaussian_blobs_generator_count_is_reproducible(rectangle_domain):
             "background": 0.0,
             "generators": [
                 {
-                    "count": 2,
+                    "count": {"sample": "randint", "min": 1, "max": 3},
                     "amplitude": {"sample": "uniform", "min": 0.8, "max": 1.2},
                     "sigma": {"sample": "uniform", "min": 0.05, "max": 0.09},
                     "center": [

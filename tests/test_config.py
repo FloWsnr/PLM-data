@@ -42,7 +42,7 @@ def _write_yaml(tmp_path, name: str, data: dict[str, object]):
 
 
 def test_load_config():
-    cfg = load_config("configs/basic/heat/2d_single_blob_diffusion.yaml")
+    cfg = load_config("configs/basic/heat/2d_localized_blob_diffusion.yaml")
     assert cfg.preset == "heat"
     assert cfg.parameters == {}
     assert cfg.coefficient("kappa").type == "constant"
@@ -53,7 +53,12 @@ def test_load_config():
     assert cfg.time.t_end == 1.0
     assert cfg.has_periodic_boundary_conditions is False
     assert cfg.input("u").initial_condition.type == "gaussian_blobs"
-    assert cfg.input("u").initial_condition.params["generators"][0]["count"] == 1
+    assert (
+        cfg.input("u").initial_condition.params["generators"][0]["count"]["sample"]
+        == "randint"
+    )
+    assert cfg.input("u").initial_condition.params["generators"][0]["count"]["min"] == 1
+    assert cfg.input("u").initial_condition.params["generators"][0]["count"]["max"] == 2
     assert (
         cfg.input("u").initial_condition.params["generators"][0]["center"][0]["sample"]
         == "uniform"
@@ -445,7 +450,18 @@ def test_load_config_shallow_water():
     assert cfg.coefficient("bathymetry").type == "constant"
     assert cfg.coefficient("bathymetry").params["value"] == 0.0
     assert cfg.input("height").initial_condition.type == "gaussian_blobs"
-    assert cfg.input("height").initial_condition.params["generators"][0]["count"] == 1
+    assert (
+        cfg.input("height").initial_condition.params["generators"][0]["count"]["sample"]
+        == "randint"
+    )
+    assert (
+        cfg.input("height").initial_condition.params["generators"][0]["count"]["min"]
+        == 1
+    )
+    assert (
+        cfg.input("height").initial_condition.params["generators"][0]["count"]["max"]
+        == 2
+    )
     assert cfg.input("velocity").initial_condition.components["x"].type == "constant"
     assert (
         cfg.input("velocity").initial_condition.components["y"].params["value"] == 0.0
@@ -564,7 +580,12 @@ def test_load_config_wave():
     assert cfg.input("u").initial_condition.type == "constant"
     assert cfg.input("u").initial_condition.params["value"] == 0.0
     assert cfg.input("v").initial_condition.type == "gaussian_blobs"
-    assert cfg.input("v").initial_condition.params["generators"][0]["count"] == 1
+    assert (
+        cfg.input("v").initial_condition.params["generators"][0]["count"]["sample"]
+        == "randint"
+    )
+    assert cfg.input("v").initial_condition.params["generators"][0]["count"]["min"] == 1
+    assert cfg.input("v").initial_condition.params["generators"][0]["count"]["max"] == 2
     assert cfg.input("forcing").source.type == "none"
     assert cfg.output_mode("u") == "scalar"
     assert cfg.output_mode("v") == "scalar"

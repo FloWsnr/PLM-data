@@ -30,7 +30,10 @@ inputs:
       params:
         background: 1.0
         generators:
-        - count: 1
+        - count:
+            sample: randint
+            min: 1
+            max: 2
           amplitude:
             sample: uniform
             min: -0.55
@@ -46,7 +49,10 @@ inputs:
           - sample: uniform
             min: -0.3
             max: 0.3
-        - count: 1
+        - count:
+            sample: randint
+            min: 1
+            max: 2
           amplitude:
             sample: uniform
             min: -0.55
@@ -68,7 +74,10 @@ inputs:
       params:
         background: 0.0
         generators:
-        - count: 1
+        - count:
+            sample: randint
+            min: 1
+            max: 2
           amplitude:
             sample: uniform
             min: 0.2
@@ -84,7 +93,10 @@ inputs:
           - sample: uniform
             min: -0.3
             max: 0.3
-        - count: 1
+        - count:
+            sample: randint
+            min: 1
+            max: 2
           amplitude:
             sample: uniform
             min: 0.2

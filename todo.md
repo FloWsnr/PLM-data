@@ -12,10 +12,10 @@ dynamics.
 
 #### Advection (`configs/basic/advection`)
 
-1. `2d_cellular_blob_advection`: single blob stirred by periodic cellular flow with weak diffusion.
-2. `2d_diagonal_blob_transport`: single blob translated diagonally with no diffusion.
-3. `2d_rotating_blob_advection`: single blob rotating around the domain center with slight diffusion.
-4. `3d_swirling_blob_advection`: single blob carried by a 3D periodic swirling flow with weak diffusion.
+1. `2d_cellular_blob_advection`: one or two blobs stirred by periodic cellular flow with weak diffusion.
+2. `2d_diagonal_blob_transport`: one or two blobs translated diagonally with no diffusion.
+3. `2d_rotating_blob_advection`: one or two blobs rotating around the domain center with slight diffusion.
+4. `3d_swirling_blob_advection`: one or two blobs carried by a 3D periodic swirling flow with weak diffusion.
 
 #### Elasticity (`configs/basic/elasticity`)
 
@@ -24,11 +24,11 @@ dynamics.
 
 #### Heat (`configs/basic/heat`)
 
-1. `2d_single_blob_diffusion`: single hot blob diffusing under no-flux boundaries.
+1. `2d_localized_blob_diffusion`: one or two hot blobs diffusing under no-flux boundaries.
 2. `2d_cosine_source_heating`: zero initial field driven by a standing cosine heat source.
 3. `2d_noisy_media_diffusion`: hot/cold blobs diffusing through noisy conductivity with additive state noise.
 4. `2d_radial_diffusivity_spread`: hot spot spreading through radially varying conductivity with cold boundaries.
-5. `3d_single_blob_diffusion`: single hot blob diffusing in a cube with no-flux walls.
+5. `3d_localized_blob_diffusion`: one or two hot blobs diffusing in a cube with no-flux walls.
 6. `3d_noisy_media_diffusion`: hot/cold blobs diffusing in noisy 3D media with additive state noise.
 
 #### Helmholtz (`configs/basic/helmholtz`)
