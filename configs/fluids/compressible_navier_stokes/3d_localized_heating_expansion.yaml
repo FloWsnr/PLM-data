@@ -73,6 +73,7 @@ inputs:
             sample: uniform
             min: 0.096
             max: 0.144
+          aspect_ratio: 1.0
           center:
           - sample: uniform
             min: 0.17

@@ -45,6 +45,7 @@ inputs:
             sample: uniform
             min: 0.11
             max: 0.18
+          aspect_ratio: 1.0
           center:
           - sample: uniform
             min: 0.85
@@ -64,6 +65,7 @@ inputs:
             sample: uniform
             min: 0.08
             max: 0.14
+          aspect_ratio: 1.0
           center:
           - sample: uniform
             min: 1.35
@@ -89,6 +91,7 @@ inputs:
             sample: uniform
             min: 0.1
             max: 0.16
+          aspect_ratio: 1.0
           center:
           - sample: uniform
             min: 0.9
@@ -108,6 +111,7 @@ inputs:
             sample: uniform
             min: 0.08
             max: 0.14
+          aspect_ratio: 1.0
           center:
           - sample: uniform
             min: 1.3

@@ -1177,6 +1177,7 @@ def test_gray_scott_rejects_spd_solver_strategy_with_advection(tmp_path):
                     "count": 1,
                     "amplitude": -0.5,
                     "sigma": 0.08,
+                    "aspect_ratio": 1.0,
                     "center": [0.5, 0.5],
                 }
             ],
@@ -1189,6 +1190,7 @@ def test_gray_scott_rejects_spd_solver_strategy_with_advection(tmp_path):
                     "count": 1,
                     "amplitude": 0.25,
                     "sigma": 0.08,
+                    "aspect_ratio": 1.0,
                     "center": [0.5, 0.5],
                 }
             ],
@@ -1218,6 +1220,7 @@ def test_gray_scott_accepts_spd_solver_strategy_with_zero_velocity(tmp_path):
                     "count": 1,
                     "amplitude": -0.5,
                     "sigma": 0.08,
+                    "aspect_ratio": 1.0,
                     "center": [0.5, 0.5],
                 }
             ],
@@ -1230,6 +1233,7 @@ def test_gray_scott_accepts_spd_solver_strategy_with_zero_velocity(tmp_path):
                     "count": 1,
                     "amplitude": 0.25,
                     "sigma": 0.08,
+                    "aspect_ratio": 1.0,
                     "center": [0.5, 0.5],
                 }
             ],

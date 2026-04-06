@@ -74,12 +74,14 @@ def test_apply_gaussian_blobs(rectangle_domain):
                     "amplitude": 1.0,
                     "sigma": 0.08,
                     "center": [0.3, 0.4],
+                    "aspect_ratio": 1.0,
                 },
                 {
                     "count": 1,
                     "amplitude": -0.4,
                     "sigma": 0.05,
                     "center": [0.7, 0.6],
+                    "aspect_ratio": 1.0,
                 },
             ],
         },
@@ -105,6 +107,7 @@ def test_apply_gaussian_blobs_generator_count_is_reproducible(rectangle_domain):
                         {"sample": "uniform", "min": 0.2, "max": 0.8},
                         {"sample": "uniform", "min": 0.2, "max": 0.8},
                     ],
+                    "aspect_ratio": 1.0,
                 }
             ],
         },
@@ -113,6 +116,53 @@ def test_apply_gaussian_blobs_generator_count_is_reproducible(rectangle_domain):
     apply_ic(f2, ic, {}, seed=42, stream_id="u")
     np.testing.assert_allclose(f1.x.array, f2.x.array)
     assert np.max(f1.x.array) > 0.2
+
+
+def test_apply_gaussian_blobs_elliptical(rectangle_domain):
+    """Elliptical blobs (aspect_ratio > 1) produce an anisotropic field."""
+    f = _make_function(rectangle_domain)
+    ic = FieldExpressionConfig(
+        type="gaussian_blobs",
+        params={
+            "background": 0.0,
+            "generators": [
+                {
+                    "count": 1,
+                    "amplitude": 1.0,
+                    "sigma": 0.12,
+                    "center": [0.5, 0.5],
+                    "aspect_ratio": 3.0,
+                },
+            ],
+        },
+    )
+    apply_ic(f, ic, {}, seed=99, stream_id="u")
+    # The field should still have a clear peak near the center.
+    assert np.max(f.x.array) > 0.5
+    # With aspect_ratio=3 the blob is squeezed along one axis, so the
+    # value at a fixed distance from the center should differ depending on
+    # direction.  We verify by running a second time with aspect_ratio=1
+    # and checking the fields are NOT identical (the random direction
+    # changes the shape).
+    f_round = _make_function(rectangle_domain)
+    ic_round = FieldExpressionConfig(
+        type="gaussian_blobs",
+        params={
+            "background": 0.0,
+            "generators": [
+                {
+                    "count": 1,
+                    "amplitude": 1.0,
+                    "sigma": 0.12,
+                    "center": [0.5, 0.5],
+                    "aspect_ratio": 1.0,
+                },
+            ],
+        },
+    )
+    apply_ic(f_round, ic_round, {}, seed=99, stream_id="u")
+    # Fields must differ because the elliptical blob is anisotropic.
+    assert not np.allclose(f.x.array, f_round.x.array)
 
 
 def test_apply_gaussian_wave_packet(rectangle_domain):

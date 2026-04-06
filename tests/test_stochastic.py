@@ -348,6 +348,7 @@ def test_gray_scott_saturating_noise_run_stays_finite(tmp_path):
                     "count": 1,
                     "amplitude": -0.35,
                     "sigma": 0.12,
+                    "aspect_ratio": 1.0,
                     "center": [0.5, 0.5],
                 }
             ],
@@ -360,6 +361,7 @@ def test_gray_scott_saturating_noise_run_stays_finite(tmp_path):
                     "count": 1,
                     "amplitude": 0.22,
                     "sigma": 0.1,
+                    "aspect_ratio": 1.0,
                     "center": [0.5, 0.5],
                 }
             ],

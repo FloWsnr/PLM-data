@@ -321,10 +321,17 @@ def _validate_initial_condition_scalar_expression(
         for index, generator in enumerate(generators):
             generator_context = f"{context}.params.generators[{index}]"
             generator_mapping = _as_mapping(generator, generator_context)
-            if set(generator_mapping) != {"count", "amplitude", "sigma", "center"}:
+            expected_keys = {
+                "count",
+                "amplitude",
+                "sigma",
+                "center",
+                "aspect_ratio",
+            }
+            if set(generator_mapping) != expected_keys:
                 raise ValueError(
-                    f"{generator_context} must contain exactly ['amplitude', "
-                    f"'center', 'count', 'sigma']. Got {sorted(generator_mapping)}."
+                    f"{generator_context} must contain exactly "
+                    f"{sorted(expected_keys)}. Got {sorted(generator_mapping)}."
                 )
             _validate_sampleable_integer(
                 generator_mapping["count"], f"{generator_context}.count"
@@ -334,6 +341,10 @@ def _validate_initial_condition_scalar_expression(
             )
             _validate_sampleable_numeric(
                 generator_mapping["sigma"], f"{generator_context}.sigma"
+            )
+            _validate_sampleable_numeric(
+                generator_mapping["aspect_ratio"],
+                f"{generator_context}.aspect_ratio",
             )
             _validate_sampleable_vector(
                 generator_mapping["center"],

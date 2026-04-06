@@ -1677,6 +1677,7 @@ SUCCESS_CASES = (
                         "count": 1,
                         "amplitude": -0.5,
                         "sigma": 0.08,
+                        "aspect_ratio": 1.0,
                         "center": [0.5, 0.5],
                     }
                 ],
@@ -1689,6 +1690,7 @@ SUCCESS_CASES = (
                         "count": 1,
                         "amplitude": 0.25,
                         "sigma": 0.08,
+                        "aspect_ratio": 1.0,
                         "center": [0.5, 0.5],
                     }
                 ],
@@ -1722,6 +1724,7 @@ SUCCESS_CASES = (
                         "count": 1,
                         "amplitude": -0.5,
                         "sigma": 0.08,
+                        "aspect_ratio": 1.0,
                         "center": [0.5, 0.5, 0.5],
                     }
                 ],
@@ -1734,6 +1737,7 @@ SUCCESS_CASES = (
                         "count": 1,
                         "amplitude": 0.25,
                         "sigma": 0.08,
+                        "aspect_ratio": 1.0,
                         "center": [0.5, 0.5, 0.5],
                     }
                 ],

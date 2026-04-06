@@ -295,6 +295,31 @@ def _resolved_scalar_ic(
                     f"gaussian_blobs generator count must be positive. Got {count}."
                 )
             for _ in range(count):
+                aspect_ratio = _sample_number(
+                    _require_param(generator, "aspect_ratio", ic_type),
+                    parameters=parameters,
+                    rng=rng,
+                )
+                # Random elongation direction (unit vector); rotation is
+                # always random and not configurable.  When aspect_ratio
+                # is exactly 1 the direction has no effect, so a fixed
+                # axis-aligned vector is used (avoids requiring an rng
+                # for non-sampled circular blobs).
+                if aspect_ratio == 1.0:
+                    raw_dir = np.zeros(gdim)
+                    raw_dir[0] = 1.0
+                else:
+                    if rng is None:
+                        raise _random_seed_required(
+                            "Elliptical gaussian_blobs (aspect_ratio != 1)"
+                        )
+                    raw_dir = rng.standard_normal(gdim)
+                    norm = float(np.linalg.norm(raw_dir))
+                    if norm < 1e-12:
+                        raw_dir = np.zeros(gdim)
+                        raw_dir[0] = 1.0
+                    else:
+                        raw_dir = raw_dir / norm
                 resolved_blobs.append(
                     {
                         "amplitude": _sample_number(
@@ -315,6 +340,8 @@ def _resolved_scalar_ic(
                             field_type=ic_type,
                             field_name="center",
                         ),
+                        "aspect_ratio": aspect_ratio,
+                        "direction": raw_dir.tolist(),
                     }
                 )
 
@@ -456,17 +483,22 @@ def _build_gaussian_blobs_interpolator(
             float(blob["amplitude"]),
             float(blob["sigma"]),
             np.asarray(blob["center"], dtype=float),
+            float(blob["aspect_ratio"]),
+            np.asarray(blob["direction"], dtype=float),
         )
         for blob in blobs
     ]
 
     def _interpolator(x: np.ndarray) -> np.ndarray:
         values = np.full(x.shape[1], background, dtype=float)
-        for amplitude, sigma, center in blob_parameters:
-            radius_squared = sum(
-                (x[axis] - center[axis]) ** 2 for axis in range(center.shape[0])
-            )
-            values = values + amplitude * np.exp(-radius_squared / (2.0 * sigma**2))
+        for amplitude, sigma, center, aspect_ratio, direction in blob_parameters:
+            ndim = center.shape[0]
+            dx = x[:ndim, :] - center[:, None]
+            total_sq = np.sum(dx**2, axis=0)
+            parallel_sq = np.dot(direction, dx) ** 2
+            perp_sq = total_sq - parallel_sq
+            r_eff_sq = parallel_sq + aspect_ratio**2 * perp_sq
+            values = values + amplitude * np.exp(-r_eff_sq / (2.0 * sigma**2))
         return values
 
     return _interpolator
