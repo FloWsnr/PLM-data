@@ -36,10 +36,13 @@ boundary_conditions:
         value:
           components:
             x:
-              type: sine_product
+              type: sine_waves
               params:
-                amplitude: 1.5
-                ky: 1.0
+                background: 0.0
+                modes:
+                  - amplitude: 1.5
+                    cycles: [0.0, 1.0]
+                    phase: 0.0
             y:
               type: constant
               params:

@@ -10,12 +10,13 @@ domain:
 inputs:
   u:
     source:
-      type: sine_product
+      type: sine_waves
       params:
-        amplitude: "param:f_amplitude"
-        kx: 1
-        ky: 1
-        kz: 1
+        background: 0.0
+        modes:
+          - amplitude: "param:f_amplitude"
+            cycles: [1, 1, 1]
+            phase: 0.0
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.homogeneous_dirichlet_3d

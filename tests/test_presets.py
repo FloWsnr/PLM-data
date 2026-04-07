@@ -469,13 +469,33 @@ def _make_stokes_config(tmp_path, *, source=None, parameters=None):
 def _burgers_periodic_ic(*, gdim: int):
     if gdim == 2:
         return vector_expr(
-            x=scalar_expr("sine_product", amplitude=1.0, ky=2.0),
-            y=scalar_expr("sine_product", amplitude=-1.0, kx=2.0),
+            x=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 1.0, "cycles": [0.0, 2.0], "phase": 0.0}],
+            ),
+            y=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": -1.0, "cycles": [2.0, 0.0], "phase": 0.0}],
+            ),
         )
     return vector_expr(
-        x=scalar_expr("sine_product", amplitude=0.9, ky=2.0),
-        y=scalar_expr("sine_product", amplitude=0.9, kz=2.0),
-        z=scalar_expr("sine_product", amplitude=-0.9, kx=2.0),
+        x=scalar_expr(
+            "sine_waves",
+            background=0.0,
+            modes=[{"amplitude": 0.9, "cycles": [0.0, 2.0, 0.0], "phase": 0.0}],
+        ),
+        y=scalar_expr(
+            "sine_waves",
+            background=0.0,
+            modes=[{"amplitude": 0.9, "cycles": [0.0, 0.0, 2.0], "phase": 0.0}],
+        ),
+        z=scalar_expr(
+            "sine_waves",
+            background=0.0,
+            modes=[{"amplitude": -0.9, "cycles": [2.0, 0.0, 0.0], "phase": 0.0}],
+        ),
     )
 
 
@@ -719,12 +739,28 @@ def _make_mhd_runtime_config(
             "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
         }
         velocity_ic = vector_expr(
-            x=scalar_expr("sine_product", amplitude=0.4, ky=2.0),
-            y=scalar_expr("sine_product", amplitude=-0.4, kx=2.0),
+            x=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 0.4, "cycles": [0.0, 2.0], "phase": 0.0}],
+            ),
+            y=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": -0.4, "cycles": [2.0, 0.0], "phase": 0.0}],
+            ),
         )
         magnetic_ic = vector_expr(
-            x=scalar_expr("sine_product", amplitude=0.3, ky=2.0),
-            y=scalar_expr("sine_product", amplitude=0.3, kx=4.0),
+            x=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 0.3, "cycles": [0.0, 2.0], "phase": 0.0}],
+            ),
+            y=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 0.3, "cycles": [4.0, 0.0], "phase": 0.0}],
+            ),
         )
         periodic_axes = (0, 1) if periodic else ()
         mesh_resolution = (8, 8)
@@ -740,14 +776,56 @@ def _make_mhd_runtime_config(
             "z+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
         }
         velocity_ic = vector_expr(
-            x=scalar_expr("sine_product", amplitude=0.2, ky=2.0),
-            y=scalar_expr("sine_product", amplitude=0.2, kz=2.0),
-            z=scalar_expr("sine_product", amplitude=0.2, kx=2.0),
+            x=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 0.2, "cycles": [0.0, 2.0, 0.0], "phase": 0.0}],
+            ),
+            y=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 0.2, "cycles": [0.0, 0.0, 2.0], "phase": 0.0}],
+            ),
+            z=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 0.2, "cycles": [2.0, 0.0, 0.0], "phase": 0.0}],
+            ),
         )
         magnetic_ic = vector_expr(
-            x=scalar_expr("cosine_product", amplitude=0.15, ky=2.0),
-            y=scalar_expr("cosine_product", amplitude=0.15, kz=2.0),
-            z=scalar_expr("cosine_product", amplitude=0.15, kx=2.0),
+            x=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[
+                    {
+                        "amplitude": 0.15,
+                        "cycles": [0.0, 2.0, 0.0],
+                        "phase": 1.5707963267948966,
+                    }
+                ],
+            ),
+            y=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[
+                    {
+                        "amplitude": 0.15,
+                        "cycles": [0.0, 0.0, 2.0],
+                        "phase": 1.5707963267948966,
+                    }
+                ],
+            ),
+            z=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[
+                    {
+                        "amplitude": 0.15,
+                        "cycles": [2.0, 0.0, 0.0],
+                        "phase": 1.5707963267948966,
+                    }
+                ],
+            ),
         )
         periodic_axes = (0, 1, 2) if periodic else ()
         mesh_resolution = (4, 4, 4)
@@ -1535,7 +1613,11 @@ def test_burgers_rejects_transient_saddle_point_strategy(tmp_path):
                 sigma=0.12,
                 center=[0.35, 0.45],
             ),
-            y=scalar_expr("sine_product", amplitude=0.2, kx=1.0, ky=1.0),
+            y=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 0.2, "cycles": [1.0, 1.0], "phase": 0.0}],
+            ),
         ),
         time=TimeConfig(dt=0.02, t_end=0.02),
         solver=flow_solver_config(TRANSIENT_SADDLE_POINT),
@@ -1593,7 +1675,11 @@ def test_burgers_mixed_vector_boundary_conditions_single_step(tmp_path):
                 sigma=0.12,
                 center=[0.35, 0.45],
             ),
-            y=scalar_expr("sine_product", amplitude=0.2, kx=1.0, ky=1.0),
+            y=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 0.2, "cycles": [1.0, 1.0], "phase": 0.0}],
+            ),
         ),
         mesh_resolution=(16, 16),
         output_resolution=(8, 8),
@@ -1621,10 +1707,15 @@ def test_heat_manufactured_source_approaches_expected_profile(tmp_path, direct_s
         inputs={
             "u": InputConfig(
                 source=scalar_expr(
-                    "cosine_product",
-                    amplitude=1.9739208802178716,
-                    kx=1.0,
-                    ky=1.0,
+                    "sine_waves",
+                    background=0.0,
+                    modes=[
+                        {
+                            "amplitude": 1.9739208802178716,
+                            "cycles": [1.0, 1.0],
+                            "phase": 1.5707963267948966,
+                        }
+                    ],
                 ),
                 initial_condition=scalar_expr("constant", value=0.0),
             )
@@ -1736,10 +1827,9 @@ def test_wave_standing_mode_matches_expected_profile(tmp_path):
             "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
         },
         initial_displacement=scalar_expr(
-            "cosine_product",
-            amplitude=1.0,
-            kx=1,
-            ky=1,
+            "sine_waves",
+            background=0.0,
+            modes=[{"amplitude": 1.0, "cycles": [1, 1], "phase": 1.5707963267948966}],
         ),
         initial_velocity=constant(0.0),
         forcing=scalar_expr("none"),
@@ -1777,11 +1867,11 @@ def test_wave_preset_3d_single_step(tmp_path):
             "z+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
         },
         initial_displacement=scalar_expr(
-            "cosine_product",
-            amplitude=1.0,
-            kx=1,
-            ky=1,
-            kz=1,
+            "sine_waves",
+            background=0.0,
+            modes=[
+                {"amplitude": 1.0, "cycles": [1, 1, 1], "phase": 1.5707963267948966}
+            ],
         ),
         initial_velocity=constant(0.0),
         forcing=scalar_expr("none"),

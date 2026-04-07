@@ -163,7 +163,7 @@ def test_load_config_boundary_field_sections():
     cfg = load_config("configs/basic/poisson/2d_sinusoidal_source_response.yaml")
     u_boundary = cfg.boundary_field("u")
     assert set(u_boundary.sides) == {"x-", "x+", "y-", "y+"}
-    assert cfg.input("u").source.type == "sine_product"
+    assert cfg.input("u").source.type == "sine_waves"
     assert cfg.output_mode("u") == "scalar"
     assert cfg.solver.strategy == STATIONARY_SCALAR_SPD
 
@@ -207,7 +207,7 @@ def test_load_config_navier_stokes_channel_obstacle_uses_transient_saddle_point(
     inlet = cfg.boundary_field("velocity").side_conditions("inlet")[0]
     outlet = cfg.boundary_field("velocity").side_conditions("outlet")[0]
     assert inlet.type == "dirichlet"
-    assert inlet.value.components["x"].type == "sine_product"
+    assert inlet.value.components["x"].type == "sine_waves"
     assert outlet.type == "neumann"
 
 
@@ -483,8 +483,8 @@ def test_load_config_advection_2d():
     assert cfg.boundary_field("u").side_conditions("x-")[0].type == "periodic"
     assert cfg.coefficient("diffusivity").params["value"] == 0.0005
     velocity = cfg.coefficient("velocity")
-    assert velocity.components["x"].type == "sine_product"
-    assert velocity.components["y"].params["amplitude"] == -1.25
+    assert velocity.components["x"].type == "sine_waves"
+    assert velocity.components["y"].params["modes"][0]["amplitude"] == -1.25
     assert cfg.solver.strategy == CONSTANT_LHS_SCALAR_NONSYMMETRIC
     assert cfg.solver.mpi["ksp_type"] == "gmres"
 
@@ -494,7 +494,11 @@ def test_load_config_advection_3d():
     assert cfg.preset == "advection"
     assert cfg.domain.dimension == 3
     assert cfg.has_periodic_boundary_conditions is True
-    assert cfg.coefficient("velocity").components["z"].params["kx"] == 2.0
+    assert cfg.coefficient("velocity").components["z"].params["modes"][0]["cycles"] == [
+        2.0,
+        0.0,
+        0.0,
+    ]
     assert cfg.boundary_field("u").side_conditions("z+")[0].pair_with == "z-"
 
 

@@ -22,8 +22,6 @@ _INITIAL_CONDITION_EXPR_TYPES = {
     "zero",
     "custom",
     "constant",
-    "sine_product",
-    "cosine_product",
     "gaussian_bump",
     "radial_cosine",
     "affine",
@@ -201,7 +199,6 @@ def _validate_initial_condition_scalar_expression(
 
     params = expr.params
     expr_type = expr.type
-    axis_frequency_keys = ("kx", "ky", "kz")[:gdim]
     coordinate_keys = {"x", "y", "z"} & set(_component_labels(gdim))
 
     if expr_type in {"none", "zero", "custom"}:
@@ -216,24 +213,6 @@ def _validate_initial_condition_scalar_expression(
                 f"'{expr_type}'. Got {sorted(params)}."
             )
         _validate_sampleable_numeric(params["value"], f"{context}.params.value")
-        return
-
-    if expr_type in {"sine_product", "cosine_product"}:
-        allowed_keys = {"amplitude", *axis_frequency_keys}
-        if set(params) - allowed_keys:
-            raise ValueError(
-                f"{context}.params for type '{expr_type}' allows only "
-                f"{sorted(allowed_keys)}. Got {sorted(params)}."
-            )
-        if "amplitude" not in params:
-            raise ValueError(f"{context}.params requires 'amplitude'.")
-        if not any(key in params for key in axis_frequency_keys):
-            raise ValueError(
-                f"{context}.params for type '{expr_type}' requires at least one of "
-                f"{list(axis_frequency_keys)}."
-            )
-        for key, value in params.items():
-            _validate_sampleable_numeric(value, f"{context}.params.{key}")
         return
 
     if expr_type == "gaussian_bump":
@@ -399,11 +378,18 @@ def _validate_initial_condition_scalar_expression(
         for index, mode in enumerate(modes):
             mode_context = f"{context}.params.modes[{index}]"
             mode_mapping = _as_mapping(mode, mode_context)
-            expected_keys = {"amplitude", "cycles", "phase", "angle"}
-            if set(mode_mapping) != expected_keys:
+            required_keys = {"amplitude", "cycles", "phase"}
+            optional_keys = {"angle"}
+            allowed_keys = required_keys | optional_keys
+            if set(mode_mapping) - allowed_keys:
                 raise ValueError(
-                    f"{mode_context} must contain exactly ['amplitude', 'cycles', "
-                    f"'phase', 'angle']. Got {sorted(mode_mapping)}."
+                    f"{mode_context} allows only ['amplitude', 'cycles', 'phase', 'angle']. "
+                    f"Got {sorted(mode_mapping)}."
+                )
+            if not required_keys.issubset(mode_mapping):
+                raise ValueError(
+                    f"{mode_context} requires ['amplitude', 'cycles', 'phase']. "
+                    f"Got {sorted(mode_mapping)}."
                 )
             _validate_sampleable_numeric(
                 mode_mapping["amplitude"], f"{mode_context}.amplitude"
@@ -415,12 +401,15 @@ def _validate_initial_condition_scalar_expression(
                     f"Got {cycles!r}."
                 )
             for axis, cycle_value in enumerate(cycles):
-                _validate_sampleable_integer(
+                _validate_sampleable_numeric(
                     cycle_value,
                     f"{mode_context}.cycles[{axis}]",
                 )
             _validate_sampleable_numeric(mode_mapping["phase"], f"{mode_context}.phase")
-            _validate_sampleable_numeric(mode_mapping["angle"], f"{mode_context}.angle")
+            if "angle" in mode_mapping:
+                _validate_sampleable_numeric(
+                    mode_mapping["angle"], f"{mode_context}.angle"
+                )
         return
 
     if expr_type == "quadrants":

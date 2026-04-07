@@ -4,20 +4,29 @@ coefficients:
   velocity:
     components:
       x:
-        type: sine_product
+        type: sine_waves
         params:
-          amplitude: 0.9
-          ky: 2.0
+          background: 0.0
+          modes:
+            - amplitude: 0.9
+              cycles: [0.0, 2.0, 0.0]  # ky: 2.0
+              phase: 0.0
       y:
-        type: sine_product
+        type: sine_waves
         params:
-          amplitude: 0.9
-          kz: 2.0
+          background: 0.0
+          modes:
+            - amplitude: 0.9
+              cycles: [0.0, 0.0, 2.0]  # kz: 2.0
+              phase: 0.0
       z:
-        type: sine_product
+        type: sine_waves
         params:
-          amplitude: 0.9
-          kx: 2.0
+          background: 0.0
+          modes:
+            - amplitude: 0.9
+              cycles: [2.0, 0.0, 0.0]  # kx: 2.0
+              phase: 0.0
   diffusivity:
     type: constant
     params:

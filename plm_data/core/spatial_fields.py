@@ -10,6 +10,7 @@ from dolfinx import mesh as dmesh
 from plm_data.core.config import FieldExpressionConfig
 
 _COMPONENT_LABELS = ("x", "y", "z")
+_PI = np.pi
 
 
 def resolve_param_ref(value: Any, parameters: dict[str, float]) -> float:
@@ -107,59 +108,112 @@ def _require_param(params: dict, key: str, field_type: str):
     return params[key]
 
 
-def _build_axis_trig_expression(
+def _resolve_sine_waves_mode(
+    mode: dict[str, Any],
+    parameters: dict[str, float],
+    gdim: int,
+) -> tuple[float, list[float], float, float]:
+    if not isinstance(mode, dict):
+        raise ValueError(
+            "sine_waves modes must be mappings with amplitude, cycles, and phase keys."
+        )
+
+    amplitude = resolve_param_ref(
+        _require_param(mode, "amplitude", "sine_waves"),
+        parameters,
+    )
+    cycles_raw = _require_param(mode, "cycles", "sine_waves")
+    phase = resolve_param_ref(_require_param(mode, "phase", "sine_waves"), parameters)
+    angle = resolve_param_ref(mode.get("angle", 0.0), parameters)
+
+    if not isinstance(cycles_raw, list) or len(cycles_raw) != gdim:
+        raise ValueError(
+            f"sine_waves cycles must have {gdim} entries in {gdim}D. "
+            f"Got {len(cycles_raw) if isinstance(cycles_raw, list) else 'non-list'}."
+        )
+
+    return (
+        amplitude,
+        [resolve_param_ref(cycle, parameters) for cycle in cycles_raw],
+        phase,
+        angle,
+    )
+
+
+def _sine_waves_dimension(modes: list[Any]) -> int:
+    first_mode = modes[0]
+    if not isinstance(first_mode, dict):
+        raise ValueError(
+            "sine_waves modes must be mappings with amplitude, cycles, and phase keys."
+        )
+    cycles = _require_param(first_mode, "cycles", "sine_waves")
+    if not isinstance(cycles, list) or not cycles:
+        raise ValueError(
+            "sine_waves modes must provide a non-empty 'cycles' list with one entry "
+            "per active axis."
+        )
+    return len(cycles)
+
+
+def _rotated_coordinates_ufl(x, angle: float, gdim: int) -> list:
+    if angle == 0.0 or gdim < 2:
+        return [x[axis] for axis in range(gdim)]
+
+    cos_angle = float(np.cos(angle))
+    sin_angle = float(np.sin(angle))
+    rotated = [
+        cos_angle * x[0] - sin_angle * x[1],
+        sin_angle * x[0] + cos_angle * x[1],
+    ]
+    rotated.extend(x[axis] for axis in range(2, gdim))
+    return rotated
+
+
+def _rotated_coordinates_numpy(x: np.ndarray, angle: float) -> np.ndarray:
+    if angle == 0.0 or x.shape[0] < 2:
+        return x
+
+    rotated = np.array(x, copy=True)
+    cos_angle = float(np.cos(angle))
+    sin_angle = float(np.sin(angle))
+    rotated[0] = cos_angle * x[0] - sin_angle * x[1]
+    rotated[1] = sin_angle * x[0] + cos_angle * x[1]
+    return rotated
+
+
+def _build_sine_waves_expression(
     x,
     params: dict,
     parameters: dict[str, float],
-    *,
-    field_type: str,
-    trig_fn,
+    gdim: int,
 ):
-    amplitude = resolve_param_ref(
-        _require_param(params, "amplitude", field_type), parameters
+    """Build a sine_waves UFL expression."""
+    background = resolve_param_ref(
+        _require_param(params, "background", "sine_waves"), parameters
     )
-    expr = ufl.as_ufl(amplitude)
-    axis_keys = {"kx": 0, "ky": 1, "kz": 2}
-    found_any = False
-    for key, axis in axis_keys.items():
-        if key in params:
-            k = resolve_param_ref(params[key], parameters)
-            expr = expr * trig_fn(k * ufl.pi * x[axis])  # type: ignore[reportOperatorIssue]
-            found_any = True
-    if not found_any:
-        raise ValueError(
-            f"{field_type} requires at least one of kx, ky, kz. Got params: {params}"
+    modes = _require_param(params, "modes", "sine_waves")
+
+    if not isinstance(modes, list) or not modes:
+        raise ValueError("sine_waves requires a non-empty 'modes' list.")
+
+    expr = ufl.as_ufl(background)
+
+    for mode in modes:
+        amplitude, cycles, phase, angle = _resolve_sine_waves_mode(
+            mode,
+            parameters,
+            gdim,
         )
+        coordinates = _rotated_coordinates_ufl(x, angle, gdim)
+        mode_expr = ufl.as_ufl(amplitude)
+        for axis, cycle in enumerate(cycles):
+            if cycle == 0.0:
+                continue
+            mode_expr = mode_expr * ufl.sin(_PI * cycle * coordinates[axis] + phase)
+
+        expr = expr + mode_expr
+
     return expr
-
-
-def _build_axis_trig_interpolator(
-    params: dict,
-    parameters: dict[str, float],
-    *,
-    field_type: str,
-    trig_fn,
-) -> Callable[[np.ndarray], np.ndarray]:
-    amplitude = resolve_param_ref(
-        _require_param(params, "amplitude", field_type), parameters
-    )
-    axis_keys = {"kx": 0, "ky": 1, "kz": 2}
-    axes = {}
-    for key, axis in axis_keys.items():
-        if key in params:
-            axes[axis] = resolve_param_ref(params[key], parameters)
-    if not axes:
-        raise ValueError(
-            f"{field_type} requires at least one of kx, ky, kz. Got params: {params}"
-        )
-
-    def _axis_trig(x, amp=amplitude, ax=axes):
-        result = np.full(x.shape[1], amp)
-        for axis, k in ax.items():
-            result = result * trig_fn(k * np.pi * x[axis])
-        return result
-
-    return _axis_trig
 
 
 def _build_affine_expression(
@@ -227,24 +281,6 @@ def build_ufl_field(
         value = resolve_param_ref(_require_param(p, "value", field_type), parameters)
         return fem.Constant(msh, default_real_type(value))
 
-    elif field_type == "sine_product":
-        return _build_axis_trig_expression(
-            x,
-            p,
-            parameters,
-            field_type=field_type,
-            trig_fn=ufl.sin,
-        )
-
-    elif field_type == "cosine_product":
-        return _build_axis_trig_expression(
-            x,
-            p,
-            parameters,
-            field_type=field_type,
-            trig_fn=ufl.cos,
-        )
-
     elif field_type == "gaussian_bump":
         amplitude = resolve_param_ref(
             _require_param(p, "amplitude", field_type), parameters
@@ -291,6 +327,9 @@ def build_ufl_field(
         )
         axis = int(_require_param(p, "axis", field_type))
         return ufl.conditional(ufl.lt(x[axis], x_split), value_left, value_right)
+
+    elif field_type == "sine_waves":
+        return _build_sine_waves_expression(x, p, parameters, msh.geometry.dim)
 
     elif field_type == "custom":
         return None
@@ -384,22 +423,6 @@ def build_interpolator(
         value = resolve_param_ref(_require_param(p, "value", field_type), parameters)
         return lambda x, v=value: np.full(x.shape[1], v)
 
-    elif field_type == "sine_product":
-        return _build_axis_trig_interpolator(
-            p,
-            parameters,
-            field_type=field_type,
-            trig_fn=np.sin,
-        )
-
-    elif field_type == "cosine_product":
-        return _build_axis_trig_interpolator(
-            p,
-            parameters,
-            field_type=field_type,
-            trig_fn=np.cos,
-        )
-
     elif field_type == "gaussian_bump":
         amplitude = resolve_param_ref(
             _require_param(p, "amplitude", field_type), parameters
@@ -453,11 +476,50 @@ def build_interpolator(
 
         return _step
 
+    elif field_type == "sine_waves":
+        return _build_sine_waves_interpolator(p, parameters)
+
     elif field_type == "custom":
         return None
 
     else:
         raise ValueError(f"Unknown field type: '{field_type}'")
+
+
+def _build_sine_waves_interpolator(
+    params: dict,
+    parameters: dict[str, float],
+) -> Callable[[np.ndarray], np.ndarray]:
+    """Build a sine_waves interpolator function."""
+    background = resolve_param_ref(
+        _require_param(params, "background", "sine_waves"), parameters
+    )
+    modes = _require_param(params, "modes", "sine_waves")
+
+    if not isinstance(modes, list) or not modes:
+        raise ValueError("sine_waves requires a non-empty 'modes' list.")
+    gdim = _sine_waves_dimension(modes)
+
+    def _sine_waves_interpolator(x: np.ndarray) -> np.ndarray:
+        values = np.full(x.shape[1], background, dtype=float)
+
+        for mode in modes:
+            amplitude, cycles, phase, angle = _resolve_sine_waves_mode(
+                mode,
+                parameters,
+                gdim,
+            )
+            coordinates = _rotated_coordinates_numpy(x[:gdim], angle)
+            mode_values = np.full(x.shape[1], float(amplitude), dtype=float)
+            for axis, cycle in enumerate(cycles):
+                if cycle == 0.0:
+                    continue
+                mode_values *= np.sin(_PI * cycle * coordinates[axis] + phase)
+            values = values + mode_values
+
+        return values
+
+    return _sine_waves_interpolator
 
 
 def build_vector_interpolator(

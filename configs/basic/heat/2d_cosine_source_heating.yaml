@@ -19,11 +19,13 @@ time:
 inputs:
   u:
     source:
-      type: cosine_product
+      type: sine_waves
       params:
-        amplitude: 1.9739208802178716
-        kx: 1.0
-        ky: 1.0
+        background: 0.0
+        modes:
+          - amplitude: 1.9739208802178716
+            cycles: [1.0, 1.0]
+            phase: 1.5707963267948966
     initial_condition:
       type: gaussian_blobs
       params:

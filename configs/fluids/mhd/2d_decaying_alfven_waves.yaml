@@ -22,21 +22,27 @@ inputs:
     initial_condition:
       components:
         x:
-          type: sine_product
+          type: sine_waves
           params:
-            amplitude:
-              sample: uniform
-              min: 0.4675
-              max: 0.6325
-            ky: 2.0
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: 0.4675
+                  max: 0.6325
+                cycles: [0.0, 2.0]
+                phase: 0.0
         y:
-          type: sine_product
+          type: sine_waves
           params:
-            amplitude:
-              sample: uniform
-              min: 0.4675
-              max: 0.6325
-            kx: 2.0
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: 0.4675
+                  max: 0.6325
+                cycles: [2.0, 0.0]
+                phase: 0.0
   magnetic_field:
     source:
       type: none
@@ -44,21 +50,27 @@ inputs:
     initial_condition:
       components:
         x:
-          type: sine_product
+          type: sine_waves
           params:
-            amplitude:
-              sample: uniform
-              min: 0.4675
-              max: 0.6325
-            ky: 2.0
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: 0.4675
+                  max: 0.6325
+                cycles: [0.0, 2.0]
+                phase: 0.0
         y:
-          type: sine_product
+          type: sine_waves
           params:
-            amplitude:
-              sample: uniform
-              min: -0.6325
-              max: -0.4675
-            kx: 2.0
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: -0.6325
+                  max: -0.4675
+                cycles: [2.0, 0.0]
+                phase: 0.0
 boundary_conditions:
   velocity:
     $ref: boundary_field.vector.full_periodic_2d

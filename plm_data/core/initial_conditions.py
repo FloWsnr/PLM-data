@@ -5,7 +5,6 @@ from typing import Any, Callable
 
 import numpy as np
 from dolfinx import fem
-from mpi4py import MPI
 
 from plm_data.core.config import FieldExpressionConfig
 from plm_data.core.spatial_fields import (
@@ -15,8 +14,6 @@ from plm_data.core.spatial_fields import (
     component_labels_for_dim,
     resolve_param_ref,
 )
-
-_TAU = 2.0 * np.pi
 
 
 def _random_seed_required(context: str) -> ValueError:
@@ -99,19 +96,6 @@ def _sample_coordinate_list(
     return [_sample_number(value, parameters=parameters, rng=rng) for value in values]
 
 
-def _global_axis_bounds(msh) -> tuple[np.ndarray, np.ndarray]:
-    coords = msh.geometry.x
-    comm = msh.comm
-    lower_bounds = []
-    upper_bounds = []
-    for axis in range(msh.geometry.dim):
-        local_min = float(coords[:, axis].min()) if coords.size > 0 else np.inf
-        local_max = float(coords[:, axis].max()) if coords.size > 0 else -np.inf
-        lower_bounds.append(comm.allreduce(local_min, op=MPI.MIN))
-        upper_bounds.append(comm.allreduce(local_max, op=MPI.MAX))
-    return np.asarray(lower_bounds, dtype=float), np.asarray(upper_bounds, dtype=float)
-
-
 def _rng_for_stream(seed: int, stream_id: str | None) -> np.random.Generator:
     if not stream_id:
         return np.random.default_rng(seed)
@@ -149,31 +133,6 @@ def _resolved_scalar_ic(
                 rng=rng,
             )
         }
-
-    if ic_type in {"sine_product", "cosine_product"}:
-        resolved_params: dict[str, Any] = {
-            "amplitude": _sample_number(
-                _require_param(params, "amplitude", ic_type),
-                parameters=parameters,
-                rng=rng,
-            )
-        }
-        axis_keys = ("kx", "ky", "kz")[:gdim]
-        found_any = False
-        for axis_key in axis_keys:
-            if axis_key in params:
-                resolved_params[axis_key] = _sample_number(
-                    params[axis_key],
-                    parameters=parameters,
-                    rng=rng,
-                )
-                found_any = True
-        if not found_any:
-            raise ValueError(
-                f"{ic_type} requires at least one of {list(axis_keys)}. "
-                f"Got params: {params}"
-            )
-        return ic_type, resolved_params
 
     if ic_type == "gaussian_bump":
         return ic_type, {
@@ -415,7 +374,7 @@ def _resolved_scalar_ic(
                         rng=rng,
                     ),
                     "cycles": [
-                        _sample_integer(
+                        _sample_number(
                             cycle_value,
                             parameters=parameters,
                             rng=rng,
@@ -427,13 +386,12 @@ def _resolved_scalar_ic(
                         parameters=parameters,
                         rng=rng,
                     ),
+                    "angle": _sample_number(
+                        mode.get("angle", 0.0),
+                        parameters=parameters,
+                        rng=rng,
+                    ),
                 }
-            )
-            # Handle required angle parameter
-            resolved_modes[-1]["angle"] = _sample_number(
-                _require_param(mode, "angle", ic_type),
-                parameters=parameters,
-                rng=rng,
             )
 
         return ic_type, {
@@ -531,54 +489,6 @@ def _build_gaussian_wave_packet_interpolator(
     return _interpolator
 
 
-def _build_sine_waves_interpolator(
-    *,
-    background: float,
-    modes: list[dict[str, Any]],
-    lower_bounds: np.ndarray,
-    upper_bounds: np.ndarray,
-) -> Callable[[np.ndarray], np.ndarray]:
-    spans = upper_bounds - lower_bounds
-    if np.any(spans <= 0.0):
-        raise ValueError("sine_waves requires positive domain lengths.")
-
-    def _interpolator(x: np.ndarray) -> np.ndarray:
-        normalized = (x[: lower_bounds.shape[0], :] - lower_bounds[:, None]) / spans[
-            :, None
-        ]
-        values = np.full(x.shape[1], background, dtype=float)
-        for mode in modes:
-            mode_values = np.full(x.shape[1], float(mode["amplitude"]), dtype=float)
-            phase = float(mode["phase"])
-            angle = float(mode.get("angle", 0.0))
-            
-            # Apply rotation if angle is non-zero
-            if angle != 0.0 and lower_bounds.shape[0] >= 2:
-                # For 2D and 3D, rotate the coordinates
-                cos_a, sin_a = np.cos(angle), np.sin(angle)
-                if lower_bounds.shape[0] == 2:
-                    # 2D rotation
-                    x_rot = cos_a * normalized[0] - sin_a * normalized[1]
-                    y_rot = sin_a * normalized[0] + cos_a * normalized[1]
-                    rotated_normalized = np.array([x_rot, y_rot])
-                else:
-                    # 3D rotation around Z-axis (most intuitive for wave patterns)
-                    x_rot = cos_a * normalized[0] - sin_a * normalized[1]
-                    y_rot = sin_a * normalized[0] + cos_a * normalized[1]
-                    z_rot = normalized[2]  # Z coordinate unchanged
-                    rotated_normalized = np.array([x_rot, y_rot, z_rot])
-            else:
-                rotated_normalized = normalized
-            
-            # Use rotated coordinates for sine wave computation
-            for axis, cycles in enumerate(mode["cycles"]):
-                mode_values *= np.sin(_TAU * int(cycles) * rotated_normalized[axis] + phase)
-            values = values + mode_values
-        return values
-
-    return _interpolator
-
-
 def _build_quadrants_interpolator(
     *,
     split: list[float],
@@ -641,15 +551,6 @@ def _build_resolved_scalar_interpolator(
             center=list(resolved_params["center"]),
             wavevector=list(resolved_params["wavevector"]),
             phase=float(resolved_params["phase"]),
-        )
-
-    if ic_type == "sine_waves":
-        lower_bounds, upper_bounds = _global_axis_bounds(msh)
-        return _build_sine_waves_interpolator(
-            background=float(resolved_params["background"]),
-            modes=list(resolved_params["modes"]),
-            lower_bounds=lower_bounds,
-            upper_bounds=upper_bounds,
         )
 
     if ic_type == "quadrants":

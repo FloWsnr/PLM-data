@@ -111,7 +111,13 @@ class TestNormalizeFieldConfig:
         assert result == {"type": "constant", "params": {"value": "param:kappa"}}
 
     def test_dict_with_type_params(self):
-        cfg = {"type": "sine_product", "params": {"amplitude": 1.0, "kx": 2}}
+        cfg = {
+            "type": "sine_waves",
+            "params": {
+                "background": 0.0,
+                "modes": [{"amplitude": 1.0, "cycles": [2, 0], "phase": 0.0}],
+            },
+        }
         result = normalize_field_config(cfg)
         assert result is cfg  # returned as-is, same object
 
@@ -173,34 +179,47 @@ class TestBuildUflField:
         assert isinstance(result, fem.Constant)
         assert result.ufl_domain() == mesh_2d.ufl_domain()
 
-    def test_sine_product_kx_only(self, mesh_2d, params):
-        cfg = {"type": "sine_product", "params": {"amplitude": 1.0, "kx": 2.0}}
-        result = build_ufl_field(mesh_2d, cfg, params)
-        assert result is not None
-        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
-
-    def test_sine_product_kx_ky(self, mesh_2d, params):
+    def test_sine_waves_kx_only(self, mesh_2d, params):
         cfg = {
-            "type": "sine_product",
-            "params": {"amplitude": 1.0, "kx": 1.0, "ky": 2.0},
+            "type": "sine_waves",
+            "params": {
+                "background": 0.0,
+                "modes": [{"amplitude": 1.0, "cycles": [2.0, 0.0], "phase": 0.0}],
+            },
         }
         result = build_ufl_field(mesh_2d, cfg, params)
         assert result is not None
         assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
 
-    def test_cosine_product(self, mesh_2d, params):
+    def test_sine_waves_kx_ky(self, mesh_2d, params):
         cfg = {
-            "type": "cosine_product",
-            "params": {"amplitude": 1.0, "kx": 1.0, "ky": 2.0},
+            "type": "sine_waves",
+            "params": {
+                "background": 0.0,
+                "modes": [{"amplitude": 1.0, "cycles": [1.0, 2.0], "phase": 0.0}],
+            },
         }
         result = build_ufl_field(mesh_2d, cfg, params)
         assert result is not None
         assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
 
-    def test_sine_product_no_axes_raises(self, mesh_2d, params):
-        cfg = {"type": "sine_product", "params": {"amplitude": 1.0}}
-        with pytest.raises(ValueError, match="at least one of kx, ky, kz"):
-            build_ufl_field(mesh_2d, cfg, params)
+    def test_sine_waves_cosine_equivalent(self, mesh_2d, params):
+        cfg = {
+            "type": "sine_waves",
+            "params": {
+                "background": 0.0,
+                "modes": [
+                    {
+                        "amplitude": 1.0,
+                        "cycles": [1.0, 2.0],
+                        "phase": 1.5707963267948966,
+                    }
+                ],
+            },
+        }
+        result = build_ufl_field(mesh_2d, cfg, params)
+        assert result is not None
+        assert isinstance(result, ufl.core.expr.Expr)  # type: ignore[reportAttributeAccessIssue]
 
     def test_gaussian_bump_2d(self, mesh_2d, params):
         cfg = {
@@ -357,11 +376,14 @@ class TestBuildInterpolator:
         result = fn(points_2d)
         np.testing.assert_array_equal(result, 3.0)
 
-    def test_sine_product_known_values(self, points_2d):
+    def test_sine_waves_known_values(self, points_2d):
         """sin(pi*x) * sin(pi*y) should be 0 on all boundaries and max at center."""
         cfg = {
-            "type": "sine_product",
-            "params": {"amplitude": 1.0, "kx": 1.0, "ky": 1.0},
+            "type": "sine_waves",
+            "params": {
+                "background": 0.0,
+                "modes": [{"amplitude": 1.0, "cycles": [1.0, 1.0], "phase": 0.0}],
+            },
         }
         fn = build_interpolator(cfg, {})
         assert fn is not None
@@ -373,9 +395,15 @@ class TestBuildInterpolator:
             expected = np.sin(np.pi * x) * np.sin(np.pi * y)
             np.testing.assert_allclose(result[i], expected, atol=1e-14)
 
-    def test_sine_product_kx_only(self):
+    def test_sine_waves_kx_only(self):
         """With only kx, result depends only on x."""
-        cfg = {"type": "sine_product", "params": {"amplitude": 2.0, "kx": 1.0}}
+        cfg = {
+            "type": "sine_waves",
+            "params": {
+                "background": 0.0,
+                "modes": [{"amplitude": 2.0, "cycles": [1.0, 0.0], "phase": 0.0}],
+            },
+        }
         fn = build_interpolator(cfg, {})
         assert fn is not None
         x = np.array([[0.0, 0.25, 0.5, 0.75, 1.0], [0.5, 0.5, 0.5, 0.5, 0.5]])
@@ -383,15 +411,15 @@ class TestBuildInterpolator:
         expected = 2.0 * np.sin(np.pi * x[0])
         np.testing.assert_allclose(result, expected, atol=1e-14)
 
-    def test_sine_product_no_axes_raises(self):
-        cfg = {"type": "sine_product", "params": {"amplitude": 1.0}}
-        with pytest.raises(ValueError, match="at least one of kx, ky, kz"):
-            build_interpolator(cfg, {})
-
-    def test_sine_product_param_refs(self, points_2d):
+    def test_sine_waves_param_refs(self, points_2d):
         cfg = {
-            "type": "sine_product",
-            "params": {"amplitude": "param:amp", "kx": "param:k"},
+            "type": "sine_waves",
+            "params": {
+                "background": 0.0,
+                "modes": [
+                    {"amplitude": "param:amp", "cycles": ["param:k", 0.0], "phase": 0.0}
+                ],
+            },
         }
         fn = build_interpolator(cfg, {"amp": 3.0, "k": 2.0})
         assert fn is not None
@@ -399,10 +427,19 @@ class TestBuildInterpolator:
         expected = 3.0 * np.sin(2.0 * np.pi * points_2d[0])
         np.testing.assert_allclose(result, expected, atol=1e-14)
 
-    def test_cosine_product_known_values(self, points_2d):
+    def test_sine_waves_cosine_equivalent_known_values(self, points_2d):
         cfg = {
-            "type": "cosine_product",
-            "params": {"amplitude": 2.0, "kx": 1.0, "ky": 1.0},
+            "type": "sine_waves",
+            "params": {
+                "background": 0.0,
+                "modes": [
+                    {
+                        "amplitude": 2.0,
+                        "cycles": [1.0, 1.0],
+                        "phase": 1.5707963267948966,
+                    }
+                ],
+            },
         }
         fn = build_interpolator(cfg, {})
         assert fn is not None

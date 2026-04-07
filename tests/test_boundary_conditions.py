@@ -87,8 +87,11 @@ class TestApplyDirichletBCs:
             "y+": BoundaryConditionConfig(
                 type="dirichlet",
                 value=FieldExpressionConfig(
-                    type="sine_product",
-                    params={"ky": 1, "amplitude": 1.0},
+                    type="sine_waves",
+                    params={
+                        "background": 0.0,
+                        "modes": [{"amplitude": 1.0, "cycles": [0.0, 1.0], "phase": 0.0}]
+                    },
                 ),
             ),
         }
@@ -154,8 +157,11 @@ class TestApplyVectorDirichletBCs:
                 value=FieldExpressionConfig(
                     components={
                         "x": FieldExpressionConfig(
-                            type="sine_product",
-                            params={"ky": 1, "amplitude": 1.0},
+                            type="sine_waves",
+                            params={
+                                "background": 0.0,
+                                "modes": [{"amplitude": 1.0, "cycles": [0.0, 1.0], "phase": 0.0}]
+                            },
                         ),
                         "y": constant(0.0),
                     }

@@ -52,11 +52,14 @@ def test_apply_gaussian_noise(rectangle_domain):
     assert np.std(f.x.array) > 0
 
 
-def test_apply_sine_product(rectangle_domain):
+def test_apply_sine_waves_basic(rectangle_domain):
     f = _make_function(rectangle_domain)
     ic = FieldExpressionConfig(
-        type="sine_product",
-        params={"amplitude": 1.0, "kx": 1.0, "ky": 1.0},
+        type="sine_waves",
+        params={
+            "background": 0.0,
+            "modes": [{"amplitude": 1.0, "cycles": [1.0, 1.0], "phase": 0.0}],
+        },
     )
     apply_ic(f, ic, {})
     assert np.max(f.x.array) > 0
@@ -187,7 +190,7 @@ def test_apply_gaussian_wave_packet(rectangle_domain):
     assert np.min(f.x.array) < -0.05
 
 
-def test_apply_sine_waves(rectangle_domain):
+def test_apply_sine_waves_multiple_modes(rectangle_domain):
     f = _make_function(rectangle_domain)
     ic = FieldExpressionConfig(
         type="sine_waves",
@@ -212,8 +215,18 @@ def test_apply_sine_waves_with_rotation(rectangle_domain):
         params={
             "background": 0.1,
             "modes": [
-                {"amplitude": 0.3, "cycles": [1, 2], "phase": 0.0, "angle": 1.57},  # 90 degrees
-                {"amplitude": -0.15, "cycles": [2, 1], "phase": 0.5, "angle": 0.0},  # No rotation
+                {
+                    "amplitude": 0.3,
+                    "cycles": [1, 2],
+                    "phase": 0.0,
+                    "angle": 1.57,
+                },  # 90 degrees
+                {
+                    "amplitude": -0.15,
+                    "cycles": [2, 1],
+                    "phase": 0.5,
+                    "angle": 0.0,
+                },  # No rotation
             ],
         },
     )
@@ -234,7 +247,11 @@ def test_apply_sine_waves_with_random_rotation(rectangle_domain):
                     "amplitude": 0.3,
                     "cycles": [1, 2],
                     "phase": 0.0,
-                    "angle": {"sample": "uniform", "min": 0.0, "max": 6.283185},  # 0 to 2π
+                    "angle": {
+                        "sample": "uniform",
+                        "min": 0.0,
+                        "max": 6.283185,
+                    },  # 0 to 2π
                 },
             ],
         },

@@ -24,29 +24,38 @@ inputs:
     initial_condition:
       components:
         x:
-          type: sine_product
+          type: sine_waves
           params:
-            amplitude:
-              sample: uniform
-              min: 0.2125
-              max: 0.2875
-            ky: 2.0
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: 0.2125
+                  max: 0.2875
+                cycles: [0.0, 2.0, 0.0]
+                phase: 0.0
         y:
-          type: sine_product
+          type: sine_waves
           params:
-            amplitude:
-              sample: uniform
-              min: 0.2125
-              max: 0.2875
-            kz: 2.0
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: 0.2125
+                  max: 0.2875
+                cycles: [0.0, 0.0, 2.0]
+                phase: 0.0
         z:
-          type: sine_product
+          type: sine_waves
           params:
-            amplitude:
-              sample: uniform
-              min: 0.2125
-              max: 0.2875
-            kx: 2.0
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: 0.2125
+                  max: 0.2875
+                cycles: [2.0, 0.0, 0.0]
+                phase: 0.0
   magnetic_field:
     source:
       type: none
@@ -54,29 +63,38 @@ inputs:
     initial_condition:
       components:
         x:
-          type: cosine_product
+          type: sine_waves
           params:
-            amplitude:
-              sample: uniform
-              min: 0.17
-              max: 0.23
-            ky: 2.0
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: 0.17
+                  max: 0.23
+                cycles: [0.0, 2.0, 0.0]
+                phase: 1.5707963267948966
         y:
-          type: cosine_product
+          type: sine_waves
           params:
-            amplitude:
-              sample: uniform
-              min: 0.17
-              max: 0.23
-            kz: 2.0
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: 0.17
+                  max: 0.23
+                cycles: [0.0, 0.0, 2.0]
+                phase: 1.5707963267948966
         z:
-          type: cosine_product
+          type: sine_waves
           params:
-            amplitude:
-              sample: uniform
-              min: 0.17
-              max: 0.23
-            kx: 2.0
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: 0.17
+                  max: 0.23
+                cycles: [2.0, 0.0, 0.0]
+                phase: 1.5707963267948966
 boundary_conditions:
   velocity:
     $ref: boundary_field.vector.full_periodic_3d

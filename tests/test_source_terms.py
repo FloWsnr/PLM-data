@@ -42,10 +42,13 @@ def test_source_constant(test_function, mesh_2d):
     assert result is not None
 
 
-def test_source_sine_product(test_function, mesh_2d):
+def test_source_sine_waves(test_function, mesh_2d):
     config = FieldExpressionConfig(
-        type="sine_product",
-        params={"amplitude": 1.0, "kx": 1, "ky": 1},
+        type="sine_waves",
+        params={
+            "background": 0.0,
+            "modes": [{"amplitude": 1.0, "cycles": [1, 1], "phase": 0.0}]
+        },
     )
     result = build_source_form(test_function, mesh_2d, config, parameters={})
     assert result is not None
