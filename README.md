@@ -11,11 +11,13 @@ Create a conda environment with DOLFINx and its dependencies:
 ```bash
 conda create -n fenicsx-env -c conda-forge fenics-dolfinx mpich python=3.12 ffmpeg
 conda activate fenicsx-env
-pip install pyyaml pytest pytest-xdist pyright matplotlib pyvista dolfinx_mpc clawpack
+pip install pyyaml pytest pytest-xdist pyright matplotlib dolfinx_mpc clawpack
 ```
 
 See the [DOLFINx README](https://github.com/FEniCS/dolfinx#installation) for alternative installation methods (Docker, apt, Spack, Windows).
 `clawpack` is a required dependency because the `compressible_euler` preset uses Clawpack exclusively.
+Install `python-gmsh` as well if you want to use the Gmsh-backed `disk`, `dumbbell`,
+`channel_obstacle`, or `annulus` domains.
 
 ### DOLFINx (FEniCSx) — complex-valued (optional)
 
@@ -26,7 +28,7 @@ environment:
 ```bash
 conda create -n fenicsx-env-complex -c conda-forge fenics-dolfinx mpich "petsc=*=complex*" python=3.12 ffmpeg
 conda activate fenicsx-env-complex
-pip install pyyaml pytest pytest-xdist pyright matplotlib pyvista clawpack
+pip install pyyaml pytest pytest-xdist pyright matplotlib clawpack
 ```
 
 Do not install `dolfinx_mpc` in the complex environment — no complex builds exist.
@@ -36,7 +38,7 @@ Do not install `dolfinx_mpc` in the complex environment — no complex builds ex
 - **Presets** (`plm_data/presets/`) — Each PDE is a `PDEPreset` with a `PresetSpec` and a `build_problem(config)` factory. Specs now separate config-facing `coefficients` and `inputs`, boundary-condition fields/operators, solved `states`, selectable `outputs`, and explicit `static_fields` that are excluded from post-run stagnation warnings.
 - **Problem engines** (`plm_data/presets/base.py`) — Reusable runtime engines cover stationary linear, transient linear, transient nonlinear, and custom problems. Presets still own the formulation details and use shared runtime loops where that helps.
 - **Config** (`configs/`) — YAML uses explicit top-level `coefficients:`, `inputs:`, `boundary_conditions:`, and `output:` sections. Coefficients are preset-declared field expressions used directly in variational forms. Inputs configure sources and initial conditions; `boundary_conditions` configures each preset boundary field; `output.fields` selects which declared outputs to save and how to expand them. Time-dependent presets use a `time:` section; output resolution lives under `output.resolution`. The output root directory is chosen at the CLI with `--output-dir`, and each run writes into `<output-dir>/<category>/<preset>`. Periodic constraints are activated with boundary `periodic` operators and resolved against built-in or custom `domain.periodic_maps`. Shared scalar Robin is supported; vector boundaries use shared Dirichlet/Neumann or preset-specific types such as Maxwell `absorbing`, while generic vector Robin remains intentionally unsupported.
-- **Domains** (`plm_data/core/mesh.py`) — Built-in domains are registry-backed. The current repo ships `interval`, `rectangle`, and `box`.
+- **Domains** (`plm_data/core/mesh.py`) — Domain creation is registry-backed. The current repo ships `interval`, `rectangle`, `box`, `disk`, `dumbbell`, `parallelogram`, `channel_obstacle`, and `annulus`. The Gmsh-backed domains (`disk`, `dumbbell`, `channel_obstacle`, `annulus`) require `python-gmsh`.
 - **Output** (`plm_data/core/output.py`) — `FrameWriter` validates requested outputs against the preset spec, expands vector outputs into components for grid formats, and writes post-run stagnation diagnostics to `frames_meta.json`, skipping outputs listed in `static_fields`.
 
 ## Usage

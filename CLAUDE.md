@@ -42,7 +42,7 @@ The system has three layers:
 
 2. **Core** (`plm_data/core/`) — Shared infrastructure:
    - `config.py` — `SimulationConfig` dataclass loaded from YAML. Configs are validated against the preset spec up front. The schema uses explicit top-level `coefficients`, `inputs`, `boundary_conditions`, and `output` sections. Coefficients are preset-declared field expressions used directly in forms; inputs own `source` and `initial_condition`; boundary conditions are declared separately per preset boundary field; `output.fields` selects which declared outputs are saved. Transient presets use a `time:` section. Output resolution lives under `output.resolution`, while the output root directory is provided at runtime via `--output-dir`. Domains may declare extra `periodic_maps`, while built-in domains provide the standard face-pair maps used by periodic boundary operators.
-   - `mesh.py` — `create_domain()` returns `DomainGeometry` (mesh + facet_tags + boundary_names + ds measure + axis bounds / periodic metadata). Domain creation is registry-backed. Built-in domains auto-tag boundaries (x-, x+, y-, y+ for rectangle; 6 faces for box; x-/x+ for interval). The `annulus` domain (requires `python-gmsh`) uses the Gmsh OCC kernel and tags boundaries as `inner`/`outer`.
+   - `mesh.py` — `create_domain()` returns `DomainGeometry` (mesh + facet_tags + boundary_names + ds measure + periodic metadata). Domain creation is registry-backed. The current repo ships `interval`, `rectangle`, `box`, `disk`, `dumbbell`, `parallelogram`, `channel_obstacle`, and `annulus`. Cartesian/parallelogram domains expose the standard face tags and periodic maps; Gmsh-backed domains require `python-gmsh`, with `annulus` tagged as `inner`/`outer` and `channel_obstacle` tagged as `inlet`/`outlet`/`walls`/`obstacle`.
    - `periodic.py` — shared `dolfinx_mpc` integration for periodic boundary operators. Periodicity is activated per boundary field via the `periodic` operator and resolved against the domain's available periodic maps.
    - `spatial_fields.py` — Shared scalar and vector spatial field system (constant, sine_waves, gaussian_bump, radial_cosine, step, none, custom). Provides UFL builders, scalar interpolators, and vector-component expansion helpers. Supports `"param:name"` references
   - `boundary_conditions.py` — shared scalar Dirichlet / Neumann / Robin helpers plus vector Dirichlet / Neumann helpers for standard vector-valued spaces; vector Robin remains intentionally unsupported in the shared layer
@@ -50,7 +50,7 @@ The system has three layers:
    - `initial_conditions.py` — scalar and vector IC helpers from the unified field expression config, including sampled IC parameters and the shared `gaussian_noise`, `gaussian_blobs`, `sine_waves`, `quadrants`, and `constant` initial-condition families
    - `runner.py` — `SimulationRunner` orchestrates: loads config → instantiates preset → builds problem → runs it → finalizes output
    - `output.py` — `FrameWriter` coordinates format-specific writers. It validates base fields against the preset spec, expands vector fields into component outputs for grid-based formats, and writes post-run stagnation diagnostics to `frames_meta.json`, skipping outputs listed in `spec.static_fields`. Delegates to writers in `formats/`
-   - `formats/` — Output format writers: `NumpyWriter` (.npy arrays), `GifWriter` (animated .gif), `VideoWriter` (.mp4), `VTKWriter` (pyvista .vtu/.pvd for Paraview). Grid writers (numpy/gif/video) share the interpolation pipeline; VTK writes FEM functions directly
+   - `formats/` — Output format writers: `NumpyWriter` (.npy arrays), `GifWriter` (animated .gif), `VideoWriter` (.mp4), `VTKWriter` (native DOLFINx `.pvd`/`.vtu` output for ParaView). Grid writers (numpy/gif/video) share the interpolation pipeline; VTK writes FEM functions directly
    - `interpolation.py` — `function_to_array()` maps DOLFINx FEM functions onto regular numpy grids via point evaluation. Grid points outside the mesh (e.g. corners/holes on non-rectangular domains) produce NaN; `InterpolationCache.outside_mask` tracks which points are out-of-domain. When a domain mask is present, `FrameWriter` writes `domain_mask.npy` (True = inside) alongside the field arrays.
 
 3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, explicit coefficients, domain geometry, explicit `inputs`, explicit `boundary_conditions`, optional `time`, solver strategy/profile settings, output settings, and seed.
@@ -67,7 +67,7 @@ The system has three layers:
 
 ## Reference Material
 
-`reference/pdes/` contains markdown descriptions of PDE simulations from VisualPDE, organized by category (_basic-pdes, _fluids, _mathematical-biology, _nonlinear-physics). Use the `/reference` skill to look up parameters and descriptions when implementing or tuning presets.
+`reference/pdes/` contains markdown descriptions of PDE simulations from VisualPDE, organized by category (_basic-pdes, _fluids, _mathematical-biology, _nonlinear-physics). Use that local reference material directly when implementing or tuning presets; if your agent environment exposes a reference lookup skill, use the appropriate one for that environment.
 
 ## Key Conventions
 
