@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from mpi4py import MPI
 
-from plm_data.core.formats._rendering import render_animation
+from plm_data.core.formats._rendering import render_animation, render_scalar_gif_fast
 from plm_data.core.logging import get_logger
 
 
@@ -37,7 +37,11 @@ class GifWriter:
             return
 
         for name, frames in self._field_frames.items():
-            stacked = np.stack(frames, axis=0)
             output_path = self._output_dir / f"{name}.gif"
-            render_animation(stacked, name, output_path, writer_name="pillow")
+            first_frame = frames[0]
+            if np.asarray(first_frame).ndim == 2:
+                render_scalar_gif_fast(frames, output_path)
+            else:
+                stacked = np.stack(frames, axis=0)
+                render_animation(stacked, name, output_path, writer_name="pillow")
             self._logger.info("  Saved GIF: %s", output_path)

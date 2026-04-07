@@ -5,6 +5,78 @@ from pathlib import Path
 import numpy as np
 
 
+def _display_scalar_frame(frame: np.ndarray) -> np.ndarray:
+    """Convert an `(nx, ny)` grid into image display order."""
+    return np.flipud(np.asarray(frame).T)
+
+
+def _scalar_data_range(frames: list[np.ndarray]) -> tuple[float, float]:
+    """Compute a robust global color scale across scalar frames."""
+    finite_mins: list[float] = []
+    finite_maxs: list[float] = []
+    for frame in frames:
+        data = np.abs(frame) if np.iscomplexobj(frame) else np.asarray(frame)
+        finite = np.isfinite(data)
+        if not np.any(finite):
+            continue
+        finite_mins.append(float(np.min(data[finite])))
+        finite_maxs.append(float(np.max(data[finite])))
+
+    if not finite_mins or not finite_maxs:
+        return 0.0, 1.0
+
+    vmin = min(finite_mins)
+    vmax = max(finite_maxs)
+    if np.isclose(vmin, vmax):
+        scale = max(abs(vmin), 1.0)
+        return vmin - 0.5 * scale, vmax + 0.5 * scale
+    return vmin, vmax
+
+
+def render_scalar_gif_fast(
+    frames: list[np.ndarray],
+    output_path: Path,
+    *,
+    fps: int = 10,
+) -> None:
+    """Render 2D scalar frames to GIF without matplotlib animation overhead."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    from matplotlib import colormaps
+    from PIL import Image
+
+    if not frames:
+        raise ValueError("render_scalar_gif_fast requires at least one frame.")
+
+    vmin, vmax = _scalar_data_range(frames)
+    span = max(vmax - vmin, np.finfo(np.float32).eps)
+    cmap = colormaps["viridis"]
+
+    images: list[Image.Image] = []
+    for frame in frames:
+        data = np.abs(frame) if np.iscomplexobj(frame) else np.asarray(frame)
+        display = _display_scalar_frame(data)
+        finite = np.isfinite(display)
+        normalized = np.zeros(display.shape, dtype=np.float32)
+        if np.any(finite):
+            clipped = np.clip(display[finite], vmin, vmax)
+            normalized[finite] = ((clipped - vmin) / span).astype(np.float32)
+        rgba = cmap(normalized, bytes=True)
+        if not np.all(finite):
+            rgba[~finite] = np.array([0, 0, 0, 0], dtype=np.uint8)
+        images.append(Image.fromarray(rgba, mode="RGBA"))
+
+    images[0].save(
+        output_path,
+        save_all=True,
+        append_images=images[1:],
+        duration=max(1, int(round(1000 / fps))),
+        loop=0,
+        disposal=2,
+    )
+
+
 def render_animation(
     data: np.ndarray,
     name: str,

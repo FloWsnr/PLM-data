@@ -261,6 +261,26 @@ class TestNumpyWriter:
         meta = json.loads((output_dir / "frames_meta.json").read_text())
         assert meta["timings"]["grid_interpolation_calls"] == 2
 
+    def test_sampled_grid_output_bypasses_interpolation(self, tmp_path):
+        config = _scalar_heat_config(tmp_path, formats=["numpy"])
+        output_dir = tmp_path / "out"
+        spec = get_preset("heat").spec
+        writer = FrameWriter(output_dir, config, spec)
+
+        frame0 = np.arange(16, dtype=float).reshape(4, 4)
+        frame1 = frame0 + 1.0
+
+        writer.write_frame({}, t=0.0, sampled_fields={"u": frame0})
+        writer.write_frame({}, t=1.0, sampled_fields={"u": frame1})
+        writer.finalize()
+
+        npy = np.load(output_dir / "u.npy")
+        assert np.allclose(npy[0], frame0)
+        assert np.allclose(npy[1], frame1)
+
+        meta = json.loads((output_dir / "frames_meta.json").read_text())
+        assert meta["timings"]["grid_interpolation_calls"] == 0
+
 
 class TestGifWriter:
     @pytest.fixture(autouse=True)

@@ -1,6 +1,6 @@
 # PLM-data
 
-Generate PDE simulation datasets using [DOLFINx](https://github.com/FEniCS/dolfinx) (FEniCSx). Each simulation produces numpy arrays on a regular grid, suitable for training machine learning models.
+Generate PDE simulation datasets using [DOLFINx](https://github.com/FEniCS/dolfinx) (FEniCSx) and [Clawpack](https://www.clawpack.org/). Each simulation produces numpy arrays on a regular grid, suitable for training machine learning models.
 
 ## Installation
 
@@ -11,10 +11,11 @@ Create a conda environment with DOLFINx and its dependencies:
 ```bash
 conda create -n fenicsx-env -c conda-forge fenics-dolfinx mpich python=3.12 ffmpeg
 conda activate fenicsx-env
-pip install pyyaml pytest pytest-xdist pyright matplotlib pyvista dolfinx_mpc
+pip install pyyaml pytest pytest-xdist pyright matplotlib pyvista dolfinx_mpc clawpack
 ```
 
 See the [DOLFINx README](https://github.com/FEniCS/dolfinx#installation) for alternative installation methods (Docker, apt, Spack, Windows).
+`clawpack` is a required dependency because the `compressible_euler` preset uses Clawpack exclusively.
 
 ### DOLFINx (FEniCSx) — complex-valued (optional)
 
@@ -25,7 +26,7 @@ environment:
 ```bash
 conda create -n fenicsx-env-complex -c conda-forge fenics-dolfinx mpich "petsc=*=complex*" python=3.12 ffmpeg
 conda activate fenicsx-env-complex
-pip install pyyaml pytest pytest-xdist pyright matplotlib pyvista
+pip install pyyaml pytest pytest-xdist pyright matplotlib pyvista clawpack
 ```
 
 Do not install `dolfinx_mpc` in the complex environment — no complex builds exist.

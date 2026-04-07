@@ -134,6 +134,14 @@ class FrameWriter:
 
         self._logger.info("  Output formats: %s", ", ".join(config.output.formats))
 
+    def needs_fem_fields(self) -> bool:
+        """Return whether this run needs FEM fields for native-mesh output."""
+        return bool(self._fem_writers)
+
+    def needs_grid_sampling(self) -> bool:
+        """Return whether this run needs concrete grid arrays for output or health."""
+        return self._needs_grid_sampling()
+
     def _vector_output_view(
         self,
         output_name: str,
@@ -172,6 +180,36 @@ class FrameWriter:
                 f"Expected at least {sorted(self._expected_base_fields)}, "
                 f"got {sorted(fields)}."
             )
+
+    def _validate_sampled_fields(
+        self,
+        sampled_fields: dict[str, np.ndarray] | None,
+    ) -> dict[str, np.ndarray]:
+        """Validate pre-sampled grid arrays supplied by a runtime problem."""
+        if sampled_fields is None:
+            return {}
+
+        unexpected = set(sampled_fields) - set(self.field_names)
+        if unexpected:
+            raise ValueError(
+                f"Unexpected sampled output fields: {sorted(unexpected)}. "
+                f"Expected subset of {sorted(self.field_names)}."
+            )
+
+        validated: dict[str, np.ndarray] = {}
+        for name, arr in sampled_fields.items():
+            grid = np.asarray(arr)
+            if grid.shape != self._resolution:
+                raise ValueError(
+                    f"Sampled output field '{name}' has shape {grid.shape}; "
+                    f"expected {self._resolution}."
+                )
+            if not np.all(np.isfinite(grid)):
+                raise ValueError(
+                    f"Sampled output field '{name}' contains non-finite values."
+                )
+            validated[name] = grid
+        return validated
 
     def _selected_vtk_fields(
         self,
@@ -326,9 +364,16 @@ class FrameWriter:
 
         return self._compute_output_health()
 
-    def write_frame(self, fields: dict[str, fem.Function], t: float) -> None:
+    def write_frame(
+        self,
+        fields: dict[str, fem.Function],
+        t: float,
+        *,
+        sampled_fields: dict[str, np.ndarray] | None = None,
+    ) -> None:
         """Capture a snapshot of one or more output fields."""
         frame_start = time.perf_counter()
+        sampled_fields = self._validate_sampled_fields(sampled_fields)
         self._validate_finite_base_fields(fields, t=t)
 
         if self._fem_writers:
@@ -339,10 +384,32 @@ class FrameWriter:
             self._timings.vtk_write_seconds += time.perf_counter() - vtk_start
 
         if self._needs_grid_sampling():
-            self._validate_output_fields(fields)
-
             for output_group in self._grid_output_groups:
-                base_function = fields[output_group.output_spec.source_name]
+                concrete_names = [
+                    concrete_output.name
+                    for concrete_output in output_group.concrete_outputs
+                ]
+                if all(name in sampled_fields for name in concrete_names):
+                    for concrete_output in output_group.concrete_outputs:
+                        arr = sampled_fields[concrete_output.name]
+                        if self._rank == 0:
+                            self._record_diagnostic_field(concrete_output.name, arr)
+                        if self._rank == 0 and self._grid_writers:
+                            self._dispatch_grid_field(concrete_output.name, arr, t)
+                    continue
+                if any(name in sampled_fields for name in concrete_names):
+                    raise ValueError(
+                        f"Sampled output for '{output_group.output_name}' must provide "
+                        f"all concrete fields {concrete_names}."
+                    )
+
+                base_function = fields.get(output_group.output_spec.source_name)
+                if base_function is None:
+                    raise ValueError(
+                        f"Output source '{output_group.output_spec.source_name}' for "
+                        f"'{output_group.output_name}' was not provided and no "
+                        "sampled grid data was supplied."
+                    )
 
                 if output_group.output_spec.shape == "scalar":
                     interp_start = time.perf_counter()

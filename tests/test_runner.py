@@ -79,3 +79,18 @@ def test_simulation_runner_writes_failure_metadata(heat_config, monkeypatch):
     assert run_meta["summary"]["health_status"] == "fail"
     assert run_meta["summary"]["status"] == "failed"
     assert run_meta["config"]["resolved"]["preset"] == "heat"
+
+
+def test_simulation_runner_compressible_euler_preserves_logging(tmp_path):
+    runner = SimulationRunner.from_yaml(
+        "configs/fluids/compressible_euler/2d_reflective_chaotic_quadrant_smoke.yaml",
+        tmp_path,
+    )
+
+    summary = runner.run(console_level=logging.WARNING)
+
+    assert summary["preset"] == "compressible_euler"
+    assert summary["solver_converged"] is True
+    log_text = (Path(summary["output_dir"]) / "simulation.log").read_text()
+    assert "Setup: output sampling" in log_text
+    assert "Time stepping complete" in log_text

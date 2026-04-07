@@ -2,7 +2,7 @@ This file provides guidance to all coding agents when working with code in this 
 
 ## What This Is
 
-PLM-data generates PDE simulation datasets using DOLFINx (FEniCSx). It produces numpy arrays on regular grids from finite-element simulations, intended for training ML models. The project is inspired by and references the [VisualPDE](https://visualpde.com/) simulation catalog.
+PLM-data generates PDE simulation datasets using DOLFINx (FEniCSx) and Clawpack. It produces numpy arrays on regular grids from finite-element simulations and structured-grid hyperbolic solvers, intended for training ML models. The project is inspired by and references the [VisualPDE](https://visualpde.com/) simulation catalog.
 
 ## Commands
 
@@ -17,12 +17,12 @@ PLM-data generates PDE simulation datasets using DOLFINx (FEniCSx). It produces 
 ./run.sh list
 ```
 
-Tests run via `python -m pytest tests/`. pytest is configured to use 4 parallel processes (`-n 4` via `pytest-xdist`) by default. The project runs directly as a Python module. DOLFINx and its dependencies (PETSc, mpi4py, UFL) must be installed in the environment.
+Tests run via `python -m pytest tests/`. pytest is configured to use 4 parallel processes (`-n 4` via `pytest-xdist`) by default. The project runs directly as a Python module. DOLFINx and its dependencies (PETSc, mpi4py, UFL) must be installed in the environment, and `clawpack` is required for the shipped `compressible_euler` preset.
 
 ## Conda Environments
 
 Two conda environments exist:
-- `fenicsx-env` — real-valued PETSc (default). Used by the shipped presets, including `maxwell`.
+- `fenicsx-env` — real-valued PETSc (default). Used by the shipped presets, including `maxwell` and `compressible_euler`.
 - `fenicsx-env-complex` — complex-valued PETSc (`petsc=*=complex*`). Optional for separate experiments. Does not have `dolfinx_mpc`.
 
 Override the environment via `PLM_CONDA_ENV`:

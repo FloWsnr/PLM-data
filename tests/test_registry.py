@@ -1,5 +1,10 @@
 """Tests for plm_data.presets registry."""
 
+import os
+import subprocess
+import sys
+from pathlib import Path
+
 import pytest
 
 from plm_data.presets import get_preset, list_presets
@@ -40,3 +45,30 @@ def test_get_preset():
 def test_get_unknown_preset_raises():
     with pytest.raises(ValueError, match="Unknown preset"):
         get_preset("nonexistent_preset")
+
+
+def test_registry_import_does_not_create_pyclaw_log(tmp_path):
+    repo_root = Path(__file__).resolve().parents[1]
+    pythonpath = str(repo_root)
+    existing_pythonpath = os.environ.get("PYTHONPATH")
+    if existing_pythonpath:
+        pythonpath = f"{pythonpath}:{existing_pythonpath}"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "from plm_data.presets import list_presets; "
+                "print('compressible_euler' in list_presets())"
+            ),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+        env={**os.environ, "PYTHONPATH": pythonpath},
+    )
+
+    assert result.stdout.strip() == "True"
+    assert not (tmp_path / "pyclaw.log").exists()

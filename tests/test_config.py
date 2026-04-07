@@ -104,6 +104,19 @@ def test_load_config_compressible_euler_periodic():
     assert cfg.solver.strategy == TRANSIENT_EXPLICIT
 
 
+def test_load_config_compressible_euler_strong_reflective():
+    cfg = load_config(
+        "configs/fluids/compressible_euler/2d_reflective_strong_quadrant_shock_interaction.yaml"
+    )
+    assert cfg.preset == "compressible_euler"
+    assert cfg.parameters["cfl"] == 0.35
+    assert cfg.domain.params["mesh_resolution"] == [256, 256]
+    assert cfg.time.t_end == 0.9
+    assert cfg.boundary_field("state").side_conditions("y+")[0].type == "reflective"
+    assert cfg.output.resolution == [256, 256]
+    assert cfg.solver.strategy == TRANSIENT_EXPLICIT
+
+
 def test_load_config_fisher_kpp_2d():
     cfg = load_config("configs/biology/fisher_kpp/2d_logistic_invasion_front.yaml")
     assert cfg.preset == "fisher_kpp"

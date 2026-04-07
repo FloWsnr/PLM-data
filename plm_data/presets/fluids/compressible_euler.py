@@ -1,6 +1,8 @@
-"""2D compressible Euler preset using a Cartesian finite-volume scheme."""
+"""2D compressible Euler preset using Clawpack's classic solver."""
 
-import math
+import importlib
+from pathlib import Path
+import time
 
 import numpy as np
 from dolfinx import default_real_type, fem, mesh
@@ -10,7 +12,7 @@ from plm_data.core.initial_conditions import (
     build_scalar_ic_interpolator,
     build_vector_ic_interpolator,
 )
-from plm_data.core.logging import get_logger
+from plm_data.core.logging import configure_clawpack_logging, get_logger
 from plm_data.core.solver_strategies import TRANSIENT_EXPLICIT
 from plm_data.presets import register_preset
 from plm_data.presets.base import CustomProblem, PDEPreset, ProblemInstance, RunResult
@@ -40,12 +42,20 @@ _EULER_STATE_BOUNDARY_OPERATORS = {
     "reflective": _REFLECTIVE_BOUNDARY_OPERATOR,
 }
 
+# Clawpack's 2D Euler conservative-variable ordering.
+DENSITY = 0
+X_MOMENTUM = 1
+Y_MOMENTUM = 2
+ENERGY = 3
+NUM_EQN = 4
+
 _COMPRESSIBLE_EULER_SPEC = PresetSpec(
     name="compressible_euler",
     category="fluids",
     description=(
-        "Two-dimensional compressible Euler equations in conservative form on a "
-        "Cartesian finite-volume grid with local Lax-Friedrichs fluxes."
+        "Two-dimensional compressible Euler equations in conservative form using "
+        "the mandatory Clawpack HLLE wave-propagation solver with admissibility "
+        "repair."
     ),
     equations={
         "density": "d(rho)/dt + div(momentum) = 0",
@@ -57,14 +67,14 @@ _COMPRESSIBLE_EULER_SPEC = PresetSpec(
     },
     parameters=[
         PDEParameter("gamma", "Ratio of specific heats."),
-        PDEParameter("cfl", "Maximum CFL number for adaptive explicit stepping."),
+        PDEParameter("cfl", "Desired CFL number for the Clawpack solver."),
         PDEParameter(
             "density_floor",
-            "Minimum density enforced after each timestep for admissibility.",
+            "Minimum density used for derived-field clipping and validation.",
         ),
         PDEParameter(
             "pressure_floor",
-            "Minimum pressure enforced after each timestep for admissibility.",
+            "Minimum pressure used for derived-field clipping and validation.",
         ),
     ],
     inputs={
@@ -176,7 +186,44 @@ class _CompressibleEulerProblem(CustomProblem):
     def runtime_health_metrics(self, context: str) -> dict[str, float | int]:
         return getattr(self, "_latest_metrics", {})
 
+    def _load_clawpack_backend(self) -> None:
+        try:
+            self._pyclaw = importlib.import_module("clawpack.pyclaw")
+            self._petclaw = importlib.import_module("clawpack.petclaw")
+            self._riemann = importlib.import_module("clawpack.riemann")
+        except ImportError as exc:
+            raise RuntimeError(
+                f"Preset '{self.spec.name}' requires the mandatory 'clawpack' "
+                "dependency in the active environment."
+            ) from exc
+
+        configure_clawpack_logging()
+        Path("pyclaw.log").unlink(missing_ok=True)
+
+    def _install_progress_logging(self) -> None:
+        self._progress_logger = get_logger("timestepper")
+        self._progress_wall_start = time.monotonic()
+        self._last_progress_log_wall_time = self._progress_wall_start
+
+        def _progress_before_step(solver, state) -> None:
+            if self.comm.rank != 0:
+                return
+            now = time.monotonic()
+            if now - self._last_progress_log_wall_time < 30.0:
+                return
+            self._progress_logger.info(
+                "  Progress: step %d, t=%.6g, dt=%.3g, wall=%.0fs",
+                int(solver.status["numsteps"]),
+                float(self._solution.t),
+                float(solver.dt),
+                now - self._progress_wall_start,
+            )
+            self._last_progress_log_wall_time = now
+
+        self._solver.before_step = _progress_before_step
+
     def _setup_runtime(self) -> None:
+        logger = get_logger("timestepper")
         if self.config.time is None:
             raise ValueError(f"Preset '{self.spec.name}' requires a time section.")
         if self.config.domain.type != "rectangle":
@@ -208,15 +255,10 @@ class _CompressibleEulerProblem(CustomProblem):
         self.Ly = float(size[1])
         self.nx = int(resolution[0])
         self.ny = int(resolution[1])
-        self.comm = MPI.COMM_WORLD
-        if self.comm.size > self.ny:
-            raise ValueError(
-                f"Preset '{self.spec.name}' requires at least one y-row per MPI rank. "
-                f"Got {self.comm.size} ranks for ny={self.ny}."
-            )
         self.dx = self.Lx / self.nx
         self.dy = self.Ly / self.ny
         self.max_dt = float(self.config.time.dt)
+        self.comm = MPI.COMM_WORLD
 
         state_boundary_field = self.config.boundary_field("state")
         self._boundary_types = {
@@ -224,51 +266,16 @@ class _CompressibleEulerProblem(CustomProblem):
             for side in ("x-", "x+", "y-", "y+")
         }
 
-        self._setup_parallel_layout()
+        self._load_clawpack_backend()
+        logger.info("  Setup: output sampling")
+        self._setup_output_sampling()
+        logger.info("  Setup: output mesh")
         self._build_output_mesh()
-        self._initialize_state()
-        self._latest_metrics = self._state_metrics(correction_count=0)
-
-    def _setup_parallel_layout(self) -> None:
-        base_rows = self.ny // self.comm.size
-        extra_rows = self.ny % self.comm.size
-        self._row_counts = np.array(
-            [
-                base_rows + (1 if rank < extra_rows else 0)
-                for rank in range(self.comm.size)
-            ],
-            dtype=np.int32,
-        )
-        self._row_offsets = np.zeros(self.comm.size, dtype=np.int32)
-        if self.comm.size > 1:
-            self._row_offsets[1:] = np.cumsum(self._row_counts[:-1])
-
-        self._local_row_start = int(self._row_offsets[self.comm.rank])
-        self._local_ny = int(self._row_counts[self.comm.rank])
-        self._local_row_stop = self._local_row_start + self._local_ny
-
-        self._lower_rank = (
-            self.comm.rank - 1
-            if self.comm.rank > 0
-            else (
-                self.comm.size - 1
-                if self._boundary_types["y-"] == "periodic" and self.comm.size > 1
-                else MPI.PROC_NULL
-            )
-        )
-        self._upper_rank = (
-            self.comm.rank + 1
-            if self.comm.rank < self.comm.size - 1
-            else (
-                0
-                if self._boundary_types["y+"] == "periodic" and self.comm.size > 1
-                else MPI.PROC_NULL
-            )
-        )
-        self._gather_counts = [int(count) * self.nx * 4 for count in self._row_counts]
-        self._gather_displs = [0]
-        for count in self._gather_counts[:-1]:
-            self._gather_displs.append(self._gather_displs[-1] + count)
+        logger.info("  Setup: Clawpack state")
+        self._initialize_clawpack_solution()
+        self._install_progress_logging()
+        logger.info("  Setup: runtime health")
+        self._latest_metrics = self._state_metrics(self._local_q(), correction_count=0)
 
     def _build_output_mesh(self) -> None:
         self.output_mesh = mesh.create_rectangle(
@@ -292,7 +299,7 @@ class _CompressibleEulerProblem(CustomProblem):
         tdim = self.output_mesh.topology.dim
         cell_map = self.output_mesh.topology.index_map(tdim)
         owned_cell_ids = np.arange(cell_map.size_local, dtype=np.int32)
-        self._num_dofs = 4 * self.nx * self.ny
+        self._num_dofs = NUM_EQN * self.nx * self.ny
 
         cell_midpoints = mesh.compute_midpoints(self.output_mesh, tdim, owned_cell_ids)
         self._owned_cell_i = np.clip(
@@ -314,7 +321,35 @@ class _CompressibleEulerProblem(CustomProblem):
             dtype=np.int32,
         )
 
-    def _initialize_state(self) -> None:
+    def _setup_output_sampling(self) -> None:
+        output_nx, output_ny = self.config.output.resolution
+        x_coords = np.linspace(0.0, self.Lx, output_nx)
+        y_coords = np.linspace(0.0, self.Ly, output_ny)
+        self._output_x_indices = np.clip(
+            np.floor(x_coords / self.dx).astype(np.int32),
+            0,
+            self.nx - 1,
+        )
+        self._output_y_indices = np.clip(
+            np.floor(y_coords / self.dy).astype(np.int32),
+            0,
+            self.ny - 1,
+        )
+
+    def _configure_boundary_conditions(self) -> None:
+        bc_map = {
+            "periodic": self._claw.BC.periodic,
+            "reflective": self._claw.BC.wall,
+        }
+        self._solver.bc_lower[0] = bc_map[self._boundary_types["x-"]]
+        self._solver.bc_upper[0] = bc_map[self._boundary_types["x+"]]
+        self._solver.bc_lower[1] = bc_map[self._boundary_types["y-"]]
+        self._solver.bc_upper[1] = bc_map[self._boundary_types["y+"]]
+
+    def _initialize_clawpack_solution(self) -> None:
+        self._claw = self._petclaw if self.comm.size > 1 else self._pyclaw
+        self._last_correction_count = 0
+
         density_input = self.config.input("density")
         velocity_input = self.config.input("velocity")
         pressure_input = self.config.input("pressure")
@@ -349,31 +384,33 @@ class _CompressibleEulerProblem(CustomProblem):
                 "conditions for density, velocity, or pressure."
             )
 
-        x_centers = (np.arange(self.nx, dtype=float) + 0.5) * self.dx
-        y_centers = (
-            np.arange(self._local_row_start, self._local_row_stop, dtype=float) + 0.5
-        ) * self.dy
-        xx, yy = np.meshgrid(x_centers, y_centers, indexing="xy")
-        points = np.zeros((3, self._local_ny * self.nx), dtype=float)
+        x = self._claw.Dimension(0.0, self.Lx, self.nx, name="x")
+        y = self._claw.Dimension(0.0, self.Ly, self.ny, name="y")
+        domain = self._claw.Domain([x, y])
+        state = self._claw.State(domain, NUM_EQN)
+        state.problem_data["gamma"] = self.gamma
+        state.problem_data["gamma1"] = self.gamma - 1.0
+
+        centers = state.grid.p_centers
+        if centers is None or len(centers) != 2:
+            raise RuntimeError(
+                f"Preset '{self.spec.name}' could not access Clawpack cell centers."
+            )
+        xx, yy = centers
+        points = np.zeros((3, xx.size), dtype=float)
         points[0, :] = xx.ravel()
         points[1, :] = yy.ravel()
 
-        density = np.asarray(density_interp(points), dtype=float).reshape(
-            self._local_ny,
-            self.nx,
-        )
-        pressure = np.asarray(pressure_interp(points), dtype=float).reshape(
-            self._local_ny,
-            self.nx,
-        )
+        density = np.asarray(density_interp(points), dtype=float).reshape(xx.shape)
+        pressure = np.asarray(pressure_interp(points), dtype=float).reshape(xx.shape)
         velocity = np.asarray(velocity_interp(points), dtype=float)
-        if velocity.shape != (2, self._local_ny * self.nx):
+        if velocity.shape != (2, xx.size):
             raise ValueError(
                 f"Velocity initial condition produced shape {velocity.shape}, expected "
-                f"(2, {self._local_ny * self.nx})."
+                f"(2, {xx.size})."
             )
-        velocity_x = velocity[0, :].reshape(self._local_ny, self.nx)
-        velocity_y = velocity[1, :].reshape(self._local_ny, self.nx)
+        velocity_x = velocity[0, :].reshape(xx.shape)
+        velocity_y = velocity[1, :].reshape(xx.shape)
 
         local_min_density = (
             float(np.min(density)) if density.size > 0 else float("inf")
@@ -394,193 +431,129 @@ class _CompressibleEulerProblem(CustomProblem):
                 f"pressure_floor={self.pressure_floor:.6g}. Got min {min_pressure:.6g}."
             )
 
-        self._state_local = self._primitive_to_conservative(
-            density,
-            velocity_x,
-            velocity_y,
-            pressure,
-        )
-
-    def _primitive_to_conservative(
-        self,
-        density: np.ndarray,
-        velocity_x: np.ndarray,
-        velocity_y: np.ndarray,
-        pressure: np.ndarray,
-    ) -> np.ndarray:
-        momentum_x = density * velocity_x
-        momentum_y = density * velocity_y
-        total_energy = pressure / (self.gamma - 1.0) + 0.5 * density * (
+        q = state.q
+        if q is None:
+            raise RuntimeError(
+                f"Preset '{self.spec.name}' could not access the Clawpack state array."
+            )
+        q[DENSITY, ...] = density
+        q[X_MOMENTUM, ...] = density * velocity_x
+        q[Y_MOMENTUM, ...] = density * velocity_y
+        q[ENERGY, ...] = pressure / (self.gamma - 1.0) + 0.5 * density * (
             velocity_x**2 + velocity_y**2
         )
-        return np.stack((density, momentum_x, momentum_y, total_energy), axis=-1)
+
+        self._solution = self._claw.Solution(state, domain)
+        self._solver = self._claw.ClawSolver2D(self._riemann.euler_hlle_2D)
+        self._solver.transverse_waves = 0
+        self._solver.limiters = self._pyclaw.limiters.tvd.MC
+        self._solver.cfl_desired = self.cfl
+        self._solver.cfl_max = min(0.5, max(self.cfl + 0.05, self.cfl * 1.1))
+        self._solver.dt_initial = min(self.max_dt, self._compute_stable_dt(state.q))
+        self._solver.dt_max = self.max_dt
+        self._solver.max_steps = 1_000_000
+        self._configure_boundary_conditions()
+        self._install_admissibility_repair()
+        self._solver.setup(self._solution)
+        self._solver.dt = self._solver.dt_initial
+
+    def _install_admissibility_repair(self) -> None:
+        original_step = self._solver.step
+
+        def _patched_step(solution, take_one_step, tstart, tend):
+            accepted = original_step(solution, take_one_step, tstart, tend)
+            q = solution.state.q
+            if q is None:
+                raise RuntimeError(
+                    f"Preset '{self.spec.name}' could not access the Clawpack state "
+                    "array after a timestep."
+                )
+
+            density = q[DENSITY, ...]
+            density_bad = (~np.isfinite(density)) | (density < self.density_floor)
+            if np.any(density_bad):
+                density[density_bad] = self.density_floor
+
+            momentum_x = q[X_MOMENTUM, ...]
+            momentum_y = q[Y_MOMENTUM, ...]
+            bad_momentum_x = ~np.isfinite(momentum_x)
+            bad_momentum_y = ~np.isfinite(momentum_y)
+            if np.any(bad_momentum_x):
+                momentum_x[bad_momentum_x] = 0.0
+            if np.any(bad_momentum_y):
+                momentum_y[bad_momentum_y] = 0.0
+
+            density_safe = np.maximum(density, self.density_floor)
+            momentum_sq = momentum_x**2 + momentum_y**2
+            min_total_energy = self.pressure_floor / (self.gamma - 1.0) + 0.5 * (
+                momentum_sq / density_safe
+            )
+            total_energy = q[ENERGY, ...]
+            energy_bad = (~np.isfinite(total_energy)) | (
+                total_energy < min_total_energy
+            )
+            if np.any(energy_bad):
+                total_energy[energy_bad] = min_total_energy[energy_bad]
+
+            self._last_correction_count = int(
+                np.count_nonzero(
+                    density_bad | bad_momentum_x | bad_momentum_y | energy_bad
+                )
+            )
+            return accepted
+
+        self._solver.step = _patched_step
+
+    def _local_q(self) -> np.ndarray:
+        return np.asarray(self._solution.state.q, dtype=float)
+
+    def _global_q(self) -> np.ndarray:
+        if self.comm.size == 1:
+            global_q = np.array(self._solution.state.q, copy=True)
+        else:
+            global_q = self._solution.state.get_q_global()
+        global_q = self.comm.bcast(global_q, root=0)
+        if global_q is None:
+            raise RuntimeError(
+                f"Preset '{self.spec.name}' could not gather the global Clawpack state."
+            )
+        return np.asarray(global_q, dtype=float)
 
     def _primitive_fields(
         self,
-        state: np.ndarray,
+        q: np.ndarray,
         *,
         clip_pressure: bool,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        density = np.maximum(state[..., 0], self.density_floor)
-        velocity_x = state[..., 1] / density
-        velocity_y = state[..., 2] / density
-        kinetic = 0.5 * density * (velocity_x**2 + velocity_y**2)
-        pressure = (self.gamma - 1.0) * (state[..., 3] - kinetic)
+        density = np.asarray(q[DENSITY, ...], dtype=float)
+        safe_density = np.maximum(density, self.density_floor)
+        momentum_x = np.asarray(q[X_MOMENTUM, ...], dtype=float)
+        momentum_y = np.asarray(q[Y_MOMENTUM, ...], dtype=float)
+        total_energy = np.asarray(q[ENERGY, ...], dtype=float)
+        velocity_x = momentum_x / safe_density
+        velocity_y = momentum_y / safe_density
+        kinetic = 0.5 * (momentum_x**2 + momentum_y**2) / safe_density
+        pressure = (self.gamma - 1.0) * (total_energy - kinetic)
         if clip_pressure:
             pressure = np.maximum(pressure, self.pressure_floor)
         return density, velocity_x, velocity_y, pressure
 
-    def _flux_x(self, state: np.ndarray) -> np.ndarray:
-        _, velocity_x, _, pressure = self._primitive_fields(state, clip_pressure=True)
-        total_energy = state[..., 3]
-        return np.stack(
-            (
-                state[..., 1],
-                state[..., 1] * velocity_x + pressure,
-                state[..., 2] * velocity_x,
-                (total_energy + pressure) * velocity_x,
-            ),
-            axis=-1,
-        )
-
-    def _flux_y(self, state: np.ndarray) -> np.ndarray:
-        _, _, velocity_y, pressure = self._primitive_fields(state, clip_pressure=True)
-        total_energy = state[..., 3]
-        return np.stack(
-            (
-                state[..., 2],
-                state[..., 1] * velocity_y,
-                state[..., 2] * velocity_y + pressure,
-                (total_energy + pressure) * velocity_y,
-            ),
-            axis=-1,
-        )
-
-    def _rusanov_flux(
-        self,
-        left_state: np.ndarray,
-        right_state: np.ndarray,
-        *,
-        axis: int,
-    ) -> np.ndarray:
-        if axis == 0:
-            left_flux = self._flux_x(left_state)
-            right_flux = self._flux_x(right_state)
-        else:
-            left_flux = self._flux_y(left_state)
-            right_flux = self._flux_y(right_state)
-
-        left_density, left_u, left_v, left_pressure = self._primitive_fields(
-            left_state,
-            clip_pressure=True,
-        )
-        right_density, right_u, right_v, right_pressure = self._primitive_fields(
-            right_state,
-            clip_pressure=True,
-        )
-        left_sound = np.sqrt(self.gamma * left_pressure / left_density)
-        right_sound = np.sqrt(self.gamma * right_pressure / right_density)
-        if axis == 0:
-            left_speed = np.abs(left_u) + left_sound
-            right_speed = np.abs(right_u) + right_sound
-        else:
-            left_speed = np.abs(left_v) + left_sound
-            right_speed = np.abs(right_v) + right_sound
-
-        wave_speed = np.maximum(left_speed, right_speed)[..., None]
-        return 0.5 * (left_flux + right_flux) - 0.5 * wave_speed * (
-            right_state - left_state
-        )
-
-    def _reflect_x(self, state: np.ndarray) -> np.ndarray:
-        reflected = np.array(state, copy=True)
-        reflected[..., 1] *= -1.0
-        return reflected
-
-    def _reflect_y(self, state: np.ndarray) -> np.ndarray:
-        reflected = np.array(state, copy=True)
-        reflected[..., 2] *= -1.0
-        return reflected
-
-    def _x_minus_ghost(self, state: np.ndarray) -> np.ndarray:
-        if self._boundary_types["x-"] == "periodic":
-            return np.array(state[:, -1, :], copy=True)
-        return self._reflect_x(state[:, 0, :])
-
-    def _x_plus_ghost(self, state: np.ndarray) -> np.ndarray:
-        if self._boundary_types["x+"] == "periodic":
-            return np.array(state[:, 0, :], copy=True)
-        return self._reflect_x(state[:, -1, :])
-
-    def _y_halos(self, state: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        if self._local_ny == 0:
-            raise RuntimeError("Cannot exchange halos for an empty local state.")
-
-        if self.comm.size == 1:
-            bottom_halo = (
-                np.array(state[-1, :, :], copy=True)
-                if self._boundary_types["y-"] == "periodic"
-                else self._reflect_y(state[0, :, :])
-            )
-            top_halo = (
-                np.array(state[0, :, :], copy=True)
-                if self._boundary_types["y+"] == "periodic"
-                else self._reflect_y(state[-1, :, :])
-            )
-            return bottom_halo, top_halo
-
-        bottom_halo = np.empty((self.nx, 4), dtype=state.dtype)
-        top_halo = np.empty((self.nx, 4), dtype=state.dtype)
-        requests: list[MPI.Request] = []
-        send_buffers: list[np.ndarray] = []
-
-        if self._lower_rank == MPI.PROC_NULL:
-            bottom_halo[:] = self._reflect_y(state[0, :, :])
-        else:
-            requests.append(
-                self.comm.Irecv(bottom_halo, source=self._lower_rank, tag=22)
-            )
-
-        if self._upper_rank == MPI.PROC_NULL:
-            top_halo[:] = self._reflect_y(state[-1, :, :])
-        else:
-            requests.append(self.comm.Irecv(top_halo, source=self._upper_rank, tag=11))
-
-        if self._lower_rank != MPI.PROC_NULL:
-            send_to_lower = np.ascontiguousarray(state[0, :, :])
-            send_buffers.append(send_to_lower)
-            requests.append(
-                self.comm.Isend(send_to_lower, dest=self._lower_rank, tag=11)
-            )
-
-        if self._upper_rank != MPI.PROC_NULL:
-            send_to_upper = np.ascontiguousarray(state[-1, :, :])
-            send_buffers.append(send_to_upper)
-            requests.append(
-                self.comm.Isend(send_to_upper, dest=self._upper_rank, tag=22)
-            )
-
-        if requests:
-            MPI.Request.Waitall(requests)
-
-        return bottom_halo, top_halo
-
-    def _compute_stable_dt(self) -> float:
+    def _compute_stable_dt(self, q: np.ndarray) -> float:
         density, velocity_x, velocity_y, pressure = self._primitive_fields(
-            self._state_local,
+            q,
             clip_pressure=True,
         )
         if density.size == 0:
             local_max_inverse_dt = 0.0
         else:
-            sound_speed = np.sqrt(self.gamma * pressure / density)
+            sound_speed = np.sqrt(self.gamma * pressure / np.maximum(density, self.density_floor))
             inverse_dt = (np.abs(velocity_x) + sound_speed) / self.dx + (
                 np.abs(velocity_y) + sound_speed
             ) / self.dy
             local_max_inverse_dt = float(np.max(inverse_dt))
 
         max_inverse_dt = self.comm.allreduce(local_max_inverse_dt, op=MPI.MAX)
-        if not math.isfinite(max_inverse_dt):
+        if not np.isfinite(max_inverse_dt):
             raise RuntimeError(
                 f"Preset '{self.spec.name}' produced a non-finite wave speed."
             )
@@ -588,66 +561,14 @@ class _CompressibleEulerProblem(CustomProblem):
             return self.max_dt
         return self.cfl / max_inverse_dt
 
-    def _apply_admissibility_floors(self, state: np.ndarray) -> int:
-        if not np.all(np.isfinite(state)):
-            raise RuntimeError(
-                f"Preset '{self.spec.name}' produced non-finite conservative state values."
-            )
-
-        density = state[..., 0]
-        density_corrections = density < self.density_floor
-        if np.any(density_corrections):
-            density[density_corrections] = self.density_floor
-
-        momentum_sq = state[..., 1] ** 2 + state[..., 2] ** 2
-        min_total_energy = self.pressure_floor / (self.gamma - 1.0) + 0.5 * (
-            momentum_sq / density
-        )
-        total_energy = state[..., 3]
-        energy_corrections = total_energy < min_total_energy
-        if np.any(energy_corrections):
-            total_energy[energy_corrections] = min_total_energy[energy_corrections]
-
-        return int(np.count_nonzero(density_corrections | energy_corrections))
-
-    def _advance_local_state(self, dt: float) -> int:
-        state = self._state_local
-        bottom_halo, top_halo = self._y_halos(state)
-        state_x = np.concatenate(
-            (
-                self._x_minus_ghost(state)[:, None, :],
-                state,
-                self._x_plus_ghost(state)[:, None, :],
-            ),
-            axis=1,
-        )
-        state_y = np.concatenate(
-            (
-                bottom_halo[None, :, :],
-                state,
-                top_halo[None, :, :],
-            ),
-            axis=0,
-        )
-        flux_x = self._rusanov_flux(state_x[:, :-1, :], state_x[:, 1:, :], axis=0)
-        flux_y = self._rusanov_flux(state_y[:-1, :, :], state_y[1:, :, :], axis=1)
-
-        updated_state = (
-            state
-            - (dt / self.dx) * (flux_x[:, 1:, :] - flux_x[:, :-1, :])
-            - (dt / self.dy) * (flux_y[1:, :, :] - flux_y[:-1, :, :])
-        )
-        correction_count = self._apply_admissibility_floors(updated_state)
-        self._state_local = updated_state
-        return correction_count
-
     def _state_metrics(
         self,
+        q: np.ndarray,
         *,
         correction_count: int,
     ) -> dict[str, float | int]:
         density, velocity_x, velocity_y, pressure = self._primitive_fields(
-            self._state_local,
+            q,
             clip_pressure=False,
         )
         if density.size == 0:
@@ -655,8 +576,9 @@ class _CompressibleEulerProblem(CustomProblem):
             local_min_pressure = float("inf")
             local_max_wave_speed = 0.0
         else:
+            safe_density = np.maximum(density, self.density_floor)
             sound_speed = np.sqrt(
-                self.gamma * np.maximum(pressure, self.pressure_floor) / density
+                self.gamma * np.maximum(pressure, self.pressure_floor) / safe_density
             )
             local_max_wave_speed = float(
                 np.max(
@@ -673,13 +595,13 @@ class _CompressibleEulerProblem(CustomProblem):
         min_density = self.comm.allreduce(local_min_density, op=MPI.MIN)
         min_pressure = self.comm.allreduce(local_min_pressure, op=MPI.MIN)
         total_corrections = self.comm.allreduce(int(correction_count), op=MPI.SUM)
-        if min_density <= 0.0:
-            raise ValueError(
+        if not np.isfinite(min_density) or min_density <= 0.0:
+            raise RuntimeError(
                 f"Preset '{self.spec.name}' produced non-positive density. "
                 f"Minimum density: {min_density:.6g}."
             )
-        if min_pressure <= 0.0:
-            raise ValueError(
+        if not np.isfinite(min_pressure) or min_pressure <= 0.0:
+            raise RuntimeError(
                 f"Preset '{self.spec.name}' produced non-positive pressure. "
                 f"Minimum pressure: {min_pressure:.6g}."
             )
@@ -690,26 +612,18 @@ class _CompressibleEulerProblem(CustomProblem):
             "admissibility_corrections": total_corrections,
         }
 
-    def _gather_global_state(self) -> np.ndarray:
-        recv = np.empty(self.nx * self.ny * 4, dtype=self._state_local.dtype)
-        self.comm.Allgatherv(
-            np.ascontiguousarray(self._state_local).reshape(-1),
-            (recv, self._gather_counts, self._gather_displs, MPI.DOUBLE),
-        )
-        return recv.reshape(self.ny, self.nx, 4)
-
-    def _update_output_fields(self, state: np.ndarray) -> None:
+    def _update_output_fields(self, q: np.ndarray) -> None:
         density, velocity_x, velocity_y, pressure = self._primitive_fields(
-            state,
+            q,
             clip_pressure=False,
         )
-        local_density = density[self._owned_cell_j, self._owned_cell_i]
-        local_pressure = pressure[self._owned_cell_j, self._owned_cell_i]
-        local_energy = state[self._owned_cell_j, self._owned_cell_i, 3]
+        local_density = density[self._owned_cell_i, self._owned_cell_j]
+        local_pressure = pressure[self._owned_cell_i, self._owned_cell_j]
+        local_energy = q[ENERGY, self._owned_cell_i, self._owned_cell_j]
         local_velocity = np.stack(
             (
-                velocity_x[self._owned_cell_j, self._owned_cell_i],
-                velocity_y[self._owned_cell_j, self._owned_cell_i],
+                velocity_x[self._owned_cell_i, self._owned_cell_j],
+                velocity_y[self._owned_cell_i, self._owned_cell_j],
             ),
             axis=1,
         )
@@ -737,25 +651,54 @@ class _CompressibleEulerProblem(CustomProblem):
         self.total_energy_out.x.scatter_forward()
         self.velocity_out.x.scatter_forward()
 
+    def _sample_output_fields(self, q: np.ndarray) -> dict[str, np.ndarray]:
+        density, velocity_x, velocity_y, pressure = self._primitive_fields(
+            q,
+            clip_pressure=False,
+        )
+        return {
+            "density": density[
+                self._output_x_indices[:, None],
+                self._output_y_indices[None, :],
+            ],
+            "velocity_x": velocity_x[
+                self._output_x_indices[:, None],
+                self._output_y_indices[None, :],
+            ],
+            "velocity_y": velocity_y[
+                self._output_x_indices[:, None],
+                self._output_y_indices[None, :],
+            ],
+            "pressure": pressure[
+                self._output_x_indices[:, None],
+                self._output_y_indices[None, :],
+            ],
+            "total_energy": q[
+                ENERGY,
+                self._output_x_indices[:, None],
+                self._output_y_indices[None, :],
+            ],
+        }
+
     def _write_current_frame(self, output, *, t: float) -> None:
-        state = self._gather_global_state()
-        self._update_output_fields(state)
-        output.write_frame(
-            {
+        q = self._global_q()
+        sampled_fields = self._sample_output_fields(q)
+        fem_fields: dict[str, fem.Function] = {}
+        if output.needs_fem_fields():
+            self._update_output_fields(q)
+            fem_fields = {
                 "density": self.density_out,
                 "velocity": self.velocity_out,
                 "pressure": self.pressure_out,
                 "total_energy": self.total_energy_out,
-            },
-            t=t,
-        )
+            }
+        output.write_frame(fem_fields, t=t, sampled_fields=sampled_fields)
 
     def run(self, output) -> RunResult:
         logger = get_logger("timestepper")
         self._setup_runtime()
 
         assert self.config.time is not None
-        dt_limit = self.max_dt
         t_end = float(self.config.time.t_end)
         num_frames = self.config.output.num_frames
         if num_frames > 1:
@@ -763,12 +706,11 @@ class _CompressibleEulerProblem(CustomProblem):
         else:
             output_times = np.array([t_end], dtype=float)
         next_output_idx = 0
+        next_log_progress = 0.1
 
-        estimated_steps = max(1, int(math.ceil(t_end / max(dt_limit, 1.0e-12))))
-        log_every = max(1, estimated_steps // 10)
         logger.info(
-            "  Time stepping: adaptive explicit finite volume, dt_max=%s, t_end=%s",
-            dt_limit,
+            "  Time stepping: Clawpack wave propagation, dt_max=%s, t_end=%s",
+            self.max_dt,
             t_end,
         )
 
@@ -777,44 +719,43 @@ class _CompressibleEulerProblem(CustomProblem):
             self._write_current_frame(output, t=0.0)
             next_output_idx += 1
 
-        t = 0.0
-        num_steps = 0
-        while t < t_end - 1.0e-14 * max(1.0, t_end):
-            stable_dt = self._compute_stable_dt()
-            step_dt = min(dt_limit, stable_dt, t_end - t)
+        while self._solution.t < t_end - 1.0e-14 * max(1.0, t_end):
+            target_time = t_end
             if next_output_idx < len(output_times):
-                remaining_to_output = float(output_times[next_output_idx] - t)
-                if remaining_to_output > 1.0e-14 * max(1.0, dt_limit):
-                    step_dt = min(step_dt, remaining_to_output)
-            if step_dt <= 0.0:
+                target_time = min(target_time, float(output_times[next_output_idx]))
+
+            status = self._solver.evolve_to_time(self._solution, target_time)
+            current_t = float(self._solution.t)
+            if current_t < target_time - 1.0e-12 * max(1.0, target_time):
                 raise RuntimeError(
-                    f"Preset '{self.spec.name}' selected a non-positive timestep "
-                    f"{step_dt} at t={t:.6g}."
+                    f"Preset '{self.spec.name}' did not reach target time "
+                    f"{target_time:.6g}; stopped at {current_t:.6g}."
                 )
 
-            correction_count = self._advance_local_state(step_dt)
-            self._latest_metrics = self._state_metrics(correction_count=correction_count)
+            self._latest_metrics = self._state_metrics(
+                self._local_q(),
+                correction_count=self._last_correction_count,
+            )
+            self.record_runtime_health(f"t={current_t:.6g}")
 
-            t += step_dt
-            num_steps += 1
-            self.record_solver_health(f"step_{num_steps}")
-            self.record_runtime_health(f"t={t:.6g}")
-
-            if num_steps % log_every == 0 or num_steps == 1:
-                progress = t / t_end * 100.0 if t_end > 0.0 else 100.0
+            progress = current_t / t_end if t_end > 0.0 else 1.0
+            if progress >= next_log_progress - 1.0e-12:
                 logger.info(
                     "  Step %d (t=%.4g, %.0f%%)",
-                    num_steps,
-                    t,
-                    progress,
+                    int(status["numsteps"]),
+                    current_t,
+                    progress * 100.0,
                 )
+                while progress >= next_log_progress - 1.0e-12:
+                    next_log_progress += 0.1
 
-            if next_output_idx < len(output_times) and t >= output_times[
+            if next_output_idx < len(output_times) and current_t >= output_times[
                 next_output_idx
-            ] - 1.0e-14 * max(step_dt, 1.0):
-                self._write_current_frame(output, t=t)
+            ] - 1.0e-12 * max(1.0, target_time):
+                self._write_current_frame(output, t=current_t)
                 next_output_idx += 1
 
+        num_steps = int(self._solver.status["numsteps"])
         logger.info("  Time stepping complete: %d substeps", num_steps)
         return RunResult(
             num_dofs=self._num_dofs,
