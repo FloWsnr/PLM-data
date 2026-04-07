@@ -8,6 +8,7 @@ TRANSIENT_SADDLE_POINT = "transient_saddle_point"
 STEADY_MIXED_DIRECT = "steady_mixed_direct"
 TRANSIENT_MIXED_DIRECT = "transient_mixed_direct"
 NONLINEAR_MIXED_DIRECT = "nonlinear_mixed_direct"
+TRANSIENT_EXPLICIT = "transient_explicit"
 STATIONARY_INDEFINITE_DIRECT = "stationary_indefinite_direct"
 CONSTANT_LHS_CURL_DIRECT = "constant_lhs_curl_direct"
 CONSTANT_LHS_BLOCK_DIRECT = "constant_lhs_block_direct"
@@ -33,6 +34,7 @@ ALL_SOLVER_STRATEGIES = {
     STEADY_MIXED_DIRECT,
     TRANSIENT_MIXED_DIRECT,
     NONLINEAR_MIXED_DIRECT,
+    TRANSIENT_EXPLICIT,
     STATIONARY_INDEFINITE_DIRECT,
     CONSTANT_LHS_CURL_DIRECT,
     CONSTANT_LHS_BLOCK_DIRECT,

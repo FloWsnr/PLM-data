@@ -1,0 +1,81 @@
+preset: compressible_euler
+parameters:
+  gamma: 1.4
+  cfl: 0.45
+  density_floor: 1.0e-06
+  pressure_floor: 1.0e-06
+domain:
+  type: rectangle
+  size:
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 128
+  - 128
+time:
+  dt: 0.01
+  t_end: 0.3
+inputs:
+  density:
+    initial_condition:
+      type: quadrants
+      params:
+        split: [0.5, 0.5]
+        region_values:
+          "00": 0.138
+          "01": 0.5323
+          "10": 0.5323
+          "11": 1.5
+  velocity:
+    initial_condition:
+      components:
+        x:
+          type: quadrants
+          params:
+            split: [0.5, 0.5]
+            region_values:
+              "00": 1.206
+              "01": 1.206
+              "10": 0.0
+              "11": 0.0
+        y:
+          type: quadrants
+          params:
+            split: [0.5, 0.5]
+            region_values:
+              "00": 1.206
+              "01": 0.0
+              "10": 1.206
+              "11": 0.0
+  pressure:
+    initial_condition:
+      type: quadrants
+      params:
+        split: [0.5, 0.5]
+        region_values:
+          "00": 0.029
+          "01": 0.3
+          "10": 0.3
+          "11": 1.5
+boundary_conditions:
+  state:
+    $ref: boundary_field.scalar.reflective_2d
+solver:
+  $ref: solver.profile.transient_explicit
+output:
+  formats:
+    $ref: output.formats.standard
+  resolution:
+  - 128
+  - 128
+  num_frames: 31
+  fields:
+    density:
+      mode: scalar
+    velocity:
+      mode: components
+    pressure:
+      mode: scalar
+    total_energy:
+      mode: scalar
+seed: 42

@@ -565,6 +565,91 @@ def _build_resolved_scalar_interpolator(
     )
 
 
+def build_scalar_ic_interpolator(
+    ic_config: FieldExpressionConfig,
+    parameters: dict[str, float],
+    *,
+    gdim: int,
+    seed: int | None = None,
+    stream_id: str | None = None,
+) -> Callable[[np.ndarray], np.ndarray] | None:
+    """Build a scalar initial-condition interpolator without a FEM function."""
+    if ic_config.is_componentwise:
+        raise ValueError("Expected a scalar initial-condition config.")
+
+    rng = _rng_for_stream(seed, stream_id) if seed is not None else None
+    ic_type, resolved_params = _resolved_scalar_ic(
+        ic_config,
+        gdim=gdim,
+        parameters=parameters,
+        rng=rng,
+    )
+    return _build_resolved_scalar_interpolator(
+        msh=None,
+        ic_type=ic_type,
+        resolved_params=resolved_params,
+        rng=rng,
+        parameters=parameters,
+    )
+
+
+def build_vector_ic_interpolator(
+    ic_config: FieldExpressionConfig,
+    parameters: dict[str, float],
+    *,
+    gdim: int,
+    seed: int | None = None,
+    stream_id: str | None = None,
+) -> Callable[[np.ndarray], np.ndarray] | None:
+    """Build a vector initial-condition interpolator without a FEM function."""
+    if ic_config.type == "custom" and not ic_config.is_componentwise:
+        return None
+
+    stream_root = stream_id or "vector"
+    if not ic_config.is_componentwise:
+        return build_vector_interpolator(ic_config, gdim, parameters)
+
+    components = component_expressions(ic_config, gdim)
+    scalar_interpolators = []
+    for label in component_labels_for_dim(gdim):
+        component = components[label]
+        if component.type == "custom":
+            raise ValueError(
+                f"Component '{label}' cannot use 'custom' inside a vector expression"
+            )
+        component_rng = (
+            _rng_for_stream(seed, f"{stream_root}.{label}")
+            if seed is not None
+            else None
+        )
+        ic_type, resolved_params = _resolved_scalar_ic(
+            component,
+            gdim=gdim,
+            parameters=parameters,
+            rng=component_rng,
+        )
+        interpolator = _build_resolved_scalar_interpolator(
+            msh=None,
+            ic_type=ic_type,
+            resolved_params=resolved_params,
+            rng=component_rng,
+            parameters=parameters,
+        )
+        if interpolator is None:
+            raise ValueError(
+                f"Component '{label}' cannot use 'custom' inside a vector expression"
+            )
+        scalar_interpolators.append(interpolator)
+
+    def _vector_interpolator(x: np.ndarray) -> np.ndarray:
+        values = np.zeros((gdim, x.shape[1]))
+        for i, interpolator in enumerate(scalar_interpolators):
+            values[i, :] = interpolator(x)
+        return values
+
+    return _vector_interpolator
+
+
 def apply_ic(
     func: fem.Function,
     ic_config: FieldExpressionConfig,

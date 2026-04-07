@@ -30,6 +30,7 @@ from plm_data.core.solver_strategies import (
     STATIONARY_INDEFINITE_DIRECT,
     STATIONARY_SCALAR_SPD,
     STEADY_SADDLE_POINT,
+    TRANSIENT_EXPLICIT,
     TRANSIENT_MIXED_DIRECT,
     TRANSIENT_SADDLE_POINT,
 )
@@ -217,6 +218,14 @@ def nonlinear_mixed_direct_solver_config() -> SolverConfig:
             "pc_factor_mat_solver_type": "mumps",
             "ksp_error_if_not_converged": "1",
         },
+    )
+
+
+def explicit_solver_config() -> SolverConfig:
+    return solver_config(
+        TRANSIENT_EXPLICIT,
+        serial={},
+        mpi={},
     )
 
 
@@ -671,6 +680,62 @@ def make_compressible_navier_stokes_config(
             fields=selected_output_modes,
         ),
         solver=nonlinear_mixed_direct_solver_config(),
+        time=time,
+        seed=seed,
+    )
+
+
+def make_compressible_euler_config(
+    tmp_path: Path,
+    *,
+    parameters: dict[str, float],
+    state_boundary_conditions: dict[str, BoundaryConditionConfig],
+    density_initial_condition: FieldExpressionConfig,
+    velocity_initial_condition: FieldExpressionConfig,
+    pressure_initial_condition: FieldExpressionConfig,
+    periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, int] = (8, 8),
+    output_resolution: tuple[int, int] = (4, 4),
+    output_modes: dict[str, OutputSelectionConfig] | None = None,
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    selected_output_modes = (
+        output_fields(
+            density="scalar",
+            velocity="components",
+            pressure="scalar",
+            total_energy="scalar",
+        )
+        if output_modes is None
+        else output_modes
+    )
+
+    return SimulationConfig(
+        preset="compressible_euler",
+        parameters=parameters,
+        domain=rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        ),
+        inputs={
+            "density": InputConfig(initial_condition=density_initial_condition),
+            "velocity": InputConfig(initial_condition=velocity_initial_condition),
+            "pressure": InputConfig(initial_condition=pressure_initial_condition),
+        },
+        boundary_conditions={
+            "state": boundary_field_config(
+                state_boundary_conditions,
+                periodic_axes=periodic_axes,
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=selected_output_modes,
+        ),
+        solver=explicit_solver_config(),
         time=time,
         seed=seed,
     )

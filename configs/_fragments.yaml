@@ -124,6 +124,10 @@ solver:
         $ref: solver.serial.nonlinear_newton_lu
       mpi:
         $ref: solver.mpi.nonlinear_direct
+    transient_explicit:
+      strategy: transient_explicit
+      serial: {}
+      mpi: {}
 
 boundary_field:
   scalar:
@@ -293,6 +297,15 @@ boundary_field:
       z+:
         - operator: periodic
           pair_with: z-
+    reflective_2d:
+      x-:
+        - operator: reflective
+      x+:
+        - operator: reflective
+      y-:
+        - operator: reflective
+      y+:
+        - operator: reflective
   vector:
     homogeneous_dirichlet_2d:
       x-:

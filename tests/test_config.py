@@ -15,6 +15,7 @@ from plm_data.core.solver_strategies import (
     STATIONARY_INDEFINITE_DIRECT,
     STATIONARY_SCALAR_SPD,
     STEADY_SADDLE_POINT,
+    TRANSIENT_EXPLICIT,
     TRANSIENT_MIXED_DIRECT,
     TRANSIENT_SADDLE_POINT,
 )
@@ -77,6 +78,30 @@ def test_load_config_periodic_field():
     assert cfg.has_periodic_boundary_conditions is True
     assert cfg.boundary_field("c").side_conditions("x-")[0].pair_with == "x+"
     assert cfg.boundary_field("c").side_conditions("y+")[0].type == "periodic"
+
+
+def test_load_config_compressible_euler_reflective():
+    cfg = load_config(
+        "configs/fluids/compressible_euler/2d_reflective_quadrant_shock_interaction.yaml"
+    )
+    assert cfg.preset == "compressible_euler"
+    assert cfg.parameters["gamma"] == 1.4
+    assert cfg.domain.dimension == 2
+    assert cfg.boundary_field("state").side_conditions("x-")[0].type == "reflective"
+    assert cfg.output_mode("density") == "scalar"
+    assert cfg.output_mode("velocity") == "components"
+    assert cfg.solver.strategy == TRANSIENT_EXPLICIT
+
+
+def test_load_config_compressible_euler_periodic():
+    cfg = load_config(
+        "configs/fluids/compressible_euler/2d_periodic_acoustic_pulse.yaml"
+    )
+    assert cfg.preset == "compressible_euler"
+    assert cfg.has_periodic_boundary_conditions is True
+    assert cfg.boundary_field("state").side_conditions("x-")[0].pair_with == "x+"
+    assert cfg.boundary_field("state").side_conditions("y+")[0].type == "periodic"
+    assert cfg.solver.strategy == TRANSIENT_EXPLICIT
 
 
 def test_load_config_fisher_kpp_2d():
