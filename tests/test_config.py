@@ -684,18 +684,20 @@ def test_load_config_elasticity_2d():
     velocity = cfg.input("velocity")
     assert cfg.preset == "elasticity"
     assert cfg.domain.dimension == 2
-    assert cfg.parameters["young_modulus"] == 6.0
-    assert cfg.parameters["poisson_ratio"] == 0.3
-    assert cfg.parameters["density"] == 1.0
-    assert cfg.parameters["eta_mass"] == 0.02
-    assert cfg.parameters["eta_stiffness"] == 0.002
+    assert 6.0 <= cfg.parameters["young_modulus"] <= 8.2
+    assert 0.28 <= cfg.parameters["poisson_ratio"] <= 0.34
+    assert 0.9 <= cfg.parameters["density"] <= 1.1
+    assert 0.009 <= cfg.parameters["eta_mass"] <= 0.015
+    assert 0.001 <= cfg.parameters["eta_stiffness"] <= 0.0019
     assert cfg.input("displacement").initial_condition.type == "zero"
     assert velocity.initial_condition.components["x"].params["value"] == 0.0
     assert velocity.initial_condition.components["y"].type == "gaussian_bump"
     assert (
-        velocity.initial_condition.components["y"].params["center"][0]["sample"]
+        velocity.initial_condition.components["y"].params["amplitude"]["sample"]
         == "uniform"
     )
+    assert velocity.initial_condition.components["y"].params["sigma"]["sample"] == "uniform"
+    assert velocity.initial_condition.components["y"].params["center"][0]["sample"] == "uniform"
     assert cfg.input("forcing").source.type == "zero"
     assert cfg.output_mode("displacement") == "components"
     assert cfg.output_mode("velocity") == "components"
@@ -711,8 +713,12 @@ def test_load_config_elasticity_3d():
     velocity = cfg.input("velocity")
     assert cfg.preset == "elasticity"
     assert cfg.domain.dimension == 3
+    assert 5.2 <= cfg.parameters["young_modulus"] <= 6.9
+    assert 0.27 <= cfg.parameters["poisson_ratio"] <= 0.34
     assert cfg.output.resolution == [64, 16, 16]
     assert velocity.initial_condition.components["y"].type == "gaussian_bump"
+    assert velocity.initial_condition.components["y"].params["amplitude"]["sample"] == "uniform"
+    assert velocity.initial_condition.components["y"].params["sigma"]["sample"] == "uniform"
     assert velocity.initial_condition.components["z"].params["value"] == 0.0
     assert boundary_field.side_conditions("x-")[0].type == "dirichlet"
     assert boundary_field.side_conditions("z+")[0].type == "neumann"

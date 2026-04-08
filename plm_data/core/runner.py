@@ -1,6 +1,6 @@
 """Simulation runner."""
 
-from dataclasses import asdict, is_dataclass, replace
+from dataclasses import asdict, is_dataclass
 import json
 import logging
 import time
@@ -10,7 +10,11 @@ from pathlib import Path
 import numpy as np
 from mpi4py import MPI
 
-from plm_data.core.config import SimulationConfig, load_config
+from plm_data.core.config import (
+    SimulationConfig,
+    load_config,
+    materialize_runtime_samples,
+)
 from plm_data.core.health import combine_health_status
 from plm_data.core.logging import get_logger, setup_logging, teardown_logging
 from plm_data.core.output import FrameWriter
@@ -45,8 +49,8 @@ class SimulationRunner:
             raise ValueError(
                 "Simulation runs require an explicit seed from the config or '--seed'."
             )
-        self.config = config
-        self.preset = get_preset(config.preset)
+        self.config = materialize_runtime_samples(config)
+        self.preset = get_preset(self.config.preset)
         self.config_source = (
             Path(config_source).resolve() if config_source is not None else None
         )
@@ -64,9 +68,7 @@ class SimulationRunner:
         *,
         seed: int | None = None,
     ) -> "SimulationRunner":
-        config = load_config(path)
-        if seed is not None:
-            config = replace(config, seed=seed)
+        config = load_config(path, seed_override=seed)
         return cls(config, output_root, config_source=path)
 
     def _serialize_config(self) -> dict:

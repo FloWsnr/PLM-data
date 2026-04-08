@@ -1,12 +1,14 @@
 """Simulation configuration loading and validation."""
 
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+import hashlib
 import math
 from pathlib import Path
 from typing import Any
 
 from mpi4py import MPI
+import numpy as np
 import yaml
 
 from plm_data.core.solver_strategies import ALL_SOLVER_STRATEGIES
@@ -75,6 +77,10 @@ def _component_labels(gdim: int) -> tuple[str, ...]:
     return _COMPONENT_LABELS[:gdim]
 
 
+def _is_sampler_spec(value: Any) -> bool:
+    return isinstance(value, dict) and "sample" in value
+
+
 def _is_param_ref(value: Any) -> bool:
     return isinstance(value, str) and value.startswith("param:")
 
@@ -117,6 +123,122 @@ def _resolve_numeric_literal_or_param_ref(
     raise ValueError(
         f"{context} must be a number or 'param:<name>' reference. Got {value!r}."
     )
+
+
+def _rng_for_stream(seed: int | None, stream_id: str | None) -> np.random.Generator | None:
+    if seed is None:
+        return None
+    if not stream_id:
+        return np.random.default_rng(seed)
+
+    digest = hashlib.sha256(f"{seed}:{stream_id}".encode("utf-8")).digest()
+    entropy = [seed] + [
+        int.from_bytes(digest[index : index + 4], "little") for index in range(0, 16, 4)
+    ]
+    return np.random.default_rng(np.random.SeedSequence(entropy))
+
+
+def _resolve_sampleable_numeric(
+    value: Any,
+    *,
+    parameters: dict[str, float],
+    rng: np.random.Generator | None,
+    context: str,
+) -> float | int:
+    if not _is_sampler_spec(value):
+        return _resolve_numeric_literal_or_param_ref(value, parameters, context)
+
+    if rng is None:
+        raise ValueError(
+            f"{context} sampling requires an explicit seed from the config or '--seed'."
+        )
+
+    sample_type = _require(value, "sample", context)
+    if sample_type == "uniform":
+        minimum = _resolve_numeric_literal_or_param_ref(
+            _require(value, "min", context),
+            parameters,
+            f"{context}.min",
+        )
+        maximum = _resolve_numeric_literal_or_param_ref(
+            _require(value, "max", context),
+            parameters,
+            f"{context}.max",
+        )
+        return float(rng.uniform(minimum, maximum))
+    if sample_type == "normal":
+        mean = _resolve_numeric_literal_or_param_ref(
+            _require(value, "mean", context),
+            parameters,
+            f"{context}.mean",
+        )
+        std = _resolve_numeric_literal_or_param_ref(
+            _require(value, "std", context),
+            parameters,
+            f"{context}.std",
+        )
+        return float(rng.normal(mean, std))
+    if sample_type == "randint":
+        minimum = int(
+            round(
+                _resolve_numeric_literal_or_param_ref(
+                    _require(value, "min", context),
+                    parameters,
+                    f"{context}.min",
+                )
+            )
+        )
+        maximum = int(
+            round(
+                _resolve_numeric_literal_or_param_ref(
+                    _require(value, "max", context),
+                    parameters,
+                    f"{context}.max",
+                )
+            )
+        )
+        return int(rng.integers(minimum, maximum + 1))
+
+    raise ValueError(f"{context} uses unknown sampler '{sample_type}'.")
+
+
+def _materialize_sampled_tree(
+    value: Any,
+    *,
+    parameters: dict[str, float],
+    rng: np.random.Generator | None,
+    context: str,
+) -> Any:
+    if _is_sampler_spec(value):
+        return _resolve_sampleable_numeric(
+            value,
+            parameters=parameters,
+            rng=rng,
+            context=context,
+        )
+    if _is_param_ref(value):
+        return _resolve_numeric_literal_or_param_ref(value, parameters, context)
+    if isinstance(value, list):
+        return [
+            _materialize_sampled_tree(
+                item,
+                parameters=parameters,
+                rng=rng,
+                context=f"{context}[{index}]",
+            )
+            for index, item in enumerate(value)
+        ]
+    if isinstance(value, dict):
+        return {
+            key: _materialize_sampled_tree(
+                item,
+                parameters=parameters,
+                rng=rng,
+                context=f"{context}.{key}",
+            )
+            for key, item in value.items()
+        }
+    return deepcopy(value)
 
 
 def _validate_sampleable_numeric(
@@ -1028,6 +1150,120 @@ class SimulationConfig:
         )
 
 
+def _materialize_field_expression(
+    expr: FieldExpressionConfig,
+    *,
+    parameters: dict[str, float],
+    rng: np.random.Generator | None,
+    context: str,
+) -> FieldExpressionConfig:
+    return FieldExpressionConfig(
+        type=expr.type,
+        params=_materialize_sampled_tree(
+            expr.params,
+            parameters=parameters,
+            rng=rng,
+            context=f"{context}.params",
+        ),
+        components={
+            name: _materialize_field_expression(
+                component,
+                parameters=parameters,
+                rng=rng,
+                context=f"{context}.components.{name}",
+            )
+            for name, component in expr.components.items()
+        },
+    )
+
+
+def materialize_runtime_samples(config: SimulationConfig) -> SimulationConfig:
+    """Resolve sampled runtime values that are not handled by IC helpers."""
+    if config.seed is None:
+        raise ValueError(
+            "Runtime sample materialization requires an explicit seed from the "
+            "config or '--seed'."
+        )
+
+    parameters = config.parameters
+
+    coefficients = {
+        name: _materialize_field_expression(
+            expr,
+            parameters=parameters,
+            rng=_rng_for_stream(config.seed, f"coefficients.{name}"),
+            context=f"coefficients.{name}",
+        )
+        for name, expr in config.coefficients.items()
+    }
+
+    inputs = {
+        name: InputConfig(
+            source=(
+                None
+                if input_config.source is None
+                else _materialize_field_expression(
+                    input_config.source,
+                    parameters=parameters,
+                    rng=_rng_for_stream(config.seed, f"inputs.{name}.source"),
+                    context=f"inputs.{name}.source",
+                )
+            ),
+            # Keep initial-condition sampling on the existing stream-aware path.
+            initial_condition=input_config.initial_condition,
+        )
+        for name, input_config in config.inputs.items()
+    }
+
+    boundary_conditions = {}
+    for field_name, field_config in config.boundary_conditions.items():
+        sides = {}
+        for side_name, entries in field_config.sides.items():
+            materialized_entries = []
+            for index, entry in enumerate(entries):
+                rng = _rng_for_stream(
+                    config.seed,
+                    f"boundary_conditions.{field_name}.{side_name}[{index}]",
+                )
+                materialized_entries.append(
+                    BoundaryConditionConfig(
+                        type=entry.type,
+                        value=(
+                            None
+                            if entry.value is None
+                            else _materialize_field_expression(
+                                entry.value,
+                                parameters=parameters,
+                                rng=rng,
+                                context=(
+                                    f"boundary_conditions.{field_name}.{side_name}"
+                                    f"[{index}].value"
+                                ),
+                            )
+                        ),
+                        pair_with=entry.pair_with,
+                        operator_parameters=_materialize_sampled_tree(
+                            entry.operator_parameters,
+                            parameters=parameters,
+                            rng=rng,
+                            context=(
+                                f"boundary_conditions.{field_name}.{side_name}"
+                                f"[{index}].operator_parameters"
+                            ),
+                        ),
+                    )
+                )
+            sides[side_name] = materialized_entries
+        boundary_conditions[field_name] = BoundaryFieldConfig(sides=sides)
+
+    return replace(
+        config,
+        coefficients=coefficients,
+        inputs=inputs,
+        boundary_conditions=boundary_conditions,
+    )
+
+
 def _parse_scalar_expression(raw: Any, context: str) -> FieldExpressionConfig:
     """Parse a scalar field expression."""
     if isinstance(raw, (int, float)):
@@ -1516,13 +1752,18 @@ def _parse_stochastic(
     )
 
 
-def load_config(path: str | Path) -> SimulationConfig:
+def load_config(
+    path: str | Path,
+    *,
+    seed_override: int | None = None,
+) -> SimulationConfig:
     """Load and validate a simulation config from YAML."""
     path = Path(path)
     with open(path) as f:
         raw = yaml.safe_load(f)
 
     raw = _expand_config_refs(raw)
+    effective_seed = raw.get("seed") if seed_override is None else seed_override
     unexpected_top_level_keys = set(raw) - _TOP_LEVEL_CONFIG_KEYS
     if unexpected_top_level_keys:
         raise ValueError(
@@ -1535,24 +1776,18 @@ def load_config(path: str | Path) -> SimulationConfig:
 
     domain_raw = _as_mapping(_require(raw, "domain"), "domain")
     domain_type = _require(domain_raw, "type", "domain")
-    domain_params = {
+    domain_params_raw = {
         key: value
         for key, value in domain_raw.items()
         if key not in {"type", "periodic_maps"}
     }
-    gdim = _infer_domain_dimension(domain_type, domain_params)
+    gdim = _infer_domain_dimension(domain_type, domain_params_raw)
     periodic_maps_raw = domain_raw.get("periodic_maps", {})
     periodic_maps = _parse_periodic_maps(
         periodic_maps_raw,
         "domain.periodic_maps",
         gdim,
     )
-    domain = DomainConfig(
-        type=domain_type,
-        params=domain_params,
-        periodic_maps=periodic_maps,
-    )
-    gdim = domain.dimension
 
     from plm_data.presets import get_preset
 
@@ -1566,7 +1801,33 @@ def load_config(path: str | Path) -> SimulationConfig:
             f"Preset '{preset_name}' requires parameters {sorted(parameter_names)}. "
             f"Got {sorted(parameters_raw)}."
         )
-    parameters = {name: float(value) for name, value in parameters_raw.items()}
+    parameters = {
+        name: float(
+            _resolve_sampleable_numeric(
+                parameters_raw[name],
+                parameters={},
+                rng=_rng_for_stream(effective_seed, f"parameters.{name}"),
+                context=f"parameters.{name}",
+            )
+        )
+        for name in parameter_names
+    }
+
+    domain_params = {
+        key: _materialize_sampled_tree(
+            value,
+            parameters=parameters,
+            rng=_rng_for_stream(effective_seed, f"domain.{key}"),
+            context=f"domain.{key}",
+        )
+        for key, value in domain_params_raw.items()
+    }
+    domain = DomainConfig(
+        type=domain_type,
+        params=domain_params,
+        periodic_maps=periodic_maps,
+    )
+    gdim = domain.dimension
 
     if spec.coefficients:
         coefficients_raw = _as_mapping(
@@ -1775,7 +2036,7 @@ def load_config(path: str | Path) -> SimulationConfig:
             )
         boundary_conditions = {}
 
-    return SimulationConfig(
+    config = SimulationConfig(
         preset=preset_name,
         parameters=parameters,
         domain=domain,
@@ -1784,7 +2045,10 @@ def load_config(path: str | Path) -> SimulationConfig:
         output=output,
         solver=solver,
         time=time,
-        seed=raw.get("seed"),
+        seed=effective_seed,
         coefficients=coefficients,
         stochastic=stochastic,
     )
+    if config.seed is not None:
+        return materialize_runtime_samples(config)
+    return config

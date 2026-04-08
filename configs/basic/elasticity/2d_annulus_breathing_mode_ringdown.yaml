@@ -1,10 +1,25 @@
 preset: elasticity
 parameters:
-  young_modulus: 9.0
-  poisson_ratio: 0.32
-  density: 1.0
-  eta_mass: 0.015
-  eta_stiffness: 0.001
+  young_modulus:
+    sample: uniform
+    min: 8.0
+    max: 10.2
+  poisson_ratio:
+    sample: uniform
+    min: 0.29
+    max: 0.35
+  density:
+    sample: uniform
+    min: 0.9
+    max: 1.1
+  eta_mass:
+    sample: uniform
+    min: 0.012
+    max: 0.018
+  eta_stiffness:
+    sample: uniform
+    min: 0.0008
+    max: 0.0013
 domain:
   type: annulus
   inner_radius: 0.35
@@ -24,11 +39,17 @@ inputs:
         x:
           type: affine
           params:
-            x: 0.75
+            x:
+              sample: uniform
+              min: 0.6
+              max: 0.9
         y:
           type: affine
           params:
-            y: 0.75
+            y:
+              sample: uniform
+              min: 0.6
+              max: 0.9
   forcing:
     source:
       type: zero

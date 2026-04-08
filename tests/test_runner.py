@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 
 import pytest
+import yaml
 
 from plm_data.core.config import BoundaryConditionConfig, TimeConfig
 from plm_data.core.runner import SimulationRunner
@@ -55,6 +56,84 @@ def test_simulation_runner_heat(heat_config):
 def test_simulation_runner_requires_explicit_seed(heat_config):
     with pytest.raises(ValueError, match="explicit seed"):
         SimulationRunner(replace(heat_config, seed=None))
+
+
+def test_simulation_runner_materializes_sampled_runtime_values(tmp_path):
+    config_path = tmp_path / "poisson_sampled_runtime.yaml"
+    config_path.write_text(
+        yaml.safe_dump(
+            {
+                "preset": "poisson",
+                "parameters": {
+                    "kappa": {"sample": "uniform", "min": 0.8, "max": 1.2},
+                    "f_amplitude": 1.0,
+                },
+                "domain": {
+                    "type": "rectangle",
+                    "size": [1.0, 1.0],
+                    "mesh_resolution": [6, 6],
+                },
+                "inputs": {
+                    "u": {
+                        "source": {
+                            "type": "constant",
+                            "params": {"value": 1.0},
+                        }
+                    }
+                },
+                "boundary_conditions": {
+                    "u": {
+                        side: [
+                            {
+                                "operator": "dirichlet",
+                                "value": {
+                                    "type": "constant",
+                                    "params": {
+                                        "value": {
+                                            "sample": "uniform",
+                                            "min": -0.2,
+                                            "max": 0.2,
+                                        }
+                                    },
+                                },
+                            }
+                        ]
+                        for side in ("x-", "x+", "y-", "y+")
+                    }
+                },
+                "output": {
+                    "resolution": [8, 8],
+                    "num_frames": 1,
+                    "formats": ["numpy"],
+                    "fields": {"u": "scalar"},
+                },
+                "solver": {
+                    "strategy": "stationary_scalar_spd",
+                    "serial": {"ksp_type": "preonly", "pc_type": "lu"},
+                    "mpi": {"ksp_type": "preonly", "pc_type": "lu"},
+                },
+                "seed": 42,
+            }
+        )
+    )
+
+    runner_a = SimulationRunner.from_yaml(config_path, tmp_path / "out_a", seed=7)
+    runner_b = SimulationRunner.from_yaml(config_path, tmp_path / "out_b", seed=7)
+    runner_c = SimulationRunner.from_yaml(config_path, tmp_path / "out_c", seed=8)
+
+    bc_a = runner_a.config.boundary_field("u").side_conditions("x-")[0]
+    bc_b = runner_b.config.boundary_field("u").side_conditions("x-")[0]
+    bc_c = runner_c.config.boundary_field("u").side_conditions("x-")[0]
+
+    assert runner_a.config.parameters["kappa"] == runner_b.config.parameters["kappa"]
+    assert bc_a.value is not None
+    assert bc_b.value is not None
+    assert bc_c.value is not None
+    assert bc_a.value.params["value"] == bc_b.value.params["value"]
+    assert (
+        runner_a.config.parameters["kappa"] != runner_c.config.parameters["kappa"]
+        or bc_a.value.params["value"] != bc_c.value.params["value"]
+    )
 
 
 def test_simulation_runner_writes_failure_metadata(heat_config, monkeypatch):

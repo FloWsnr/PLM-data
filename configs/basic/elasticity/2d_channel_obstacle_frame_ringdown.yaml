@@ -1,10 +1,25 @@
 preset: elasticity
 parameters:
-  young_modulus: 7.0
-  poisson_ratio: 0.29
-  density: 1.0
-  eta_mass: 0.008
-  eta_stiffness: 0.0006
+  young_modulus:
+    sample: uniform
+    min: 6.0
+    max: 8.1
+  poisson_ratio:
+    sample: uniform
+    min: 0.25
+    max: 0.33
+  density:
+    sample: uniform
+    min: 0.9
+    max: 1.1
+  eta_mass:
+    sample: uniform
+    min: 0.006
+    max: 0.011
+  eta_stiffness:
+    sample: uniform
+    min: 0.0004
+    max: 0.0009
 domain:
   type: channel_obstacle
   length: 2.4
@@ -29,30 +44,90 @@ inputs:
             background: 0.0
             generators:
             - count: 1
-              amplitude: 0.45
-              sigma: 0.1
-              aspect_ratio: 1.0
-              center: [0.95, 0.5]
+              amplitude:
+                sample: uniform
+                min: 0.3
+                max: 0.6
+              sigma:
+                sample: uniform
+                min: 0.07
+                max: 0.12
+              aspect_ratio:
+                sample: uniform
+                min: 1.0
+                max: 1.7
+              center:
+              - sample: uniform
+                min: 0.9
+                max: 1.0
+              - sample: uniform
+                min: 0.44
+                max: 0.56
             - count: 1
-              amplitude: -0.45
-              sigma: 0.1
-              aspect_ratio: 1.0
-              center: [1.45, 0.5]
+              amplitude:
+                sample: uniform
+                min: -0.6
+                max: -0.3
+              sigma:
+                sample: uniform
+                min: 0.07
+                max: 0.12
+              aspect_ratio:
+                sample: uniform
+                min: 1.0
+                max: 1.7
+              center:
+              - sample: uniform
+                min: 1.4
+                max: 1.5
+              - sample: uniform
+                min: 0.44
+                max: 0.56
         y:
           type: gaussian_blobs
           params:
             background: 0.0
             generators:
             - count: 1
-              amplitude: 1.25
-              sigma: 0.09
-              aspect_ratio: 1.0
-              center: [1.2, 0.78]
+              amplitude:
+                sample: uniform
+                min: 1.0
+                max: 1.5
+              sigma:
+                sample: uniform
+                min: 0.07
+                max: 0.11
+              aspect_ratio:
+                sample: uniform
+                min: 1.0
+                max: 1.7
+              center:
+              - sample: uniform
+                min: 1.15
+                max: 1.25
+              - sample: uniform
+                min: 0.72
+                max: 0.82
             - count: 1
-              amplitude: -1.25
-              sigma: 0.09
-              aspect_ratio: 1.0
-              center: [1.2, 0.22]
+              amplitude:
+                sample: uniform
+                min: -1.5
+                max: -1.0
+              sigma:
+                sample: uniform
+                min: 0.07
+                max: 0.11
+              aspect_ratio:
+                sample: uniform
+                min: 1.0
+                max: 1.7
+              center:
+              - sample: uniform
+                min: 1.15
+                max: 1.25
+              - sample: uniform
+                min: 0.18
+                max: 0.28
   forcing:
     source:
       type: zero

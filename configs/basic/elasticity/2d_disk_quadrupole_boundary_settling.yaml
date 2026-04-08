@@ -1,10 +1,25 @@
 preset: elasticity
 parameters:
-  young_modulus: 7.5
-  poisson_ratio: 0.29
-  density: 1.0
-  eta_mass: 0.007
-  eta_stiffness: 0.0004
+  young_modulus:
+    sample: uniform
+    min: 6.6
+    max: 8.5
+  poisson_ratio:
+    sample: uniform
+    min: 0.25
+    max: 0.33
+  density:
+    sample: uniform
+    min: 0.9
+    max: 1.1
+  eta_mass:
+    sample: uniform
+    min: 0.0055
+    max: 0.009
+  eta_stiffness:
+    sample: uniform
+    min: 0.00025
+    max: 0.0006
 domain:
   type: disk
   center: [0.0, 0.0]
@@ -35,11 +50,17 @@ boundary_conditions:
           x:
             type: affine
             params:
-              x: 0.09
+              x:
+                sample: uniform
+                min: 0.06
+                max: 0.11
           y:
             type: affine
             params:
-              y: -0.09
+              y:
+                sample: uniform
+                min: -0.11
+                max: -0.06
 solver:
   $ref: solver.profile.constant_lhs_block_direct
 output:

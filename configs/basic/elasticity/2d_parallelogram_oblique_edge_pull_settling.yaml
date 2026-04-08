@@ -1,10 +1,25 @@
 preset: elasticity
 parameters:
-  young_modulus: 6.2
-  poisson_ratio: 0.24
-  density: 1.0
-  eta_mass: 0.009
-  eta_stiffness: 0.0008
+  young_modulus:
+    sample: uniform
+    min: 5.4
+    max: 7.2
+  poisson_ratio:
+    sample: uniform
+    min: 0.2
+    max: 0.28
+  density:
+    sample: uniform
+    min: 0.9
+    max: 1.1
+  eta_mass:
+    sample: uniform
+    min: 0.007
+    max: 0.012
+  eta_stiffness:
+    sample: uniform
+    min: 0.00055
+    max: 0.0011
 domain:
   type: parallelogram
   origin: [0.0, 0.0]
@@ -34,7 +49,22 @@ boundary_conditions:
       value: [0.0, 0.0]
     x+:
     - operator: dirichlet
-      value: [0.09, 0.055]
+      value:
+        components:
+          x:
+            type: constant
+            params:
+              value:
+                sample: uniform
+                min: 0.06
+                max: 0.12
+          y:
+            type: constant
+            params:
+              value:
+                sample: uniform
+                min: 0.03
+                max: 0.08
     y-:
     - operator: neumann
       value: [0.0, 0.0]
