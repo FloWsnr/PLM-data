@@ -2,24 +2,24 @@ preset: elasticity
 parameters:
   young_modulus:
     sample: uniform
-    min: 4.4
-    max: 5.8
+    min: 4.2
+    max: 6.0
   poisson_ratio:
     sample: uniform
-    min: 0.24
-    max: 0.31
+    min: 0.23
+    max: 0.32
   density:
     sample: uniform
-    min: 1.0
-    max: 1.25
+    min: 0.98
+    max: 1.28
   eta_mass:
     sample: uniform
-    min: 0.006
-    max: 0.012
+    min: 0.0065
+    max: 0.0135
   eta_stiffness:
     sample: uniform
-    min: 0.00035
-    max: 0.0008
+    min: 0.0003
+    max: 0.0009
 domain:
   type: annulus
   inner_radius: 0.24
@@ -50,17 +50,25 @@ boundary_conditions:
           x:
             type: affine
             params:
+              x:
+                sample: uniform
+                min: -0.06
+                max: 0.06
               y:
                 sample: uniform
-                min: -0.34
-                max: -0.22
+                min: -0.38
+                max: -0.2
           y:
             type: affine
             params:
               x:
                 sample: uniform
-                min: 0.22
-                max: 0.34
+                min: 0.2
+                max: 0.38
+              y:
+                sample: uniform
+                min: -0.06
+                max: 0.06
     outer:
     - operator: dirichlet
       value: [0.0, 0.0]

@@ -2,24 +2,24 @@ preset: elasticity
 parameters:
   young_modulus:
     sample: uniform
-    min: 5.0
-    max: 6.6
+    min: 4.8
+    max: 6.9
   poisson_ratio:
     sample: uniform
-    min: 0.24
-    max: 0.31
+    min: 0.23
+    max: 0.32
   density:
     sample: uniform
-    min: 1.0
-    max: 1.35
+    min: 0.98
+    max: 1.4
   eta_mass:
     sample: uniform
     min: 0.006
-    max: 0.011
+    max: 0.0125
   eta_stiffness:
     sample: uniform
-    min: 0.00035
-    max: 0.0007
+    min: 0.0003
+    max: 0.0008
 domain:
   type: rectangle
   size: [1.8, 0.55]
@@ -66,23 +66,31 @@ boundary_conditions:
               modes:
               - amplitude:
                   sample: uniform
-                  min: 0.065
-                  max: 0.1
-                cycles: [0.5555555555555556, 0.0]
+                  min: 0.06
+                  max: 0.11
+                cycles:
+                - sample: uniform
+                  min: 0.48
+                  max: 0.68
+                - 0.0
                 phase:
                   sample: uniform
-                  min: -0.5
-                  max: 0.5
+                  min: -0.65
+                  max: 0.65
                 angle: 0.0
               - amplitude:
                   sample: uniform
-                  min: -0.04
-                  max: -0.02
-                cycles: [1.6666666666666667, 0.0]
+                  min: -0.05
+                  max: -0.015
+                cycles:
+                - sample: uniform
+                  min: 1.45
+                  max: 1.95
+                - 0.0
                 phase:
                   sample: uniform
-                  min: -0.75
-                  max: 0.75
+                  min: -1.0
+                  max: 1.0
                 angle: 0.0
 solver:
   $ref: solver.profile.constant_lhs_block_direct
