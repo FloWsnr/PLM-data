@@ -8,15 +8,15 @@ coefficients:
         params:
           value:
             sample: uniform
-            min: 0.92
-            max: 1.08
+            min: 0.84
+            max: 1.16
       y:
         type: constant
         params:
           value:
             sample: uniform
-            min: 0.28
-            max: 0.42
+            min: 0.22
+            max: 0.48
   diffusivity:
     type: zero
     params: {}
@@ -44,26 +44,26 @@ inputs:
         - count:
             sample: randint
             min: 1
-            max: 2
+            max: 3
           amplitude:
             sample: uniform
-            min: 0.85
-            max: 1.15
+            min: 0.8
+            max: 1.2
           sigma:
             sample: uniform
-            min: 0.04
-            max: 0.08
+            min: 0.035
+            max: 0.09
           aspect_ratio:
             sample: uniform
             min: 1.0
-            max: 1.3
+            max: 1.4
           center:
           - sample: uniform
-            min: 0.13
-            max: 0.31
+            min: 0.08
+            max: 0.36
           - sample: uniform
-            min: 0.25
-            max: 0.43
+            min: 0.18
+            max: 0.5
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.full_periodic_2d
