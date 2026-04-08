@@ -1,0 +1,121 @@
+preset: heat
+parameters: {}
+coefficients:
+  kappa:
+    type: constant
+    params:
+      value:
+        sample: uniform
+        min: 0.015
+        max: 0.035
+domain:
+  allow_sampling: true
+  type: channel_obstacle
+  length: 2.2
+  height: 1.0
+  obstacle_center:
+    - 1.0
+    - sample: uniform
+      min: 0.42
+      max: 0.6
+  obstacle_radius:
+    sample: uniform
+    min: 0.14
+    max: 0.21
+  mesh_size: 0.035
+time:
+  dt: 0.01
+  t_end: 1.4
+inputs:
+  u:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.05
+          max: 0.05
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.75
+              max: 1.2
+            sigma:
+              sample: uniform
+              min: 0.06
+              max: 0.1
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.8
+            center:
+              - sample: uniform
+                min: 0.2
+                max: 0.55
+              - sample: uniform
+                min: 0.18
+                max: 0.8
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: -0.55
+              max: -0.18
+            sigma:
+              sample: uniform
+              min: 0.05
+              max: 0.09
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.6
+            center:
+              - sample: uniform
+                min: 0.82
+                max: 1.35
+              - sample: uniform
+                min: 0.25
+                max: 0.75
+boundary_conditions:
+  u:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.92
+              max: 1.24
+    outlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -0.16
+              max: 0.08
+    walls:
+      - operator: neumann
+        value: 0.0
+    obstacle:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -0.15
+              max: 0.06
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [192, 128]
+  num_frames: 49
+seed: 42

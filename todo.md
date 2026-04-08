@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 148 configs.
+Current baseline: 38 PDE presets and 167 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -47,13 +47,21 @@ rename existing cases.
 
 #### Heat (`configs/basic/heat`)
 
-1. `2d_cosine_source_heating`: zero initial field driven by a standing cosine heat source.
-2. `2d_dumbbell_bottleneck_diffusion`: one chamber starts hot and equilibrates with the other through a narrow neck.
-3. `2d_localized_blob_diffusion`: one or two hot blobs diffusing under no-flux boundaries.
-4. `2d_noisy_media_diffusion`: hot and cold blobs diffusing through noisy conductivity with additive state noise.
-5. `2d_radial_diffusivity_spread`: hot spot spreading through radially varying conductivity with cold boundaries.
-6. `3d_localized_blob_diffusion`: one or two hot blobs diffusing in a cube with no-flux walls.
-7. `3d_noisy_media_diffusion`: hot and cold blobs diffusing in noisy 3D media with additive state noise.
+All 2D heat configs now output at least `128x128` and use sampled coefficients,
+geometry, boundary values, or initial conditions so seed changes are visible.
+
+1. `2d_annulus_inner_heating_layer`: hot inner rim and cooled outer rim drive a ring-shaped heating layer while azimuthal seed blobs relax around the annulus.
+2. `2d_channel_obstacle_heat_shadow`: mixed signed transients and hot-to-cold channel forcing create an obstacle-centered thermal shadow with asymmetric wall-guided fronts.
+3. `2d_cosine_source_heating`: a sampled quadrant start is overwritten by standing source-sink forcing, settling toward a seed-dependent four-cell heating pattern.
+4. `2d_cross_gradient_quadrant_relaxation`: hot-left and cool-right boundaries pull a sharp quadrant field into a directional cross-gradient relaxation front.
+5. `2d_disk_boundary_quench`: concentric hot rings inside a disk collapse inward and smooth out against a cold outer rim.
+6. `2d_dumbbell_bottleneck_diffusion`: signed lobe imbalance equalizes slowly through a sampled neck, giving a clear two-chamber transfer transient.
+7. `2d_localized_blob_diffusion`: one or two elongated hot spots diffuse and merge under insulated walls, serving as the clean slow-diffusion baseline.
+8. `2d_noisy_media_diffusion`: hot and cold blobs dissolve inside noisy conductivity with additive state noise, keeping high seed-to-seed texture variation.
+9. `2d_parallelogram_periodic_stripe_relaxation`: oblique periodic bands decay on a skew cell without rectangular axis locking or wall effects.
+10. `2d_radial_diffusivity_spread`: a warm square with signed interior perturbations cools toward zero walls while radially varying diffusivity shapes a centered relaxation halo.
+11. `3d_localized_blob_diffusion`: one or two hot blobs diffusing in a cube with no-flux walls.
+12. `3d_noisy_media_diffusion`: hot and cold blobs diffusing in noisy 3D media with additive state noise.
 
 #### Helmholtz (`configs/basic/helmholtz`)
 
@@ -63,8 +71,19 @@ rename existing cases.
 
 #### Plate (`configs/basic/plate`)
 
-1. `2d_disk_mode_vibration`: circular simply supported plate vibrating from a low sinusoidal deflection mode.
-2. `2d_simply_supported_mode_vibration`: simply supported plate vibrating from a single sinusoidal deflection mode.
+All plate configs now use sampled geometry, material, and excitation parameters,
+and every 2D case outputs at least `128x128`.
+
+1. `2d_annulus_multilobe_load_settling`: slowly forced annular plate settling into low-amplitude multi-lobe sag patterns around the inner hole.
+2. `2d_annulus_radial_ringdown`: concentric annular ringdown with sampled radial spacing and a slight azimuthal asymmetry.
+3. `2d_channel_obstacle_shadow_scatter`: an upstream kick scatters around a circular obstacle, leaving a seed-dependent wake lobe on one side of the perforation.
+4. `2d_disk_mode_vibration`: a disk seeded by concentric deflection plus an off-center impulse, producing circular-to-spiral mode mixing.
+5. `2d_dumbbell_lobe_transfer_ringdown`: a left-chamber kick drives delayed neck-coupled motion toward the bridge and softer right chamber.
+6. `2d_parallelogram_oblique_ripple_beating`: skew plate with oblique multi-mode beating and slanted nodal bands that avoid axis locking.
+7. `2d_quadrant_snapthrough_beating`: quadrant release pattern breaking into energetic lobe exchange and high-contrast mode conversion.
+8. `2d_simply_supported_mode_vibration`: rectangular simply supported plate with oblique multimode beating instead of one textbook standing mode.
+9. `2d_stiffness_interface_scatter`: localized kick hitting a left-right stiffness jump and refracting into asymmetric lobes.
+10. `2d_strip_release_fronts`: strip-like step release launching axial fronts and broad standing packets with slower relaxation.
 
 #### Poisson (`configs/basic/poisson`)
 
@@ -80,9 +99,17 @@ rename existing cases.
 
 #### Wave (`configs/basic/wave`)
 
-1. `2d_dumbbell_pulse_transfer`: localized pulse launched in one chamber with delayed transmission through the dumbbell neck.
-2. `2d_localized_pulse_propagation`: localized initial velocity pulse radiating through a heterogeneous wave-speed field.
-3. `3d_localized_pulse_propagation`: localized 3D velocity pulse radiating through a heterogeneous wave-speed field.
+1. `2d_annulus_arc_interference`: opposing pulses launched on an annulus circulate around the hole and interfere under a clamped inner rim and reflective outer rim.
+2. `2d_channel_obstacle_scattering`: an upstream pulse scatters around a circular obstacle in a channel-like cavity, leaving wall-guided wake structures downstream.
+3. `2d_dirichlet_mode_beating`: multiple low-order standing modes ring inside a fully clamped square cavity, producing a distorted beating pattern rather than a single textbook mode.
+4. `2d_disk_focusing_reflections`: an off-center pulse in a circular cavity reflects from the outer wall and refocuses into crescent-shaped interference bands.
+5. `2d_dumbbell_pulse_transfer`: localized left-lobe excitation crosses the dumbbell neck with delayed energy transfer into the second chamber.
+6. `2d_layered_refraction_fronts`: a pulse launched toward a sharp wave-speed interface splits into reflected and refracted fronts with visibly different propagation speeds.
+7. `2d_localized_pulse_propagation`: an off-center pulse radiates through a heterogeneous radial lens field, breaking into irregular curved fronts.
+8. `2d_parallelogram_wraparound_lensing`: a localized pulse wraps around a skew periodic cell and is distorted by an oblique lensing medium.
+9. `2d_periodic_oblique_wave_train`: oblique stripe-like wave trains circulate on a fully periodic box without wall reflections.
+10. `2d_periodic_strip_waveguide`: x-periodic, y-clamped strip dynamics behave like a guided wave corridor with lateral reflections and repeated focusing.
+11. `3d_localized_pulse_propagation`: localized 3D velocity pulse radiating through a heterogeneous wave-speed field.
 
 ### Biology
 
