@@ -53,6 +53,22 @@ def test_simulation_runner_heat(heat_config):
     assert run_meta["config"]["resolved"]["seed"] == 42
 
 
+def test_simulation_runner_cleans_output_dir_before_single_run(heat_config):
+    output_dir = Path(heat_config.output.path) / "basic" / "heat"
+    stale_dir = output_dir / "stale_dir"
+    stale_dir.mkdir(parents=True)
+    (output_dir / "stale.npy").write_text("stale")
+    (stale_dir / "stale.txt").write_text("stale")
+
+    runner = SimulationRunner(heat_config)
+    summary = runner.run(console_level=logging.WARNING)
+
+    assert Path(summary["output_dir"]) == output_dir
+    assert not (output_dir / "stale.npy").exists()
+    assert not stale_dir.exists()
+    assert (output_dir / "u.npy").is_file()
+
+
 def test_simulation_runner_requires_explicit_seed(heat_config):
     with pytest.raises(ValueError, match="explicit seed"):
         SimulationRunner(replace(heat_config, seed=None))
@@ -134,6 +150,90 @@ def test_simulation_runner_materializes_sampled_runtime_values(tmp_path):
         runner_a.config.parameters["kappa"] != runner_c.config.parameters["kappa"]
         or bc_a.value.params["value"] != bc_c.value.params["value"]
     )
+
+
+def test_simulation_runner_run_many_from_yaml_uses_seed_subdirs(tmp_path):
+    config_path = tmp_path / "heat_batch.yaml"
+    config_path.write_text(
+        yaml.safe_dump(
+            {
+                "preset": "heat",
+                "parameters": {},
+                "domain": {
+                    "type": "rectangle",
+                    "size": [1.0, 1.0],
+                    "mesh_resolution": [8, 8],
+                },
+                "coefficients": {
+                    "kappa": {"type": "constant", "params": {"value": 0.01}}
+                },
+                "inputs": {
+                    "u": {
+                        "source": {"type": "none"},
+                        "initial_condition": {
+                            "type": "gaussian_bump",
+                            "params": {
+                                "sigma": 0.1,
+                                "amplitude": 1.0,
+                                "center": [0.5, 0.5],
+                            },
+                        },
+                    }
+                },
+                "boundary_conditions": {
+                    "u": {
+                        side: [
+                            {
+                                "operator": "neumann",
+                                "value": {
+                                    "type": "constant",
+                                    "params": {"value": 0.0},
+                                },
+                            }
+                        ]
+                        for side in ("x-", "x+", "y-", "y+")
+                    }
+                },
+                "output": {
+                    "resolution": [4, 4],
+                    "num_frames": 2,
+                    "formats": ["numpy"],
+                    "fields": {"u": "scalar"},
+                },
+                "solver": {
+                    "strategy": "constant_lhs_scalar_spd",
+                    "serial": {"ksp_type": "preonly", "pc_type": "lu"},
+                    "mpi": {"ksp_type": "preonly", "pc_type": "lu"},
+                },
+                "time": {"dt": 0.01, "t_end": 0.01},
+                "seed": 42,
+            }
+        )
+    )
+
+    batch_output_dir = tmp_path / "out" / "basic" / "heat"
+    batch_output_dir.mkdir(parents=True)
+    (batch_output_dir / "stale.txt").write_text("stale")
+
+    summaries = SimulationRunner.run_many_from_yaml(
+        config_path,
+        tmp_path / "out",
+        n_runs=2,
+        console_level=logging.WARNING,
+    )
+
+    assert [Path(summary["output_dir"]).name for summary in summaries] == [
+        "seed_42",
+        "seed_43",
+    ]
+    assert not (batch_output_dir / "stale.txt").exists()
+
+    for expected_seed, summary in zip((42, 43), summaries, strict=True):
+        run_dir = Path(summary["output_dir"])
+        assert run_dir == batch_output_dir / f"seed_{expected_seed}"
+        assert (run_dir / "u.npy").is_file()
+        run_meta = json.loads((run_dir / "run_meta.json").read_text())
+        assert run_meta["config"]["resolved"]["seed"] == expected_seed
 
 
 def test_simulation_runner_writes_failure_metadata(heat_config, monkeypatch):

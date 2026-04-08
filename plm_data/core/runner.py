@@ -3,6 +3,7 @@
 from dataclasses import asdict, is_dataclass
 import json
 import logging
+import shutil
 import time
 import traceback
 from pathlib import Path
@@ -35,6 +36,22 @@ def _json_compatible(value):
     return value
 
 
+def _reset_output_dir(output_dir: Path) -> None:
+    """Remove and recreate one run output directory."""
+
+    if output_dir.is_dir():
+        shutil.rmtree(output_dir)
+    elif output_dir.exists():
+        output_dir.unlink()
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+
+def _seed_output_subdir(seed: int) -> str:
+    """Return the batch subdirectory name for one seed."""
+
+    return f"seed_{seed}"
+
+
 class SimulationRunner:
     """Orchestrates a single simulation run."""
 
@@ -47,7 +64,8 @@ class SimulationRunner:
     ):
         if config.seed is None:
             raise ValueError(
-                "Simulation runs require an explicit seed from the config or '--seed'."
+                "Simulation runs require an explicit seed from the config or an "
+                "explicit seed override."
             )
         self.config = materialize_runtime_samples(config)
         self.preset = get_preset(self.config.preset)
@@ -70,6 +88,42 @@ class SimulationRunner:
     ) -> "SimulationRunner":
         config = load_config(path, seed_override=seed)
         return cls(config, output_root, config_source=path)
+
+    @classmethod
+    def run_many_from_yaml(
+        cls,
+        path: str | Path,
+        output_root: str | Path,
+        *,
+        n_runs: int,
+        console_level: int = logging.INFO,
+    ) -> list[dict[str, object]]:
+        """Run one YAML config repeatedly with incrementing seeds."""
+
+        if n_runs < 1:
+            raise ValueError("n_runs must be at least 1.")
+
+        initial_runner = cls.from_yaml(path, output_root)
+        base_seed = initial_runner.config.seed
+        if base_seed is None:
+            raise ValueError(
+                "Simulation runs require an explicit seed from the config or an "
+                "explicit seed override."
+            )
+
+        _reset_output_dir(initial_runner.resolve_output_dir())
+
+        summaries: list[dict[str, object]] = []
+        for seed in range(base_seed, base_seed + n_runs):
+            runner = cls.from_yaml(path, output_root, seed=seed)
+            summaries.append(
+                runner.run(
+                    console_level=console_level,
+                    output_subdir=_seed_output_subdir(seed),
+                    cleanup_output_dir=False,
+                )
+            )
+        return summaries
 
     def _serialize_config(self) -> dict:
         """Return the resolved simulation config in JSON-compatible form."""
@@ -207,10 +261,29 @@ class SimulationRunner:
         with open(output_dir / "run_meta.json", "w") as f:
             json.dump(run_meta, f, indent=2)
 
-    def run(self, console_level: int = logging.INFO) -> dict:
+    def resolve_output_dir(self, output_subdir: str | None = None) -> Path:
+        """Return the target directory for this run."""
+
+        output_dir = (
+            self.output_root / self.preset.spec.category / self.preset.spec.name
+        )
+        if output_subdir is not None:
+            output_dir = output_dir / output_subdir
+        return output_dir
+
+    def run(
+        self,
+        console_level: int = logging.INFO,
+        *,
+        output_subdir: str | None = None,
+        cleanup_output_dir: bool = True,
+    ) -> dict:
         spec = self.preset.spec
-        output_dir = self.output_root / spec.category / spec.name
-        output_dir.mkdir(parents=True, exist_ok=True)
+        output_dir = self.resolve_output_dir(output_subdir)
+        if cleanup_output_dir:
+            _reset_output_dir(output_dir)
+        else:
+            output_dir.mkdir(parents=True, exist_ok=True)
 
         logger = get_logger("runner")
         output: FrameWriter | None = None

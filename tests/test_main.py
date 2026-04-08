@@ -13,8 +13,10 @@ def test_cmd_run_passes_output_dir(monkeypatch, tmp_path):
     calls: dict[str, object] = {}
 
     class DummyRunner:
-        def run(self, console_level):
+        def run(self, console_level, *, output_subdir=None, cleanup_output_dir=True):
             calls["console_level"] = console_level
+            calls["output_subdir"] = output_subdir
+            calls["cleanup_output_dir"] = cleanup_output_dir
 
     class FakeSimulationRunner:
         @classmethod
@@ -31,21 +33,19 @@ def test_cmd_run_passes_output_dir(monkeypatch, tmp_path):
             config="configs/basic/heat/2d_localized_blob_diffusion.yaml",
             output_dir=str(tmp_path),
             log_level="WARNING",
-            seed=None,
+            n_runs=None,
         )
     )
 
     assert calls["config_path"] == "configs/basic/heat/2d_localized_blob_diffusion.yaml"
     assert calls["output_dir"] == str(tmp_path)
     assert calls["seed"] is None
+    assert calls["cleanup_output_dir"] is True
+    assert calls["output_subdir"] is None
 
 
-def test_cmd_run_passes_seed_override(monkeypatch, tmp_path):
+def test_cmd_run_uses_batch_mode_when_n_runs_is_set(monkeypatch, tmp_path):
     calls: dict[str, object] = {}
-
-    class DummyRunner:
-        def run(self, console_level):
-            calls["console_level"] = console_level
 
     class FakeSimulationRunner:
         @classmethod
@@ -53,7 +53,13 @@ def test_cmd_run_passes_seed_override(monkeypatch, tmp_path):
             calls["config_path"] = config_path
             calls["output_dir"] = output_dir
             calls["seed"] = seed
-            return DummyRunner()
+
+        @classmethod
+        def run_many_from_yaml(cls, config_path, output_dir, *, n_runs, console_level):
+            calls["config_path"] = config_path
+            calls["output_dir"] = output_dir
+            calls["n_runs"] = n_runs
+            calls["console_level"] = console_level
 
     monkeypatch.setattr(runner_mod, "SimulationRunner", FakeSimulationRunner)
 
@@ -62,13 +68,13 @@ def test_cmd_run_passes_seed_override(monkeypatch, tmp_path):
             config="configs/basic/heat/2d_localized_blob_diffusion.yaml",
             output_dir=str(tmp_path),
             log_level="INFO",
-            seed=123,
+            n_runs=3,
         )
     )
 
     assert calls["config_path"] == "configs/basic/heat/2d_localized_blob_diffusion.yaml"
     assert calls["output_dir"] == str(tmp_path)
-    assert calls["seed"] == 123
+    assert calls["n_runs"] == 3
 
 
 def test_main_run_requires_output_dir(monkeypatch):

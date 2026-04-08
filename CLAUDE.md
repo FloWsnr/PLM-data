@@ -13,6 +13,9 @@ PLM-data generates PDE simulation datasets using DOLFINx (FEniCSx) and custom st
 # Run a simulation with multiple MPI ranks
 ./run.sh -n 4 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
 
+# Run one config many times with incrementing seeds from the YAML config
+./run.sh -n 4 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output --n-runs 100
+
 # List registered presets
 ./run.sh list
 
@@ -44,7 +47,7 @@ The system has three layers:
    Family-specific helpers can live alongside presets when multiple presets share a discretization; for example, `plm_data/presets/fluids/_taylor_hood.py` is the shared Stokes / Navier-Stokes incompressible-flow helper.
 
 2. **Core** (`plm_data/core/`) — Shared infrastructure:
-   - `config.py` — `SimulationConfig` dataclass loaded from YAML. Configs are validated against the preset spec up front. The schema uses explicit top-level `coefficients`, `inputs`, `boundary_conditions`, and `output` sections. Coefficients are preset-declared field expressions used directly in forms; inputs own `source` and `initial_condition`; boundary conditions are declared separately per preset boundary field; `output.fields` selects which declared outputs are saved. Transient presets use a `time:` section. Output resolution lives under `output.resolution`, while the output root directory is provided at runtime via `--output-dir`. Domains may declare extra `periodic_maps`, while built-in domains provide the standard face-pair maps used by periodic boundary operators.
+   - `config.py` — `SimulationConfig` dataclass loaded from YAML. Configs are validated against the preset spec up front. The schema uses explicit top-level `coefficients`, `inputs`, `boundary_conditions`, and `output` sections. Coefficients are preset-declared field expressions used directly in forms; inputs own `source` and `initial_condition`; boundary conditions are declared separately per preset boundary field; `output.fields` selects which declared outputs are saved. Transient presets use a `time:` section. Output resolution lives under `output.resolution`, while the output root directory is provided at runtime via `--output-dir`. Single runs overwrite that preset directory after an initial cleanup; `--n-runs` uses the config seed as the base seed and writes each run into `seed_<seed>` subdirectories below the preset directory. Domains may declare extra `periodic_maps`, while built-in domains provide the standard face-pair maps used by periodic boundary operators.
    - `mesh.py` — `create_domain()` returns `DomainGeometry` (mesh + facet_tags + boundary_names + ds measure + periodic metadata). Domain creation is registry-backed. The current repo ships `interval`, `rectangle`, `box`, `disk`, `dumbbell`, `parallelogram`, `channel_obstacle`, and `annulus`. Cartesian/parallelogram domains expose the standard face tags and periodic maps; Gmsh-backed domains require `python-gmsh`, with `annulus` tagged as `inner`/`outer` and `channel_obstacle` tagged as `inlet`/`outlet`/`walls`/`obstacle`.
    - `periodic.py` — shared `dolfinx_mpc` integration for periodic boundary operators. Periodicity is activated per boundary field via the `periodic` operator and resolved against the domain's available periodic maps.
    - `spatial_fields.py` — Shared scalar and vector spatial field system (constant, sine_waves, gaussian_bump, radial_cosine, step, none, custom). Provides UFL builders, scalar interpolators, and vector-component expansion helpers. Supports `"param:name"` references
@@ -80,7 +83,8 @@ The system has three layers:
 - Solver configs must declare `solver.strategy`, `solver.serial`, and `solver.mpi` explicitly; the runtime selects the serial or MPI profile from communicator size
 - Periodic constraints are declared with `boundary_conditions.<field>.<side>.[].operator: periodic`; optional `domain.periodic_maps` can add custom geometric pairings beyond the built-in domain maps
 - Config validation is spec-driven: parameter names, input names, boundary field names, output names, allowed sections, boundary operators, output modes, and supported dimensions are checked before solving
-- Output goes to `output/<category>/<preset>/` with format-specific files: `.npy` arrays, `.gif`/`.mp4` animations, and `paraview/` directory with `.pvd`+`.vtu` files for Paraview
+- Output goes to `output/<category>/<preset>/` for single runs, which clear that directory before writing format-specific files: `.npy` arrays, `.gif`/`.mp4` animations, and `paraview/` directory with `.pvd`+`.vtu` files for Paraview
+- Batch runs use `--n-runs` and write to `output/<category>/<preset>/seed_<seed>/`, incrementing from the config seed
 - The `gallery` CLI command scans those output trees recursively and writes a `pde_gif_gallery.html` page that aligns PDE runs by row and field names by column
 - Presets must declare `static_fields` explicitly; post-run stagnation warnings skip those outputs
 - Presets are auto-discovered recursively under `plm_data.presets`
@@ -100,5 +104,6 @@ The system has three layers:
 
 - Use 4 CPUs for all simulations runs by default to speed up data generation.
 - use the `./output` directory for all simulation outputs
-- create a new subdirectory under `./output` for each new simulation run, following the pattern `./output/<category>/<preset>/`
+- single runs overwrite `./output/<category>/<preset>/` after cleaning it first
+- dataset-generation batches should use `--n-runs`, which creates `./output/<category>/<preset>/seed_<seed>/` subdirectories with consecutive seeds from the config
 - Delete old simulations if they are no longer needed to avoid cluttering the output directory. However, when creating new PDE presets, you need to keep the working 2D output so the developer can visually verify the new preset is working correctly.

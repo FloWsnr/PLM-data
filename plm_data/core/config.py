@@ -125,7 +125,9 @@ def _resolve_numeric_literal_or_param_ref(
     )
 
 
-def _rng_for_stream(seed: int | None, stream_id: str | None) -> np.random.Generator | None:
+def _rng_for_stream(
+    seed: int | None, stream_id: str | None
+) -> np.random.Generator | None:
     if seed is None:
         return None
     if not stream_id:
@@ -150,7 +152,8 @@ def _resolve_sampleable_numeric(
 
     if rng is None:
         raise ValueError(
-            f"{context} sampling requires an explicit seed from the config or '--seed'."
+            f"{context} sampling requires an explicit seed from the config or an "
+            "explicit seed override."
         )
 
     sample_type = _require(value, "sample", context)
@@ -1182,7 +1185,7 @@ def materialize_runtime_samples(config: SimulationConfig) -> SimulationConfig:
     if config.seed is None:
         raise ValueError(
             "Runtime sample materialization requires an explicit seed from the "
-            "config or '--seed'."
+            "config or an explicit seed override."
         )
 
     parameters = config.parameters

@@ -5,12 +5,28 @@ import logging
 import sys
 
 
+def _positive_int(raw: str) -> int:
+    value = int(raw)
+    if value < 1:
+        raise argparse.ArgumentTypeError("must be at least 1")
+    return value
+
+
 def cmd_run(args):
     from plm_data.core.runner import SimulationRunner
 
     level = getattr(logging, args.log_level)
-    runner = SimulationRunner.from_yaml(args.config, args.output_dir, seed=args.seed)
-    runner.run(console_level=level)
+    if args.n_runs is None:
+        runner = SimulationRunner.from_yaml(args.config, args.output_dir)
+        runner.run(console_level=level)
+        return
+
+    SimulationRunner.run_many_from_yaml(
+        args.config,
+        args.output_dir,
+        n_runs=args.n_runs,
+        console_level=level,
+    )
 
 
 def cmd_list(_args):
@@ -55,7 +71,10 @@ def main():
     p_run.add_argument(
         "--output-dir",
         required=True,
-        help="Base output directory. Results are written to <dir>/<category>/<preset>",
+        help=(
+            "Base output directory. Single runs write to <dir>/<category>/<preset>; "
+            "--n-runs writes to <dir>/<category>/<preset>/seed_<seed>"
+        ),
     )
     p_run.add_argument(
         "--log-level",
@@ -64,9 +83,9 @@ def main():
         help="Console log level (file always logs DEBUG)",
     )
     p_run.add_argument(
-        "--seed",
-        type=int,
-        help="Override the config seed for this run.",
+        "--n-runs",
+        type=_positive_int,
+        help="Run the config repeatedly with seeds seed, seed+1, ...",
     )
     p_run.set_defaults(func=cmd_run)
 

@@ -18,7 +18,8 @@ from plm_data.core.spatial_fields import (
 
 def _random_seed_required(context: str) -> ValueError:
     return ValueError(
-        f"{context} requires an explicit seed from the config or '--seed'."
+        f"{context} requires an explicit seed from the config or an explicit seed "
+        "override."
     )
 
 
