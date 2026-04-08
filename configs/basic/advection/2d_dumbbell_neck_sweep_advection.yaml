@@ -8,9 +8,15 @@ coefficients:
         params:
           background: 0.0
           modes:
-            - amplitude: 0.9
+            - amplitude:
+                sample: uniform
+                min: 0.78
+                max: 1.02
               cycles: [0.0, 1.0]
-              phase: 0.0
+              phase:
+                sample: uniform
+                min: -0.2
+                max: 0.2
       y:
         type: constant
         params:
@@ -18,7 +24,10 @@ coefficients:
   diffusivity:
     type: constant
     params:
-      value: 0.0008
+      value:
+        sample: uniform
+        min: 0.00065
+        max: 0.001
 domain:
   type: dumbbell
   left_center: [0.32, 0.5]
@@ -40,13 +49,36 @@ inputs:
         background: 0.0
         generators:
         - count: 1
-          amplitude: 1.0
-          sigma: 0.045
-          aspect_ratio: 1.0
-          center: [0.24, 0.5]
+          amplitude:
+            sample: uniform
+            min: 0.9
+            max: 1.1
+          sigma:
+            sample: uniform
+            min: 0.035
+            max: 0.055
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 1.4
+          center:
+          - sample: uniform
+            min: 0.2
+            max: 0.28
+          - sample: uniform
+            min: 0.45
+            max: 0.55
 boundary_conditions:
   u:
-    $ref: boundary_field.scalar.homogeneous_neumann_outer
+    outer:
+    - operator: neumann
+      value:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.008
+            max: 0.008
 solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 output:

@@ -8,21 +8,36 @@ coefficients:
         params:
           background: 0.0
           modes:
-            - amplitude: 1.35
+            - amplitude:
+                sample: uniform
+                min: 1.2
+                max: 1.5
               cycles: [0.0, 4.0]
-              phase: 0.0
+              phase:
+                sample: uniform
+                min: -0.15
+                max: 0.15
       y:
         type: sine_waves
         params:
           background: 0.0
           modes:
-            - amplitude: -1.35
+            - amplitude:
+                sample: uniform
+                min: -1.5
+                max: -1.2
               cycles: [4.0, 0.0]
-              phase: 0.0
+              phase:
+                sample: uniform
+                min: -0.15
+                max: 0.15
   diffusivity:
     type: constant
     params:
-      value: 0.0001
+      value:
+        sample: uniform
+        min: 0.00005
+        max: 0.00016
 domain:
   type: rectangle
   size:
@@ -44,10 +59,22 @@ inputs:
       params:
         background: 0.0
         generators:
-        - count: 4
-          amplitude: 0.9
-          sigma: 0.03
-          aspect_ratio: 1.0
+        - count:
+            sample: randint
+            min: 3
+            max: 5
+          amplitude:
+            sample: uniform
+            min: 0.75
+            max: 0.95
+          sigma:
+            sample: uniform
+            min: 0.024
+            max: 0.038
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 1.25
           center:
           - sample: uniform
             min: 0.18

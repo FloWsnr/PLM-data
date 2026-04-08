@@ -6,17 +6,32 @@ coefficients:
       x:
         type: affine
         params:
-          constant: -0.224
-          y: 1.1
+          constant:
+            sample: uniform
+            min: -0.32
+            max: -0.12
+          y:
+            sample: uniform
+            min: 0.98
+            max: 1.22
       y:
         type: affine
         params:
-          constant: 1.188
-          x: -1.1
+          constant:
+            sample: uniform
+            min: 1.08
+            max: 1.28
+          x:
+            sample: uniform
+            min: -1.22
+            max: -0.98
   diffusivity:
     type: constant
     params:
-      value: 0.0012
+      value:
+        sample: uniform
+        min: 0.00095
+        max: 0.00135
 domain:
   type: channel_obstacle
   length: 2.0
@@ -38,13 +53,51 @@ inputs:
         background: 0.0
         generators:
         - count: 1
-          amplitude: 1.0
-          sigma: 0.05
-          aspect_ratio: 1.5
-          center: [0.72, 0.48]
+          amplitude:
+            sample: uniform
+            min: 0.9
+            max: 1.1
+          sigma:
+            sample: uniform
+            min: 0.042
+            max: 0.06
+          aspect_ratio:
+            sample: uniform
+            min: 1.15
+            max: 1.8
+          center:
+          - sample: uniform
+            min: 0.68
+            max: 0.76
+          - sample: uniform
+            min: 0.44
+            max: 0.52
 boundary_conditions:
   u:
-    $ref: boundary_field.scalar.homogeneous_neumann_channel_obstacle
+    inlet:
+    - operator: neumann
+      value:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.008
+            max: 0.008
+    outlet:
+    - operator: neumann
+      value:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.008
+            max: 0.008
+    walls:
+    - operator: neumann
+      value: 0.0
+    obstacle:
+    - operator: neumann
+      value: 0.0
 solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 output:

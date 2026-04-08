@@ -6,17 +6,32 @@ coefficients:
       x:
         type: affine
         params:
-          constant: -1.1
-          y: 2.2
+          constant:
+            sample: uniform
+            min: -1.24
+            max: -0.96
+          y:
+            sample: uniform
+            min: 1.9
+            max: 2.5
       y:
         type: affine
         params:
-          constant: 1.1
-          x: -2.2
+          constant:
+            sample: uniform
+            min: 0.96
+            max: 1.24
+          x:
+            sample: uniform
+            min: -2.5
+            max: -1.9
   diffusivity:
     type: constant
     params:
-      value: 0.0004
+      value:
+        sample: uniform
+        min: 0.00028
+        max: 0.00055
 domain:
   type: rectangle
   size:
@@ -50,7 +65,10 @@ inputs:
             sample: uniform
             min: 0.015
             max: 0.055
-          aspect_ratio: 1.0
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 1.35
           center:
           - sample: uniform
             min: 0.7
@@ -60,7 +78,42 @@ inputs:
             max: 0.5
 boundary_conditions:
   u:
-    $ref: boundary_field.scalar.homogeneous_neumann_2d
+    x-:
+    - operator: neumann
+      value:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.008
+            max: 0.008
+    x+:
+    - operator: neumann
+      value:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.008
+            max: 0.008
+    y-:
+    - operator: neumann
+      value:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.008
+            max: 0.008
+    y+:
+    - operator: neumann
+      value:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.008
+            max: 0.008
 solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 output:

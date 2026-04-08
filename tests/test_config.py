@@ -511,12 +511,28 @@ def test_load_config_advection_2d():
     assert cfg.output_mode("u") == "scalar"
     assert cfg.input("u").initial_condition.type == "gaussian_blobs"
     assert cfg.boundary_field("u").side_conditions("x-")[0].type == "periodic"
-    assert cfg.coefficient("diffusivity").params["value"] == 0.0005
+    assert cfg.coefficient("diffusivity").params["value"]["sample"] == "uniform"
     velocity = cfg.coefficient("velocity")
     assert velocity.components["x"].type == "sine_waves"
-    assert velocity.components["y"].params["modes"][0]["amplitude"] == -1.25
+    assert (
+        velocity.components["x"].params["modes"][0]["amplitude"]["sample"] == "uniform"
+    )
+    assert (
+        velocity.components["y"].params["modes"][0]["amplitude"]["sample"] == "uniform"
+    )
     assert cfg.solver.strategy == CONSTANT_LHS_SCALAR_NONSYMMETRIC
     assert cfg.solver.mpi["ksp_type"] == "gmres"
+
+
+def test_load_config_advection_2d_sampled_boundaries():
+    cfg = load_config("configs/basic/advection/2d_rotating_blob_advection.yaml")
+    assert cfg.preset == "advection"
+    assert cfg.boundary_field("u").side_conditions("x-")[0].value.type == "constant"
+    assert (
+        cfg.boundary_field("u").side_conditions("x-")[0].value.params["value"]["sample"]
+        == "uniform"
+    )
+    assert cfg.coefficient("diffusivity").params["value"]["sample"] == "uniform"
 
 
 def test_load_config_advection_3d():
@@ -684,7 +700,9 @@ def test_load_config_plate():
 
 
 def test_load_config_elasticity_2d():
-    raw_cfg = load_config("configs/basic/elasticity/2d_cantilever_impulse_ringdown.yaml")
+    raw_cfg = load_config(
+        "configs/basic/elasticity/2d_cantilever_impulse_ringdown.yaml"
+    )
     cfg = realize_simulation_config(raw_cfg)
     boundary_field = cfg.boundary_field("displacement")
     velocity = raw_cfg.input("velocity")
@@ -721,7 +739,9 @@ def test_load_config_elasticity_2d():
 
 
 def test_load_config_elasticity_3d():
-    raw_cfg = load_config("configs/basic/elasticity/3d_cantilever_impulse_ringdown.yaml")
+    raw_cfg = load_config(
+        "configs/basic/elasticity/3d_cantilever_impulse_ringdown.yaml"
+    )
     cfg = realize_simulation_config(raw_cfg)
     boundary_field = cfg.boundary_field("displacement")
     velocity = raw_cfg.input("velocity")

@@ -6,15 +6,24 @@ coefficients:
       x:
         type: affine
         params:
-          y: -1.45
+          y:
+            sample: uniform
+            min: -1.58
+            max: -1.32
       y:
         type: affine
         params:
-          x: 1.45
+          x:
+            sample: uniform
+            min: 1.32
+            max: 1.58
   diffusivity:
     type: constant
     params:
-      value: 0.00025
+      value:
+        sample: uniform
+        min: 0.00018
+        max: 0.00034
 domain:
   type: annulus
   inner_radius: 0.35
@@ -34,18 +43,65 @@ inputs:
         background: 0.0
         generators:
         - count: 1
-          amplitude: 1.0
-          sigma: 0.07
-          aspect_ratio: 1.0
-          center: [0.68, 0.0]
+          amplitude:
+            sample: uniform
+            min: 0.9
+            max: 1.1
+          sigma:
+            sample: uniform
+            min: 0.06
+            max: 0.08
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 1.35
+          center:
+          - sample: uniform
+            min: 0.62
+            max: 0.74
+          - sample: uniform
+            min: -0.08
+            max: 0.08
         - count: 1
-          amplitude: 0.9
-          sigma: 0.08
-          aspect_ratio: 1.0
-          center: [-0.55, 0.22]
+          amplitude:
+            sample: uniform
+            min: 0.8
+            max: 1.0
+          sigma:
+            sample: uniform
+            min: 0.07
+            max: 0.09
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 1.35
+          center:
+          - sample: uniform
+            min: -0.64
+            max: -0.46
+          - sample: uniform
+            min: 0.14
+            max: 0.32
 boundary_conditions:
   u:
-    $ref: boundary_field.scalar.homogeneous_neumann_annulus
+    inner:
+    - operator: neumann
+      value:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.01
+            max: 0.01
+    outer:
+    - operator: neumann
+      value:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.008
+            max: 0.008
 solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 output:

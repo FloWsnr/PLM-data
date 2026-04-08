@@ -6,15 +6,24 @@ coefficients:
       x:
         type: affine
         params:
-          x: 1.15
+          x:
+            sample: uniform
+            min: 1.0
+            max: 1.3
       y:
         type: affine
         params:
-          y: 1.15
+          y:
+            sample: uniform
+            min: 1.0
+            max: 1.3
   diffusivity:
     type: constant
     params:
-      value: 0.0002
+      value:
+        sample: uniform
+        min: 0.00012
+        max: 0.00028
 domain:
   type: disk
   center: [0.0, 0.0]
@@ -32,12 +41,32 @@ inputs:
       type: radial_cosine
       params:
         base: 0.0
-        amplitude: 1.0
-        frequency: 8.0
-        center: [0.0, 0.0]
+        amplitude:
+          sample: uniform
+          min: 0.9
+          max: 1.1
+        frequency:
+          sample: uniform
+          min: 6.8
+          max: 9.2
+        center:
+        - sample: uniform
+          min: -0.08
+          max: 0.08
+        - sample: uniform
+          min: -0.08
+          max: 0.08
 boundary_conditions:
   u:
-    $ref: boundary_field.scalar.homogeneous_dirichlet_outer
+    outer:
+    - operator: dirichlet
+      value:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.01
+            max: 0.01
 solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 output:
