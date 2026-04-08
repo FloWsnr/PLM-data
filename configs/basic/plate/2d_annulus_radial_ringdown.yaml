@@ -3,7 +3,7 @@ parameters:
   theta:
     sample: uniform
     min: 0.52
-    max: 0.64
+    max: 0.62
 coefficients:
   rho_h:
     type: constant
@@ -11,33 +11,45 @@ coefficients:
       value:
         sample: uniform
         min: 0.95
-        max: 1.15
+        max: 1.1
   damping:
     type: constant
     params:
       value:
         sample: uniform
         min: 0.006
-        max: 0.018
+        max: 0.016
   rigidity:
-    type: constant
+    type: radial_cosine
     params:
-      value:
+      base:
         sample: uniform
         min: 0.18
-        max: 0.32
+        max: 0.24
+      amplitude:
+        sample: uniform
+        min: 0.02
+        max: 0.05
+      frequency:
+        sample: uniform
+        min: 4.5
+        max: 6.5
+      center: [0.0, 0.0]
 domain:
-  type: disk
+  type: annulus
   allow_sampling: true
-  center: [0.0, 0.0]
-  radius:
+  inner_radius:
     sample: uniform
-    min: 0.92
+    min: 0.28
+    max: 0.42
+  outer_radius:
+    sample: uniform
+    min: 0.95
     max: 1.05
-  mesh_size: 0.035
+  mesh_size: 0.03
 time:
   dt: 0.004
-  t_end: 1.05
+  t_end: 1.1
 inputs:
   deflection:
     initial_condition:
@@ -46,46 +58,48 @@ inputs:
         base: 0.0
         amplitude:
           sample: uniform
-          min: 0.02
-          max: 0.05
+          min: 0.05
+          max: 0.09
         frequency:
           sample: uniform
-          min: 8.0
-          max: 12.0
+          min: 6.0
+          max: 10.0
         center: [0.0, 0.0]
   velocity:
     initial_condition:
-      type: gaussian_blobs
+      type: sine_waves
       params:
         background: 0.0
-        generators:
-        - count: 1
-          amplitude:
+        modes:
+        - amplitude:
             sample: uniform
+            min: 0.01
+            max: 0.03
+          cycles:
+          - sample: uniform
             min: 0.8
-            max: 1.25
-          sigma:
-            sample: uniform
-            min: 0.08
-            max: 0.13
-          aspect_ratio:
-            sample: uniform
-            min: 1.1
-            max: 1.9
-          center:
+            max: 1.2
           - sample: uniform
-            min: 0.2
-            max: 0.55
-          - sample: uniform
-            min: -0.25
-            max: 0.25
+            min: 0.8
+            max: 1.2
+          phase:
+            sample: uniform
+            min: -0.4
+            max: 0.4
+          angle:
+            sample: uniform
+            min: -0.35
+            max: 0.35
   load:
     source:
       type: none
       params: {}
 boundary_conditions:
   deflection:
-    $ref: boundary_field.scalar.simply_supported_outer
+    inner:
+    - operator: simply_supported
+    outer:
+    - operator: simply_supported
 solver:
   $ref: solver.profile.constant_lhs_block_direct
 output:

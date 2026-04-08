@@ -2,57 +2,65 @@ preset: plate
 parameters:
   theta:
     sample: uniform
-    min: 0.52
-    max: 0.64
+    min: 0.55
+    max: 0.66
 coefficients:
   rho_h:
-    type: constant
+    type: step
     params:
-      value:
+      value_left:
         sample: uniform
-        min: 0.95
-        max: 1.15
+        min: 0.98
+        max: 1.16
+      value_right:
+        sample: uniform
+        min: 0.76
+        max: 0.92
+      x_split: 0.0
+      axis: 0
   damping:
     type: constant
     params:
       value:
         sample: uniform
         min: 0.006
-        max: 0.018
+        max: 0.015
   rigidity:
-    type: constant
+    type: step
     params:
-      value:
+      value_left:
         sample: uniform
-        min: 0.18
-        max: 0.32
+        min: 0.17
+        max: 0.23
+      value_right:
+        sample: uniform
+        min: 0.11
+        max: 0.17
+      x_split: 0.0
+      axis: 0
 domain:
-  type: disk
+  type: dumbbell
   allow_sampling: true
-  center: [0.0, 0.0]
-  radius:
+  left_center: [-0.68, 0.0]
+  right_center: [0.68, 0.0]
+  lobe_radius:
     sample: uniform
-    min: 0.92
-    max: 1.05
+    min: 0.45
+    max: 0.52
+  neck_width:
+    sample: uniform
+    min: 0.24
+    max: 0.34
   mesh_size: 0.035
 time:
-  dt: 0.004
-  t_end: 1.05
+  dt: 0.0045
+  t_end: 2.2
 inputs:
   deflection:
     initial_condition:
-      type: radial_cosine
+      type: constant
       params:
-        base: 0.0
-        amplitude:
-          sample: uniform
-          min: 0.02
-          max: 0.05
-        frequency:
-          sample: uniform
-          min: 8.0
-          max: 12.0
-        center: [0.0, 0.0]
+        value: 0.0
   velocity:
     initial_condition:
       type: gaussian_blobs
@@ -62,23 +70,23 @@ inputs:
         - count: 1
           amplitude:
             sample: uniform
-            min: 0.8
-            max: 1.25
+            min: 0.9
+            max: 1.3
           sigma:
             sample: uniform
             min: 0.08
-            max: 0.13
+            max: 0.12
           aspect_ratio:
             sample: uniform
-            min: 1.1
-            max: 1.9
+            min: 1.0
+            max: 1.8
           center:
           - sample: uniform
-            min: 0.2
-            max: 0.55
+            min: -0.58
+            max: -0.28
           - sample: uniform
-            min: -0.25
-            max: 0.25
+            min: -0.18
+            max: 0.18
   load:
     source:
       type: none
@@ -91,7 +99,7 @@ solver:
 output:
   $ref: output.template.deflection_velocity
   resolution:
-  - 160
-  - 160
-  num_frames: 44
+  - 224
+  - 128
+  num_frames: 60
 seed: 42

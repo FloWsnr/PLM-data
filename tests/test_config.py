@@ -680,10 +680,10 @@ def test_load_config_plate():
     cfg = load_config("configs/basic/plate/2d_simply_supported_mode_vibration.yaml")
     boundary_field = cfg.boundary_field("deflection")
     assert cfg.preset == "plate"
-    assert cfg.parameters["theta"] == 0.5
+    assert cfg.parameters["theta"]["sample"] == "uniform"
     assert cfg.coefficient("rho_h").type == "constant"
-    assert cfg.coefficient("damping").params["value"] == 0.0
-    assert cfg.coefficient("rigidity").params["value"] == 0.2
+    assert cfg.coefficient("damping").params["value"]["sample"] == "uniform"
+    assert cfg.coefficient("rigidity").params["value"]["sample"] == "uniform"
     assert cfg.input("deflection").initial_condition.type == "sine_waves"
     assert (
         cfg.input("deflection").initial_condition.params["modes"][0]["amplitude"][
@@ -691,11 +691,17 @@ def test_load_config_plate():
         ]
         == "uniform"
     )
-    assert cfg.input("velocity").initial_condition.type == "constant"
-    assert cfg.input("velocity").initial_condition.params["value"] == 0.0
+    assert cfg.input("velocity").initial_condition.type == "sine_waves"
+    assert (
+        cfg.input("velocity").initial_condition.params["modes"][0]["amplitude"][
+            "sample"
+        ]
+        == "uniform"
+    )
     assert cfg.input("load").source.type == "none"
     assert cfg.output_mode("deflection") == "scalar"
     assert cfg.output_mode("velocity") == "scalar"
+    assert cfg.output.resolution == [160, 160]
     assert boundary_field.side_conditions("x-")[0].type == "simply_supported"
 
 

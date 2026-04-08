@@ -1,0 +1,102 @@
+preset: plate
+parameters:
+  theta:
+    sample: uniform
+    min: 0.55
+    max: 0.65
+coefficients:
+  rho_h:
+    type: constant
+    params:
+      value:
+        sample: uniform
+        min: 0.95
+        max: 1.2
+  damping:
+    type: constant
+    params:
+      value:
+        sample: uniform
+        min: 0.015
+        max: 0.035
+  rigidity:
+    type: affine
+    params:
+      constant:
+        sample: uniform
+        min: 0.24
+        max: 0.3
+      x:
+        sample: uniform
+        min: -0.03
+        max: 0.03
+      y:
+        sample: uniform
+        min: -0.03
+        max: 0.03
+domain:
+  type: rectangle
+  allow_sampling: true
+  size:
+  - sample: uniform
+    min: 0.95
+    max: 1.1
+  - sample: uniform
+    min: 0.95
+    max: 1.1
+  mesh_resolution:
+  - 60
+  - 60
+time:
+  dt: 0.005
+  t_end: 1.05
+inputs:
+  deflection:
+    initial_condition:
+      type: quadrants
+      params:
+        split:
+        - sample: uniform
+          min: 0.42
+          max: 0.58
+        - sample: uniform
+          min: 0.42
+          max: 0.58
+        region_values:
+          "00":
+            sample: uniform
+            min: 0.08
+            max: 0.14
+          "01":
+            sample: uniform
+            min: -0.14
+            max: -0.08
+          "10":
+            sample: uniform
+            min: -0.08
+            max: -0.03
+          "11":
+            sample: uniform
+            min: 0.04
+            max: 0.1
+  velocity:
+    initial_condition:
+      type: constant
+      params:
+        value: 0.0
+  load:
+    source:
+      type: none
+      params: {}
+boundary_conditions:
+  deflection:
+    $ref: boundary_field.scalar.simply_supported_2d
+solver:
+  $ref: solver.profile.constant_lhs_block_direct
+output:
+  $ref: output.template.deflection_velocity
+  resolution:
+  - 160
+  - 160
+  num_frames: 40
+seed: 42
