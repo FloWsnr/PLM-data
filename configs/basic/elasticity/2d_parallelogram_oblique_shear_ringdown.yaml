@@ -1,21 +1,19 @@
 preset: elasticity
 parameters:
-  young_modulus: 7.0
-  poisson_ratio: 0.31
+  young_modulus: 6.5
+  poisson_ratio: 0.22
   density: 1.0
-  eta_mass: 0.012
-  eta_stiffness: 0.0015
+  eta_mass: 0.01
+  eta_stiffness: 0.001
 domain:
-  type: rectangle
-  size:
-  - 2.4
-  - 0.45
-  mesh_resolution:
-  - 120
-  - 30
+  type: parallelogram
+  origin: [0.0, 0.0]
+  axis_x: [1.4, 0.0]
+  axis_y: [0.45, 1.0]
+  mesh_resolution: [96, 64]
 time:
   dt: 0.0035
-  t_end: 1.1
+  t_end: 1.0
 inputs:
   displacement:
     initial_condition:
@@ -25,17 +23,24 @@ inputs:
     initial_condition:
       components:
         x:
+          type: gaussian_blobs
+          params:
+            background: 0.0
+            generators:
+            - count: 1
+              amplitude: 0.9
+              sigma: 0.12
+              aspect_ratio: 1.0
+              center: [0.35, 0.22]
+            - count: 1
+              amplitude: -0.7
+              sigma: 0.15
+              aspect_ratio: 1.0
+              center: [1.25, 0.82]
+        y:
           type: constant
           params:
             value: 0.0
-        y:
-          type: gaussian_bump
-          params:
-            amplitude: 1.6
-            sigma: 0.09
-            center:
-            - 2.0
-            - 0.33
   forcing:
     source:
       type: zero
@@ -66,7 +71,7 @@ solver:
   $ref: solver.profile.constant_lhs_block_direct
 output:
   resolution:
-  - 192
+  - 160
   - 128
   num_frames: 36
   formats:

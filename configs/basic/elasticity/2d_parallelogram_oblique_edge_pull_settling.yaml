@@ -1,0 +1,55 @@
+preset: elasticity
+parameters:
+  young_modulus: 6.2
+  poisson_ratio: 0.24
+  density: 1.0
+  eta_mass: 0.009
+  eta_stiffness: 0.0008
+domain:
+  type: parallelogram
+  origin: [0.0, 0.0]
+  axis_x: [1.35, 0.0]
+  axis_y: [0.38, 0.95]
+  mesh_resolution: [104, 72]
+time:
+  dt: 0.0035
+  t_end: 1.1
+inputs:
+  displacement:
+    initial_condition:
+      type: zero
+      params: {}
+  velocity:
+    initial_condition:
+      type: zero
+      params: {}
+  forcing:
+    source:
+      type: zero
+      params: {}
+boundary_conditions:
+  displacement:
+    x-:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+    x+:
+    - operator: dirichlet
+      value: [0.09, 0.055]
+    y-:
+    - operator: neumann
+      value: [0.0, 0.0]
+    y+:
+    - operator: neumann
+      value: [0.0, 0.0]
+solver:
+  $ref: solver.profile.constant_lhs_block_direct
+output:
+  resolution: [160, 128]
+  num_frames: 36
+  formats:
+    $ref: output.formats.standard
+  fields:
+    displacement: components
+    velocity: components
+    von_mises: scalar
+seed: 42

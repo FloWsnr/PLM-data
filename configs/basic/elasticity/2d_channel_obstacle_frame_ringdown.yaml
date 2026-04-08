@@ -1,0 +1,95 @@
+preset: elasticity
+parameters:
+  young_modulus: 7.0
+  poisson_ratio: 0.29
+  density: 1.0
+  eta_mass: 0.008
+  eta_stiffness: 0.0006
+domain:
+  type: channel_obstacle
+  length: 2.4
+  height: 1.0
+  obstacle_center: [1.2, 0.5]
+  obstacle_radius: 0.22
+  mesh_size: 0.035
+time:
+  dt: 0.0035
+  t_end: 1.1
+inputs:
+  displacement:
+    initial_condition:
+      type: zero
+      params: {}
+  velocity:
+    initial_condition:
+      components:
+        x:
+          type: gaussian_blobs
+          params:
+            background: 0.0
+            generators:
+            - count: 1
+              amplitude: 0.45
+              sigma: 0.1
+              aspect_ratio: 1.0
+              center: [0.95, 0.5]
+            - count: 1
+              amplitude: -0.45
+              sigma: 0.1
+              aspect_ratio: 1.0
+              center: [1.45, 0.5]
+        y:
+          type: gaussian_blobs
+          params:
+            background: 0.0
+            generators:
+            - count: 1
+              amplitude: 1.25
+              sigma: 0.09
+              aspect_ratio: 1.0
+              center: [1.2, 0.78]
+            - count: 1
+              amplitude: -1.25
+              sigma: 0.09
+              aspect_ratio: 1.0
+              center: [1.2, 0.22]
+  forcing:
+    source:
+      type: zero
+      params: {}
+boundary_conditions:
+  displacement:
+    inlet:
+    - operator: dirichlet
+      value:
+      - 0.0
+      - 0.0
+    outlet:
+    - operator: dirichlet
+      value:
+      - 0.0
+      - 0.0
+    walls:
+    - operator: dirichlet
+      value:
+      - 0.0
+      - 0.0
+    obstacle:
+    - operator: neumann
+      value:
+      - 0.0
+      - 0.0
+solver:
+  $ref: solver.profile.constant_lhs_block_direct
+output:
+  resolution:
+  - 192
+  - 128
+  num_frames: 36
+  formats:
+    $ref: output.formats.standard
+  fields:
+    displacement: components
+    velocity: components
+    von_mises: scalar
+seed: 42

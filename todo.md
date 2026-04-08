@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 133 configs.
+Current baseline: 38 PDE presets and 148 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -28,9 +28,22 @@ rename existing cases.
 
 #### Elasticity (`configs/basic/elasticity`)
 
-1. `2d_cantilever_impulse_ringdown`: cantilever beam ringing after a localized upward velocity kick near the free end.
-2. `2d_disk_impulse_ringdown`: clamped elastic disk ringing after a localized transverse velocity kick near the rim.
-3. `3d_cantilever_impulse_ringdown`: 3D cantilever bar ringing after a localized transverse velocity kick.
+1. `2d_annulus_breathing_mode_ringdown`: annular ring breathing radially around the inner hole, with stress wrapping around the cavity and the outer rim held fixed.
+2. `2d_annulus_inner_twist_settling`: inner annulus rim prescribed in tangential twist against a fixed outer rim, producing a localized torsional settling wave around the hole.
+3. `2d_annulus_torsional_ringdown`: annular torsional swirl ringing around a clamped inner hole, producing a clean low-order tangential shear mode.
+4. `2d_cantilever_diagonal_shear_ringdown`: cantilever beam excited by mixed horizontal and vertical tip kicks, producing coupled diagonal shear and bending.
+5. `2d_cantilever_impulse_ringdown`: slender cantilever ringing after a localized upward kick near the free tip, with persistent asymmetric bending.
+6. `2d_channel_obstacle_frame_ringdown`: clamped perforated plate around a circular opening ringing in mirrored frame-like lobes after a quadrupolar hole-centered kick.
+7. `2d_channel_obstacle_hole_lift_settling`: fixed outer frame with the circular hole lifted upward, creating an obstacle-centered settling transient with mirrored side lobes and concentrated frame stress.
+8. `2d_disk_impulse_ringdown`: clamped elastic disk ringing after an off-center upward kick, producing curved cavity-like lobes and arc-shaped stress bands.
+9. `2d_disk_quadrupole_boundary_settling`: disk outer rim prescribed in a static quadrupole shape, launching a smooth global four-lobe settling mode across the cavity.
+10. `2d_disk_quadrupole_mode_ringdown`: clamped elastic disk seeded with a global quadrupole displacement mode that evolves through a symmetric standing-wave family.
+11. `2d_dumbbell_lobe_transfer_ringdown`: one dumbbell lobe kicked first, with delayed displacement and stress transfer through the neck into the second chamber.
+12. `2d_parallelogram_oblique_edge_pull_settling`: skew panel pulled obliquely along one side, giving slanted displacement packets and diagonal stress lobes that are not axis-locked.
+13. `2d_parallelogram_oblique_shear_ringdown`: skew elastic panel with oblique shear packets and diagonal stress bands aligned to the parallelogram cell.
+14. `2d_strip_sinusoidal_clamp_settling`: strip with a sinusoidally prescribed top clamp, producing a boundary-launched transverse settling pattern with repeated sign changes in the interior motion.
+15. `2d_strip_transverse_mode_beating`: top/bottom-clamped strip seeded with two transverse modes, producing a slow standing-wave beating pattern.
+16. `3d_cantilever_impulse_ringdown`: 3D cantilever bar ringing after a localized transverse velocity kick.
 
 #### Heat (`configs/basic/heat`)
 

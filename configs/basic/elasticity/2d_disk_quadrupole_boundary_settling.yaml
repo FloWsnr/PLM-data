@@ -1,18 +1,18 @@
 preset: elasticity
 parameters:
-  young_modulus: 6.0
+  young_modulus: 7.5
   poisson_ratio: 0.29
   density: 1.0
-  eta_mass: 0.014
-  eta_stiffness: 0.0012
+  eta_mass: 0.007
+  eta_stiffness: 0.0004
 domain:
   type: disk
   center: [0.0, 0.0]
   radius: 1.0
-  mesh_size: 0.035
+  mesh_size: 0.032
 time:
   dt: 0.0035
-  t_end: 0.95
+  t_end: 1.0
 inputs:
   displacement:
     initial_condition:
@@ -20,32 +20,30 @@ inputs:
       params: {}
   velocity:
     initial_condition:
-      components:
-        x:
-          type: constant
-          params:
-            value: 0.0
-        y:
-          type: gaussian_bump
-          params:
-            amplitude: 1.45
-            sigma: 0.11
-            center:
-            - 0.55
-            - 0.55
+      type: zero
+      params: {}
   forcing:
     source:
       type: zero
       params: {}
 boundary_conditions:
   displacement:
-    $ref: boundary_field.vector.homogeneous_dirichlet_outer
+    outer:
+    - operator: dirichlet
+      value:
+        components:
+          x:
+            type: affine
+            params:
+              x: 0.09
+          y:
+            type: affine
+            params:
+              y: -0.09
 solver:
   $ref: solver.profile.constant_lhs_block_direct
 output:
-  resolution:
-  - 128
-  - 128
+  resolution: [128, 128]
   num_frames: 36
   formats:
     $ref: output.formats.standard

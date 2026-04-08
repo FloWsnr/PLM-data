@@ -1,0 +1,57 @@
+preset: elasticity
+parameters:
+  young_modulus: 5.0
+  poisson_ratio: 0.27
+  density: 1.15
+  eta_mass: 0.008
+  eta_stiffness: 0.0005
+domain:
+  type: annulus
+  inner_radius: 0.24
+  outer_radius: 1.0
+  mesh_size: 0.03
+time:
+  dt: 0.0035
+  t_end: 1.2
+inputs:
+  displacement:
+    initial_condition:
+      type: zero
+      params: {}
+  velocity:
+    initial_condition:
+      type: zero
+      params: {}
+  forcing:
+    source:
+      type: zero
+      params: {}
+boundary_conditions:
+  displacement:
+    inner:
+    - operator: dirichlet
+      value:
+        components:
+          x:
+            type: affine
+            params:
+              y: -0.28
+          y:
+            type: affine
+            params:
+              x: 0.28
+    outer:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+solver:
+  $ref: solver.profile.constant_lhs_block_direct
+output:
+  resolution: [128, 128]
+  num_frames: 40
+  formats:
+    $ref: output.formats.standard
+  fields:
+    displacement: components
+    velocity: components
+    von_mises: scalar
+seed: 42

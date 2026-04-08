@@ -1,0 +1,56 @@
+preset: elasticity
+parameters:
+  young_modulus: 7.2
+  poisson_ratio: 0.28
+  density: 1.0
+  eta_mass: 0.01
+  eta_stiffness: 0.0007
+domain:
+  type: channel_obstacle
+  length: 2.4
+  height: 1.0
+  obstacle_center: [1.2, 0.5]
+  obstacle_radius: 0.22
+  mesh_size: 0.03
+time:
+  dt: 0.0035
+  t_end: 1.1
+inputs:
+  displacement:
+    initial_condition:
+      type: zero
+      params: {}
+  velocity:
+    initial_condition:
+      type: zero
+      params: {}
+  forcing:
+    source:
+      type: zero
+      params: {}
+boundary_conditions:
+  displacement:
+    inlet:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+    outlet:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+    walls:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+    obstacle:
+    - operator: dirichlet
+      value: [0.0, 0.1]
+solver:
+  $ref: solver.profile.constant_lhs_block_direct
+output:
+  resolution: [192, 128]
+  num_frames: 36
+  formats:
+    $ref: output.formats.standard
+  fields:
+    displacement: components
+    velocity: components
+    von_mises: scalar
+seed: 42
