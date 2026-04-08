@@ -1,25 +1,23 @@
 """Initial condition helpers for scalar and vector fields."""
 
-import hashlib
 from typing import Any, Callable
 
 import numpy as np
 from dolfinx import fem
 
 from plm_data.core.config import FieldExpressionConfig
+from plm_data.core.sampling import (
+    rng_for_stream,
+    sample_coordinate_list,
+    sample_integer,
+    sample_number,
+)
 from plm_data.core.spatial_fields import (
     build_interpolator,
     build_vector_interpolator,
     component_expressions,
     component_labels_for_dim,
-    resolve_param_ref,
 )
-
-
-def _random_seed_required(context: str) -> ValueError:
-    return ValueError(
-        f"{context} requires an explicit seed from the config or '--seed'."
-    )
 
 
 def _require_param(params: dict[str, Any], key: str, field_type: str) -> Any:
@@ -29,82 +27,6 @@ def _require_param(params: dict[str, Any], key: str, field_type: str) -> Any:
             f"Got params: {params}"
         )
     return params[key]
-
-
-def _is_sampler_spec(value: Any) -> bool:
-    return isinstance(value, dict) and "sample" in value
-
-
-def _sample_number(
-    value: Any,
-    *,
-    parameters: dict[str, float],
-    rng: np.random.Generator | None,
-) -> float:
-    if not _is_sampler_spec(value):
-        return resolve_param_ref(value, parameters)
-
-    if rng is None:
-        raise _random_seed_required("Initial-condition parameter sampling")
-
-    sample_type = value["sample"]
-    if sample_type == "uniform":
-        minimum = resolve_param_ref(value["min"], parameters)
-        maximum = resolve_param_ref(value["max"], parameters)
-        return float(rng.uniform(minimum, maximum))
-    if sample_type == "normal":
-        mean = resolve_param_ref(value["mean"], parameters)
-        std = resolve_param_ref(value["std"], parameters)
-        return float(rng.normal(mean, std))
-    if sample_type == "randint":
-        minimum = int(round(resolve_param_ref(value["min"], parameters)))
-        maximum = int(round(resolve_param_ref(value["max"], parameters)))
-        return float(rng.integers(minimum, maximum + 1))
-
-    raise ValueError(f"Unknown initial-condition sampler '{sample_type}'.")
-
-
-def _sample_integer(
-    value: Any,
-    *,
-    parameters: dict[str, float],
-    rng: np.random.Generator | None,
-) -> int:
-    sampled = _sample_number(value, parameters=parameters, rng=rng)
-    integer = int(round(sampled))
-    if abs(sampled - integer) > 1.0e-9:
-        raise ValueError(
-            f"Expected an integer-valued initial-condition parameter, got {sampled}."
-        )
-    return integer
-
-
-def _sample_coordinate_list(
-    values: Any,
-    *,
-    gdim: int,
-    parameters: dict[str, float],
-    rng: np.random.Generator | None,
-    field_type: str,
-    field_name: str,
-) -> list[float]:
-    if not isinstance(values, list) or len(values) != gdim:
-        raise ValueError(
-            f"{field_type} {field_name} must have {gdim} entries in {gdim}D. "
-            f"Got {values!r}."
-        )
-    return [_sample_number(value, parameters=parameters, rng=rng) for value in values]
-
-
-def _rng_for_stream(seed: int, stream_id: str | None) -> np.random.Generator:
-    if not stream_id:
-        return np.random.default_rng(seed)
-
-    digest = hashlib.sha256(f"{seed}:{stream_id}".encode("utf-8")).digest()
-    entropy = [seed] + [
-        int.from_bytes(digest[index : index + 4], "little") for index in range(0, 16, 4)
-    ]
-    return np.random.default_rng(np.random.SeedSequence(entropy))
 
 
 def _resolved_scalar_ic(
@@ -127,59 +49,63 @@ def _resolved_scalar_ic(
 
     if ic_type == "constant":
         return ic_type, {
-            "value": _sample_number(
+            "value": sample_number(
                 _require_param(params, "value", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.value",
             )
         }
 
     if ic_type == "gaussian_bump":
         return ic_type, {
-            "amplitude": _sample_number(
+            "amplitude": sample_number(
                 _require_param(params, "amplitude", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.amplitude",
             ),
-            "sigma": _sample_number(
+            "sigma": sample_number(
                 _require_param(params, "sigma", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.sigma",
             ),
-            "center": _sample_coordinate_list(
+            "center": sample_coordinate_list(
                 _require_param(params, "center", ic_type),
                 gdim=gdim,
                 parameters=parameters,
                 rng=rng,
-                field_type=ic_type,
-                field_name="center",
+                context=f"{ic_type}.center",
             ),
         }
 
     if ic_type == "radial_cosine":
         return ic_type, {
-            "base": _sample_number(
+            "base": sample_number(
                 _require_param(params, "base", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.base",
             ),
-            "amplitude": _sample_number(
+            "amplitude": sample_number(
                 _require_param(params, "amplitude", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.amplitude",
             ),
-            "frequency": _sample_number(
+            "frequency": sample_number(
                 _require_param(params, "frequency", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.frequency",
             ),
-            "center": _sample_coordinate_list(
+            "center": sample_coordinate_list(
                 _require_param(params, "center", ic_type),
                 gdim=gdim,
                 parameters=parameters,
                 rng=rng,
-                field_type=ic_type,
-                field_name="center",
+                context=f"{ic_type}.center",
             ),
         }
 
@@ -187,52 +113,78 @@ def _resolved_scalar_ic(
         resolved_params = {}
         for key in ("constant", *component_labels_for_dim(gdim)):
             if key in params:
-                resolved_params[key] = _sample_number(
+                resolved_params[key] = sample_number(
                     params[key],
                     parameters=parameters,
                     rng=rng,
+                    context=f"{ic_type}.{key}",
                 )
         return ic_type, resolved_params
 
     if ic_type == "step":
         return ic_type, {
-            "value_left": _sample_number(
+            "value_left": sample_number(
                 _require_param(params, "value_left", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.value_left",
             ),
-            "value_right": _sample_number(
+            "value_right": sample_number(
                 _require_param(params, "value_right", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.value_right",
             ),
-            "x_split": _sample_number(
+            "x_split": sample_number(
                 _require_param(params, "x_split", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.x_split",
             ),
-            "axis": _sample_integer(
+            "axis": sample_integer(
                 _require_param(params, "axis", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.axis",
             ),
         }
 
     if ic_type == "gaussian_noise":
         return ic_type, {
-            "mean": _sample_number(
+            "mean": sample_number(
                 _require_param(params, "mean", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.mean",
             ),
-            "std": _sample_number(
+            "std": sample_number(
                 _require_param(params, "std", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.std",
             ),
         }
 
     if ic_type == "gaussian_blobs":
+        if "blobs" in params:
+            return ic_type, {
+                "background": sample_number(
+                    _require_param(params, "background", ic_type),
+                    parameters=parameters,
+                    rng=rng,
+                    context=f"{ic_type}.background",
+                ),
+                "blobs": [
+                    {
+                        "amplitude": float(blob["amplitude"]),
+                        "sigma": float(blob["sigma"]),
+                        "center": [float(value) for value in blob["center"]],
+                        "aspect_ratio": float(blob["aspect_ratio"]),
+                        "direction": [float(value) for value in blob["direction"]],
+                    }
+                    for blob in _require_param(params, "blobs", ic_type)
+                ],
+            }
         raw_generators = _require_param(params, "generators", ic_type)
         if not isinstance(raw_generators, list) or not raw_generators:
             raise ValueError("gaussian_blobs requires a non-empty 'generators' list.")
@@ -244,20 +196,22 @@ def _resolved_scalar_ic(
                     "gaussian_blobs generators must be mappings with count, "
                     "amplitude, sigma, and center."
                 )
-            count = _sample_integer(
+            count = sample_integer(
                 _require_param(generator, "count", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.count",
             )
             if count <= 0:
                 raise ValueError(
                     f"gaussian_blobs generator count must be positive. Got {count}."
                 )
             for _ in range(count):
-                aspect_ratio = _sample_number(
+                aspect_ratio = sample_number(
                     _require_param(generator, "aspect_ratio", ic_type),
                     parameters=parameters,
                     rng=rng,
+                    context=f"{ic_type}.aspect_ratio",
                 )
                 # Random elongation direction (unit vector); rotation is
                 # always random and not configurable.  When aspect_ratio
@@ -269,8 +223,9 @@ def _resolved_scalar_ic(
                     raw_dir[0] = 1.0
                 else:
                     if rng is None:
-                        raise _random_seed_required(
-                            "Elliptical gaussian_blobs (aspect_ratio != 1)"
+                        raise ValueError(
+                            "Elliptical gaussian_blobs require an explicit seed "
+                            "from the config or '--seed'."
                         )
                     raw_dir = rng.standard_normal(gdim)
                     norm = float(np.linalg.norm(raw_dir))
@@ -281,23 +236,24 @@ def _resolved_scalar_ic(
                         raw_dir = raw_dir / norm
                 resolved_blobs.append(
                     {
-                        "amplitude": _sample_number(
+                        "amplitude": sample_number(
                             _require_param(generator, "amplitude", ic_type),
                             parameters=parameters,
                             rng=rng,
+                            context=f"{ic_type}.amplitude",
                         ),
-                        "sigma": _sample_number(
+                        "sigma": sample_number(
                             _require_param(generator, "sigma", ic_type),
                             parameters=parameters,
                             rng=rng,
+                            context=f"{ic_type}.sigma",
                         ),
-                        "center": _sample_coordinate_list(
+                        "center": sample_coordinate_list(
                             _require_param(generator, "center", ic_type),
                             gdim=gdim,
                             parameters=parameters,
                             rng=rng,
-                            field_type=ic_type,
-                            field_name="center",
+                            context=f"{ic_type}.center",
                         ),
                         "aspect_ratio": aspect_ratio,
                         "direction": raw_dir.tolist(),
@@ -305,46 +261,48 @@ def _resolved_scalar_ic(
                 )
 
         return ic_type, {
-            "background": _sample_number(
+            "background": sample_number(
                 _require_param(params, "background", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.background",
             ),
             "blobs": resolved_blobs,
         }
 
     if ic_type == "gaussian_wave_packet":
         return ic_type, {
-            "amplitude": _sample_number(
+            "amplitude": sample_number(
                 _require_param(params, "amplitude", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.amplitude",
             ),
-            "sigma": _sample_number(
+            "sigma": sample_number(
                 _require_param(params, "sigma", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.sigma",
             ),
-            "center": _sample_coordinate_list(
+            "center": sample_coordinate_list(
                 _require_param(params, "center", ic_type),
                 gdim=gdim,
                 parameters=parameters,
                 rng=rng,
-                field_type=ic_type,
-                field_name="center",
+                context=f"{ic_type}.center",
             ),
-            "wavevector": _sample_coordinate_list(
+            "wavevector": sample_coordinate_list(
                 _require_param(params, "wavevector", ic_type),
                 gdim=gdim,
                 parameters=parameters,
                 rng=rng,
-                field_type=ic_type,
-                field_name="wavevector",
+                context=f"{ic_type}.wavevector",
             ),
-            "phase": _sample_number(
+            "phase": sample_number(
                 _require_param(params, "phase", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.phase",
             ),
         }
 
@@ -368,37 +326,42 @@ def _resolved_scalar_ic(
                 )
             resolved_modes.append(
                 {
-                    "amplitude": _sample_number(
+                    "amplitude": sample_number(
                         _require_param(mode, "amplitude", ic_type),
                         parameters=parameters,
                         rng=rng,
+                        context=f"{ic_type}.amplitude",
                     ),
                     "cycles": [
-                        _sample_number(
+                        sample_number(
                             cycle_value,
                             parameters=parameters,
                             rng=rng,
+                            context=f"{ic_type}.cycles[{axis}]",
                         )
-                        for cycle_value in cycles_raw
+                        for axis, cycle_value in enumerate(cycles_raw)
                     ],
-                    "phase": _sample_number(
+                    "phase": sample_number(
                         _require_param(mode, "phase", ic_type),
                         parameters=parameters,
                         rng=rng,
+                        context=f"{ic_type}.phase",
                     ),
-                    "angle": _sample_number(
+                    "angle": sample_number(
                         mode.get("angle", 0.0),
                         parameters=parameters,
                         rng=rng,
+                        context=f"{ic_type}.angle",
                     ),
                 }
             )
 
         return ic_type, {
-            "background": _sample_number(
+            "background": sample_number(
                 _require_param(params, "background", ic_type),
                 parameters=parameters,
                 rng=rng,
+                context=f"{ic_type}.background",
             ),
             "modes": resolved_modes,
         }
@@ -416,19 +379,19 @@ def _resolved_scalar_ic(
             )
 
         return ic_type, {
-            "split": _sample_coordinate_list(
+            "split": sample_coordinate_list(
                 _require_param(params, "split", ic_type),
                 gdim=gdim,
                 parameters=parameters,
                 rng=rng,
-                field_type=ic_type,
-                field_name="split",
+                context=f"{ic_type}.split",
             ),
             "region_values": {
-                key: _sample_number(
+                key: sample_number(
                     value,
                     parameters=parameters,
                     rng=rng,
+                    context=f"{ic_type}.region_values.{key}",
                 )
                 for key, value in raw_region_values.items()
             },
@@ -524,7 +487,10 @@ def _build_resolved_scalar_interpolator(
 
     if ic_type == "gaussian_noise":
         if rng is None:
-            raise _random_seed_required("Initial-condition gaussian_noise")
+            raise ValueError(
+                "Initial-condition gaussian_noise requires an explicit seed "
+                "from the config or '--seed'."
+            )
         mean = float(resolved_params["mean"])
         std = float(resolved_params["std"])
 
@@ -577,7 +543,7 @@ def build_scalar_ic_interpolator(
     if ic_config.is_componentwise:
         raise ValueError("Expected a scalar initial-condition config.")
 
-    rng = _rng_for_stream(seed, stream_id) if seed is not None else None
+    rng = rng_for_stream(seed, stream_id) if seed is not None else None
     ic_type, resolved_params = _resolved_scalar_ic(
         ic_config,
         gdim=gdim,
@@ -618,9 +584,7 @@ def build_vector_ic_interpolator(
                 f"Component '{label}' cannot use 'custom' inside a vector expression"
             )
         component_rng = (
-            _rng_for_stream(seed, f"{stream_root}.{label}")
-            if seed is not None
-            else None
+            rng_for_stream(seed, f"{stream_root}.{label}") if seed is not None else None
         )
         ic_type, resolved_params = _resolved_scalar_ic(
             component,
@@ -664,7 +628,7 @@ def apply_ic(
 
     gdim = func.function_space.mesh.geometry.dim
     rng = (
-        _rng_for_stream(seed, stream_id or func.name or None)
+        rng_for_stream(seed, stream_id or func.name or None)
         if seed is not None
         else None
     )
@@ -715,9 +679,7 @@ def apply_vector_ic(
                 f"Component '{label}' cannot use 'custom' inside a vector expression"
             )
         component_rng = (
-            _rng_for_stream(seed, f"{stream_root}.{label}")
-            if seed is not None
-            else None
+            rng_for_stream(seed, f"{stream_root}.{label}") if seed is not None else None
         )
         ic_type, resolved_params = _resolved_scalar_ic(
             component,

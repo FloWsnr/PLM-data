@@ -9,6 +9,7 @@ from typing import Any
 from mpi4py import MPI
 import yaml
 
+from plm_data.core.sampling import is_sampler_spec
 from plm_data.core.solver_strategies import ALL_SOLVER_STRATEGIES
 
 _COMPONENT_LABELS = ("x", "y", "z")
@@ -487,7 +488,12 @@ def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
     )
 
 
-def validate_domain_params(domain_type: str, params: dict[str, Any]) -> None:
+def validate_domain_params(
+    domain_type: str,
+    params: dict[str, Any],
+    *,
+    allow_sampling: bool = False,
+) -> None:
     """Validate built-in domain parameters before mesh creation."""
 
     def _require_keys(*required: str) -> None:
@@ -498,36 +504,71 @@ def validate_domain_params(domain_type: str, params: dict[str, Any]) -> None:
                 f"{sorted(required)}. Missing {sorted(missing)}."
             )
 
-    def _float_param(name: str, *, positive: bool = False) -> float:
-        value = float(params[name])
+    def _validate_domain_sampler(value: Any, context: str, *, integer: bool) -> None:
+        if not is_sampler_spec(value):
+            return
+        sample_type = _require(value, "sample", context)
+        if sample_type not in {"uniform", "randint"}:
+            raise ValueError(
+                f"{context} domain sampling supports only 'uniform' and 'randint'."
+            )
+        if integer and sample_type != "randint":
+            raise ValueError(f"{context} must use 'randint' for integer sampling.")
+
+    def _float_param(name: str, *, positive: bool = False) -> float | None:
+        raw = params[name]
+        context = f"{domain_type.capitalize()} domain parameter '{name}'"
+        if is_sampler_spec(raw):
+            if not allow_sampling:
+                raise ValueError(
+                    f"{context} uses sampled values, but domain sampling is disabled. "
+                    "Set 'domain.allow_sampling: true' to enable it."
+                )
+            _validate_domain_sampler(raw, context, integer=False)
+            _validate_sampleable_numeric(raw, context)
+            return None
+        if _is_param_ref(raw):
+            return None
+        value = float(raw)
         if not math.isfinite(value):
-            raise ValueError(
-                f"{domain_type.capitalize()} domain parameter '{name}' must be "
-                f"finite. Got {value}."
-            )
+            raise ValueError(f"{context} must be finite. Got {value}.")
         if positive and value <= 0.0:
-            raise ValueError(
-                f"{domain_type.capitalize()} domain parameter '{name}' must be > 0. "
-                f"Got {value}."
-            )
+            raise ValueError(f"{context} must be > 0. Got {value}.")
         return value
 
-    def _vector_param(name: str, *, length: int) -> list[float]:
+    def _vector_param(name: str, *, length: int) -> list[float] | None:
         raw = params[name]
         if not isinstance(raw, list) or len(raw) != length:
             raise ValueError(
                 f"{domain_type.capitalize()} domain parameter '{name}' must be a "
                 f"list with {length} entries. Got {raw!r}."
             )
-        values = [float(value) for value in raw]
-        if not all(math.isfinite(value) for value in values):
-            raise ValueError(
-                f"{domain_type.capitalize()} domain parameter '{name}' must contain "
-                f"only finite numbers. Got {raw!r}."
-            )
+        values: list[float] = []
+        saw_nonconcrete = False
+        for index, value in enumerate(raw):
+            context = f"{domain_type.capitalize()} domain parameter '{name}[{index}]'"
+            if is_sampler_spec(value):
+                if not allow_sampling:
+                    raise ValueError(
+                        f"{context} uses sampled values, but domain sampling is "
+                        "disabled. Set 'domain.allow_sampling: true' to enable it."
+                    )
+                _validate_domain_sampler(value, context, integer=False)
+                _validate_sampleable_numeric(value, context)
+                saw_nonconcrete = True
+                continue
+            if _is_param_ref(value):
+                saw_nonconcrete = True
+                continue
+            numeric = float(value)
+            if not math.isfinite(numeric):
+                raise ValueError(f"{context} must be finite. Got {numeric}.")
+            values.append(numeric)
+        if saw_nonconcrete:
+            return None
         return values
 
-    def _positive_int_vector(name: str, *, length: int) -> list[int]:
+    def _positive_int_vector(name: str, *, length: int) -> list[int] | None:
         raw = params[name]
         if not isinstance(raw, list) or len(raw) != length:
             raise ValueError(
@@ -535,22 +576,103 @@ def validate_domain_params(domain_type: str, params: dict[str, Any]) -> None:
                 f"list with {length} entries. Got {raw!r}."
             )
         values: list[int] = []
-        for value in raw:
+        saw_nonconcrete = False
+        for index, value in enumerate(raw):
+            context = f"{domain_type.capitalize()} domain parameter '{name}[{index}]'"
+            if is_sampler_spec(value):
+                if not allow_sampling:
+                    raise ValueError(
+                        f"{context} uses sampled values, but domain sampling is "
+                        "disabled. Set 'domain.allow_sampling: true' to enable it."
+                    )
+                _validate_domain_sampler(value, context, integer=True)
+                _validate_sampleable_integer(value, context)
+                saw_nonconcrete = True
+                continue
+            if _is_param_ref(value):
+                saw_nonconcrete = True
+                continue
             int_value = int(value)
             if float(int_value) != float(value) or int_value <= 0:
                 raise ValueError(
-                    f"{domain_type.capitalize()} domain parameter '{name}' must "
-                    f"contain positive integers. Got {raw!r}."
+                    f"{context} must be a positive integer. Got {value!r}."
                 )
             values.append(int_value)
+        if saw_nonconcrete:
+            return None
         return values
+
+    if domain_type == "interval":
+        _require_keys("size", "mesh_resolution")
+        size = params["size"]
+        if isinstance(size, list):
+            if len(size) != 1:
+                raise ValueError("Interval domain 'size' list must have length 1.")
+            params["size"] = size
+            _vector_param("size", length=1)
+        else:
+            _float_param("size", positive=True)
+        res = params["mesh_resolution"]
+        if isinstance(res, list):
+            _positive_int_vector("mesh_resolution", length=1)
+        else:
+            if is_sampler_spec(res):
+                if not allow_sampling:
+                    raise ValueError(
+                        "Interval domain parameter 'mesh_resolution' uses sampled "
+                        "values, but domain sampling is disabled. Set "
+                        "'domain.allow_sampling: true' to enable it."
+                    )
+                _validate_domain_sampler(
+                    res,
+                    "Interval domain parameter 'mesh_resolution'",
+                    integer=True,
+                )
+                _validate_sampleable_integer(
+                    res,
+                    "Interval domain parameter 'mesh_resolution'",
+                )
+            else:
+                int_value = int(res)
+                if float(int_value) != float(res) or int_value <= 0:
+                    raise ValueError(
+                        "Interval domain parameter 'mesh_resolution' must be a "
+                        f"positive integer. Got {res!r}."
+                    )
+        return
+
+    if domain_type == "rectangle":
+        _require_keys("size", "mesh_resolution")
+        size = _vector_param("size", length=2)
+        resolution = _positive_int_vector("mesh_resolution", length=2)
+        if size is not None and any(value <= 0.0 for value in size):
+            raise ValueError("Rectangle domain 'size' entries must be positive.")
+        if resolution is not None and any(value <= 0 for value in resolution):
+            raise ValueError(
+                "Rectangle domain 'mesh_resolution' entries must be positive."
+            )
+        return
+
+    if domain_type == "box":
+        _require_keys("size", "mesh_resolution")
+        size = _vector_param("size", length=3)
+        resolution = _positive_int_vector("mesh_resolution", length=3)
+        if size is not None and any(value <= 0.0 for value in size):
+            raise ValueError("Box domain 'size' entries must be positive.")
+        if resolution is not None and any(value <= 0 for value in resolution):
+            raise ValueError("Box domain 'mesh_resolution' entries must be positive.")
+        return
 
     if domain_type == "annulus":
         _require_keys("inner_radius", "outer_radius", "mesh_size")
         inner_radius = _float_param("inner_radius", positive=True)
         outer_radius = _float_param("outer_radius", positive=True)
         _float_param("mesh_size", positive=True)
-        if inner_radius >= outer_radius:
+        if (
+            inner_radius is not None
+            and outer_radius is not None
+            and inner_radius >= outer_radius
+        ):
             raise ValueError(
                 "Annulus domain requires 'inner_radius' < 'outer_radius'. "
                 f"Got inner_radius={inner_radius} and outer_radius={outer_radius}."
@@ -577,17 +699,29 @@ def validate_domain_params(domain_type: str, params: dict[str, Any]) -> None:
         lobe_radius = _float_param("lobe_radius", positive=True)
         neck_width = _float_param("neck_width", positive=True)
         _float_param("mesh_size", positive=True)
-        if not math.isclose(left_center[1], right_center[1], abs_tol=1.0e-12):
+        if (
+            left_center is not None
+            and right_center is not None
+            and not math.isclose(left_center[1], right_center[1], abs_tol=1.0e-12)
+        ):
             raise ValueError(
                 "Dumbbell domain requires 'left_center' and 'right_center' to "
                 "share the same y-coordinate."
             )
-        if right_center[0] <= left_center[0]:
+        if (
+            left_center is not None
+            and right_center is not None
+            and right_center[0] <= left_center[0]
+        ):
             raise ValueError(
                 "Dumbbell domain requires 'right_center[0]' to be greater than "
                 "'left_center[0]'."
             )
-        if neck_width > 2.0 * lobe_radius:
+        if (
+            neck_width is not None
+            and lobe_radius is not None
+            and neck_width > 2.0 * lobe_radius
+        ):
             raise ValueError(
                 "Dumbbell domain requires 'neck_width' <= 2 * 'lobe_radius'. "
                 f"Got neck_width={neck_width} and lobe_radius={lobe_radius}."
@@ -600,12 +734,13 @@ def validate_domain_params(domain_type: str, params: dict[str, Any]) -> None:
         axis_x = _vector_param("axis_x", length=2)
         axis_y = _vector_param("axis_y", length=2)
         _positive_int_vector("mesh_resolution", length=2)
-        signed_area = axis_x[0] * axis_y[1] - axis_x[1] * axis_y[0]
-        if abs(signed_area) <= 1.0e-12:
-            raise ValueError(
-                "Parallelogram domain requires linearly independent 'axis_x' and "
-                "'axis_y' vectors."
-            )
+        if axis_x is not None and axis_y is not None:
+            signed_area = axis_x[0] * axis_y[1] - axis_x[1] * axis_y[0]
+            if abs(signed_area) <= 1.0e-12:
+                raise ValueError(
+                    "Parallelogram domain requires linearly independent 'axis_x' and "
+                    "'axis_y' vectors."
+                )
         return
 
     if domain_type == "channel_obstacle":
@@ -621,17 +756,23 @@ def validate_domain_params(domain_type: str, params: dict[str, Any]) -> None:
         obstacle_center = _vector_param("obstacle_center", length=2)
         obstacle_radius = _float_param("obstacle_radius", positive=True)
         _float_param("mesh_size", positive=True)
-        cx, cy = obstacle_center
-        if cx - obstacle_radius <= 0.0 or cx + obstacle_radius >= length:
-            raise ValueError(
-                "Channel_obstacle domain requires the circular obstacle to lie "
-                "strictly inside the channel in x."
-            )
-        if cy - obstacle_radius <= 0.0 or cy + obstacle_radius >= height:
-            raise ValueError(
-                "Channel_obstacle domain requires the circular obstacle to lie "
-                "strictly inside the channel in y."
-            )
+        if (
+            length is not None
+            and height is not None
+            and obstacle_center is not None
+            and obstacle_radius is not None
+        ):
+            cx, cy = obstacle_center
+            if cx - obstacle_radius <= 0.0 or cx + obstacle_radius >= length:
+                raise ValueError(
+                    "Channel_obstacle domain requires the circular obstacle to lie "
+                    "strictly inside the channel in x."
+                )
+            if cy - obstacle_radius <= 0.0 or cy + obstacle_radius >= height:
+                raise ValueError(
+                    "Channel_obstacle domain requires the circular obstacle to lie "
+                    "strictly inside the channel in y."
+                )
 
 
 def _load_fragment_catalog() -> dict[str, Any]:
@@ -764,7 +905,7 @@ class BoundaryConditionConfig:
     value: FieldExpressionConfig | None = None
     pair_with: str | None = None
     operator_parameters: dict[str, Any] = field(default_factory=dict)
-    alpha: float | str | None = None
+    alpha: Any | None = None
 
     def __post_init__(self) -> None:
         if self.alpha is not None:
@@ -823,9 +964,14 @@ class DomainConfig:
     type: str
     params: dict[str, Any]
     periodic_maps: dict[str, PeriodicMapConfig] = field(default_factory=dict)
+    allow_sampling: bool = False
 
     def __post_init__(self) -> None:
-        validate_domain_params(self.type, self.params)
+        validate_domain_params(
+            self.type,
+            self.params,
+            allow_sampling=self.allow_sampling,
+        )
 
     @property
     def dimension(self) -> int:
@@ -948,7 +1094,7 @@ class SimulationConfig:
     """Validated simulation configuration."""
 
     preset: str
-    parameters: dict[str, float]
+    parameters: dict[str, Any]
     domain: DomainConfig
     inputs: dict[str, InputConfig]
     boundary_conditions: dict[str, BoundaryFieldConfig]
@@ -1131,6 +1277,8 @@ def _parse_operator_parameters(
         raise ValueError(
             f"{context} must contain exactly {sorted(allowed)}. Got {sorted(mapping)}."
         )
+    for name, value in mapping.items():
+        _validate_sampleable_numeric(value, f"{context}.{name}")
     return dict(mapping)
 
 
@@ -1535,10 +1683,16 @@ def load_config(path: str | Path) -> SimulationConfig:
 
     domain_raw = _as_mapping(_require(raw, "domain"), "domain")
     domain_type = _require(domain_raw, "type", "domain")
+    allow_domain_sampling = domain_raw.get("allow_sampling", False)
+    if not isinstance(allow_domain_sampling, bool):
+        raise ValueError(
+            "domain.allow_sampling must be a boolean when provided. "
+            f"Got {allow_domain_sampling!r}."
+        )
     domain_params = {
         key: value
         for key, value in domain_raw.items()
-        if key not in {"type", "periodic_maps"}
+        if key not in {"type", "periodic_maps", "allow_sampling"}
     }
     gdim = _infer_domain_dimension(domain_type, domain_params)
     periodic_maps_raw = domain_raw.get("periodic_maps", {})
@@ -1551,6 +1705,7 @@ def load_config(path: str | Path) -> SimulationConfig:
         type=domain_type,
         params=domain_params,
         periodic_maps=periodic_maps,
+        allow_sampling=allow_domain_sampling,
     )
     gdim = domain.dimension
 
@@ -1566,7 +1721,14 @@ def load_config(path: str | Path) -> SimulationConfig:
             f"Preset '{preset_name}' requires parameters {sorted(parameter_names)}. "
             f"Got {sorted(parameters_raw)}."
         )
-    parameters = {name: float(value) for name, value in parameters_raw.items()}
+    parameters: dict[str, Any] = {}
+    validation_parameters: dict[str, float] = {}
+    for name in spec.parameter_names():
+        raw_value = parameters_raw[name]
+        _validate_sampleable_numeric(raw_value, f"parameters.{name}")
+        parameters[name] = deepcopy(raw_value)
+        if isinstance(raw_value, (int, float)):
+            validation_parameters[name] = float(raw_value)
 
     if spec.coefficients:
         coefficients_raw = _as_mapping(
@@ -1595,7 +1757,7 @@ def load_config(path: str | Path) -> SimulationConfig:
     stochastic = _parse_stochastic(
         raw.get("stochastic"),
         spec=spec,
-        parameters=parameters,
+        parameters=validation_parameters,
     )
 
     output_raw = _as_mapping(_require(raw, "output"), "output")
