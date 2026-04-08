@@ -6,6 +6,7 @@ import pytest
 
 import plm_data.__main__ as main_mod
 import plm_data.core.runner as runner_mod
+import plm_data.tools.gif_gallery as gallery_mod
 
 
 def test_cmd_run_passes_output_dir(monkeypatch, tmp_path):
@@ -80,3 +81,33 @@ def test_main_run_requires_output_dir(monkeypatch):
         main_mod.main()
 
     assert exc_info.value.code == 2
+
+
+def test_cmd_gallery_passes_arguments(monkeypatch, tmp_path, capsys):
+    calls: dict[str, object] = {}
+
+    class Summary:
+        output_path = tmp_path / "gallery.html"
+        num_rows = 3
+        num_fields = 4
+
+    def fake_write_gallery_html(directory, output_path, *, title):
+        calls["directory"] = directory
+        calls["output_path"] = output_path
+        calls["title"] = title
+        return Summary()
+
+    monkeypatch.setattr(gallery_mod, "write_gallery_html", fake_write_gallery_html)
+
+    main_mod.cmd_gallery(
+        SimpleNamespace(
+            directory=str(tmp_path),
+            output=str(tmp_path / "custom.html"),
+            title="Custom Title",
+        )
+    )
+
+    assert calls["directory"] == str(tmp_path)
+    assert calls["output_path"] == str(tmp_path / "custom.html")
+    assert calls["title"] == "Custom Title"
+    assert "3 PDE rows, 4 fields" in capsys.readouterr().out

@@ -15,6 +15,9 @@ PLM-data generates PDE simulation datasets using DOLFINx (FEniCSx) and Clawpack.
 
 # List registered presets
 ./run.sh list
+
+# Build one HTML gallery from all PDE GIFs under a directory
+./run.sh gallery ./output
 ```
 
 Tests run via `python -m pytest tests/`. pytest is configured to use 4 parallel processes (`-n 4` via `pytest-xdist`) by default. The project runs directly as a Python module. DOLFINx and its dependencies (PETSc, mpi4py, UFL) must be installed in the environment, and `clawpack` is required for the shipped `compressible_euler` preset.
@@ -52,6 +55,7 @@ The system has three layers:
    - `output.py` — `FrameWriter` coordinates format-specific writers. It validates base fields against the preset spec, expands vector fields into component outputs for grid-based formats, and writes post-run stagnation diagnostics to `frames_meta.json`, skipping outputs listed in `spec.static_fields`. Delegates to writers in `formats/`
    - `formats/` — Output format writers: `NumpyWriter` (.npy arrays), `GifWriter` (animated .gif), `VideoWriter` (.mp4), `VTKWriter` (native DOLFINx `.pvd`/`.vtu` output for ParaView). Grid writers (numpy/gif/video) share the interpolation pipeline; VTK writes FEM functions directly
    - `interpolation.py` — `function_to_array()` maps DOLFINx FEM functions onto regular numpy grids via point evaluation. Grid points outside the mesh (e.g. corners/holes on non-rectangular domains) produce NaN; `InterpolationCache.outside_mask` tracks which points are out-of-domain. When a domain mask is present, `FrameWriter` writes `domain_mask.npy` (True = inside) alongside the field arrays.
+   - `plm_data/tools/gif_gallery.py` — utility for postprocessing GIF outputs into a single HTML gallery. It scans a directory recursively for `.gif` files, groups them by containing run directory, and renders one PDE per row with one column per field.
 
 3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, explicit coefficients, domain geometry, explicit `inputs`, explicit `boundary_conditions`, optional `time`, solver strategy/profile settings, output settings, and seed.
    The current schema uses top-level `coefficients`, `inputs`, `boundary_conditions`, `output.fields`, and an explicit `solver` block with `strategy`, `serial`, and `mpi`. Shared YAML fragments live in `configs/_fragments.yaml` and can be reused anywhere via `$ref`.
@@ -77,6 +81,7 @@ The system has three layers:
 - Periodic constraints are declared with `boundary_conditions.<field>.<side>.[].operator: periodic`; optional `domain.periodic_maps` can add custom geometric pairings beyond the built-in domain maps
 - Config validation is spec-driven: parameter names, input names, boundary field names, output names, allowed sections, boundary operators, output modes, and supported dimensions are checked before solving
 - Output goes to `output/<category>/<preset>/` with format-specific files: `.npy` arrays, `.gif`/`.mp4` animations, and `paraview/` directory with `.pvd`+`.vtu` files for Paraview
+- The `gallery` CLI command scans those output trees recursively and writes a `pde_gif_gallery.html` page that aligns PDE runs by row and field names by column
 - Presets must declare `static_fields` explicitly; post-run stagnation warnings skip those outputs
 - Presets are auto-discovered recursively under `plm_data.presets`
 - Meshes use `GhostMode.shared_facet` for DOLFINx compatibility

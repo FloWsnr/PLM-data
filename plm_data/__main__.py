@@ -34,6 +34,16 @@ def cmd_list(_args):
             print(f"  {spec.name:20s}  [{state}, {dims}]  {spec.description}")
 
 
+def cmd_gallery(args):
+    from plm_data.tools.gif_gallery import write_gallery_html
+
+    summary = write_gallery_html(args.directory, args.output, title=args.title)
+    print(
+        f"Wrote {summary.output_path} "
+        f"({summary.num_rows} PDE rows, {summary.num_fields} fields)."
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="plm_data", description="PDE simulation data generation"
@@ -62,6 +72,24 @@ def main():
 
     p_list = sub.add_parser("list", help="List available PDE presets")
     p_list.set_defaults(func=cmd_list)
+
+    p_gallery = sub.add_parser(
+        "gallery", help="Build one HTML page from GIF outputs under a directory"
+    )
+    p_gallery.add_argument(
+        "directory",
+        help="Root directory to scan recursively for GIF outputs",
+    )
+    p_gallery.add_argument(
+        "--output",
+        help="HTML file to write. Defaults to <directory>/pde_gif_gallery.html",
+    )
+    p_gallery.add_argument(
+        "--title",
+        default="PDE GIF Gallery",
+        help="Title shown in the generated HTML",
+    )
+    p_gallery.set_defaults(func=cmd_gallery)
 
     args = parser.parse_args()
     if not hasattr(args, "func"):

@@ -55,9 +55,16 @@ Use the `run.sh` wrapper script, which activates the `fenicsx-env` conda environ
 # List available presets
 ./run.sh list
 
+# Build one HTML gallery for all GIF outputs under a directory
+./run.sh gallery ./output
+
 # Use a different conda environment if needed
 PLM_CONDA_ENV=fenicsx-env-complex ./run.sh run configs/basic/poisson/2d_sinusoidal_source_response.yaml --output-dir ./output
 ```
+
+The gallery command scans recursively for `.gif` files, groups them by output
+directory, and writes `pde_gif_gallery.html` into the scanned directory by
+default. Use `--output` to choose a different HTML path.
 
 Both `maxwell_pulse` and the time-harmonic `maxwell` preset run in the standard
 real-valued build. The `PLM_CONDA_ENV` override remains available if you want to
