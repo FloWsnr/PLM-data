@@ -11,11 +11,8 @@ from pathlib import Path
 import numpy as np
 from mpi4py import MPI
 
-from plm_data.core.config import (
-    SimulationConfig,
-    load_config,
-    materialize_runtime_samples,
-)
+from plm_data.core.config import SimulationConfig, load_config
+from plm_data.core.config_realization import realize_simulation_config
 from plm_data.core.health import combine_health_status
 from plm_data.core.logging import get_logger, setup_logging, teardown_logging
 from plm_data.core.output import FrameWriter
@@ -67,7 +64,7 @@ class SimulationRunner:
                 "Simulation runs require an explicit seed from the config or an "
                 "explicit seed override."
             )
-        self.config = materialize_runtime_samples(config)
+        self.config = realize_simulation_config(config)
         self.preset = get_preset(self.config.preset)
         self.config_source = (
             Path(config_source).resolve() if config_source is not None else None
