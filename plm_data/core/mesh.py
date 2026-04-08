@@ -721,6 +721,7 @@ def _create_annulus(domain: DomainConfig) -> DomainGeometry:
     import gmsh
 
     p = domain.params
+    center = np.asarray(_require_param(p, "center", domain.type), dtype=float)
     inner_radius = float(_require_param(p, "inner_radius", domain.type))
     outer_radius = float(_require_param(p, "outer_radius", domain.type))
     mesh_size = float(_require_param(p, "mesh_size", domain.type))
@@ -735,8 +736,20 @@ def _create_annulus(domain: DomainConfig) -> DomainGeometry:
         model.setCurrent("annulus")
 
         if comm.rank == 0:
-            outer_disk = model.occ.addDisk(0.0, 0.0, 0.0, outer_radius, outer_radius)
-            inner_disk = model.occ.addDisk(0.0, 0.0, 0.0, inner_radius, inner_radius)
+            outer_disk = model.occ.addDisk(
+                center[0],
+                center[1],
+                0.0,
+                outer_radius,
+                outer_radius,
+            )
+            inner_disk = model.occ.addDisk(
+                center[0],
+                center[1],
+                0.0,
+                inner_radius,
+                inner_radius,
+            )
             model.occ.cut([(2, outer_disk)], [(2, inner_disk)])
             model.occ.synchronize()
 

@@ -619,7 +619,7 @@ def _realize_domain_params(
                 stream_root=f"domain.params.{key}",
             )
     elif domain.type == "annulus":
-        for key in ("inner_radius", "outer_radius", "mesh_size"):
+        for key in ("center", "inner_radius", "outer_radius", "mesh_size"):
             realized[key] = _realize_numeric_tree(
                 params[key],
                 parameters=parameters,

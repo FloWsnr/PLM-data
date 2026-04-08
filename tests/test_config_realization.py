@@ -141,6 +141,39 @@ def test_realize_simulation_config_concretizes_blob_generators():
     assert all("direction" in blob for blob in params["blobs"])
 
 
+def test_realize_simulation_config_concretizes_annulus_center(tmp_path):
+    data = _load_config_dict("configs/basic/heat/2d_annulus_inner_heating_layer.yaml")
+    data["domain"]["center"] = [
+        {"sample": "uniform", "min": -0.2, "max": 0.2},
+        {"sample": "uniform", "min": -0.1, "max": 0.1},
+    ]
+
+    cfg = load_config(_write_yaml(tmp_path, "sampled_annulus_center.yaml", data))
+
+    realized_a = realize_simulation_config(cfg)
+    realized_b = realize_simulation_config(cfg)
+
+    assert realized_a.domain.params["center"] == realized_b.domain.params["center"]
+    assert all(isinstance(value, float) for value in realized_a.domain.params["center"])
+
+
+def test_realize_simulation_config_concretizes_basic_annulus_center_refs():
+    cfg = load_config("configs/basic/plate/2d_annulus_radial_ringdown.yaml")
+
+    realized_a = realize_simulation_config(cfg)
+    realized_b = realize_simulation_config(cfg)
+
+    assert realized_a.domain.params["center"] == realized_b.domain.params["center"]
+    assert (
+        realized_a.coefficient("rigidity").params["center"]
+        == realized_a.domain.params["center"]
+    )
+    assert (
+        realized_a.input("deflection").initial_condition.params["center"]
+        == (realized_a.domain.params["center"])
+    )
+
+
 def test_simulation_runner_serializes_realized_config(tmp_path):
     data = _load_config_dict("configs/basic/heat/2d_localized_blob_diffusion.yaml")
     data["domain"]["allow_sampling"] = True

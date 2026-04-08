@@ -41,7 +41,12 @@ def test_function_to_array_annulus():
     domain_geom = create_domain(
         DomainConfig(
             type="annulus",
-            params={"inner_radius": 0.3, "outer_radius": 1.0, "mesh_size": 0.15},
+            params={
+                "center": [0.2, -0.1],
+                "inner_radius": 0.3,
+                "outer_radius": 1.0,
+                "mesh_size": 0.15,
+            },
         )
     )
     V = fem.functionspace(domain_geom.mesh, ("Lagrange", 1))

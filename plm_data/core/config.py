@@ -664,7 +664,8 @@ def validate_domain_params(
         return
 
     if domain_type == "annulus":
-        _require_keys("inner_radius", "outer_radius", "mesh_size")
+        _require_keys("center", "inner_radius", "outer_radius", "mesh_size")
+        _vector_param("center", length=2)
         inner_radius = _float_param("inner_radius", positive=True)
         outer_radius = _float_param("outer_radius", positive=True)
         _float_param("mesh_size", positive=True)
@@ -1721,15 +1722,15 @@ def load_config(
     spec.validate_dimension(gdim)
 
     parameter_names = spec.parameter_names()
-    if set(parameters_raw) != parameter_names:
+    missing_parameters = parameter_names - set(parameters_raw)
+    if missing_parameters:
         raise ValueError(
             f"Preset '{preset_name}' requires parameters {sorted(parameter_names)}. "
             f"Got {sorted(parameters_raw)}."
         )
     parameters: dict[str, Any] = {}
     validation_parameters: dict[str, float] = {}
-    for name in spec.parameter_names():
-        raw_value = parameters_raw[name]
+    for name, raw_value in parameters_raw.items():
         _validate_sampleable_numeric(raw_value, f"parameters.{name}")
         parameters[name] = deepcopy(raw_value)
         if isinstance(raw_value, (int, float)):

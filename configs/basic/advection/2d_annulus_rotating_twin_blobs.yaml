@@ -1,5 +1,13 @@
 preset: advection
-parameters: {}
+parameters:
+  domain_center_x:
+    sample: uniform
+    min: -0.06
+    max: 0.06
+  domain_center_y:
+    sample: uniform
+    min: -0.06
+    max: 0.06
 coefficients:
   velocity:
     components:
@@ -26,6 +34,7 @@ coefficients:
         max: 0.00034
 domain:
   type: annulus
+  center: ["param:domain_center_x", "param:domain_center_y"]
   inner_radius: 0.35
   outer_radius: 1.0
   mesh_size: 0.02

@@ -1,5 +1,13 @@
 preset: plate
 parameters:
+  domain_center_x:
+    sample: uniform
+    min: -0.06
+    max: 0.06
+  domain_center_y:
+    sample: uniform
+    min: -0.06
+    max: 0.06
   theta:
     sample: uniform
     min: 0.62
@@ -32,6 +40,7 @@ coefficients:
         max: 0.04
 domain:
   type: annulus
+  center: ["param:domain_center_x", "param:domain_center_y"]
   allow_sampling: true
   inner_radius:
     sample: uniform

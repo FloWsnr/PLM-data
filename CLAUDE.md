@@ -67,7 +67,7 @@ The system has three layers:
    - `interpolation.py` — `function_to_array()` maps DOLFINx FEM functions onto regular numpy grids via point evaluation. Grid points outside the mesh (e.g. corners/holes on non-rectangular domains) produce NaN; `InterpolationCache.outside_mask` tracks which points are out-of-domain. When a domain mask is present, `FrameWriter` writes `domain_mask.npy` (True = inside) alongside the field arrays.
    - `plm_data/tools/gif_gallery.py` — utility for postprocessing GIF outputs into a single HTML gallery. It scans a directory recursively for `.gif` files, groups them by containing run directory, and renders one PDE per row with one column per field.
 
-3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, explicit coefficients, domain geometry, explicit `inputs`, explicit `boundary_conditions`, optional `time`, solver strategy/profile settings, output settings, and seed.
+3. **Configs** (`configs/<category>/<preset>/`) — YAML files specifying: preset name, physical parameters, optional shared sampled parameters referenced elsewhere via `param:...`, explicit coefficients, domain geometry, explicit `inputs`, explicit `boundary_conditions`, optional `time`, solver strategy/profile settings, output settings, and seed.
    The current schema uses top-level `coefficients`, `inputs`, `boundary_conditions`, `output.fields`, and an explicit `solver` block with `strategy`, `serial`, and `mpi`. Shared YAML fragments live in `configs/_fragments.yaml` and can be reused anywhere via `$ref`.
 
 ## Adding a New PDE Preset
@@ -89,7 +89,7 @@ The system has three layers:
 - Shared config fragments are allowed via `$ref: some.path` into `configs/_fragments.yaml`; mappings may override referenced mappings locally, but reuse still stays explicit in YAML
 - Solver configs must declare `solver.strategy`, `solver.serial`, and `solver.mpi` explicitly; the runtime selects the serial or MPI profile from communicator size
 - Periodic constraints are declared with `boundary_conditions.<field>.<side>.[].operator: periodic`; optional `domain.periodic_maps` can add custom geometric pairings beyond the built-in domain maps
-- Config validation is spec-driven: parameter names, input names, boundary field names, output names, allowed sections, boundary operators, output modes, and supported dimensions are checked before solving
+- Config validation is spec-driven: preset-declared parameter names, input names, boundary field names, output names, allowed sections, boundary operators, output modes, and supported dimensions are checked before solving; additional top-level parameters are allowed when used as explicit shared sampled values via `param:...`
 - Config loading and runtime realization are separate steps: `load_config()` returns the declarative config, and `realize_simulation_config()` produces the concrete per-seed runtime config used by the solver
 - Output goes to `output/<category>/<preset>/` for single runs, which clear that directory before writing format-specific files: `.npy` arrays, `.gif`/`.mp4` animations, and `paraview/` directory with `.pvd`+`.vtu` files for Paraview
 - Batch runs use `--n-runs` and write to `output/<category>/<preset>/seed_<seed>/`, incrementing from the config seed

@@ -1,5 +1,13 @@
 preset: plate
 parameters:
+  domain_center_x:
+    sample: uniform
+    min: -0.06
+    max: 0.06
+  domain_center_y:
+    sample: uniform
+    min: -0.06
+    max: 0.06
   theta:
     sample: uniform
     min: 0.52
@@ -34,9 +42,10 @@ coefficients:
         sample: uniform
         min: 4.5
         max: 6.5
-      center: [0.0, 0.0]
+      center: ["param:domain_center_x", "param:domain_center_y"]
 domain:
   type: annulus
+  center: ["param:domain_center_x", "param:domain_center_y"]
   allow_sampling: true
   inner_radius:
     sample: uniform
@@ -64,7 +73,7 @@ inputs:
           sample: uniform
           min: 6.0
           max: 10.0
-        center: [0.0, 0.0]
+        center: ["param:domain_center_x", "param:domain_center_y"]
   velocity:
     initial_condition:
       type: sine_waves

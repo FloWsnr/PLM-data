@@ -1,5 +1,13 @@
 preset: wave
 parameters:
+  domain_center_x:
+    sample: uniform
+    min: -0.06
+    max: 0.06
+  domain_center_y:
+    sample: uniform
+    min: -0.06
+    max: 0.06
   damping:
     sample: uniform
     min: 0.006
@@ -20,9 +28,10 @@ coefficients:
         sample: uniform
         min: 6.0
         max: 9.5
-      center: [0.0, 0.0]
+      center: ["param:domain_center_x", "param:domain_center_y"]
 domain:
   type: annulus
+  center: ["param:domain_center_x", "param:domain_center_y"]
   allow_sampling: true
   inner_radius:
     sample: uniform

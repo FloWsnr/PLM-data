@@ -189,6 +189,20 @@ def test_load_config_rejects_invalid_annulus_geometry(tmp_path):
         load_config(path)
 
 
+def test_load_config_rejects_annulus_without_center(tmp_path):
+    data = yaml.safe_load(
+        Path(
+            "configs/physics/gray_scott/2d_annular_spot_stripe_patterns.yaml"
+        ).read_text()
+    )
+    del data["domain"]["center"]
+
+    path = _write_yaml(tmp_path, "annulus_without_center.yaml", data)
+
+    with pytest.raises(ValueError, match="requires parameters"):
+        load_config(path)
+
+
 def test_load_config_boundary_field_sections():
     cfg = load_config("configs/basic/poisson/2d_sinusoidal_source_response.yaml")
     u_boundary = cfg.boundary_field("u")
@@ -356,6 +370,29 @@ def test_load_config_darcy_channel_obstacle_domain():
         cfg.boundary_field("concentration").side_conditions("obstacle")[0].type
         == "neumann"
     )
+
+
+def test_load_config_annulus_center_is_explicit():
+    cfg = load_config("configs/physics/gray_scott/2d_annular_spot_stripe_patterns.yaml")
+    assert cfg.domain.type == "annulus"
+    assert cfg.domain.params["center"] == [0.0, 0.0]
+
+
+def test_load_config_basic_annulus_center_uses_param_refs():
+    cfg = load_config("configs/basic/plate/2d_annulus_radial_ringdown.yaml")
+    assert cfg.domain.type == "annulus"
+    assert cfg.domain.params["center"] == [
+        "param:domain_center_x",
+        "param:domain_center_y",
+    ]
+    assert cfg.coefficient("rigidity").params["center"] == [
+        "param:domain_center_x",
+        "param:domain_center_y",
+    ]
+    assert cfg.input("deflection").initial_condition.params["center"] == [
+        "param:domain_center_x",
+        "param:domain_center_y",
+    ]
 
 
 def test_load_config_swift_hohenberg_2d_default():

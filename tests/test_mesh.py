@@ -57,7 +57,12 @@ def test_create_parallelogram_mesh():
 def test_create_annulus_mesh():
     domain = DomainConfig(
         type="annulus",
-        params={"inner_radius": 0.3, "outer_radius": 1.0, "mesh_size": 0.2},
+        params={
+            "center": [0.2, -0.1],
+            "inner_radius": 0.3,
+            "outer_radius": 1.0,
+            "mesh_size": 0.2,
+        },
     )
     domain_geom = create_domain(domain)
     msh = domain_geom.mesh
@@ -70,7 +75,12 @@ def test_create_annulus_mesh():
 def test_annulus_boundary_tags():
     domain = DomainConfig(
         type="annulus",
-        params={"inner_radius": 0.3, "outer_radius": 1.0, "mesh_size": 0.2},
+        params={
+            "center": [0.2, -0.1],
+            "inner_radius": 0.3,
+            "outer_radius": 1.0,
+            "mesh_size": 0.2,
+        },
     )
     domain_geom = create_domain(domain)
     assert set(domain_geom.boundary_names.keys()) == {"inner", "outer"}
@@ -131,22 +141,42 @@ def test_gmsh_domain_boundary_tags(domain_type, params, expected_boundaries):
     [
         (
             "annulus",
-            {"inner_radius": 0.0, "outer_radius": 1.0, "mesh_size": 0.2},
+            {
+                "center": [0.0, 0.0],
+                "inner_radius": 0.0,
+                "outer_radius": 1.0,
+                "mesh_size": 0.2,
+            },
             "inner_radius",
         ),
         (
             "annulus",
-            {"inner_radius": 0.3, "outer_radius": -1.0, "mesh_size": 0.2},
+            {
+                "center": [0.0, 0.0],
+                "inner_radius": 0.3,
+                "outer_radius": -1.0,
+                "mesh_size": 0.2,
+            },
             "outer_radius",
         ),
         (
             "annulus",
-            {"inner_radius": 1.0, "outer_radius": 1.0, "mesh_size": 0.2},
+            {
+                "center": [0.0, 0.0],
+                "inner_radius": 1.0,
+                "outer_radius": 1.0,
+                "mesh_size": 0.2,
+            },
             "inner_radius' < 'outer_radius",
         ),
         (
             "annulus",
-            {"inner_radius": 0.3, "outer_radius": 1.0, "mesh_size": 0.0},
+            {
+                "center": [0.0, 0.0],
+                "inner_radius": 0.3,
+                "outer_radius": 1.0,
+                "mesh_size": 0.0,
+            },
             "mesh_size",
         ),
         (
