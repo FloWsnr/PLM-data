@@ -1,6 +1,7 @@
 """Simulation runner."""
 
 from dataclasses import asdict, is_dataclass
+import gc
 import json
 import logging
 import shutil
@@ -14,6 +15,7 @@ from mpi4py import MPI
 from plm_data.core.config import SimulationConfig, load_config
 from plm_data.core.config_realization import realize_simulation_config
 from plm_data.core.health import combine_health_status
+from plm_data.core.health import discover_solver_targets
 from plm_data.core.logging import get_logger, setup_logging, teardown_logging
 from plm_data.core.output import FrameWriter
 from plm_data.presets import get_preset
@@ -47,6 +49,69 @@ def _seed_output_subdir(seed: int) -> str:
     """Return the batch subdirectory name for one seed."""
 
     return f"seed_{seed}"
+
+
+def _prepare_output_dir(
+    output_dir: Path,
+    *,
+    reset: bool,
+    comm: MPI.Intracomm | None = None,
+) -> None:
+    """Prepare one output directory once on rank 0 and broadcast failures."""
+
+    active_comm = MPI.COMM_WORLD if comm is None else comm
+    error_message: str | None = None
+
+    if active_comm.rank == 0:
+        try:
+            if reset:
+                _reset_output_dir(output_dir)
+            else:
+                output_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as exc:
+            error_message = f"{type(exc).__name__}: {exc}"
+
+    error_message = active_comm.bcast(error_message, root=0)
+    if error_message is not None:
+        raise RuntimeError(
+            f"Failed to prepare output directory '{output_dir}': {error_message}"
+        )
+
+
+_PETSC_HANDLE_ATTRS = ("_solver", "_snes", "_A", "_b", "_x", "_P_mat")
+
+
+def _destroy_petsc_handles(target: object, *, destroyed_handle_ids: set[int]) -> None:
+    """Destroy PETSc-backed handles on one wrapper object and clear references."""
+
+    for attr_name in _PETSC_HANDLE_ATTRS:
+        handle = getattr(target, attr_name, None)
+        if handle is None:
+            continue
+
+        handle_id = id(handle)
+        if handle_id not in destroyed_handle_ids:
+            destroy = getattr(handle, "destroy", None)
+            if callable(destroy):
+                destroy()
+            destroyed_handle_ids.add(handle_id)
+
+        try:
+            setattr(target, attr_name, None)
+        except (AttributeError, TypeError):
+            continue
+
+
+def _cleanup_runtime_problem(problem: object | None) -> None:
+    """Explicitly destroy PETSc solver objects before interpreter shutdown."""
+
+    if problem is None or not hasattr(problem, "__dict__"):
+        return
+
+    destroyed_handle_ids: set[int] = set()
+    targets = discover_solver_targets(problem.__dict__)
+    for _, target in sorted(targets.items()):
+        _destroy_petsc_handles(target, destroyed_handle_ids=destroyed_handle_ids)
 
 
 class SimulationRunner:
@@ -108,7 +173,7 @@ class SimulationRunner:
                 "explicit seed override."
             )
 
-        _reset_output_dir(initial_runner.resolve_output_dir())
+        _prepare_output_dir(initial_runner.resolve_output_dir(), reset=True)
 
         summaries: list[dict[str, object]] = []
         for seed in range(base_seed, base_seed + n_runs):
@@ -277,10 +342,11 @@ class SimulationRunner:
     ) -> dict:
         spec = self.preset.spec
         output_dir = self.resolve_output_dir(output_subdir)
+        problem = None
         if cleanup_output_dir:
-            _reset_output_dir(output_dir)
+            _prepare_output_dir(output_dir, reset=True)
         else:
-            output_dir.mkdir(parents=True, exist_ok=True)
+            _prepare_output_dir(output_dir, reset=False)
 
         logger = get_logger("runner")
         output: FrameWriter | None = None
@@ -393,6 +459,9 @@ class SimulationRunner:
                 logger.exception("  Failed to write run_meta.json")
             raise
         finally:
+            _cleanup_runtime_problem(problem)
+            problem = None
+            gc.collect()
             teardown_logging()
 
         return {

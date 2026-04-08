@@ -4,11 +4,13 @@ from dataclasses import replace
 import json
 import logging
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import yaml
 
 from plm_data.core.config import BoundaryConditionConfig, TimeConfig
+import plm_data.core.runner as runner_mod
 from plm_data.core.runner import SimulationRunner
 from tests.preset_matrix import (
     constant,
@@ -16,6 +18,17 @@ from tests.preset_matrix import (
     scalar_expr,
     vector_zero,
 )
+
+
+class _FakeComm:
+    def __init__(self, rank: int, broadcast_value=None):
+        self.rank = rank
+        self._broadcast_value = broadcast_value
+
+    def bcast(self, value, root=0):
+        if self.rank == root:
+            return value
+        return self._broadcast_value
 
 
 def test_simulation_runner_heat(heat_config):
@@ -234,6 +247,98 @@ def test_simulation_runner_run_many_from_yaml_uses_seed_subdirs(tmp_path):
         assert (run_dir / "u.npy").is_file()
         run_meta = json.loads((run_dir / "run_meta.json").read_text())
         assert run_meta["config"]["resolved"]["seed"] == expected_seed
+
+
+def test_prepare_output_dir_only_resets_on_rank_zero(monkeypatch, tmp_path):
+    calls: list[Path] = []
+
+    def fake_reset(path: Path) -> None:
+        calls.append(path)
+
+    monkeypatch.setattr(runner_mod, "_reset_output_dir", fake_reset)
+
+    runner_mod._prepare_output_dir(
+        tmp_path / "out",
+        reset=True,
+        comm=_FakeComm(rank=1, broadcast_value=None),
+    )
+
+    assert calls == []
+
+
+def test_prepare_output_dir_broadcasts_rank_zero_failure(monkeypatch, tmp_path):
+    def fake_reset(path: Path) -> None:
+        raise FileNotFoundError("synthetic cleanup failure")
+
+    monkeypatch.setattr(runner_mod, "_reset_output_dir", fake_reset)
+
+    with pytest.raises(RuntimeError, match="synthetic cleanup failure"):
+        runner_mod._prepare_output_dir(
+            tmp_path / "out",
+            reset=True,
+            comm=_FakeComm(rank=0),
+        )
+
+
+def test_cleanup_runtime_problem_destroys_unique_petsc_handles_once():
+    class Handle:
+        def __init__(self) -> None:
+            self.destroy_calls = 0
+
+        def destroy(self) -> None:
+            self.destroy_calls += 1
+
+    class FakeSolver:
+        def getConvergedReason(self) -> int:
+            return 1
+
+    shared_solver = Handle()
+    shared_matrix = Handle()
+    rhs = Handle()
+    solution = Handle()
+    preconditioner = Handle()
+
+    wrapper_a = SimpleNamespace(
+        _solver=shared_solver,
+        _A=shared_matrix,
+        _b=rhs,
+        _x=solution,
+        _P_mat=preconditioner,
+        solver=FakeSolver(),
+    )
+    wrapper_b = SimpleNamespace(
+        _solver=shared_solver,
+        _A=shared_matrix,
+        _b=rhs,
+        _x=solution,
+        _P_mat=preconditioner,
+        solver=FakeSolver(),
+    )
+    runtime_problem = SimpleNamespace(
+        primary=wrapper_a,
+        nested={"secondary": wrapper_b},
+    )
+
+    runner_mod._cleanup_runtime_problem(runtime_problem)
+
+    for handle in (
+        shared_solver,
+        shared_matrix,
+        rhs,
+        solution,
+        preconditioner,
+    ):
+        assert handle.destroy_calls == 1
+    assert wrapper_a._solver is None
+    assert wrapper_a._A is None
+    assert wrapper_a._b is None
+    assert wrapper_a._x is None
+    assert wrapper_a._P_mat is None
+    assert wrapper_b._solver is None
+    assert wrapper_b._A is None
+    assert wrapper_b._b is None
+    assert wrapper_b._x is None
+    assert wrapper_b._P_mat is None
 
 
 def test_simulation_runner_writes_failure_metadata(heat_config, monkeypatch):

@@ -10,11 +10,15 @@ PLM-data generates PDE simulation datasets using DOLFINx (FEniCSx) and custom st
 # Run a simulation (single core)
 ./run.sh run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
 
-# Run a simulation with multiple MPI ranks
+# Run a simulation on 4 pinned physical cores
 ./run.sh -n 4 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
 
 # Run one config many times with incrementing seeds from the YAML config
 ./run.sh -n 4 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output --n-runs 100
+
+# Reserve disjoint physical cores for concurrent simulations
+./run.sh -n 4 --core-list 0-3 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
+./run.sh -n 4 --core-list 4-7 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output --n-runs 100
 
 # List registered presets
 ./run.sh list
@@ -22,6 +26,8 @@ PLM-data generates PDE simulation datasets using DOLFINx (FEniCSx) and custom st
 # Build one HTML gallery from all PDE GIFs under a directory
 ./run.sh gallery ./output
 ```
+
+`run.sh -n N` now means "use N physical cores": one single-threaded MPI rank per physical core, pinned with MPI binding. Use `--core-list` when multiple simulations should coexist on disjoint core sets without oversubscription.
 
 Tests run via `python -m pytest tests/`. pytest is configured to use 4 parallel processes (`-n 4` via `pytest-xdist`) by default. The project runs directly as a Python module. DOLFINx and its dependencies (PETSc, mpi4py, UFL) must be installed in the environment.
 
@@ -104,7 +110,7 @@ The system has three layers:
 
 ## Simulation Rules
 
-- Use 4 CPUs for all simulations runs by default to speed up data generation.
+- Use 4 physical cores for simulation runs by default to speed up data generation. `./run.sh -n 4` now launches 4 pinned single-threaded MPI ranks; add `--core-list` to reserve specific physical cores when running multiple simulations concurrently.
 - use the `./output` directory for all simulation outputs
 - single runs overwrite `./output/<category>/<preset>/` after cleaning it first
 - dataset-generation batches should use `--n-runs`, which creates `./output/<category>/<preset>/seed_<seed>/` subdirectories with consecutive seeds from the config
