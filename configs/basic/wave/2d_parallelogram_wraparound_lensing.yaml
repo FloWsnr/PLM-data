@@ -1,0 +1,87 @@
+preset: wave
+parameters:
+  damping:
+    sample: uniform
+    min: 0.002
+    max: 0.01
+coefficients:
+  c_sq:
+    type: radial_cosine
+    params:
+      base:
+        sample: uniform
+        min: 1.18
+        max: 1.55
+      amplitude:
+        sample: uniform
+        min: 0.2
+        max: 0.55
+      frequency:
+        sample: uniform
+        min: 10.0
+        max: 16.0
+      center:
+      - sample: uniform
+        min: 0.48
+        max: 0.74
+      - sample: uniform
+        min: 0.3
+        max: 0.7
+domain:
+  type: parallelogram
+  origin: [0.0, 0.0]
+  axis_x: [1.0, 0.0]
+  axis_y: [0.35, 1.0]
+  mesh_resolution: [144, 144]
+time:
+  dt: 0.004
+  t_end: 1.6
+inputs:
+  u:
+    initial_condition:
+      type: constant
+      params:
+        value: 0.0
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+        - count:
+            sample: randint
+            min: 1
+            max: 2
+          amplitude:
+            sample: uniform
+            min: 7.0
+            max: 10.0
+          sigma:
+            sample: uniform
+            min: 0.045
+            max: 0.08
+          aspect_ratio:
+            sample: uniform
+            min: 1.2
+            max: 2.0
+          center:
+          - sample: uniform
+            min: 0.24
+            max: 0.45
+          - sample: uniform
+            min: 0.25
+            max: 0.55
+  forcing:
+    source:
+      type: none
+      params: {}
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.full_periodic_2d
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  resolution: [144, 144]
+  num_frames: 61
+seed: 42

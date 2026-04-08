@@ -3,41 +3,42 @@ parameters:
   damping:
     sample: uniform
     min: 0.006
-    max: 0.022
+    max: 0.018
 coefficients:
   c_sq:
     type: radial_cosine
     params:
       base:
         sample: uniform
-        min: 1.45
-        max: 1.95
+        min: 0.98
+        max: 1.24
       amplitude:
         sample: uniform
-        min: 0.28
-        max: 0.72
+        min: 0.12
+        max: 0.28
       frequency:
         sample: uniform
-        min: 11.0
-        max: 21.0
-      center:
-      - sample: uniform
-        min: 0.42
-        max: 0.58
-      - sample: uniform
-        min: 0.38
-        max: 0.62
+        min: 6.0
+        max: 9.5
+      center: [0.0, 0.0]
 domain:
-  type: rectangle
-  size:
-  - 1.0
-  - 1.0
-  mesh_resolution:
-  - 144
-  - 144
+  type: annulus
+  allow_sampling: true
+  inner_radius:
+    sample: uniform
+    min: 0.28
+    max: 0.36
+  outer_radius:
+    sample: uniform
+    min: 0.98
+    max: 1.12
+  mesh_size:
+    sample: uniform
+    min: 0.015
+    max: 0.019
 time:
-  dt: 0.0035
-  t_end: 1.0
+  dt: 0.004
+  t_end: 1.6
 inputs:
   u:
     initial_condition:
@@ -50,62 +51,62 @@ inputs:
       params:
         background: 0.0
         generators:
-        - count:
-            sample: randint
-            min: 1
-            max: 2
-          amplitude:
-            sample: uniform
-            min: 9.5
-            max: 14.5
-          sigma:
-            sample: uniform
-            min: 0.035
-            max: 0.07
-          aspect_ratio:
-            sample: uniform
-            min: 1.0
-            max: 2.1
-          center:
-          - sample: uniform
-            min: 0.16
-            max: 0.34
-          - sample: uniform
-            min: 0.24
-            max: 0.76
         - count: 1
           amplitude:
             sample: uniform
-            min: -5.2
-            max: -2.4
+            min: 6.0
+            max: 8.8
           sigma:
             sample: uniform
-            min: 0.03
-            max: 0.06
+            min: 0.06
+            max: 0.1
           aspect_ratio:
             sample: uniform
             min: 1.0
             max: 1.8
           center:
           - sample: uniform
-            min: 0.3
-            max: 0.48
+            min: 0.38
+            max: 0.76
           - sample: uniform
-            min: 0.28
-            max: 0.72
+            min: 0.38
+            max: 0.76
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: -7.2
+            max: -4.4
+          sigma:
+            sample: uniform
+            min: 0.05
+            max: 0.09
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 1.7
+          center:
+          - sample: uniform
+            min: -0.78
+            max: -0.4
+          - sample: uniform
+            min: -0.74
+            max: -0.36
   forcing:
     source:
       type: none
       params: {}
 boundary_conditions:
   u:
-    $ref: boundary_field.scalar.homogeneous_neumann_2d
+    inner:
+    - operator: dirichlet
+      value: 0.0
+    outer:
+    - operator: neumann
+      value: 0.0
 solver:
   $ref: solver.profile.constant_lhs_scalar_spd
 output:
   $ref: output.template.scalar_uv
-  resolution:
-  - 144
-  - 144
-  num_frames: 41
+  resolution: [128, 128]
+  num_frames: 61
 seed: 42

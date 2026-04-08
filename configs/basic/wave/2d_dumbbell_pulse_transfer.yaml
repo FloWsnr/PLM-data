@@ -1,26 +1,53 @@
 preset: wave
 parameters:
-  damping: 0.01
+  damping:
+    sample: uniform
+    min: 0.008
+    max: 0.03
 coefficients:
   c_sq:
-    type: radial_cosine
+    type: affine
     params:
-      base: 1.8
-      amplitude: 0.65
-      frequency: 18.0
-      center:
-      - 0.5
-      - 0.5
+      constant:
+        sample: uniform
+        min: 1.2
+        max: 1.45
+      x:
+        sample: uniform
+        min: 0.4
+        max: 0.75
+      y:
+        sample: uniform
+        min: -0.16
+        max: 0.16
 domain:
   type: dumbbell
-  left_center: [0.3, 0.5]
-  right_center: [0.7, 0.5]
-  lobe_radius: 0.23
-  neck_width: 0.12
-  mesh_size: 0.018
+  allow_sampling: true
+  left_center:
+  - sample: uniform
+    min: 0.26
+    max: 0.3
+  - 0.5
+  right_center:
+  - sample: uniform
+    min: 0.7
+    max: 0.74
+  - 0.5
+  lobe_radius:
+    sample: uniform
+    min: 0.2
+    max: 0.24
+  neck_width:
+    sample: uniform
+    min: 0.08
+    max: 0.14
+  mesh_size:
+    sample: uniform
+    min: 0.015
+    max: 0.019
 time:
-  dt: 0.004
-  t_end: 0.8
+  dt: 0.0035
+  t_end: 1.1
 inputs:
   u:
     initial_condition:
@@ -39,20 +66,43 @@ inputs:
             max: 2
           amplitude:
             sample: uniform
-            min: 10.2
-            max: 13.8
+            min: 8.8
+            max: 13.0
           sigma:
             sample: uniform
-            min: 0.04
-            max: 0.08
-          aspect_ratio: 1.0
+            min: 0.035
+            max: 0.06
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 2.0
           center:
           - sample: uniform
-            min: 0.19
-            max: 0.37
+            min: 0.14
+            max: 0.31
           - sample: uniform
-            min: 0.35
-            max: 0.53
+            min: 0.28
+            max: 0.72
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: -4.4
+            max: -1.8
+          sigma:
+            sample: uniform
+            min: 0.028
+            max: 0.05
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 1.7
+          center:
+          - sample: uniform
+            min: 0.25
+            max: 0.38
+          - sample: uniform
+            min: 0.36
+            max: 0.64
   forcing:
     source:
       type: none
@@ -65,7 +115,7 @@ solver:
 output:
   $ref: output.template.scalar_uv
   resolution:
-  - 64
-  - 64
-  num_frames: 25
+  - 160
+  - 160
+  num_frames: 45
 seed: 42
