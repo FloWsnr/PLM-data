@@ -640,7 +640,11 @@ def _realize_domain_params(
     return realized
 
 
-def realize_simulation_config(config: SimulationConfig) -> SimulationConfig:
+def realize_simulation_config(
+    config: SimulationConfig,
+    *,
+    realize_initial_conditions: bool = True,
+) -> SimulationConfig:
     seed = config.seed
     parameters = _realize_parameters(config.parameters, seed)
     domain = DomainConfig(
@@ -667,12 +671,16 @@ def realize_simulation_config(config: SimulationConfig) -> SimulationConfig:
             initial_condition=(
                 None
                 if input_config.initial_condition is None
-                else _realize_field_expression(
-                    input_config.initial_condition,
-                    gdim=gdim,
-                    parameters=parameters,
-                    seed=seed,
-                    stream_root=f"inputs.{name}.initial_condition",
+                else (
+                    _realize_field_expression(
+                        input_config.initial_condition,
+                        gdim=gdim,
+                        parameters=parameters,
+                        seed=seed,
+                        stream_root=f"inputs.{name}.initial_condition",
+                    )
+                    if realize_initial_conditions
+                    else deepcopy(input_config.initial_condition)
                 )
             ),
         )

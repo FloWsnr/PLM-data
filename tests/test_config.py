@@ -6,6 +6,7 @@ import pytest
 import yaml
 
 from plm_data.core.config import load_config
+from plm_data.core.config_realization import realize_simulation_config
 from plm_data.core.solver_strategies import (
     CONSTANT_LHS_BLOCK_DIRECT,
     CONSTANT_LHS_CURL_DIRECT,
@@ -40,6 +41,10 @@ def _write_yaml(tmp_path, name: str, data: dict[str, object]):
     path = tmp_path / name
     path.write_text(yaml.dump(data))
     return path
+
+
+def _realized_config(path: str):
+    return realize_simulation_config(load_config(path))
 
 
 def test_load_config():
@@ -679,9 +684,11 @@ def test_load_config_plate():
 
 
 def test_load_config_elasticity_2d():
-    cfg = load_config("configs/basic/elasticity/2d_cantilever_impulse_ringdown.yaml")
+    raw_cfg = load_config("configs/basic/elasticity/2d_cantilever_impulse_ringdown.yaml")
+    cfg = realize_simulation_config(raw_cfg)
     boundary_field = cfg.boundary_field("displacement")
-    velocity = cfg.input("velocity")
+    velocity = raw_cfg.input("velocity")
+    realized_velocity = cfg.input("velocity")
     assert cfg.preset == "elasticity"
     assert cfg.domain.dimension == 2
     assert 6.0 <= cfg.parameters["young_modulus"] <= 8.2
@@ -690,14 +697,20 @@ def test_load_config_elasticity_2d():
     assert 0.009 <= cfg.parameters["eta_mass"] <= 0.015
     assert 0.001 <= cfg.parameters["eta_stiffness"] <= 0.0019
     assert cfg.input("displacement").initial_condition.type == "zero"
-    assert velocity.initial_condition.components["x"].params["value"] == 0.0
-    assert velocity.initial_condition.components["y"].type == "gaussian_bump"
+    assert realized_velocity.initial_condition.components["x"].params["value"] == 0.0
+    assert realized_velocity.initial_condition.components["y"].type == "gaussian_bump"
     assert (
         velocity.initial_condition.components["y"].params["amplitude"]["sample"]
         == "uniform"
     )
-    assert velocity.initial_condition.components["y"].params["sigma"]["sample"] == "uniform"
-    assert velocity.initial_condition.components["y"].params["center"][0]["sample"] == "uniform"
+    assert (
+        velocity.initial_condition.components["y"].params["sigma"]["sample"]
+        == "uniform"
+    )
+    assert (
+        velocity.initial_condition.components["y"].params["center"][0]["sample"]
+        == "uniform"
+    )
     assert cfg.input("forcing").source.type == "zero"
     assert cfg.output_mode("displacement") == "components"
     assert cfg.output_mode("velocity") == "components"
@@ -708,18 +721,26 @@ def test_load_config_elasticity_2d():
 
 
 def test_load_config_elasticity_3d():
-    cfg = load_config("configs/basic/elasticity/3d_cantilever_impulse_ringdown.yaml")
+    raw_cfg = load_config("configs/basic/elasticity/3d_cantilever_impulse_ringdown.yaml")
+    cfg = realize_simulation_config(raw_cfg)
     boundary_field = cfg.boundary_field("displacement")
-    velocity = cfg.input("velocity")
+    velocity = raw_cfg.input("velocity")
+    realized_velocity = cfg.input("velocity")
     assert cfg.preset == "elasticity"
     assert cfg.domain.dimension == 3
     assert 5.2 <= cfg.parameters["young_modulus"] <= 6.9
     assert 0.27 <= cfg.parameters["poisson_ratio"] <= 0.34
     assert cfg.output.resolution == [64, 16, 16]
-    assert velocity.initial_condition.components["y"].type == "gaussian_bump"
-    assert velocity.initial_condition.components["y"].params["amplitude"]["sample"] == "uniform"
-    assert velocity.initial_condition.components["y"].params["sigma"]["sample"] == "uniform"
-    assert velocity.initial_condition.components["z"].params["value"] == 0.0
+    assert realized_velocity.initial_condition.components["y"].type == "gaussian_bump"
+    assert (
+        velocity.initial_condition.components["y"].params["amplitude"]["sample"]
+        == "uniform"
+    )
+    assert (
+        velocity.initial_condition.components["y"].params["sigma"]["sample"]
+        == "uniform"
+    )
+    assert realized_velocity.initial_condition.components["z"].params["value"] == 0.0
     assert boundary_field.side_conditions("x-")[0].type == "dirichlet"
     assert boundary_field.side_conditions("z+")[0].type == "neumann"
     assert cfg.solver.strategy == CONSTANT_LHS_BLOCK_DIRECT

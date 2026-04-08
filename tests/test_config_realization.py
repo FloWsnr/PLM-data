@@ -100,7 +100,7 @@ def test_realize_simulation_config_is_seeded_and_concrete(tmp_path):
 
     data["seed"] = 7
     cfg_other_seed = load_config(
-        _write_yaml(tmp_path, "realize_fisher_kpp_2.yaml", data)
+        _write_yaml(tmp_path, "realize_fisher_kpp_2.yaml", data),
     )
     realized_c = realize_simulation_config(cfg_other_seed)
 

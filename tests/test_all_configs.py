@@ -10,6 +10,7 @@ import importlib.util
 import pytest
 
 from plm_data.core.config import load_config
+from plm_data.core.config_realization import realize_simulation_config
 from plm_data.core.output import FrameWriter
 from plm_data.presets import get_preset
 
@@ -63,6 +64,7 @@ def test_config_runs(config_path, tmp_path):
         pytest.skip("gmsh domain requires python-gmsh")
 
     # This is a parser/build/solve smoke sweep, not a fidelity benchmark.
+    cfg = realize_simulation_config(cfg)
     _prepare_smoke_run_config(cfg, tmp_path)
 
     preset = get_preset(cfg.preset)
