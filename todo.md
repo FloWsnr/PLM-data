@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 125 configs.
+Current baseline: 38 PDE presets and 133 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -12,11 +12,19 @@ rename existing cases.
 
 #### Advection (`configs/basic/advection`)
 
-1. `2d_cellular_blob_advection`: one or two blobs stirred by periodic cellular flow with weak diffusion.
-2. `2d_diagonal_blob_transport`: one or two blobs translated diagonally with no diffusion.
-3. `2d_dumbbell_rotating_blob_advection`: one or two blobs launched in one dumbbell lobe and recirculated through the neck under rotating flow.
-4. `2d_rotating_blob_advection`: one or two blobs rotating around the domain center with slight diffusion.
-5. `3d_swirling_blob_advection`: one or two blobs carried by a 3D periodic swirling flow with weak diffusion.
+1. `2d_absorbing_diagonal_stripes`: oblique stripe field swept diagonally into absorbing walls, ending in clipped boundary remnants instead of periodic wrap-around.
+2. `2d_annulus_rotating_twin_blobs`: two blobs orbit around an annular ring and gradually smooth while staying confined between the inner and outer walls.
+3. `2d_cellular_blob_advection`: one or two blobs stretched into curved filaments by periodic cellular flow with weak diffusion.
+4. `2d_channel_obstacle_clockwise_bypass`: an off-center blob is swept beneath a non-centered circular obstacle, then curls downstream along the lower wake side.
+5. `2d_channel_obstacle_counterclockwise_bypass`: a blob launched beside the cylinder rises over the top of the same channel-obstacle geometry, giving a complementary upper-bypass trajectory.
+6. `2d_diagonal_blob_transport`: one or two blobs translated diagonally across a periodic box, with clear wrap-around at the edges.
+7. `2d_disk_outward_ring_sweep`: concentric signed rings advected outward inside a disk and filtered by an absorbing outer boundary.
+8. `2d_dumbbell_neck_sweep_advection`: a blob launched in the left lobe is swept through the neck into the right chamber before strong decay sets in.
+9. `2d_multicell_blob_mixing`: four compact blobs are torn apart and redistributed by a fast multi-cell periodic mixer.
+10. `2d_parallelogram_drifting_bands_advection`: oblique sine bands drift and bend on a skew periodic cell under mean flow plus cross-cell recirculation.
+11. `2d_periodic_shear_quadrant_filamentation`: a quadrant pattern shears into smooth S-shaped filaments under periodic shear.
+12. `2d_rotating_blob_advection`: one or two blobs rotate around the square center under weak diffusion and no-flux walls.
+13. `3d_swirling_blob_advection`: one or two blobs carried by a 3D periodic swirling flow with weak diffusion.
 
 #### Elasticity (`configs/basic/elasticity`)
 

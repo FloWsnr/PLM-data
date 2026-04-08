@@ -1,0 +1,58 @@
+preset: advection
+parameters: {}
+coefficients:
+  velocity:
+    components:
+      x:
+        type: sine_waves
+        params:
+          background: 0.2
+          modes:
+            - amplitude: 0.95
+              cycles: [0.0, 2.0]
+              phase: 0.0
+      y:
+        type: constant
+        params:
+          value: 0.18
+  diffusivity:
+    type: constant
+    params:
+      value: 0.00015
+domain:
+  type: rectangle
+  size:
+  - 1.0
+  - 1.0
+  mesh_resolution:
+  - 128
+  - 128
+time:
+  dt: 0.005
+  t_end: 2.0
+inputs:
+  u:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: quadrants
+      params:
+        split: [0.5, 0.5]
+        region_values:
+          "00": 1.0
+          "01": 0.0
+          "10": 0.0
+          "11": 1.0
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.full_periodic_2d
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+output:
+  $ref: output.template.scalar_u
+  resolution:
+  - 128
+  - 128
+  num_frames: 61
+seed: 42

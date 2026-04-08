@@ -1,0 +1,54 @@
+preset: advection
+parameters: {}
+coefficients:
+  velocity:
+    components:
+      x:
+        type: affine
+        params:
+          constant: 1.006
+          y: -1.2
+      y:
+        type: affine
+        params:
+          constant: -1.14
+          x: 1.2
+  diffusivity:
+    type: constant
+    params:
+      value: 0.001
+domain:
+  type: channel_obstacle
+  length: 2.0
+  height: 1.0
+  obstacle_center: [0.95, 0.63]
+  obstacle_radius: 0.14
+  mesh_size: 0.025
+time:
+  dt: 0.005
+  t_end: 1.1
+inputs:
+  u:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+        - count: 1
+          amplitude: 1.0
+          sigma: 0.055
+          aspect_ratio: 1.4
+          center: [0.28, 0.48]
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_neumann_channel_obstacle
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+output:
+  $ref: output.template.scalar_u
+  resolution: [256, 128]
+  num_frames: 51
+seed: 42

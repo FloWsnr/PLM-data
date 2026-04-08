@@ -1,0 +1,55 @@
+preset: advection
+parameters: {}
+coefficients:
+  velocity:
+    components:
+      x:
+        type: affine
+        params:
+          y: -1.45
+      y:
+        type: affine
+        params:
+          x: 1.45
+  diffusivity:
+    type: constant
+    params:
+      value: 0.00025
+domain:
+  type: annulus
+  inner_radius: 0.35
+  outer_radius: 1.0
+  mesh_size: 0.02
+time:
+  dt: 0.005
+  t_end: 3.0
+inputs:
+  u:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+        - count: 1
+          amplitude: 1.0
+          sigma: 0.07
+          aspect_ratio: 1.0
+          center: [0.68, 0.0]
+        - count: 1
+          amplitude: 0.9
+          sigma: 0.08
+          aspect_ratio: 1.0
+          center: [-0.55, 0.22]
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_neumann_annulus
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+output:
+  $ref: output.template.scalar_u
+  resolution: [128, 128]
+  num_frames: 61
+seed: 42

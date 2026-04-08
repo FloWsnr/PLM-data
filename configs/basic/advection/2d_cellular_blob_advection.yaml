@@ -29,11 +29,11 @@ domain:
   - 1.0
   - 1.0
   mesh_resolution:
-  - 96
-  - 96
+  - 128
+  - 128
 time:
   dt: 0.01
-  t_end: 2.0
+  t_end: 2.6
 inputs:
   u:
     source:
@@ -72,7 +72,7 @@ solver:
 output:
   $ref: output.template.scalar_u
   resolution:
-  - 96
-  - 96
-  num_frames: 41
+  - 128
+  - 128
+  num_frames: 53
 seed: 42

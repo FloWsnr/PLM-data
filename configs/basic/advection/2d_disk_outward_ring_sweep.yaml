@@ -1,0 +1,47 @@
+preset: advection
+parameters: {}
+coefficients:
+  velocity:
+    components:
+      x:
+        type: affine
+        params:
+          x: 1.15
+      y:
+        type: affine
+        params:
+          y: 1.15
+  diffusivity:
+    type: constant
+    params:
+      value: 0.0002
+domain:
+  type: disk
+  center: [0.0, 0.0]
+  radius: 1.0
+  mesh_size: 0.025
+time:
+  dt: 0.005
+  t_end: 0.9
+inputs:
+  u:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: radial_cosine
+      params:
+        base: 0.0
+        amplitude: 1.0
+        frequency: 8.0
+        center: [0.0, 0.0]
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_dirichlet_outer
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+output:
+  $ref: output.template.scalar_u
+  resolution: [128, 128]
+  num_frames: 61
+seed: 42
