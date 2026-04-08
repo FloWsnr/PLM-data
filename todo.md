@@ -143,11 +143,6 @@ rename existing cases.
 3. `2d_shear_mode_interaction`: orthogonal sinusoidal velocity modes steepening, interacting, and diffusing on a periodic box.
 4. `3d_shear_mode_interaction`: three sinusoidal velocity modes steepening and diffusing in a 3D periodic box.
 
-#### Compressible Euler (`configs/fluids/compressible_euler`)
-
-1. `2d_reflective_strong_quadrant_shock_interaction`: strong reflective four-quadrant Riemann problem producing interacting shocks, contacts, and jets in a square box.
-2. `2d_reflective_strong_quadrant_shock_interaction_lowres`: lower-resolution, shorter-horizon smoke-test version of the same strong reflective quadrant shock interaction.
-
 #### Compressible Navier-Stokes (`configs/fluids/compressible_navier_stokes`)
 
 1. `2d_channel_obstacle_heating_expansion`: localized heating in a channel with an obstacle drives expansion waves and a thermal wake around the blockage.
