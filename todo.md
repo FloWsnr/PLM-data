@@ -130,18 +130,36 @@ geometry, boundary values, or initial conditions so seed changes are visible.
 #### Plate (`configs/basic/plate`)
 
 All plate configs now use sampled geometry, material, and excitation parameters,
-and every 2D case outputs at least `128x128`.
+every 2D case outputs at least `128x128`, and every current Gmsh-backed 2D
+plate domain has at least two distinct configs.
 
-1. `2d_annulus_multilobe_load_settling`: slowly forced annular plate settling into low-amplitude multi-lobe sag patterns around the inner hole.
-2. `2d_annulus_radial_ringdown`: concentric annular ringdown with sampled radial spacing and a slight azimuthal asymmetry.
-3. `2d_channel_obstacle_shadow_scatter`: an upstream kick scatters around a circular obstacle, leaving a seed-dependent wake lobe on one side of the perforation.
-4. `2d_disk_mode_vibration`: a disk seeded by concentric deflection plus an off-center impulse, producing circular-to-spiral mode mixing.
-5. `2d_dumbbell_lobe_transfer_ringdown`: a left-chamber kick drives delayed neck-coupled motion toward the bridge and softer right chamber.
-6. `2d_parallelogram_oblique_ripple_beating`: skew plate with oblique multi-mode beating and slanted nodal bands that avoid axis locking.
-7. `2d_quadrant_snapthrough_beating`: quadrant release pattern breaking into energetic lobe exchange and high-contrast mode conversion.
-8. `2d_simply_supported_mode_vibration`: rectangular simply supported plate with oblique multimode beating instead of one textbook standing mode.
-9. `2d_stiffness_interface_scatter`: localized kick hitting a left-right stiffness jump and refracting into asymmetric lobes.
-10. `2d_strip_release_fronts`: strip-like step release launching axial fronts and broad standing packets with slower relaxation.
+1. `2d_airfoil_channel_surface_skimming_ringdown`: an upstream oblique ringdown skims the airfoil surface and relaxes into thin wall-following wake ribbons.
+2. `2d_airfoil_channel_wake_load_settling`: a downstream-biased load plus oblique standing modes create asymmetric wake pockets behind the airfoil.
+3. `2d_annulus_multilobe_load_settling`: slowly forced annular plate settling into low-amplitude multi-lobe sag patterns around the inner hole.
+4. `2d_annulus_radial_ringdown`: concentric annular ringdown with sampled radial spacing and a slight azimuthal asymmetry.
+5. `2d_channel_obstacle_obstacle_halo_settling`: obstacle-centered loading creates a perforation halo that settles into screened lobes around the circular cutout.
+6. `2d_channel_obstacle_shadow_scatter`: an upstream kick scatters around a circular obstacle, leaving a seed-dependent wake lobe on one side of the perforation.
+7. `2d_disk_mode_vibration`: a disk seeded by concentric deflection plus an off-center impulse, producing circular-to-spiral mode mixing.
+8. `2d_dumbbell_lobe_transfer_ringdown`: a left-chamber kick drives delayed neck-coupled motion toward the bridge and softer right chamber.
+9. `2d_l_shape_arm_exchange_settling`: asymmetric forcing trades amplitude between the two arms of an L-shaped plate while the reentrant corner redirects the response.
+10. `2d_l_shape_reentrant_corner_ringdown`: a corner-focused ringdown highlights the L-shape singular corner and the reflected diagonals it launches.
+11. `2d_multi_hole_plate_interstitial_ringdown`: compact motion threads through the ligaments between holes, making the solid web ring more than the plate exterior.
+12. `2d_multi_hole_plate_perforation_load_settling`: an off-axis perforated-plate load settles into hole-shadowed lobes and screened pockets around the sampled holes.
+13. `2d_parallelogram_oblique_ripple_beating`: skew plate with oblique multi-mode beating and slanted nodal bands that avoid axis locking.
+14. `2d_porous_channel_percolating_ringdown`: a broad porous-channel ringdown leaks through different pore corridors each seed, producing percolation-like transport of plate motion.
+15. `2d_porous_channel_trapped_pocket_settling`: localized loading leaves trapped high-amplitude pockets in sheltered porous cavities before they slowly relax.
+16. `2d_quadrant_snapthrough_beating`: quadrant release pattern breaking into energetic lobe exchange and high-contrast mode conversion.
+17. `2d_serpentine_channel_bend_wave_beating`: a short-lived bend-localized packet sweeps across alternating turns before damping out, giving a compact fast transient.
+18. `2d_serpentine_channel_lane_switch_ringdown`: an inlet-biased impulse switches the dominant serpentine lane between bends under a sampled stiffness gradient.
+19. `2d_side_cavity_channel_cavity_release_ringdown`: cavity-trapped motion releases into the main duct and then rebounds back into the side pocket.
+20. `2d_side_cavity_channel_mouth_beating_settling`: mouth-focused forcing drives alternating cavity-duct exchange with a stronger settling lobe at the cavity lip.
+21. `2d_simply_supported_mode_vibration`: rectangular simply supported plate with oblique multimode beating instead of one textbook standing mode.
+22. `2d_stiffness_interface_scatter`: localized kick hitting a left-right stiffness jump and refracting into asymmetric lobes.
+23. `2d_strip_release_fronts`: strip-like step release launching axial fronts and broad standing packets with slower relaxation.
+24. `2d_venturi_channel_oblique_throat_settling`: oblique excitation focuses through the venturi throat and leaves a compressed downstream lobe after the constriction.
+25. `2d_venturi_channel_throat_focusing_ringdown`: a throat-centered packet rings between converging walls before expanding into the outlet section.
+26. `2d_y_bifurcation_branch_split_ringdown`: an inlet pulse splits unevenly between the two branches and reflects off sampled branch geometry.
+27. `2d_y_bifurcation_junction_collision_beating`: counter-signed branch excitations collide at the junction and radiate back up the trunk in a short beating transient.
 
 #### Poisson (`configs/basic/poisson`)
 

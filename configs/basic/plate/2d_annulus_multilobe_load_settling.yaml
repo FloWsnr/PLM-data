@@ -50,7 +50,10 @@ domain:
     sample: uniform
     min: 0.95
     max: 1.08
-  mesh_size: 0.03
+  mesh_size:
+    sample: uniform
+    min: 0.028
+    max: 0.035
 time:
   dt: 0.007
   t_end: 1.75
