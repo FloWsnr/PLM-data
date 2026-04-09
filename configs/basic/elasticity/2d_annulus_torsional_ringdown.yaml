@@ -30,10 +30,20 @@ parameters:
     max: 0.0008
 domain:
   type: annulus
+  allow_sampling: true
   center: ["param:domain_center_x", "param:domain_center_y"]
-  inner_radius: 0.25
-  outer_radius: 1.05
-  mesh_size: 0.03
+  inner_radius:
+    sample: uniform
+    min: 0.22
+    max: 0.29
+  outer_radius:
+    sample: uniform
+    min: 0.99
+    max: 1.09
+  mesh_size:
+    sample: uniform
+    min: 0.028
+    max: 0.034
 time:
   dt: 0.004
   t_end: 1.0

@@ -2,53 +2,87 @@ preset: elasticity
 parameters:
   young_modulus:
     sample: uniform
-    min: 6.0
-    max: 8.1
+    min: 5.2
+    max: 7.0
   poisson_ratio:
     sample: uniform
-    min: 0.25
-    max: 0.33
+    min: 0.24
+    max: 0.34
   density:
     sample: uniform
     min: 0.9
-    max: 1.1
+    max: 1.15
   eta_mass:
     sample: uniform
-    min: 0.006
-    max: 0.011
+    min: 0.008
+    max: 0.014
   eta_stiffness:
     sample: uniform
-    min: 0.0004
-    max: 0.0009
+    min: 0.00045
+    max: 0.001
 domain:
-  type: channel_obstacle
+  type: multi_hole_plate
   allow_sampling: true
-  length:
+  width:
     sample: uniform
-    min: 2.22
-    max: 2.54
+    min: 1.12
+    max: 1.28
   height:
     sample: uniform
-    min: 0.94
-    max: 1.08
-  obstacle_center:
-  - sample: uniform
-    min: 1.02
-    max: 1.24
-  - sample: uniform
-    min: 0.43
-    max: 0.57
-  obstacle_radius:
-    sample: uniform
-    min: 0.18
-    max: 0.24
+    min: 0.82
+    max: 0.98
+  holes:
+  - center:
+    - sample: uniform
+      min: 0.24
+      max: 0.32
+    - sample: uniform
+      min: 0.24
+      max: 0.34
+    radius:
+      sample: uniform
+      min: 0.055
+      max: 0.08
+  - center:
+    - sample: uniform
+      min: 0.56
+      max: 0.68
+    - sample: uniform
+      min: 0.48
+      max: 0.62
+    radius:
+      sample: uniform
+      min: 0.06
+      max: 0.09
+  - center:
+    - sample: uniform
+      min: 0.86
+      max: 0.96
+    - sample: uniform
+      min: 0.22
+      max: 0.36
+    radius:
+      sample: uniform
+      min: 0.05
+      max: 0.075
+  - center:
+    - sample: uniform
+      min: 0.78
+      max: 0.92
+    - sample: uniform
+      min: 0.62
+      max: 0.74
+    radius:
+      sample: uniform
+      min: 0.045
+      max: 0.07
   mesh_size:
     sample: uniform
-    min: 0.03
-    max: 0.036
+    min: 0.024
+    max: 0.031
 time:
-  dt: 0.0035
-  t_end: 1.1
+  dt: 0.0038
+  t_end: 1.05
 inputs:
   displacement:
     initial_condition:
@@ -65,43 +99,43 @@ inputs:
             - count: 1
               amplitude:
                 sample: uniform
-                min: 0.3
-                max: 0.6
+                min: 0.4
+                max: 0.85
               sigma:
                 sample: uniform
-                min: 0.07
-                max: 0.12
+                min: 0.05
+                max: 0.08
               aspect_ratio:
                 sample: uniform
                 min: 1.0
                 max: 1.7
               center:
               - sample: uniform
-                min: 0.9
-                max: 1.0
+                min: 0.28
+                max: 0.44
               - sample: uniform
-                min: 0.44
-                max: 0.56
+                min: 0.26
+                max: 0.42
             - count: 1
               amplitude:
                 sample: uniform
-                min: -0.6
-                max: -0.3
+                min: -0.8
+                max: -0.35
               sigma:
                 sample: uniform
-                min: 0.07
-                max: 0.12
+                min: 0.05
+                max: 0.08
               aspect_ratio:
                 sample: uniform
                 min: 1.0
                 max: 1.7
               center:
               - sample: uniform
-                min: 1.4
-                max: 1.5
+                min: 0.72
+                max: 0.94
               - sample: uniform
-                min: 0.44
-                max: 0.56
+                min: 0.5
+                max: 0.68
         y:
           type: gaussian_blobs
           params:
@@ -110,76 +144,40 @@ inputs:
             - count: 1
               amplitude:
                 sample: uniform
-                min: 1.0
-                max: 1.5
+                min: 0.9
+                max: 1.45
               sigma:
                 sample: uniform
-                min: 0.07
-                max: 0.11
+                min: 0.05
+                max: 0.085
               aspect_ratio:
                 sample: uniform
                 min: 1.0
-                max: 1.7
+                max: 1.8
               center:
               - sample: uniform
-                min: 1.15
-                max: 1.25
+                min: 0.54
+                max: 0.72
               - sample: uniform
-                min: 0.72
-                max: 0.82
-            - count: 1
-              amplitude:
-                sample: uniform
-                min: -1.5
-                max: -1.0
-              sigma:
-                sample: uniform
-                min: 0.07
-                max: 0.11
-              aspect_ratio:
-                sample: uniform
-                min: 1.0
-                max: 1.7
-              center:
-              - sample: uniform
-                min: 1.15
-                max: 1.25
-              - sample: uniform
-                min: 0.18
-                max: 0.28
+                min: 0.36
+                max: 0.54
   forcing:
     source:
       type: zero
       params: {}
 boundary_conditions:
   displacement:
-    inlet:
+    outer:
     - operator: dirichlet
-      value:
-      - 0.0
-      - 0.0
-    outlet:
-    - operator: dirichlet
-      value:
-      - 0.0
-      - 0.0
-    walls:
-    - operator: dirichlet
-      value:
-      - 0.0
-      - 0.0
-    obstacle:
+      value: [0.0, 0.0]
+    holes:
     - operator: neumann
-      value:
-      - 0.0
-      - 0.0
+      value: [0.0, 0.0]
 solver:
   $ref: solver.profile.constant_lhs_block_direct
 output:
-  resolution:
-  - 192
-  - 128
-  num_frames: 36
+  resolution: [192, 144]
+  num_frames: 40
   formats:
     $ref: output.formats.standard
   fields:
