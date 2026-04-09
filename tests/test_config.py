@@ -203,6 +203,19 @@ def test_load_config_rejects_annulus_without_center(tmp_path):
         load_config(path)
 
 
+def test_load_config_rejects_invalid_l_shape_geometry(tmp_path):
+    data = yaml.safe_load(
+        Path("configs/basic/heat/2d_l_shape_corner_heating.yaml").read_text()
+    )
+    data["domain"]["outer_width"] = 1.0
+    data["domain"]["cutout_width"] = 1.2
+
+    path = _write_yaml(tmp_path, "bad_l_shape.yaml", data)
+
+    with pytest.raises(ValueError, match="cutout_width' < 'outer_width"):
+        load_config(path)
+
+
 def test_load_config_boundary_field_sections():
     cfg = load_config("configs/basic/poisson/2d_sinusoidal_source_response.yaml")
     u_boundary = cfg.boundary_field("u")
@@ -406,6 +419,16 @@ def test_load_config_basic_heat_serpentine_channel_domain():
     assert cfg.boundary_field("u").side_conditions("inlet")[0].type == "dirichlet"
     assert cfg.boundary_field("u").side_conditions("outlet")[0].type == "dirichlet"
     assert cfg.boundary_field("u").side_conditions("walls")[0].type == "neumann"
+
+
+def test_load_config_basic_heat_l_shape_domain():
+    cfg = load_config("configs/basic/heat/2d_l_shape_corner_heating.yaml")
+    assert cfg.domain.type == "l_shape"
+    assert cfg.domain.dimension == 2
+    assert cfg.domain.allow_sampling is True
+    assert set(cfg.boundary_field("u").sides) == {"outer", "notch"}
+    assert cfg.boundary_field("u").side_conditions("outer")[0].type == "dirichlet"
+    assert cfg.boundary_field("u").side_conditions("notch")[0].type == "dirichlet"
 
 
 def test_load_config_annulus_center_is_explicit():

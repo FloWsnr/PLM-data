@@ -589,6 +589,20 @@ def _realize_domain_params(
                 seed=seed,
                 stream_root=f"domain.params.{key}",
             )
+    elif domain.type == "l_shape":
+        for key in (
+            "outer_width",
+            "outer_height",
+            "cutout_width",
+            "cutout_height",
+            "mesh_size",
+        ):
+            realized[key] = _realize_numeric_tree(
+                params[key],
+                parameters=parameters,
+                seed=seed,
+                stream_root=f"domain.params.{key}",
+            )
     elif domain.type == "parallelogram":
         for key in ("origin", "axis_x", "axis_y"):
             realized[key] = _realize_numeric_tree(

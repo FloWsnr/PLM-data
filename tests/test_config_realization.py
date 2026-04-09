@@ -233,6 +233,25 @@ def test_realize_simulation_config_concretizes_serpentine_channel_domain_samplin
     assert 0.026 <= realized_a.domain.params["mesh_size"] <= 0.034
 
 
+def test_realize_simulation_config_concretizes_l_shape_domain_sampling():
+    cfg = load_config("configs/basic/heat/2d_l_shape_corner_heating.yaml")
+
+    realized_a = realize_simulation_config(cfg)
+    realized_b = realize_simulation_config(cfg)
+
+    assert realized_a.domain.params == realized_b.domain.params
+    assert isinstance(realized_a.domain.params["outer_width"], float)
+    assert isinstance(realized_a.domain.params["outer_height"], float)
+    assert isinstance(realized_a.domain.params["cutout_width"], float)
+    assert isinstance(realized_a.domain.params["cutout_height"], float)
+    assert isinstance(realized_a.domain.params["mesh_size"], float)
+    assert 0.96 <= realized_a.domain.params["outer_width"] <= 1.12
+    assert 0.96 <= realized_a.domain.params["outer_height"] <= 1.12
+    assert 0.34 <= realized_a.domain.params["cutout_width"] <= 0.46
+    assert 0.34 <= realized_a.domain.params["cutout_height"] <= 0.46
+    assert 0.024 <= realized_a.domain.params["mesh_size"] <= 0.032
+
+
 def test_simulation_runner_serializes_realized_config(tmp_path):
     data = _load_config_dict("configs/basic/heat/2d_localized_blob_diffusion.yaml")
     data["domain"]["allow_sampling"] = True

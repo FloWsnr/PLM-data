@@ -26,6 +26,7 @@ GMSH_DOMAIN_TYPES = {
     "channel_obstacle",
     "disk",
     "dumbbell",
+    "l_shape",
     "y_bifurcation",
     "venturi_channel",
     "serpentine_channel",

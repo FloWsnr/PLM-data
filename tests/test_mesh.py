@@ -115,6 +115,17 @@ def test_annulus_boundary_tags():
             {"outer"},
         ),
         (
+            "l_shape",
+            {
+                "outer_width": 1.1,
+                "outer_height": 1.0,
+                "cutout_width": 0.4,
+                "cutout_height": 0.35,
+                "mesh_size": 0.12,
+            },
+            {"outer", "notch"},
+        ),
+        (
             "channel_obstacle",
             {
                 "length": 1.4,
@@ -252,6 +263,38 @@ def test_serpentine_channel_spans_multiple_lanes():
     assert np.max(wall_midpoints[:, 1]) - np.min(wall_midpoints[:, 1]) > 1.0
 
 
+@pytest.mark.skipif(not HAS_GMSH, reason="gmsh not installed")
+def test_l_shape_notch_boundary_tracks_reentrant_corner():
+    outer_width = 1.2
+    outer_height = 1.0
+    cutout_width = 0.45
+    cutout_height = 0.35
+    domain_geom = create_domain(
+        DomainConfig(
+            type="l_shape",
+            params={
+                "outer_width": outer_width,
+                "outer_height": outer_height,
+                "cutout_width": cutout_width,
+                "cutout_height": cutout_height,
+                "mesh_size": 0.1,
+            },
+        )
+    )
+    reentrant_x = outer_width - cutout_width
+    reentrant_y = outer_height - cutout_height
+    fdim = domain_geom.mesh.topology.dim - 1
+    notch_facets = domain_geom.facet_tags.find(domain_geom.boundary_names["notch"])
+    notch_midpoints = dmesh.compute_midpoints(domain_geom.mesh, fdim, notch_facets)
+
+    assert np.any(np.isclose(notch_midpoints[:, 0], reentrant_x, atol=0.08))
+    assert np.any(np.isclose(notch_midpoints[:, 1], reentrant_y, atol=0.08))
+    assert np.all(
+        np.isclose(notch_midpoints[:, 0], reentrant_x, atol=0.08)
+        | np.isclose(notch_midpoints[:, 1], reentrant_y, atol=0.08)
+    )
+
+
 @pytest.mark.parametrize(
     ("domain_type", "params", "match"),
     [
@@ -321,6 +364,28 @@ def test_serpentine_channel_spans_multiple_lanes():
                 "mesh_size": 0.2,
             },
             "same y-coordinate",
+        ),
+        (
+            "l_shape",
+            {
+                "outer_width": 1.0,
+                "outer_height": 1.0,
+                "cutout_width": 1.0,
+                "cutout_height": 0.3,
+                "mesh_size": 0.2,
+            },
+            "cutout_width",
+        ),
+        (
+            "l_shape",
+            {
+                "outer_width": 1.0,
+                "outer_height": 1.0,
+                "cutout_width": 0.3,
+                "cutout_height": 1.0,
+                "mesh_size": 0.2,
+            },
+            "cutout_height",
         ),
         (
             "parallelogram",

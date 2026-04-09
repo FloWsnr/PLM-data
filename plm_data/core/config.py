@@ -472,6 +472,7 @@ def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
         "annulus": 2,
         "disk": 2,
         "dumbbell": 2,
+        "l_shape": 2,
         "parallelogram": 2,
         "channel_obstacle": 2,
         "y_bifurcation": 2,
@@ -732,6 +733,39 @@ def validate_domain_params(
             )
         return
 
+    if domain_type == "l_shape":
+        _require_keys(
+            "outer_width",
+            "outer_height",
+            "cutout_width",
+            "cutout_height",
+            "mesh_size",
+        )
+        outer_width = _float_param("outer_width", positive=True)
+        outer_height = _float_param("outer_height", positive=True)
+        cutout_width = _float_param("cutout_width", positive=True)
+        cutout_height = _float_param("cutout_height", positive=True)
+        _float_param("mesh_size", positive=True)
+        if (
+            outer_width is not None
+            and cutout_width is not None
+            and cutout_width >= outer_width
+        ):
+            raise ValueError(
+                "L_shape domain requires 'cutout_width' < 'outer_width'. "
+                f"Got cutout_width={cutout_width} and outer_width={outer_width}."
+            )
+        if (
+            outer_height is not None
+            and cutout_height is not None
+            and cutout_height >= outer_height
+        ):
+            raise ValueError(
+                "L_shape domain requires 'cutout_height' < 'outer_height'. "
+                f"Got cutout_height={cutout_height} and outer_height={outer_height}."
+            )
+        return
+
     if domain_type == "parallelogram":
         _require_keys("origin", "axis_x", "axis_y", "mesh_resolution")
         _vector_param("origin", length=2)
@@ -811,6 +845,7 @@ def validate_domain_params(
                     "'branch_length * sin(branch_angle_degrees)' > 'channel_width' "
                     "so the two outlet branches separate cleanly."
                 )
+        return
 
     if domain_type == "venturi_channel":
         _require_keys(
@@ -879,6 +914,7 @@ def validate_domain_params(
         channel_length = _float_param("channel_length", positive=True)
         lane_spacing = _float_param("lane_spacing", positive=True)
         raw_n_bends = params["n_bends"]
+        n_bends: int | None
         n_bends_context = "Serpentine_channel domain parameter 'n_bends'"
         if is_sampler_spec(raw_n_bends):
             if not allow_sampling:
@@ -888,8 +924,9 @@ def validate_domain_params(
                 )
             _validate_domain_sampler(raw_n_bends, n_bends_context, integer=True)
             _validate_sampleable_integer(raw_n_bends, n_bends_context)
+            n_bends = None
         elif _is_param_ref(raw_n_bends):
-            pass
+            n_bends = None
         else:
             n_bends = int(raw_n_bends)
             if float(n_bends) != float(raw_n_bends) or n_bends < 2:
