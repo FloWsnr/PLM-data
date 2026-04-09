@@ -1,0 +1,108 @@
+preset: fisher_kpp
+parameters:
+  D:
+    sample: uniform
+    min: 0.018
+    max: 0.045
+  r:
+    sample: uniform
+    min: 0.45
+    max: 0.8
+  K:
+    sample: uniform
+    min: 0.9
+    max: 1.15
+  wall_exchange:
+    sample: uniform
+    min: 0.16
+    max: 0.42
+coefficients:
+  velocity:
+    components:
+      x:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.06
+            max: 0.06
+      y:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: 0.05
+            max: 0.14
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width:
+    sample: uniform
+    min: 1.0
+    max: 1.18
+  outer_height:
+    sample: uniform
+    min: 1.0
+    max: 1.18
+  cutout_width:
+    sample: uniform
+    min: 0.32
+    max: 0.46
+  cutout_height:
+    sample: uniform
+    min: 0.32
+    max: 0.46
+  mesh_size:
+    sample: uniform
+    min: 0.014
+    max: 0.018
+time:
+  dt: 0.008
+  t_end: 7.5
+inputs:
+  u:
+    initial_condition:
+      type: quadrants
+      params:
+        split:
+          - sample: uniform
+            min: 0.34
+            max: 0.56
+          - sample: uniform
+            min: 0.34
+            max: 0.56
+        region_values:
+          "00":
+            sample: uniform
+            min: 0.74
+            max: 0.96
+          "01":
+            sample: uniform
+            min: 0.34
+            max: 0.58
+          "10":
+            sample: uniform
+            min: 0.06
+            max: 0.18
+          "11":
+            sample: uniform
+            min: 0.22
+            max: 0.42
+boundary_conditions:
+  u:
+    outer:
+      - operator: neumann
+        value: 0.0
+    notch:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: "param:wall_exchange"
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [176, 176]
+  num_frames: 69
+seed: 42

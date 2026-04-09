@@ -3,11 +3,11 @@ parameters:
   D:
     sample: uniform
     min: 0.03
-    max: 0.08
+    max: 0.07
   r:
     sample: uniform
-    min: 0.75
-    max: 1.25
+    min: 0.65
+    max: 1.1
   K:
     sample: uniform
     min: 0.9
@@ -22,83 +22,103 @@ parameters:
     max: 0.05
 coefficients:
   velocity:
-    type: zero
-    params: {}
+    components:
+      x:
+        type: affine
+        params:
+          y:
+            sample: uniform
+            min: -0.8
+            max: -0.42
+      y:
+        type: affine
+        params:
+          x:
+            sample: uniform
+            min: 0.42
+            max: 0.8
 domain:
   allow_sampling: true
-  type: disk
+  type: annulus
   center: ["param:domain_center_x", "param:domain_center_y"]
-  radius:
+  inner_radius:
+    sample: uniform
+    min: 0.28
+    max: 0.4
+  outer_radius:
     sample: uniform
     min: 0.92
-    max: 1.06
+    max: 1.05
   mesh_size:
     sample: uniform
-    min: 0.015
-    max: 0.019
+    min: 0.017
+    max: 0.021
 time:
-  dt: 0.01
-  t_end: 10.0
+  dt: 0.008
+  t_end: 8.0
 inputs:
   u:
     initial_condition:
       type: gaussian_blobs
       params:
-        background: 0.0
+        background:
+          sample: uniform
+          min: 0.02
+          max: 0.08
         generators:
-          - count:
-              sample: randint
-              min: 1
-              max: 2
-            amplitude:
-              sample: uniform
-              min: 0.78
-              max: 1.02
-            sigma:
-              sample: uniform
-              min: 0.09
-              max: 0.16
-            aspect_ratio:
-              sample: uniform
-              min: 1.0
-              max: 1.9
-            center:
-              - sample: uniform
-                min: -0.18
-                max: 0.18
-              - sample: uniform
-                min: -0.18
-                max: 0.18
           - count: 1
             amplitude:
               sample: uniform
-              min: 0.4
-              max: 0.72
+              min: 0.72
+              max: 0.96
             sigma:
               sample: uniform
-              min: 0.06
-              max: 0.1
+              min: 0.11
+              max: 0.16
             aspect_ratio:
               sample: uniform
-              min: 1.2
-              max: 2.2
+              min: 2.2
+              max: 3.4
             center:
               - sample: uniform
-                min: -0.32
-                max: 0.32
+                min: 0.56
+                max: 0.78
               - sample: uniform
-                min: -0.32
-                max: 0.32
+                min: -0.14
+                max: 0.14
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.5
+              max: 0.8
+            sigma:
+              sample: uniform
+              min: 0.08
+              max: 0.13
+            aspect_ratio:
+              sample: uniform
+              min: 1.8
+              max: 3.0
+            center:
+              - sample: uniform
+                min: 0.22
+                max: 0.54
+              - sample: uniform
+                min: 0.12
+                max: 0.44
 boundary_conditions:
   u:
-    $ref: boundary_field.scalar.homogeneous_neumann_outer
+    inner:
+      - operator: neumann
+        value: 0.0
+    outer:
+      - operator: neumann
+        value: 0.0
 solver:
   $ref: solver.profile.nonlinear_mixed_direct
 output:
   $ref: output.template.scalar_u
   formats: [numpy, gif]
-  resolution:
-    - 160
-    - 160
-  num_frames: 73
+  resolution: [160, 160]
+  num_frames: 81
 seed: 42

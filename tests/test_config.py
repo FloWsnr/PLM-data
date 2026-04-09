@@ -113,9 +113,12 @@ def test_load_config_fisher_kpp_2d():
     cfg = load_config("configs/biology/fisher_kpp/2d_logistic_invasion_front.yaml")
     assert cfg.preset == "fisher_kpp"
     assert cfg.domain.dimension == 2
-    assert cfg.parameters["D"] == 0.1
-    assert cfg.parameters["r"] == 1.0
-    assert cfg.parameters["K"] == 1.0
+    assert cfg.parameters["D"]["sample"] == "uniform"
+    assert cfg.parameters["D"]["min"] == 0.07
+    assert cfg.parameters["D"]["max"] == 0.16
+    assert cfg.parameters["r"]["sample"] == "uniform"
+    assert cfg.parameters["K"]["sample"] == "uniform"
+    assert cfg.domain.allow_sampling is True
     assert cfg.coefficient("velocity").type == "zero"
     assert cfg.input("u").initial_condition.type == "step"
     assert cfg.input("u").initial_condition.params["x_split"]["sample"] == "uniform"

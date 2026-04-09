@@ -1,0 +1,103 @@
+preset: fisher_kpp
+parameters:
+  D:
+    sample: uniform
+    min: 0.025
+    max: 0.06
+  r:
+    sample: uniform
+    min: 0.7
+    max: 1.2
+  K:
+    sample: uniform
+    min: 0.9
+    max: 1.2
+coefficients:
+  velocity:
+    components:
+      x:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: 0.04
+            max: 0.12
+      y:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: 0.04
+            max: 0.12
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width:
+    sample: uniform
+    min: 0.98
+    max: 1.16
+  outer_height:
+    sample: uniform
+    min: 0.98
+    max: 1.16
+  cutout_width:
+    sample: uniform
+    min: 0.3
+    max: 0.44
+  cutout_height:
+    sample: uniform
+    min: 0.3
+    max: 0.44
+  mesh_size:
+    sample: uniform
+    min: 0.014
+    max: 0.018
+time:
+  dt: 0.008
+  t_end: 8.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+          - count:
+              sample: randint
+              min: 1
+              max: 2
+            amplitude:
+              sample: uniform
+              min: 0.84
+              max: 1.04
+            sigma:
+              sample: uniform
+              min: 0.07
+              max: 0.11
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.7
+            center:
+              - sample: uniform
+                min: 0.12
+                max: 0.34
+              - sample: uniform
+                min: 0.12
+                max: 0.34
+boundary_conditions:
+  u:
+    outer:
+      - operator: dirichlet
+        value: 0.0
+    notch:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [176, 176]
+  num_frames: 71
+seed: 42

@@ -285,9 +285,32 @@ mixed boundaries or sampled geometry to drive directional chases and pinning.
 
 #### Fisher-KPP (`configs/biology/fisher_kpp`)
 
-1. `2d_disk_radial_invasion`: logistic invasion expanding radially from a localized seed in a disk.
-2. `2d_logistic_invasion_front`: logistic invasion front expanding from a left-right step profile.
-3. `3d_logistic_invasion_front`: 3D logistic invasion front expanding along `x`.
+The 2D Fisher-KPP suite now spans 10 domain families with 2 configs each,
+covering fast and slow fronts, periodic band competition, boundary-fed
+colonization, obstacle-shadowed spreading, and sampled geometry changes from
+seed to seed.
+
+1. `2d_annulus_azimuthal_front_wraparound`: elongated seed arcs wrap around a sampled annulus under rotational advection, giving travelling circumferential fronts instead of purely radial expansion.
+2. `2d_annulus_inner_rim_source_band`: the inner annulus wall is held at carrying capacity while the outer wall absorbs, producing a boundary-fed outward invasion band around the hole.
+3. `2d_channel_obstacle_boundary_forced_bypass`: inlet forcing drives logistic growth around a sampled cylinder, leaving a clear wake shadow and asymmetric bypass route.
+4. `2d_channel_obstacle_wake_recolonization`: upstream and wake-side seeds recolonize around the obstacle under weak recirculation, creating delayed wake filling rather than one clean front.
+5. `2d_disk_radial_invasion`: one or two central seeds expand through a sampled disk with no-flux walls, giving radially biased but seed-sensitive invasion shapes.
+6. `2d_disk_robin_ring_detachment`: radial-cosine bands evolve inside a sampled disk with a lossy Robin rim, producing concentric ring relaxation and boundary-detached growth patterns.
+7. `2d_dumbbell_bridge_invasion_front`: a left-lobe step front fills a large sampled dumbbell and pushes through the bridge into the right chamber with mild drift.
+8. `2d_dumbbell_dual_lobe_exchange`: unequal dumbbell lobe seeds expand and exchange through the neck under mild wall leakage, focusing on inter-lobe transfer rather than immediate global saturation or extinction.
+9. `2d_l_shape_corner_refuge_invasion`: compact corner seeds grow along both arms of a sampled L-shaped domain while the notch acts as a no-flux refuge.
+10. `2d_l_shape_notch_robin_shadow`: quadrant-style initial data drifts upward in an L-shape and is selectively depleted by a lossy notch boundary, creating a re-entrant shadow.
+11. `2d_logistic_invasion_front`: sampled rectangle supports a classical fast planar invasion front with randomized launch position, width, and carrying capacity.
+12. `2d_multi_hole_plate_hole_shadow_channels`: mixed hole and outer-wall losses carve out perforation shadows as quadrant data relaxes across a sampled plate.
+13. `2d_multi_hole_plate_perforation_invasion`: a left-to-right logistic front threads through sampled holes, with a central absorbing hole splitting and delaying the advance.
+14. `2d_parallelogram_swept_quadrant_invasion`: skew-periodic quadrant data is advected obliquely across a sampled parallelogram, producing wraparound invasion rather than a static phase split.
+15. `2d_parallelogram_wraparound_stripe_relaxation`: positive stripe bands coarsen and smooth on a sampled periodic skew cell, reducing obvious axis-aligned bias.
+16. `2d_periodic_shear_band_competition`: near-uniform periodic bands shear, merge, and drift slowly in a rectangular torus, targeting long-lived wraparound competition.
+17. `2d_serpentine_channel_guided_front`: inlet Dirichlet forcing launches a front that follows sampled serpentine bends with clear lane-guided advance.
+18. `2d_serpentine_channel_reverse_lane_shadow`: outlet forcing drives a reverse-propagating front back through the sampled serpentine against wall losses, giving a clear downstream-to-upstream contrast with the inlet-guided case.
+19. `2d_y_bifurcation_asymmetric_branch_competition`: unequal daughter-branch seeds compete while a weak upstream drift pulls the stronger branch back toward the junction.
+20. `2d_y_bifurcation_branch_split_front`: an inlet-fed front fills a sampled Y-bifurcation and splits into the daughter arms with branch-angle-dependent timing.
+21. `3d_logistic_invasion_front`: 3D logistic invasion front expanding along `x`.
 
 #### FitzHugh-Nagumo (`configs/biology/fitzhugh_nagumo`)
 

@@ -1,0 +1,96 @@
+preset: fisher_kpp
+parameters:
+  D:
+    sample: uniform
+    min: 0.02
+    max: 0.045
+  r:
+    sample: uniform
+    min: 0.7
+    max: 1.2
+  K:
+    sample: uniform
+    min: 0.9
+    max: 1.2
+coefficients:
+  velocity:
+    components:
+      x:
+        type: affine
+        params:
+          constant:
+            sample: uniform
+            min: 0.18
+            max: 0.32
+          y:
+            sample: uniform
+            min: -0.45
+            max: -0.22
+      y:
+        type: affine
+        params:
+          constant:
+            sample: uniform
+            min: -0.06
+            max: 0.06
+          x:
+            sample: uniform
+            min: 0.22
+            max: 0.45
+domain:
+  allow_sampling: true
+  type: channel_obstacle
+  length:
+    sample: uniform
+    min: 2.0
+    max: 2.3
+  height:
+    sample: uniform
+    min: 0.96
+    max: 1.12
+  obstacle_center:
+    - sample: uniform
+      min: 0.9
+      max: 1.08
+    - sample: uniform
+      min: 0.44
+      max: 0.64
+  obstacle_radius:
+    sample: uniform
+    min: 0.12
+    max: 0.17
+  mesh_size:
+    sample: uniform
+    min: 0.02
+    max: 0.026
+time:
+  dt: 0.008
+  t_end: 7.0
+inputs:
+  u:
+    initial_condition:
+      type: constant
+      params:
+        value: 0.0
+boundary_conditions:
+  u:
+    inlet:
+      - operator: dirichlet
+        value: "param:K"
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+    obstacle:
+      - operator: dirichlet
+        value: 0.0
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [192, 128]
+  num_frames: 69
+seed: 42
