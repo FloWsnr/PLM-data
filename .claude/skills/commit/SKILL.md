@@ -1,9 +1,9 @@
 ---
 name: commit
-description: This skill should be used when the user asks to "commit", "commit changes", "make a commit", "git commit", merge a git workflow, or wants to save their work to git. Invoked via /commit.
+description: This skill should be used when the user asks to "commit", "commit changes", "make a commit", "git commit", "merge", "merge a git worktree", or wants to save their work to git. Invoked via /commit.
 ---
 
-## Commit Workflow
+## Commit/Merge Workflow
 
 Commit only the changes made during the current session unless the user explicitly asks to commit other changes. Follow these steps:
 
@@ -42,9 +42,11 @@ If the commit includes important changes in API or functionality, update the `CL
 1. Stage only the session-relevant files by name (never `git add -A` or `git add .`)
 2. Run `git log --oneline -5` to match the repository's commit message style
 3. Write a concise commit message (1-2 sentences) focusing on the "why" not the "what"
-```
+4. Run `git status` after to verify success
 
-5. Run `git status` after to verify success
+### Git worktrees
+
+If you are working on a git worktree, follow the same steps when merging into the main branch. Make sure to remove the worktree after merging if it is no longer needed.
 
 ### Important Rules
 
