@@ -1,0 +1,103 @@
+preset: advection
+parameters: {}
+coefficients:
+  velocity:
+    components:
+      x:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: 0.82
+            max: 0.96
+      y:
+        type: affine
+        params:
+          constant:
+            sample: uniform
+            min: -0.78
+            max: -0.62
+          y:
+            sample: uniform
+            min: 1.45
+            max: 1.75
+  diffusivity:
+    type: constant
+    params:
+      value:
+        sample: uniform
+        min: 0.00025
+        max: 0.00045
+domain:
+  allow_sampling: true
+  type: venturi_channel
+  length:
+    sample: uniform
+    min: 2.0
+    max: 2.3
+  height:
+    sample: uniform
+    min: 0.92
+    max: 1.08
+  throat_height:
+    sample: uniform
+    min: 0.34
+    max: 0.48
+  constriction_center_x:
+    sample: uniform
+    min: 0.95
+    max: 1.15
+  constriction_radius:
+    sample: uniform
+    min: 0.42
+    max: 0.62
+  mesh_size:
+    sample: uniform
+    min: 0.028
+    max: 0.036
+time:
+  dt: 0.006
+  t_end: 1.1
+inputs:
+  u:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: radial_cosine
+      params:
+        base: 0.0
+        amplitude:
+          sample: uniform
+          min: 0.85
+          max: 1.12
+        frequency:
+          sample: uniform
+          min: 8.0
+          max: 11.0
+        center:
+          - sample: uniform
+            min: 0.98
+            max: 1.18
+          - sample: uniform
+            min: 0.44
+            max: 0.56
+boundary_conditions:
+  u:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: dirichlet
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [224, 128]
+  num_frames: 49
+seed: 42

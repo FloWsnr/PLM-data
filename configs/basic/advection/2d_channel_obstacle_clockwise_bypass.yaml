@@ -33,12 +33,31 @@ coefficients:
         min: 0.00085
         max: 0.0012
 domain:
+  allow_sampling: true
   type: channel_obstacle
-  length: 2.0
-  height: 1.0
-  obstacle_center: [0.95, 0.63]
-  obstacle_radius: 0.14
-  mesh_size: 0.025
+  length:
+    sample: uniform
+    min: 1.9
+    max: 2.15
+  height:
+    sample: uniform
+    min: 0.94
+    max: 1.08
+  obstacle_center:
+    - sample: uniform
+      min: 0.88
+      max: 1.02
+    - sample: uniform
+      min: 0.58
+      max: 0.7
+  obstacle_radius:
+    sample: uniform
+    min: 0.12
+    max: 0.16
+  mesh_size:
+    sample: uniform
+    min: 0.022
+    max: 0.028
 time:
   dt: 0.005
   t_end: 1.1

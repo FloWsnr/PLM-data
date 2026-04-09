@@ -1,5 +1,14 @@
 preset: advection
 parameters: {}
+parameters:
+  domain_center_x:
+    sample: uniform
+    min: -0.04
+    max: 0.04
+  domain_center_y:
+    sample: uniform
+    min: -0.04
+    max: 0.04
 coefficients:
   velocity:
     components:
@@ -25,10 +34,17 @@ coefficients:
         min: 0.00012
         max: 0.00028
 domain:
+  allow_sampling: true
   type: disk
-  center: [0.0, 0.0]
-  radius: 1.0
-  mesh_size: 0.025
+  center: ["param:domain_center_x", "param:domain_center_y"]
+  radius:
+    sample: uniform
+    min: 0.94
+    max: 1.05
+  mesh_size:
+    sample: uniform
+    min: 0.022
+    max: 0.03
 time:
   dt: 0.005
   t_end: 0.9

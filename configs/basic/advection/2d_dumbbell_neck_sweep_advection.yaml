@@ -1,5 +1,9 @@
 preset: advection
-parameters: {}
+parameters:
+  center_y:
+    sample: uniform
+    min: 0.47
+    max: 0.53
 coefficients:
   velocity:
     components:
@@ -29,12 +33,30 @@ coefficients:
         min: 0.00065
         max: 0.001
 domain:
+  allow_sampling: true
   type: dumbbell
-  left_center: [0.32, 0.5]
-  right_center: [0.68, 0.5]
-  lobe_radius: 0.24
-  neck_width: 0.14
-  mesh_size: 0.015
+  left_center:
+    - sample: uniform
+      min: 0.29
+      max: 0.33
+    - param:center_y
+  right_center:
+    - sample: uniform
+      min: 0.67
+      max: 0.71
+    - param:center_y
+  lobe_radius:
+    sample: uniform
+    min: 0.22
+    max: 0.26
+  neck_width:
+    sample: uniform
+    min: 0.12
+    max: 0.16
+  mesh_size:
+    sample: uniform
+    min: 0.014
+    max: 0.018
 time:
   dt: 0.005
   t_end: 0.7

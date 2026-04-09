@@ -33,11 +33,21 @@ coefficients:
         min: 0.00018
         max: 0.00034
 domain:
+  allow_sampling: true
   type: annulus
   center: ["param:domain_center_x", "param:domain_center_y"]
-  inner_radius: 0.35
-  outer_radius: 1.0
-  mesh_size: 0.02
+  inner_radius:
+    sample: uniform
+    min: 0.31
+    max: 0.39
+  outer_radius:
+    sample: uniform
+    min: 0.94
+    max: 1.04
+  mesh_size:
+    sample: uniform
+    min: 0.019
+    max: 0.024
 time:
   dt: 0.005
   t_end: 3.0

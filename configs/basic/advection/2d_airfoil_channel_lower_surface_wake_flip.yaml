@@ -1,0 +1,139 @@
+preset: advection
+parameters: {}
+coefficients:
+  velocity:
+    components:
+      x:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: 0.68
+            max: 0.82
+      y:
+        type: affine
+        params:
+          constant:
+            sample: uniform
+            min: -0.26
+            max: -0.16
+          x:
+            sample: uniform
+            min: 0.16
+            max: 0.24
+  diffusivity:
+    type: constant
+    params:
+      value:
+        sample: uniform
+        min: 0.00075
+        max: 0.0012
+domain:
+  allow_sampling: true
+  type: airfoil_channel
+  length:
+    sample: uniform
+    min: 2.4
+    max: 2.8
+  height:
+    sample: uniform
+    min: 1.0
+    max: 1.15
+  airfoil_center:
+    - sample: uniform
+      min: 1.05
+      max: 1.35
+    - sample: uniform
+      min: 0.48
+      max: 0.66
+  chord_length:
+    sample: uniform
+    min: 0.52
+    max: 0.64
+  thickness_ratio:
+    sample: uniform
+    min: 0.1
+    max: 0.16
+  attack_angle_degrees:
+    sample: uniform
+    min: -10.0
+    max: 10.0
+  mesh_size:
+    sample: uniform
+    min: 0.028
+    max: 0.036
+time:
+  dt: 0.006
+  t_end: 1.2
+inputs:
+  u:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.82
+              max: 1.08
+            sigma:
+              sample: uniform
+              min: 0.05
+              max: 0.08
+            aspect_ratio:
+              sample: uniform
+              min: 1.2
+              max: 1.8
+            center:
+              - sample: uniform
+                min: 0.24
+                max: 0.52
+              - sample: uniform
+                min: 0.56
+                max: 0.78
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.28
+              max: 0.52
+            sigma:
+              sample: uniform
+              min: 0.045
+              max: 0.07
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.5
+            center:
+              - sample: uniform
+                min: 0.54
+                max: 0.86
+              - sample: uniform
+                min: 0.32
+                max: 0.48
+boundary_conditions:
+  u:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+    airfoil:
+      - operator: dirichlet
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [224, 128]
+  num_frames: 49
+seed: 42

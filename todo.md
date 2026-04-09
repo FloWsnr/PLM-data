@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 167 configs.
+Current baseline: 38 PDE presets and 194 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -24,7 +24,26 @@ rename existing cases.
 10. `2d_parallelogram_drifting_bands_advection`: oblique sine bands drift and bend on a skew periodic cell under mean flow plus cross-cell recirculation.
 11. `2d_periodic_shear_quadrant_filamentation`: a quadrant pattern shears into smooth S-shaped filaments under periodic shear.
 12. `2d_rotating_blob_advection`: one or two blobs rotate around the square center under weak diffusion and no-flux walls.
-13. `3d_swirling_blob_advection`: one or two blobs carried by a 3D periodic swirling flow with weak diffusion.
+13. `2d_airfoil_channel_lower_surface_wake_flip`: compact packets skim the lower airfoil surface, then flip into a narrow downstream wake with strong seed-to-seed asymmetry.
+14. `2d_airfoil_channel_upper_surface_skimming`: upstream blobs ride over the top surface of the airfoil and peel into a smooth upper wake ribbon.
+15. `2d_annulus_inward_spiral_filaments`: signed filaments spiral around the annulus while an inward radial bias pulls structure back toward the inner wall.
+16. `2d_disk_saddle_filament_collapse`: a saddle-like velocity field stretches a disk-confined blob pair into crossing filaments before they collapse toward the absorbing rim.
+17. `2d_dumbbell_bridge_vortex_exchange`: opposite-signed structures circulate within both lobes and repeatedly exchange mass through the narrow bridge.
+18. `2d_l_shape_corner_capture`: a drifting packet is pulled into the re-entrant corner of an L-shaped cavity, leaving a trapped corner remnant behind.
+19. `2d_l_shape_reentrant_shear_fold`: layered bands sweep past the L-shaped notch and fold into sharp re-entrant corner filaments under skew shear.
+20. `2d_multi_hole_plate_interstitial_orbit`: compact blobs thread between multiple holes and loop around the solid islands instead of crossing the plate directly.
+21. `2d_multi_hole_plate_weaving_shadow`: a staggered plume weaves through the perforations, leaving alternating sheltered low-amplitude shadows behind the holes.
+22. `2d_porous_channel_reverse_flush`: a reverse-biased plume is forced back through a porous obstacle field, producing short recirculating pockets between pillars.
+23. `2d_porous_channel_sinuous_percolation`: two inlet blobs percolate sinuously through the porous matrix, repeatedly splitting and rejoining between obstacles.
+24. `2d_serpentine_channel_lane_reversal`: broad bands traverse a serpentine duct with alternating cross-stream drift, giving lane switches at successive bends.
+25. `2d_serpentine_channel_slug_release`: a striped slug fills the serpentine passage and rides the full bend sequence with strong phase differences across seeds.
+26. `2d_side_cavity_channel_cavity_entrainment`: a passing channel plume is pulled down into a side cavity, then stretched back out along the cavity mouth.
+27. `2d_side_cavity_channel_cavity_purge`: material initially stored in the side cavity is purged into the main channel, giving a cavity-emptying transient rather than inlet-fed transport.
+28. `2d_venturi_channel_centerline_focusing`: upstream blobs are compressed through the venturi throat into a narrow high-speed centerline jet before diffusing downstream.
+29. `2d_venturi_channel_wall_peeling`: wall-adjacent structure is sheared off the venturi boundary and peeled into elongated downstream ribbons.
+30. `2d_y_bifurcation_branch_merge_collision`: packets launched from the outlet branches advect upstream and collide near the bifurcation junction.
+31. `2d_y_bifurcation_inlet_split_plume`: an inlet plume splits unevenly into the two daughter branches, with the junction geometry setting the branch preference.
+32. `3d_swirling_blob_advection`: one or two blobs carried by a 3D periodic swirling flow with weak diffusion.
 
 #### Elasticity (`configs/basic/elasticity`)
 
