@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 256 configs.
+Current baseline: 38 PDE presets and 313 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -257,9 +257,31 @@ boundary-fed invasion through sampled Gmsh geometries.
 
 #### Cyclic Competition (`configs/biology/cyclic_competition`)
 
-1. `2d_parallelogram_spatial_rps_domains`: rock-paper-scissors competition on a skew parallelogram cell, forming oblique moving patches and spiral-like domains.
-2. `2d_spatial_rps_domains`: rock-paper-scissors competition from noise, forming moving patches and spiral-like domains.
-3. `3d_spatial_rps_domains`: 3D rock-paper-scissors competition from noise, forming moving domains.
+The 2D suite now spans 10 domain families with 2 configs each: one set focuses
+on self-organized spiral or stripe breakup, while the companion configs use
+mixed boundaries or sampled geometry to drive directional chases and pinning.
+
+1. `2d_annulus_azimuthal_patch_chase`: ring-confined patches chase each other azimuthally around a sampled annulus, with the gap width and curvature changing per seed.
+2. `2d_annulus_inner_rim_refuge_competition`: one species is pinned to the inner rim while competitors arrive from the outer wall and radial modulation, creating inward-versus-outward ring fronts.
+3. `2d_boundary_forced_corner_chase`: rectangular side forcing launches three fronts from different edges, producing directional corner chases instead of isotropic spiral breakup.
+4. `2d_channel_obstacle_bypass_fronts`: inlet, outlet, and obstacle-pinned species fronts split around a sampled cylinder and reconnect in its downstream shadow.
+5. `2d_channel_obstacle_obstacle_shadow_cycle`: off-center patches and an obstacle refuge create alternating upper/lower bypass takeovers around the circular blocker.
+6. `2d_disk_absorbing_rim_competition`: radial shell structure collapses against a weakly absorbing disk rim while interior blobs seed secondary chases.
+7. `2d_disk_spiral_core_breakup`: three off-axis colonies inside a disk spawn curved spiral cores that collide with the boundary and fragment.
+8. `2d_dumbbell_bottleneck_lane_swap`: left/right species layers exchange through the sampled neck, repeatedly swapping dominance across the bottleneck.
+9. `2d_dumbbell_species_exchange`: independent lobe populations form in each chamber and intermittently invade through the narrow bridge.
+10. `2d_l_shape_notch_quench_chase`: mixed outer/notch forcing on an L-shape drives fronts into the re-entrant corner where one species repeatedly quenches the others.
+11. `2d_l_shape_reentrant_spiral_trap`: blobs seeded on the two arms spiral into the re-entrant corner, which acts as a pinning trap for one species.
+12. `2d_multi_hole_plate_hole_refugia`: three named holes act as separate refugia, emitting different species that screen each other across the perforated plate.
+13. `2d_multi_hole_plate_perforation_screening`: outer-boundary invasion competes with hole-seeded colonies, producing sheltered shadow corridors between holes.
+14. `2d_parallelogram_spatial_rps_domains`: separated colonies on a skew periodic cell generate oblique spirals and patch trains without obvious axis locking.
+15. `2d_parallelogram_wraparound_stripe_chase`: phase-shifted oblique stripes wrap around the skew cell and shear into travelling pursuit bands.
+16. `2d_serpentine_channel_lane_invasion`: opposite-end species fronts negotiate sampled bends and exchange the lead from turn to turn.
+17. `2d_serpentine_channel_reverse_chase`: alternating bend blobs plus wall forcing produce reverse-moving chases and bend-pinned takeovers.
+18. `2d_spatial_rps_domains`: periodic noise on a sampled rectangle produces the broadest self-organized spiral mosaic in the suite.
+19. `2d_y_bifurcation_branch_species_split`: species injected from trunk and daughter branches compete at the junction, then recolonize the winning arm.
+20. `2d_y_bifurcation_junction_relay`: branch-seeded colonies relay dominance through the junction under weak outlet damping.
+21. `3d_spatial_rps_domains`: 3D rock-paper-scissors competition from noise, forming moving domains.
 
 #### Fisher-KPP (`configs/biology/fisher_kpp`)
 

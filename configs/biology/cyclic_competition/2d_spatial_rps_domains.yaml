@@ -1,36 +1,138 @@
 preset: cyclic_competition
 parameters:
-  Du: 0.2
-  Dv: 0.2
-  Dw: 0.2
-  a: 0.5
-  b: 2.0
+  domain_size_x:
+    sample: uniform
+    min: 2.3
+    max: 2.8
+  domain_size_y:
+    sample: uniform
+    min: 2.2
+    max: 2.7
+  Du:
+    sample: uniform
+    min: 0.0018
+    max: 0.0038
+  Dv:
+    sample: uniform
+    min: 0.0015
+    max: 0.0035
+  Dw:
+    sample: uniform
+    min: 0.0018
+    max: 0.004
+  a:
+    sample: uniform
+    min: 0.28
+    max: 0.44
+  b:
+    sample: uniform
+    min: 1.95
+    max: 2.3
 domain:
+  allow_sampling: true
   type: rectangle
-  size: [100.0, 100.0]
-  mesh_resolution: [192, 192]
+  size: ["param:domain_size_x", "param:domain_size_y"]
+  mesh_resolution: [160, 160]
 time:
-  dt: 0.02
-  t_end: 200.0
+  dt: 0.015
+  t_end: 12.0
 inputs:
   u:
     initial_condition:
-      type: gaussian_noise
+      type: gaussian_blobs
       params:
-        mean: 0.286
-        std: 0.1
+        background:
+          sample: uniform
+          min: 0.1
+          max: 0.16
+        generators:
+          - count:
+              sample: randint
+              min: 2
+              max: 4
+            amplitude:
+              sample: uniform
+              min: 0.12
+              max: 0.24
+            sigma:
+              sample: uniform
+              min: 0.12
+              max: 0.2
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.8
+            center:
+              - sample: uniform
+                min: 0.2
+                max: 2.3
+              - sample: uniform
+                min: 0.2
+                max: 2.2
   v:
     initial_condition:
-      type: gaussian_noise
+      type: gaussian_blobs
       params:
-        mean: 0.286
-        std: 0.1
+        background:
+          sample: uniform
+          min: 0.1
+          max: 0.16
+        generators:
+          - count:
+              sample: randint
+              min: 2
+              max: 4
+            amplitude:
+              sample: uniform
+              min: 0.12
+              max: 0.24
+            sigma:
+              sample: uniform
+              min: 0.12
+              max: 0.2
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.8
+            center:
+              - sample: uniform
+                min: 0.2
+                max: 2.3
+              - sample: uniform
+                min: 0.2
+                max: 2.2
   w:
     initial_condition:
-      type: gaussian_noise
+      type: gaussian_blobs
       params:
-        mean: 0.286
-        std: 0.1
+        background:
+          sample: uniform
+          min: 0.1
+          max: 0.16
+        generators:
+          - count:
+              sample: randint
+              min: 2
+              max: 4
+            amplitude:
+              sample: uniform
+              min: 0.12
+              max: 0.24
+            sigma:
+              sample: uniform
+              min: 0.12
+              max: 0.2
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.8
+            center:
+              - sample: uniform
+                min: 0.2
+                max: 2.3
+              - sample: uniform
+                min: 0.2
+                max: 2.2
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.full_periodic_2d
@@ -42,6 +144,7 @@ solver:
   $ref: solver.profile.constant_lhs_scalar_spd
 output:
   $ref: output.template.scalar_uvw
-  resolution: [96, 96]
-  num_frames: 100
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 73
 seed: 42

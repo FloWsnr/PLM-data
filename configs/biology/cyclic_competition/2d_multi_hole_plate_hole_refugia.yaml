@@ -1,0 +1,168 @@
+preset: cyclic_competition
+parameters:
+  Du:
+    sample: uniform
+    min: 0.003
+    max: 0.007
+  Dv:
+    sample: uniform
+    min: 0.003
+    max: 0.007
+  Dw:
+    sample: uniform
+    min: 0.0025
+    max: 0.0065
+  a:
+    sample: uniform
+    min: 0.4
+    max: 0.6
+  b:
+    sample: uniform
+    min: 1.66
+    max: 2.02
+domain:
+  allow_sampling: true
+  type: multi_hole_plate
+  width:
+    sample: uniform
+    min: 1.16
+    max: 1.28
+  height:
+    sample: uniform
+    min: 0.86
+    max: 0.98
+  holes:
+    - center:
+        - sample: uniform
+          min: 0.24
+          max: 0.32
+        - sample: uniform
+          min: 0.24
+          max: 0.34
+      radius:
+        sample: uniform
+        min: 0.055
+        max: 0.08
+      boundary_name: hole_u
+    - center:
+        - sample: uniform
+          min: 0.56
+          max: 0.68
+        - sample: uniform
+          min: 0.44
+          max: 0.6
+      radius:
+        sample: uniform
+        min: 0.06
+        max: 0.085
+      boundary_name: hole_v
+    - center:
+        - sample: uniform
+          min: 0.88
+          max: 0.98
+        - sample: uniform
+          min: 0.22
+          max: 0.34
+      radius:
+        sample: uniform
+        min: 0.055
+        max: 0.08
+      boundary_name: hole_w
+  mesh_size:
+    sample: uniform
+    min: 0.009
+    max: 0.011
+time:
+  dt: 0.01
+  t_end: 7.5
+inputs:
+  u:
+    initial_condition:
+      type: constant
+      params:
+        value:
+          sample: uniform
+          min: 0.08
+          max: 0.14
+  v:
+    initial_condition:
+      type: constant
+      params:
+        value:
+          sample: uniform
+          min: 0.08
+          max: 0.14
+  w:
+    initial_condition:
+      type: constant
+      params:
+        value:
+          sample: uniform
+          min: 0.08
+          max: 0.14
+boundary_conditions:
+  u:
+    outer:
+      - operator: neumann
+        value: 0.0
+    hole_u:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.72
+              max: 0.9
+    hole_v:
+      - operator: neumann
+        value: 0.0
+    hole_w:
+      - operator: neumann
+        value: 0.0
+  v:
+    outer:
+      - operator: neumann
+        value: 0.0
+    hole_u:
+      - operator: neumann
+        value: 0.0
+    hole_v:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.72
+              max: 0.9
+    hole_w:
+      - operator: neumann
+        value: 0.0
+  w:
+    outer:
+      - operator: neumann
+        value: 0.0
+    hole_u:
+      - operator: neumann
+        value: 0.0
+    hole_v:
+      - operator: neumann
+        value: 0.0
+    hole_w:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.72
+              max: 0.9
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uvw
+  formats: [numpy, gif]
+  resolution: [192, 160]
+  num_frames: 61
+seed: 42

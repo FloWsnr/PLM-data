@@ -1,47 +1,48 @@
 preset: cyclic_competition
 parameters:
-  domain_length:
+  domain_center_x:
     sample: uniform
-    min: 2.3
-    max: 2.8
-  domain_height:
+    min: -0.06
+    max: 0.06
+  domain_center_y:
     sample: uniform
-    min: 2.1
-    max: 2.6
-  domain_shear:
-    sample: uniform
-    min: 0.45
-    max: 0.85
+    min: -0.06
+    max: 0.06
   Du:
     sample: uniform
-    min: 0.0024
-    max: 0.006
+    min: 0.002
+    max: 0.0052
   Dv:
     sample: uniform
-    min: 0.0021
-    max: 0.0054
+    min: 0.0018
+    max: 0.0048
   Dw:
     sample: uniform
-    min: 0.0023
-    max: 0.0058
+    min: 0.002
+    max: 0.0055
   a:
     sample: uniform
     min: 0.28
-    max: 0.46
+    max: 0.48
   b:
     sample: uniform
-    min: 1.98
-    max: 2.3
+    min: 2.0
+    max: 2.4
 domain:
   allow_sampling: true
-  type: parallelogram
-  origin: [0.0, 0.0]
-  axis_x: ["param:domain_length", 0.0]
-  axis_y: ["param:domain_shear", "param:domain_height"]
-  mesh_resolution: [160, 160]
+  type: disk
+  center: ["param:domain_center_x", "param:domain_center_y"]
+  radius:
+    sample: uniform
+    min: 0.96
+    max: 1.08
+  mesh_size:
+    sample: uniform
+    min: 0.014
+    max: 0.016
 time:
   dt: 0.012
-  t_end: 12.5
+  t_end: 11.5
 inputs:
   u:
     initial_condition:
@@ -50,51 +51,51 @@ inputs:
         background:
           sample: uniform
           min: 0.08
-          max: 0.15
+          max: 0.14
         generators:
           - count:
               sample: randint
-              min: 2
-              max: 3
+              min: 1
+              max: 2
             amplitude:
               sample: uniform
-              min: 0.18
-              max: 0.34
+              min: 0.2
+              max: 0.32
             sigma:
               sample: uniform
-              min: 0.07
-              max: 0.14
+              min: 0.055
+              max: 0.1
             aspect_ratio:
               sample: uniform
               min: 1.2
-              max: 2.8
+              max: 2.4
             center:
               - sample: uniform
-                min: 0.45
-                max: 1.0
+                min: -0.62
+                max: -0.18
               - sample: uniform
-                min: 0.35
-                max: 1.1
+                min: 0.12
+                max: 0.62
           - count: 1
             amplitude:
               sample: uniform
-              min: 0.06
-              max: 0.14
+              min: 0.08
+              max: 0.18
             sigma:
               sample: uniform
-              min: 0.05
-              max: 0.09
+              min: 0.045
+              max: 0.085
             aspect_ratio:
               sample: uniform
               min: 1.0
               max: 2.0
             center:
               - sample: uniform
-                min: 1.25
-                max: 2.05
+                min: -0.15
+                max: 0.2
               - sample: uniform
-                min: 0.95
-                max: 1.9
+                min: -0.08
+                max: 0.28
   v:
     initial_condition:
       type: gaussian_blobs
@@ -102,112 +103,129 @@ inputs:
         background:
           sample: uniform
           min: 0.08
-          max: 0.15
+          max: 0.14
         generators:
           - count:
               sample: randint
-              min: 2
-              max: 3
+              min: 1
+              max: 2
             amplitude:
               sample: uniform
-              min: 0.18
-              max: 0.34
+              min: 0.2
+              max: 0.32
             sigma:
               sample: uniform
-              min: 0.07
-              max: 0.14
+              min: 0.055
+              max: 0.1
             aspect_ratio:
               sample: uniform
               min: 1.2
-              max: 2.8
+              max: 2.4
             center:
               - sample: uniform
-                min: 1.55
-                max: 2.45
+                min: 0.15
+                max: 0.68
               - sample: uniform
-                min: 0.3
-                max: 1.1
+                min: -0.68
+                max: -0.12
           - count: 1
             amplitude:
               sample: uniform
-              min: 0.06
-              max: 0.14
+              min: 0.08
+              max: 0.18
             sigma:
               sample: uniform
-              min: 0.05
-              max: 0.09
+              min: 0.045
+              max: 0.085
             aspect_ratio:
               sample: uniform
               min: 1.0
               max: 2.0
             center:
               - sample: uniform
-                min: 0.75
-                max: 1.55
+                min: 0.0
+                max: 0.36
               - sample: uniform
-                min: 1.15
-                max: 2.05
+                min: 0.04
+                max: 0.42
   w:
     initial_condition:
       type: gaussian_blobs
       params:
         background:
           sample: uniform
-          min: 0.08
-          max: 0.15
+          min: 0.07
+          max: 0.13
         generators:
-          - count:
-              sample: randint
-              min: 2
-              max: 3
-            amplitude:
-              sample: uniform
-              min: 0.18
-              max: 0.34
-            sigma:
-              sample: uniform
-              min: 0.07
-              max: 0.14
-            aspect_ratio:
-              sample: uniform
-              min: 1.2
-              max: 2.8
-            center:
-              - sample: uniform
-                min: 0.95
-                max: 1.8
-              - sample: uniform
-                min: 1.0
-                max: 2.0
           - count: 1
             amplitude:
               sample: uniform
-              min: 0.06
-              max: 0.14
+              min: 0.24
+              max: 0.38
             sigma:
               sample: uniform
               min: 0.05
-              max: 0.09
+              max: 0.1
+            aspect_ratio:
+              sample: uniform
+              min: 1.2
+              max: 2.6
+            center:
+              - sample: uniform
+                min: -0.18
+                max: 0.18
+              - sample: uniform
+                min: 0.26
+                max: 0.74
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.1
+              max: 0.2
+            sigma:
+              sample: uniform
+              min: 0.045
+              max: 0.085
             aspect_ratio:
               sample: uniform
               min: 1.0
               max: 2.0
             center:
               - sample: uniform
-                min: 0.35
-                max: 1.15
+                min: -0.34
+                max: 0.02
               - sample: uniform
-                min: 1.25
-                max: 2.05
+                min: -0.16
+                max: 0.24
 boundary_conditions:
   u:
-    $ref: boundary_field.scalar.full_periodic_2d
+    outer:
+      - operator: neumann
+        value: 0.0
   v:
-    $ref: boundary_field.scalar.full_periodic_2d
+    outer:
+      - operator: neumann
+        value: 0.0
   w:
-    $ref: boundary_field.scalar.full_periodic_2d
+    outer:
+      - operator: neumann
+        value: 0.0
 solver:
   $ref: solver.profile.constant_lhs_scalar_spd
+stochastic:
+  states:
+    u:
+      coupling: saturating_self
+      intensity: 0.005
+      offset: 0.22
+    v:
+      coupling: saturating_self
+      intensity: 0.005
+      offset: 0.22
+    w:
+      coupling: saturating_self
+      intensity: 0.005
+      offset: 0.22
 output:
   $ref: output.template.scalar_uvw
   formats: [numpy, gif]

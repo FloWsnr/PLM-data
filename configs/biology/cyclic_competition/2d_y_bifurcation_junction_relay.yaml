@@ -1,0 +1,200 @@
+preset: cyclic_competition
+parameters:
+  wall_absorption:
+    sample: uniform
+    min: 0.08
+    max: 0.22
+  Du:
+    sample: uniform
+    min: 0.0025
+    max: 0.006
+  Dv:
+    sample: uniform
+    min: 0.0025
+    max: 0.006
+  Dw:
+    sample: uniform
+    min: 0.002
+    max: 0.0055
+  a:
+    sample: uniform
+    min: 0.48
+    max: 0.68
+  b:
+    sample: uniform
+    min: 1.48
+    max: 1.9
+domain:
+  allow_sampling: true
+  type: y_bifurcation
+  inlet_length:
+    sample: uniform
+    min: 0.9
+    max: 1.1
+  branch_length:
+    sample: uniform
+    min: 0.86
+    max: 1.08
+  branch_angle_degrees:
+    sample: uniform
+    min: 34.0
+    max: 44.0
+  channel_width:
+    sample: uniform
+    min: 0.18
+    max: 0.24
+  mesh_size:
+    sample: uniform
+    min: 0.015
+    max: 0.018
+time:
+  dt: 0.01
+  t_end: 9.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.1
+          max: 0.16
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.18
+              max: 0.3
+            sigma:
+              sample: uniform
+              min: 0.07
+              max: 0.1
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.6
+            center:
+              - sample: uniform
+                min: 0.28
+                max: 0.46
+              - sample: uniform
+                min: -0.06
+                max: 0.06
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.1
+          max: 0.16
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.18
+              max: 0.3
+            sigma:
+              sample: uniform
+              min: 0.07
+              max: 0.1
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.6
+            center:
+              - sample: uniform
+                min: 1.14
+                max: 1.48
+              - sample: uniform
+                min: 0.26
+                max: 0.54
+  w:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.1
+          max: 0.16
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.18
+              max: 0.3
+            sigma:
+              sample: uniform
+              min: 0.07
+              max: 0.1
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.6
+            center:
+              - sample: uniform
+                min: 1.14
+                max: 1.48
+              - sample: uniform
+                min: -0.54
+                max: -0.26
+boundary_conditions:
+  u:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet_upper:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: "param:wall_absorption"
+    outlet_lower:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: "param:wall_absorption"
+    walls:
+      - operator: neumann
+        value: 0.0
+  v:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet_upper:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: "param:wall_absorption"
+    outlet_lower:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: "param:wall_absorption"
+    walls:
+      - operator: neumann
+        value: 0.0
+  w:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet_upper:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: "param:wall_absorption"
+    outlet_lower:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: "param:wall_absorption"
+    walls:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uvw
+  formats: [numpy, gif]
+  resolution: [208, 160]
+  num_frames: 61
+seed: 42

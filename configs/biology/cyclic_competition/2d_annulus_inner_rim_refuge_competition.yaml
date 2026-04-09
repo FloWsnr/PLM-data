@@ -1,0 +1,154 @@
+preset: cyclic_competition
+parameters:
+  domain_center_x:
+    sample: uniform
+    min: -0.05
+    max: 0.05
+  domain_center_y:
+    sample: uniform
+    min: -0.05
+    max: 0.05
+  wall_absorption:
+    sample: uniform
+    min: 0.14
+    max: 0.34
+  u_inner_value:
+    sample: uniform
+    min: 0.58
+    max: 0.8
+  v_outer_value:
+    sample: uniform
+    min: 0.52
+    max: 0.76
+  Du:
+    sample: uniform
+    min: 0.0025
+    max: 0.0065
+  Dv:
+    sample: uniform
+    min: 0.003
+    max: 0.007
+  Dw:
+    sample: uniform
+    min: 0.002
+    max: 0.006
+  a:
+    sample: uniform
+    min: 0.46
+    max: 0.66
+  b:
+    sample: uniform
+    min: 1.48
+    max: 1.92
+domain:
+  allow_sampling: true
+  type: annulus
+  center: ["param:domain_center_x", "param:domain_center_y"]
+  inner_radius:
+    sample: uniform
+    min: 0.25
+    max: 0.34
+  outer_radius:
+    sample: uniform
+    min: 0.94
+    max: 1.08
+  mesh_size:
+    sample: uniform
+    min: 0.014
+    max: 0.016
+time:
+  dt: 0.012
+  t_end: 10.5
+inputs:
+  u:
+    initial_condition:
+      type: constant
+      params:
+        value:
+          sample: uniform
+          min: 0.14
+          max: 0.22
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.1
+          max: 0.16
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.18
+              max: 0.3
+            sigma:
+              sample: uniform
+              min: 0.07
+              max: 0.11
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.8
+            center:
+              - sample: uniform
+                min: -0.18
+                max: 0.18
+              - sample: uniform
+                min: -0.72
+                max: -0.42
+  w:
+    initial_condition:
+      type: radial_cosine
+      params:
+        base:
+          sample: uniform
+          min: 0.16
+          max: 0.24
+        amplitude:
+          sample: uniform
+          min: 0.04
+          max: 0.1
+        frequency:
+          sample: uniform
+          min: 2.6
+          max: 4.8
+        center: ["param:domain_center_x", "param:domain_center_y"]
+boundary_conditions:
+  u:
+    inner:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: "param:u_inner_value"
+    outer:
+      - operator: neumann
+        value: 0.0
+  v:
+    inner:
+      - operator: neumann
+        value: 0.0
+    outer:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: "param:v_outer_value"
+  w:
+    inner:
+      - operator: neumann
+        value: 0.0
+    outer:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: "param:wall_absorption"
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uvw
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 61
+seed: 42

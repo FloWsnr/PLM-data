@@ -635,18 +635,48 @@ def test_load_config_cyclic_competition_2d():
     cfg = load_config("configs/biology/cyclic_competition/2d_spatial_rps_domains.yaml")
     assert cfg.preset == "cyclic_competition"
     assert cfg.domain.dimension == 2
+    assert cfg.domain.type == "rectangle"
     assert cfg.has_periodic_boundary_conditions is True
-    assert cfg.parameters["Du"] == 0.2
-    assert cfg.parameters["a"] == 0.5
-    assert cfg.parameters["b"] == 2.0
-    assert cfg.input("u").initial_condition.type == "gaussian_noise"
-    assert cfg.input("v").initial_condition.params["mean"] == 0.286
-    assert cfg.input("w").initial_condition.params["std"] == 0.1
+    assert cfg.parameters["Du"]["sample"] == "uniform"
+    assert cfg.parameters["Du"]["min"] == 0.0018
+    assert cfg.parameters["Du"]["max"] == 0.0038
+    assert cfg.parameters["a"]["sample"] == "uniform"
+    assert cfg.parameters["b"]["max"] == 2.3
+    assert cfg.input("u").initial_condition.type == "gaussian_blobs"
+    assert cfg.input("u").initial_condition.params["generators"][0]["count"]["min"] == 2
+    assert (
+        cfg.input("w").initial_condition.params["generators"][0]["sigma"]["max"] == 0.2
+    )
     assert cfg.boundary_field("u").side_conditions("x-")[0].type == "periodic"
     assert cfg.boundary_field("w").side_conditions("y+")[0].pair_with == "y-"
     assert cfg.output_mode("u") == "scalar"
     assert cfg.output_mode("v") == "scalar"
     assert cfg.output_mode("w") == "scalar"
+    assert cfg.output.resolution == [160, 160]
+
+
+def test_cyclic_competition_2d_inventory():
+    config_paths = sorted(Path("configs/biology/cyclic_competition").glob("2d*.yaml"))
+    assert len(config_paths) >= 20
+
+    counts_by_domain: dict[str, int] = {}
+    for path in config_paths:
+        cfg = load_config(str(path))
+        counts_by_domain[cfg.domain.type] = counts_by_domain.get(cfg.domain.type, 0) + 1
+        assert cfg.output.resolution[0] >= 128
+        assert cfg.output.resolution[1] >= 128
+
+    assert all(count >= 2 for count in counts_by_domain.values())
+    assert counts_by_domain["rectangle"] >= 2
+    assert counts_by_domain["parallelogram"] >= 2
+    assert counts_by_domain["disk"] >= 2
+    assert counts_by_domain["annulus"] >= 2
+    assert counts_by_domain["dumbbell"] >= 2
+    assert counts_by_domain["l_shape"] >= 2
+    assert counts_by_domain["channel_obstacle"] >= 2
+    assert counts_by_domain["y_bifurcation"] >= 2
+    assert counts_by_domain["multi_hole_plate"] >= 2
+    assert counts_by_domain["serpentine_channel"] >= 2
 
 
 def test_load_config_shallow_water():
