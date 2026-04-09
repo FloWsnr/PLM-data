@@ -2,53 +2,74 @@ preset: elasticity
 parameters:
   young_modulus:
     sample: uniform
-    min: 6.1
-    max: 8.5
+    min: 3.8
+    max: 5.0
   poisson_ratio:
     sample: uniform
-    min: 0.23
-    max: 0.33
+    min: 0.26
+    max: 0.36
   density:
     sample: uniform
-    min: 0.88
-    max: 1.12
+    min: 0.92
+    max: 1.14
   eta_mass:
     sample: uniform
-    min: 0.0085
-    max: 0.0145
+    min: 0.015
+    max: 0.024
   eta_stiffness:
     sample: uniform
-    min: 0.0004
-    max: 0.0011
+    min: 0.001
+    max: 0.0018
 domain:
-  type: channel_obstacle
+  type: porous_channel
   allow_sampling: true
   length:
     sample: uniform
-    min: 2.24
-    max: 2.58
+    min: 2.55
+    max: 2.75
   height:
     sample: uniform
-    min: 0.94
-    max: 1.08
-  obstacle_center:
-  - sample: uniform
-    min: 1.02
-    max: 1.24
-  - sample: uniform
-    min: 0.42
-    max: 0.58
+    min: 0.95
+    max: 1.06
   obstacle_radius:
     sample: uniform
-    min: 0.18
-    max: 0.24
+    min: 0.085
+    max: 0.11
+  n_rows:
+    sample: randint
+    min: 2
+    max: 3
+  n_cols:
+    sample: randint
+    min: 4
+    max: 5
+  pitch_x:
+    sample: uniform
+    min: 0.34
+    max: 0.4
+  pitch_y:
+    sample: uniform
+    min: 0.26
+    max: 0.28
+  x_margin:
+    sample: uniform
+    min: 0.2
+    max: 0.28
+  y_margin:
+    sample: uniform
+    min: 0.12
+    max: 0.16
+  row_shift_fraction:
+    sample: uniform
+    min: 0.32
+    max: 0.48
   mesh_size:
     sample: uniform
-    min: 0.028
+    min: 0.026
     max: 0.034
 time:
-  dt: 0.0035
-  t_end: 1.1
+  dt: 0.0045
+  t_end: 1.32
 inputs:
   displacement:
     initial_condition:
@@ -71,9 +92,9 @@ boundary_conditions:
     - operator: dirichlet
       value: [0.0, 0.0]
     walls:
-    - operator: dirichlet
+    - operator: neumann
       value: [0.0, 0.0]
-    obstacle:
+    obstacles:
     - operator: dirichlet
       value:
         components:
@@ -82,28 +103,24 @@ boundary_conditions:
             params:
               constant:
                 sample: uniform
-                min: -0.05
-                max: 0.05
+                min: -0.015
+                max: 0.015
               y:
                 sample: uniform
-                min: -0.02
-                max: 0.02
+                min: -0.025
+                max: 0.025
           y:
-            type: affine
+            type: constant
             params:
-              constant:
+              value:
                 sample: uniform
-                min: 0.065
-                max: 0.145
-              x:
-                sample: uniform
-                min: -0.02
-                max: 0.02
+                min: 0.045
+                max: 0.09
 solver:
   $ref: solver.profile.constant_lhs_block_direct
 output:
-  resolution: [192, 128]
-  num_frames: 36
+  resolution: [224, 128]
+  num_frames: 44
   formats:
     $ref: output.formats.standard
   fields:

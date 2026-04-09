@@ -1,5 +1,13 @@
 preset: elasticity
 parameters:
+  domain_center_x:
+    sample: uniform
+    min: -0.06
+    max: 0.06
+  domain_center_y:
+    sample: uniform
+    min: -0.06
+    max: 0.06
   young_modulus:
     sample: uniform
     min: 5.2
@@ -22,9 +30,16 @@ parameters:
     max: 0.0015
 domain:
   type: disk
-  center: [0.0, 0.0]
-  radius: 1.0
-  mesh_size: 0.035
+  allow_sampling: true
+  center: ["param:domain_center_x", "param:domain_center_y"]
+  radius:
+    sample: uniform
+    min: 0.94
+    max: 1.06
+  mesh_size:
+    sample: uniform
+    min: 0.032
+    max: 0.038
 time:
   dt: 0.0035
   t_end: 0.95

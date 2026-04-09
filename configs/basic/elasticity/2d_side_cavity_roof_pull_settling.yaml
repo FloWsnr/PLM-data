@@ -1,54 +1,56 @@
 preset: elasticity
 parameters:
+  cavity_center_x:
+    sample: uniform
+    min: 0.95
+    max: 1.55
   young_modulus:
     sample: uniform
-    min: 6.1
-    max: 8.5
+    min: 3.2
+    max: 4.6
   poisson_ratio:
     sample: uniform
-    min: 0.23
-    max: 0.33
+    min: 0.25
+    max: 0.35
   density:
     sample: uniform
-    min: 0.88
-    max: 1.12
+    min: 0.92
+    max: 1.15
   eta_mass:
     sample: uniform
-    min: 0.0085
-    max: 0.0145
+    min: 0.008
+    max: 0.015
   eta_stiffness:
     sample: uniform
-    min: 0.0004
-    max: 0.0011
+    min: 0.0005
+    max: 0.0012
 domain:
-  type: channel_obstacle
+  type: side_cavity_channel
   allow_sampling: true
   length:
     sample: uniform
-    min: 2.24
-    max: 2.58
+    min: 2.25
+    max: 2.85
   height:
     sample: uniform
-    min: 0.94
-    max: 1.08
-  obstacle_center:
-  - sample: uniform
-    min: 1.02
-    max: 1.24
-  - sample: uniform
-    min: 0.42
-    max: 0.58
-  obstacle_radius:
+    min: 0.68
+    max: 0.82
+  cavity_width:
     sample: uniform
-    min: 0.18
-    max: 0.24
+    min: 0.38
+    max: 0.58
+  cavity_depth:
+    sample: uniform
+    min: 0.3
+    max: 0.52
+  cavity_center_x: "param:cavity_center_x"
   mesh_size:
     sample: uniform
-    min: 0.028
+    min: 0.026
     max: 0.034
 time:
-  dt: 0.0035
-  t_end: 1.1
+  dt: 0.0045
+  t_end: 1.35
 inputs:
   displacement:
     initial_condition:
@@ -72,38 +74,37 @@ boundary_conditions:
       value: [0.0, 0.0]
     walls:
     - operator: dirichlet
-      value: [0.0, 0.0]
-    obstacle:
-    - operator: dirichlet
       value:
         components:
           x:
-            type: affine
+            type: gaussian_bump
             params:
-              constant:
+              amplitude:
                 sample: uniform
-                min: -0.05
-                max: 0.05
-              y:
+                min: -0.04
+                max: 0.04
+              sigma:
                 sample: uniform
-                min: -0.02
-                max: 0.02
+                min: 0.06
+                max: 0.1
+              center: ["param:cavity_center_x", 0.88]
           y:
-            type: affine
+            type: gaussian_bump
             params:
-              constant:
+              amplitude:
                 sample: uniform
-                min: 0.065
-                max: 0.145
-              x:
+                min: 0.16
+                max: 0.28
+              sigma:
                 sample: uniform
-                min: -0.02
-                max: 0.02
+                min: 0.05
+                max: 0.09
+              center: ["param:cavity_center_x", 0.88]
 solver:
   $ref: solver.profile.constant_lhs_block_direct
 output:
-  resolution: [192, 128]
-  num_frames: 36
+  resolution: [192, 144]
+  num_frames: 44
   formats:
     $ref: output.formats.standard
   fields:

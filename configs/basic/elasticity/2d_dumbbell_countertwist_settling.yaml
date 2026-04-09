@@ -6,36 +6,36 @@ parameters:
     max: 0.05
   young_modulus:
     sample: uniform
-    min: 3.2
-    max: 4.5
+    min: 3.8
+    max: 5.2
   poisson_ratio:
     sample: uniform
-    min: 0.3
-    max: 0.38
+    min: 0.28
+    max: 0.37
   density:
     sample: uniform
     min: 0.9
-    max: 1.1
+    max: 1.15
   eta_mass:
     sample: uniform
-    min: 0.014
-    max: 0.022
+    min: 0.012
+    max: 0.02
   eta_stiffness:
     sample: uniform
-    min: 0.0011
-    max: 0.0019
+    min: 0.0008
+    max: 0.0015
 domain:
   type: dumbbell
   allow_sampling: true
   left_center:
   - sample: uniform
-    min: -0.74
-    max: -0.61
+    min: -0.76
+    max: -0.62
   - "param:dumbbell_center_y"
   right_center:
   - sample: uniform
-    min: 0.61
-    max: 0.74
+    min: 0.62
+    max: 0.76
   - "param:dumbbell_center_y"
   lobe_radius:
     sample: uniform
@@ -43,7 +43,7 @@ domain:
     max: 0.46
   neck_width:
     sample: uniform
-    min: 0.18
+    min: 0.16
     max: 0.24
   mesh_size:
     sample: uniform
@@ -51,7 +51,7 @@ domain:
     max: 0.034
 time:
   dt: 0.004
-  t_end: 1.2
+  t_end: 1.25
 inputs:
   displacement:
     initial_condition:
@@ -59,29 +59,8 @@ inputs:
       params: {}
   velocity:
     initial_condition:
-      components:
-        x:
-          type: constant
-          params:
-            value: 0.0
-        y:
-          type: gaussian_bump
-          params:
-            amplitude:
-              sample: uniform
-              min: 1.1
-              max: 1.8
-            sigma:
-              sample: uniform
-              min: 0.06
-              max: 0.11
-            center:
-            - sample: uniform
-              min: -0.78
-              max: -0.52
-            - sample: uniform
-              min: 0.08
-              max: 0.24
+      type: zero
+      params: {}
   forcing:
     source:
       type: zero
@@ -91,15 +70,34 @@ boundary_conditions:
     outer:
     - operator: dirichlet
       value:
-      - 0.0
-      - 0.0
+        components:
+          x:
+            type: affine
+            params:
+              constant:
+                sample: uniform
+                min: -0.01
+                max: 0.01
+              y:
+                sample: uniform
+                min: 0.12
+                max: 0.18
+          y:
+            type: affine
+            params:
+              constant:
+                sample: uniform
+                min: -0.01
+                max: 0.01
+              x:
+                sample: uniform
+                min: -0.18
+                max: -0.12
 solver:
   $ref: solver.profile.constant_lhs_block_direct
 output:
-  resolution:
-  - 160
-  - 128
-  num_frames: 40
+  resolution: [160, 128]
+  num_frames: 42
   formats:
     $ref: output.formats.standard
   fields:

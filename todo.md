@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 204 configs.
+Current baseline: 38 PDE presets and 221 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -47,6 +47,10 @@ rename existing cases.
 
 #### Elasticity (`configs/basic/elasticity`)
 
+All Gmsh-backed 2D elasticity configs now sample their geometry as well as
+their excitation / material parameters, so seed changes alter both the shape
+and the resulting transient.
+
 1. `2d_annulus_breathing_mode_ringdown`: annular ring breathing radially around the inner hole, with stress wrapping around the cavity and the outer rim held fixed.
 2. `2d_annulus_inner_twist_settling`: inner annulus rim prescribed in tangential twist against a fixed outer rim, producing a localized torsional settling wave around the hole.
 3. `2d_annulus_torsional_ringdown`: annular torsional swirl ringing around a clamped inner hole, producing a clean low-order tangential shear mode.
@@ -63,6 +67,23 @@ rename existing cases.
 14. `2d_strip_sinusoidal_clamp_settling`: strip with a sinusoidally prescribed top clamp, producing a boundary-launched transverse settling pattern with repeated sign changes in the interior motion.
 15. `2d_strip_transverse_mode_beating`: top/bottom-clamped strip seeded with two transverse modes, producing a slow standing-wave beating pattern.
 16. `3d_cantilever_impulse_ringdown`: 3D cantilever bar ringing after a localized transverse velocity kick.
+17. `2d_airfoil_lift_skin_settling`: airfoil boundary lifted and sheared inside a sampled channel, creating a strong body-centered settling wake rather than an upstream launch.
+18. `2d_airfoil_wake_scatter_ringdown`: an upstream kick scatters around a sampled airfoil, producing asymmetric channel-filling wake lobes and moving stress shadows.
+19. `2d_dumbbell_countertwist_settling`: the dumbbell outer boundary is prescribed in a global counter-twist, driving opposite lobe rotation and neck-focused torsional stress.
+20. `2d_l_shape_notch_shear_settling`: the reentrant notch is pulled diagonally against a fixed outer frame, turning the inside corner into a strong shear actuator.
+21. `2d_l_shape_reentrant_corner_ringdown`: a localized kick near the reentrant corner launches corner-trapped oscillations that spill differently into the two L-arms.
+22. `2d_multi_hole_plate_opposed_hole_pull_settling`: grouped plate holes are pulled in different directions, producing perforation-to-perforation stress competition instead of one global plate mode.
+23. `2d_multi_hole_plate_perforation_ringdown`: off-center kicks among several sampled holes create hole-scattered ringdown patterns and punctured stress halos.
+24. `2d_porous_channel_maze_ringdown`: a porous channel is kicked from one side, generating maze-like elastic transfer through the obstacle lattice rather than a single open-channel mode.
+25. `2d_porous_channel_obstacle_lift_settling`: the obstacle array is lifted against fixed ends, producing a pore-by-pore settling field with strongly seed-dependent lattice asymmetry.
+26. `2d_serpentine_end_pull_settling`: one serpentine endpoint is pulled obliquely against the other, giving bend-to-bend settling with geometry-driven sign flips.
+27. `2d_serpentine_lane_launch_ringdown`: a compact launch in the entrance lane propagates through the sampled turns as a delayed waveguide-style ringdown.
+28. `2d_side_cavity_release_ringdown`: motion seeded in the side cavity leaks back into the main channel, producing a delayed reservoir-release transient.
+29. `2d_side_cavity_roof_pull_settling`: a strong, localized cavity-roof actuation drives a cavity-confined settling plume that now varies sharply across seeds.
+30. `2d_venturi_axial_squeeze_settling`: opposing inlet/outlet pulls squeeze a sampled venturi, concentrating displacement and stress through the throat.
+31. `2d_venturi_throat_focus_ringdown`: paired kicks above and below the constriction focus motion into the venturi throat before it re-expands downstream.
+32. `2d_y_bifurcation_branch_transfer_ringdown`: one bifurcation branch is kicked harder than the other, generating a branch-to-junction transfer transient instead of symmetric splitting.
+33. `2d_y_bifurcation_split_arm_settling`: the two outlet arms are prescribed apart, launching a clean branch-opening settling mode through the Y junction.
 
 #### Heat (`configs/basic/heat`)
 
