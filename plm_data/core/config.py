@@ -475,6 +475,7 @@ def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
         "parallelogram": 2,
         "channel_obstacle": 2,
         "y_bifurcation": 2,
+        "serpentine_channel": 2,
     }
     if domain_type in builtin_dims:
         return builtin_dims[domain_type]
@@ -809,6 +810,56 @@ def validate_domain_params(
                     "'branch_length * sin(branch_angle_degrees)' > 'channel_width' "
                     "so the two outlet branches separate cleanly."
                 )
+
+    if domain_type == "serpentine_channel":
+        _require_keys(
+            "channel_length",
+            "lane_spacing",
+            "n_bends",
+            "channel_width",
+            "mesh_size",
+        )
+        channel_length = _float_param("channel_length", positive=True)
+        lane_spacing = _float_param("lane_spacing", positive=True)
+        raw_n_bends = params["n_bends"]
+        n_bends_context = "Serpentine_channel domain parameter 'n_bends'"
+        if is_sampler_spec(raw_n_bends):
+            if not allow_sampling:
+                raise ValueError(
+                    f"{n_bends_context} uses sampled values, but domain sampling is "
+                    "disabled. Set 'domain.allow_sampling: true' to enable it."
+                )
+            _validate_domain_sampler(raw_n_bends, n_bends_context, integer=True)
+            _validate_sampleable_integer(raw_n_bends, n_bends_context)
+        elif _is_param_ref(raw_n_bends):
+            pass
+        else:
+            n_bends = int(raw_n_bends)
+            if float(n_bends) != float(raw_n_bends) or n_bends < 2:
+                raise ValueError(
+                    "Serpentine_channel domain parameter 'n_bends' must be an "
+                    f"integer >= 2. Got {raw_n_bends!r}."
+                )
+        channel_width = _float_param("channel_width", positive=True)
+        _float_param("mesh_size", positive=True)
+        if (
+            channel_length is not None
+            and channel_width is not None
+            and channel_length <= channel_width
+        ):
+            raise ValueError(
+                "Serpentine_channel domain requires 'channel_length' > "
+                "'channel_width' so each lane has a non-degenerate straight span."
+            )
+        if (
+            lane_spacing is not None
+            and channel_width is not None
+            and lane_spacing <= channel_width
+        ):
+            raise ValueError(
+                "Serpentine_channel domain requires 'lane_spacing' > "
+                "'channel_width' so adjacent lanes do not overlap."
+            )
 
 
 def _load_fragment_catalog() -> dict[str, Any]:

@@ -1,0 +1,94 @@
+preset: heat
+parameters: {}
+coefficients:
+  kappa:
+    type: constant
+    params:
+      value:
+        sample: uniform
+        min: 0.018
+        max: 0.03
+domain:
+  allow_sampling: true
+  type: serpentine_channel
+  channel_length:
+    sample: uniform
+    min: 0.88
+    max: 1.08
+  lane_spacing:
+    sample: uniform
+    min: 0.36
+    max: 0.48
+  n_bends:
+    sample: randint
+    min: 2
+    max: 4
+  channel_width:
+    sample: uniform
+    min: 0.16
+    max: 0.22
+  mesh_size:
+    sample: uniform
+    min: 0.026
+    max: 0.034
+time:
+  dt: 0.01
+  t_end: 1.5
+inputs:
+  u:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.03
+          max: 0.03
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.55
+              max: 0.95
+            sigma:
+              sample: uniform
+              min: 0.06
+              max: 0.09
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.5
+            center: [0.26, 0.0]
+boundary_conditions:
+  u:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.95
+              max: 1.2
+    outlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -0.08
+              max: 0.05
+    walls:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [160, 224]
+  num_frames: 49
+seed: 42

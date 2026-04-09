@@ -626,6 +626,21 @@ def _realize_domain_params(
                 seed=seed,
                 stream_root=f"domain.params.{key}",
             )
+    elif domain.type == "serpentine_channel":
+        for key in ("channel_length", "lane_spacing", "channel_width", "mesh_size"):
+            realized[key] = _realize_numeric_tree(
+                params[key],
+                parameters=parameters,
+                seed=seed,
+                stream_root=f"domain.params.{key}",
+            )
+        realized["n_bends"] = _realize_numeric_tree(
+            params["n_bends"],
+            parameters=parameters,
+            seed=seed,
+            stream_root="domain.params.n_bends",
+            integer=True,
+        )
 
     for key, value in params.items():
         if key in realized:

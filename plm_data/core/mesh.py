@@ -264,6 +264,82 @@ def _tag_single_gmsh_boundary(
     model.setPhysicalName(1, 1, boundary_name)
 
 
+def _fuse_planar_surfaces(model, surface_tags: list[int]) -> list[int]:
+    """Fuse 2D OCC surfaces and return the resulting surface tags."""
+    if not surface_tags:
+        raise AssertionError("Expected at least one surface to fuse.")
+    if len(surface_tags) == 1:
+        model.occ.synchronize()
+        return surface_tags
+
+    model.occ.fuse(
+        [(2, surface_tags[0])],
+        [(2, surface_tag) for surface_tag in surface_tags[1:]],
+        removeObject=True,
+        removeTool=True,
+    )
+    model.occ.synchronize()
+    fused_surfaces = [entity[1] for entity in model.getEntities(2)]
+    if not fused_surfaces:
+        raise AssertionError("OCC fuse produced no 2D surfaces.")
+    return fused_surfaces
+
+
+def _add_orthogonal_channel_surfaces(
+    model,
+    *,
+    centerline_points: list[np.ndarray],
+    channel_width: float,
+) -> list[int]:
+    """Create one rounded orthogonal channel by thickening a polyline."""
+    half_width = 0.5 * channel_width
+    surfaces: list[int] = []
+
+    for start, end in zip(centerline_points, centerline_points[1:]):
+        if np.isclose(start[1], end[1]):
+            x0 = min(float(start[0]), float(end[0]))
+            length = abs(float(end[0] - start[0]))
+            surfaces.append(
+                model.occ.addRectangle(
+                    x0,
+                    float(start[1] - half_width),
+                    0.0,
+                    length,
+                    channel_width,
+                )
+            )
+            continue
+        if np.isclose(start[0], end[0]):
+            y0 = min(float(start[1]), float(end[1]))
+            height = abs(float(end[1] - start[1]))
+            surfaces.append(
+                model.occ.addRectangle(
+                    float(start[0] - half_width),
+                    y0,
+                    0.0,
+                    channel_width,
+                    height,
+                )
+            )
+            continue
+        raise AssertionError(
+            "Orthogonal channel centerlines must use axis-aligned segments."
+        )
+
+    for point in centerline_points[1:-1]:
+        surfaces.append(
+            model.occ.addDisk(
+                float(point[0]),
+                float(point[1]),
+                0.0,
+                half_width,
+                half_width,
+            )
+        )
+
+    return _fuse_planar_surfaces(model, surfaces)
+
+
 def _local_coordinates(
     x: np.ndarray,
     origin: np.ndarray,
@@ -925,5 +1001,95 @@ def _create_y_bifurcation(domain: DomainConfig) -> DomainGeometry:
             model.mesh.generate(2)
 
         return _finalize_gmsh_domain(model, name="y_bifurcation", gdim=2)
+    finally:
+        gmsh.finalize()
+
+
+@register_domain("serpentine_channel")
+def _create_serpentine_channel(domain: DomainConfig) -> DomainGeometry:
+    import gmsh
+
+    p = domain.params
+    channel_length = float(_require_param(p, "channel_length", domain.type))
+    lane_spacing = float(_require_param(p, "lane_spacing", domain.type))
+    n_bends = int(_require_param(p, "n_bends", domain.type))
+    channel_width = float(_require_param(p, "channel_width", domain.type))
+    mesh_size = float(_require_param(p, "mesh_size", domain.type))
+    validate_domain_params(domain.type, p)
+
+    centerline_points = [np.array([0.0, 0.0], dtype=float)]
+    current_x = 0.0
+    current_y = 0.0
+    direction = 1.0
+    for bend_index in range(n_bends + 1):
+        current_x = channel_length if direction > 0.0 else 0.0
+        centerline_points.append(np.array([current_x, current_y], dtype=float))
+        if bend_index == n_bends:
+            break
+        current_y += lane_spacing
+        centerline_points.append(np.array([current_x, current_y], dtype=float))
+        direction *= -1.0
+
+    inlet_center = centerline_points[0]
+    outlet_center = centerline_points[-1]
+    cap_tolerance = 0.45 * channel_width + 1.0e-8
+
+    gmsh.initialize()
+    try:
+        gmsh.option.setNumber("General.Terminal", 0)
+        model = gmsh.model
+        model.add("serpentine_channel")
+        model.setCurrent("serpentine_channel")
+
+        if MPI.COMM_WORLD.rank == 0:
+            surfaces = _add_orthogonal_channel_surfaces(
+                model,
+                centerline_points=centerline_points,
+                channel_width=channel_width,
+            )
+            model.addPhysicalGroup(2, surfaces, tag=1)
+            model.setPhysicalName(2, 1, "surface")
+
+            inlet: list[int] = []
+            outlet: list[int] = []
+            walls: list[int] = []
+            boundary = model.getBoundary(
+                [(2, surface_tag) for surface_tag in surfaces],
+                oriented=False,
+            )
+            for dim, tag in boundary:
+                if dim != 1:
+                    continue
+                center = np.asarray(
+                    model.occ.getCenterOfMass(dim, tag)[:2],
+                    dtype=float,
+                )
+                if np.linalg.norm(center - inlet_center) <= cap_tolerance:
+                    inlet.append(tag)
+                    continue
+                if np.linalg.norm(center - outlet_center) <= cap_tolerance:
+                    outlet.append(tag)
+                    continue
+                walls.append(tag)
+
+            for physical_tag, (name, curve_tags) in enumerate(
+                (
+                    ("inlet", inlet),
+                    ("outlet", outlet),
+                    ("walls", walls),
+                ),
+                start=1,
+            ):
+                if not curve_tags:
+                    raise AssertionError(
+                        f"Serpentine-channel domain produced no curves for '{name}'."
+                    )
+                model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
+                model.setPhysicalName(1, physical_tag, name)
+
+            model.mesh.setSize(model.getEntities(0), mesh_size)
+            model.mesh.generate(2)
+
+        return _finalize_gmsh_domain(model, name="serpentine_channel", gdim=2)
     finally:
         gmsh.finalize()

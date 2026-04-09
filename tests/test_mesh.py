@@ -136,6 +136,17 @@ def test_annulus_boundary_tags():
             },
             {"inlet", "outlet_upper", "outlet_lower", "walls"},
         ),
+        (
+            "serpentine_channel",
+            {
+                "channel_length": 1.0,
+                "lane_spacing": 0.42,
+                "n_bends": 3,
+                "channel_width": 0.18,
+                "mesh_size": 0.08,
+            },
+            {"inlet", "outlet", "walls"},
+        ),
     ],
 )
 def test_gmsh_domain_boundary_tags(domain_type, params, expected_boundaries):
@@ -173,6 +184,31 @@ def test_y_bifurcation_outlet_positions():
     lower_midpoints = dmesh.compute_midpoints(domain_geom.mesh, fdim, lower_facets)
     assert np.mean(upper_midpoints[:, 1]) > 0.0
     assert np.mean(lower_midpoints[:, 1]) < 0.0
+
+
+@pytest.mark.skipif(not HAS_GMSH, reason="gmsh not installed")
+def test_serpentine_channel_spans_multiple_lanes():
+    domain_geom = create_domain(
+        DomainConfig(
+            type="serpentine_channel",
+            params={
+                "channel_length": 1.0,
+                "lane_spacing": 0.42,
+                "n_bends": 3,
+                "channel_width": 0.18,
+                "mesh_size": 0.08,
+            },
+        )
+    )
+    fdim = domain_geom.mesh.topology.dim - 1
+    inlet_facets = domain_geom.facet_tags.find(domain_geom.boundary_names["inlet"])
+    outlet_facets = domain_geom.facet_tags.find(domain_geom.boundary_names["outlet"])
+    wall_facets = domain_geom.facet_tags.find(domain_geom.boundary_names["walls"])
+    inlet_midpoints = dmesh.compute_midpoints(domain_geom.mesh, fdim, inlet_facets)
+    outlet_midpoints = dmesh.compute_midpoints(domain_geom.mesh, fdim, outlet_facets)
+    wall_midpoints = dmesh.compute_midpoints(domain_geom.mesh, fdim, wall_facets)
+    assert np.mean(outlet_midpoints[:, 1]) > np.mean(inlet_midpoints[:, 1])
+    assert np.max(wall_midpoints[:, 1]) - np.min(wall_midpoints[:, 1]) > 1.0
 
 
 @pytest.mark.parametrize(
@@ -287,6 +323,39 @@ def test_y_bifurcation_outlet_positions():
                 "mesh_size": 0.1,
             },
             "branch_angle_degrees",
+        ),
+        (
+            "serpentine_channel",
+            {
+                "channel_length": 0.18,
+                "lane_spacing": 0.42,
+                "n_bends": 3,
+                "channel_width": 0.18,
+                "mesh_size": 0.08,
+            },
+            "channel_length",
+        ),
+        (
+            "serpentine_channel",
+            {
+                "channel_length": 1.0,
+                "lane_spacing": 0.18,
+                "n_bends": 3,
+                "channel_width": 0.18,
+                "mesh_size": 0.08,
+            },
+            "lane_spacing",
+        ),
+        (
+            "serpentine_channel",
+            {
+                "channel_length": 1.0,
+                "lane_spacing": 0.42,
+                "n_bends": 1,
+                "channel_width": 0.18,
+                "mesh_size": 0.08,
+            },
+            "n_bends",
         ),
     ],
 )

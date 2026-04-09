@@ -21,9 +21,16 @@ ALL_CONFIGS = sorted(
 HAS_DOLFINX_MPC = importlib.util.find_spec("dolfinx_mpc") is not None
 HAS_GMSH = importlib.util.find_spec("gmsh") is not None
 SMOKE_MESH_RESOLUTION_CAP = 4
-GMSH_DOMAIN_TYPES = {"annulus", "channel_obstacle", "disk", "dumbbell", "y_bifurcation"}
+GMSH_DOMAIN_TYPES = {
+    "annulus",
+    "channel_obstacle",
+    "disk",
+    "dumbbell",
+    "y_bifurcation",
+    "serpentine_channel",
+}
 SMOKE_MESH_SIZE_FLOOR = 0.3
-SMOKE_CHANNEL_OBSTACLE_MESH_SIZE_FLOOR = 0.15
+SMOKE_NARROW_GMSH_CHANNEL_MESH_SIZE_FLOOR = 0.15
 
 
 def _prepare_smoke_run_config(cfg, output_path: Path) -> None:
@@ -43,8 +50,12 @@ def _prepare_smoke_run_config(cfg, output_path: Path) -> None:
     mesh_size = cfg.domain.params.get("mesh_size")
     if mesh_size is not None:
         mesh_size_floor = SMOKE_MESH_SIZE_FLOOR
-        if cfg.domain.type == "channel_obstacle":
-            mesh_size_floor = SMOKE_CHANNEL_OBSTACLE_MESH_SIZE_FLOOR
+        if cfg.domain.type in {
+            "channel_obstacle",
+            "y_bifurcation",
+            "serpentine_channel",
+        }:
+            mesh_size_floor = SMOKE_NARROW_GMSH_CHANNEL_MESH_SIZE_FLOOR
         cfg.domain.params["mesh_size"] = max(float(mesh_size), mesh_size_floor)
 
     if cfg.time is not None:
