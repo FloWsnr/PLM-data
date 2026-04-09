@@ -216,6 +216,21 @@ def test_load_config_rejects_invalid_l_shape_geometry(tmp_path):
         load_config(path)
 
 
+def test_load_config_rejects_invalid_multi_hole_plate_geometry(tmp_path):
+    data = yaml.safe_load(
+        Path("configs/basic/heat/2d_multi_hole_plate_hole_heating.yaml").read_text()
+    )
+    data["domain"]["holes"] = [
+        {"center": [0.36, 0.34], "radius": 0.17},
+        {"center": [0.48, 0.34], "radius": 0.17},
+    ]
+
+    path = _write_yaml(tmp_path, "bad_multi_hole_plate.yaml", data)
+
+    with pytest.raises(ValueError, match="non-overlapping"):
+        load_config(path)
+
+
 def test_load_config_boundary_field_sections():
     cfg = load_config("configs/basic/poisson/2d_sinusoidal_source_response.yaml")
     u_boundary = cfg.boundary_field("u")
@@ -429,6 +444,16 @@ def test_load_config_basic_heat_l_shape_domain():
     assert set(cfg.boundary_field("u").sides) == {"outer", "notch"}
     assert cfg.boundary_field("u").side_conditions("outer")[0].type == "dirichlet"
     assert cfg.boundary_field("u").side_conditions("notch")[0].type == "dirichlet"
+
+
+def test_load_config_basic_heat_multi_hole_plate_domain():
+    cfg = load_config("configs/basic/heat/2d_multi_hole_plate_hole_heating.yaml")
+    assert cfg.domain.type == "multi_hole_plate"
+    assert cfg.domain.dimension == 2
+    assert cfg.domain.allow_sampling is True
+    assert set(cfg.boundary_field("u").sides) == {"outer", "holes"}
+    assert cfg.boundary_field("u").side_conditions("outer")[0].type == "dirichlet"
+    assert cfg.boundary_field("u").side_conditions("holes")[0].type == "dirichlet"
 
 
 def test_load_config_annulus_center_is_explicit():

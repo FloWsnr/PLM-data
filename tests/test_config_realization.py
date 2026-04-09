@@ -252,6 +252,24 @@ def test_realize_simulation_config_concretizes_l_shape_domain_sampling():
     assert 0.024 <= realized_a.domain.params["mesh_size"] <= 0.032
 
 
+def test_realize_simulation_config_concretizes_multi_hole_plate_domain_sampling():
+    cfg = load_config("configs/basic/heat/2d_multi_hole_plate_hole_heating.yaml")
+
+    realized_a = realize_simulation_config(cfg)
+    realized_b = realize_simulation_config(cfg)
+
+    assert realized_a.domain.params == realized_b.domain.params
+    assert isinstance(realized_a.domain.params["width"], float)
+    assert isinstance(realized_a.domain.params["height"], float)
+    assert isinstance(realized_a.domain.params["mesh_size"], float)
+    assert len(realized_a.domain.params["holes"]) == 3
+    for hole in realized_a.domain.params["holes"]:
+        assert isinstance(hole["center"][0], float)
+        assert isinstance(hole["center"][1], float)
+        assert isinstance(hole["radius"], float)
+    assert 0.024 <= realized_a.domain.params["mesh_size"] <= 0.032
+
+
 def test_simulation_runner_serializes_realized_config(tmp_path):
     data = _load_config_dict("configs/basic/heat/2d_localized_blob_diffusion.yaml")
     data["domain"]["allow_sampling"] = True

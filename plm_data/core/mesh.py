@@ -703,6 +703,126 @@ def _create_l_shape(domain: DomainConfig) -> DomainGeometry:
         gmsh.finalize()
 
 
+@register_domain("multi_hole_plate")
+def _create_multi_hole_plate(domain: DomainConfig) -> DomainGeometry:
+    import gmsh
+
+    p = domain.params
+    width = float(_require_param(p, "width", domain.type))
+    height = float(_require_param(p, "height", domain.type))
+    holes_raw = _require_param(p, "holes", domain.type)
+    mesh_size = float(_require_param(p, "mesh_size", domain.type))
+    validate_domain_params(domain.type, p)
+
+    if not isinstance(holes_raw, list):
+        raise AssertionError("multi_hole_plate requires 'holes' to be a list.")
+
+    hole_specs: list[tuple[np.ndarray, float, str]] = []
+    for hole_raw in holes_raw:
+        if not isinstance(hole_raw, dict):
+            raise AssertionError(
+                "multi_hole_plate hole definitions must be mappings after realization."
+            )
+        hole_specs.append(
+            (
+                np.asarray(hole_raw["center"], dtype=float),
+                float(hole_raw["radius"]),
+                str(hole_raw.get("boundary_name", "holes")),
+            )
+        )
+
+    gmsh.initialize()
+    try:
+        gmsh.option.setNumber("General.Terminal", 0)
+        model = gmsh.model
+        model.add("multi_hole_plate")
+        model.setCurrent("multi_hole_plate")
+
+        if MPI.COMM_WORLD.rank == 0:
+            plate = model.occ.addRectangle(0.0, 0.0, 0.0, width, height)
+            holes = [
+                model.occ.addDisk(center[0], center[1], 0.0, radius, radius)
+                for center, radius, _ in hole_specs
+            ]
+            model.occ.cut(
+                [(2, plate)],
+                [(2, hole) for hole in holes],
+                removeObject=True,
+                removeTool=True,
+            )
+            model.occ.synchronize()
+
+            surfaces = [entity[1] for entity in model.getEntities(2)]
+            model.addPhysicalGroup(2, surfaces, tag=1)
+            model.setPhysicalName(2, 1, "surface")
+
+            tol = max(1.0e-8, 1.0e-6 * max(width, height))
+            outer: list[int] = []
+            hole_groups: dict[str, list[int]] = {}
+            for _, _, boundary_name in hole_specs:
+                hole_groups.setdefault(boundary_name, [])
+
+            boundary = model.getBoundary(
+                [(2, surface_tag) for surface_tag in surfaces],
+                oriented=False,
+            )
+            for dim, tag in boundary:
+                if dim != 1:
+                    continue
+                x_min, y_min, _, x_max, y_max, _ = model.occ.getBoundingBox(dim, tag)
+                if (
+                    (
+                        np.isclose(x_min, 0.0, atol=tol)
+                        and np.isclose(x_max, 0.0, atol=tol)
+                    )
+                    or (
+                        np.isclose(x_min, width, atol=tol)
+                        and np.isclose(x_max, width, atol=tol)
+                    )
+                    or (
+                        np.isclose(y_min, 0.0, atol=tol)
+                        and np.isclose(y_max, 0.0, atol=tol)
+                    )
+                    or (
+                        np.isclose(y_min, height, atol=tol)
+                        and np.isclose(y_max, height, atol=tol)
+                    )
+                ):
+                    outer.append(tag)
+                    continue
+
+                curve_center = np.asarray(
+                    model.occ.getCenterOfMass(dim, tag)[:2],
+                    dtype=float,
+                )
+                hole_index = min(
+                    range(len(hole_specs)),
+                    key=lambda index: np.linalg.norm(
+                        curve_center - hole_specs[index][0]
+                    ),
+                )
+                hole_groups[hole_specs[hole_index][2]].append(tag)
+
+            physical_groups = [("outer", outer), *hole_groups.items()]
+            for physical_tag, (name, curve_tags) in enumerate(
+                physical_groups,
+                start=1,
+            ):
+                if not curve_tags:
+                    raise AssertionError(
+                        f"Multi-hole plate domain produced no curves for '{name}'."
+                    )
+                model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
+                model.setPhysicalName(1, physical_tag, name)
+
+            model.mesh.setSize(model.getEntities(0), mesh_size)
+            model.mesh.generate(2)
+
+        return _finalize_gmsh_domain(model, name="multi_hole_plate", gdim=2)
+    finally:
+        gmsh.finalize()
+
+
 @register_domain("parallelogram")
 def _create_parallelogram(domain: DomainConfig) -> DomainGeometry:
     p = domain.params

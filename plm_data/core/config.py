@@ -473,6 +473,7 @@ def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
         "disk": 2,
         "dumbbell": 2,
         "l_shape": 2,
+        "multi_hole_plate": 2,
         "parallelogram": 2,
         "channel_obstacle": 2,
         "y_bifurcation": 2,
@@ -519,9 +520,7 @@ def validate_domain_params(
         if integer and sample_type != "randint":
             raise ValueError(f"{context} must use 'randint' for integer sampling.")
 
-    def _float_param(name: str, *, positive: bool = False) -> float | None:
-        raw = params[name]
-        context = f"{domain_type.capitalize()} domain parameter '{name}'"
+    def _float_value(raw: Any, context: str, *, positive: bool = False) -> float | None:
         if is_sampler_spec(raw):
             if not allow_sampling:
                 raise ValueError(
@@ -540,25 +539,30 @@ def validate_domain_params(
             raise ValueError(f"{context} must be > 0. Got {value}.")
         return value
 
-    def _vector_param(name: str, *, length: int) -> list[float] | None:
-        raw = params[name]
+    def _float_param(name: str, *, positive: bool = False) -> float | None:
+        return _float_value(
+            params[name],
+            f"{domain_type.capitalize()} domain parameter '{name}'",
+            positive=positive,
+        )
+
+    def _vector_value(raw: Any, context: str, *, length: int) -> list[float] | None:
         if not isinstance(raw, list) or len(raw) != length:
             raise ValueError(
-                f"{domain_type.capitalize()} domain parameter '{name}' must be a "
-                f"list with {length} entries. Got {raw!r}."
+                f"{context} must be a list with {length} entries. Got {raw!r}."
             )
         values: list[float] = []
         saw_nonconcrete = False
         for index, value in enumerate(raw):
-            context = f"{domain_type.capitalize()} domain parameter '{name}[{index}]'"
+            entry_context = f"{context}[{index}]"
             if is_sampler_spec(value):
                 if not allow_sampling:
                     raise ValueError(
-                        f"{context} uses sampled values, but domain sampling is "
+                        f"{entry_context} uses sampled values, but domain sampling is "
                         "disabled. Set 'domain.allow_sampling: true' to enable it."
                     )
-                _validate_domain_sampler(value, context, integer=False)
-                _validate_sampleable_numeric(value, context)
+                _validate_domain_sampler(value, entry_context, integer=False)
+                _validate_sampleable_numeric(value, entry_context)
                 saw_nonconcrete = True
                 continue
             if _is_param_ref(value):
@@ -566,11 +570,18 @@ def validate_domain_params(
                 continue
             numeric = float(value)
             if not math.isfinite(numeric):
-                raise ValueError(f"{context} must be finite. Got {numeric}.")
+                raise ValueError(f"{entry_context} must be finite. Got {numeric}.")
             values.append(numeric)
         if saw_nonconcrete:
             return None
         return values
+
+    def _vector_param(name: str, *, length: int) -> list[float] | None:
+        return _vector_value(
+            params[name],
+            f"{domain_type.capitalize()} domain parameter '{name}'",
+            length=length,
+        )
 
     def _positive_int_vector(name: str, *, length: int) -> list[int] | None:
         raw = params[name]
@@ -764,6 +775,80 @@ def validate_domain_params(
                 "L_shape domain requires 'cutout_height' < 'outer_height'. "
                 f"Got cutout_height={cutout_height} and outer_height={outer_height}."
             )
+        return
+
+    if domain_type == "multi_hole_plate":
+        _require_keys("width", "height", "holes", "mesh_size")
+        width = _float_param("width", positive=True)
+        height = _float_param("height", positive=True)
+        _float_param("mesh_size", positive=True)
+        holes_raw = params["holes"]
+        if not isinstance(holes_raw, list) or not holes_raw:
+            raise ValueError(
+                "Multi_hole_plate domain parameter 'holes' must be a non-empty list."
+            )
+
+        concrete_holes: list[tuple[int, list[float], float]] = []
+        for index, hole_raw in enumerate(holes_raw):
+            context = f"Multi_hole_plate domain parameter 'holes[{index}]'"
+            hole = _as_mapping(hole_raw, context)
+            allowed_keys = {"center", "radius", "boundary_name"}
+            if set(hole) - allowed_keys:
+                raise ValueError(
+                    f"{context} allows only {sorted(allowed_keys)}. Got {sorted(hole)}."
+                )
+            if not {"center", "radius"}.issubset(hole):
+                raise ValueError(
+                    f"{context} requires ['center', 'radius']. Got {sorted(hole)}."
+                )
+
+            center = _vector_value(hole["center"], f"{context}.center", length=2)
+            radius = _float_value(hole["radius"], f"{context}.radius", positive=True)
+
+            if "boundary_name" in hole:
+                boundary_name = hole["boundary_name"]
+                if not isinstance(boundary_name, str) or not boundary_name.strip():
+                    raise ValueError(
+                        f"{context}.boundary_name must be a non-empty string. "
+                        f"Got {boundary_name!r}."
+                    )
+                if boundary_name == "outer":
+                    raise ValueError(
+                        f"{context}.boundary_name may not be 'outer' because that "
+                        "name is reserved for the plate exterior."
+                    )
+
+            if (
+                width is not None
+                and height is not None
+                and center is not None
+                and radius is not None
+            ):
+                cx, cy = center
+                if cx - radius <= 0.0 or cx + radius >= width:
+                    raise ValueError(
+                        "Multi_hole_plate domain requires each hole to lie strictly "
+                        "inside the plate in x."
+                    )
+                if cy - radius <= 0.0 or cy + radius >= height:
+                    raise ValueError(
+                        "Multi_hole_plate domain requires each hole to lie strictly "
+                        "inside the plate in y."
+                    )
+                concrete_holes.append((index, center, radius))
+
+        for index, (hole_i, center_i, radius_i) in enumerate(concrete_holes):
+            for hole_j, center_j, radius_j in concrete_holes[index + 1 :]:
+                distance = math.hypot(
+                    center_i[0] - center_j[0],
+                    center_i[1] - center_j[1],
+                )
+                if distance <= radius_i + radius_j:
+                    raise ValueError(
+                        "Multi_hole_plate domain requires holes to remain "
+                        f"non-overlapping. holes[{hole_i}] and holes[{hole_j}] "
+                        "intersect."
+                    )
         return
 
     if domain_type == "parallelogram":

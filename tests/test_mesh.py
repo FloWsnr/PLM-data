@@ -126,6 +126,19 @@ def test_annulus_boundary_tags():
             {"outer", "notch"},
         ),
         (
+            "multi_hole_plate",
+            {
+                "width": 1.2,
+                "height": 0.9,
+                "holes": [
+                    {"center": [0.28, 0.3], "radius": 0.08},
+                    {"center": [0.82, 0.6], "radius": 0.09},
+                ],
+                "mesh_size": 0.08,
+            },
+            {"outer", "holes"},
+        ),
+        (
             "channel_obstacle",
             {
                 "length": 1.4,
@@ -295,6 +308,53 @@ def test_l_shape_notch_boundary_tracks_reentrant_corner():
     )
 
 
+@pytest.mark.skipif(not HAS_GMSH, reason="gmsh not installed")
+def test_multi_hole_plate_can_tag_holes_individually():
+    hole_1_center = np.array([0.3, 0.3])
+    hole_2_center = np.array([0.85, 0.55])
+    domain_geom = create_domain(
+        DomainConfig(
+            type="multi_hole_plate",
+            params={
+                "width": 1.2,
+                "height": 0.9,
+                "holes": [
+                    {
+                        "center": hole_1_center.tolist(),
+                        "radius": 0.08,
+                        "boundary_name": "hole_1",
+                    },
+                    {
+                        "center": hole_2_center.tolist(),
+                        "radius": 0.09,
+                        "boundary_name": "hole_2",
+                    },
+                ],
+                "mesh_size": 0.08,
+            },
+        )
+    )
+
+    assert set(domain_geom.boundary_names) == {"outer", "hole_1", "hole_2"}
+
+    fdim = domain_geom.mesh.topology.dim - 1
+    hole_1_facets = domain_geom.facet_tags.find(domain_geom.boundary_names["hole_1"])
+    hole_2_facets = domain_geom.facet_tags.find(domain_geom.boundary_names["hole_2"])
+    hole_1_midpoints = dmesh.compute_midpoints(domain_geom.mesh, fdim, hole_1_facets)[
+        :, :2
+    ]
+    hole_2_midpoints = dmesh.compute_midpoints(domain_geom.mesh, fdim, hole_2_facets)[
+        :, :2
+    ]
+
+    np.testing.assert_allclose(
+        np.mean(hole_1_midpoints, axis=0), hole_1_center, atol=0.08
+    )
+    np.testing.assert_allclose(
+        np.mean(hole_2_midpoints, axis=0), hole_2_center, atol=0.08
+    )
+
+
 @pytest.mark.parametrize(
     ("domain_type", "params", "match"),
     [
@@ -386,6 +446,41 @@ def test_l_shape_notch_boundary_tracks_reentrant_corner():
                 "mesh_size": 0.2,
             },
             "cutout_height",
+        ),
+        (
+            "multi_hole_plate",
+            {
+                "width": 1.2,
+                "height": 0.9,
+                "holes": [],
+                "mesh_size": 0.08,
+            },
+            "non-empty list",
+        ),
+        (
+            "multi_hole_plate",
+            {
+                "width": 1.2,
+                "height": 0.9,
+                "holes": [
+                    {"center": [0.3, 0.3], "radius": 0.12},
+                    {"center": [0.48, 0.3], "radius": 0.12},
+                ],
+                "mesh_size": 0.08,
+            },
+            "non-overlapping",
+        ),
+        (
+            "multi_hole_plate",
+            {
+                "width": 1.2,
+                "height": 0.9,
+                "holes": [
+                    {"center": [0.08, 0.3], "radius": 0.09},
+                ],
+                "mesh_size": 0.08,
+            },
+            "strictly inside the plate in x",
         ),
         (
             "parallelogram",
