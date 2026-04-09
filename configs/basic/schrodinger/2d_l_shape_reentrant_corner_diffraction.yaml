@@ -1,0 +1,98 @@
+preset: schrodinger
+parameters:
+  D:
+    sample: uniform
+    min: 0.04
+    max: 0.058
+  theta: 0.5
+  outer_width:
+    sample: uniform
+    min: 1.0
+    max: 1.16
+  outer_height:
+    sample: uniform
+    min: 1.0
+    max: 1.16
+  cutout_width:
+    sample: uniform
+    min: 0.32
+    max: 0.46
+  cutout_height:
+    sample: uniform
+    min: 0.32
+    max: 0.46
+  mesh_size:
+    sample: uniform
+    min: 0.018
+    max: 0.024
+  packet_amplitude:
+    sample: uniform
+    min: 0.9
+    max: 1.12
+  packet_sigma:
+    sample: uniform
+    min: 0.045
+    max: 0.07
+  packet_center_x:
+    sample: uniform
+    min: 0.18
+    max: 0.34
+  packet_center_y:
+    sample: uniform
+    min: 0.16
+    max: 0.3
+  packet_kx:
+    sample: uniform
+    min: 8.5
+    max: 11.5
+  packet_ky:
+    sample: uniform
+    min: 6.0
+    max: 8.8
+coefficients:
+  potential:
+    type: constant
+    params:
+      value: 0.0
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width: "param:outer_width"
+  outer_height: "param:outer_height"
+  cutout_width: "param:cutout_width"
+  cutout_height: "param:cutout_height"
+  mesh_size: "param:mesh_size"
+time:
+  dt: 0.0018
+  t_end: 0.62
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_wave_packet
+      params:
+        amplitude: "param:packet_amplitude"
+        sigma: "param:packet_sigma"
+        center: ["param:packet_center_x", "param:packet_center_y"]
+        wavevector: ["param:packet_kx", "param:packet_ky"]
+        phase: 0.0
+  v:
+    initial_condition:
+      type: gaussian_wave_packet
+      params:
+        amplitude: "param:packet_amplitude"
+        sigma: "param:packet_sigma"
+        center: ["param:packet_center_x", "param:packet_center_y"]
+        wavevector: ["param:packet_kx", "param:packet_ky"]
+        phase: -1.5707963267948966
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_dirichlet_l_shape
+  v:
+    $ref: boundary_field.scalar.homogeneous_dirichlet_l_shape
+output:
+  $ref: output.template.schrodinger
+  resolution: [176, 176]
+  num_frames: 69
+solver:
+  $ref: solver.profile.constant_lhs_block_direct
+seed: 42

@@ -1,76 +1,105 @@
 preset: schrodinger
 parameters:
-  D: 0.05
+  D:
+    sample: uniform
+    min: 0.045
+    max: 0.065
   theta: 0.5
+  domain_size_x:
+    sample: uniform
+    min: 1.0
+    max: 1.18
+  domain_size_y:
+    sample: uniform
+    min: 0.92
+    max: 1.08
+  packet_amplitude:
+    sample: uniform
+    min: 0.9
+    max: 1.12
+  packet_sigma:
+    sample: uniform
+    min: 0.048
+    max: 0.078
+  packet_center_x:
+    sample: uniform
+    min: 0.14
+    max: 0.28
+  packet_center_y:
+    sample: uniform
+    min: 0.34
+    max: 0.66
+  packet_kx:
+    sample: uniform
+    min: 11.5
+    max: 15.5
+  packet_ky:
+    sample: uniform
+    min: -1.8
+    max: 1.8
+  barrier_amplitude:
+    sample: uniform
+    min: 6.5
+    max: 10.5
+  barrier_sigma:
+    sample: uniform
+    min: 0.045
+    max: 0.072
+  barrier_center_x:
+    sample: uniform
+    min: 0.48
+    max: 0.66
+  barrier_center_y:
+    sample: uniform
+    min: 0.34
+    max: 0.66
 coefficients:
   potential:
     type: gaussian_bump
     params:
-      amplitude: 8.0
-      sigma: 0.05
+      amplitude: "param:barrier_amplitude"
+      sigma: "param:barrier_sigma"
       center:
-      - 0.55
-      - 0.5
+      - "param:barrier_center_x"
+      - "param:barrier_center_y"
 domain:
+  allow_sampling: true
   type: rectangle
   size:
-  - 1.0
-  - 1.0
+  - "param:domain_size_x"
+  - "param:domain_size_y"
   mesh_resolution:
-  - 96
-  - 96
+  - 192
+  - 160
 time:
-  $ref: time.schrodinger_default
+  dt: 0.0018
+  t_end: 0.56
 inputs:
   u:
     initial_condition:
       type: gaussian_wave_packet
       params:
-        amplitude:
-          sample: uniform
-          min: 0.9
-          max: 1.1
-        sigma:
-          sample: uniform
-          min: 0.05
-          max: 0.09
+        amplitude: "param:packet_amplitude"
+        sigma: "param:packet_sigma"
         center:
-        - sample: uniform
-          min: 0.145
-          max: 0.355
-        - sample: uniform
-          min: 0.395
-          max: 0.605
+        - "param:packet_center_x"
+        - "param:packet_center_y"
         wavevector:
-        - sample: uniform
-          min: 12.32
-          max: 15.68
-        - 0.0
+        - "param:packet_kx"
+        - "param:packet_ky"
         phase: 0.0
   v:
     initial_condition:
       type: gaussian_wave_packet
       params:
-        amplitude:
-          sample: uniform
-          min: 0.9
-          max: 1.1
-        sigma:
-          sample: uniform
-          min: 0.05
-          max: 0.09
+        amplitude: "param:packet_amplitude"
+        sigma: "param:packet_sigma"
         center:
-        - sample: uniform
-          min: 0.145
-          max: 0.355
-        - sample: uniform
-          min: 0.395
-          max: 0.605
+        - "param:packet_center_x"
+        - "param:packet_center_y"
         wavevector:
-        - sample: uniform
-          min: 12.32
-          max: 15.68
-        - 0.0
+        - "param:packet_kx"
+        - "param:packet_ky"
         phase: -1.5707963267948966
 boundary_conditions:
   u:
@@ -80,9 +109,9 @@ boundary_conditions:
 output:
   $ref: output.template.schrodinger
   resolution:
-  - 128
-  - 128
-  num_frames: 64
+  - 192
+  - 160
+  num_frames: 67
 solver:
   $ref: solver.profile.constant_lhs_block_direct
 seed: 42

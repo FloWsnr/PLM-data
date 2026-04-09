@@ -1,0 +1,107 @@
+preset: schrodinger
+parameters:
+  D:
+    sample: uniform
+    min: 0.026
+    max: 0.04
+  theta: 0.5
+  inlet_length:
+    sample: uniform
+    min: 0.9
+    max: 1.1
+  branch_length:
+    sample: uniform
+    min: 0.88
+    max: 1.08
+  branch_angle_degrees:
+    sample: uniform
+    min: 32.0
+    max: 42.0
+  channel_width:
+    sample: uniform
+    min: 0.18
+    max: 0.25
+  mesh_size:
+    sample: uniform
+    min: 0.019
+    max: 0.026
+  packet_amplitude:
+    sample: uniform
+    min: 0.88
+    max: 1.08
+  packet_sigma:
+    sample: uniform
+    min: 0.06
+    max: 0.09
+  packet_center_x:
+    sample: uniform
+    min: 0.92
+    max: 1.08
+  packet_center_y:
+    sample: uniform
+    min: 0.02
+    max: 0.12
+  packet_kx:
+    sample: uniform
+    min: 5.5
+    max: 8.0
+  packet_ky:
+    sample: uniform
+    min: 5.5
+    max: 8.0
+  branch_bias_constant:
+    sample: uniform
+    min: -0.2
+    max: 0.2
+  branch_bias_y:
+    sample: uniform
+    min: -1.0
+    max: -0.55
+coefficients:
+  potential:
+    type: affine
+    params:
+      constant: "param:branch_bias_constant"
+      y: "param:branch_bias_y"
+domain:
+  allow_sampling: true
+  type: y_bifurcation
+  inlet_length: "param:inlet_length"
+  branch_length: "param:branch_length"
+  branch_angle_degrees: "param:branch_angle_degrees"
+  channel_width: "param:channel_width"
+  mesh_size: "param:mesh_size"
+time:
+  dt: 0.0028
+  t_end: 1.05
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_wave_packet
+      params:
+        amplitude: "param:packet_amplitude"
+        sigma: "param:packet_sigma"
+        center: ["param:packet_center_x", "param:packet_center_y"]
+        wavevector: ["param:packet_kx", "param:packet_ky"]
+        phase: 0.0
+  v:
+    initial_condition:
+      type: gaussian_wave_packet
+      params:
+        amplitude: "param:packet_amplitude"
+        sigma: "param:packet_sigma"
+        center: ["param:packet_center_x", "param:packet_center_y"]
+        wavevector: ["param:packet_kx", "param:packet_ky"]
+        phase: -1.5707963267948966
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_dirichlet_y_bifurcation
+  v:
+    $ref: boundary_field.scalar.homogeneous_dirichlet_y_bifurcation
+output:
+  $ref: output.template.schrodinger
+  resolution: [208, 160]
+  num_frames: 81
+solver:
+  $ref: solver.profile.constant_lhs_block_direct
+seed: 42

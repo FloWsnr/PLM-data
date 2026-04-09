@@ -1,0 +1,120 @@
+preset: schrodinger
+parameters:
+  D:
+    sample: uniform
+    min: 0.038
+    max: 0.055
+  theta: 0.5
+  channel_length:
+    sample: uniform
+    min: 1.95
+    max: 2.2
+  channel_height:
+    sample: uniform
+    min: 0.94
+    max: 1.08
+  obstacle_center_x:
+    sample: uniform
+    min: 0.88
+    max: 1.04
+  obstacle_center_y:
+    sample: uniform
+    min: 0.46
+    max: 0.62
+  obstacle_radius:
+    sample: uniform
+    min: 0.12
+    max: 0.16
+  mesh_size:
+    sample: uniform
+    min: 0.017
+    max: 0.023
+  packet_amplitude:
+    sample: uniform
+    min: 0.9
+    max: 1.12
+  packet_sigma:
+    sample: uniform
+    min: 0.045
+    max: 0.07
+  packet_center_x:
+    sample: uniform
+    min: 0.16
+    max: 0.38
+  packet_center_y:
+    sample: uniform
+    min: 0.56
+    max: 0.82
+  packet_kx:
+    sample: uniform
+    min: 9.0
+    max: 13.8
+  packet_ky:
+    sample: uniform
+    min: 0.5
+    max: 4.5
+  upper_scatter_amplitude:
+    sample: uniform
+    min: 1.2
+    max: 3.0
+  upper_scatter_sigma:
+    sample: uniform
+    min: 0.05
+    max: 0.11
+  upper_scatter_center_x:
+    sample: uniform
+    min: 0.94
+    max: 1.22
+  upper_scatter_center_y:
+    sample: uniform
+    min: 0.58
+    max: 0.82
+coefficients:
+  potential:
+    type: gaussian_bump
+    params:
+      amplitude: "param:upper_scatter_amplitude"
+      sigma: "param:upper_scatter_sigma"
+      center: ["param:upper_scatter_center_x", "param:upper_scatter_center_y"]
+domain:
+  allow_sampling: true
+  type: channel_obstacle
+  length: "param:channel_length"
+  height: "param:channel_height"
+  obstacle_center: ["param:obstacle_center_x", "param:obstacle_center_y"]
+  obstacle_radius: "param:obstacle_radius"
+  mesh_size: "param:mesh_size"
+time:
+  dt: 0.0018
+  t_end: 0.46
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_wave_packet
+      params:
+        amplitude: "param:packet_amplitude"
+        sigma: "param:packet_sigma"
+        center: ["param:packet_center_x", "param:packet_center_y"]
+        wavevector: ["param:packet_kx", "param:packet_ky"]
+        phase: 0.0
+  v:
+    initial_condition:
+      type: gaussian_wave_packet
+      params:
+        amplitude: "param:packet_amplitude"
+        sigma: "param:packet_sigma"
+        center: ["param:packet_center_x", "param:packet_center_y"]
+        wavevector: ["param:packet_kx", "param:packet_ky"]
+        phase: -1.5707963267948966
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_dirichlet_channel_obstacle
+  v:
+    $ref: boundary_field.scalar.homogeneous_dirichlet_channel_obstacle
+output:
+  $ref: output.template.schrodinger
+  resolution: [224, 128]
+  num_frames: 69
+solver:
+  $ref: solver.profile.constant_lhs_block_direct
+seed: 42

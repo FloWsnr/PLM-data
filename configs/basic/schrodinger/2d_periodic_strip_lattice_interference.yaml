@@ -1,0 +1,118 @@
+preset: schrodinger
+parameters:
+  D:
+    sample: uniform
+    min: 0.028
+    max: 0.04
+  theta: 0.5
+  domain_size_x:
+    sample: uniform
+    min: 1.55
+    max: 1.85
+  domain_size_y:
+    sample: uniform
+    min: 0.88
+    max: 1.06
+  packet_amplitude:
+    sample: uniform
+    min: 0.85
+    max: 1.05
+  packet_sigma:
+    sample: uniform
+    min: 0.055
+    max: 0.085
+  packet_center_x:
+    sample: uniform
+    min: 0.34
+    max: 0.58
+  packet_center_y:
+    sample: uniform
+    min: 0.28
+    max: 0.52
+  packet_kx:
+    sample: uniform
+    min: 7.5
+    max: 10.5
+  packet_ky:
+    sample: uniform
+    min: 4.5
+    max: 7.0
+  lattice_background:
+    sample: uniform
+    min: -0.2
+    max: 0.2
+  lattice_x_amplitude:
+    sample: uniform
+    min: 0.7
+    max: 1.15
+  lattice_x_cycles:
+    sample: uniform
+    min: 1.0
+    max: 1.6
+  lattice_x_phase:
+    sample: uniform
+    min: -0.6
+    max: 0.6
+  lattice_y_amplitude:
+    sample: uniform
+    min: -0.9
+    max: -0.45
+  lattice_y_cycles:
+    sample: uniform
+    min: 1.6
+    max: 2.6
+  lattice_y_phase:
+    sample: uniform
+    min: -0.4
+    max: 0.8
+coefficients:
+  potential:
+    type: sine_waves
+    params:
+      background: "param:lattice_background"
+      modes:
+        - amplitude: "param:lattice_x_amplitude"
+          cycles: ["param:lattice_x_cycles", 0.0]
+          phase: "param:lattice_x_phase"
+        - amplitude: "param:lattice_y_amplitude"
+          cycles: [0.0, "param:lattice_y_cycles"]
+          phase: "param:lattice_y_phase"
+domain:
+  allow_sampling: true
+  type: rectangle
+  size: ["param:domain_size_x", "param:domain_size_y"]
+  mesh_resolution: [224, 128]
+time:
+  dt: 0.0025
+  t_end: 0.9
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_wave_packet
+      params:
+        amplitude: "param:packet_amplitude"
+        sigma: "param:packet_sigma"
+        center: ["param:packet_center_x", "param:packet_center_y"]
+        wavevector: ["param:packet_kx", "param:packet_ky"]
+        phase: 0.0
+  v:
+    initial_condition:
+      type: gaussian_wave_packet
+      params:
+        amplitude: "param:packet_amplitude"
+        sigma: "param:packet_sigma"
+        center: ["param:packet_center_x", "param:packet_center_y"]
+        wavevector: ["param:packet_kx", "param:packet_ky"]
+        phase: -1.5707963267948966
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.x_periodic_dirichlet_y_2d
+  v:
+    $ref: boundary_field.scalar.x_periodic_dirichlet_y_2d
+output:
+  $ref: output.template.schrodinger
+  resolution: [224, 128]
+  num_frames: 73
+solver:
+  $ref: solver.profile.constant_lhs_block_direct
+seed: 42

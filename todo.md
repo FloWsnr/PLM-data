@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 238 configs.
+Current baseline: 38 PDE presets and 256 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -169,9 +169,27 @@ plate domain has at least two distinct configs.
 
 #### Schrodinger (`configs/basic/schrodinger`)
 
-1. `2d_disk_wavepacket_reflection`: Gaussian wave packet launched across a disk cavity, reflecting from the circular wall and a localized barrier.
-2. `2d_wavepacket_barrier_scattering`: Gaussian wave packet traveling toward and scattering off a localized potential bump.
-3. `3d_wavepacket_barrier_scattering`: 3D Gaussian wave packet traveling toward and scattering off a localized potential bump.
+1. `2d_annulus_radial_spoke_interference`: a top-launched annular packet fires inward toward the hole and rebounds into spoke-like radial interference under a weak cross-ring lattice.
+2. `2d_annulus_ring_orbit_scattering`: a tangential packet orbits around the annulus, repeatedly shearing against the inner and outer rims while the sampled ring potential modulates its angular speed.
+3. `2d_channel_obstacle_upper_bypass_scattering`: an upstream packet clips above the cylinder and leaves a clean upper-side bypass wake inside the channel frame.
+4. `2d_channel_obstacle_wake_corral_echoes`: a lower launch slips around the cylinder and becomes trapped intermittently in a sampled downstream wake well, producing delayed echo packets.
+5. `2d_disk_quantum_corral_beating`: broad low-order disk modes beat against a sampled radial corral potential, producing slow rotating lobe patterns instead of one reflected packet.
+6. `2d_disk_wavepacket_reflection`: an off-center packet crosses the disk, ricochets off the circular wall, and interferes with a sampled interior barrier.
+7. `2d_dumbbell_neck_tunneling`: a left-lobe packet tunnels through the sampled neck against a weak neck barrier, with delayed transfer into the opposite chamber.
+8. `2d_dumbbell_transverse_lobe_ricochet`: a diagonal launch in one lobe ricochets off the lobe wall before being pulled through the neck toward a sampled capture well in the opposite chamber.
+9. `2d_l_shape_notch_trap_echoes`: a top-arm launch falls toward the re-entrant corner and lingers around a sampled notch well, producing repeated corner echoes.
+10. `2d_l_shape_reentrant_corner_diffraction`: a lower-arm packet runs directly into the L-shaped corner and breaks into sharply bent diffraction fronts.
+11. `2d_multi_hole_plate_diagonal_weave_scattering`: a diagonal packet threads a sampled perforated plate under a step potential, weaving between holes instead of taking a straight corridor.
+12. `2d_multi_hole_plate_multislit_diffraction`: a left-to-right launch turns the sampled hole pattern into a multi-slit scatterer with clear downstream interference fans.
+13. `2d_periodic_strip_lattice_interference`: a diagonal packet wraps in the periodic streamwise direction while a sampled strip lattice bends it into repeated banded interference.
+14. `2d_side_cavity_channel_cavity_release`: a packet seeded inside the side pocket is released through the cavity mouth and spills back into the main duct in bursts.
+15. `2d_side_cavity_channel_passby_capture`: a channel packet passes the cavity opening and sheds part of its mass into a sampled cavity well before re-emerging downstream.
+16. `2d_venturi_channel_throat_focusing`: an inlet packet is squeezed through the sampled venturi throat and sharpened by a weak throat well before expanding into the outlet.
+17. `2d_venturi_channel_wall_ricochet`: an upper-wall launch bounces through the converging venturi section and refracts across the throat under a sampled cross-stream bias.
+18. `2d_wavepacket_barrier_scattering`: a fast rectangular wave packet crosses a sampled box and scatters off a moving localized barrier with seed-dependent impact offsets.
+19. `2d_y_bifurcation_junction_rebound_echoes`: a junction-centered packet rebounds into the two branches and back into the trunk, with a sampled vertical bias making one arm dominate.
+20. `2d_y_bifurcation_split_branch_scattering`: an inlet packet hits a sampled junction barrier and splits asymmetrically into the two daughter branches.
+21. `3d_wavepacket_barrier_scattering`: 3D Gaussian wave packet traveling toward and scattering off a localized potential bump.
 
 #### Wave (`configs/basic/wave`)
 

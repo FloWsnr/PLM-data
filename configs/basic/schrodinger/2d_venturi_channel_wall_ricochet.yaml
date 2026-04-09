@@ -1,0 +1,121 @@
+preset: schrodinger
+parameters:
+  D:
+    sample: uniform
+    min: 0.024
+    max: 0.038
+  theta: 0.5
+  channel_length:
+    sample: uniform
+    min: 2.0
+    max: 2.3
+  channel_height:
+    sample: uniform
+    min: 0.92
+    max: 1.08
+  throat_height:
+    sample: uniform
+    min: 0.34
+    max: 0.48
+  constriction_center_x:
+    sample: uniform
+    min: 0.96
+    max: 1.16
+  constriction_radius:
+    sample: uniform
+    min: 0.42
+    max: 0.62
+  mesh_size:
+    sample: uniform
+    min: 0.018
+    max: 0.025
+  packet_amplitude:
+    sample: uniform
+    min: 0.88
+    max: 1.08
+  packet_sigma:
+    sample: uniform
+    min: 0.055
+    max: 0.085
+  packet_center_x:
+    sample: uniform
+    min: 0.14
+    max: 0.34
+  packet_center_y:
+    sample: uniform
+    min: 0.6
+    max: 0.88
+  packet_kx:
+    sample: uniform
+    min: 6.5
+    max: 11.5
+  packet_ky:
+    sample: uniform
+    min: -7.5
+    max: -2.5
+  wall_scatter_amplitude:
+    sample: uniform
+    min: 1.0
+    max: 2.6
+  wall_scatter_sigma:
+    sample: uniform
+    min: 0.06
+    max: 0.14
+  wall_scatter_center_x:
+    sample: uniform
+    min: 0.92
+    max: 1.26
+  wall_scatter_center_y:
+    sample: uniform
+    min: 0.58
+    max: 0.84
+coefficients:
+  potential:
+    type: gaussian_bump
+    params:
+      amplitude: "param:wall_scatter_amplitude"
+      sigma: "param:wall_scatter_sigma"
+      center: ["param:wall_scatter_center_x", "param:wall_scatter_center_y"]
+domain:
+  allow_sampling: true
+  type: venturi_channel
+  length: "param:channel_length"
+  height: "param:channel_height"
+  throat_height: "param:throat_height"
+  constriction_center_x: "param:constriction_center_x"
+  constriction_radius: "param:constriction_radius"
+  mesh_size: "param:mesh_size"
+time:
+  dt: 0.003
+  t_end: 0.68
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_wave_packet
+      params:
+        amplitude: "param:packet_amplitude"
+        sigma: "param:packet_sigma"
+        center: ["param:packet_center_x", "param:packet_center_y"]
+        wavevector: ["param:packet_kx", "param:packet_ky"]
+        phase: 0.0
+  v:
+    initial_condition:
+      type: gaussian_wave_packet
+      params:
+        amplitude: "param:packet_amplitude"
+        sigma: "param:packet_sigma"
+        center: ["param:packet_center_x", "param:packet_center_y"]
+        wavevector: ["param:packet_kx", "param:packet_ky"]
+        phase: -1.5707963267948966
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_dirichlet_venturi_channel
+  v:
+    $ref: boundary_field.scalar.homogeneous_dirichlet_venturi_channel
+output:
+  $ref: output.template.schrodinger
+  resolution: [224, 128]
+  num_frames: 73
+solver:
+  $ref: solver.profile.constant_lhs_block_direct
+seed: 42

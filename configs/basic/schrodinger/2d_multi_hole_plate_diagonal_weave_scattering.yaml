@@ -1,0 +1,149 @@
+preset: schrodinger
+parameters:
+  D:
+    sample: uniform
+    min: 0.028
+    max: 0.042
+  theta: 0.5
+  plate_width:
+    sample: uniform
+    min: 1.2
+    max: 1.36
+  plate_height:
+    sample: uniform
+    min: 0.9
+    max: 1.04
+  hole_1_x:
+    sample: uniform
+    min: 0.24
+    max: 0.32
+  hole_1_y:
+    sample: uniform
+    min: 0.22
+    max: 0.34
+  hole_1_radius:
+    sample: uniform
+    min: 0.055
+    max: 0.075
+  hole_2_x:
+    sample: uniform
+    min: 0.56
+    max: 0.7
+  hole_2_y:
+    sample: uniform
+    min: 0.44
+    max: 0.6
+  hole_2_radius:
+    sample: uniform
+    min: 0.06
+    max: 0.085
+  hole_3_x:
+    sample: uniform
+    min: 0.94
+    max: 1.06
+  hole_3_y:
+    sample: uniform
+    min: 0.24
+    max: 0.38
+  hole_3_radius:
+    sample: uniform
+    min: 0.055
+    max: 0.08
+  mesh_size:
+    sample: uniform
+    min: 0.016
+    max: 0.022
+  packet_amplitude:
+    sample: uniform
+    min: 0.88
+    max: 1.08
+  packet_sigma:
+    sample: uniform
+    min: 0.055
+    max: 0.085
+  packet_center_x:
+    sample: uniform
+    min: 0.08
+    max: 0.16
+  packet_center_y:
+    sample: uniform
+    min: 0.14
+    max: 0.28
+  packet_kx:
+    sample: uniform
+    min: 8.0
+    max: 10.5
+  packet_ky:
+    sample: uniform
+    min: 6.0
+    max: 8.5
+  step_value_low:
+    sample: uniform
+    min: -1.2
+    max: -0.6
+  step_value_high:
+    sample: uniform
+    min: 0.6
+    max: 1.2
+  step_split:
+    sample: uniform
+    min: 0.42
+    max: 0.58
+coefficients:
+  potential:
+    type: step
+    params:
+      value_left: "param:step_value_low"
+      value_right: "param:step_value_high"
+      x_split: "param:step_split"
+      axis: 1
+domain:
+  allow_sampling: true
+  type: multi_hole_plate
+  width: "param:plate_width"
+  height: "param:plate_height"
+  holes:
+    - center: ["param:hole_1_x", "param:hole_1_y"]
+      radius: "param:hole_1_radius"
+      boundary_name: holes
+    - center: ["param:hole_2_x", "param:hole_2_y"]
+      radius: "param:hole_2_radius"
+      boundary_name: holes
+    - center: ["param:hole_3_x", "param:hole_3_y"]
+      radius: "param:hole_3_radius"
+      boundary_name: holes
+  mesh_size: "param:mesh_size"
+time:
+  dt: 0.0025
+  t_end: 0.9
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_wave_packet
+      params:
+        amplitude: "param:packet_amplitude"
+        sigma: "param:packet_sigma"
+        center: ["param:packet_center_x", "param:packet_center_y"]
+        wavevector: ["param:packet_kx", "param:packet_ky"]
+        phase: 0.0
+  v:
+    initial_condition:
+      type: gaussian_wave_packet
+      params:
+        amplitude: "param:packet_amplitude"
+        sigma: "param:packet_sigma"
+        center: ["param:packet_center_x", "param:packet_center_y"]
+        wavevector: ["param:packet_kx", "param:packet_ky"]
+        phase: -1.5707963267948966
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.homogeneous_dirichlet_multi_hole_plate
+  v:
+    $ref: boundary_field.scalar.homogeneous_dirichlet_multi_hole_plate
+output:
+  $ref: output.template.schrodinger
+  resolution: [208, 160]
+  num_frames: 77
+solver:
+  $ref: solver.profile.constant_lhs_block_direct
+seed: 42

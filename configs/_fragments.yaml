@@ -232,6 +232,86 @@ boundary_field:
       outer:
         - operator: dirichlet
           value: 0.0
+    homogeneous_dirichlet_annulus:
+      inner:
+        - operator: dirichlet
+          value: 0.0
+      outer:
+        - operator: dirichlet
+          value: 0.0
+    homogeneous_dirichlet_l_shape:
+      outer:
+        - operator: dirichlet
+          value: 0.0
+      notch:
+        - operator: dirichlet
+          value: 0.0
+    homogeneous_dirichlet_multi_hole_plate:
+      outer:
+        - operator: dirichlet
+          value: 0.0
+      holes:
+        - operator: dirichlet
+          value: 0.0
+    homogeneous_dirichlet_channel_obstacle:
+      inlet:
+        - operator: dirichlet
+          value: 0.0
+      outlet:
+        - operator: dirichlet
+          value: 0.0
+      walls:
+        - operator: dirichlet
+          value: 0.0
+      obstacle:
+        - operator: dirichlet
+          value: 0.0
+    homogeneous_dirichlet_y_bifurcation:
+      inlet:
+        - operator: dirichlet
+          value: 0.0
+      outlet_upper:
+        - operator: dirichlet
+          value: 0.0
+      outlet_lower:
+        - operator: dirichlet
+          value: 0.0
+      walls:
+        - operator: dirichlet
+          value: 0.0
+    homogeneous_dirichlet_venturi_channel:
+      inlet:
+        - operator: dirichlet
+          value: 0.0
+      outlet:
+        - operator: dirichlet
+          value: 0.0
+      walls:
+        - operator: dirichlet
+          value: 0.0
+    homogeneous_dirichlet_side_cavity_channel:
+      inlet:
+        - operator: dirichlet
+          value: 0.0
+      outlet:
+        - operator: dirichlet
+          value: 0.0
+      walls:
+        - operator: dirichlet
+          value: 0.0
+    x_periodic_dirichlet_y_2d:
+      x-:
+        - operator: periodic
+          pair_with: x+
+      x+:
+        - operator: periodic
+          pair_with: x-
+      y-:
+        - operator: dirichlet
+          value: 0.0
+      y+:
+        - operator: dirichlet
+          value: 0.0
     homogeneous_neumann_channel_obstacle:
       inlet:
         - operator: neumann
