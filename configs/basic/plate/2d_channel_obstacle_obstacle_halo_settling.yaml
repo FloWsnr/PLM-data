@@ -1,64 +1,73 @@
 preset: plate
 parameters:
+  obstacle_center_x:
+    sample: uniform
+    min: 0.92
+    max: 1.08
+  obstacle_center_y:
+    sample: uniform
+    min: 0.42
+    max: 0.58
   theta:
     sample: uniform
-    min: 0.54
-    max: 0.66
+    min: 0.66
+    max: 0.78
 coefficients:
   rho_h:
     type: constant
     params:
       value:
         sample: uniform
-        min: 0.92
-        max: 1.12
+        min: 1.0
+        max: 1.18
   damping:
     type: constant
     params:
       value:
         sample: uniform
-        min: 0.012
-        max: 0.03
+        min: 0.055
+        max: 0.11
   rigidity:
-    type: affine
+    type: radial_cosine
     params:
-      constant:
+      base:
         sample: uniform
-        min: 0.18
-        max: 0.23
-      y:
+        min: 0.16
+        max: 0.22
+      amplitude:
         sample: uniform
-        min: 0.03
+        min: 0.04
         max: 0.08
+      frequency:
+        sample: uniform
+        min: 5.5
+        max: 8.5
+      center: ["param:obstacle_center_x", "param:obstacle_center_y"]
 domain:
   type: channel_obstacle
   allow_sampling: true
   length:
     sample: uniform
-    min: 1.8
+    min: 1.95
     max: 2.2
   height:
     sample: uniform
-    min: 0.94
+    min: 0.92
     max: 1.08
   obstacle_center:
-  - sample: uniform
-    min: 0.85
-    max: 1.15
-  - sample: uniform
-    min: 0.42
-    max: 0.62
+  - "param:obstacle_center_x"
+  - "param:obstacle_center_y"
   obstacle_radius:
     sample: uniform
-    min: 0.12
+    min: 0.13
     max: 0.18
   mesh_size:
     sample: uniform
-    min: 0.028
+    min: 0.03
     max: 0.036
 time:
-  dt: 0.0045
-  t_end: 1.25
+  dt: 0.0055
+  t_end: 1.6
 inputs:
   deflection:
     initial_condition:
@@ -67,34 +76,43 @@ inputs:
         value: 0.0
   velocity:
     initial_condition:
-      type: gaussian_blobs
+      type: sine_waves
       params:
         background: 0.0
-        generators:
-        - count: 1
-          amplitude:
+        modes:
+        - amplitude:
             sample: uniform
+            min: 0.01
+            max: 0.03
+          cycles:
+          - sample: uniform
             min: 0.8
             max: 1.2
-          sigma:
-            sample: uniform
-            min: 0.05
-            max: 0.08
-          aspect_ratio:
-            sample: uniform
-            min: 1.2
-            max: 2.0
-          center:
           - sample: uniform
-            min: 0.18
-            max: 0.34
-          - sample: uniform
-            min: 0.35
-            max: 0.65
+            min: 0.8
+            max: 1.3
+          phase:
+            sample: uniform
+            min: -0.4
+            max: 0.4
+          angle:
+            sample: uniform
+            min: -0.2
+            max: 0.2
   load:
     source:
-      type: none
-      params: {}
+      type: radial_cosine
+      params:
+        base: 0.0
+        amplitude:
+          sample: uniform
+          min: 0.15
+          max: 0.24
+        frequency:
+          sample: uniform
+          min: 8.0
+          max: 12.0
+        center: ["param:obstacle_center_x", "param:obstacle_center_y"]
 boundary_conditions:
   deflection:
     inlet:
