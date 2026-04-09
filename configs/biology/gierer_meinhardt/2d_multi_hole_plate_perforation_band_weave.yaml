@@ -1,0 +1,258 @@
+preset: gierer_meinhardt
+parameters:
+  Da:
+    sample: uniform
+    min: 0.046
+    max: 0.074
+  Dh:
+    sample: uniform
+    min: 1.3
+    max: 2.0
+  rho_a:
+    sample: uniform
+    min: 0.9
+    max: 1.08
+  rho_h:
+    sample: uniform
+    min: 0.9
+    max: 1.12
+  mu_a:
+    sample: uniform
+    min: 0.82
+    max: 0.98
+  mu_h:
+    sample: uniform
+    min: 0.76
+    max: 0.92
+  sigma_a:
+    sample: uniform
+    min: 0.012
+    max: 0.028
+  sigma_h:
+    sample: uniform
+    min: 0.006
+    max: 0.02
+  tau:
+    sample: uniform
+    min: 1.0
+    max: 1.85
+  top_exchange:
+    sample: uniform
+    min: 0.05
+    max: 0.16
+  bottom_exchange:
+    sample: uniform
+    min: 0.05
+    max: 0.16
+  a_top_hole_value:
+    sample: uniform
+    min: 0.76
+    max: 0.94
+  h_bottom_hole_value:
+    sample: uniform
+    min: 1.12
+    max: 1.34
+domain:
+  allow_sampling: true
+  type: multi_hole_plate
+  width:
+    sample: uniform
+    min: 18.0
+    max: 22.0
+  height:
+    sample: uniform
+    min: 12.0
+    max: 14.5
+  holes:
+    - center:
+        - sample: uniform
+          min: 4.0
+          max: 5.6
+        - sample: uniform
+          min: 9.0
+          max: 10.8
+      radius:
+        sample: uniform
+        min: 0.95
+        max: 1.25
+      boundary_name: holes_top
+    - center:
+        - sample: uniform
+          min: 8.4
+          max: 10.2
+        - sample: uniform
+          min: 3.0
+          max: 4.6
+      radius:
+        sample: uniform
+        min: 1.0
+        max: 1.35
+      boundary_name: holes_bottom
+    - center:
+        - sample: uniform
+          min: 12.0
+          max: 13.8
+        - sample: uniform
+          min: 8.6
+          max: 10.4
+      radius:
+        sample: uniform
+        min: 0.95
+        max: 1.25
+      boundary_name: holes_top
+    - center:
+        - sample: uniform
+          min: 15.8
+          max: 17.4
+        - sample: uniform
+          min: 3.0
+          max: 4.6
+      radius:
+        sample: uniform
+        min: 1.0
+        max: 1.35
+      boundary_name: holes_bottom
+  mesh_size:
+    sample: uniform
+    min: 0.12
+    max: 0.15
+time:
+  dt: 0.015
+  t_end: 16.0
+inputs:
+  a:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.76
+          max: 0.9
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.12
+              max: 0.24
+            sigma:
+              sample: uniform
+              min: 0.9
+              max: 1.5
+            aspect_ratio:
+              sample: uniform
+              min: 1.1
+              max: 2.6
+            center:
+              - sample: uniform
+                min: 3.2
+                max: 6.2
+              - sample: uniform
+                min: 7.6
+                max: 10.8
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.08
+              max: 0.18
+            sigma:
+              sample: uniform
+              min: 0.8
+              max: 1.3
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.0
+            center:
+              - sample: uniform
+                min: 8.0
+                max: 12.2
+              - sample: uniform
+                min: 4.8
+                max: 8.2
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.08
+              max: 0.18
+            sigma:
+              sample: uniform
+              min: 0.9
+              max: 1.5
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.2
+            center:
+              - sample: uniform
+                min: 13.2
+                max: 18.0
+              - sample: uniform
+                min: 2.8
+                max: 6.0
+  h:
+    initial_condition:
+      type: quadrants
+      params:
+        split:
+          - sample: uniform
+            min: 8.5
+            max: 12.5
+          - sample: uniform
+            min: 5.0
+            max: 8.0
+        region_values:
+          "00":
+            sample: uniform
+            min: 1.0
+            max: 1.14
+          "01":
+            sample: uniform
+            min: 1.12
+            max: 1.28
+          "10":
+            sample: uniform
+            min: 1.04
+            max: 1.2
+          "11":
+            sample: uniform
+            min: 1.16
+            max: 1.32
+boundary_conditions:
+  a:
+    outer:
+      - operator: neumann
+        value: 0.0
+    holes_top:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:a_top_hole_value"
+        operator_parameters:
+          alpha: "param:top_exchange"
+    holes_bottom:
+      - operator: neumann
+        value: 0.0
+  h:
+    outer:
+      - operator: neumann
+        value: 0.0
+    holes_top:
+      - operator: neumann
+        value: 0.0
+    holes_bottom:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:h_bottom_hole_value"
+        operator_parameters:
+          alpha: "param:bottom_exchange"
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_ah
+  formats: [numpy, gif]
+  resolution: [224, 160]
+  num_frames: 65
+seed: 42
