@@ -481,6 +481,7 @@ def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
         "venturi_channel": 2,
         "serpentine_channel": 2,
         "airfoil_channel": 2,
+        "side_cavity_channel": 2,
     }
     if domain_type in builtin_dims:
         return builtin_dims[domain_type]
@@ -1013,6 +1014,42 @@ def validate_domain_params(
                 raise ValueError(
                     "Airfoil_channel domain requires the airfoil to lie strictly "
                     "inside the channel in y."
+                )
+        return
+
+    if domain_type == "side_cavity_channel":
+        _require_keys(
+            "length",
+            "height",
+            "cavity_width",
+            "cavity_depth",
+            "cavity_center_x",
+            "mesh_size",
+        )
+        length = _float_param("length", positive=True)
+        _float_param("height", positive=True)
+        cavity_width = _float_param("cavity_width", positive=True)
+        _float_param("cavity_depth", positive=True)
+        cavity_center_x = _float_param("cavity_center_x", positive=True)
+        _float_param("mesh_size", positive=True)
+        if length is not None and cavity_width is not None and cavity_width >= length:
+            raise ValueError(
+                "Side_cavity_channel domain requires 'cavity_width' < 'length'. "
+                f"Got cavity_width={cavity_width} and length={length}."
+            )
+        if (
+            length is not None
+            and cavity_width is not None
+            and cavity_center_x is not None
+        ):
+            half_width = 0.5 * cavity_width
+            if (
+                cavity_center_x - half_width <= 0.0
+                or cavity_center_x + half_width >= length
+            ):
+                raise ValueError(
+                    "Side_cavity_channel domain requires the cavity to stay "
+                    "strictly inside the channel in x."
                 )
         return
 

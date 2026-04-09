@@ -1408,3 +1408,89 @@ def _create_airfoil_channel(domain: DomainConfig) -> DomainGeometry:
         return _finalize_gmsh_domain(model, name="airfoil_channel", gdim=2)
     finally:
         gmsh.finalize()
+
+
+@register_domain("side_cavity_channel")
+def _create_side_cavity_channel(domain: DomainConfig) -> DomainGeometry:
+    import gmsh
+
+    p = domain.params
+    length = float(_require_param(p, "length", domain.type))
+    height = float(_require_param(p, "height", domain.type))
+    cavity_width = float(_require_param(p, "cavity_width", domain.type))
+    cavity_depth = float(_require_param(p, "cavity_depth", domain.type))
+    cavity_center_x = float(_require_param(p, "cavity_center_x", domain.type))
+    mesh_size = float(_require_param(p, "mesh_size", domain.type))
+    validate_domain_params(domain.type, p)
+
+    cavity_left = cavity_center_x - 0.5 * cavity_width
+
+    gmsh.initialize()
+    try:
+        gmsh.option.setNumber("General.Terminal", 0)
+        model = gmsh.model
+        model.add("side_cavity_channel")
+        model.setCurrent("side_cavity_channel")
+
+        if MPI.COMM_WORLD.rank == 0:
+            channel = model.occ.addRectangle(0.0, 0.0, 0.0, length, height)
+            cavity = model.occ.addRectangle(
+                cavity_left,
+                height,
+                0.0,
+                cavity_width,
+                cavity_depth,
+            )
+            surfaces = _fuse_planar_surfaces(model, [channel, cavity])
+            model.addPhysicalGroup(2, surfaces, tag=1)
+            model.setPhysicalName(2, 1, "surface")
+
+            inlet: list[int] = []
+            outlet: list[int] = []
+            walls: list[int] = []
+            boundary_tol = 1.0e-6
+            boundary = model.getBoundary(
+                [(2, surface_tag) for surface_tag in surfaces],
+                oriented=False,
+            )
+            for dim, tag in boundary:
+                if dim != 1:
+                    continue
+                bb = model.occ.getBoundingBox(dim, tag)
+                x_min, _, _, x_max, _, _ = bb
+                if np.isclose(x_min, 0.0, atol=boundary_tol) and np.isclose(
+                    x_max,
+                    0.0,
+                    atol=boundary_tol,
+                ):
+                    inlet.append(tag)
+                elif np.isclose(x_min, length, atol=boundary_tol) and np.isclose(
+                    x_max,
+                    length,
+                    atol=boundary_tol,
+                ):
+                    outlet.append(tag)
+                else:
+                    walls.append(tag)
+
+            for physical_tag, (name, curve_tags) in enumerate(
+                (
+                    ("inlet", inlet),
+                    ("outlet", outlet),
+                    ("walls", walls),
+                ),
+                start=1,
+            ):
+                if not curve_tags:
+                    raise AssertionError(
+                        f"Side-cavity channel domain produced no curves for '{name}'."
+                    )
+                model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
+                model.setPhysicalName(1, physical_tag, name)
+
+            model.mesh.setSize(model.getEntities(0), mesh_size)
+            model.mesh.generate(2)
+
+        return _finalize_gmsh_domain(model, name="side_cavity_channel", gdim=2)
+    finally:
+        gmsh.finalize()

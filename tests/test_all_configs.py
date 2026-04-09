@@ -31,6 +31,7 @@ GMSH_DOMAIN_TYPES = {
     "y_bifurcation",
     "venturi_channel",
     "serpentine_channel",
+    "side_cavity_channel",
 }
 SMOKE_MESH_SIZE_FLOOR = 0.3
 SMOKE_NARROW_GMSH_CHANNEL_MESH_SIZE_FLOOR = 0.15
@@ -59,6 +60,7 @@ def _prepare_smoke_run_config(cfg, output_path: Path) -> None:
             "y_bifurcation",
             "venturi_channel",
             "serpentine_channel",
+            "side_cavity_channel",
         }:
             mesh_size_floor = SMOKE_NARROW_GMSH_CHANNEL_MESH_SIZE_FLOOR
         cfg.domain.params["mesh_size"] = max(float(mesh_size), mesh_size_floor)

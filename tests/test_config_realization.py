@@ -278,6 +278,27 @@ def test_realize_simulation_config_concretizes_airfoil_channel_domain_sampling()
     assert 0.028 <= realized_a.domain.params["mesh_size"] <= 0.036
 
 
+def test_realize_simulation_config_concretizes_side_cavity_channel_domain_sampling():
+    cfg = load_config("configs/basic/heat/2d_side_cavity_channel_delayed_release.yaml")
+
+    realized_a = realize_simulation_config(cfg)
+    realized_b = realize_simulation_config(cfg)
+
+    assert realized_a.domain.params == realized_b.domain.params
+    assert isinstance(realized_a.domain.params["length"], float)
+    assert isinstance(realized_a.domain.params["height"], float)
+    assert isinstance(realized_a.domain.params["cavity_width"], float)
+    assert isinstance(realized_a.domain.params["cavity_depth"], float)
+    assert isinstance(realized_a.domain.params["cavity_center_x"], float)
+    assert isinstance(realized_a.domain.params["mesh_size"], float)
+    assert 2.2 <= realized_a.domain.params["length"] <= 2.8
+    assert 0.68 <= realized_a.domain.params["height"] <= 0.82
+    assert 0.36 <= realized_a.domain.params["cavity_width"] <= 0.56
+    assert 0.28 <= realized_a.domain.params["cavity_depth"] <= 0.48
+    assert 1.0 <= realized_a.domain.params["cavity_center_x"] <= 1.55
+    assert 0.026 <= realized_a.domain.params["mesh_size"] <= 0.034
+
+
 def test_simulation_runner_serializes_realized_config(tmp_path):
     data = _load_config_dict("configs/basic/heat/2d_localized_blob_diffusion.yaml")
     data["domain"]["allow_sampling"] = True

@@ -216,6 +216,22 @@ def test_load_config_rejects_invalid_l_shape_geometry(tmp_path):
         load_config(path)
 
 
+def test_load_config_rejects_side_cavity_channel_cavity_outside_channel(tmp_path):
+    data = yaml.safe_load(
+        Path(
+            "configs/basic/heat/2d_side_cavity_channel_delayed_release.yaml"
+        ).read_text()
+    )
+    data["domain"]["length"] = 2.4
+    data["domain"]["cavity_width"] = 0.6
+    data["domain"]["cavity_center_x"] = 0.2
+
+    path = _write_yaml(tmp_path, "bad_side_cavity_channel.yaml", data)
+
+    with pytest.raises(ValueError, match="strictly inside the channel in x"):
+        load_config(path)
+
+
 def test_load_config_boundary_field_sections():
     cfg = load_config("configs/basic/poisson/2d_sinusoidal_source_response.yaml")
     u_boundary = cfg.boundary_field("u")
@@ -445,6 +461,17 @@ def test_load_config_basic_heat_airfoil_channel_domain():
     assert cfg.boundary_field("u").side_conditions("outlet")[0].type == "dirichlet"
     assert cfg.boundary_field("u").side_conditions("walls")[0].type == "neumann"
     assert cfg.boundary_field("u").side_conditions("airfoil")[0].type == "dirichlet"
+
+
+def test_load_config_basic_heat_side_cavity_channel_domain():
+    cfg = load_config("configs/basic/heat/2d_side_cavity_channel_delayed_release.yaml")
+    assert cfg.domain.type == "side_cavity_channel"
+    assert cfg.domain.dimension == 2
+    assert cfg.domain.allow_sampling is True
+    assert set(cfg.boundary_field("u").sides) == {"inlet", "outlet", "walls"}
+    assert cfg.boundary_field("u").side_conditions("inlet")[0].type == "dirichlet"
+    assert cfg.boundary_field("u").side_conditions("outlet")[0].type == "dirichlet"
+    assert cfg.boundary_field("u").side_conditions("walls")[0].type == "neumann"
 
 
 def test_load_config_annulus_center_is_explicit():

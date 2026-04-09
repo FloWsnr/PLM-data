@@ -183,6 +183,18 @@ def test_annulus_boundary_tags():
             },
             {"inlet", "outlet", "walls"},
         ),
+        (
+            "side_cavity_channel",
+            {
+                "length": 2.4,
+                "height": 0.8,
+                "cavity_width": 0.5,
+                "cavity_depth": 0.36,
+                "cavity_center_x": 1.2,
+                "mesh_size": 0.08,
+            },
+            {"inlet", "outlet", "walls"},
+        ),
     ],
 )
 def test_gmsh_domain_boundary_tags(domain_type, params, expected_boundaries):
@@ -276,6 +288,33 @@ def test_airfoil_channel_airfoil_boundary_is_interior():
     assert np.min(airfoil_midpoints[:, 1]) > 0.0
     assert np.max(airfoil_midpoints[:, 1]) < 1.1
     assert np.max(wall_midpoints[:, 1]) - np.min(wall_midpoints[:, 1]) > 1.0
+
+
+@pytest.mark.skipif(not HAS_GMSH, reason="gmsh not installed")
+def test_side_cavity_channel_extends_above_main_channel():
+    height = 0.8
+    cavity_depth = 0.36
+    domain_geom = create_domain(
+        DomainConfig(
+            type="side_cavity_channel",
+            params={
+                "length": 2.4,
+                "height": height,
+                "cavity_width": 0.5,
+                "cavity_depth": cavity_depth,
+                "cavity_center_x": 1.2,
+                "mesh_size": 0.08,
+            },
+        )
+    )
+    fdim = domain_geom.mesh.topology.dim - 1
+    wall_facets = domain_geom.facet_tags.find(domain_geom.boundary_names["walls"])
+    wall_midpoints = dmesh.compute_midpoints(domain_geom.mesh, fdim, wall_facets)
+    cavity_roof_midpoints = wall_midpoints[
+        wall_midpoints[:, 1] > height + 0.8 * cavity_depth
+    ]
+    assert len(cavity_roof_midpoints) > 0
+    assert np.max(wall_midpoints[:, 1]) > height
 
 
 @pytest.mark.skipif(not HAS_GMSH, reason="gmsh not installed")
@@ -577,6 +616,18 @@ def test_l_shape_notch_boundary_tracks_reentrant_corner():
                 "mesh_size": 0.08,
             },
             "n_bends",
+        ),
+        (
+            "side_cavity_channel",
+            {
+                "length": 2.0,
+                "height": 0.8,
+                "cavity_width": 2.0,
+                "cavity_depth": 0.36,
+                "cavity_center_x": 1.0,
+                "mesh_size": 0.08,
+            },
+            "cavity_width",
         ),
     ],
 )

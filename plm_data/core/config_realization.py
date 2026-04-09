@@ -686,6 +686,21 @@ def _realize_domain_params(
                 seed=seed,
                 stream_root=f"domain.params.{key}",
             )
+    elif domain.type == "side_cavity_channel":
+        for key in (
+            "length",
+            "height",
+            "cavity_width",
+            "cavity_depth",
+            "cavity_center_x",
+            "mesh_size",
+        ):
+            realized[key] = _realize_numeric_tree(
+                params[key],
+                parameters=parameters,
+                seed=seed,
+                stream_root=f"domain.params.{key}",
+            )
 
     for key, value in params.items():
         if key in realized:
