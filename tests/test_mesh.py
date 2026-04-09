@@ -137,6 +137,18 @@ def test_annulus_boundary_tags():
             {"inlet", "outlet_upper", "outlet_lower", "walls"},
         ),
         (
+            "venturi_channel",
+            {
+                "length": 2.0,
+                "height": 1.0,
+                "throat_height": 0.36,
+                "constriction_center_x": 1.0,
+                "constriction_radius": 0.55,
+                "mesh_size": 0.08,
+            },
+            {"inlet", "outlet", "walls"},
+        ),
+        (
             "serpentine_channel",
             {
                 "channel_length": 1.0,
@@ -184,6 +196,35 @@ def test_y_bifurcation_outlet_positions():
     lower_midpoints = dmesh.compute_midpoints(domain_geom.mesh, fdim, lower_facets)
     assert np.mean(upper_midpoints[:, 1]) > 0.0
     assert np.mean(lower_midpoints[:, 1]) < 0.0
+
+
+@pytest.mark.skipif(not HAS_GMSH, reason="gmsh not installed")
+def test_venturi_channel_has_narrower_throat_than_inlet():
+    domain_geom = create_domain(
+        DomainConfig(
+            type="venturi_channel",
+            params={
+                "length": 2.0,
+                "height": 1.0,
+                "throat_height": 0.36,
+                "constriction_center_x": 1.0,
+                "constriction_radius": 0.55,
+                "mesh_size": 0.08,
+            },
+        )
+    )
+    fdim = domain_geom.mesh.topology.dim - 1
+    inlet_facets = domain_geom.facet_tags.find(domain_geom.boundary_names["inlet"])
+    wall_facets = domain_geom.facet_tags.find(domain_geom.boundary_names["walls"])
+    inlet_midpoints = dmesh.compute_midpoints(domain_geom.mesh, fdim, inlet_facets)
+    wall_midpoints = dmesh.compute_midpoints(domain_geom.mesh, fdim, wall_facets)
+    throat_wall_midpoints = wall_midpoints[np.abs(wall_midpoints[:, 0] - 1.0) < 0.12]
+    assert len(throat_wall_midpoints) > 0
+    inlet_height = np.max(inlet_midpoints[:, 1]) - np.min(inlet_midpoints[:, 1])
+    throat_height = np.max(throat_wall_midpoints[:, 1]) - np.min(
+        throat_wall_midpoints[:, 1]
+    )
+    assert throat_height < inlet_height
 
 
 @pytest.mark.skipif(not HAS_GMSH, reason="gmsh not installed")
@@ -323,6 +364,42 @@ def test_serpentine_channel_spans_multiple_lanes():
                 "mesh_size": 0.1,
             },
             "branch_angle_degrees",
+        ),
+        (
+            "venturi_channel",
+            {
+                "length": 2.0,
+                "height": 1.0,
+                "throat_height": 1.0,
+                "constriction_center_x": 1.0,
+                "constriction_radius": 0.55,
+                "mesh_size": 0.08,
+            },
+            "throat_height",
+        ),
+        (
+            "venturi_channel",
+            {
+                "length": 2.0,
+                "height": 1.0,
+                "throat_height": 0.12,
+                "constriction_center_x": 1.0,
+                "constriction_radius": 0.4,
+                "mesh_size": 0.08,
+            },
+            "constriction_radius",
+        ),
+        (
+            "venturi_channel",
+            {
+                "length": 2.0,
+                "height": 1.0,
+                "throat_height": 0.36,
+                "constriction_center_x": 0.35,
+                "constriction_radius": 0.55,
+                "mesh_size": 0.08,
+            },
+            "strictly inside the channel in x",
         ),
         (
             "serpentine_channel",

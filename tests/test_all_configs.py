@@ -27,6 +27,7 @@ GMSH_DOMAIN_TYPES = {
     "disk",
     "dumbbell",
     "y_bifurcation",
+    "venturi_channel",
     "serpentine_channel",
 }
 SMOKE_MESH_SIZE_FLOOR = 0.3
@@ -53,6 +54,7 @@ def _prepare_smoke_run_config(cfg, output_path: Path) -> None:
         if cfg.domain.type in {
             "channel_obstacle",
             "y_bifurcation",
+            "venturi_channel",
             "serpentine_channel",
         }:
             mesh_size_floor = SMOKE_NARROW_GMSH_CHANNEL_MESH_SIZE_FLOOR

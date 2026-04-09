@@ -475,6 +475,7 @@ def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
         "parallelogram": 2,
         "channel_obstacle": 2,
         "y_bifurcation": 2,
+        "venturi_channel": 2,
         "serpentine_channel": 2,
     }
     if domain_type in builtin_dims:
@@ -810,6 +811,62 @@ def validate_domain_params(
                     "'branch_length * sin(branch_angle_degrees)' > 'channel_width' "
                     "so the two outlet branches separate cleanly."
                 )
+
+    if domain_type == "venturi_channel":
+        _require_keys(
+            "length",
+            "height",
+            "throat_height",
+            "constriction_center_x",
+            "constriction_radius",
+            "mesh_size",
+        )
+        length = _float_param("length", positive=True)
+        height = _float_param("height", positive=True)
+        throat_height = _float_param("throat_height", positive=True)
+        constriction_center_x = _float_param("constriction_center_x", positive=True)
+        constriction_radius = _float_param("constriction_radius", positive=True)
+        _float_param("mesh_size", positive=True)
+        if height is not None and throat_height is not None and throat_height >= height:
+            raise ValueError(
+                "Venturi_channel domain requires 'throat_height' < 'height'. "
+                f"Got throat_height={throat_height} and height={height}."
+            )
+        if (
+            height is not None
+            and throat_height is not None
+            and constriction_radius is not None
+        ):
+            indentation = 0.5 * (height - throat_height)
+            if indentation >= constriction_radius:
+                raise ValueError(
+                    "Venturi_channel domain requires 'constriction_radius' to "
+                    "exceed the wall indentation implied by "
+                    "'height - throat_height'."
+                )
+        if (
+            length is not None
+            and height is not None
+            and throat_height is not None
+            and constriction_center_x is not None
+            and constriction_radius is not None
+        ):
+            indentation = 0.5 * (height - throat_height)
+            half_span = math.sqrt(
+                max(
+                    0.0,
+                    2.0 * constriction_radius * indentation - indentation**2,
+                )
+            )
+            if (
+                constriction_center_x - half_span <= 0.0
+                or constriction_center_x + half_span >= length
+            ):
+                raise ValueError(
+                    "Venturi_channel domain requires the constriction to stay "
+                    "strictly inside the channel in x."
+                )
+        return
 
     if domain_type == "serpentine_channel":
         _require_keys(

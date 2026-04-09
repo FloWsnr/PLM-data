@@ -388,6 +388,16 @@ def test_load_config_basic_heat_y_bifurcation_domain():
     assert cfg.boundary_field("u").side_conditions("walls")[0].type == "neumann"
 
 
+def test_load_config_basic_heat_venturi_channel_domain():
+    cfg = load_config("configs/basic/heat/2d_venturi_channel_throat_focusing.yaml")
+    assert cfg.domain.type == "venturi_channel"
+    assert cfg.domain.dimension == 2
+    assert set(cfg.boundary_field("u").sides) == {"inlet", "outlet", "walls"}
+    assert cfg.boundary_field("u").side_conditions("inlet")[0].type == "dirichlet"
+    assert cfg.boundary_field("u").side_conditions("outlet")[0].type == "dirichlet"
+    assert cfg.boundary_field("u").side_conditions("walls")[0].type == "neumann"
+
+
 def test_load_config_basic_heat_serpentine_channel_domain():
     cfg = load_config("configs/basic/heat/2d_serpentine_channel_guided_diffusion.yaml")
     assert cfg.domain.type == "serpentine_channel"

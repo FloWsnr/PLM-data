@@ -193,6 +193,27 @@ def test_realize_simulation_config_concretizes_y_bifurcation_domain_sampling():
     assert 0.028 <= realized_a.domain.params["mesh_size"] <= 0.036
 
 
+def test_realize_simulation_config_concretizes_venturi_channel_domain_sampling():
+    cfg = load_config("configs/basic/heat/2d_venturi_channel_throat_focusing.yaml")
+
+    realized_a = realize_simulation_config(cfg)
+    realized_b = realize_simulation_config(cfg)
+
+    assert realized_a.domain.params == realized_b.domain.params
+    assert isinstance(realized_a.domain.params["length"], float)
+    assert isinstance(realized_a.domain.params["height"], float)
+    assert isinstance(realized_a.domain.params["throat_height"], float)
+    assert isinstance(realized_a.domain.params["constriction_center_x"], float)
+    assert isinstance(realized_a.domain.params["constriction_radius"], float)
+    assert isinstance(realized_a.domain.params["mesh_size"], float)
+    assert 2.0 <= realized_a.domain.params["length"] <= 2.3
+    assert 0.9 <= realized_a.domain.params["height"] <= 1.1
+    assert 0.34 <= realized_a.domain.params["throat_height"] <= 0.5
+    assert 0.95 <= realized_a.domain.params["constriction_center_x"] <= 1.15
+    assert 0.4 <= realized_a.domain.params["constriction_radius"] <= 0.65
+    assert 0.028 <= realized_a.domain.params["mesh_size"] <= 0.036
+
+
 def test_realize_simulation_config_concretizes_serpentine_channel_domain_sampling():
     cfg = load_config("configs/basic/heat/2d_serpentine_channel_guided_diffusion.yaml")
 
