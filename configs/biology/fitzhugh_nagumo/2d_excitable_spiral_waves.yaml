@@ -1,30 +1,58 @@
 preset: fitzhugh_nagumo
 parameters:
-  Du: 1.0
-  Dv: 50.0
-  tau: 0.1
-  b: 0.5
-  a: 0.0
+  Du:
+    sample: uniform
+    min: 0.00105
+    max: 0.00155
+  Dv:
+    sample: uniform
+    min: 0.042
+    max: 0.068
+  tau:
+    sample: uniform
+    min: 0.055
+    max: 0.095
+  b:
+    sample: uniform
+    min: 0.43
+    max: 0.56
+  a:
+    sample: uniform
+    min: -0.03
+    max: 0.02
 domain:
+  allow_sampling: true
   type: rectangle
-  size: [50.0, 50.0]
-  mesh_resolution: [128, 128]
+  size:
+    - sample: uniform
+      min: 1.75
+      max: 2.25
+    - sample: uniform
+      min: 1.75
+      max: 2.25
+  mesh_resolution: [192, 192]
 time:
-  dt: 0.01
-  t_end: 50.0
+  dt: 0.004
+  t_end: 12.0
 inputs:
   u:
     initial_condition:
       type: gaussian_noise
       params:
         mean: 0.0
-        std: 0.05
+        std:
+          sample: uniform
+          min: 0.09
+          max: 0.13
   v:
     initial_condition:
       type: gaussian_noise
       params:
         mean: 0.0
-        std: 0.05
+        std:
+          sample: uniform
+          min: 0.05
+          max: 0.085
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.full_periodic_2d
@@ -34,6 +62,7 @@ solver:
   $ref: solver.profile.constant_lhs_scalar_spd
 output:
   $ref: output.template.scalar_uv
-  resolution: [96, 96]
-  num_frames: 100
+  formats: [numpy, gif]
+  resolution: [192, 192]
+  num_frames: 81
 seed: 42

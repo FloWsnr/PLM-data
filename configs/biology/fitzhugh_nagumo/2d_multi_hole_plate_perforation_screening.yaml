@@ -1,0 +1,139 @@
+preset: fitzhugh_nagumo
+parameters:
+  Du:
+    sample: uniform
+    min: 0.0012
+    max: 0.002
+  Dv:
+    sample: uniform
+    min: 0.03
+    max: 0.05
+  tau:
+    sample: uniform
+    min: 0.1
+    max: 0.2
+  b:
+    sample: uniform
+    min: 0.55
+    max: 0.76
+  a:
+    sample: uniform
+    min: -0.05
+    max: 0.03
+  v_background:
+    sample: uniform
+    min: -0.08
+    max: 0.02
+domain:
+  allow_sampling: true
+  type: multi_hole_plate
+  width:
+    sample: uniform
+    min: 1.18
+    max: 1.32
+  height:
+    sample: uniform
+    min: 0.86
+    max: 1.02
+  holes:
+    - center:
+        - sample: uniform
+          min: 0.24
+          max: 0.32
+        - sample: uniform
+          min: 0.26
+          max: 0.38
+      radius:
+        sample: uniform
+        min: 0.055
+        max: 0.075
+      boundary_name: holes_left
+    - center:
+        - sample: uniform
+          min: 0.56
+          max: 0.68
+        - sample: uniform
+          min: 0.4
+          max: 0.58
+      radius:
+        sample: uniform
+        min: 0.06
+        max: 0.085
+      boundary_name: hole_center
+    - center:
+        - sample: uniform
+          min: 0.9
+          max: 1.02
+        - sample: uniform
+          min: 0.24
+          max: 0.38
+      radius:
+        sample: uniform
+        min: 0.055
+        max: 0.075
+      boundary_name: holes_right
+  mesh_size:
+    sample: uniform
+    min: 0.015
+    max: 0.018
+time:
+  dt: 0.005
+  t_end: 12.0
+inputs:
+  u:
+    initial_condition:
+      type: step
+      params:
+        value_left:
+          sample: uniform
+          min: 0.76
+          max: 1.0
+        value_right:
+          sample: uniform
+          min: -0.08
+          max: 0.1
+        x_split:
+          sample: uniform
+          min: 0.14
+          max: 0.28
+        axis: 0
+  v:
+    initial_condition:
+      type: constant
+      params:
+        value: param:v_background
+boundary_conditions:
+  u:
+    outer:
+      - operator: neumann
+        value: 0.0
+    holes_left:
+      - operator: neumann
+        value: 0.0
+    hole_center:
+      - operator: dirichlet
+        value: 0.0
+    holes_right:
+      - operator: neumann
+        value: 0.0
+  v:
+    outer:
+      - operator: neumann
+        value: 0.0
+    holes_left:
+      - operator: neumann
+        value: 0.0
+    hole_center:
+      - operator: dirichlet
+        value: 0.0
+    holes_right:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [192, 160]
+  num_frames: 73
+seed: 42

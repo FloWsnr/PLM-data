@@ -1,0 +1,120 @@
+preset: fitzhugh_nagumo
+parameters:
+  u_inlet_value:
+    sample: uniform
+    min: 0.76
+    max: 0.95
+  v_inlet_value:
+    sample: uniform
+    min: -0.12
+    max: 0.03
+  outlet_absorption:
+    sample: uniform
+    min: 0.08
+    max: 0.18
+  Du:
+    sample: uniform
+    min: 0.00105
+    max: 0.0017
+  Dv:
+    sample: uniform
+    min: 0.026
+    max: 0.048
+  tau:
+    sample: uniform
+    min: 0.12
+    max: 0.24
+  b:
+    sample: uniform
+    min: 0.56
+    max: 0.78
+  a:
+    sample: uniform
+    min: -0.08
+    max: 0.0
+domain:
+  allow_sampling: true
+  type: y_bifurcation
+  inlet_length:
+    sample: uniform
+    min: 0.9
+    max: 1.08
+  branch_length:
+    sample: uniform
+    min: 0.84
+    max: 1.06
+  branch_angle_degrees:
+    sample: uniform
+    min: 32.0
+    max: 42.0
+  channel_width:
+    sample: uniform
+    min: 0.18
+    max: 0.24
+  mesh_size:
+    sample: uniform
+    min: 0.016
+    max: 0.02
+time:
+  dt: 0.005
+  t_end: 12.0
+inputs:
+  u:
+    initial_condition:
+      type: constant
+      params:
+        value: 0.0
+  v:
+    initial_condition:
+      type: constant
+      params:
+        value: 0.0
+boundary_conditions:
+  u:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:u_inlet_value
+    outlet_upper:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: param:outlet_absorption
+    outlet_lower:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: param:outlet_absorption
+    walls:
+      - operator: neumann
+        value: 0.0
+  v:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:v_inlet_value
+    outlet_upper:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: param:outlet_absorption
+    outlet_lower:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: param:outlet_absorption
+    walls:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [224, 160]
+  num_frames: 73
+seed: 42
