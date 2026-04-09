@@ -603,6 +603,60 @@ def _realize_domain_params(
                 seed=seed,
                 stream_root=f"domain.params.{key}",
             )
+    elif domain.type == "multi_hole_plate":
+        realized["width"] = _realize_numeric_tree(
+            params["width"],
+            parameters=parameters,
+            seed=seed,
+            stream_root="domain.params.width",
+        )
+        realized["height"] = _realize_numeric_tree(
+            params["height"],
+            parameters=parameters,
+            seed=seed,
+            stream_root="domain.params.height",
+        )
+        realized["mesh_size"] = _realize_numeric_tree(
+            params["mesh_size"],
+            parameters=parameters,
+            seed=seed,
+            stream_root="domain.params.mesh_size",
+        )
+        holes_raw = params["holes"]
+        if not isinstance(holes_raw, list):
+            raise ValueError(
+                "domain.params.holes must be a list for domain type 'multi_hole_plate'."
+            )
+        realized_holes: list[dict[str, Any]] = []
+        for index, hole_raw in enumerate(holes_raw):
+            if not isinstance(hole_raw, dict):
+                raise ValueError(
+                    f"domain.params.holes[{index}] must be a mapping. Got {hole_raw!r}."
+                )
+            realized_hole = {
+                "center": _realize_numeric_tree(
+                    hole_raw["center"],
+                    parameters=parameters,
+                    seed=seed,
+                    stream_root=f"domain.params.holes[{index}].center",
+                ),
+                "radius": _realize_numeric_tree(
+                    hole_raw["radius"],
+                    parameters=parameters,
+                    seed=seed,
+                    stream_root=f"domain.params.holes[{index}].radius",
+                ),
+            }
+            if "boundary_name" in hole_raw:
+                boundary_name = hole_raw["boundary_name"]
+                if not isinstance(boundary_name, str):
+                    raise ValueError(
+                        f"domain.params.holes[{index}].boundary_name must be a "
+                        f"string. Got {boundary_name!r}."
+                    )
+                realized_hole["boundary_name"] = boundary_name
+            realized_holes.append(realized_hole)
+        realized["holes"] = realized_holes
     elif domain.type == "parallelogram":
         for key in ("origin", "axis_x", "axis_y"):
             realized[key] = _realize_numeric_tree(
