@@ -479,6 +479,7 @@ def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
         "channel_obstacle": 2,
         "y_bifurcation": 2,
         "venturi_channel": 2,
+        "porous_channel": 2,
         "serpentine_channel": 2,
         "airfoil_channel": 2,
         "side_cavity_channel": 2,
@@ -542,6 +543,25 @@ def validate_domain_params(
             raise ValueError(f"{context} must be finite. Got {value}.")
         if positive and value <= 0.0:
             raise ValueError(f"{context} must be > 0. Got {value}.")
+        return value
+
+    def _int_param(name: str, *, minimum: int) -> int | None:
+        raw = params[name]
+        context = f"{domain_type.capitalize()} domain parameter '{name}'"
+        if is_sampler_spec(raw):
+            if not allow_sampling:
+                raise ValueError(
+                    f"{context} uses sampled values, but domain sampling is disabled. "
+                    "Set 'domain.allow_sampling: true' to enable it."
+                )
+            _validate_domain_sampler(raw, context, integer=True)
+            _validate_sampleable_integer(raw, context)
+            return None
+        if _is_param_ref(raw):
+            return None
+        value = int(raw)
+        if float(value) != float(raw) or value < minimum:
+            raise ValueError(f"{context} must be an integer >= {minimum}. Got {raw!r}.")
         return value
 
     def _vector_param(name: str, *, length: int) -> list[float] | None:
@@ -907,6 +927,88 @@ def validate_domain_params(
                 )
         return
 
+    if domain_type == "porous_channel":
+        _require_keys(
+            "length",
+            "height",
+            "obstacle_radius",
+            "n_rows",
+            "n_cols",
+            "pitch_x",
+            "pitch_y",
+            "x_margin",
+            "y_margin",
+            "row_shift_fraction",
+            "mesh_size",
+        )
+        length = _float_param("length", positive=True)
+        height = _float_param("height", positive=True)
+        obstacle_radius = _float_param("obstacle_radius", positive=True)
+        n_rows = _int_param("n_rows", minimum=1)
+        n_cols = _int_param("n_cols", minimum=1)
+        pitch_x = _float_param("pitch_x", positive=True)
+        pitch_y = _float_param("pitch_y", positive=True)
+        x_margin = _float_param("x_margin", positive=True)
+        y_margin = _float_param("y_margin", positive=True)
+        row_shift_fraction = _float_param("row_shift_fraction")
+        _float_param("mesh_size", positive=True)
+
+        if row_shift_fraction is not None and not 0.0 <= row_shift_fraction <= 0.5:
+            raise ValueError(
+                "Porous_channel domain requires 'row_shift_fraction' to lie in "
+                f"[0, 0.5]. Got {row_shift_fraction}."
+            )
+        if (
+            obstacle_radius is not None
+            and pitch_x is not None
+            and pitch_x <= 2.0 * obstacle_radius
+        ):
+            raise ValueError(
+                "Porous_channel domain requires 'pitch_x' > 2 * "
+                "'obstacle_radius' so neighboring obstacles do not overlap."
+            )
+        if (
+            obstacle_radius is not None
+            and pitch_y is not None
+            and pitch_y <= 2.0 * obstacle_radius
+        ):
+            raise ValueError(
+                "Porous_channel domain requires 'pitch_y' > 2 * "
+                "'obstacle_radius' so stacked obstacle rows stay separated."
+            )
+        if (
+            length is not None
+            and obstacle_radius is not None
+            and n_cols is not None
+            and pitch_x is not None
+            and x_margin is not None
+            and row_shift_fraction is not None
+        ):
+            has_shifted_rows = n_rows is None or n_rows > 1
+            shift_x = row_shift_fraction * pitch_x if has_shifted_rows else 0.0
+            right_extent = (
+                x_margin + 2.0 * obstacle_radius + (n_cols - 1) * pitch_x + shift_x
+            )
+            if right_extent >= length:
+                raise ValueError(
+                    "Porous_channel domain requires the obstacle array to lie "
+                    "strictly inside the channel in x."
+                )
+        if (
+            height is not None
+            and obstacle_radius is not None
+            and n_rows is not None
+            and pitch_y is not None
+            and y_margin is not None
+        ):
+            top_extent = y_margin + 2.0 * obstacle_radius + (n_rows - 1) * pitch_y
+            if top_extent >= height:
+                raise ValueError(
+                    "Porous_channel domain requires the obstacle array to lie "
+                    "strictly inside the channel in y."
+                )
+        return
+
     if domain_type == "serpentine_channel":
         _require_keys(
             "channel_length",
@@ -917,27 +1019,7 @@ def validate_domain_params(
         )
         channel_length = _float_param("channel_length", positive=True)
         lane_spacing = _float_param("lane_spacing", positive=True)
-        raw_n_bends = params["n_bends"]
-        n_bends: int | None
-        n_bends_context = "Serpentine_channel domain parameter 'n_bends'"
-        if is_sampler_spec(raw_n_bends):
-            if not allow_sampling:
-                raise ValueError(
-                    f"{n_bends_context} uses sampled values, but domain sampling is "
-                    "disabled. Set 'domain.allow_sampling: true' to enable it."
-                )
-            _validate_domain_sampler(raw_n_bends, n_bends_context, integer=True)
-            _validate_sampleable_integer(raw_n_bends, n_bends_context)
-            n_bends = None
-        elif _is_param_ref(raw_n_bends):
-            n_bends = None
-        else:
-            n_bends = int(raw_n_bends)
-            if float(n_bends) != float(raw_n_bends) or n_bends < 2:
-                raise ValueError(
-                    "Serpentine_channel domain parameter 'n_bends' must be an "
-                    f"integer >= 2. Got {raw_n_bends!r}."
-                )
+        _int_param("n_bends", minimum=2)
         channel_width = _float_param("channel_width", positive=True)
         _float_param("mesh_size", positive=True)
         if (

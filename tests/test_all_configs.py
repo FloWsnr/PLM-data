@@ -30,6 +30,7 @@ GMSH_DOMAIN_TYPES = {
     "l_shape",
     "y_bifurcation",
     "venturi_channel",
+    "porous_channel",
     "serpentine_channel",
     "side_cavity_channel",
 }
@@ -59,6 +60,7 @@ def _prepare_smoke_run_config(cfg, output_path: Path) -> None:
             "channel_obstacle",
             "y_bifurcation",
             "venturi_channel",
+            "porous_channel",
             "serpentine_channel",
             "side_cavity_channel",
         }:

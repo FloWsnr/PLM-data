@@ -173,6 +173,23 @@ def test_annulus_boundary_tags():
             {"inlet", "outlet", "walls"},
         ),
         (
+            "porous_channel",
+            {
+                "length": 2.5,
+                "height": 1.0,
+                "obstacle_radius": 0.1,
+                "n_rows": 3,
+                "n_cols": 4,
+                "pitch_x": 0.38,
+                "pitch_y": 0.24,
+                "x_margin": 0.22,
+                "y_margin": 0.14,
+                "row_shift_fraction": 0.45,
+                "mesh_size": 0.08,
+            },
+            {"inlet", "outlet", "walls", "obstacles"},
+        ),
+        (
             "serpentine_channel",
             {
                 "channel_length": 1.0,
@@ -288,6 +305,51 @@ def test_airfoil_channel_airfoil_boundary_is_interior():
     assert np.min(airfoil_midpoints[:, 1]) > 0.0
     assert np.max(airfoil_midpoints[:, 1]) < 1.1
     assert np.max(wall_midpoints[:, 1]) - np.min(wall_midpoints[:, 1]) > 1.0
+
+
+def test_porous_channel_places_multiple_interior_obstacles():
+    params = {
+        "length": 2.5,
+        "height": 1.0,
+        "obstacle_radius": 0.1,
+        "n_rows": 3,
+        "n_cols": 4,
+        "pitch_x": 0.38,
+        "pitch_y": 0.24,
+        "x_margin": 0.22,
+        "y_margin": 0.14,
+        "row_shift_fraction": 0.45,
+        "mesh_size": 0.08,
+    }
+    domain_geom = create_domain(DomainConfig(type="porous_channel", params=params))
+    fdim = domain_geom.mesh.topology.dim - 1
+    obstacle_facets = domain_geom.facet_tags.find(
+        domain_geom.boundary_names["obstacles"]
+    )
+    obstacle_midpoints = dmesh.compute_midpoints(
+        domain_geom.mesh, fdim, obstacle_facets
+    )
+    shift_x = params["row_shift_fraction"] * params["pitch_x"]
+    expected_centers = [
+        np.array(
+            [
+                params["x_margin"]
+                + params["obstacle_radius"]
+                + col * params["pitch_x"]
+                + (shift_x if row % 2 == 1 else 0.0),
+                params["y_margin"]
+                + params["obstacle_radius"]
+                + row * params["pitch_y"],
+            ]
+        )
+        for row in range(params["n_rows"])
+        for col in range(params["n_cols"])
+    ]
+    for center in expected_centers:
+        distances = np.linalg.norm(obstacle_midpoints[:, :2] - center, axis=1)
+        assert np.any(np.abs(distances - params["obstacle_radius"]) < 0.05)
+    assert np.min(obstacle_midpoints[:, 0]) > 0.0
+    assert np.max(obstacle_midpoints[:, 0]) < params["length"]
 
 
 @pytest.mark.skipif(not HAS_GMSH, reason="gmsh not installed")
@@ -583,6 +645,57 @@ def test_l_shape_notch_boundary_tracks_reentrant_corner():
                 "mesh_size": 0.08,
             },
             "strictly inside the channel in x",
+        ),
+        (
+            "porous_channel",
+            {
+                "length": 2.5,
+                "height": 1.0,
+                "obstacle_radius": 0.12,
+                "n_rows": 3,
+                "n_cols": 4,
+                "pitch_x": 0.2,
+                "pitch_y": 0.24,
+                "x_margin": 0.22,
+                "y_margin": 0.14,
+                "row_shift_fraction": 0.45,
+                "mesh_size": 0.08,
+            },
+            "pitch_x",
+        ),
+        (
+            "porous_channel",
+            {
+                "length": 1.72,
+                "height": 1.0,
+                "obstacle_radius": 0.1,
+                "n_rows": 3,
+                "n_cols": 4,
+                "pitch_x": 0.38,
+                "pitch_y": 0.24,
+                "x_margin": 0.22,
+                "y_margin": 0.14,
+                "row_shift_fraction": 0.45,
+                "mesh_size": 0.08,
+            },
+            "strictly inside the channel in x",
+        ),
+        (
+            "porous_channel",
+            {
+                "length": 2.5,
+                "height": 1.0,
+                "obstacle_radius": 0.1,
+                "n_rows": 3,
+                "n_cols": 4,
+                "pitch_x": 0.38,
+                "pitch_y": 0.24,
+                "x_margin": 0.22,
+                "y_margin": 0.14,
+                "row_shift_fraction": 0.7,
+                "mesh_size": 0.08,
+            },
+            "row_shift_fraction",
         ),
         (
             "serpentine_channel",

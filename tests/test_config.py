@@ -474,6 +474,22 @@ def test_load_config_basic_heat_side_cavity_channel_domain():
     assert cfg.boundary_field("u").side_conditions("walls")[0].type == "neumann"
 
 
+def test_load_config_basic_heat_porous_channel_domain():
+    cfg = load_config("configs/basic/heat/2d_porous_channel_trapping_diffusion.yaml")
+    assert cfg.domain.type == "porous_channel"
+    assert cfg.domain.dimension == 2
+    assert set(cfg.boundary_field("u").sides) == {
+        "inlet",
+        "outlet",
+        "walls",
+        "obstacles",
+    }
+    assert cfg.boundary_field("u").side_conditions("inlet")[0].type == "dirichlet"
+    assert cfg.boundary_field("u").side_conditions("outlet")[0].type == "dirichlet"
+    assert cfg.boundary_field("u").side_conditions("walls")[0].type == "neumann"
+    assert cfg.boundary_field("u").side_conditions("obstacles")[0].type == "dirichlet"
+
+
 def test_load_config_annulus_center_is_explicit():
     cfg = load_config("configs/physics/gray_scott/2d_annular_spot_stripe_patterns.yaml")
     assert cfg.domain.type == "annulus"

@@ -655,6 +655,32 @@ def _realize_domain_params(
                 seed=seed,
                 stream_root=f"domain.params.{key}",
             )
+    elif domain.type == "porous_channel":
+        for key in (
+            "length",
+            "height",
+            "obstacle_radius",
+            "pitch_x",
+            "pitch_y",
+            "x_margin",
+            "y_margin",
+            "row_shift_fraction",
+            "mesh_size",
+        ):
+            realized[key] = _realize_numeric_tree(
+                params[key],
+                parameters=parameters,
+                seed=seed,
+                stream_root=f"domain.params.{key}",
+            )
+        for key in ("n_rows", "n_cols"):
+            realized[key] = _realize_numeric_tree(
+                params[key],
+                parameters=parameters,
+                seed=seed,
+                stream_root=f"domain.params.{key}",
+                integer=True,
+            )
     elif domain.type == "serpentine_channel":
         for key in ("channel_length", "lane_spacing", "channel_width", "mesh_size"):
             realized[key] = _realize_numeric_tree(

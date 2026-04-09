@@ -299,6 +299,37 @@ def test_realize_simulation_config_concretizes_side_cavity_channel_domain_sampli
     assert 0.026 <= realized_a.domain.params["mesh_size"] <= 0.034
 
 
+def test_realize_simulation_config_concretizes_porous_channel_domain_sampling():
+    cfg = load_config("configs/basic/heat/2d_porous_channel_trapping_diffusion.yaml")
+
+    realized_a = realize_simulation_config(cfg)
+    realized_b = realize_simulation_config(cfg)
+
+    assert realized_a.domain.params == realized_b.domain.params
+    assert isinstance(realized_a.domain.params["length"], float)
+    assert isinstance(realized_a.domain.params["height"], float)
+    assert isinstance(realized_a.domain.params["obstacle_radius"], float)
+    assert isinstance(realized_a.domain.params["n_rows"], int)
+    assert isinstance(realized_a.domain.params["n_cols"], int)
+    assert isinstance(realized_a.domain.params["pitch_x"], float)
+    assert isinstance(realized_a.domain.params["pitch_y"], float)
+    assert isinstance(realized_a.domain.params["x_margin"], float)
+    assert isinstance(realized_a.domain.params["y_margin"], float)
+    assert isinstance(realized_a.domain.params["row_shift_fraction"], float)
+    assert isinstance(realized_a.domain.params["mesh_size"], float)
+    assert 2.55 <= realized_a.domain.params["length"] <= 2.75
+    assert realized_a.domain.params["height"] == 1.0
+    assert 0.085 <= realized_a.domain.params["obstacle_radius"] <= 0.11
+    assert 2 <= realized_a.domain.params["n_rows"] <= 3
+    assert 4 <= realized_a.domain.params["n_cols"] <= 5
+    assert 0.34 <= realized_a.domain.params["pitch_x"] <= 0.4
+    assert 0.26 <= realized_a.domain.params["pitch_y"] <= 0.28
+    assert 0.2 <= realized_a.domain.params["x_margin"] <= 0.28
+    assert 0.12 <= realized_a.domain.params["y_margin"] <= 0.16
+    assert 0.32 <= realized_a.domain.params["row_shift_fraction"] <= 0.48
+    assert 0.026 <= realized_a.domain.params["mesh_size"] <= 0.034
+
+
 def test_simulation_runner_serializes_realized_config(tmp_path):
     data = _load_config_dict("configs/basic/heat/2d_localized_blob_diffusion.yaml")
     data["domain"]["allow_sampling"] = True

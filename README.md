@@ -16,7 +16,8 @@ pip install pyyaml pytest pytest-xdist pyright matplotlib dolfinx_mpc
 
 See the [DOLFINx README](https://github.com/FEniCS/dolfinx#installation) for alternative installation methods (Docker, apt, Spack, Windows).
 Install `python-gmsh` as well if you want to use the Gmsh-backed `disk`, `dumbbell`,
-`channel_obstacle`, `y_bifurcation`, `venturi_channel`, or `annulus` domains.
+`channel_obstacle`, `y_bifurcation`, `venturi_channel`, `porous_channel`,
+`serpentine_channel`, `l_shape`, `airfoil_channel`, or `annulus` domains.
 
 ### DOLFINx (FEniCSx) — complex-valued (optional)
 
@@ -37,7 +38,7 @@ Do not install `dolfinx_mpc` in the complex environment — no complex builds ex
 - **Presets** (`plm_data/presets/`) — Each PDE is a `PDEPreset` with a `PresetSpec` and a `build_problem(config)` factory. Specs now separate config-facing `coefficients` and `inputs`, boundary-condition fields/operators, solved `states`, selectable `outputs`, and explicit `static_fields` that are excluded from post-run stagnation warnings.
 - **Problem engines** (`plm_data/presets/base.py`) — Reusable runtime engines cover stationary linear, transient linear, transient nonlinear, and custom problems. Presets still own the formulation details and use shared runtime loops where that helps.
 - **Config** (`configs/`) — YAML uses explicit top-level `coefficients:`, `inputs:`, `boundary_conditions:`, and `output:` sections. Coefficients are preset-declared field expressions used directly in variational forms. Inputs configure sources and initial conditions; `boundary_conditions` configures each preset boundary field; `output.fields` selects which declared outputs to save and how to expand them. Time-dependent presets use a `time:` section; output resolution lives under `output.resolution`. The output root directory is chosen at the CLI with `--output-dir`; single runs clean and write into `<output-dir>/<category>/<preset>`, while batch runs use `--n-runs N` and write into `<output-dir>/<category>/<preset>/seed_<seed>`, incrementing from the config seed. `load_config()` is declarative and keeps sampler specs intact; `realize_simulation_config()` turns one config plus one seed into the concrete runtime values used for a solve. Periodic constraints are activated with boundary `periodic` operators and resolved against built-in or custom `domain.periodic_maps`. Shared scalar Robin is supported; vector boundaries use shared Dirichlet/Neumann or preset-specific types such as Maxwell `absorbing`, while generic vector Robin remains intentionally unsupported.
-- **Domains** (`plm_data/core/mesh.py`) — Domain creation is registry-backed. The current repo ships `interval`, `rectangle`, `box`, `disk`, `dumbbell`, `parallelogram`, `channel_obstacle`, `y_bifurcation`, `venturi_channel`, and `annulus`. The Gmsh-backed domains (`disk`, `dumbbell`, `channel_obstacle`, `y_bifurcation`, `venturi_channel`, `annulus`) require `python-gmsh`.
+- **Domains** (`plm_data/core/mesh.py`) — Domain creation is registry-backed. The current repo ships `interval`, `rectangle`, `box`, `disk`, `dumbbell`, `parallelogram`, `channel_obstacle`, `y_bifurcation`, `venturi_channel`, `porous_channel`, `serpentine_channel`, `l_shape`, `airfoil_channel`, and `annulus`. The Gmsh-backed domains (`disk`, `dumbbell`, `channel_obstacle`, `y_bifurcation`, `venturi_channel`, `porous_channel`, `serpentine_channel`, `l_shape`, `airfoil_channel`, `annulus`) require `python-gmsh`.
 - **Output** (`plm_data/core/output.py`) — `FrameWriter` validates requested outputs against the preset spec, expands vector outputs into components for grid formats, and writes post-run stagnation diagnostics to `frames_meta.json`, skipping outputs listed in `static_fields`.
 
 ## Usage

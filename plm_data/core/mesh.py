@@ -265,6 +265,84 @@ def _tag_single_gmsh_boundary(
     model.setPhysicalName(1, 1, boundary_name)
 
 
+def _classify_rectangular_channel_hole_boundaries(
+    model,
+    surface_tags: list[int],
+    *,
+    length: float,
+    height: float,
+    tol: float,
+) -> tuple[list[int], list[int], list[int], list[int]]:
+    """Split channel-with-hole curves into inlet, outlet, walls, and interior."""
+    inlet: list[int] = []
+    outlet: list[int] = []
+    walls: list[int] = []
+    interior: list[int] = []
+    boundary = model.getBoundary(
+        [(2, surface_tag) for surface_tag in surface_tags],
+        oriented=False,
+    )
+    for dim, tag in boundary:
+        if dim != 1:
+            continue
+        bb = model.occ.getBoundingBox(dim, tag)
+        x_min, y_min, _, x_max, y_max, _ = bb
+        if np.isclose(x_min, 0.0, atol=tol) and np.isclose(x_max, 0.0, atol=tol):
+            inlet.append(tag)
+        elif np.isclose(x_min, length, atol=tol) and np.isclose(
+            x_max,
+            length,
+            atol=tol,
+        ):
+            outlet.append(tag)
+        elif np.isclose(y_min, 0.0, atol=tol) or np.isclose(y_max, height, atol=tol):
+            walls.append(tag)
+        else:
+            interior.append(tag)
+    return inlet, outlet, walls, interior
+
+
+def _add_named_gmsh_boundaries(
+    model,
+    boundary_groups: tuple[tuple[str, list[int]], ...],
+    *,
+    domain_name: str,
+) -> None:
+    """Attach one named physical group per boundary subset."""
+    for physical_tag, (name, curve_tags) in enumerate(boundary_groups, start=1):
+        if not curve_tags:
+            raise AssertionError(
+                f"{domain_name} domain produced no curves for '{name}'."
+            )
+        model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
+        model.setPhysicalName(1, physical_tag, name)
+
+
+def _porous_channel_obstacle_centers(
+    *,
+    obstacle_radius: float,
+    n_rows: int,
+    n_cols: int,
+    pitch_x: float,
+    pitch_y: float,
+    x_margin: float,
+    y_margin: float,
+    row_shift_fraction: float,
+) -> list[tuple[float, float]]:
+    """Return circle centers for one staggered porous obstacle array."""
+    base_x = x_margin + obstacle_radius
+    base_y = y_margin + obstacle_radius
+    shift_x = row_shift_fraction * pitch_x
+    centers: list[tuple[float, float]] = []
+    for row in range(n_rows):
+        row_shift_x = shift_x if row % 2 == 1 else 0.0
+        y = base_y + row * pitch_y
+        for col in range(n_cols):
+            x = base_x + row_shift_x + col * pitch_x
+            centers.append((x, y))
+    return centers
+
+
 def _fuse_planar_surfaces(model, surface_tags: list[int]) -> list[int]:
     """Fuse 2D OCC surfaces and return the resulting surface tags."""
     if not surface_tags:
@@ -823,55 +901,25 @@ def _create_channel_obstacle(domain: DomainConfig) -> DomainGeometry:
             model.setPhysicalName(2, 1, "surface")
 
             tol = max(mesh_size, 1.0e-8)
-            inlet: list[int] = []
-            outlet: list[int] = []
-            walls: list[int] = []
-            obstacle_curves: list[int] = []
-            boundary = model.getBoundary(
-                [(2, surface_tag) for surface_tag in surfaces],
-                oriented=False,
+            inlet, outlet, walls, obstacle_curves = (
+                _classify_rectangular_channel_hole_boundaries(
+                    model,
+                    surfaces,
+                    length=length,
+                    height=height,
+                    tol=tol,
+                )
             )
-            for dim, tag in boundary:
-                if dim != 1:
-                    continue
-                bb = model.occ.getBoundingBox(dim, tag)
-                x_min, y_min, _, x_max, y_max, _ = bb
-                if np.isclose(x_min, 0.0, atol=tol) and np.isclose(
-                    x_max,
-                    0.0,
-                    atol=tol,
-                ):
-                    inlet.append(tag)
-                elif np.isclose(x_min, length, atol=tol) and np.isclose(
-                    x_max,
-                    length,
-                    atol=tol,
-                ):
-                    outlet.append(tag)
-                elif np.isclose(y_min, 0.0, atol=tol) or np.isclose(
-                    y_max,
-                    height,
-                    atol=tol,
-                ):
-                    walls.append(tag)
-                else:
-                    obstacle_curves.append(tag)
-
-            for physical_tag, (name, curve_tags) in enumerate(
+            _add_named_gmsh_boundaries(
+                model,
                 (
                     ("inlet", inlet),
                     ("outlet", outlet),
                     ("walls", walls),
                     ("obstacle", obstacle_curves),
                 ),
-                start=1,
-            ):
-                if not curve_tags:
-                    raise AssertionError(
-                        f"Channel-obstacle domain produced no curves for '{name}'."
-                    )
-                model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
-                model.setPhysicalName(1, physical_tag, name)
+                domain_name="Channel-obstacle",
+            )
 
             model.mesh.setSize(model.getEntities(0), mesh_size)
             model.mesh.generate(2)
@@ -1194,6 +1242,95 @@ def _create_venturi_channel(domain: DomainConfig) -> DomainGeometry:
             model.mesh.generate(2)
 
         return _finalize_gmsh_domain(model, name="venturi_channel", gdim=2)
+    finally:
+        gmsh.finalize()
+
+
+@register_domain("porous_channel")
+def _create_porous_channel(domain: DomainConfig) -> DomainGeometry:
+    import gmsh
+
+    p = domain.params
+    length = float(_require_param(p, "length", domain.type))
+    height = float(_require_param(p, "height", domain.type))
+    obstacle_radius = float(_require_param(p, "obstacle_radius", domain.type))
+    n_rows = int(_require_param(p, "n_rows", domain.type))
+    n_cols = int(_require_param(p, "n_cols", domain.type))
+    pitch_x = float(_require_param(p, "pitch_x", domain.type))
+    pitch_y = float(_require_param(p, "pitch_y", domain.type))
+    x_margin = float(_require_param(p, "x_margin", domain.type))
+    y_margin = float(_require_param(p, "y_margin", domain.type))
+    row_shift_fraction = float(_require_param(p, "row_shift_fraction", domain.type))
+    mesh_size = float(_require_param(p, "mesh_size", domain.type))
+    validate_domain_params(domain.type, p)
+
+    obstacle_centers = _porous_channel_obstacle_centers(
+        obstacle_radius=obstacle_radius,
+        n_rows=n_rows,
+        n_cols=n_cols,
+        pitch_x=pitch_x,
+        pitch_y=pitch_y,
+        x_margin=x_margin,
+        y_margin=y_margin,
+        row_shift_fraction=row_shift_fraction,
+    )
+
+    gmsh.initialize()
+    try:
+        gmsh.option.setNumber("General.Terminal", 0)
+        model = gmsh.model
+        model.add("porous_channel")
+        model.setCurrent("porous_channel")
+
+        if MPI.COMM_WORLD.rank == 0:
+            channel = model.occ.addRectangle(0.0, 0.0, 0.0, length, height)
+            obstacles = [
+                model.occ.addDisk(
+                    center_x,
+                    center_y,
+                    0.0,
+                    obstacle_radius,
+                    obstacle_radius,
+                )
+                for center_x, center_y in obstacle_centers
+            ]
+            model.occ.cut(
+                [(2, channel)],
+                [(2, obstacle) for obstacle in obstacles],
+                removeObject=True,
+                removeTool=True,
+            )
+            model.occ.synchronize()
+
+            surfaces = [entity[1] for entity in model.getEntities(2)]
+            model.addPhysicalGroup(2, surfaces, tag=1)
+            model.setPhysicalName(2, 1, "surface")
+
+            tol = max(mesh_size, 1.0e-8)
+            inlet, outlet, walls, obstacle_curves = (
+                _classify_rectangular_channel_hole_boundaries(
+                    model,
+                    surfaces,
+                    length=length,
+                    height=height,
+                    tol=tol,
+                )
+            )
+            _add_named_gmsh_boundaries(
+                model,
+                (
+                    ("inlet", inlet),
+                    ("outlet", outlet),
+                    ("walls", walls),
+                    ("obstacles", obstacle_curves),
+                ),
+                domain_name="Porous-channel",
+            )
+
+            model.mesh.setSize(model.getEntities(0), mesh_size)
+            model.mesh.generate(2)
+
+        return _finalize_gmsh_domain(model, name="porous_channel", gdim=2)
     finally:
         gmsh.finalize()
 
