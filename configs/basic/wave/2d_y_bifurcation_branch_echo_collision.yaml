@@ -1,0 +1,137 @@
+preset: wave
+parameters:
+  damping:
+    sample: uniform
+    min: 0.008
+    max: 0.022
+  inlet_absorption:
+    sample: uniform
+    min: 0.25
+    max: 0.55
+  wall_absorption:
+    sample: uniform
+    min: 0.45
+    max: 0.82
+coefficients:
+  c_sq:
+    type: affine
+    params:
+      constant:
+        sample: uniform
+        min: 1.08
+        max: 1.28
+      x:
+        sample: uniform
+        min: 0.08
+        max: 0.24
+      y:
+        sample: uniform
+        min: -0.14
+        max: 0.14
+domain:
+  allow_sampling: true
+  type: y_bifurcation
+  inlet_length:
+    sample: uniform
+    min: 0.88
+    max: 1.06
+  branch_length:
+    sample: uniform
+    min: 0.84
+    max: 1.04
+  branch_angle_degrees:
+    sample: uniform
+    min: 34.0
+    max: 44.0
+  channel_width:
+    sample: uniform
+    min: 0.18
+    max: 0.24
+  mesh_size:
+    sample: uniform
+    min: 0.024
+    max: 0.032
+time:
+  dt: 0.0038
+  t_end: 1.6
+inputs:
+  u:
+    initial_condition:
+      type: constant
+      params:
+        value: 0.0
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 7.0
+              max: 10.0
+            sigma:
+              sample: uniform
+              min: 0.045
+              max: 0.07
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.5
+            center:
+              - sample: uniform
+                min: 1.24
+                max: 1.56
+              - sample: uniform
+                min: 0.26
+                max: 0.5
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: -9.4
+              max: -5.2
+            sigma:
+              sample: uniform
+              min: 0.045
+              max: 0.07
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.5
+            center:
+              - sample: uniform
+                min: 1.24
+                max: 1.56
+              - sample: uniform
+                min: -0.5
+                max: -0.26
+  forcing:
+    source:
+      type: none
+      params: {}
+boundary_conditions:
+  u:
+    inlet:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: "param:inlet_absorption"
+    outlet_upper:
+      - operator: neumann
+        value: 0.0
+    outlet_lower:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: "param:wall_absorption"
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  resolution: [192, 144]
+  num_frames: 61
+seed: 42

@@ -1,0 +1,143 @@
+preset: wave
+parameters:
+  centerline_y:
+    sample: uniform
+    min: 0.46
+    max: 0.54
+  damping:
+    sample: uniform
+    min: 0.006
+    max: 0.018
+coefficients:
+  c_sq:
+    type: step
+    params:
+      value_left:
+        sample: uniform
+        min: 0.98
+        max: 1.16
+      value_right:
+        sample: uniform
+        min: 1.45
+        max: 1.92
+      x_split:
+        sample: uniform
+        min: 0.48
+        max: 0.58
+      axis: 0
+domain:
+  type: dumbbell
+  allow_sampling: true
+  left_center:
+    - sample: uniform
+      min: 0.24
+      max: 0.31
+    - "param:centerline_y"
+  right_center:
+    - sample: uniform
+      min: 0.69
+      max: 0.76
+    - "param:centerline_y"
+  lobe_radius:
+    sample: uniform
+    min: 0.2
+    max: 0.25
+  neck_width:
+    sample: uniform
+    min: 0.07
+    max: 0.12
+  mesh_size:
+    sample: uniform
+    min: 0.015
+    max: 0.019
+time:
+  dt: 0.0034
+  t_end: 1.25
+inputs:
+  u:
+    initial_condition:
+      type: constant
+      params:
+        value: 0.0
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 7.8
+              max: 11.2
+            sigma:
+              sample: uniform
+              min: 0.04
+              max: 0.07
+            aspect_ratio:
+              sample: uniform
+              min: 1.1
+              max: 1.9
+            center:
+              - sample: uniform
+                min: 0.16
+                max: 0.3
+              - sample: uniform
+                min: 0.32
+                max: 0.68
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: -10.2
+              max: -6.2
+            sigma:
+              sample: uniform
+              min: 0.04
+              max: 0.07
+            aspect_ratio:
+              sample: uniform
+              min: 1.1
+              max: 1.9
+            center:
+              - sample: uniform
+                min: 0.69
+                max: 0.83
+              - sample: uniform
+                min: 0.32
+                max: 0.68
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 1.6
+              max: 3.4
+            sigma:
+              sample: uniform
+              min: 0.028
+              max: 0.05
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.5
+            center:
+              - sample: uniform
+                min: 0.44
+                max: 0.56
+              - sample: uniform
+                min: 0.42
+                max: 0.58
+  forcing:
+    source:
+      type: none
+      params: {}
+boundary_conditions:
+  u:
+    outer:
+      - operator: dirichlet
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  resolution: [160, 160]
+  num_frames: 53
+seed: 42

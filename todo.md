@@ -186,6 +186,26 @@ plate domain has at least two distinct configs.
 9. `2d_periodic_oblique_wave_train`: oblique stripe-like wave trains circulate on a fully periodic box without wall reflections.
 10. `2d_periodic_strip_waveguide`: x-periodic, y-clamped strip dynamics behave like a guided wave corridor with lateral reflections and repeated focusing.
 11. `3d_localized_pulse_propagation`: localized 3D velocity pulse radiating through a heterogeneous wave-speed field.
+12. `2d_airfoil_channel_bow_front_scattering`: a broad front sweeps past a sampled airfoil and produces bow-wave shadowing plus downstream wake refraction.
+13. `2d_airfoil_channel_surface_pulse_ringing`: oblique modal excitation rings around a sampled airfoil with partly absorbing outer boundaries, giving asymmetric upper/lower-surface responses.
+14. `2d_annulus_absorbing_ring_modes`: radial ring modes launched on a sampled annulus decay against an absorbing outer rim while the inner hole re-radiates echoes.
+15. `2d_channel_obstacle_bow_front_scattering`: a stronger planar front hits the sampled cylinder and sheds asymmetric reflected bands into the downstream cavity.
+16. `2d_disk_robin_mode_beating`: sampled modal mixtures ring inside a partially absorbing disk, producing rotating lobe patterns instead of a single focal reflection.
+17. `2d_dumbbell_counterlobe_collision`: opposite-sign pulses launched from both lobes collide in the sampled neck and reflect back with asymmetric chamber timing.
+18. `2d_l_shape_notch_mode_beating`: oblique standing-wave mixtures ring inside an L-shaped cavity with notch absorption, emphasizing re-entrant-corner mode distortions.
+19. `2d_l_shape_reentrant_echoes`: a localized launch drives echoes off the notch corner and outer walls, producing delayed corner focusing.
+20. `2d_multi_hole_plate_corridor_scatter`: a left-to-right pulse threads the perforated corridors and sheds hole-shadow interference bands.
+21. `2d_multi_hole_plate_interstitial_beating`: quadrant-seeded interstitial modes rattle between differently conditioned holes, producing patchwork plate ringing.
+22. `2d_porous_channel_percolation_echoes`: inlet-side pulses percolate through the sampled obstacle lattice and split into maze-like echo paths.
+23. `2d_porous_channel_reverse_maze_ringdown`: a reverse launch from the outlet side drives obstacle-to-obstacle ringdown through the porous maze.
+24. `2d_serpentine_channel_bend_mode_ringing`: distributed modal excitation fills the sampled bends with alternating corner hot spots and delayed turn-to-turn echoes.
+25. `2d_serpentine_channel_guided_lane_ringdown`: an inlet lane launch follows the sampled serpentine guide and reflects from successive bends with clear travel-time delays.
+26. `2d_side_cavity_channel_cavity_slosh`: a cavity-centered ringdown sloshes between the pocket and main channel, generating high-energy cavity resonances.
+27. `2d_side_cavity_channel_passby_echoes`: a channel pulse couples energy into the side pocket and releases delayed echoes back into the main stream.
+28. `2d_venturi_channel_throat_pulse_focusing`: a localized launch focuses through the sampled throat and expands into downstream refraction fans.
+29. `2d_venturi_channel_wall_mode_ringing`: distributed wall modes ring inside the venturi and highlight repeated throat-to-wall reflections.
+30. `2d_y_bifurcation_branch_echo_collision`: opposite branch launches collide at the junction and re-split into the outlet arms.
+31. `2d_y_bifurcation_split_pulse`: an inlet pulse divides across the sampled bifurcation and produces asymmetric arm responses from mixed branch boundary conditions.
 
 ### Biology
 

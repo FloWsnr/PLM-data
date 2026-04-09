@@ -1,5 +1,9 @@
 preset: wave
 parameters:
+  centerline_y:
+    sample: uniform
+    min: 0.46
+    max: 0.54
   damping:
     sample: uniform
     min: 0.008
@@ -27,12 +31,12 @@ domain:
   - sample: uniform
     min: 0.26
     max: 0.3
-  - 0.5
+  - "param:centerline_y"
   right_center:
   - sample: uniform
     min: 0.7
     max: 0.74
-  - 0.5
+  - "param:centerline_y"
   lobe_radius:
     sample: uniform
     min: 0.2
