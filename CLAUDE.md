@@ -101,7 +101,7 @@ The system has three layers:
 
 ## Coding Rules
 
-- Always use git worktrees to isolate different features or bug fixes into separate branches. This keeps the commit history clean and makes it easier to review changes.
+- Always use git worktrees to isolate different features or bug fixes into separate branches. This keeps the commit history clean and makes it easier to review changes. Remove the worktrees when the feature or fix is merged to avoid clutter.
 - Always! think about the optimal, cleanest way to implement a feature. Is the current code structure the best way to support this, or is there a more elegant design? Refactor if needed.
 - Don't account for backwards compatibility if you are planning code changes. This is a research codebase, not a production library.
 - Do not use parameter defaults in code. The config must specify all parameters explicitly.

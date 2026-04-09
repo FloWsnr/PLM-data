@@ -1,6 +1,6 @@
 ---
 name: commit
-description: This skill should be used when the user asks to "commit", "commit changes", "make a commit", "git commit", or wants to save their work to git. Invoked via /commit.
+description: This skill should be used when the user asks to "commit", "commit changes", "make a commit", "git commit", merge a git workflow, or wants to save their work to git. Invoked via /commit.
 ---
 
 ## Commit Workflow
