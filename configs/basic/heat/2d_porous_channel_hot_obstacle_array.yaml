@@ -6,14 +6,14 @@ coefficients:
     params:
       value:
         sample: uniform
-        min: 0.014
-        max: 0.028
+        min: 0.018
+        max: 0.03
 domain:
   allow_sampling: true
   type: porous_channel
   length:
     sample: uniform
-    min: 2.55
+    min: 2.45
     max: 2.75
   height:
     sample: uniform
@@ -21,8 +21,8 @@ domain:
     max: 1.06
   obstacle_radius:
     sample: uniform
-    min: 0.085
-    max: 0.11
+    min: 0.07
+    max: 0.1
   n_rows:
     sample: randint
     min: 2
@@ -37,80 +37,36 @@ domain:
     max: 0.4
   pitch_y:
     sample: uniform
-    min: 0.26
+    min: 0.24
     max: 0.28
   x_margin:
     sample: uniform
-    min: 0.2
-    max: 0.28
+    min: 0.18
+    max: 0.26
   y_margin:
     sample: uniform
-    min: 0.12
-    max: 0.16
+    min: 0.1
+    max: 0.14
   row_shift_fraction:
     sample: uniform
-    min: 0.32
-    max: 0.48
+    min: 0.25
+    max: 0.5
   mesh_size:
     sample: uniform
     min: 0.026
     max: 0.034
 time:
   dt: 0.01
-  t_end: 1.5
+  t_end: 1.45
 inputs:
   u:
     source:
       type: none
       params: {}
     initial_condition:
-      type: gaussian_blobs
+      type: constant
       params:
-        background:
-          sample: uniform
-          min: -0.03
-          max: 0.03
-        generators:
-          - count: 1
-            amplitude:
-              sample: uniform
-              min: 0.65
-              max: 1.0
-            sigma:
-              sample: uniform
-              min: 0.06
-              max: 0.1
-            aspect_ratio:
-              sample: uniform
-              min: 1.0
-              max: 1.7
-            center:
-              - sample: uniform
-                min: 0.2
-                max: 0.45
-              - sample: uniform
-                min: 0.22
-                max: 0.78
-          - count: 1
-            amplitude:
-              sample: uniform
-              min: -0.32
-              max: -0.14
-            sigma:
-              sample: uniform
-              min: 0.05
-              max: 0.08
-            aspect_ratio:
-              sample: uniform
-              min: 1.0
-              max: 1.4
-            center:
-              - sample: uniform
-                min: 1.25
-                max: 1.95
-              - sample: uniform
-                min: 0.2
-                max: 0.8
+        value: 0.0
 boundary_conditions:
   u:
     inlet:
@@ -120,8 +76,8 @@ boundary_conditions:
           params:
             value:
               sample: uniform
-              min: 0.95
-              max: 1.25
+              min: -0.02
+              max: 0.04
     outlet:
       - operator: dirichlet
         value:
@@ -129,8 +85,8 @@ boundary_conditions:
           params:
             value:
               sample: uniform
-              min: -0.12
-              max: 0.05
+              min: -0.04
+              max: 0.02
     walls:
       - operator: neumann
         value: 0.0
@@ -141,8 +97,8 @@ boundary_conditions:
           params:
             value:
               sample: uniform
-              min: -0.22
-              max: -0.04
+              min: 0.92
+              max: 1.18
 solver:
   $ref: solver.profile.constant_lhs_scalar_spd
 output:

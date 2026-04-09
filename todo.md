@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 167 configs.
+Current baseline: 38 PDE presets and 177 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -51,17 +51,35 @@ All 2D heat configs now output at least `128x128` and use sampled coefficients,
 geometry, boundary values, or initial conditions so seed changes are visible.
 
 1. `2d_annulus_inner_heating_layer`: hot inner rim and cooled outer rim drive a ring-shaped heating layer while azimuthal seed blobs relax around the annulus.
-2. `2d_channel_obstacle_heat_shadow`: mixed signed transients and hot-to-cold channel forcing create an obstacle-centered thermal shadow with asymmetric wall-guided fronts.
-3. `2d_cosine_source_heating`: a sampled quadrant start is overwritten by standing source-sink forcing, settling toward a seed-dependent four-cell heating pattern.
-4. `2d_cross_gradient_quadrant_relaxation`: hot-left and cool-right boundaries pull a sharp quadrant field into a directional cross-gradient relaxation front.
-5. `2d_disk_boundary_quench`: concentric hot rings inside a disk collapse inward and smooth out against a cold outer rim.
-6. `2d_dumbbell_bottleneck_diffusion`: signed lobe imbalance equalizes slowly through a sampled neck, giving a clear two-chamber transfer transient.
-7. `2d_localized_blob_diffusion`: one or two elongated hot spots diffuse and merge under insulated walls, serving as the clean slow-diffusion baseline.
-8. `2d_noisy_media_diffusion`: hot and cold blobs dissolve inside noisy conductivity with additive state noise, keeping high seed-to-seed texture variation.
-9. `2d_parallelogram_periodic_stripe_relaxation`: oblique periodic bands decay on a skew cell without rectangular axis locking or wall effects.
-10. `2d_radial_diffusivity_spread`: a warm square with signed interior perturbations cools toward zero walls while radially varying diffusivity shapes a centered relaxation halo.
-11. `3d_localized_blob_diffusion`: one or two hot blobs diffusing in a cube with no-flux walls.
-12. `3d_noisy_media_diffusion`: hot and cold blobs diffusing in noisy 3D media with additive state noise.
+2. `2d_annulus_outer_quench_rings`: concentric signed rings relax between a cold inner rim and a hot outer rim, reversing the annular boundary forcing direction.
+3. `2d_airfoil_channel_heat_shadow`: mixed signed transients and hot-to-cold channel forcing create an airfoil-centered thermal wake with wall-guided downstream cooling.
+4. `2d_airfoil_channel_hot_skin_relaxation`: oblique signed bands diffuse around a hot airfoil, forming surface-hugging thermal layers instead of inlet-to-outlet forcing.
+5. `2d_channel_obstacle_heat_shadow`: mixed signed transients and hot-to-cold channel forcing create an obstacle-centered thermal shadow with asymmetric wall-guided fronts.
+6. `2d_channel_obstacle_hot_cylinder_cooling`: a heated cylinder diffuses into a cooled channel, generating obstacle-centered fronts without the previous inlet-driven wake asymmetry.
+7. `2d_cosine_source_heating`: a sampled quadrant start is overwritten by standing source-sink forcing, settling toward a seed-dependent four-cell heating pattern.
+8. `2d_cross_gradient_quadrant_relaxation`: hot-left and cool-right boundaries pull a sharp quadrant field into a directional cross-gradient relaxation front.
+9. `2d_disk_boundary_quench`: concentric hot rings inside a disk collapse inward and smooth out against a cold outer rim.
+10. `2d_dumbbell_bottleneck_diffusion`: signed lobe imbalance equalizes slowly through a sampled neck, giving a clear two-chamber transfer transient.
+11. `2d_l_shape_corner_heating`: a hot reentrant notch diffuses into a grounded outer frame, emphasizing corner-driven filling of the L-shaped cavity.
+12. `2d_l_shape_reentrant_quench`: a mixed-sign quadrant start is pulled between warm outer walls and a cold notch, turning the reentrant corner into a sharp thermal sink.
+13. `2d_localized_blob_diffusion`: one or two elongated hot spots diffuse and merge under insulated walls, serving as the clean slow-diffusion baseline.
+14. `2d_multi_hole_plate_hole_heating`: uniformly hot holes diffuse into a colder perforated plate, yielding symmetric halo growth around the sampled hole layout.
+15. `2d_multi_hole_plate_thermal_dipoles`: hot, warm, and cold holes compete across the plate, producing interacting thermal dipoles instead of uniform hole heating.
+16. `2d_noisy_media_diffusion`: hot and cold blobs dissolve inside noisy conductivity with additive state noise, keeping high seed-to-seed texture variation.
+17. `2d_parallelogram_periodic_stripe_relaxation`: oblique periodic bands decay on a skew cell without rectangular axis locking or wall effects.
+18. `2d_porous_channel_hot_obstacle_array`: many heated inclusions radiate into a near-neutral porous channel, creating multi-source halos through the pore lattice.
+19. `2d_porous_channel_trapping_diffusion`: hot and cold transients mix through a sampled porous lattice while chilled obstacles pin localized trapping zones.
+20. `2d_radial_diffusivity_spread`: a warm square with signed interior perturbations cools toward zero walls while radially varying diffusivity shapes a centered relaxation halo.
+21. `2d_serpentine_channel_guided_diffusion`: end-forced heating relaxes through a sampled serpentine path, giving a slow bend-to-bend filling transient.
+22. `2d_serpentine_channel_lane_band_relaxation`: signed lane-aligned bands smooth through the bends with no-flux walls, making the geometry alone control the equilibration.
+23. `2d_side_cavity_channel_cavity_source_release`: a strong cavity heater fights signed channel seed blobs and asymmetric end temperatures, so the side pocket leaks a bright plume back into a counter-biased main channel.
+24. `2d_side_cavity_channel_delayed_release`: inlet-heated transients pool in the cavity and then bleed back into the outlet corridor after a sampled delay.
+25. `2d_venturi_channel_oblique_stripe_relaxation`: oblique hot/cold bands squeeze through the venturi throat and smooth without any boundary forcing.
+26. `2d_venturi_channel_throat_focusing`: inlet-driven heat diffuses through a constricted throat, producing a channel-scale thermal pinch point.
+27. `2d_y_bifurcation_branch_imbalance_relaxation`: upper and lower branches start at opposite temperatures and equalize through the junction under zero-flux boundaries.
+28. `2d_y_bifurcation_split_diffusion`: a hot trunk start diffuses into two cooled branches, giving a clean branch-splitting relaxation front.
+29. `3d_localized_blob_diffusion`: one or two hot blobs diffusing in a cube with no-flux walls.
+30. `3d_noisy_media_diffusion`: hot and cold blobs diffusing in noisy 3D media with additive state noise.
 
 #### Helmholtz (`configs/basic/helmholtz`)
 

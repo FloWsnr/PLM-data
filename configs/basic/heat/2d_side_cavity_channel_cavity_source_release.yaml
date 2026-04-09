@@ -1,60 +1,79 @@
 preset: heat
-parameters: {}
+parameters:
+  cavity_center_x:
+    sample: uniform
+    min: 0.95
+    max: 1.55
+  cavity_source_y:
+    sample: uniform
+    min: 0.84
+    max: 0.92
+  wall_exchange:
+    sample: uniform
+    min: 0.7
+    max: 1.25
 coefficients:
   kappa:
     type: constant
     params:
       value:
         sample: uniform
-        min: 0.015
-        max: 0.035
+        min: 0.012
+        max: 0.02
 domain:
   allow_sampling: true
-  type: channel_obstacle
+  type: side_cavity_channel
   length:
     sample: uniform
-    min: 2.05
-    max: 2.35
+    min: 2.25
+    max: 2.85
   height:
     sample: uniform
-    min: 0.92
-    max: 1.08
-  obstacle_center:
-    - sample: uniform
-      min: 0.92
-      max: 1.18
-    - sample: uniform
-      min: 0.42
-      max: 0.6
-  obstacle_radius:
+    min: 0.68
+    max: 0.82
+  cavity_width:
     sample: uniform
-    min: 0.14
-    max: 0.21
+    min: 0.38
+    max: 0.58
+  cavity_depth:
+    sample: uniform
+    min: 0.3
+    max: 0.52
+  cavity_center_x: "param:cavity_center_x"
   mesh_size:
     sample: uniform
-    min: 0.032
-    max: 0.038
+    min: 0.026
+    max: 0.034
 time:
   dt: 0.01
-  t_end: 1.4
+  t_end: 1.6
 inputs:
   u:
     source:
-      type: none
-      params: {}
+      type: gaussian_bump
+      params:
+        amplitude:
+          sample: uniform
+          min: 0.72
+          max: 1.15
+        sigma:
+          sample: uniform
+          min: 0.06
+          max: 0.11
+        center: ["param:cavity_center_x", "param:cavity_source_y"]
     initial_condition:
       type: gaussian_blobs
       params:
         background:
           sample: uniform
-          min: -0.05
-          max: 0.05
+          min: -0.02
+          max: 0.02
         generators:
           - count: 1
             amplitude:
               sample: uniform
-              min: 0.75
-              max: 1.2
+              min: -0.55
+              max: -0.28
             sigma:
               sample: uniform
               min: 0.06
@@ -62,34 +81,34 @@ inputs:
             aspect_ratio:
               sample: uniform
               min: 1.0
-              max: 1.8
-            center:
-              - sample: uniform
-                min: 0.2
-                max: 0.55
-              - sample: uniform
-                min: 0.18
-                max: 0.8
-          - count: 1
-            amplitude:
-              sample: uniform
-              min: -0.55
-              max: -0.18
-            sigma:
-              sample: uniform
-              min: 0.05
-              max: 0.09
-            aspect_ratio:
-              sample: uniform
-              min: 1.0
               max: 1.6
             center:
               - sample: uniform
-                min: 0.82
-                max: 1.35
+                min: 0.28
+                max: 0.55
               - sample: uniform
-                min: 0.25
-                max: 0.75
+                min: 0.2
+                max: 0.48
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.18
+              max: 0.42
+            sigma:
+              sample: uniform
+              min: 0.05
+              max: 0.08
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.8
+            center:
+              - sample: uniform
+                min: 1.7
+                max: 2.15
+              - sample: uniform
+                min: 0.22
+                max: 0.5
 boundary_conditions:
   u:
     inlet:
@@ -99,8 +118,8 @@ boundary_conditions:
           params:
             value:
               sample: uniform
-              min: 0.92
-              max: 1.24
+              min: -0.22
+              max: -0.06
     outlet:
       - operator: dirichlet
         value:
@@ -108,25 +127,21 @@ boundary_conditions:
           params:
             value:
               sample: uniform
-              min: -0.16
-              max: 0.08
+              min: 0.08
+              max: 0.26
     walls:
-      - operator: neumann
-        value: 0.0
-    obstacle:
-      - operator: dirichlet
+      - operator: robin
         value:
           type: constant
           params:
-            value:
-              sample: uniform
-              min: -0.15
-              max: 0.06
+            value: 0.0
+        operator_parameters:
+          alpha: "param:wall_exchange"
 solver:
   $ref: solver.profile.constant_lhs_scalar_spd
 output:
   $ref: output.template.scalar_u
   formats: [numpy, gif]
-  resolution: [192, 128]
+  resolution: [192, 144]
   num_frames: 49
 seed: 42

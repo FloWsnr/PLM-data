@@ -1,0 +1,127 @@
+preset: heat
+parameters:
+  stripe_angle:
+    sample: uniform
+    min: -0.42
+    max: 0.42
+coefficients:
+  kappa:
+    type: constant
+    params:
+      value:
+        sample: uniform
+        min: 0.012
+        max: 0.022
+domain:
+  allow_sampling: true
+  type: airfoil_channel
+  length:
+    sample: uniform
+    min: 2.35
+    max: 2.85
+  height:
+    sample: uniform
+    min: 0.94
+    max: 1.12
+  airfoil_center:
+    - sample: uniform
+      min: 0.95
+      max: 1.35
+    - sample: uniform
+      min: 0.44
+      max: 0.72
+  chord_length:
+    sample: uniform
+    min: 0.48
+    max: 0.62
+  thickness_ratio:
+    sample: uniform
+    min: 0.08
+    max: 0.14
+  attack_angle_degrees:
+    sample: uniform
+    min: -14.0
+    max: 14.0
+  mesh_size:
+    sample: uniform
+    min: 0.027
+    max: 0.034
+time:
+  dt: 0.01
+  t_end: 1.55
+inputs:
+  u:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: -0.08
+          max: 0.08
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.34
+              max: 0.52
+            cycles:
+              - sample: uniform
+                min: 1.2
+                max: 1.8
+              - sample: uniform
+                min: 2.4
+                max: 3.4
+            phase:
+              sample: uniform
+              min: -0.9
+              max: 0.9
+            angle: "param:stripe_angle"
+          - amplitude:
+              sample: uniform
+              min: -0.26
+              max: -0.12
+            cycles:
+              - sample: uniform
+                min: 3.0
+                max: 4.2
+              - sample: uniform
+                min: 0.8
+                max: 1.4
+            phase:
+              sample: uniform
+              min: 0.2
+              max: 1.4
+            angle:
+              sample: uniform
+              min: -0.15
+              max: 0.15
+boundary_conditions:
+  u:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+    airfoil:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.9
+              max: 1.2
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [192, 128]
+  num_frames: 49
+seed: 42
