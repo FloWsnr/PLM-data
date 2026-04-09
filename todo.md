@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 238 configs.
+Current baseline: 38 PDE presets and 256 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -211,9 +211,31 @@ plate domain has at least two distinct configs.
 
 #### Bistable Travelling Waves (`configs/biology/bistable_travelling_waves`)
 
-1. `2d_dumbbell_invasion_front`: bistable invasion front filling one lobe and then crossing the dumbbell neck into the second chamber.
-2. `2d_planar_invasion_front`: planar invasion front moving rightward from a step initial condition.
-3. `3d_planar_invasion_front`: 3D planar invasion front moving along `x` from a step initial condition.
+The 2D suite now spans 10 domain families with 2 configs each, covering
+fast and slow fronts, threshold-driven retreat, periodic coarsening, and
+boundary-fed invasion through sampled Gmsh geometries.
+
+1. `2d_annulus_azimuthal_front_wraparound`: elongated supercritical arc on an annulus is swept azimuthally by sampled rotation while diffusion and bistability smooth it into a travelling ring segment.
+2. `2d_annulus_inner_rim_pinned_front`: inner annulus rim is held at `u=1` and slowly twists against an absorbing outer wall, producing a boundary-pinned outward invasion layer.
+3. `2d_channel_obstacle_boundary_forced_bypass`: inlet-fed population front is forced around a sampled cylinder, leaving a clear obstacle shadow and asymmetric bypass path.
+4. `2d_channel_obstacle_wake_recolonization`: localized patches upstream and in the wake interact with weak recirculation, giving obstacle-mediated recolonization instead of a clean boundary-driven fill.
+5. `2d_disk_radial_survival_threshold`: one or two blobs in a sampled disk either settle into a supercritical radial invasion or hover near the critical survival size.
+6. `2d_disk_robin_ring_collapse`: concentric radial-cosine bands in a disk retreat and smooth under an absorbing Robin wall, emphasizing shrinking ring-like fronts.
+7. `2d_dumbbell_dual_lobe_threshold_exchange`: unequal lobe seeds in a narrow dumbbell compete near threshold, with one chamber often dominating the neck transfer.
+8. `2d_dumbbell_invasion_front`: broad left-lobe step front fills a sampled dumbbell and is nudged through the bridge by weak rightward drift.
+9. `2d_l_shape_corner_refuge_invasion`: supercritical corner seed expands along both L-shaped arms while the re-entrant notch acts as a no-flux refuge.
+10. `2d_l_shape_notch_quench_retreat`: quadrant-style initial data is driven upward and partially quenched by a lossy notch, producing retreat biased toward the re-entrant corner.
+11. `2d_multi_hole_plate_hole_shadow_retreat`: sampled quadrants retreat across a perforated plate while mixed hole conditions carve out persistent obstacle-shadow patterns.
+12. `2d_multi_hole_plate_perforation_invasion`: left-to-right bistable front threads through sampled holes, with the center hole held at zero to split and delay the advancing interface.
+13. `2d_parallelogram_swept_quadrant_invasion`: skew-periodic quadrant data is advected obliquely across a sampled parallelogram, giving wraparound invasion rather than a static phase split.
+14. `2d_parallelogram_wraparound_stripe_relaxation`: oblique periodic bands coarsen and compete on a sampled skew cell, giving slow wraparound stripe selection.
+15. `2d_periodic_shear_band_competition`: near-threshold sine bands in a periodic rectangle shear and merge slowly, targeting long-lived coarsening instead of a single fast front.
+16. `2d_planar_invasion_front`: sampled rectangle supports a fast classical planar invasion front with randomized width, extent, and launch position.
+17. `2d_serpentine_channel_guided_front`: inlet Dirichlet forcing launches a front that follows sampled serpentine bends with clear lane-guided advance.
+18. `2d_serpentine_channel_reverse_lane_quench`: downstream seed is pushed back through the sampled serpentine against wall losses, giving a reverse-lane retreat rather than inlet growth.
+19. `2d_y_bifurcation_asymmetric_branch_competition`: unequal daughter-branch seeds compete while a weak upstream drift pulls the winner back toward the junction.
+20. `2d_y_bifurcation_branch_split_front`: inlet-fed front fills a sampled Y-branch and splits into the daughter arms with branch-angle-dependent timing.
+21. `3d_planar_invasion_front`: 3D planar invasion front moving along `x` from a step initial condition.
 
 #### Cyclic Competition (`configs/biology/cyclic_competition`)
 

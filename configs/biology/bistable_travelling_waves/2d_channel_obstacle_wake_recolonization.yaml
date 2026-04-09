@@ -1,0 +1,133 @@
+preset: bistable_travelling_waves
+parameters:
+  D:
+    sample: uniform
+    min: 0.18
+    max: 0.34
+  a:
+    sample: uniform
+    min: 0.42
+    max: 0.54
+coefficients:
+  velocity:
+    components:
+      x:
+        type: affine
+        params:
+          constant:
+            sample: uniform
+            min: 0.06
+            max: 0.16
+          y:
+            sample: uniform
+            min: -0.55
+            max: -0.26
+      y:
+        type: affine
+        params:
+          constant:
+            sample: uniform
+            min: -0.04
+            max: 0.04
+          x:
+            sample: uniform
+            min: 0.26
+            max: 0.55
+domain:
+  allow_sampling: true
+  type: channel_obstacle
+  length:
+    sample: uniform
+    min: 1.95
+    max: 2.2
+  height:
+    sample: uniform
+    min: 0.94
+    max: 1.08
+  obstacle_center:
+    - sample: uniform
+      min: 0.82
+      max: 1.0
+    - sample: uniform
+      min: 0.42
+      max: 0.68
+  obstacle_radius:
+    sample: uniform
+    min: 0.12
+    max: 0.16
+  mesh_size:
+    sample: uniform
+    min: 0.02
+    max: 0.026
+time:
+  dt: 0.008
+  t_end: 7.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.9
+              max: 1.04
+            sigma:
+              sample: uniform
+              min: 0.06
+              max: 0.09
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.6
+            center:
+              - sample: uniform
+                min: 0.24
+                max: 0.38
+              - sample: uniform
+                min: 0.38
+                max: 0.62
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.52
+              max: 0.76
+            sigma:
+              sample: uniform
+              min: 0.04
+              max: 0.07
+            aspect_ratio:
+              sample: uniform
+              min: 1.1
+              max: 1.9
+            center:
+              - sample: uniform
+                min: 1.24
+                max: 1.6
+              - sample: uniform
+                min: 0.32
+                max: 0.72
+boundary_conditions:
+  u:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: dirichlet
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+    obstacle:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [192, 128]
+  num_frames: 69
+seed: 42
