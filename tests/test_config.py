@@ -625,9 +625,11 @@ def test_load_config_keller_segel_2d():
     assert cfg.preset == "keller_segel"
     assert cfg.domain.dimension == 2
     assert cfg.has_periodic_boundary_conditions is True
-    assert cfg.parameters["chi0"] == 10.0
+    assert cfg.parameters["chi0"]["sample"] == "uniform"
+    assert cfg.parameters["chi0"]["min"] == 5.8
+    assert cfg.parameters["chi0"]["max"] == 8.0
     assert cfg.input("rho").initial_condition.type == "gaussian_noise"
-    assert cfg.input("c").initial_condition.params["mean"] == 1.0
+    assert cfg.input("c").initial_condition.params["mean"]["sample"] == "uniform"
     assert cfg.boundary_field("rho").side_conditions("x-")[0].type == "periodic"
     assert cfg.boundary_field("c").side_conditions("y+")[0].pair_with == "y-"
     assert cfg.output_mode("rho") == "scalar"
