@@ -1,0 +1,104 @@
+preset: bistable_travelling_waves
+parameters:
+  D:
+    sample: uniform
+    min: 0.2
+    max: 0.34
+  a:
+    sample: uniform
+    min: 0.54
+    max: 0.66
+  wall_exchange:
+    sample: uniform
+    min: 0.2
+    max: 0.52
+coefficients:
+  velocity:
+    components:
+      x:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.08
+            max: 0.08
+      y:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: 0.06
+            max: 0.14
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width:
+    sample: uniform
+    min: 1.0
+    max: 1.18
+  outer_height:
+    sample: uniform
+    min: 1.0
+    max: 1.18
+  cutout_width:
+    sample: uniform
+    min: 0.32
+    max: 0.46
+  cutout_height:
+    sample: uniform
+    min: 0.32
+    max: 0.46
+  mesh_size:
+    sample: uniform
+    min: 0.014
+    max: 0.018
+time:
+  dt: 0.008
+  t_end: 7.5
+inputs:
+  u:
+    initial_condition:
+      type: quadrants
+      params:
+        split:
+          - sample: uniform
+            min: 0.34
+            max: 0.56
+          - sample: uniform
+            min: 0.34
+            max: 0.56
+        region_values:
+          "00":
+            sample: uniform
+            min: 0.82
+            max: 1.0
+          "01":
+            sample: uniform
+            min: 0.42
+            max: 0.6
+          "10":
+            sample: uniform
+            min: 0.08
+            max: 0.2
+          "11":
+            sample: uniform
+            min: 0.28
+            max: 0.44
+boundary_conditions:
+  u:
+    outer:
+      - operator: neumann
+        value: 0.0
+    notch:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: "param:wall_exchange"
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [176, 176]
+  num_frames: 69
+seed: 42

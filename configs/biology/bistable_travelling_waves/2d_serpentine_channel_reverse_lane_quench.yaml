@@ -1,0 +1,114 @@
+preset: bistable_travelling_waves
+parameters:
+  D:
+    sample: uniform
+    min: 0.14
+    max: 0.28
+  a:
+    sample: uniform
+    min: 0.54
+    max: 0.66
+  wall_exchange:
+    sample: uniform
+    min: 0.16
+    max: 0.42
+  channel_length:
+    sample: uniform
+    min: 0.94
+    max: 1.12
+  lane_spacing:
+    sample: uniform
+    min: 0.34
+    max: 0.46
+coefficients:
+  velocity:
+    components:
+      x:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.24
+            max: -0.1
+      y:
+        type: sine_waves
+        params:
+          background: 0.0
+          modes:
+            - amplitude:
+                sample: uniform
+                min: 0.08
+                max: 0.16
+              cycles: [0.5, 0.0]
+              phase:
+                sample: uniform
+                min: 1.1
+                max: 1.9
+domain:
+  allow_sampling: true
+  type: serpentine_channel
+  channel_length: "param:channel_length"
+  lane_spacing: "param:lane_spacing"
+  n_bends:
+    sample: randint
+    min: 2
+    max: 4
+  channel_width:
+    sample: uniform
+    min: 0.16
+    max: 0.22
+  mesh_size:
+    sample: uniform
+    min: 0.02
+    max: 0.026
+time:
+  dt: 0.008
+  t_end: 8.5
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.92
+              max: 1.04
+            sigma:
+              sample: uniform
+              min: 0.05
+              max: 0.08
+            aspect_ratio:
+              sample: uniform
+              min: 1.2
+              max: 2.0
+            center:
+              - sample: uniform
+                min: 2.4
+                max: 3.4
+              - sample: uniform
+                min: -0.08
+                max: 0.08
+boundary_conditions:
+  u:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: dirichlet
+        value: 0.0
+    walls:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: "param:wall_exchange"
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [192, 160]
+  num_frames: 75
+seed: 42
