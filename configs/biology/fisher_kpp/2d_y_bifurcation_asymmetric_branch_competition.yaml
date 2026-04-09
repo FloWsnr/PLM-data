@@ -1,0 +1,126 @@
+preset: fisher_kpp
+parameters:
+  D:
+    sample: uniform
+    min: 0.018
+    max: 0.04
+  r:
+    sample: uniform
+    min: 0.45
+    max: 0.8
+  K:
+    sample: uniform
+    min: 0.9
+    max: 1.15
+coefficients:
+  velocity:
+    components:
+      x:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.18
+            max: -0.06
+      y:
+        type: affine
+        params:
+          y:
+            sample: uniform
+            min: -0.24
+            max: 0.24
+domain:
+  allow_sampling: true
+  type: y_bifurcation
+  inlet_length:
+    sample: uniform
+    min: 0.9
+    max: 1.08
+  branch_length:
+    sample: uniform
+    min: 0.82
+    max: 1.02
+  branch_angle_degrees:
+    sample: uniform
+    min: 34.0
+    max: 44.0
+  channel_width:
+    sample: uniform
+    min: 0.18
+    max: 0.24
+  mesh_size:
+    sample: uniform
+    min: 0.022
+    max: 0.028
+time:
+  dt: 0.008
+  t_end: 7.5
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.8
+              max: 1.0
+            sigma:
+              sample: uniform
+              min: 0.05
+              max: 0.08
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.6
+            center:
+              - sample: uniform
+                min: 1.56
+                max: 1.92
+              - sample: uniform
+                min: 0.34
+                max: 0.72
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.46
+              max: 0.72
+            sigma:
+              sample: uniform
+              min: 0.05
+              max: 0.08
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.6
+            center:
+              - sample: uniform
+                min: 1.56
+                max: 1.92
+              - sample: uniform
+                min: -0.72
+                max: -0.34
+boundary_conditions:
+  u:
+    inlet:
+      - operator: dirichlet
+        value: 0.0
+    outlet_upper:
+      - operator: neumann
+        value: 0.0
+    outlet_lower:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [192, 160]
+  num_frames: 71
+seed: 42
