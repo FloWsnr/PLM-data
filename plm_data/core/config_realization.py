@@ -670,6 +670,22 @@ def _realize_domain_params(
             stream_root="domain.params.n_bends",
             integer=True,
         )
+    elif domain.type == "airfoil_channel":
+        for key in (
+            "length",
+            "height",
+            "airfoil_center",
+            "chord_length",
+            "thickness_ratio",
+            "attack_angle_degrees",
+            "mesh_size",
+        ):
+            realized[key] = _realize_numeric_tree(
+                params[key],
+                parameters=parameters,
+                seed=seed,
+                stream_root=f"domain.params.{key}",
+            )
 
     for key, value in params.items():
         if key in realized:

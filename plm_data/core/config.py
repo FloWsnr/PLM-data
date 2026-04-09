@@ -7,8 +7,10 @@ from pathlib import Path
 from typing import Any
 
 from mpi4py import MPI
+import numpy as np
 import yaml
 
+from plm_data.core.airfoil import symmetric_naca_airfoil_outline
 from plm_data.core.sampling import is_sampler_spec
 from plm_data.core.solver_strategies import ALL_SOLVER_STRATEGIES
 
@@ -478,6 +480,7 @@ def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
         "y_bifurcation": 2,
         "venturi_channel": 2,
         "serpentine_channel": 2,
+        "airfoil_channel": 2,
     }
     if domain_type in builtin_dims:
         return builtin_dims[domain_type]
@@ -954,6 +957,64 @@ def validate_domain_params(
                 "Serpentine_channel domain requires 'lane_spacing' > "
                 "'channel_width' so adjacent lanes do not overlap."
             )
+        return
+
+    if domain_type == "airfoil_channel":
+        _require_keys(
+            "length",
+            "height",
+            "airfoil_center",
+            "chord_length",
+            "thickness_ratio",
+            "attack_angle_degrees",
+            "mesh_size",
+        )
+        length = _float_param("length", positive=True)
+        height = _float_param("height", positive=True)
+        airfoil_center = _vector_param("airfoil_center", length=2)
+        chord_length = _float_param("chord_length", positive=True)
+        thickness_ratio = _float_param("thickness_ratio", positive=True)
+        attack_angle = _float_param("attack_angle_degrees")
+        _float_param("mesh_size", positive=True)
+        if thickness_ratio is not None and thickness_ratio >= 0.25:
+            raise ValueError(
+                "Airfoil_channel domain requires 'thickness_ratio' < 0.25. "
+                f"Got {thickness_ratio}."
+            )
+        if attack_angle is not None and abs(attack_angle) >= 35.0:
+            raise ValueError(
+                "Airfoil_channel domain requires |'attack_angle_degrees'| < 35. "
+                f"Got {attack_angle}."
+            )
+        if (
+            length is not None
+            and height is not None
+            and airfoil_center is not None
+            and chord_length is not None
+            and thickness_ratio is not None
+            and attack_angle is not None
+        ):
+            outline = symmetric_naca_airfoil_outline(
+                chord_length=chord_length,
+                thickness_ratio=thickness_ratio,
+                center=np.asarray(airfoil_center, dtype=float),
+                attack_angle_degrees=attack_angle,
+            )
+            x_min = float(np.min(outline[:, 0]))
+            x_max = float(np.max(outline[:, 0]))
+            y_min = float(np.min(outline[:, 1]))
+            y_max = float(np.max(outline[:, 1]))
+            if x_min <= 0.0 or x_max >= length:
+                raise ValueError(
+                    "Airfoil_channel domain requires the airfoil to lie strictly "
+                    "inside the channel in x."
+                )
+            if y_min <= 0.0 or y_max >= height:
+                raise ValueError(
+                    "Airfoil_channel domain requires the airfoil to lie strictly "
+                    "inside the channel in y."
+                )
+        return
 
 
 def _load_fragment_catalog() -> dict[str, Any]:

@@ -137,6 +137,19 @@ def test_annulus_boundary_tags():
             {"inlet", "outlet", "walls", "obstacle"},
         ),
         (
+            "airfoil_channel",
+            {
+                "length": 2.6,
+                "height": 1.1,
+                "airfoil_center": [1.2, 0.55],
+                "chord_length": 0.58,
+                "thickness_ratio": 0.13,
+                "attack_angle_degrees": 7.0,
+                "mesh_size": 0.08,
+            },
+            {"inlet", "outlet", "walls", "airfoil"},
+        ),
+        (
             "y_bifurcation",
             {
                 "inlet_length": 1.0,
@@ -209,7 +222,6 @@ def test_y_bifurcation_outlet_positions():
     assert np.mean(lower_midpoints[:, 1]) < 0.0
 
 
-@pytest.mark.skipif(not HAS_GMSH, reason="gmsh not installed")
 def test_venturi_channel_has_narrower_throat_than_inlet():
     domain_geom = create_domain(
         DomainConfig(
@@ -236,6 +248,34 @@ def test_venturi_channel_has_narrower_throat_than_inlet():
         throat_wall_midpoints[:, 1]
     )
     assert throat_height < inlet_height
+
+
+@pytest.mark.skipif(not HAS_GMSH, reason="gmsh not installed")
+def test_airfoil_channel_airfoil_boundary_is_interior():
+    domain_geom = create_domain(
+        DomainConfig(
+            type="airfoil_channel",
+            params={
+                "length": 2.6,
+                "height": 1.1,
+                "airfoil_center": [1.2, 0.55],
+                "chord_length": 0.58,
+                "thickness_ratio": 0.13,
+                "attack_angle_degrees": 7.0,
+                "mesh_size": 0.08,
+            },
+        )
+    )
+    fdim = domain_geom.mesh.topology.dim - 1
+    airfoil_facets = domain_geom.facet_tags.find(domain_geom.boundary_names["airfoil"])
+    wall_facets = domain_geom.facet_tags.find(domain_geom.boundary_names["walls"])
+    airfoil_midpoints = dmesh.compute_midpoints(domain_geom.mesh, fdim, airfoil_facets)
+    wall_midpoints = dmesh.compute_midpoints(domain_geom.mesh, fdim, wall_facets)
+    assert np.min(airfoil_midpoints[:, 0]) > 0.0
+    assert np.max(airfoil_midpoints[:, 0]) < 2.6
+    assert np.min(airfoil_midpoints[:, 1]) > 0.0
+    assert np.max(airfoil_midpoints[:, 1]) < 1.1
+    assert np.max(wall_midpoints[:, 1]) - np.min(wall_midpoints[:, 1]) > 1.0
 
 
 @pytest.mark.skipif(not HAS_GMSH, reason="gmsh not installed")
@@ -407,6 +447,45 @@ def test_l_shape_notch_boundary_tracks_reentrant_corner():
                 "mesh_size": 0.2,
             },
             "strictly inside the channel in x",
+        ),
+        (
+            "airfoil_channel",
+            {
+                "length": 2.6,
+                "height": 1.1,
+                "airfoil_center": [0.25, 0.55],
+                "chord_length": 0.58,
+                "thickness_ratio": 0.13,
+                "attack_angle_degrees": 0.0,
+                "mesh_size": 0.08,
+            },
+            "strictly inside the channel in x",
+        ),
+        (
+            "airfoil_channel",
+            {
+                "length": 2.6,
+                "height": 1.1,
+                "airfoil_center": [1.2, 0.02],
+                "chord_length": 0.58,
+                "thickness_ratio": 0.13,
+                "attack_angle_degrees": 0.0,
+                "mesh_size": 0.08,
+            },
+            "strictly inside the channel in y",
+        ),
+        (
+            "airfoil_channel",
+            {
+                "length": 2.6,
+                "height": 1.1,
+                "airfoil_center": [1.2, 0.55],
+                "chord_length": 0.58,
+                "thickness_ratio": 0.28,
+                "attack_angle_degrees": 0.0,
+                "mesh_size": 0.08,
+            },
+            "thickness_ratio",
         ),
         (
             "y_bifurcation",

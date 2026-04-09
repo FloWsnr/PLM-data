@@ -23,6 +23,7 @@ HAS_GMSH = importlib.util.find_spec("gmsh") is not None
 SMOKE_MESH_RESOLUTION_CAP = 4
 GMSH_DOMAIN_TYPES = {
     "annulus",
+    "airfoil_channel",
     "channel_obstacle",
     "disk",
     "dumbbell",
@@ -53,6 +54,7 @@ def _prepare_smoke_run_config(cfg, output_path: Path) -> None:
     if mesh_size is not None:
         mesh_size_floor = SMOKE_MESH_SIZE_FLOOR
         if cfg.domain.type in {
+            "airfoil_channel",
             "channel_obstacle",
             "y_bifurcation",
             "venturi_channel",

@@ -252,6 +252,32 @@ def test_realize_simulation_config_concretizes_l_shape_domain_sampling():
     assert 0.024 <= realized_a.domain.params["mesh_size"] <= 0.032
 
 
+def test_realize_simulation_config_concretizes_airfoil_channel_domain_sampling():
+    cfg = load_config("configs/basic/heat/2d_airfoil_channel_heat_shadow.yaml")
+
+    realized_a = realize_simulation_config(cfg)
+    realized_b = realize_simulation_config(cfg)
+
+    assert realized_a.domain.params == realized_b.domain.params
+    assert isinstance(realized_a.domain.params["length"], float)
+    assert isinstance(realized_a.domain.params["height"], float)
+    assert all(
+        isinstance(value, float) for value in realized_a.domain.params["airfoil_center"]
+    )
+    assert isinstance(realized_a.domain.params["chord_length"], float)
+    assert isinstance(realized_a.domain.params["thickness_ratio"], float)
+    assert isinstance(realized_a.domain.params["attack_angle_degrees"], float)
+    assert isinstance(realized_a.domain.params["mesh_size"], float)
+    assert 2.4 <= realized_a.domain.params["length"] <= 2.8
+    assert 1.0 <= realized_a.domain.params["height"] <= 1.15
+    assert 1.05 <= realized_a.domain.params["airfoil_center"][0] <= 1.35
+    assert 0.48 <= realized_a.domain.params["airfoil_center"][1] <= 0.66
+    assert 0.52 <= realized_a.domain.params["chord_length"] <= 0.64
+    assert 0.1 <= realized_a.domain.params["thickness_ratio"] <= 0.16
+    assert -10.0 <= realized_a.domain.params["attack_angle_degrees"] <= 10.0
+    assert 0.028 <= realized_a.domain.params["mesh_size"] <= 0.036
+
+
 def test_simulation_runner_serializes_realized_config(tmp_path):
     data = _load_config_dict("configs/basic/heat/2d_localized_blob_diffusion.yaml")
     data["domain"]["allow_sampling"] = True
