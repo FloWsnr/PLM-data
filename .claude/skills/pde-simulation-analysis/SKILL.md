@@ -28,7 +28,7 @@ The typical input is a run directory like `output/<category>/<preset>/`.
    - If `domain_mask.npy` exists, exclude out-of-domain points from all metrics.
    - Then choose PDE-specific metrics that match the preset and boundary conditions.
 
-### PDE-Specific Metric Ideas
+#### PDE-Specific Metric Ideas
 
 - Conservative transport / compressible Euler / wave-like conservative systems:
   - Mass conservation
@@ -72,6 +72,13 @@ If exact conservation is not expected, say why and pick a better metric. The poi
    - Separate hard failures from softer concerns.
    - State whether the run looks physically plausible, numerically suspicious, or clearly broken.
    - End with the single most informative next check if uncertainty remains.
+
+### Analyzing multiple simulations
+
+If you analyze multiple runs to compare them, generate a plot which compare the start, middle, and end frames for one (important) field across the runs.
+This can be done by extracting the frames as PNGs and then using a plotting library to create a side-by-side comparison.
+Look for differences in the patterns, magnitudes, and any artifacts that may indicate differences in the underlying physics or numerical stability of the runs.
+
 
 ### Practical Notes
 
