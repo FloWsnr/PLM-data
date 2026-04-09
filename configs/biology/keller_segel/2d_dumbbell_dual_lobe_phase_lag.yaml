@@ -1,0 +1,137 @@
+preset: keller_segel
+parameters:
+  left_center_x:
+    sample: uniform
+    min: -6.0
+    max: -5.0
+  right_center_x:
+    sample: uniform
+    min: 5.0
+    max: 6.0
+  center_y:
+    sample: uniform
+    min: -0.4
+    max: 0.4
+  D_rho:
+    sample: uniform
+    min: 0.24
+    max: 0.36
+  D_c:
+    sample: uniform
+    min: 1.4
+    max: 2.4
+  chi0:
+    sample: uniform
+    min: 5.4
+    max: 8.0
+  alpha:
+    sample: uniform
+    min: 0.84
+    max: 1.2
+  beta:
+    sample: uniform
+    min: 0.6
+    max: 0.9
+  r:
+    sample: uniform
+    min: 0.05
+    max: 0.14
+domain:
+  allow_sampling: true
+  type: dumbbell
+  left_center: ["param:left_center_x", "param:center_y"]
+  right_center: ["param:right_center_x", "param:center_y"]
+  lobe_radius:
+    sample: uniform
+    min: 3.4
+    max: 4.0
+  neck_width:
+    sample: uniform
+    min: 1.4
+    max: 2.0
+  mesh_size:
+    sample: uniform
+    min: 0.12
+    max: 0.15
+time:
+  dt: 0.015
+  t_end: 16.0
+inputs:
+  rho:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.46
+          max: 0.68
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.16
+              max: 0.28
+            sigma:
+              sample: uniform
+              min: 1.0
+              max: 1.6
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.4
+            center:
+              - sample: uniform
+                min: -5.2
+                max: -3.4
+              - sample: uniform
+                min: -1.2
+                max: 1.2
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.08
+              max: 0.18
+            sigma:
+              sample: uniform
+              min: 1.0
+              max: 1.6
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.4
+            center:
+              - sample: uniform
+                min: 3.4
+                max: 5.2
+              - sample: uniform
+                min: -1.2
+                max: 1.2
+  c:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 0.18
+          max: 0.3
+        std:
+          sample: uniform
+          min: 0.02
+          max: 0.04
+boundary_conditions:
+  rho:
+    outer:
+      - operator: neumann
+        value: 0.0
+  c:
+    outer:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_rho_c
+  formats: [numpy, gif]
+  resolution: [224, 160]
+  num_frames: 65
+seed: 42

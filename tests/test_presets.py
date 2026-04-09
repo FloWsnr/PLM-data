@@ -2882,8 +2882,9 @@ def test_shallow_water_rejects_mismatched_periodic_fields(tmp_path):
         problem.load_domain_geometry()
 
 
-def test_keller_segel_rejects_nonperiodic_boundaries(tmp_path):
+def test_keller_segel_accepts_nonperiodic_rho_and_flux_c_boundaries(tmp_path):
     dirichlet_bc = BoundaryConditionConfig(type="dirichlet", value=constant(1.0))
+    neumann_bc = BoundaryConditionConfig(type="neumann", value=constant(0.0))
     config = _make_keller_segel_config(
         tmp_path,
         rho_boundary_conditions={
@@ -2891,6 +2892,30 @@ def test_keller_segel_rejects_nonperiodic_boundaries(tmp_path):
             "x+": dirichlet_bc,
             "y-": dirichlet_bc,
             "y+": dirichlet_bc,
+        },
+        c_boundary_conditions={
+            "x-": neumann_bc,
+            "x+": neumann_bc,
+            "y-": neumann_bc,
+            "y+": neumann_bc,
+        },
+    )
+
+    preset = get_preset(config.preset)
+    problem = preset.build_problem(config)
+    problem.load_domain_geometry()
+
+
+def test_keller_segel_rejects_dirichlet_chemoattractant_boundaries(tmp_path):
+    neumann_bc = BoundaryConditionConfig(type="neumann", value=constant(0.0))
+    dirichlet_bc = BoundaryConditionConfig(type="dirichlet", value=constant(1.0))
+    config = _make_keller_segel_config(
+        tmp_path,
+        rho_boundary_conditions={
+            "x-": neumann_bc,
+            "x+": neumann_bc,
+            "y-": neumann_bc,
+            "y+": neumann_bc,
         },
         c_boundary_conditions={
             "x-": dirichlet_bc,
@@ -2906,7 +2931,7 @@ def test_keller_segel_rejects_nonperiodic_boundaries(tmp_path):
         problem.load_domain_geometry()
 
 
-def test_keller_segel_rejects_mismatched_periodic_fields(tmp_path):
+def test_keller_segel_accepts_independent_periodic_fields(tmp_path):
     config = SimulationConfig(
         preset="keller_segel",
         parameters={
@@ -2940,13 +2965,19 @@ def test_keller_segel_rejects_mismatched_periodic_fields(tmp_path):
             "c": InputConfig(initial_condition=constant(1.0)),
         },
         boundary_conditions={
-            "rho": boundary_field_config({}, periodic_axes=(0, 1)),
+            "rho": boundary_field_config(
+                {
+                    "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                    "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                },
+                periodic_axes=(0,),
+            ),
             "c": BoundaryFieldConfig(
                 sides={
-                    "x-": [BoundaryConditionConfig(type="periodic", pair_with="y-")],
-                    "x+": [BoundaryConditionConfig(type="periodic", pair_with="y+")],
-                    "y-": [BoundaryConditionConfig(type="periodic", pair_with="x-")],
-                    "y+": [BoundaryConditionConfig(type="periodic", pair_with="x+")],
+                    "x-": [BoundaryConditionConfig(type="neumann", value=constant(0.0))],
+                    "x+": [BoundaryConditionConfig(type="neumann", value=constant(0.0))],
+                    "y-": [BoundaryConditionConfig(type="periodic", pair_with="y+")],
+                    "y+": [BoundaryConditionConfig(type="periodic", pair_with="y-")],
                 }
             ),
         },
@@ -2964,8 +2995,7 @@ def test_keller_segel_rejects_mismatched_periodic_fields(tmp_path):
 
     preset = get_preset(config.preset)
     problem = preset.build_problem(config)
-    with pytest.raises(ValueError, match="identical periodic side pairs"):
-        problem.load_domain_geometry()
+    problem.load_domain_geometry()
 
 
 def test_schrodinger_rejects_mismatched_periodic_fields(tmp_path):

@@ -1,0 +1,146 @@
+preset: keller_segel
+parameters:
+  D_rho:
+    sample: uniform
+    min: 0.22
+    max: 0.34
+  D_c:
+    sample: uniform
+    min: 1.1
+    max: 1.7
+  chi0:
+    sample: uniform
+    min: 5.6
+    max: 8.2
+  alpha:
+    sample: uniform
+    min: 0.84
+    max: 1.18
+  beta:
+    sample: uniform
+    min: 0.56
+    max: 0.86
+  r:
+    sample: uniform
+    min: 0.06
+    max: 0.18
+domain:
+  allow_sampling: true
+  type: serpentine_channel
+  channel_length:
+    sample: uniform
+    min: 8.2
+    max: 10.8
+  lane_spacing:
+    sample: uniform
+    min: 3.2
+    max: 4.8
+  n_bends:
+    sample: randint
+    min: 3
+    max: 4
+  channel_width:
+    sample: uniform
+    min: 1.3
+    max: 1.8
+  mesh_size:
+    sample: uniform
+    min: 0.09
+    max: 0.12
+time:
+  dt: 0.012
+  t_end: 16.0
+inputs:
+  rho:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.38
+          max: 0.58
+        generators:
+          - count:
+              sample: randint
+              min: 3
+              max: 6
+            amplitude:
+              sample: uniform
+              min: 0.08
+              max: 0.18
+            sigma:
+              sample: uniform
+              min: 0.45
+              max: 1.0
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.6
+            center:
+              - sample: uniform
+                min: 0.5
+                max: 10.8
+              - sample: uniform
+                min: 0.3
+                max: 14.0
+  c:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.08
+          max: 0.18
+        generators:
+          - count:
+              sample: randint
+              min: 2
+              max: 4
+            amplitude:
+              sample: uniform
+              min: 0.18
+              max: 0.36
+            sigma:
+              sample: uniform
+              min: 1.0
+              max: 2.4
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.2
+            center:
+              - sample: uniform
+                min: 0.6
+                max: 10.8
+              - sample: uniform
+                min: 0.4
+                max: 14.0
+boundary_conditions:
+  rho:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+  c:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_rho_c
+  formats: [numpy, gif]
+  resolution: [224, 160]
+  num_frames: 73
+seed: 42

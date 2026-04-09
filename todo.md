@@ -390,9 +390,29 @@ quenching, guided channel pulses, and geometry-mediated wave collisions.
 
 #### Keller-Segel (`configs/biology/keller_segel`)
 
-1. `2d_chemotactic_aggregation`: chemotactic aggregation from near-uniform noise into dense clusters.
-2. `2d_parallelogram_chemotactic_aggregation`: chemotactic aggregation on a skew parallelogram cell, reducing obvious rectangular bias in the cluster layout.
-3. `3d_chemotactic_aggregation`: 3D chemotactic aggregation into clumps and filaments.
+These 2D configs now cover ten domain families with two dynamics per shape, all with randomized PDE parameters and randomized domain geometry where supported.
+
+1. `2d_annulus_azimuthal_spot_wraparound`: azimuthal annulus spots wrap around the ring and separate into seed-dependent rotating trains.
+2. `2d_annulus_inner_rim_pinned_bands`: inner-rim chemoattractant bias pins broken aggregation bands to the annulus core.
+3. `2d_channel_obstacle_inlet_wake_spots`: inlet-biased density sheds obstacle-wake spots and wall-attached streaks behind the cylinder.
+4. `2d_channel_obstacle_reverse_shadow_collapse`: reverse obstacle forcing creates a different wake-shadow collapse pattern with downstream recovery.
+5. `2d_chemotactic_aggregation`: rectangle-based chemotactic aggregation from near-uniform noise into dense clusters.
+6. `2d_disk_boundary_crowding`: smooth-wall crowding collapses disk-wide mass into seed-dependent spot pairs and short arcs.
+7. `2d_disk_radial_spot_necklace`: radial rings destabilize into a boundary necklace of discrete spots with different final constellations per seed.
+8. `2d_dumbbell_dual_lobe_phase_lag`: both lobes aggregate with a phase lag, producing asymmetric lobe-to-lobe hotspot timing.
+9. `2d_dumbbell_neck_spot_exchange`: chemotactic hot spots form in one chamber and exchange through the narrow neck.
+10. `2d_l_shape_corner_hotspot_trap`: aggregation is trapped near the re-entrant corner, emphasizing the notch singularity.
+11. `2d_l_shape_reentrant_boundary_crowding`: boundary crowding along the L-shape walls creates notch-skewed clumps and bands.
+12. `2d_multi_hole_plate_hole_shadow_spots`: holes cast chemotactic shadow zones that seed different spot constellations downstream.
+13. `2d_multi_hole_plate_perforation_band_weave`: perforations split the density into banded structures that weave between holes.
+14. `2d_parallelogram_chemotactic_aggregation`: chemotactic aggregation on a skew parallelogram cell, reducing obvious rectangular bias in the cluster layout.
+15. `2d_parallelogram_oblique_band_competition`: oblique periodic bands compete and break on a skew cell with shifted orientations across seeds.
+16. `2d_rectangular_band_competition`: rectangular periodic bands compete, merge, and realign under randomized chemotactic forcing.
+17. `2d_serpentine_channel_guided_lane_breakup`: internally seeded hotspots follow the serpentine bends and break into bend-localized spot chains.
+18. `2d_serpentine_channel_reverse_bend_reentry`: reverse-biased structure re-enters the serpentine from the downstream side and lights up successive bends in a different order.
+19. `2d_y_bifurcation_branch_selection`: trunk and junction blob seeds choose different daughter branches under weak branch-selection forcing.
+20. `2d_y_bifurcation_reverse_branch_competition`: reverse branch-biased fronts propagate back toward the trunk and compete at the bifurcation junction.
+21. `3d_chemotactic_aggregation`: 3D chemotactic aggregation into clumps and filaments.
 
 #### Klausmeier Topography (`configs/biology/klausmeier_topography`)
 
@@ -572,8 +592,7 @@ periodic-geometry priority is `skew_box`.
 
 1. `cyclic_competition` -> `2d_dumbbell_species_exchange`: independent spiral domains in each lobe with intermittent invasion through the bottleneck.
 2. `fitzhugh_nagumo` -> `2d_eccentric_annulus_reentry`: obstacle-anchored reentry with biased drift and breakup.
-3. `keller_segel` -> `2d_disk_boundary_aggregation`: chemotactic collapse in a smooth bounded domain with stronger radial crowding.
-4. `klausmeier_topography` -> `2d_trapezoidal_hillslope_bands`: widening or narrowing slope geometry bending vegetation bands across the domain.
+3. `klausmeier_topography` -> `2d_trapezoidal_hillslope_bands`: widening or narrowing slope geometry bending vegetation bands across the domain.
 
 #### Fluids
 

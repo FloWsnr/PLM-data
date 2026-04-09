@@ -1,0 +1,182 @@
+preset: keller_segel
+parameters:
+  D_rho:
+    sample: uniform
+    min: 0.22
+    max: 0.34
+  D_c:
+    sample: uniform
+    min: 1.25
+    max: 2.0
+  chi0:
+    sample: uniform
+    min: 6.0
+    max: 8.8
+  alpha:
+    sample: uniform
+    min: 0.9
+    max: 1.3
+  beta:
+    sample: uniform
+    min: 0.55
+    max: 0.85
+  r:
+    sample: uniform
+    min: 0.05
+    max: 0.15
+  rho_inlet_value:
+    sample: uniform
+    min: 0.78
+    max: 1.04
+  c_upper_value:
+    sample: uniform
+    min: 0.92
+    max: 1.24
+  c_lower_value:
+    sample: uniform
+    min: 0.68
+    max: 0.98
+  upper_exchange:
+    sample: uniform
+    min: 0.04
+    max: 0.12
+  lower_exchange:
+    sample: uniform
+    min: 0.04
+    max: 0.12
+domain:
+  allow_sampling: true
+  type: y_bifurcation
+  inlet_length:
+    sample: uniform
+    min: 8.0
+    max: 10.0
+  branch_length:
+    sample: uniform
+    min: 6.0
+    max: 8.0
+  branch_angle_degrees:
+    sample: uniform
+    min: 28.0
+    max: 38.0
+  channel_width:
+    sample: uniform
+    min: 1.8
+    max: 2.4
+  mesh_size:
+    sample: uniform
+    min: 0.12
+    max: 0.15
+time:
+  dt: 0.012
+  t_end: 18.0
+inputs:
+  rho:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.34
+          max: 0.56
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.16
+              max: 0.28
+            sigma:
+              sample: uniform
+              min: 0.9
+              max: 1.5
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.0
+            center:
+              - sample: uniform
+                min: 2.5
+                max: 5.5
+              - sample: uniform
+                min: -0.5
+                max: 0.5
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.08
+              max: 0.18
+            sigma:
+              sample: uniform
+              min: 0.8
+              max: 1.3
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.4
+            center:
+              - sample: uniform
+                min: 7.0
+                max: 9.6
+              - sample: uniform
+                min: -0.9
+                max: 0.9
+  c:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 0.14
+          max: 0.26
+        std:
+          sample: uniform
+          min: 0.018
+          max: 0.04
+boundary_conditions:
+  rho:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: "param:rho_inlet_value"
+    outlet_upper:
+      - operator: neumann
+        value: 0.0
+    outlet_lower:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+  c:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet_upper:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:c_upper_value"
+        operator_parameters:
+          alpha: "param:upper_exchange"
+    outlet_lower:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:c_lower_value"
+        operator_parameters:
+          alpha: "param:lower_exchange"
+    walls:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_rho_c
+  formats: [numpy, gif]
+  resolution: [224, 160]
+  num_frames: 73
+seed: 42

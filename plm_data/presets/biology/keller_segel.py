@@ -9,10 +9,16 @@ from plm_data.core.boundary_conditions import (
 )
 from plm_data.core.initial_conditions import apply_ic
 from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
+from plm_data.core.spatial_fields import (
+    build_ufl_field,
+    resolve_param_ref,
+    scalar_expression_to_config,
+)
 from plm_data.core.stochastic import build_scalar_state_stochastic_term
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
 from plm_data.presets.boundary_validation import (
+    validate_scalar_standard_boundary_field,
     validate_boundary_field_structure,
 )
 from plm_data.presets.metadata import (
@@ -26,8 +32,10 @@ from plm_data.presets.metadata import (
     StateSpec,
 )
 
-_KELLER_SEGEL_BOUNDARY_OPERATORS = {
-    "periodic": SCALAR_STANDARD_BOUNDARY_OPERATORS["periodic"]
+_KELLER_SEGEL_RHO_BOUNDARY_OPERATORS = SCALAR_STANDARD_BOUNDARY_OPERATORS
+_KELLER_SEGEL_C_BOUNDARY_OPERATORS = {
+    name: SCALAR_STANDARD_BOUNDARY_OPERATORS[name]
+    for name in ("neumann", "robin", "periodic")
 }
 
 _KELLER_SEGEL_SPEC = PresetSpec(
@@ -72,14 +80,22 @@ _KELLER_SEGEL_SPEC = PresetSpec(
         "rho": BoundaryFieldSpec(
             name="rho",
             shape="scalar",
-            operators=_KELLER_SEGEL_BOUNDARY_OPERATORS,
-            description="Periodic boundary conditions for cell density rho.",
+            operators=_KELLER_SEGEL_RHO_BOUNDARY_OPERATORS,
+            description=(
+                "Scalar boundary conditions for cell density rho. Natural "
+                "conditions act on the diffusive part of the rho flux."
+            ),
         ),
         "c": BoundaryFieldSpec(
             name="c",
             shape="scalar",
-            operators=_KELLER_SEGEL_BOUNDARY_OPERATORS,
-            description="Periodic boundary conditions for chemoattractant c.",
+            operators=_KELLER_SEGEL_C_BOUNDARY_OPERATORS,
+            description=(
+                "Periodic, Neumann, or Robin boundary conditions for "
+                "chemoattractant c. Dirichlet values are intentionally "
+                "unsupported because the explicit chemotaxis term requires a "
+                "known normal chemoattractant flux."
+            ),
         ),
     },
     states={
@@ -118,6 +134,50 @@ def _space_num_dofs(V: fem.FunctionSpace) -> int:
     return V.dofmap.index_map.size_global * V.dofmap.index_map_bs
 
 
+def _chemotaxis_boundary_flux_form(
+    chi_rho_n,
+    c_n: fem.Function,
+    rho_test,
+    domain_geom,
+    c_boundary_field,
+    parameters: dict[str, float],
+):
+    """Return the explicit chemotactic boundary term induced by c-flux BCs."""
+    msh = domain_geom.mesh
+    boundary_form = None
+
+    for name, entries in c_boundary_field.sides.items():
+        tag = domain_geom.boundary_names[name]
+        for bc in entries:
+            if bc.type == "periodic":
+                continue
+            if bc.type == "dirichlet":
+                raise ValueError(
+                    "Keller-Segel chemoattractant field 'c' does not support "
+                    "Dirichlet boundaries; use neumann, robin, or periodic."
+                )
+            if bc.value is None:
+                raise ValueError(
+                    f"Boundary '{name}' operator '{bc.type}' requires a value"
+                )
+
+            field_config = scalar_expression_to_config(bc.value)
+            if field_config["type"] == "custom":
+                raise ValueError(
+                    f"Boundary '{name}' cannot use custom scalar values for 'c'"
+                )
+
+            boundary_flux = build_ufl_field(msh, field_config, parameters)
+            if bc.type == "robin":
+                alpha = resolve_param_ref(bc.operator_parameters["alpha"], parameters)
+                boundary_flux = boundary_flux - alpha * c_n
+
+            term = -ufl.inner(chi_rho_n * boundary_flux, rho_test) * domain_geom.ds(tag)
+            boundary_form = term if boundary_form is None else boundary_form + term
+
+    return boundary_form
+
+
 class _KellerSegelProblem(TransientLinearProblem):
     supported_solver_strategies = (CONSTANT_LHS_SCALAR_SPD,)
 
@@ -125,29 +185,19 @@ class _KellerSegelProblem(TransientLinearProblem):
         rho_boundary_field = self.config.boundary_field("rho")
         c_boundary_field = self.config.boundary_field("c")
 
-        validate_boundary_field_structure(
+        validate_scalar_standard_boundary_field(
             preset_name=self.spec.name,
             field_name="rho",
             boundary_field=rho_boundary_field,
             domain_geom=domain_geom,
-            allowed_operators={"periodic"},
         )
         validate_boundary_field_structure(
             preset_name=self.spec.name,
             field_name="c",
             boundary_field=c_boundary_field,
             domain_geom=domain_geom,
-            allowed_operators={"periodic"},
+            allowed_operators={"neumann", "robin", "periodic"},
         )
-
-        if (
-            rho_boundary_field.periodic_pair_keys()
-            != c_boundary_field.periodic_pair_keys()
-        ):
-            raise ValueError(
-                "Keller-Segel boundary conditions for 'rho' and 'c' must use "
-                "identical periodic side pairs."
-            )
 
     def setup(self) -> None:
         domain_geom = self.load_domain_geometry()
@@ -231,6 +281,16 @@ class _KellerSegelProblem(TransientLinearProblem):
             * ufl.dx
             + dt * ufl.inner(growth, rho_test) * ufl.dx
         )
+        c_boundary_flux = _chemotaxis_boundary_flux_form(
+            chi_rho_n,
+            self.c_n,
+            rho_test,
+            domain_geom,
+            c_boundary_field,
+            self.config.parameters,
+        )
+        if c_boundary_flux is not None:
+            L_rho = L_rho + dt * c_boundary_flux
 
         # c-equation: (c_h - c_n)/dt = D_c*laplacian(c_h) + alpha*rho_n - beta*c_h
         # LHS (constant, SPD): mass + dt*D_c*stiffness + dt*beta*mass

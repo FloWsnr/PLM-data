@@ -1,0 +1,129 @@
+preset: keller_segel
+parameters:
+  D_rho:
+    sample: uniform
+    min: 0.22
+    max: 0.34
+  D_c:
+    sample: uniform
+    min: 1.35
+    max: 2.2
+  chi0:
+    sample: uniform
+    min: 6.0
+    max: 8.8
+  alpha:
+    sample: uniform
+    min: 0.9
+    max: 1.28
+  beta:
+    sample: uniform
+    min: 0.55
+    max: 0.9
+  r:
+    sample: uniform
+    min: 0.04
+    max: 0.14
+  c_notch_exchange:
+    sample: uniform
+    min: 0.06
+    max: 0.16
+  c_notch_value:
+    sample: uniform
+    min: 0.96
+    max: 1.34
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width:
+    sample: uniform
+    min: 15.0
+    max: 18.0
+  outer_height:
+    sample: uniform
+    min: 15.0
+    max: 19.0
+  cutout_width:
+    sample: uniform
+    min: 5.0
+    max: 7.5
+  cutout_height:
+    sample: uniform
+    min: 6.0
+    max: 8.5
+  mesh_size:
+    sample: uniform
+    min: 0.12
+    max: 0.15
+time:
+  dt: 0.012
+  t_end: 18.0
+inputs:
+  rho:
+    initial_condition:
+      type: quadrants
+      params:
+        split:
+          - sample: uniform
+            min: 5.5
+            max: 8.0
+          - sample: uniform
+            min: 6.0
+            max: 9.0
+        region_values:
+          "00":
+            sample: uniform
+            min: 0.38
+            max: 0.56
+          "01":
+            sample: uniform
+            min: 0.7
+            max: 0.92
+          "10":
+            sample: uniform
+            min: 0.32
+            max: 0.5
+          "11":
+            sample: uniform
+            min: 0.46
+            max: 0.68
+  c:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 0.14
+          max: 0.28
+        std:
+          sample: uniform
+          min: 0.02
+          max: 0.04
+boundary_conditions:
+  rho:
+    outer:
+      - operator: neumann
+        value: 0.0
+    notch:
+      - operator: neumann
+        value: 0.0
+  c:
+    outer:
+      - operator: neumann
+        value: 0.0
+    notch:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:c_notch_value"
+        operator_parameters:
+          alpha: "param:c_notch_exchange"
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_rho_c
+  formats: [numpy, gif]
+  resolution: [192, 192]
+  num_frames: 73
+seed: 42

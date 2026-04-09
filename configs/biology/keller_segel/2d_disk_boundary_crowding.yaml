@@ -1,0 +1,133 @@
+preset: keller_segel
+parameters:
+  domain_center_x:
+    sample: uniform
+    min: -0.6
+    max: 0.6
+  domain_center_y:
+    sample: uniform
+    min: -0.6
+    max: 0.6
+  D_rho:
+    sample: uniform
+    min: 0.26
+    max: 0.38
+  D_c:
+    sample: uniform
+    min: 1.5
+    max: 2.3
+  chi0:
+    sample: uniform
+    min: 5.0
+    max: 7.2
+  alpha:
+    sample: uniform
+    min: 0.88
+    max: 1.22
+  beta:
+    sample: uniform
+    min: 0.64
+    max: 0.92
+  r:
+    sample: uniform
+    min: 0.04
+    max: 0.12
+  rho_wall_exchange:
+    sample: uniform
+    min: 0.03
+    max: 0.08
+  rho_wall_value:
+    sample: uniform
+    min: 0.16
+    max: 0.34
+  c_wall_exchange:
+    sample: uniform
+    min: 0.06
+    max: 0.14
+  c_wall_value:
+    sample: uniform
+    min: 0.88
+    max: 1.18
+domain:
+  allow_sampling: true
+  type: disk
+  center: ["param:domain_center_x", "param:domain_center_y"]
+  radius:
+    sample: uniform
+    min: 7.8
+    max: 9.5
+  mesh_size:
+    sample: uniform
+    min: 0.11
+    max: 0.135
+time:
+  dt: 0.01
+  t_end: 16.0
+inputs:
+  rho:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.34
+          max: 0.56
+        generators:
+          - count:
+              sample: randint
+              min: 2
+              max: 4
+            amplitude:
+              sample: uniform
+              min: 0.08
+              max: 0.18
+            sigma:
+              sample: uniform
+              min: 1.1
+              max: 1.9
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.4
+            center:
+              - sample: uniform
+                min: -5.0
+                max: 5.0
+              - sample: uniform
+                min: -5.0
+                max: 5.0
+  c:
+    initial_condition:
+      type: constant
+      params:
+        value:
+          sample: uniform
+          min: 0.12
+          max: 0.24
+boundary_conditions:
+  rho:
+    outer:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:rho_wall_value"
+        operator_parameters:
+          alpha: "param:rho_wall_exchange"
+  c:
+    outer:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:c_wall_value"
+        operator_parameters:
+          alpha: "param:c_wall_exchange"
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_rho_c
+  formats: [numpy, gif]
+  resolution: [192, 192]
+  num_frames: 65
+seed: 42
