@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 313 configs.
+Current baseline: 38 PDE presets and 331 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -314,9 +314,31 @@ seed to seed.
 
 #### FitzHugh-Nagumo (`configs/biology/fitzhugh_nagumo`)
 
-1. `2d_excitable_spiral_waves`: excitable medium seeded by noise, developing traveling and spiral-like waves.
-2. `2d_parallelogram_excitable_spiral_waves`: excitable spiral-wave dynamics on a skew parallelogram cell with reduced axis locking.
-3. `3d_excitable_wavefronts`: 3D excitable medium seeded by noise, developing wavefronts and filament-like structures.
+The 2D suite now spans 10 domain families with 2 configs each, covering
+noise-driven spiral turbulence, boundary-forced pacemakers, absorbing-wall
+quenching, guided channel pulses, and geometry-mediated wave collisions.
+
+1. `2d_annulus_azimuthal_reentry`: localized annular arc seeds wrap around the hole and generate azimuthally biased reentry with seed-dependent breakup along the ring.
+2. `2d_annulus_inner_rim_pacemaker`: excited inner rim continuously emits waves into an absorbing annulus, creating a boundary-forced reentry / target-wave hybrid.
+3. `2d_channel_obstacle_inlet_bypass_pulses`: inlet forcing launches excitable pulses that split around the sampled cylinder and reunite in the wake.
+4. `2d_channel_obstacle_obstacle_shed_rotor`: the obstacle itself acts as a sampled pacemaker, shedding wavefronts into the channel with alternating wake asymmetry.
+5. `2d_disk_absorbing_rim_rotor_collapse`: off-center disk rotor drifts into a lossy rim and collapses after a short-lived spiral transient.
+6. `2d_disk_target_ring_relaxation`: radial-cosine rings relax into expanding and interfering target-like fronts inside a no-flux disk.
+7. `2d_dumbbell_counter_lobe_collision`: strong pulses launched from both lobes collide in the neck and then damp asymmetrically back into the chambers.
+8. `2d_dumbbell_lobe_relay_pulses`: a dominant left-lobe launch relays through the narrow bridge into a delayed right-lobe response.
+9. `2d_excitable_spiral_waves`: fully periodic rectangle with randomized size and noise now targets fast spiral turbulence rather than a single nearly deterministic pattern.
+10. `2d_l_shape_notch_emitter_rebound`: a notch-held excitable state repeatedly emits waves into both arms while absorbing outer walls suppress long-lived cavity filling.
+11. `2d_l_shape_reentrant_spiral_trap`: reentrant-corner geometry traps a rotor seeded near the notch, giving corner-pinned spiral drift and intermittent quenching.
+12. `2d_multi_hole_plate_hole_rim_emitters`: a center hole acts as a pacemaker while neighboring holes stay clamped, producing hole-shadowed emission and screening.
+13. `2d_multi_hole_plate_perforation_screening`: a left-right excitable step threads through sampled perforations and is split / delayed by a clamped center hole.
+14. `2d_parallelogram_excitable_spiral_waves`: skew-periodic dual-blob launch now favors wraparound spiral pairs on a sampled oblique cell.
+15. `2d_parallelogram_skew_labyrinth_breakup`: oblique bands on a skew periodic cell bend, reconnect, and break into labyrinth fragments with reduced axis locking.
+16. `2d_reflective_quadrant_wave_collision`: quadrant-seeded rectangle with reflective walls drives multi-front collisions and rebound rather than periodic wraparound.
+17. `2d_serpentine_channel_guided_pulse_train`: inlet forcing sends pulse trains through sampled bends so fronts arrive at successive turns with visible travel-time staggering.
+18. `2d_serpentine_channel_reverse_bend_recovery`: outlet-driven recovery waves run backward through the sampled serpentine and partially die on lossy walls.
+19. `2d_y_bifurcation_branch_split_fronts`: inlet pacemaker splits excitable fronts into both daughter branches with branch-angle-dependent timing.
+20. `2d_y_bifurcation_junction_collision`: both outlets are driven so fronts collide at the junction and then reflect upstream toward an absorbing inlet.
+21. `3d_excitable_wavefronts`: 3D excitable medium seeded by noise, developing wavefronts and filament-like structures.
 
 #### Gierer-Meinhardt (`configs/biology/gierer_meinhardt`)
 

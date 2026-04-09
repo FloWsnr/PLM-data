@@ -1,32 +1,104 @@
 preset: fitzhugh_nagumo
 parameters:
-  Du: 1.0
-  Dv: 50.0
-  tau: 0.1
-  b: 0.5
-  a: 0.0
+  Du:
+    sample: uniform
+    min: 0.001
+    max: 0.00145
+  Dv:
+    sample: uniform
+    min: 0.04
+    max: 0.066
+  tau:
+    sample: uniform
+    min: 0.055
+    max: 0.11
+  b:
+    sample: uniform
+    min: 0.44
+    max: 0.58
+  a:
+    sample: uniform
+    min: -0.03
+    max: 0.02
 domain:
+  allow_sampling: true
   type: parallelogram
   origin: [0.0, 0.0]
-  axis_x: [50.0, 0.0]
-  axis_y: [12.5, 50.0]
-  mesh_resolution: [128, 128]
+  axis_x:
+    - sample: uniform
+      min: 1.9
+      max: 2.35
+    - 0.0
+  axis_y:
+    - sample: uniform
+      min: 0.38
+      max: 0.82
+    - sample: uniform
+      min: 1.75
+      max: 2.25
+  mesh_resolution: [192, 192]
 time:
-  dt: 0.01
-  t_end: 50.0
+  dt: 0.004
+  t_end: 12.0
 inputs:
   u:
     initial_condition:
-      type: gaussian_noise
+      type: gaussian_blobs
       params:
-        mean: 0.0
-        std: 0.05
+        background:
+          sample: uniform
+          min: -0.02
+          max: 0.04
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.72
+              max: 0.98
+            sigma:
+              sample: uniform
+              min: 0.08
+              max: 0.12
+            aspect_ratio:
+              sample: uniform
+              min: 1.1
+              max: 2.4
+            center:
+              - sample: uniform
+                min: 0.45
+                max: 0.85
+              - sample: uniform
+                min: 0.35
+                max: 0.75
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.72
+              max: 0.98
+            sigma:
+              sample: uniform
+              min: 0.08
+              max: 0.12
+            aspect_ratio:
+              sample: uniform
+              min: 1.1
+              max: 2.4
+            center:
+              - sample: uniform
+                min: 1.55
+                max: 2.3
+              - sample: uniform
+                min: 1.05
+                max: 1.75
   v:
     initial_condition:
       type: gaussian_noise
       params:
         mean: 0.0
-        std: 0.05
+        std:
+          sample: uniform
+          min: 0.03
+          max: 0.055
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.full_periodic_2d
@@ -36,6 +108,7 @@ solver:
   $ref: solver.profile.constant_lhs_scalar_spd
 output:
   $ref: output.template.scalar_uv
-  resolution: [96, 96]
-  num_frames: 100
+  formats: [numpy, gif]
+  resolution: [192, 192]
+  num_frames: 81
 seed: 42

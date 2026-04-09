@@ -1,0 +1,149 @@
+preset: fitzhugh_nagumo
+parameters:
+  domain_center_x:
+    sample: uniform
+    min: -0.06
+    max: 0.06
+  domain_center_y:
+    sample: uniform
+    min: -0.06
+    max: 0.06
+  rim_absorption:
+    sample: uniform
+    min: 0.08
+    max: 0.16
+  Du:
+    sample: uniform
+    min: 0.00105
+    max: 0.0017
+  Dv:
+    sample: uniform
+    min: 0.045
+    max: 0.07
+  tau:
+    sample: uniform
+    min: 0.06
+    max: 0.12
+  b:
+    sample: uniform
+    min: 0.45
+    max: 0.58
+  a:
+    sample: uniform
+    min: -0.02
+    max: 0.02
+domain:
+  allow_sampling: true
+  type: disk
+  center: [param:domain_center_x, param:domain_center_y]
+  radius:
+    sample: uniform
+    min: 0.92
+    max: 1.08
+  mesh_size:
+    sample: uniform
+    min: 0.012
+    max: 0.016
+time:
+  dt: 0.004
+  t_end: 10.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.02
+          max: 0.04
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.64
+              max: 0.92
+            sigma:
+              sample: uniform
+              min: 0.07
+              max: 0.11
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.2
+            center:
+              - sample: uniform
+                min: -0.46
+                max: -0.1
+              - sample: uniform
+                min: -0.18
+                max: 0.22
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.52
+              max: 0.84
+            sigma:
+              sample: uniform
+              min: 0.06
+              max: 0.1
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.0
+            center:
+              - sample: uniform
+                min: 0.12
+                max: 0.48
+              - sample: uniform
+                min: -0.3
+                max: 0.1
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.06
+          max: 0.02
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.1
+              max: 0.26
+            sigma:
+              sample: uniform
+              min: 0.08
+              max: 0.13
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.8
+            center:
+              - sample: uniform
+                min: -0.1
+                max: 0.2
+              - sample: uniform
+                min: 0.1
+                max: 0.42
+boundary_conditions:
+  u:
+    outer:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: param:rim_absorption
+  v:
+    outer:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: param:rim_absorption
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 73
+seed: 42

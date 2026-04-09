@@ -1,0 +1,104 @@
+preset: fitzhugh_nagumo
+parameters:
+  outer_absorption:
+    sample: uniform
+    min: 0.04
+    max: 0.12
+  notch_u_value:
+    sample: uniform
+    min: 0.78
+    max: 0.95
+  notch_v_value:
+    sample: uniform
+    min: -0.12
+    max: 0.02
+  Du:
+    sample: uniform
+    min: 0.00105
+    max: 0.0018
+  Dv:
+    sample: uniform
+    min: 0.026
+    max: 0.046
+  tau:
+    sample: uniform
+    min: 0.16
+    max: 0.28
+  b:
+    sample: uniform
+    min: 0.58
+    max: 0.8
+  a:
+    sample: uniform
+    min: -0.08
+    max: 0.0
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width:
+    sample: uniform
+    min: 1.0
+    max: 1.18
+  outer_height:
+    sample: uniform
+    min: 1.0
+    max: 1.18
+  cutout_width:
+    sample: uniform
+    min: 0.28
+    max: 0.42
+  cutout_height:
+    sample: uniform
+    min: 0.34
+    max: 0.5
+  mesh_size:
+    sample: uniform
+    min: 0.012
+    max: 0.016
+time:
+  dt: 0.005
+  t_end: 12.0
+inputs:
+  u:
+    initial_condition:
+      type: constant
+      params:
+        value: 0.0
+  v:
+    initial_condition:
+      type: constant
+      params:
+        value: 0.0
+boundary_conditions:
+  u:
+    outer:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: param:outer_absorption
+    notch:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:notch_u_value
+  v:
+    outer:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: param:outer_absorption
+    notch:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:notch_v_value
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 73
+seed: 42

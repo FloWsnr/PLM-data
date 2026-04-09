@@ -1,0 +1,150 @@
+preset: fitzhugh_nagumo
+parameters:
+  center_y:
+    sample: uniform
+    min: -0.04
+    max: 0.04
+  Du:
+    sample: uniform
+    min: 0.001
+    max: 0.00155
+  Dv:
+    sample: uniform
+    min: 0.03
+    max: 0.055
+  tau:
+    sample: uniform
+    min: 0.14
+    max: 0.26
+  b:
+    sample: uniform
+    min: 0.58
+    max: 0.78
+  a:
+    sample: uniform
+    min: -0.08
+    max: 0.01
+domain:
+  allow_sampling: true
+  type: dumbbell
+  left_center:
+    - sample: uniform
+      min: 0.78
+      max: 0.96
+    - param:center_y
+  right_center:
+    - sample: uniform
+      min: 2.04
+      max: 2.28
+    - param:center_y
+  lobe_radius:
+    sample: uniform
+    min: 0.48
+    max: 0.62
+  neck_width:
+    sample: uniform
+    min: 0.18
+    max: 0.28
+  mesh_size:
+    sample: uniform
+    min: 0.012
+    max: 0.016
+time:
+  dt: 0.005
+  t_end: 14.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.02
+          max: 0.04
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.72
+              max: 1.0
+            sigma:
+              sample: uniform
+              min: 0.07
+              max: 0.11
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.0
+            center:
+              - sample: uniform
+                min: 0.5
+                max: 0.92
+              - sample: uniform
+                min: -0.16
+                max: 0.16
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.22
+              max: 0.44
+            sigma:
+              sample: uniform
+              min: 0.07
+              max: 0.11
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.8
+            center:
+              - sample: uniform
+                min: 2.04
+                max: 2.46
+              - sample: uniform
+                min: -0.18
+                max: 0.18
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.08
+          max: 0.04
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.08
+              max: 0.22
+            sigma:
+              sample: uniform
+              min: 0.08
+              max: 0.13
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.8
+            center:
+              - sample: uniform
+                min: 1.92
+                max: 2.42
+              - sample: uniform
+                min: -0.2
+                max: 0.2
+boundary_conditions:
+  u:
+    outer:
+      - operator: neumann
+        value: 0.0
+  v:
+    outer:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [192, 128]
+  num_frames: 73
+seed: 42
