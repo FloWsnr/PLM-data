@@ -474,6 +474,7 @@ def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
         "dumbbell": 2,
         "parallelogram": 2,
         "channel_obstacle": 2,
+        "y_bifurcation": 2,
     }
     if domain_type in builtin_dims:
         return builtin_dims[domain_type]
@@ -773,6 +774,40 @@ def validate_domain_params(
                 raise ValueError(
                     "Channel_obstacle domain requires the circular obstacle to lie "
                     "strictly inside the channel in y."
+                )
+        return
+
+    if domain_type == "y_bifurcation":
+        _require_keys(
+            "inlet_length",
+            "branch_length",
+            "branch_angle_degrees",
+            "channel_width",
+            "mesh_size",
+        )
+        inlet_length = _float_param("inlet_length", positive=True)
+        branch_length = _float_param("branch_length", positive=True)
+        branch_angle = _float_param("branch_angle_degrees", positive=True)
+        channel_width = _float_param("channel_width", positive=True)
+        _float_param("mesh_size", positive=True)
+        if branch_angle is not None and branch_angle >= 85.0:
+            raise ValueError(
+                "Y_bifurcation domain requires 'branch_angle_degrees' < 85. "
+                f"Got {branch_angle}."
+            )
+        if (
+            inlet_length is not None
+            and branch_length is not None
+            and branch_angle is not None
+            and channel_width is not None
+        ):
+            branch_angle_radians = math.radians(branch_angle)
+            outlet_vertical_offset = branch_length * math.sin(branch_angle_radians)
+            if outlet_vertical_offset <= channel_width:
+                raise ValueError(
+                    "Y_bifurcation domain requires "
+                    "'branch_length * sin(branch_angle_degrees)' > 'channel_width' "
+                    "so the two outlet branches separate cleanly."
                 )
 
 

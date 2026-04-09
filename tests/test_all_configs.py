@@ -21,7 +21,7 @@ ALL_CONFIGS = sorted(
 HAS_DOLFINX_MPC = importlib.util.find_spec("dolfinx_mpc") is not None
 HAS_GMSH = importlib.util.find_spec("gmsh") is not None
 SMOKE_MESH_RESOLUTION_CAP = 4
-GMSH_DOMAIN_TYPES = {"annulus", "channel_obstacle", "disk", "dumbbell"}
+GMSH_DOMAIN_TYPES = {"annulus", "channel_obstacle", "disk", "dumbbell", "y_bifurcation"}
 SMOKE_MESH_SIZE_FLOOR = 0.3
 SMOKE_CHANNEL_OBSTACLE_MESH_SIZE_FLOOR = 0.15
 

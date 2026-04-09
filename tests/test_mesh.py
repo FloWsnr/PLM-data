@@ -6,6 +6,7 @@ import types
 
 import numpy as np
 import pytest
+from dolfinx import mesh as dmesh
 from mpi4py import MPI
 
 import plm_data.core.mesh as mesh_module
@@ -124,6 +125,17 @@ def test_annulus_boundary_tags():
             },
             {"inlet", "outlet", "walls", "obstacle"},
         ),
+        (
+            "y_bifurcation",
+            {
+                "inlet_length": 1.0,
+                "branch_length": 0.9,
+                "branch_angle_degrees": 38.0,
+                "channel_width": 0.24,
+                "mesh_size": 0.1,
+            },
+            {"inlet", "outlet_upper", "outlet_lower", "walls"},
+        ),
     ],
 )
 def test_gmsh_domain_boundary_tags(domain_type, params, expected_boundaries):
@@ -134,6 +146,33 @@ def test_gmsh_domain_boundary_tags(domain_type, params, expected_boundaries):
     for name, tag in domain_geom.boundary_names.items():
         facets = domain_geom.facet_tags.find(tag)
         assert len(facets) > 0, f"No facets tagged for boundary '{name}'"
+
+
+@pytest.mark.skipif(not HAS_GMSH, reason="gmsh not installed")
+def test_y_bifurcation_outlet_positions():
+    domain_geom = create_domain(
+        DomainConfig(
+            type="y_bifurcation",
+            params={
+                "inlet_length": 1.0,
+                "branch_length": 0.9,
+                "branch_angle_degrees": 38.0,
+                "channel_width": 0.24,
+                "mesh_size": 0.1,
+            },
+        )
+    )
+    fdim = domain_geom.mesh.topology.dim - 1
+    upper_facets = domain_geom.facet_tags.find(
+        domain_geom.boundary_names["outlet_upper"]
+    )
+    lower_facets = domain_geom.facet_tags.find(
+        domain_geom.boundary_names["outlet_lower"]
+    )
+    upper_midpoints = dmesh.compute_midpoints(domain_geom.mesh, fdim, upper_facets)
+    lower_midpoints = dmesh.compute_midpoints(domain_geom.mesh, fdim, lower_facets)
+    assert np.mean(upper_midpoints[:, 1]) > 0.0
+    assert np.mean(lower_midpoints[:, 1]) < 0.0
 
 
 @pytest.mark.parametrize(
@@ -226,6 +265,28 @@ def test_gmsh_domain_boundary_tags(domain_type, params, expected_boundaries):
                 "mesh_size": 0.2,
             },
             "strictly inside the channel in x",
+        ),
+        (
+            "y_bifurcation",
+            {
+                "inlet_length": 1.0,
+                "branch_length": 0.3,
+                "branch_angle_degrees": 25.0,
+                "channel_width": 0.24,
+                "mesh_size": 0.1,
+            },
+            "separate cleanly",
+        ),
+        (
+            "y_bifurcation",
+            {
+                "inlet_length": 1.0,
+                "branch_length": 0.9,
+                "branch_angle_degrees": 90.0,
+                "channel_width": 0.24,
+                "mesh_size": 0.1,
+            },
+            "branch_angle_degrees",
         ),
     ],
 )

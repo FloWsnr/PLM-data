@@ -174,6 +174,25 @@ def test_realize_simulation_config_concretizes_basic_annulus_center_refs():
     )
 
 
+def test_realize_simulation_config_concretizes_y_bifurcation_domain_sampling():
+    cfg = load_config("configs/basic/heat/2d_y_bifurcation_split_diffusion.yaml")
+
+    realized_a = realize_simulation_config(cfg)
+    realized_b = realize_simulation_config(cfg)
+
+    assert realized_a.domain.params == realized_b.domain.params
+    assert isinstance(realized_a.domain.params["inlet_length"], float)
+    assert isinstance(realized_a.domain.params["branch_length"], float)
+    assert isinstance(realized_a.domain.params["branch_angle_degrees"], float)
+    assert isinstance(realized_a.domain.params["channel_width"], float)
+    assert isinstance(realized_a.domain.params["mesh_size"], float)
+    assert 0.9 <= realized_a.domain.params["inlet_length"] <= 1.08
+    assert 0.82 <= realized_a.domain.params["branch_length"] <= 0.98
+    assert 34.0 <= realized_a.domain.params["branch_angle_degrees"] <= 42.0
+    assert 0.2 <= realized_a.domain.params["channel_width"] <= 0.26
+    assert 0.028 <= realized_a.domain.params["mesh_size"] <= 0.036
+
+
 def test_simulation_runner_serializes_realized_config(tmp_path):
     data = _load_config_dict("configs/basic/heat/2d_localized_blob_diffusion.yaml")
     data["domain"]["allow_sampling"] = True

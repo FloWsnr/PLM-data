@@ -372,6 +372,22 @@ def test_load_config_darcy_channel_obstacle_domain():
     )
 
 
+def test_load_config_basic_heat_y_bifurcation_domain():
+    cfg = load_config("configs/basic/heat/2d_y_bifurcation_split_diffusion.yaml")
+    assert cfg.domain.type == "y_bifurcation"
+    assert cfg.domain.dimension == 2
+    assert set(cfg.boundary_field("u").sides) == {
+        "inlet",
+        "outlet_upper",
+        "outlet_lower",
+        "walls",
+    }
+    assert (
+        cfg.boundary_field("u").side_conditions("outlet_upper")[0].type == "dirichlet"
+    )
+    assert cfg.boundary_field("u").side_conditions("walls")[0].type == "neumann"
+
+
 def test_load_config_annulus_center_is_explicit():
     cfg = load_config("configs/physics/gray_scott/2d_annular_spot_stripe_patterns.yaml")
     assert cfg.domain.type == "annulus"
