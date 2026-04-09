@@ -1,0 +1,101 @@
+preset: advection
+parameters: {}
+coefficients:
+  velocity:
+    components:
+      x:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: 0.62
+            max: 0.82
+      y:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: 0.42
+            max: 0.6
+  diffusivity:
+    type: constant
+    params:
+      value:
+        sample: uniform
+        min: 0.00045
+        max: 0.00075
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width:
+    sample: uniform
+    min: 0.96
+    max: 1.12
+  outer_height:
+    sample: uniform
+    min: 0.96
+    max: 1.12
+  cutout_width:
+    sample: uniform
+    min: 0.34
+    max: 0.46
+  cutout_height:
+    sample: uniform
+    min: 0.34
+    max: 0.46
+  mesh_size:
+    sample: uniform
+    min: 0.024
+    max: 0.032
+time:
+  dt: 0.006
+  t_end: 1.2
+inputs:
+  u:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+          - count:
+              sample: randint
+              min: 1
+              max: 3
+            amplitude:
+              sample: uniform
+              min: 0.75
+              max: 1.08
+            sigma:
+              sample: uniform
+              min: 0.05
+              max: 0.085
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.5
+            center:
+              - sample: uniform
+                min: 0.14
+                max: 0.4
+              - sample: uniform
+                min: 0.14
+                max: 0.34
+boundary_conditions:
+  u:
+    outer:
+      - operator: neumann
+        value: 0.0
+    notch:
+      - operator: dirichlet
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [176, 176]
+  num_frames: 49
+seed: 42

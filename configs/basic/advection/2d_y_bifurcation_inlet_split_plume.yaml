@@ -1,0 +1,104 @@
+preset: advection
+parameters: {}
+coefficients:
+  velocity:
+    components:
+      x:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: 0.88
+            max: 1.08
+      y:
+        type: affine
+        params:
+          y:
+            sample: uniform
+            min: 1.12
+            max: 1.42
+  diffusivity:
+    type: constant
+    params:
+      value:
+        sample: uniform
+        min: 0.00035
+        max: 0.00065
+domain:
+  allow_sampling: true
+  type: y_bifurcation
+  inlet_length:
+    sample: uniform
+    min: 0.88
+    max: 1.06
+  branch_length:
+    sample: uniform
+    min: 0.84
+    max: 1.02
+  branch_angle_degrees:
+    sample: uniform
+    min: 34.0
+    max: 42.0
+  channel_width:
+    sample: uniform
+    min: 0.18
+    max: 0.24
+  mesh_size:
+    sample: uniform
+    min: 0.026
+    max: 0.034
+time:
+  dt: 0.006
+  t_end: 1.35
+inputs:
+  u:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.85
+              max: 1.12
+            sigma:
+              sample: uniform
+              min: 0.075
+              max: 0.12
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.5
+            center:
+              - sample: uniform
+                min: 0.24
+                max: 0.42
+              - sample: uniform
+                min: -0.05
+                max: 0.05
+boundary_conditions:
+  u:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet_upper:
+      - operator: dirichlet
+        value: 0.0
+    outlet_lower:
+      - operator: dirichlet
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [192, 144]
+  num_frames: 49
+seed: 42
