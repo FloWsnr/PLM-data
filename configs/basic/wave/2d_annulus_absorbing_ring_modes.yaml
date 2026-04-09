@@ -1,0 +1,94 @@
+preset: wave
+parameters:
+  domain_center_x:
+    sample: uniform
+    min: -0.05
+    max: 0.05
+  domain_center_y:
+    sample: uniform
+    min: -0.05
+    max: 0.05
+  damping:
+    sample: uniform
+    min: 0.014
+    max: 0.032
+  outer_absorption:
+    sample: uniform
+    min: 0.55
+    max: 0.95
+coefficients:
+  c_sq:
+    type: affine
+    params:
+      constant:
+        sample: uniform
+        min: 1.04
+        max: 1.24
+      x:
+        sample: uniform
+        min: -0.14
+        max: 0.14
+      y:
+        sample: uniform
+        min: -0.14
+        max: 0.14
+domain:
+  type: annulus
+  allow_sampling: true
+  center: ["param:domain_center_x", "param:domain_center_y"]
+  inner_radius:
+    sample: uniform
+    min: 0.2
+    max: 0.3
+  outer_radius:
+    sample: uniform
+    min: 1.0
+    max: 1.12
+  mesh_size:
+    sample: uniform
+    min: 0.015
+    max: 0.019
+time:
+  dt: 0.004
+  t_end: 1.7
+inputs:
+  u:
+    initial_condition:
+      type: radial_cosine
+      params:
+        base: 0.0
+        amplitude:
+          sample: uniform
+          min: 0.42
+          max: 0.72
+        frequency:
+          sample: uniform
+          min: 12.0
+          max: 18.0
+        center: ["param:domain_center_x", "param:domain_center_y"]
+  v:
+    initial_condition:
+      type: constant
+      params:
+        value: 0.0
+  forcing:
+    source:
+      type: none
+      params: {}
+boundary_conditions:
+  u:
+    inner:
+      - operator: neumann
+        value: 0.0
+    outer:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: "param:outer_absorption"
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  resolution: [128, 128]
+  num_frames: 65
+seed: 42

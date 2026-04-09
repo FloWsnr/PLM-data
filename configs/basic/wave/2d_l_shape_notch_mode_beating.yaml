@@ -1,0 +1,124 @@
+preset: wave
+parameters:
+  damping:
+    sample: uniform
+    min: 0.01
+    max: 0.028
+  notch_absorption:
+    sample: uniform
+    min: 0.55
+    max: 0.95
+coefficients:
+  c_sq:
+    type: affine
+    params:
+      constant:
+        sample: uniform
+        min: 1.08
+        max: 1.32
+      x:
+        sample: uniform
+        min: -0.18
+        max: 0.18
+      y:
+        sample: uniform
+        min: -0.18
+        max: 0.18
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width:
+    sample: uniform
+    min: 1.0
+    max: 1.16
+  outer_height:
+    sample: uniform
+    min: 1.0
+    max: 1.16
+  cutout_width:
+    sample: uniform
+    min: 0.34
+    max: 0.46
+  cutout_height:
+    sample: uniform
+    min: 0.34
+    max: 0.46
+  mesh_size:
+    sample: uniform
+    min: 0.022
+    max: 0.028
+time:
+  dt: 0.0038
+  t_end: 1.6
+inputs:
+  u:
+    initial_condition:
+      type: constant
+      params:
+        value: 0.0
+  v:
+    initial_condition:
+      type: sine_waves
+      params:
+        background: 0.0
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 1.4
+              max: 2.1
+            cycles: [1.0, 1.0]
+            phase:
+              sample: uniform
+              min: -0.2
+              max: 0.2
+            angle:
+              sample: uniform
+              min: 0.1
+              max: 1.2
+          - amplitude:
+              sample: uniform
+              min: -0.7
+              max: -0.28
+            cycles: [2.0, 1.0]
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 1.0
+            angle:
+              sample: uniform
+              min: 0.1
+              max: 1.2
+          - amplitude:
+              sample: uniform
+              min: 0.22
+              max: 0.5
+            cycles: [1.0, 2.0]
+            phase:
+              sample: uniform
+              min: -0.7
+              max: 0.7
+            angle:
+              sample: uniform
+              min: 0.1
+              max: 1.2
+  forcing:
+    source:
+      type: none
+      params: {}
+boundary_conditions:
+  u:
+    outer:
+      - operator: dirichlet
+        value: 0.0
+    notch:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha: "param:notch_absorption"
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  resolution: [176, 176]
+  num_frames: 61
+seed: 42

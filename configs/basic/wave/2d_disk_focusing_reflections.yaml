@@ -1,5 +1,13 @@
 preset: wave
 parameters:
+  domain_center_x:
+    sample: uniform
+    min: -0.08
+    max: 0.08
+  domain_center_y:
+    sample: uniform
+    min: -0.08
+    max: 0.08
   damping:
     sample: uniform
     min: 0.004
@@ -30,7 +38,7 @@ coefficients:
 domain:
   type: disk
   allow_sampling: true
-  center: [0.0, 0.0]
+  center: ["param:domain_center_x", "param:domain_center_y"]
   radius:
     sample: uniform
     min: 0.95

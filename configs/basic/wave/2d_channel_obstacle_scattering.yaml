@@ -1,5 +1,9 @@
 preset: wave
 parameters:
+  channel_height:
+    sample: uniform
+    min: 0.92
+    max: 1.08
   damping:
     sample: uniform
     min: 0.004
@@ -34,7 +38,7 @@ domain:
     sample: uniform
     min: 2.15
     max: 2.35
-  height: 1.0
+  height: "param:channel_height"
   obstacle_center:
   - sample: uniform
     min: 1.04
