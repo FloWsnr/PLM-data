@@ -1,0 +1,195 @@
+preset: immunotherapy
+parameters:
+  Du:
+    sample: uniform
+    min: 32.0
+    max: 54.0
+  Dv:
+    sample: uniform
+    min: 0.38
+    max: 0.74
+  Dw:
+    sample: uniform
+    min: 20.0
+    max: 40.0
+  alpha:
+    sample: uniform
+    min: 0.06
+    max: 0.1
+  mu_u:
+    sample: uniform
+    min: 0.11
+    max: 0.16
+  rho_u:
+    sample: uniform
+    min: 0.48
+    max: 0.74
+  gamma_v:
+    sample: uniform
+    min: 0.09
+    max: 0.16
+  rho_w:
+    sample: uniform
+    min: 1.7
+    max: 2.7
+  gamma_w:
+    sample: uniform
+    min: 0.001
+    max: 0.0032
+  mu_w:
+    sample: uniform
+    min: 20.0
+    max: 34.0
+  sigma_u:
+    sample: uniform
+    min: 0.0
+    max: 0.014
+  Ku:
+    sample: uniform
+    min: 0.0
+    max: 0.00006
+  sigma_w:
+    sample: uniform
+    min: 0.0
+    max: 0.006
+  Kw:
+    sample: uniform
+    min: 0.0
+    max: 0.00005
+  u_inlet_value:
+    sample: uniform
+    min: 0.12
+    max: 0.24
+  w_inlet_value:
+    sample: uniform
+    min: 0.02
+    max: 0.06
+  wall_exchange:
+    sample: uniform
+    min: 0.02
+    max: 0.06
+  v_wall_value:
+    sample: uniform
+    min: 0.68
+    max: 0.86
+domain:
+  allow_sampling: true
+  type: serpentine_channel
+  channel_length:
+    sample: uniform
+    min: 7.5
+    max: 9.5
+  lane_spacing:
+    sample: uniform
+    min: 3.0
+    max: 4.2
+  n_bends:
+    sample: randint
+    min: 2
+    max: 3
+  channel_width:
+    sample: uniform
+    min: 1.6
+    max: 2.0
+  mesh_size:
+    sample: uniform
+    min: 0.11
+    max: 0.14
+time:
+  dt: 0.08
+  t_end: 78.0
+inputs:
+  u:
+    initial_condition:
+      type: constant
+      params:
+        value:
+          sample: uniform
+          min: 0.04
+          max: 0.1
+  v:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 0.62
+          max: 0.78
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.08
+              max: 0.16
+            cycles:
+              - sample: uniform
+                min: 0.5
+                max: 0.9
+              - sample: uniform
+                min: 1.4
+                max: 2.4
+            phase:
+              sample: uniform
+              min: -0.5
+              max: 0.5
+            angle:
+              sample: uniform
+              min: 1.0
+              max: 1.7
+  w:
+    initial_condition:
+      type: constant
+      params:
+        value:
+          sample: uniform
+          min: 0.005
+          max: 0.015
+boundary_conditions:
+  u:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: "param:u_inlet_value"
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+  v:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:v_wall_value"
+        operator_parameters:
+          alpha: "param:wall_exchange"
+  w:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: "param:w_inlet_value"
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uvw
+  formats: [numpy, gif]
+  resolution: [224, 160]
+  num_frames: 61
+seed: 42

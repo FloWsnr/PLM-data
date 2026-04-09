@@ -1,0 +1,215 @@
+preset: immunotherapy
+parameters:
+  Du:
+    sample: uniform
+    min: 30.0
+    max: 50.0
+  Dv:
+    sample: uniform
+    min: 0.42
+    max: 0.78
+  Dw:
+    sample: uniform
+    min: 20.0
+    max: 36.0
+  alpha:
+    sample: uniform
+    min: 0.06
+    max: 0.1
+  mu_u:
+    sample: uniform
+    min: 0.11
+    max: 0.17
+  rho_u:
+    sample: uniform
+    min: 0.48
+    max: 0.72
+  gamma_v:
+    sample: uniform
+    min: 0.09
+    max: 0.16
+  rho_w:
+    sample: uniform
+    min: 1.6
+    max: 2.6
+  gamma_w:
+    sample: uniform
+    min: 0.001
+    max: 0.0032
+  mu_w:
+    sample: uniform
+    min: 20.0
+    max: 34.0
+  sigma_u:
+    sample: uniform
+    min: 0.0
+    max: 0.014
+  Ku:
+    sample: uniform
+    min: 0.0
+    max: 0.00006
+  sigma_w:
+    sample: uniform
+    min: 0.0
+    max: 0.006
+  Kw:
+    sample: uniform
+    min: 0.0
+    max: 0.00005
+  notch_exchange:
+    sample: uniform
+    min: 0.03
+    max: 0.08
+  u_notch_value:
+    sample: uniform
+    min: 0.12
+    max: 0.24
+  v_notch_value:
+    sample: uniform
+    min: 0.12
+    max: 0.26
+  w_notch_value:
+    sample: uniform
+    min: 0.03
+    max: 0.08
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width:
+    sample: uniform
+    min: 16.0
+    max: 20.0
+  outer_height:
+    sample: uniform
+    min: 16.0
+    max: 20.0
+  cutout_width:
+    sample: uniform
+    min: 5.5
+    max: 8.0
+  cutout_height:
+    sample: uniform
+    min: 5.5
+    max: 8.5
+  mesh_size:
+    sample: uniform
+    min: 0.11
+    max: 0.14
+time:
+  dt: 0.09
+  t_end: 72.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.12
+          max: 0.22
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.14
+              max: 0.3
+            sigma:
+              sample: uniform
+              min: 1.0
+              max: 1.8
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.4
+            center:
+              - sample: uniform
+                min: 9.0
+                max: 15.0
+              - sample: uniform
+                min: 9.0
+                max: 15.5
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.58
+          max: 0.72
+        generators:
+          - count:
+              sample: randint
+              min: 2
+              max: 3
+            amplitude:
+              sample: uniform
+              min: 0.1
+              max: 0.24
+            sigma:
+              sample: uniform
+              min: 0.9
+              max: 1.7
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.3
+            center:
+              - sample: uniform
+                min: 3.0
+                max: 11.0
+              - sample: uniform
+                min: 2.0
+                max: 10.0
+  w:
+    initial_condition:
+      type: constant
+      params:
+        value:
+          sample: uniform
+          min: 0.018
+          max: 0.04
+boundary_conditions:
+  u:
+    outer:
+      - operator: neumann
+        value: 0.0
+    notch:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:u_notch_value"
+        operator_parameters:
+          alpha: "param:notch_exchange"
+  v:
+    outer:
+      - operator: neumann
+        value: 0.0
+    notch:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:v_notch_value"
+        operator_parameters:
+          alpha: "param:notch_exchange"
+  w:
+    outer:
+      - operator: neumann
+        value: 0.0
+    notch:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:w_notch_value"
+        operator_parameters:
+          alpha: "param:notch_exchange"
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uvw
+  formats: [numpy, gif]
+  resolution: [192, 192]
+  num_frames: 61
+seed: 42

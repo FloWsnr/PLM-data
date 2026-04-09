@@ -1,0 +1,220 @@
+preset: immunotherapy
+parameters:
+  Du:
+    sample: uniform
+    min: 28.0
+    max: 52.0
+  Dv:
+    sample: uniform
+    min: 0.5
+    max: 0.9
+  Dw:
+    sample: uniform
+    min: 18.0
+    max: 38.0
+  alpha:
+    sample: uniform
+    min: 0.05
+    max: 0.1
+  mu_u:
+    sample: uniform
+    min: 0.14
+    max: 0.2
+  rho_u:
+    sample: uniform
+    min: 0.45
+    max: 0.72
+  gamma_v:
+    sample: uniform
+    min: 0.1
+    max: 0.18
+  rho_w:
+    sample: uniform
+    min: 1.4
+    max: 2.4
+  gamma_w:
+    sample: uniform
+    min: 0.0012
+    max: 0.0035
+  mu_w:
+    sample: uniform
+    min: 20.0
+    max: 36.0
+  sigma_u:
+    sample: uniform
+    min: 0.0
+    max: 0.01
+  Ku:
+    sample: uniform
+    min: 0.0
+    max: 0.00003
+  sigma_w:
+    sample: uniform
+    min: 0.0
+    max: 0.004
+  Kw:
+    sample: uniform
+    min: 0.0
+    max: 0.00003
+  outer_exchange:
+    sample: uniform
+    min: 0.015
+    max: 0.05
+  u_outer_value:
+    sample: uniform
+    min: 0.08
+    max: 0.18
+  v_outer_value:
+    sample: uniform
+    min: 0.68
+    max: 0.86
+  w_outer_value:
+    sample: uniform
+    min: 0.015
+    max: 0.05
+  ring_frequency:
+    sample: uniform
+    min: 0.28
+    max: 0.5
+domain:
+  allow_sampling: true
+  type: disk
+  center: [0.0, 0.0]
+  radius:
+    sample: uniform
+    min: 7.2
+    max: 9.0
+  mesh_size:
+    sample: uniform
+    min: 0.1
+    max: 0.13
+time:
+  dt: 0.08
+  t_end: 72.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.06
+          max: 0.12
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.12
+              max: 0.24
+            sigma:
+              sample: uniform
+              min: 1.3
+              max: 2.2
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.8
+            center:
+              - sample: uniform
+                min: -0.8
+                max: 0.8
+              - sample: uniform
+                min: -0.8
+                max: 0.8
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.52
+          max: 0.68
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.18
+              max: 0.32
+            sigma:
+              sample: uniform
+              min: 1.6
+              max: 2.6
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.0
+            center:
+              - sample: uniform
+                min: -0.8
+                max: 0.8
+              - sample: uniform
+                min: -0.8
+                max: 0.8
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.14
+              max: 0.26
+            sigma:
+              sample: uniform
+              min: 0.8
+              max: 1.4
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.2
+            center:
+              - sample: uniform
+                min: -5.0
+                max: 5.0
+              - sample: uniform
+                min: -5.0
+                max: 5.0
+  w:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 0.008
+          max: 0.02
+        std:
+          sample: uniform
+          min: 0.001
+          max: 0.003
+boundary_conditions:
+  u:
+    outer:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:u_outer_value"
+        operator_parameters:
+          alpha: "param:outer_exchange"
+  v:
+    outer:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:v_outer_value"
+        operator_parameters:
+          alpha: "param:outer_exchange"
+  w:
+    outer:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:w_outer_value"
+        operator_parameters:
+          alpha: "param:outer_exchange"
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uvw
+  formats: [numpy, gif]
+  resolution: [192, 192]
+  num_frames: 61
+seed: 42

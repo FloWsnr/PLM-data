@@ -1,0 +1,201 @@
+preset: immunotherapy
+parameters:
+  Du:
+    sample: uniform
+    min: 28.0
+    max: 48.0
+  Dv:
+    sample: uniform
+    min: 0.4
+    max: 0.78
+  Dw:
+    sample: uniform
+    min: 18.0
+    max: 34.0
+  alpha:
+    sample: uniform
+    min: 0.05
+    max: 0.09
+  mu_u:
+    sample: uniform
+    min: 0.11
+    max: 0.17
+  rho_u:
+    sample: uniform
+    min: 0.42
+    max: 0.68
+  gamma_v:
+    sample: uniform
+    min: 0.1
+    max: 0.18
+  rho_w:
+    sample: uniform
+    min: 1.4
+    max: 2.4
+  gamma_w:
+    sample: uniform
+    min: 0.0012
+    max: 0.0035
+  mu_w:
+    sample: uniform
+    min: 22.0
+    max: 38.0
+  sigma_u:
+    sample: uniform
+    min: 0.0
+    max: 0.01
+  Ku:
+    sample: uniform
+    min: 0.0
+    max: 0.00004
+  sigma_w:
+    sample: uniform
+    min: 0.0
+    max: 0.004
+  Kw:
+    sample: uniform
+    min: 0.0
+    max: 0.00004
+  inner_exchange:
+    sample: uniform
+    min: 0.02
+    max: 0.07
+  u_inner_value:
+    sample: uniform
+    min: 0.12
+    max: 0.24
+  v_inner_value:
+    sample: uniform
+    min: 0.42
+    max: 0.62
+  w_inner_value:
+    sample: uniform
+    min: 0.03
+    max: 0.08
+  ring_frequency:
+    sample: uniform
+    min: 0.22
+    max: 0.42
+domain:
+  allow_sampling: true
+  type: annulus
+  center: [0.0, 0.0]
+  inner_radius:
+    sample: uniform
+    min: 3.2
+    max: 4.4
+  outer_radius:
+    sample: uniform
+    min: 8.2
+    max: 9.8
+  mesh_size:
+    sample: uniform
+    min: 0.11
+    max: 0.13
+time:
+  dt: 0.09
+  t_end: 78.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.14
+          max: 0.22
+        generators:
+          - count:
+              sample: randint
+              min: 2
+              max: 4
+            amplitude:
+              sample: uniform
+              min: 0.08
+              max: 0.18
+            sigma:
+              sample: uniform
+              min: 0.7
+              max: 1.3
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.4
+            center:
+              - sample: uniform
+                min: -6.5
+                max: 6.5
+              - sample: uniform
+                min: -6.5
+                max: 6.5
+  v:
+    initial_condition:
+      type: radial_cosine
+      params:
+        base:
+          sample: uniform
+          min: 0.54
+          max: 0.68
+        amplitude:
+          sample: uniform
+          min: 0.08
+          max: 0.16
+        frequency: "param:ring_frequency"
+        center: [0.0, 0.0]
+  w:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 0.008
+          max: 0.02
+        std:
+          sample: uniform
+          min: 0.001
+          max: 0.004
+boundary_conditions:
+  u:
+    inner:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:u_inner_value"
+        operator_parameters:
+          alpha: "param:inner_exchange"
+    outer:
+      - operator: neumann
+        value: 0.0
+  v:
+    inner:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:v_inner_value"
+        operator_parameters:
+          alpha: "param:inner_exchange"
+    outer:
+      - operator: neumann
+        value: 0.0
+  w:
+    inner:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:w_inner_value"
+        operator_parameters:
+          alpha: "param:inner_exchange"
+    outer:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uvw
+  formats: [numpy, gif]
+  resolution: [192, 192]
+  num_frames: 61
+seed: 42

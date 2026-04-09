@@ -2,24 +2,24 @@ preset: immunotherapy
 parameters:
   left_center_x:
     sample: uniform
-    min: -6.2
-    max: -5.2
+    min: -6.4
+    max: -5.4
   right_center_x:
     sample: uniform
-    min: 5.2
-    max: 6.2
+    min: 5.4
+    max: 6.4
   center_y:
     sample: uniform
-    min: -0.5
-    max: 0.5
+    min: -0.4
+    max: 0.4
   Du:
     sample: uniform
     min: 24.0
     max: 42.0
   Dv:
     sample: uniform
-    min: 0.55
-    max: 1.0
+    min: 0.42
+    max: 0.82
   Dw:
     sample: uniform
     min: 18.0
@@ -30,8 +30,8 @@ parameters:
     max: 0.085
   mu_u:
     sample: uniform
-    min: 0.16
-    max: 0.24
+    min: 0.15
+    max: 0.23
   rho_u:
     sample: uniform
     min: 0.38
@@ -68,6 +68,14 @@ parameters:
     sample: uniform
     min: 0.0
     max: 0.00002
+  outer_exchange:
+    sample: uniform
+    min: 0.02
+    max: 0.05
+  v_outer_value:
+    sample: uniform
+    min: 0.72
+    max: 0.88
 domain:
   allow_sampling: true
   type: dumbbell
@@ -76,18 +84,18 @@ domain:
   lobe_radius:
     sample: uniform
     min: 3.6
-    max: 4.4
+    max: 4.3
   neck_width:
     sample: uniform
-    min: 1.2
-    max: 2.0
+    min: 1.3
+    max: 2.1
   mesh_size:
     sample: uniform
     min: 0.11
     max: 0.14
 time:
   dt: 0.09
-  t_end: 96.0
+  t_end: 88.0
 inputs:
   u:
     initial_condition:
@@ -95,14 +103,63 @@ inputs:
       params:
         background:
           sample: uniform
-          min: 0.08
+          min: 0.1
           max: 0.16
         generators:
           - count: 1
             amplitude:
               sample: uniform
+              min: 0.08
+              max: 0.16
+            sigma:
+              sample: uniform
+              min: 1.1
+              max: 1.8
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.2
+            center:
+              - sample: uniform
+                min: -4.6
+                max: -2.4
+              - sample: uniform
+                min: -0.8
+                max: 0.8
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.02
+              max: 0.08
+            sigma:
+              sample: uniform
+              min: 0.9
+              max: 1.5
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.0
+            center:
+              - sample: uniform
+                min: 0.2
+                max: 2.4
+              - sample: uniform
+                min: -0.7
+                max: 0.7
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.72
+          max: 0.86
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
               min: 0.04
-              max: 0.1
+              max: 0.08
             sigma:
               sample: uniform
               min: 0.9
@@ -113,104 +170,83 @@ inputs:
               max: 2.0
             center:
               - sample: uniform
-                min: -5.2
-                max: -3.7
+                min: -5.1
+                max: -3.5
               - sample: uniform
                 min: -1.2
                 max: 1.2
           - count: 1
             amplitude:
               sample: uniform
-              min: 0.03
-              max: 0.08
+              min: 0.12
+              max: 0.24
             sigma:
               sample: uniform
-              min: 0.8
-              max: 1.3
+              min: 1.0
+              max: 1.7
             aspect_ratio:
               sample: uniform
               min: 1.0
-              max: 2.0
+              max: 2.2
             center:
               - sample: uniform
-                min: 3.7
-                max: 5.2
+                min: 3.5
+                max: 5.1
               - sample: uniform
                 min: -1.2
                 max: 1.2
-  v:
+  w:
     initial_condition:
       type: gaussian_blobs
       params:
         background:
           sample: uniform
-          min: 0.76
-          max: 0.88
+          min: 0.01
+          max: 0.02
         generators:
           - count: 1
             amplitude:
               sample: uniform
-              min: 0.08
-              max: 0.18
+              min: 0.01
+              max: 0.03
             sigma:
               sample: uniform
-              min: 1.0
-              max: 1.6
+              min: 1.2
+              max: 2.0
             aspect_ratio:
               sample: uniform
               min: 1.0
-              max: 2.3
+              max: 1.8
             center:
               - sample: uniform
-                min: -4.8
-                max: -3.3
+                min: -1.0
+                max: 1.0
               - sample: uniform
-                min: -1.4
-                max: 1.4
-          - count: 1
-            amplitude:
-              sample: uniform
-              min: 0.08
-              max: 0.16
-            sigma:
-              sample: uniform
-              min: 0.9
-              max: 1.5
-            aspect_ratio:
-              sample: uniform
-              min: 1.0
-              max: 2.1
-            center:
-              - sample: uniform
-                min: 3.3
-                max: 4.8
-              - sample: uniform
-                min: -1.4
-                max: 1.4
-  w:
-    initial_condition:
-      type: gaussian_noise
-      params:
-        mean:
-          sample: uniform
-          min: 0.01
-          max: 0.02
-        std:
-          sample: uniform
-          min: 0.0015
-          max: 0.004
+                min: -0.6
+                max: 0.6
 boundary_conditions:
   u:
-    $ref: boundary_field.scalar.homogeneous_neumann_outer
+    outer:
+      - operator: neumann
+        value: 0.0
   v:
-    $ref: boundary_field.scalar.homogeneous_neumann_outer
+    outer:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:v_outer_value"
+        operator_parameters:
+          alpha: "param:outer_exchange"
   w:
-    $ref: boundary_field.scalar.homogeneous_neumann_outer
+    outer:
+      - operator: neumann
+        value: 0.0
 solver:
   $ref: solver.profile.constant_lhs_scalar_spd
 output:
   $ref: output.template.scalar_uvw
   formats: [numpy, gif]
   resolution: [224, 160]
-  num_frames: 65
+  num_frames: 61
 seed: 42

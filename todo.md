@@ -366,9 +366,27 @@ quenching, guided channel pulses, and geometry-mediated wave collisions.
 
 #### Immunotherapy (`configs/biology/immunotherapy`)
 
-1. `2d_dumbbell_tumor_immune_patch_dynamics`: tumor-immune-cytokine patches evolving across two chambers connected by a narrow neck.
-2. `2d_tumor_immune_patch_dynamics`: tumor-immune-cytokine fields evolving into patchy competition and suppression zones.
-3. `3d_tumor_immune_patch_dynamics`: 3D tumor-immune-cytokine competition with patchy heterogeneous regions.
+1. `2d_annulus_inner_rim_treatment_bands`: inner-rim treatment drives azimuthal tumour bands and patch collisions around an annular refuge.
+2. `2d_annulus_outer_wall_relapse_rings`: tumour-heavy outer-wall relapse wraps into inward-moving annular shells and fragmented rings.
+3. `2d_channel_obstacle_inlet_treatment_wake`: inlet-fed immune and IL-2 treatment sweeps past an obstacle while a tumour wake clings to the cylinder.
+4. `2d_channel_obstacle_obstacle_shadow_relapse`: reverse-direction treatment and an obstacle tumour reservoir create asymmetric shadowed relapse behind the blockage.
+5. `2d_disk_boundary_treatment_core_escape`: boundary treatment closes in from the circular rim while a central tumour core tries to escape or fragment.
+6. `2d_disk_radial_shell_breakup`: a tumour shell seeded by radial structure breaks into rotating-looking fragments and patchy remnants on a disk.
+7. `2d_dumbbell_asymmetric_bridge_clearance`: one lobe starts immune-rich and the other tumour-rich, producing a directional neck-crossing clearance wave.
+8. `2d_dumbbell_tumor_immune_patch_dynamics`: dual-lobe tumour and immune patches exchange through the bottleneck and coarsen at different rates in each chamber.
+9. `2d_l_shape_corner_clearance_wave`: strong notch treatment launches a fast clearance wave that bends around the re-entrant corner.
+10. `2d_l_shape_notch_refuge_patterns`: weaker notch treatment leaves a tumour refuge in the notch while the outer arms organize into competing patches.
+11. `2d_multi_hole_plate_hole_shadow_screening`: a treated center hole screens tumour growth into perforation shadows and corridor-separated pockets.
+12. `2d_multi_hole_plate_interstitial_patch_weave`: asymmetric hole forcing drives tumour and immune patches to weave through the interstitial channels.
+13. `2d_parallelogram_oblique_band_competition`: skew-periodic band initial conditions evolve into oblique tumour-treatment band competition on a sheared cell.
+14. `2d_parallelogram_skew_corner_infusion`: mixed top-bottom treatment on a skew cell drives diagonal patch invasion and corner-focused clearance.
+15. `2d_rectangular_wraparound_treatment_bands`: vertical treatment gradients with horizontal periodicity create wraparound tumour bands and directional suppression fronts.
+16. `2d_serpentine_channel_guided_clearance_wave`: inlet treatment steers a clearance wave through serpentine bends with lane-dependent delay and breakup.
+17. `2d_serpentine_channel_reverse_lane_patch_breakup`: outlet treatment and wall-supported tumour refugia produce reverse-lane relapse and patch breakup in the bends.
+18. `2d_tumor_immune_patch_dynamics`: randomized rectangular tumour, immune, and cytokine patches coarsen into heterogeneous competition zones.
+19. `2d_y_bifurcation_branch_selective_clearance`: inlet treatment chooses one daughter branch for faster tumour suppression while the other branch lags behind.
+20. `2d_y_bifurcation_reverse_branch_relapse`: outlet-driven treatment fights a lower-branch tumour reservoir that repeatedly tries to repopulate the junction.
+21. `3d_tumor_immune_patch_dynamics`: 3D tumour-immune-cytokine competition with patchy heterogeneous regions.
 
 #### Keller-Segel (`configs/biology/keller_segel`)
 
