@@ -1,0 +1,146 @@
+preset: gierer_meinhardt
+parameters:
+  Da:
+    sample: uniform
+    min: 0.036
+    max: 0.056
+  Dh:
+    sample: uniform
+    min: 1.5
+    max: 2.3
+  rho_a:
+    sample: uniform
+    min: 0.94
+    max: 1.14
+  rho_h:
+    sample: uniform
+    min: 0.9
+    max: 1.08
+  mu_a:
+    sample: uniform
+    min: 0.88
+    max: 1.04
+  mu_h:
+    sample: uniform
+    min: 0.76
+    max: 0.92
+  sigma_a:
+    sample: uniform
+    min: 0.009
+    max: 0.02
+  sigma_h:
+    sample: uniform
+    min: 0.004
+    max: 0.016
+  tau:
+    sample: uniform
+    min: 0.75
+    max: 1.2
+  wall_exchange:
+    sample: uniform
+    min: 0.04
+    max: 0.12
+  a_inlet_value:
+    sample: uniform
+    min: 0.96
+    max: 1.12
+  a_wall_value:
+    sample: uniform
+    min: 0.8
+    max: 0.94
+  h_inlet_value:
+    sample: uniform
+    min: 1.14
+    max: 1.28
+  h_wall_value:
+    sample: uniform
+    min: 1.08
+    max: 1.22
+domain:
+  allow_sampling: true
+  type: serpentine_channel
+  channel_length:
+    sample: uniform
+    min: 7.5
+    max: 9.5
+  lane_spacing:
+    sample: uniform
+    min: 3.0
+    max: 4.2
+  n_bends:
+    sample: randint
+    min: 2
+    max: 3
+  channel_width:
+    sample: uniform
+    min: 1.6
+    max: 2.0
+  mesh_size:
+    sample: uniform
+    min: 0.12
+    max: 0.15
+time:
+  dt: 0.012
+  t_end: 18.0
+inputs:
+  a:
+    initial_condition:
+      type: constant
+      params:
+        value:
+          sample: uniform
+          min: 0.78
+          max: 0.9
+  h:
+    initial_condition:
+      type: constant
+      params:
+        value:
+          sample: uniform
+          min: 1.04
+          max: 1.16
+boundary_conditions:
+  a:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: "param:a_inlet_value"
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:a_wall_value"
+        operator_parameters:
+          alpha: "param:wall_exchange"
+  h:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: "param:h_inlet_value"
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: robin
+        value:
+          type: constant
+          params:
+            value: "param:h_wall_value"
+        operator_parameters:
+          alpha: "param:wall_exchange"
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_ah
+  formats: [numpy, gif]
+  resolution: [224, 160]
+  num_frames: 73
+seed: 42

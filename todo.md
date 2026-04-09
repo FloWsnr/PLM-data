@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 313 configs.
+Current baseline: 38 PDE presets and 331 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -320,9 +320,27 @@ seed to seed.
 
 #### Gierer-Meinhardt (`configs/biology/gierer_meinhardt`)
 
-1. `2d_parallelogram_turing_spots_and_stripes`: activator-inhibitor Turing spots and stripes on a skew parallelogram cell.
-2. `2d_turing_spots_and_stripes`: noise-seeded activator-inhibitor Turing spots and labyrinths.
-3. `3d_turing_patterning`: 3D activator-inhibitor Turing patterning from noise.
+1. `2d_annulus_azimuthal_spot_wraparound`: concentric annular ring seeds break into azimuthal spot necklaces that wrap around the hole with seed-dependent spacing.
+2. `2d_annulus_inner_rim_pinned_bands`: asymmetric annular blob seeds interact with the inner rim to produce either smooth rim bands or spot eruptions on selected outer sectors, depending on the seed.
+3. `2d_channel_obstacle_inlet_wake_spots`: inlet-biased activator growth interacts with the cylinder to leave obstacle-shadow spot lanes and wall-biased wake patches.
+4. `2d_channel_obstacle_reverse_shadow_labyrinth`: a right-biased initial activator step relaxes back around the obstacle, producing reverse-side shadow bands instead of a simple inlet-driven wake.
+5. `2d_disk_boundary_pinned_labyrinth`: wall leakage plus interior blob seeds create a rim-pinned labyrinth with irregular interior hot spots.
+6. `2d_disk_radial_spot_necklace`: radial ring seeds in a disk collapse into a circular spot necklace around a central hot spot.
+7. `2d_dumbbell_dual_lobe_phase_lag`: unequal lobe seeds evolve out of phase in the two chambers and exchange through the neck before settling into asymmetric chamber hot spots.
+8. `2d_dumbbell_neck_spot_exchange`: left-right step bias drives spot transfer across the neck, emphasizing bridge-mediated exchange between the dumbbell lobes.
+9. `2d_l_shape_corner_hotspot_trap`: quadrant-biased activation and a clamped notch trap hot spots near the re-entrant corner rather than filling both arms uniformly.
+10. `2d_l_shape_reentrant_labyrinth`: separate left-arm, lower-arm, and corner seeds braid around the re-entrant notch into strongly seed-dependent labyrinth channels and spot clusters.
+11. `2d_multi_hole_plate_hole_shadow_spots`: mixed hole boundary conditions generate screened hot spots and hole-shadow patches across the perforated plate.
+12. `2d_multi_hole_plate_perforation_band_weave`: localized corridor seeds and grouped hole exchange produce perforation-guided band weaving for one seed and multi-spot screening corridors for another.
+13. `2d_parallelogram_oblique_labyrinth_competition`: a skew x-periodic cell with transverse wall exchange produces oblique labyrinth bands that compete and coarsen without axis locking.
+14. `2d_parallelogram_turing_spots_and_stripes`: noise-seeded Turing spots and stripes on a skew periodic parallelogram, reducing obvious rectangular bias.
+15. `2d_rectangular_band_competition`: an x-periodic rectangle with Robin top/bottom walls supports long lane-like bands and slower coarsening than the fully periodic box.
+16. `2d_serpentine_channel_guided_lane_breakup`: inlet-biased patterns follow the sampled serpentine bends and break into bend-to-bend guided hot spots.
+17. `2d_serpentine_channel_reverse_bend_reentry`: reverse-biased structure re-enters the serpentine from the downstream side and lights up successive bends in a different order than the inlet-guided case.
+18. `2d_turing_spots_and_stripes`: noise-seeded periodic-box Turing patterning producing classic spots with strong seed-to-seed layout changes.
+19. `2d_y_bifurcation_branch_selection`: trunk and junction blob seeds choose different daughter branches under weak Robin branch selection, yielding seed-dependent hotspot placement near the split.
+20. `2d_y_bifurcation_reverse_branch_competition`: reverse branch-biased activator fronts propagate back toward the trunk and compete at the bifurcation junction.
+21. `3d_turing_patterning`: 3D activator-inhibitor Turing patterning from noise.
 
 #### Immunotherapy (`configs/biology/immunotherapy`)
 
