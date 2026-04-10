@@ -834,7 +834,16 @@ def make_kuramoto_sivashinsky_config(
 ) -> SimulationConfig:
     return SimulationConfig(
         preset="kuramoto_sivashinsky",
-        parameters={"theta": 0.5},
+        parameters={
+            "theta": 0.5,
+            "hyperdiffusion": 1.0,
+            "anti_diffusion": 1.0,
+            "nonlinear_strength": 1.0,
+            "damping": 0.03,
+            "advection_x": 0.0,
+            "advection_y": 0.0,
+            "advection_z": 0.0,
+        },
         domain=rectangle_domain(mesh_resolution=mesh_resolution),
         inputs={"u": InputConfig(initial_condition=initial_condition)},
         boundary_conditions={
