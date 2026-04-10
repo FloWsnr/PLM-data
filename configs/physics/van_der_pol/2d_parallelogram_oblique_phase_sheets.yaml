@@ -1,0 +1,160 @@
+preset: van_der_pol
+parameters:
+  Du:
+    sample: uniform
+    min: 0.04
+    max: 0.11
+  Dv:
+    sample: uniform
+    min: 0.18
+    max: 0.32
+  mu:
+    sample: uniform
+    min: 5.0
+    max: 8.0
+domain:
+  allow_sampling: true
+  type: parallelogram
+  origin:
+    - sample: uniform
+      min: -1.0
+      max: 1.0
+    - sample: uniform
+      min: -1.0
+      max: 1.0
+  axis_x:
+    - sample: uniform
+      min: 34.0
+      max: 42.0
+    - 0.0
+  axis_y:
+    - sample: uniform
+      min: -11.0
+      max: -5.0
+    - sample: uniform
+      min: 34.0
+      max: 42.0
+  mesh_resolution:
+    - sample: randint
+      min: 144
+      max: 176
+    - sample: randint
+      min: 144
+      max: 176
+time:
+  dt: 0.005
+  t_end: 18.0
+inputs:
+  u:
+    initial_condition:
+      type: quadrants
+      params:
+        split:
+          - sample: uniform
+            min: 14.0
+            max: 22.0
+          - sample: uniform
+            min: 14.0
+            max: 22.0
+        region_values:
+          "00":
+            sample: uniform
+            min: -1.7
+            max: -0.8
+          "01":
+            sample: uniform
+            min: 0.4
+            max: 1.4
+          "10":
+            sample: uniform
+            min: -0.4
+            max: 0.5
+          "11":
+            sample: uniform
+            min: 0.9
+            max: 1.9
+  v:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: -0.05
+          max: 0.05
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.35
+              max: 0.75
+            cycles:
+              - sample: uniform
+                min: 0.08
+                max: 0.18
+              - sample: uniform
+                min: 0.02
+                max: 0.09
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185307179586
+            angle:
+              sample: uniform
+              min: -1.0
+              max: 1.0
+boundary_conditions:
+  u:
+    x-:
+      - operator: periodic
+        pair_with: x+
+    x+:
+      - operator: periodic
+        pair_with: x-
+    y-:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -1.6
+              max: -0.8
+    y+:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha:
+            sample: uniform
+            min: 0.05
+            max: 0.18
+  v:
+    x-:
+      - operator: periodic
+        pair_with: x+
+    x+:
+      - operator: periodic
+        pair_with: x-
+    y-:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.25
+              max: 0.75
+    y+:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha:
+            sample: uniform
+            min: 0.05
+            max: 0.18
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [176, 160]
+  num_frames: 61
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+seed: 4231

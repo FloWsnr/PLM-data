@@ -1,0 +1,149 @@
+preset: van_der_pol
+parameters:
+  domain_center_x:
+    sample: uniform
+    min: -1.0
+    max: 1.0
+  domain_center_y:
+    sample: uniform
+    min: -1.0
+    max: 1.0
+  Du:
+    sample: uniform
+    min: 0.04
+    max: 0.1
+  Dv:
+    sample: uniform
+    min: 0.14
+    max: 0.28
+  mu:
+    sample: uniform
+    min: 6.0
+    max: 8.8
+domain:
+  allow_sampling: true
+  type: disk
+  center: ["param:domain_center_x", "param:domain_center_y"]
+  radius:
+    sample: uniform
+    min: 16.0
+    max: 20.0
+  mesh_size:
+    sample: uniform
+    min: 0.22
+    max: 0.3
+time:
+  dt: 0.0045
+  t_end: 16.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.25
+          max: 0.25
+        generators:
+          - count:
+              sample: randint
+              min: 3
+              max: 6
+            amplitude:
+              sample: uniform
+              min: 0.75
+              max: 1.65
+            sigma:
+              sample: uniform
+              min: 1.6
+              max: 3.4
+            aspect_ratio:
+              sample: uniform
+              min: 1.2
+              max: 3.6
+            center:
+              - sample: uniform
+                min: -13.0
+                max: 13.0
+              - sample: uniform
+                min: -13.0
+                max: 13.0
+          - count:
+              sample: randint
+              min: 1
+              max: 3
+            amplitude:
+              sample: uniform
+              min: -1.45
+              max: -0.55
+            sigma:
+              sample: uniform
+              min: 1.8
+              max: 3.6
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.5
+            center:
+              - sample: uniform
+                min: -11.0
+                max: 11.0
+              - sample: uniform
+                min: -11.0
+                max: 11.0
+  v:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: -0.06
+          max: 0.06
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.25
+              max: 0.7
+            cycles:
+              - sample: uniform
+                min: 0.12
+                max: 0.28
+              - sample: uniform
+                min: 0.04
+                max: 0.18
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185307179586
+            angle:
+              sample: uniform
+              min: -1.2
+              max: 1.2
+boundary_conditions:
+  u:
+    outer:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -0.35
+              max: 0.35
+  v:
+    outer:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha:
+            sample: uniform
+            min: 0.06
+            max: 0.18
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 57
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+seed: 4251

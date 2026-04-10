@@ -755,9 +755,27 @@ set is the current validation target for dataset expansion.
 
 #### Van der Pol (`configs/physics/van_der_pol`)
 
-1. `2d_oscillatory_wave_relaxation`: random low-amplitude modes relaxing into oscillatory Van der Pol wave patterns.
-2. `2d_parallelogram_oscillatory_wave_relaxation`: oscillatory Van der Pol wave relaxation on a skew parallelogram cell.
-3. `3d_oscillatory_wave_relaxation`: 3D Van der Pol oscillatory wave patterns from random modal perturbations.
+1. `2d_annulus_counterphase_ringdown`: annulus with inner and outer rims pinned in counterphase, producing ring phase slips and radial relaxation waves.
+2. `2d_annulus_inner_outer_phase_slips`: annulus with driven inner rim and weakly absorbing outer rim, emphasizing target-like waves that shear around the hole.
+3. `2d_channel_obstacle_obstacle_pinned_targets`: channel-obstacle case with a softened obstacle pin and obstacle-centered radial seed, producing target waves around the circular inclusion without velocity saturation.
+4. `2d_channel_obstacle_wake_locking`: inlet-driven obstacle channel where upstream blobs and obstacle damping create wake-locked relaxation waves.
+5. `2d_disk_relaxation_targets`: disk radial-cosine seed with weak rim absorption, producing clean circular target waves.
+6. `2d_disk_rim_pinned_bursts`: disk with randomized rim pinning and blob/noise seeds, producing sharper burst fronts and rim-mediated breakup.
+7. `2d_dumbbell_lobe_phase_lag`: two-lobe dumbbell with opposite-signed lobe seeds, creating phase-lagged oscillations across the bridge.
+8. `2d_dumbbell_neck_synchronization_pulse`: narrow-neck dumbbell with a neck-centered pulse, producing delayed synchronization and strong bridge-front dynamics.
+9. `2d_l_shape_corner_wave_reflection`: L-shape with notch damping and blob/sine seeds, bending wave fronts around the reentrant corner.
+10. `2d_l_shape_notch_pinned_relaxation`: L-shape with a pinned notch and quadrant seed, producing corner-localized relaxation fronts.
+11. `2d_oscillatory_wave_relaxation`: randomized periodic rectangle baseline with smooth low-`mu` oscillatory wave growth from modal perturbations.
+12. `2d_parallelogram_oblique_phase_sheets`: skew cell with x-periodicity and y-side damping, producing oblique relaxation sheets from quadrant ICs.
+13. `2d_parallelogram_oscillatory_wave_relaxation`: fully periodic skew parallelogram with oblique modal seeds and moderate relaxation dynamics.
+14. `2d_rectangle_absorbing_lobe_fronts`: rectangle with opposing Dirichlet side pins and Robin top/bottom damping, producing absorbing lobe-front dynamics.
+15. `2d_side_cavity_channel_cavity_phase_trap`: side-cavity channel with cavity-biased blobs, testing whether oscillations trap and release from the pocket.
+16. `2d_side_cavity_channel_main_lane_sweep`: side-cavity channel with opposing lane pins, producing main-channel sweep fronts with cavity leakage.
+17. `2d_venturi_channel_throat_burst_train`: Venturi channel with inlet drive and throat-biased blobs, producing constriction-focused burst trains.
+18. `2d_venturi_channel_wall_quench_pulses`: Venturi channel with wall Robin quenching and oblique waves, producing wall-damped throat pulses.
+19. `2d_y_bifurcation_branch_selection`: Y-bifurcation with asymmetric outlet conditions, producing branch-selected relaxation waves.
+20. `2d_y_bifurcation_junction_collision`: Y-bifurcation with opposite branch seeds and outlet pins, producing collision fronts at the junction.
+21. `3d_oscillatory_wave_relaxation`: 3D Van der Pol oscillatory wave patterns from random modal perturbations.
 
 #### Zakharov-Kuznetsov (`configs/physics/zakharov_kuznetsov`)
 

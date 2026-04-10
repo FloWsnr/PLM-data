@@ -1,0 +1,127 @@
+preset: van_der_pol
+parameters:
+  domain_center_x:
+    sample: uniform
+    min: -1.2
+    max: 1.2
+  domain_center_y:
+    sample: uniform
+    min: -1.2
+    max: 1.2
+  Du:
+    sample: uniform
+    min: 0.08
+    max: 0.18
+  Dv:
+    sample: uniform
+    min: 0.05
+    max: 0.12
+  mu:
+    sample: uniform
+    min: 4.0
+    max: 7.0
+domain:
+  allow_sampling: true
+  type: annulus
+  center: ["param:domain_center_x", "param:domain_center_y"]
+  inner_radius:
+    sample: uniform
+    min: 5.5
+    max: 8.5
+  outer_radius:
+    sample: uniform
+    min: 18.0
+    max: 22.0
+  mesh_size:
+    sample: uniform
+    min: 0.24
+    max: 0.32
+time:
+  dt: 0.0055
+  t_end: 18.0
+inputs:
+  u:
+    initial_condition:
+      type: radial_cosine
+      params:
+        base:
+          sample: uniform
+          min: -0.15
+          max: 0.15
+        amplitude:
+          sample: uniform
+          min: 0.65
+          max: 1.25
+        frequency:
+          sample: uniform
+          min: 0.34
+          max: 0.56
+        center: ["param:domain_center_x", "param:domain_center_y"]
+  v:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: -0.04
+          max: 0.04
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.22
+              max: 0.58
+            cycles:
+              - sample: uniform
+                min: 0.08
+                max: 0.2
+              - sample: uniform
+                min: 0.04
+                max: 0.16
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185307179586
+            angle:
+              sample: uniform
+              min: -1.0
+              max: 1.0
+boundary_conditions:
+  u:
+    inner:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.85
+              max: 1.5
+    outer:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha:
+            sample: uniform
+            min: 0.04
+            max: 0.16
+  v:
+    inner:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -0.45
+              max: -0.15
+    outer:
+      - operator: neumann
+        value: 0.0
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 59
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+seed: 4261
