@@ -124,6 +124,14 @@ solver:
         $ref: solver.serial.nonlinear_newton_lu
       mpi:
         $ref: solver.mpi.nonlinear_direct
+    nonlinear_mixed_direct_bt:
+      strategy: nonlinear_mixed_direct
+      serial:
+        $ref: solver.serial.nonlinear_newton_lu
+        snes_linesearch_type: bt
+      mpi:
+        $ref: solver.mpi.nonlinear_direct
+        snes_linesearch_type: bt
     transient_explicit:
       strategy: transient_explicit
       serial: {}
@@ -323,6 +331,43 @@ boundary_field:
         - operator: neumann
           value: 0.0
       obstacle:
+        - operator: neumann
+          value: 0.0
+    homogeneous_neumann_l_shape:
+      outer:
+        - operator: neumann
+          value: 0.0
+      notch:
+        - operator: neumann
+          value: 0.0
+    homogeneous_neumann_multi_hole_plate:
+      outer:
+        - operator: neumann
+          value: 0.0
+      holes:
+        - operator: neumann
+          value: 0.0
+    homogeneous_neumann_y_bifurcation:
+      inlet:
+        - operator: neumann
+          value: 0.0
+      outlet_upper:
+        - operator: neumann
+          value: 0.0
+      outlet_lower:
+        - operator: neumann
+          value: 0.0
+      walls:
+        - operator: neumann
+          value: 0.0
+    homogeneous_neumann_channel:
+      inlet:
+        - operator: neumann
+          value: 0.0
+      outlet:
+        - operator: neumann
+          value: 0.0
+      walls:
         - operator: neumann
           value: 0.0
     unit_dirichlet_outer:

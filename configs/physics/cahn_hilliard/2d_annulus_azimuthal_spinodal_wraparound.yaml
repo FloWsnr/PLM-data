@@ -2,31 +2,36 @@ preset: cahn_hilliard
 parameters:
   lmbda:
     sample: uniform
-    min: 0.0065
-    max: 0.0105
+    min: 0.0048
+    max: 0.0085
   barrier_height:
     sample: uniform
     min: 80.0
-    max: 130.0
+    max: 120.0
   mobility:
     sample: uniform
-    min: 0.4
-    max: 0.9
+    min: 0.45
+    max: 0.95
   theta:
     sample: uniform
     min: 0.84
     max: 1.0
 domain:
   allow_sampling: true
-  type: rectangle
-  size:
-    - sample: uniform
-      min: 0.96
-      max: 1.08
-    - sample: uniform
-      min: 0.96
-      max: 1.08
-  mesh_resolution: [128, 128]
+  type: annulus
+  center: [0.0, 0.0]
+  inner_radius:
+    sample: uniform
+    min: 0.22
+    max: 0.3
+  outer_radius:
+    sample: uniform
+    min: 0.58
+    max: 0.66
+  mesh_size:
+    sample: uniform
+    min: 0.008
+    max: 0.0095
 time:
   dt: 2.0e-06
   t_end: 2.4e-04
@@ -37,20 +42,20 @@ inputs:
       params:
         mean:
           sample: uniform
-          min: 0.48
-          max: 0.56
+          min: 0.47
+          max: 0.55
         std:
           sample: uniform
-          min: 0.02
-          max: 0.045
+          min: 0.025
+          max: 0.05
 boundary_conditions:
   c:
-    $ref: boundary_field.scalar.full_periodic_2d
+    $ref: boundary_field.scalar.homogeneous_neumann_annulus
 output:
   $ref: output.template.scalar_c
   formats: [numpy, gif]
-  resolution: [128, 128]
-  num_frames: 33
+  resolution: [144, 144]
+  num_frames: 36
 solver:
   $ref: solver.profile.nonlinear_mixed_direct_bt
 seed: 42

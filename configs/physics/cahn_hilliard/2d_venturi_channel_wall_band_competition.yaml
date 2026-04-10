@@ -1,0 +1,101 @@
+preset: cahn_hilliard
+parameters:
+  lmbda:
+    sample: uniform
+    min: 0.0033
+    max: 0.006
+  barrier_height:
+    sample: uniform
+    min: 85.0
+    max: 135.0
+  mobility:
+    sample: uniform
+    min: 0.4
+    max: 0.9
+  theta:
+    sample: uniform
+    min: 0.84
+    max: 1.0
+domain:
+  allow_sampling: true
+  type: venturi_channel
+  length:
+    sample: uniform
+    min: 1.62
+    max: 1.92
+  height:
+    sample: uniform
+    min: 0.76
+    max: 0.96
+  throat_height:
+    sample: uniform
+    min: 0.32
+    max: 0.48
+  constriction_center_x:
+    sample: uniform
+    min: 0.78
+    max: 1.06
+  constriction_radius:
+    sample: uniform
+    min: 0.38
+    max: 0.56
+  mesh_size:
+    sample: uniform
+    min: 0.01
+    max: 0.012
+time:
+  dt: 2.0e-06
+  t_end: 2.4e-04
+inputs:
+  c:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 0.48
+          max: 0.55
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.08
+              max: 0.14
+            cycles:
+              - 0.0
+              - sample: uniform
+                min: 1.6
+                max: 2.8
+            phase:
+              sample: uniform
+              min: -3.14
+              max: 3.14
+          - amplitude:
+              sample: uniform
+              min: 0.025
+              max: 0.055
+            cycles:
+              - sample: uniform
+                min: 1.5
+                max: 2.8
+              - sample: uniform
+                min: 0.5
+                max: 1.1
+            phase:
+              sample: uniform
+              min: -3.14
+              max: 3.14
+            angle:
+              sample: uniform
+              min: -0.4
+              max: 0.4
+boundary_conditions:
+  c:
+    $ref: boundary_field.scalar.homogeneous_neumann_channel
+output:
+  $ref: output.template.scalar_c
+  formats: [numpy, gif]
+  resolution: [240, 144]
+  num_frames: 36
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct_bt
+seed: 42

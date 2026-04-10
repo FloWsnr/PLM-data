@@ -1,0 +1,97 @@
+preset: cahn_hilliard
+parameters:
+  lmbda:
+    sample: uniform
+    min: 0.004
+    max: 0.0075
+  barrier_height:
+    sample: uniform
+    min: 85.0
+    max: 135.0
+  mobility:
+    sample: uniform
+    min: 0.45
+    max: 0.95
+  theta:
+    sample: uniform
+    min: 0.84
+    max: 1.0
+domain:
+  allow_sampling: true
+  type: serpentine_channel
+  channel_length:
+    sample: uniform
+    min: 0.78
+    max: 0.96
+  lane_spacing:
+    sample: uniform
+    min: 0.3
+    max: 0.4
+  n_bends:
+    sample: randint
+    min: 2
+    max: 4
+  channel_width:
+    sample: uniform
+    min: 0.12
+    max: 0.17
+  mesh_size:
+    sample: uniform
+    min: 0.0088
+    max: 0.011
+time:
+  dt: 2.0e-06
+  t_end: 2.4e-04
+inputs:
+  c:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 0.47
+          max: 0.54
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.08
+              max: 0.15
+            cycles:
+              - sample: uniform
+                min: 1.0
+                max: 2.2
+              - sample: uniform
+                min: 1.8
+                max: 3.2
+            phase:
+              sample: uniform
+              min: -3.14
+              max: 3.14
+            angle:
+              sample: uniform
+              min: -0.45
+              max: 0.45
+          - amplitude:
+              sample: uniform
+              min: 0.025
+              max: 0.06
+            cycles:
+              - sample: uniform
+                min: 2.4
+                max: 4.2
+              - 0.0
+            phase:
+              sample: uniform
+              min: -3.14
+              max: 3.14
+boundary_conditions:
+  c:
+    $ref: boundary_field.scalar.homogeneous_neumann_channel
+output:
+  $ref: output.template.scalar_c
+  formats: [numpy, gif]
+  resolution: [176, 224]
+  num_frames: 33
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct_bt
+seed: 42

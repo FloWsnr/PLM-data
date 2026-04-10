@@ -2,8 +2,8 @@ preset: cahn_hilliard
 parameters:
   lmbda:
     sample: uniform
-    min: 0.0065
-    max: 0.0105
+    min: 0.0045
+    max: 0.008
   barrier_height:
     sample: uniform
     min: 80.0
@@ -18,15 +18,31 @@ parameters:
     max: 1.0
 domain:
   allow_sampling: true
-  type: rectangle
-  size:
-    - sample: uniform
-      min: 0.96
-      max: 1.08
-    - sample: uniform
-      min: 0.96
-      max: 1.08
-  mesh_resolution: [128, 128]
+  type: venturi_channel
+  length:
+    sample: uniform
+    min: 1.5
+    max: 1.8
+  height:
+    sample: uniform
+    min: 0.72
+    max: 0.9
+  throat_height:
+    sample: uniform
+    min: 0.3
+    max: 0.44
+  constriction_center_x:
+    sample: uniform
+    min: 0.72
+    max: 0.96
+  constriction_radius:
+    sample: uniform
+    min: 0.36
+    max: 0.52
+  mesh_size:
+    sample: uniform
+    min: 0.0095
+    max: 0.0118
 time:
   dt: 2.0e-06
   t_end: 2.4e-04
@@ -37,19 +53,19 @@ inputs:
       params:
         mean:
           sample: uniform
-          min: 0.48
-          max: 0.56
+          min: 0.46
+          max: 0.55
         std:
           sample: uniform
           min: 0.02
           max: 0.045
 boundary_conditions:
   c:
-    $ref: boundary_field.scalar.full_periodic_2d
+    $ref: boundary_field.scalar.homogeneous_neumann_channel
 output:
   $ref: output.template.scalar_c
   formats: [numpy, gif]
-  resolution: [128, 128]
+  resolution: [224, 128]
   num_frames: 33
 solver:
   $ref: solver.profile.nonlinear_mixed_direct_bt
