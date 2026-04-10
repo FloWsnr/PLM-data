@@ -1,40 +1,111 @@
 preset: schnakenberg
 parameters:
-  Du: 0.05
-  Dv: 2.0
-  a: 0.1
-  b: 0.9
+  Du:
+    sample: uniform
+    min: 0.035
+    max: 0.06
+  Dv:
+    sample: uniform
+    min: 1.4
+    max: 2.4
+  a:
+    sample: uniform
+    min: 0.09
+    max: 0.16
+  b:
+    sample: uniform
+    min: 0.82
+    max: 1.05
+  axis_x_length:
+    sample: uniform
+    min: 19.0
+    max: 26.0
+  axis_y_x:
+    sample: uniform
+    min: 3.5
+    max: 8.5
+  axis_y_y:
+    sample: uniform
+    min: 17.0
+    max: 24.0
 domain:
+  allow_sampling: true
   type: parallelogram
   origin: [0.0, 0.0]
-  axis_x: [20.0, 0.0]
-  axis_y: [5.0, 20.0]
-  mesh_resolution: [128, 128]
+  axis_x:
+  - param:axis_x_length
+  - 0.0
+  axis_y:
+  - param:axis_y_x
+  - param:axis_y_y
+  mesh_resolution: [144, 144]
 time:
-  dt: 0.01
-  t_end: 20.0
+  dt: 0.015
+  t_end: 22.0
 inputs:
   u:
     initial_condition:
-      type: gaussian_noise
+      type: sine_waves
       params:
-        mean: 1.0
-        std: 0.05
+        background:
+          sample: uniform
+          min: 0.92
+          max: 1.12
+        modes:
+        - amplitude:
+            sample: uniform
+            min: 0.035
+            max: 0.08
+          cycles: [2.0, 1.0]
+          phase:
+            sample: uniform
+            min: -1.0
+            max: 1.0
+          angle:
+            sample: uniform
+            min: -0.5
+            max: 0.5
+        - amplitude:
+            sample: uniform
+            min: -0.05
+            max: 0.05
+          cycles: [0.0, 3.0]
+          phase:
+            sample: uniform
+            min: -1.0
+            max: 1.0
   v:
     initial_condition:
       type: gaussian_noise
       params:
-        mean: 0.9
-        std: 0.05
+        mean:
+          sample: uniform
+          min: 0.72
+          max: 1.02
+        std:
+          sample: uniform
+          min: 0.035
+          max: 0.08
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.full_periodic_2d
   v:
     $ref: boundary_field.scalar.full_periodic_2d
+stochastic:
+  states:
+    u:
+      coupling: saturating_self
+      intensity: 0.0006
+      offset: 0.5
+    v:
+      coupling: saturating_self
+      intensity: 0.0006
+      offset: 0.5
 solver:
   $ref: solver.profile.constant_lhs_scalar_spd
 output:
   $ref: output.template.scalar_uv
-  resolution: [96, 96]
-  num_frames: 100
-seed: 42
+  formats: [numpy, gif]
+  resolution: [144, 144]
+  num_frames: 72
+seed: 4210

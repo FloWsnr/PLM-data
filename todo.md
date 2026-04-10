@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 478 configs.
+Current baseline: 38 PDE presets and 530 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -661,9 +661,29 @@ Validation note: all 20 2D configs were run with `./run.sh -n 2 ... --n-runs 2` 
 
 #### Schnakenberg (`configs/physics/schnakenberg`)
 
-1. `2d_parallelogram_turing_spots_and_labyrinths`: Schnakenberg Turing spots and labyrinths on a skew parallelogram cell.
-2. `2d_turing_spots_and_labyrinths`: noise-seeded Schnakenberg Turing spots and labyrinths.
-3. `3d_turing_patterning`: 3D Schnakenberg pattern formation from noise.
+Validation note: all 20 2D configs were run with `./run.sh -n 2 ... --n-runs 2` under `output/schnakenberg_validation`, producing 40 successful runs with `>=128x128` outputs, solver convergence, passing health diagnostics, clean logs, and two configs each for rectangle, parallelogram, disk, annulus, dumbbell, L-shape, multi-hole plate, channel obstacle, venturi channel, and Y-bifurcation domains. `2d_annulus_inner_outer_ring_competition` and `2d_channel_obstacle_obstacle_shadow_labyrinth` were retuned after the first analysis pass to improve motion and seed-to-seed separation.
+
+1. `2d_annulus_azimuthal_spot_necklace`: annular Turing spots seeded with angular modulation, producing necklace-like spot chains and ring defects around the inner hole.
+2. `2d_annulus_inner_outer_ring_competition`: inner/outer Dirichlet competition in an annulus with sampled asymmetric blob and wave seeds, now breaking smooth rings into azimuthal patches.
+3. `2d_channel_obstacle_inlet_wake_spots`: inlet/outlet-driven channel-obstacle case where sampled upstream blobs turn into downstream wake spots around the cylinder.
+4. `2d_channel_obstacle_obstacle_shadow_labyrinth`: obstacle-shadow labyrinth variant with stronger sampled geometry and boundary contrast, producing seed-dependent wall bands and obstacle wake structure.
+5. `2d_disk_edge_pinned_labyrinths`: disk with edge-pinned activator/inhibitor contrast, bending labyrinths and spots against the circular outer wall.
+6. `2d_disk_neumann_radial_targets`: reflective disk seeded with radial targets, giving cleaner target rings and spot breakup without imposed edge values.
+7. `2d_dumbbell_absorbing_bridge_quench`: dumbbell with bridge quenching and absorbing lobe contrast, producing slower lobe-separated activity and neck filtering.
+8. `2d_dumbbell_lobe_phase_lag`: two-lobe dumbbell with phase-shifted seeds, creating delayed pattern competition across the narrow bridge.
+9. `2d_l_shape_notch_quench_spots`: L-shape notch quench variant where the reentrant notch damps one arm while sampled blobs survive elsewhere.
+10. `2d_l_shape_reentrant_corner_labyrinth`: reentrant-corner L-shape labyrinth growth, with the inside corner bending stripes and seeding corner-localized defects.
+11. `2d_multi_hole_plate_hole_rim_emitters`: perforated plate with hole-rim forcing, producing bright spots and halos around sampled holes.
+12. `2d_multi_hole_plate_perforation_screening`: multi-hole screening case where holes block and fragment broader Turing patterns into interstitial patches.
+13. `2d_parallelogram_oblique_wall_bands`: skew parallelogram with oblique wall-biased bands, separating it from the fully periodic rectangle case.
+14. `2d_parallelogram_turing_spots_and_labyrinths`: periodic skew-cell Turing patterns with randomized kinetics, ICs, and geometry, emphasizing oblique spot/labyrinth drift.
+15. `2d_rectangle_edge_pinned_spots`: rectangle with edge-pinned boundary contrast, producing wall-nucleated spots instead of fully periodic texture.
+16. `2d_turing_spots_and_labyrinths`: periodic rectangle baseline with randomized kinetics and ICs, giving dense classical spot/labyrinth Turing fields.
+17. `2d_venturi_channel_throat_focusing`: venturi channel where sampled throat geometry focuses pattern growth into the constriction and downstream expansion.
+18. `2d_venturi_channel_wall_pinned_bands`: slower venturi wall-pinned band case with boundary-driven activation near the tapered walls.
+19. `2d_y_bifurcation_branch_selection`: Y-bifurcation split case where sampled branch geometry and boundary values select different daughter-branch activity.
+20. `2d_y_bifurcation_junction_collision`: Y-bifurcation collision case where branch and inlet patterns meet near the junction and form localized defects.
+21. `3d_turing_patterning`: 3D Schnakenberg pattern formation from noise.
 
 #### Superlattice (`configs/physics/superlattice`)
 
@@ -739,7 +759,6 @@ periodic-geometry priority is `skew_box`.
 
 1. `maxwell` -> `2d_stadium_cavity_radiation`: time-harmonic EM forcing in a stadium should show geometry-controlled standing-wave scars and hot spots.
 2. `maxwell_pulse` -> `2d_dumbbell_em_pulse_transfer`: launch a pulse in one lobe and watch partial transmission and trapping through the neck.
-3. `schnakenberg` -> `2d_disk_edge_pinned_labyrinths`: smooth closed boundaries should bias stripe bending and spot pinning near the outer wall.
-4. `superlattice` -> `2d_disk_superlattice_targets`: circular geometry should favor concentric competition between the fast and slow pattern scales.
-5. `swift_hohenberg` -> `2d_eccentric_annulus_roll_pinning`: roll patterns and defects should lock to the broken-symmetry inner obstacle.
-6. `van_der_pol` -> `2d_disk_relaxation_targets`: relaxation oscillations in a disk may form cleaner target-like wave trains than the rectangular and parallelogram cases.
+3. `superlattice` -> `2d_disk_superlattice_targets`: circular geometry should favor concentric competition between the fast and slow pattern scales.
+4. `swift_hohenberg` -> `2d_eccentric_annulus_roll_pinning`: roll patterns and defects should lock to the broken-symmetry inner obstacle.
+5. `van_der_pol` -> `2d_disk_relaxation_targets`: relaxation oscillations in a disk may form cleaner target-like wave trains than the rectangular and parallelogram cases.

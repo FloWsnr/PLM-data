@@ -1,38 +1,80 @@
 preset: schnakenberg
 parameters:
-  Du: 0.05
-  Dv: 2.0
-  a: 0.1
-  b: 0.9
+  Du:
+    sample: uniform
+    min: 0.04
+    max: 0.065
+  Dv:
+    sample: uniform
+    min: 1.8
+    max: 3.2
+  a:
+    sample: uniform
+    min: 0.07
+    max: 0.14
+  b:
+    sample: uniform
+    min: 0.78
+    max: 0.98
+  domain_size:
+    sample: uniform
+    min: 18.0
+    max: 24.0
 domain:
+  allow_sampling: true
   type: rectangle
-  size: [20.0, 20.0]
-  mesh_resolution: [128, 128]
+  size:
+  - param:domain_size
+  - param:domain_size
+  mesh_resolution: [144, 144]
 time:
-  dt: 0.01
-  t_end: 20.0
+  dt: 0.015
+  t_end: 22.0
 inputs:
   u:
     initial_condition:
       type: gaussian_noise
       params:
-        mean: 1.0
-        std: 0.05
+        mean:
+          sample: uniform
+          min: 0.88
+          max: 1.08
+        std:
+          sample: uniform
+          min: 0.035
+          max: 0.085
   v:
     initial_condition:
       type: gaussian_noise
       params:
-        mean: 0.9
-        std: 0.05
+        mean:
+          sample: uniform
+          min: 0.72
+          max: 1.02
+        std:
+          sample: uniform
+          min: 0.035
+          max: 0.085
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.full_periodic_2d
   v:
     $ref: boundary_field.scalar.full_periodic_2d
+stochastic:
+  states:
+    u:
+      coupling: saturating_self
+      intensity: 0.0008
+      offset: 0.5
+    v:
+      coupling: saturating_self
+      intensity: 0.0006
+      offset: 0.5
 solver:
   $ref: solver.profile.constant_lhs_scalar_spd
 output:
   $ref: output.template.scalar_uv
-  resolution: [96, 96]
-  num_frames: 100
-seed: 42
+  formats: [numpy, gif]
+  resolution: [144, 144]
+  num_frames: 72
+seed: 4200

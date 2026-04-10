@@ -1,0 +1,164 @@
+preset: schnakenberg
+parameters:
+  Du:
+    sample: uniform
+    min: 0.028
+    max: 0.052
+  Dv:
+    sample: uniform
+    min: 1.2
+    max: 3.1
+  a:
+    sample: uniform
+    min: 0.05
+    max: 0.16
+  b:
+    sample: uniform
+    min: 0.68
+    max: 1.02
+  domain_center_x:
+    sample: uniform
+    min: -0.35
+    max: 0.35
+  domain_center_y:
+    sample: uniform
+    min: -0.35
+    max: 0.35
+  u_inner_value:
+    sample: uniform
+    min: 0.95
+    max: 1.32
+  u_outer_value:
+    sample: uniform
+    min: 0.62
+    max: 1.02
+  v_inner_value:
+    sample: uniform
+    min: 0.48
+    max: 0.88
+  v_outer_value:
+    sample: uniform
+    min: 0.76
+    max: 1.16
+domain:
+  allow_sampling: true
+  type: annulus
+  center: ["param:domain_center_x", "param:domain_center_y"]
+  inner_radius:
+    sample: uniform
+    min: 2.4
+    max: 3.8
+  outer_radius:
+    sample: uniform
+    min: 9.0
+    max: 12.0
+  mesh_size:
+    sample: uniform
+    min: 0.13
+    max: 0.17
+time:
+  dt: 0.012
+  t_end: 24.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.78
+          max: 1.05
+        generators:
+        - count:
+            sample: randint
+            min: 6
+            max: 12
+          amplitude:
+            sample: uniform
+            min: -0.16
+            max: 0.26
+          sigma:
+            sample: uniform
+            min: 0.65
+            max: 1.9
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 3.8
+          center:
+          - sample: uniform
+            min: -9.5
+            max: 9.5
+          - sample: uniform
+            min: -9.5
+            max: 9.5
+  v:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 0.68
+          max: 1.02
+        modes:
+        - amplitude:
+            sample: uniform
+            min: -0.12
+            max: 0.14
+          cycles:
+          - sample: uniform
+            min: 1.5
+            max: 4.5
+          - sample: uniform
+            min: 0.5
+            max: 3.0
+          phase:
+            sample: uniform
+            min: -3.14159
+            max: 3.14159
+          angle:
+            sample: uniform
+            min: -1.5708
+            max: 1.5708
+        - amplitude:
+            sample: uniform
+            min: -0.08
+            max: 0.1
+          cycles:
+          - sample: uniform
+            min: 0.5
+            max: 2.5
+          - sample: uniform
+            min: 2.0
+            max: 5.5
+          phase:
+            sample: uniform
+            min: -3.14159
+            max: 3.14159
+          angle:
+            sample: uniform
+            min: -1.5708
+            max: 1.5708
+boundary_conditions:
+  u:
+    inner:
+    - operator: dirichlet
+      value: param:u_inner_value
+    outer:
+    - operator: dirichlet
+      value: param:u_outer_value
+  v:
+    inner:
+    - operator: dirichlet
+      value: param:v_inner_value
+    outer:
+    - operator: dirichlet
+      value: param:v_outer_value
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 72
+seed: 4260
