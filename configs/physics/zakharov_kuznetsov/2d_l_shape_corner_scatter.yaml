@@ -1,0 +1,84 @@
+preset: zakharov_kuznetsov
+parameters:
+  alpha:
+    sample: uniform
+    min: 3.8
+    max: 6.4
+  theta:
+    sample: uniform
+    min: 0.58
+    max: 0.76
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width:
+    sample: uniform
+    min: 9.5
+    max: 11.0
+  outer_height:
+    sample: uniform
+    min: 9.5
+    max: 11.0
+  cutout_width:
+    sample: uniform
+    min: 3.2
+    max: 4.4
+  cutout_height:
+    sample: uniform
+    min: 3.0
+    max: 4.3
+  mesh_size:
+    sample: uniform
+    min: 0.072
+    max: 0.084
+time:
+  dt: 0.0035
+  t_end: 1.45
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+        - count:
+            sample: randint
+            min: 2
+            max: 3
+          amplitude:
+            sample: uniform
+            min: 0.36
+            max: 0.72
+          sigma:
+            sample: uniform
+            min: 0.28
+            max: 0.5
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 2.4
+          center:
+          - sample: uniform
+            min: 1.4
+            max: 5.6
+          - sample: uniform
+            min: 1.2
+            max: 5.8
+boundary_conditions:
+  u:
+    outer:
+    - operator: neumann
+      value: 0.0
+    notch:
+    - operator: dirichlet
+      value: 0.0
+output:
+  formats: [numpy, gif]
+  fields:
+    u: scalar
+  resolution: [160, 160]
+  num_frames: 41
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct_bt
+seed: 52
+

@@ -1,0 +1,96 @@
+preset: zakharov_kuznetsov
+parameters:
+  alpha:
+    sample: uniform
+    min: 2.8
+    max: 4.6
+  theta:
+    sample: uniform
+    min: 0.6
+    max: 0.75
+domain:
+  allow_sampling: true
+  type: rectangle
+  size:
+  - sample: uniform
+    min: 15.0
+    max: 18.0
+  - sample: uniform
+    min: 9.5
+    max: 11.5
+  mesh_resolution: [176, 128]
+time:
+  dt: 0.004
+  t_end: 1.6
+inputs:
+  u:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: -0.03
+          max: 0.03
+        modes:
+        - amplitude:
+            sample: uniform
+            min: 0.18
+            max: 0.36
+          cycles:
+          - sample: uniform
+            min: 0.32
+            max: 0.5
+          - sample: uniform
+            min: 0.48
+            max: 0.78
+          phase:
+            sample: uniform
+            min: 0.0
+            max: 6.283
+          angle:
+            sample: uniform
+            min: -0.35
+            max: 0.35
+        - amplitude:
+            sample: uniform
+            min: -0.18
+            max: 0.18
+          cycles:
+          - sample: uniform
+            min: 0.62
+            max: 0.9
+          - sample: uniform
+            min: 0.18
+            max: 0.42
+          phase:
+            sample: uniform
+            min: 0.0
+            max: 6.283
+          angle:
+            sample: uniform
+            min: 0.6
+            max: 1.05
+boundary_conditions:
+  u:
+    x-:
+    - operator: periodic
+      pair_with: x+
+    x+:
+    - operator: periodic
+      pair_with: x-
+    y-:
+    - operator: dirichlet
+      value: 0.0
+    y+:
+    - operator: dirichlet
+      value: 0.0
+output:
+  formats: [numpy, gif]
+  fields:
+    u: scalar
+  resolution: [176, 128]
+  num_frames: 41
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct_bt
+seed: 44
+
