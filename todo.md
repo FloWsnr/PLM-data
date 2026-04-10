@@ -477,9 +477,31 @@ These 2D configs now cover ten domain families with two dynamics per shape, all 
 
 #### Brusselator (`configs/physics/brusselator`)
 
-1. `2d_parallelogram_turing_labyrinths`: Brusselator Turing labyrinths on a skew parallelogram cell.
-2. `2d_turing_labyrinths`: noise-seeded Brusselator Turing and labyrinth patterns.
-3. `3d_turing_patterning`: 3D Brusselator pattern formation from noise.
+Validation: the 22 2D configs below were run with `./run.sh -n 2 ... --n-runs 2` into `output/brusselator_validation`, producing 44 successful runs with passing output, solver, and stagnation diagnostics.
+
+1. `2d_annulus_azimuthal_spot_wraparound`: annular Turing bands and spot trains wrapping around a randomized inner obstacle.
+2. `2d_annulus_inner_outer_ring_competition`: strong inner/outer boundary forcing drives competing concentric rings in an annulus.
+3. `2d_channel_obstacle_inlet_wake_spots`: inlet-biased channel-obstacle chemistry grows wake-aligned spots and shadowed bands.
+4. `2d_channel_obstacle_obstacle_shadow_labyrinth`: obstacle and wall exchange seed a stationary wake/labyrinth contrast behind the obstacle.
+5. `2d_disk_absorbing_rim_labyrinth_collapse`: disk patterns grow from seeded bumps while an absorbing rim biases collapse and edge pinning.
+6. `2d_disk_radial_target_spots`: circular-domain radial IC structure selects target-like rings and spot defects.
+7. `2d_dumbbell_lobe_phase_lag`: two dumbbell lobes pattern with randomized phase offsets before communicating through the neck.
+8. `2d_dumbbell_neck_pinned_exchange`: neck-biased boundary exchange produces asymmetric lobe-to-lobe spot transfer.
+9. `2d_l_shape_notch_quench_spots`: notch-side forcing creates corner-pinned spots and slower pattern recovery in the L-shaped cutout.
+10. `2d_l_shape_reentrant_corner_labyrinth`: reentrant-corner geometry bends labyrinths and defects around the missing quadrant.
+11. `2d_multi_hole_plate_hole_rim_emitters`: perforation rims seed spot emitters and screened wakes between randomized holes.
+12. `2d_multi_hole_plate_perforation_screening`: many-hole screening breaks otherwise regular Turing bands into perforation-controlled patches.
+13. `2d_parallelogram_oblique_band_breakup`: skew periodic geometry steers oblique bands that fragment into slower spot fields.
+14. `2d_parallelogram_turing_labyrinths`: randomized parallelogram cell selecting skewed Brusselator labyrinths.
+15. `2d_rectangular_edge_pinned_spots`: asymmetric rectangle boundary values pin edge spots and feed inward-growing features.
+16. `2d_serpentine_channel_guided_lane_breakup`: serpentine walls guide spot lanes around bends before they break into local defects.
+17. `2d_serpentine_channel_reverse_bend_recovery`: stronger bend forcing produces fast recovery bands after each channel reversal.
+18. `2d_turing_labyrinths`: baseline randomized rectangle Turing patterning with broad seed and coefficient variation.
+19. `2d_venturi_channel_throat_focusing`: venturi throat geometry focuses bands and spots through the constriction.
+20. `2d_venturi_channel_wall_pinned_labyrinths`: wall exchange in the venturi pins bands to the upper/lower walls and throat shoulders.
+21. `2d_y_bifurcation_branch_split_patterns`: Y-junction geometry splits seeded patterns into independently evolving upper/lower branches.
+22. `2d_y_bifurcation_junction_collision`: branch and inlet forcing collide at the junction, producing spots and broken bands.
+23. `3d_turing_patterning`: 3D Brusselator pattern formation from noise.
 
 #### Cahn-Hilliard (`configs/physics/cahn_hilliard`)
 
@@ -603,10 +625,9 @@ periodic-geometry priority is `skew_box`.
 
 #### Physics
 
-1. `brusselator` -> `2d_dumbbell_turing_bridge`: Turing structures emerge in each chamber and either lock across the neck or remain phase-misaligned.
-2. `maxwell` -> `2d_stadium_cavity_radiation`: time-harmonic EM forcing in a stadium should show geometry-controlled standing-wave scars and hot spots.
-3. `maxwell_pulse` -> `2d_dumbbell_em_pulse_transfer`: launch a pulse in one lobe and watch partial transmission and trapping through the neck.
-4. `schnakenberg` -> `2d_disk_edge_pinned_labyrinths`: smooth closed boundaries should bias stripe bending and spot pinning near the outer wall.
-5. `superlattice` -> `2d_disk_superlattice_targets`: circular geometry should favor concentric competition between the fast and slow pattern scales.
-6. `swift_hohenberg` -> `2d_eccentric_annulus_roll_pinning`: roll patterns and defects should lock to the broken-symmetry inner obstacle.
-7. `van_der_pol` -> `2d_disk_relaxation_targets`: relaxation oscillations in a disk may form cleaner target-like wave trains than the rectangular and parallelogram cases.
+1. `maxwell` -> `2d_stadium_cavity_radiation`: time-harmonic EM forcing in a stadium should show geometry-controlled standing-wave scars and hot spots.
+2. `maxwell_pulse` -> `2d_dumbbell_em_pulse_transfer`: launch a pulse in one lobe and watch partial transmission and trapping through the neck.
+3. `schnakenberg` -> `2d_disk_edge_pinned_labyrinths`: smooth closed boundaries should bias stripe bending and spot pinning near the outer wall.
+4. `superlattice` -> `2d_disk_superlattice_targets`: circular geometry should favor concentric competition between the fast and slow pattern scales.
+5. `swift_hohenberg` -> `2d_eccentric_annulus_roll_pinning`: roll patterns and defects should lock to the broken-symmetry inner obstacle.
+6. `van_der_pol` -> `2d_disk_relaxation_targets`: relaxation oscillations in a disk may form cleaner target-like wave trains than the rectangular and parallelogram cases.
