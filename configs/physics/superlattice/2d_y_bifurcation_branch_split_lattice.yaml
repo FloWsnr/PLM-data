@@ -1,0 +1,210 @@
+preset: superlattice
+parameters:
+  D_u1:
+    sample: uniform
+    min: 0.04
+    max: 0.07
+  D_v1:
+    sample: uniform
+    min: 0.5
+    max: 1.15
+  D_u2:
+    sample: uniform
+    min: 0.26
+    max: 0.44
+  D_v2:
+    sample: uniform
+    min: 9.0
+    max: 16.0
+  a:
+    sample: uniform
+    min: 2.9
+    max: 3.14
+  b:
+    sample: uniform
+    min: 8.75
+    max: 9.45
+  c:
+    sample: uniform
+    min: 14.5
+    max: 15.8
+  d:
+    sample: uniform
+    min: 8.4
+    max: 10.0
+  alpha:
+    sample: uniform
+    min: 0.10
+    max: 0.18
+domain:
+  allow_sampling: true
+  type: y_bifurcation
+  inlet_length:
+    sample: uniform
+    min: 16.0
+    max: 24.0
+  branch_length:
+    sample: uniform
+    min: 18.0
+    max: 28.0
+  branch_angle_degrees:
+    sample: uniform
+    min: 30.0
+    max: 42.0
+  channel_width:
+    sample: uniform
+    min: 7.0
+    max: 10.0
+  mesh_size:
+    sample: uniform
+    min: 0.16
+    max: 0.23
+time:
+  dt: 0.018
+  t_end: 18.0
+inputs:
+  u_1:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 2.88
+          max: 3.1
+        generators:
+          - count:
+              sample: randint
+              min: 3
+              max: 6
+            amplitude:
+              sample: uniform
+              min: 0.12
+              max: 0.32
+            sigma:
+              sample: uniform
+              min: 1.0
+              max: 2.5
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 3.5
+            center:
+              - sample: uniform
+                min: 2.0
+                max: 16.0
+              - sample: uniform
+                min: -2.5
+                max: 2.5
+  v_1:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 2.84
+          max: 3.15
+        std:
+          sample: uniform
+          min: 0.06
+          max: 0.16
+  u_2:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 2.8
+          max: 3.18
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.08
+              max: 0.24
+            cycles:
+              - sample: uniform
+                min: 0.12
+                max: 0.28
+              - sample: uniform
+                min: 0.12
+                max: 0.3
+            phase:
+              sample: uniform
+              min: -3.14159
+              max: 3.14159
+            angle:
+              sample: uniform
+              min: -0.7
+              max: 0.7
+  v_2:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 9.8
+          max: 10.8
+        std:
+          sample: uniform
+          min: 0.14
+          max: 0.38
+boundary_conditions:
+  u_1:
+    inlet:
+      - operator: dirichlet
+        value: 3.35
+    outlet_upper:
+      - operator: dirichlet
+        value: 2.85
+    outlet_lower:
+      - operator: dirichlet
+        value: 2.72
+    walls:
+      - operator: neumann
+        value: 0.0
+  v_1:
+    inlet:
+      - operator: dirichlet
+        value: 3.3
+    outlet_upper:
+      - operator: dirichlet
+        value: 2.86
+    outlet_lower:
+      - operator: dirichlet
+        value: 2.74
+    walls:
+      - operator: neumann
+        value: 0.0
+  u_2:
+    inlet:
+      - operator: dirichlet
+        value: 3.45
+    outlet_upper:
+      - operator: dirichlet
+        value: 2.9
+    outlet_lower:
+      - operator: dirichlet
+        value: 2.65
+    walls:
+      - operator: neumann
+        value: 0.0
+  v_2:
+    inlet:
+      - operator: dirichlet
+        value: 11.1
+    outlet_upper:
+      - operator: dirichlet
+        value: 9.7
+    outlet_lower:
+      - operator: dirichlet
+        value: 8.9
+    walls:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_u1_v1_u2_v2
+  formats: [numpy, gif]
+  resolution: [224, 160]
+  num_frames: 71
+seed: 5480

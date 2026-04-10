@@ -1,0 +1,192 @@
+preset: superlattice
+parameters:
+  D_u1:
+    sample: uniform
+    min: 0.04
+    max: 0.065
+  D_v1:
+    sample: uniform
+    min: 0.24
+    max: 0.42
+  D_u2:
+    sample: uniform
+    min: 0.24
+    max: 0.36
+  D_v2:
+    sample: uniform
+    min: 12.0
+    max: 16.0
+  a:
+    sample: uniform
+    min: 2.9
+    max: 3.12
+  b:
+    sample: uniform
+    min: 8.75
+    max: 9.4
+  c:
+    sample: uniform
+    min: 14.5
+    max: 15.7
+  d:
+    sample: uniform
+    min: 8.4
+    max: 9.8
+  alpha:
+    sample: uniform
+    min: 0.16
+    max: 0.24
+  domain_center_x:
+    sample: uniform
+    min: -0.8
+    max: 0.8
+  domain_center_y:
+    sample: uniform
+    min: -0.8
+    max: 0.8
+domain:
+  allow_sampling: true
+  type: annulus
+  center: [param:domain_center_x, param:domain_center_y]
+  inner_radius:
+    sample: uniform
+    min: 5.2
+    max: 7.2
+  outer_radius:
+    sample: uniform
+    min: 15.5
+    max: 19.0
+  mesh_size:
+    sample: uniform
+    min: 0.22
+    max: 0.3
+time:
+  dt: 0.02
+  t_end: 22.0
+inputs:
+  u_1:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 2.88
+          max: 3.12
+        generators:
+          - count:
+              sample: randint
+              min: 8
+              max: 14
+            amplitude:
+              sample: uniform
+              min: 0.06
+              max: 0.22
+            sigma:
+              sample: uniform
+              min: 0.9
+              max: 1.8
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.8
+            center:
+              - sample: uniform
+                min: -14.0
+                max: 14.0
+              - sample: uniform
+                min: -14.0
+                max: 14.0
+  v_1:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 2.85
+          max: 3.15
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.04
+              max: 0.14
+            cycles:
+              - sample: uniform
+                min: 0.18
+                max: 0.36
+              - sample: uniform
+                min: 0.18
+                max: 0.36
+            phase:
+              sample: uniform
+              min: -3.14159
+              max: 3.14159
+            angle:
+              sample: uniform
+              min: -0.8
+              max: 0.8
+  u_2:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 2.8
+          max: 3.2
+        std:
+          sample: uniform
+          min: 0.06
+          max: 0.16
+  v_2:
+    initial_condition:
+      type: radial_cosine
+      params:
+        base:
+          sample: uniform
+          min: 9.8
+          max: 10.8
+        amplitude:
+          sample: uniform
+          min: 0.22
+          max: 0.6
+        frequency:
+          sample: uniform
+          min: 0.35
+          max: 0.7
+        center: [param:domain_center_x, param:domain_center_y]
+boundary_conditions:
+  u_1:
+    inner:
+      - operator: neumann
+        value: 0.0
+    outer:
+      - operator: neumann
+        value: 0.0
+  v_1:
+    inner:
+      - operator: neumann
+        value: 0.0
+    outer:
+      - operator: neumann
+        value: 0.0
+  u_2:
+    inner:
+      - operator: neumann
+        value: 0.0
+    outer:
+      - operator: neumann
+        value: 0.0
+  v_2:
+    inner:
+      - operator: neumann
+        value: 0.0
+    outer:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_u1_v1_u2_v2
+  formats: [numpy, gif]
+  resolution: [176, 176]
+  num_frames: 89
+seed: 5430

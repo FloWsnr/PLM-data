@@ -1,0 +1,229 @@
+preset: superlattice
+parameters:
+  D_u1:
+    sample: uniform
+    min: 0.035
+    max: 0.06
+  D_v1:
+    sample: uniform
+    min: 0.5
+    max: 1.0
+  D_u2:
+    sample: uniform
+    min: 0.21
+    max: 0.36
+  D_v2:
+    sample: uniform
+    min: 7.5
+    max: 13.5
+  a:
+    sample: uniform
+    min: 2.88
+    max: 3.12
+  b:
+    sample: uniform
+    min: 8.65
+    max: 9.35
+  c:
+    sample: uniform
+    min: 14.4
+    max: 15.8
+  d:
+    sample: uniform
+    min: 8.3
+    max: 9.8
+  alpha:
+    sample: uniform
+    min: 0.08
+    max: 0.18
+domain:
+  allow_sampling: true
+  type: channel_obstacle
+  length:
+    sample: uniform
+    min: 38.0
+    max: 48.0
+  height:
+    sample: uniform
+    min: 18.0
+    max: 24.0
+  obstacle_center:
+    - sample: uniform
+      min: 15.0
+      max: 23.0
+    - sample: uniform
+      min: 7.5
+      max: 16.5
+  obstacle_radius:
+    sample: uniform
+    min: 2.0
+    max: 4.0
+  mesh_size:
+    sample: uniform
+    min: 0.18
+    max: 0.25
+time:
+  dt: 0.018
+  t_end: 18.0
+inputs:
+  u_1:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 2.88
+          max: 3.08
+        generators:
+          - count:
+              sample: randint
+              min: 4
+              max: 8
+            amplitude:
+              sample: uniform
+              min: 0.1
+              max: 0.32
+            sigma:
+              sample: uniform
+              min: 1.0
+              max: 2.4
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 3.6
+            center:
+              - sample: uniform
+                min: 3.0
+                max: 18.0
+              - sample: uniform
+                min: 4.0
+                max: 18.0
+  v_1:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 2.84
+          max: 3.14
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.06
+              max: 0.18
+            cycles:
+              - sample: uniform
+                min: 0.16
+                max: 0.34
+              - sample: uniform
+                min: 0.1
+                max: 0.28
+            phase:
+              sample: uniform
+              min: -3.14159
+              max: 3.14159
+  u_2:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 2.8
+          max: 3.2
+        std:
+          sample: uniform
+          min: 0.06
+          max: 0.18
+  v_2:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 9.8
+          max: 10.8
+        generators:
+          - count:
+              sample: randint
+              min: 3
+              max: 6
+            amplitude:
+              sample: uniform
+              min: -0.45
+              max: 0.35
+            sigma:
+              sample: uniform
+              min: 1.2
+              max: 2.6
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 3.0
+            center:
+              - sample: uniform
+                min: 6.0
+                max: 30.0
+              - sample: uniform
+                min: 4.0
+                max: 18.0
+boundary_conditions:
+  u_1:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+    obstacle:
+      - operator: neumann
+        value: 0.0
+  v_1:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+    obstacle:
+      - operator: neumann
+        value: 0.0
+  u_2:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+    obstacle:
+      - operator: neumann
+        value: 0.0
+  v_2:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+    obstacle:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_u1_v1_u2_v2
+  formats: [numpy, gif]
+  resolution: [224, 128]
+  num_frames: 73
+seed: 5471

@@ -1,0 +1,197 @@
+preset: superlattice
+parameters:
+  D_u1:
+    sample: uniform
+    min: 0.04
+    max: 0.068
+  D_v1:
+    sample: uniform
+    min: 0.13
+    max: 0.24
+  D_u2:
+    sample: uniform
+    min: 0.23
+    max: 0.36
+  D_v2:
+    sample: uniform
+    min: 7.0
+    max: 12.0
+  a:
+    sample: uniform
+    min: 2.88
+    max: 3.1
+  b:
+    sample: uniform
+    min: 8.75
+    max: 9.25
+  c:
+    sample: uniform
+    min: 14.5
+    max: 15.7
+  d:
+    sample: uniform
+    min: 8.3
+    max: 9.7
+  alpha:
+    sample: uniform
+    min: 0.08
+    max: 0.14
+  skew_x:
+    sample: uniform
+    min: 5.0
+    max: 10.0
+  axis_x_length:
+    sample: uniform
+    min: 30.0
+    max: 40.0
+  axis_y_height:
+    sample: uniform
+    min: 25.0
+    max: 34.0
+domain:
+  allow_sampling: true
+  type: parallelogram
+  origin: [0.0, 0.0]
+  axis_x: [param:axis_x_length, 0.0]
+  axis_y: [param:skew_x, param:axis_y_height]
+  mesh_resolution: [160, 128]
+time:
+  dt: 0.03
+  t_end: 24.0
+inputs:
+  u_1:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 2.9
+          max: 3.1
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.08
+              max: 0.18
+            cycles:
+              - sample: uniform
+                min: 0.18
+                max: 0.32
+              - sample: uniform
+                min: 0.0
+                max: 0.08
+            phase:
+              sample: uniform
+              min: -3.14159
+              max: 3.14159
+            angle:
+              sample: uniform
+              min: 0.35
+              max: 0.85
+          - amplitude:
+              sample: uniform
+              min: -0.12
+              max: 0.12
+            cycles:
+              - sample: uniform
+                min: 0.04
+                max: 0.15
+              - sample: uniform
+                min: 0.2
+                max: 0.38
+            phase:
+              sample: uniform
+              min: -3.14159
+              max: 3.14159
+            angle:
+              sample: uniform
+              min: -0.55
+              max: -0.15
+  v_1:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 2.86
+          max: 3.18
+        std:
+          sample: uniform
+          min: 0.05
+          max: 0.14
+  u_2:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 2.78
+          max: 3.22
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.12
+              max: 0.28
+            cycles:
+              - sample: uniform
+                min: 0.12
+                max: 0.28
+              - sample: uniform
+                min: 0.12
+                max: 0.28
+            phase:
+              sample: uniform
+              min: -3.14159
+              max: 3.14159
+            angle:
+              sample: uniform
+              min: -0.8
+              max: 0.8
+  v_2:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 9.7
+          max: 10.8
+        generators:
+          - count:
+              sample: randint
+              min: 4
+              max: 8
+            amplitude:
+              sample: uniform
+              min: -0.38
+              max: 0.45
+            sigma:
+              sample: uniform
+              min: 1.1
+              max: 2.6
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 3.8
+            center:
+              - sample: uniform
+                min: 4.0
+                max: 34.0
+              - sample: uniform
+                min: 3.0
+                max: 30.0
+boundary_conditions:
+  u_1:
+    $ref: boundary_field.scalar.full_periodic_2d
+  v_1:
+    $ref: boundary_field.scalar.full_periodic_2d
+  u_2:
+    $ref: boundary_field.scalar.full_periodic_2d
+  v_2:
+    $ref: boundary_field.scalar.full_periodic_2d
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_u1_v1_u2_v2
+  formats: [numpy, gif]
+  resolution: [160, 128]
+  num_frames: 81
+seed: 5410
