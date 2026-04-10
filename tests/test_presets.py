@@ -45,6 +45,7 @@ from tests.preset_matrix import (
     make_bistable_travelling_waves_config,
     cahn_hilliard_solver_config,
     constant,
+    make_cahn_hilliard_config,
     make_compressible_navier_stokes_config,
     make_compressible_euler_config,
     direct_solver_config,
@@ -68,6 +69,50 @@ from tests.preset_matrix import (
     vector_expr,
     vector_zero,
 )
+
+
+def _homogeneous_neumann_rectangle_field() -> BoundaryFieldConfig:
+    return boundary_field_config(
+        {
+            "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+        }
+    )
+
+
+def test_cahn_hilliard_accepts_homogeneous_neumann_natural_boundaries(tmp_path):
+    config = make_cahn_hilliard_config(
+        tmp_path,
+        initial_condition=constant(0.5),
+        periodic_axes=(),
+    )
+    config.boundary_conditions["c"] = _homogeneous_neumann_rectangle_field()
+
+    problem = get_preset(config.preset).build_problem(config)
+    domain_geom = create_domain(config.domain)
+
+    problem.validate_boundary_conditions(domain_geom)
+
+
+def test_cahn_hilliard_rejects_nonzero_neumann_boundary(tmp_path):
+    config = make_cahn_hilliard_config(
+        tmp_path,
+        initial_condition=constant(0.5),
+        periodic_axes=(),
+    )
+    config.boundary_conditions["c"] = _homogeneous_neumann_rectangle_field()
+    config.boundary_field("c").sides["x-"] = [
+        BoundaryConditionConfig(type="neumann", value=constant(1.0))
+    ]
+
+    problem = get_preset(config.preset).build_problem(config)
+    domain_geom = create_domain(config.domain)
+
+    with pytest.raises(ValueError, match="homogeneous Neumann"):
+        problem.validate_boundary_conditions(domain_geom)
+
 
 HAS_DOLFINX_MPC = importlib.util.find_spec("dolfinx_mpc") is not None
 

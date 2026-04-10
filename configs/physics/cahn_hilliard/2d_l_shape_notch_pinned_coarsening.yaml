@@ -1,0 +1,111 @@
+preset: cahn_hilliard
+parameters:
+  lmbda:
+    sample: uniform
+    min: 0.004
+    max: 0.007
+  barrier_height:
+    sample: uniform
+    min: 90.0
+    max: 145.0
+  mobility:
+    sample: uniform
+    min: 0.45
+    max: 0.95
+  theta:
+    sample: uniform
+    min: 0.84
+    max: 1.0
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width:
+    sample: uniform
+    min: 1.0
+    max: 1.18
+  outer_height:
+    sample: uniform
+    min: 1.0
+    max: 1.18
+  cutout_width:
+    sample: uniform
+    min: 0.38
+    max: 0.52
+  cutout_height:
+    sample: uniform
+    min: 0.38
+    max: 0.52
+  mesh_size:
+    sample: uniform
+    min: 0.0085
+    max: 0.0105
+time:
+  dt: 2.0e-06
+  t_end: 2.4e-04
+inputs:
+  c:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.44
+          max: 0.52
+        generators:
+          - count:
+              sample: randint
+              min: 2
+              max: 4
+            amplitude:
+              sample: uniform
+              min: 0.12
+              max: 0.25
+            sigma:
+              sample: uniform
+              min: 0.055
+              max: 0.085
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.4
+            center:
+              - sample: uniform
+                min: 0.62
+                max: 0.98
+              - sample: uniform
+                min: 0.22
+                max: 0.55
+          - count:
+              sample: randint
+              min: 2
+              max: 4
+            amplitude:
+              sample: uniform
+              min: -0.22
+              max: -0.08
+            sigma:
+              sample: uniform
+              min: 0.055
+              max: 0.085
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.2
+            center:
+              - sample: uniform
+                min: 0.22
+                max: 0.55
+              - sample: uniform
+                min: 0.62
+                max: 0.98
+boundary_conditions:
+  c:
+    $ref: boundary_field.scalar.homogeneous_neumann_l_shape
+output:
+  $ref: output.template.scalar_c
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 33
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct_bt
+seed: 42

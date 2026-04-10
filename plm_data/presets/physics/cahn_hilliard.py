@@ -52,7 +52,11 @@ _CAHN_HILLIARD_SPEC = PresetSpec(
             name="c",
             shape="scalar",
             operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for the concentration field.",
+            description=(
+                "Boundary conditions for the concentration field. Periodic side "
+                "pairs are constrained strongly; homogeneous Neumann entries mark "
+                "the natural no-flux boundary condition."
+            ),
         )
     },
     states={
@@ -77,13 +81,30 @@ class _CahnHilliardProblem(TransientNonlinearProblem):
     supported_solver_strategies = (NONLINEAR_MIXED_DIRECT,)
 
     def validate_boundary_conditions(self, domain_geom):
+        boundary_field = self.config.boundary_field("c")
         validate_boundary_field_structure(
             preset_name=self.spec.name,
             field_name="c",
-            boundary_field=self.config.boundary_field("c"),
+            boundary_field=boundary_field,
             domain_geom=domain_geom,
-            allowed_operators={"periodic"},
+            allowed_operators={"periodic", "neumann"},
         )
+        for side_name, entries in boundary_field.sides.items():
+            entry = entries[0]
+            if entry.type != "neumann":
+                continue
+            value = entry.value
+            if (
+                value is None
+                or value.is_componentwise
+                or value.type != "constant"
+                or float(value.params.get("value", 1.0)) != 0.0
+            ):
+                raise ValueError(
+                    "Preset 'cahn_hilliard' supports only homogeneous Neumann "
+                    f"natural no-flux boundaries. Side '{side_name}' got "
+                    f"{value!r}."
+                )
 
     def setup(self) -> None:
         domain_geom = self.load_domain_geometry()

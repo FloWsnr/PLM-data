@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 331 configs.
+Current baseline: 38 PDE presets and 460 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -528,9 +528,31 @@ Validation: the 22 2D configs below were run with `./run.sh -n 2 ... --n-runs 2`
 
 #### Cahn-Hilliard (`configs/physics/cahn_hilliard`)
 
-1. `2d_parallelogram_spinodal_decomposition`: spinodal decomposition on a skew parallelogram cell.
-2. `2d_spinodal_decomposition`: spinodal decomposition into phase-separated domains.
-3. `3d_spinodal_decomposition`: 3D spinodal decomposition and coarsening.
+Validation: the 22 2D configs below were run serially with `./run.sh -n 2 ... --n-runs 2` into `output/cahn_hilliard_validation`, producing 44 successful runs with passing solver/output health. The analysis contact sheets and metrics in `output/cahn_hilliard_validation/analysis` show finite concentration fields, seed-specific final states, nontrivial phase separation/coarsening in every run, and masked-grid mass drift below about 1.1%.
+
+1. `2d_annulus_azimuthal_spinodal_wraparound`: randomized annulus geometry with azimuthal noise and periodic-like wraparound coarsening around the hole.
+2. `2d_annulus_inner_rim_droplet_necklace`: inner-rim-biased droplets grow into a necklace of coarsening domains around the sampled annulus.
+3. `2d_channel_obstacle_obstacle_shadow_coarsening`: sampled cylinder channel where obstacle-shadowed spinodal bands coarsen differently upstream and downstream.
+4. `2d_channel_obstacle_wall_stripe_pinching`: wall-aligned stripes pinch into droplets and bands around the channel obstacle under zero-flux boundaries.
+5. `2d_disk_offcenter_droplet_nucleation`: off-center Gaussian droplets nucleate curved phase regions inside a randomized disk.
+6. `2d_disk_radial_ring_coarsening`: radial-cosine rings in a disk break and coarsen into circular target-like phase bands.
+7. `2d_dumbbell_dual_lobe_exchange`: two randomized lobes phase-separate with delayed interaction through the dumbbell neck.
+8. `2d_dumbbell_neck_pinch_coarsening`: neck-localized structure pinches and seeds different coarsening rates in the two lobes.
+9. `2d_l_shape_notch_pinned_coarsening`: notch-biased droplets and homogeneous no-flux walls pin domains near the reentrant corner.
+10. `2d_l_shape_reentrant_stripe_breakup`: L-shaped stripes bend around the missing quadrant and fragment into corner-controlled bands.
+11. `2d_multi_hole_plate_hole_rim_droplets`: perforation-rim droplets grow into hole-screened coarsening halos across sampled plates.
+12. `2d_multi_hole_plate_perforation_screening`: noisy spinodal texture is screened by randomized hole layouts, yielding patchy interstitial bands.
+13. `2d_parallelogram_oblique_band_breakup`: skew-cell oblique bands break into slanted domains instead of axis-aligned square patterns.
+14. `2d_parallelogram_spinodal_decomposition`: randomized skew parallelogram spinodal decomposition with periodic boundaries and sampled kinetics.
+15. `2d_rectangle_x_periodic_interface_coarsening`: x-periodic rectangular interface coarsening that produces directional stripe competition.
+16. `2d_serpentine_channel_guided_band_coarsening`: serpentine walls guide lane-following bands around bends before coarsening.
+17. `2d_serpentine_channel_lane_pinch_droplets`: broader sampled droplets pinch into lane-confined phase islands through the serpentine duct.
+18. `2d_spinodal_decomposition`: baseline randomized rectangle spinodal decomposition into labyrinthine phase-separated domains.
+19. `2d_venturi_channel_throat_focused_spinodal`: venturi geometry focuses spinodal bands through the throat and re-expands them downstream.
+20. `2d_venturi_channel_wall_band_competition`: upper/lower wall bands compete through a sampled constriction and leave throat-pinned interfaces.
+21. `2d_y_bifurcation_branch_split_spinodal`: branch geometry splits spinodal bands into the two daughter arms with seed-dependent asymmetry.
+22. `2d_y_bifurcation_junction_droplet_collision`: trunk and branch droplets collide at the Y junction before coarsening along each arm.
+23. `3d_spinodal_decomposition`: 3D spinodal decomposition and coarsening.
 
 #### Complex Ginzburg-Landau (`configs/physics/cgl`)
 

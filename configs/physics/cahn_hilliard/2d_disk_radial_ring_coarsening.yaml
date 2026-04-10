@@ -2,8 +2,8 @@ preset: cahn_hilliard
 parameters:
   lmbda:
     sample: uniform
-    min: 0.0065
-    max: 0.0105
+    min: 0.006
+    max: 0.01
   barrier_height:
     sample: uniform
     min: 80.0
@@ -18,34 +18,52 @@ parameters:
     max: 1.0
 domain:
   allow_sampling: true
-  type: rectangle
-  size:
+  type: disk
+  center:
     - sample: uniform
-      min: 0.96
-      max: 1.08
+      min: -0.035
+      max: 0.035
     - sample: uniform
-      min: 0.96
-      max: 1.08
-  mesh_resolution: [128, 128]
+      min: -0.035
+      max: 0.035
+  radius:
+    sample: uniform
+    min: 0.55
+    max: 0.62
+  mesh_size:
+    sample: uniform
+    min: 0.0075
+    max: 0.0088
 time:
   dt: 2.0e-06
   t_end: 2.4e-04
 inputs:
   c:
     initial_condition:
-      type: gaussian_noise
+      type: radial_cosine
       params:
-        mean:
+        base:
           sample: uniform
           min: 0.48
-          max: 0.56
-        std:
+          max: 0.54
+        amplitude:
           sample: uniform
-          min: 0.02
-          max: 0.045
+          min: 0.06
+          max: 0.12
+        frequency:
+          sample: uniform
+          min: 10.0
+          max: 18.0
+        center:
+          - sample: uniform
+            min: -0.05
+            max: 0.05
+          - sample: uniform
+            min: -0.05
+            max: 0.05
 boundary_conditions:
   c:
-    $ref: boundary_field.scalar.full_periodic_2d
+    $ref: boundary_field.scalar.homogeneous_neumann_outer
 output:
   $ref: output.template.scalar_c
   formats: [numpy, gif]

@@ -1,31 +1,62 @@
 preset: cahn_hilliard
 parameters:
-  lmbda: 0.01
-  barrier_height: 100.0
-  mobility: 1.0
-  theta: 0.5
+  lmbda:
+    sample: uniform
+    min: 0.005
+    max: 0.008
+  barrier_height:
+    sample: uniform
+    min: 80.0
+    max: 130.0
+  mobility:
+    sample: uniform
+    min: 0.4
+    max: 0.9
+  theta:
+    sample: uniform
+    min: 0.84
+    max: 1.0
 domain:
+  allow_sampling: true
   type: parallelogram
   origin: [0.0, 0.0]
-  axis_x: [1.0, 0.0]
-  axis_y: [0.25, 1.0]
-  mesh_resolution: [96, 96]
+  axis_x:
+    - sample: uniform
+      min: 0.96
+      max: 1.08
+    - 0.0
+  axis_y:
+    - sample: uniform
+      min: 0.16
+      max: 0.34
+    - sample: uniform
+      min: 0.94
+      max: 1.08
+  mesh_resolution: [128, 128]
 time:
-  $ref: time.cahn_hilliard_default
+  dt: 2.0e-06
+  t_end: 2.4e-04
 inputs:
   c:
     initial_condition:
       type: gaussian_noise
       params:
-        mean: 0.63
-        std: 0.02
+        mean:
+          sample: uniform
+          min: 0.44
+          max: 0.58
+        std:
+          sample: uniform
+          min: 0.02
+          max: 0.045
 boundary_conditions:
   c:
     $ref: boundary_field.scalar.full_periodic_2d
 output:
   $ref: output.template.scalar_c
-  resolution: [64, 64]
-  num_frames: 20
+  formats: [numpy, gif]
+  resolution: [160, 128]
+  num_frames: 33
 solver:
-  $ref: solver.profile.nonlinear_mixed_direct
+  $ref: solver.profile.nonlinear_mixed_direct_bt
 seed: 42
