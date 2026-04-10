@@ -2,154 +2,146 @@ preset: maxwell_pulse
 parameters:
   epsilon_r:
     sample: uniform
-    min: 0.82
-    max: 1.18
+    min: 0.7
+    max: 1.05
   mu_r:
     sample: uniform
-    min: 0.86
-    max: 1.16
+    min: 0.78
+    max: 1.14
   sigma:
     sample: uniform
-    min: 0.012
-    max: 0.038
+    min: 0.004
+    max: 0.025
   pulse_amplitude:
     sample: uniform
-    min: 3.2
-    max: 5.6
+    min: 4.0
+    max: 7.2
   pulse_frequency:
     sample: uniform
-    min: 7.0
-    max: 11.5
+    min: 10.0
+    max: 16.0
   pulse_width:
     sample: uniform
-    min: 0.04
-    max: 0.07
+    min: 0.032
+    max: 0.058
   pulse_delay:
     sample: uniform
-    min: 0.11
-    max: 0.2
+    min: 0.075
+    max: 0.15
 domain:
   allow_sampling: true
-  type: rectangle
-  size:
+  type: disk
+  center:
   - sample: uniform
-    min: 1.18
-    max: 1.35
+    min: -0.04
+    max: 0.04
   - sample: uniform
-    min: 0.86
-    max: 1.04
-  mesh_resolution:
-  - sample: randint
-    min: 128
-    max: 144
-  - sample: randint
-    min: 128
-    max: 144
+    min: -0.04
+    max: 0.04
+  radius:
+    sample: uniform
+    min: 0.94
+    max: 1.06
+  mesh_size:
+    sample: uniform
+    min: 0.016
+    max: 0.019
 inputs:
   electric_field:
     source:
       components:
         x:
-          type: gaussian_bump
+          type: radial_cosine
           params:
+            base: 0.0
             amplitude:
               sample: uniform
-              min: 0.8
-              max: 1.2
-            sigma:
+              min: 0.28
+              max: 0.52
+            frequency:
               sample: uniform
-              min: 0.045
-              max: 0.07
+              min: 16.0
+              max: 25.0
             center:
             - sample: uniform
-              min: 0.18
-              max: 0.34
+              min: -0.08
+              max: 0.08
             - sample: uniform
-              min: 0.38
-              max: 0.62
+              min: -0.08
+              max: 0.08
         y:
           type: gaussian_bump
           params:
             amplitude:
               sample: uniform
-              min: -0.24
-              max: 0.24
+              min: -0.42
+              max: 0.42
             sigma:
               sample: uniform
-              min: 0.06
-              max: 0.09
+              min: 0.08
+              max: 0.13
             center:
             - sample: uniform
-              min: 0.2
-              max: 0.38
+              min: -0.18
+              max: 0.18
             - sample: uniform
-              min: 0.28
-              max: 0.72
+              min: -0.18
+              max: 0.18
     initial_condition:
       components:
         x:
-          type: gaussian_noise
-          params:
-            mean: 0.0
-            std:
-              sample: uniform
-              min: 0.006
-              max: 0.018
-        y:
           type: gaussian_blobs
           params:
             background: 0.0
             generators:
             - count:
                 sample: randint
-                min: 1
-                max: 2
+                min: 2
+                max: 4
               amplitude:
                 sample: uniform
-                min: -0.08
-                max: 0.08
+                min: -0.09
+                max: 0.09
               sigma:
                 sample: uniform
-                min: 0.06
-                max: 0.11
+                min: 0.055
+                max: 0.095
               aspect_ratio:
                 sample: uniform
                 min: 1.0
-                max: 1.8
+                max: 2.0
               center:
               - sample: uniform
-                min: 0.46
-                max: 0.96
+                min: -0.55
+                max: 0.55
               - sample: uniform
-                min: 0.18
-                max: 0.82
+                min: -0.55
+                max: 0.55
+        y:
+          type: gaussian_noise
+          params:
+            mean: 0.0
+            std:
+              sample: uniform
+              min: 0.004
+              max: 0.012
 boundary_conditions:
   electric_field:
-    x-:
+    outer:
     - operator: absorbing
       value:
         type: zero
         params: {}
-    x+:
-    - operator: absorbing
-      value:
-        type: zero
-        params: {}
-    y-:
-    - operator: dirichlet
-      value: [0.0, 0.0]
-    y+:
-    - operator: dirichlet
-      value: [0.0, 0.0]
 time:
-  dt: 0.006
-  t_end: 0.72
+  dt: 0.004
+  t_end: 0.56
 solver:
   $ref: solver.profile.constant_lhs_curl_direct
 output:
   formats: [numpy, gif]
   fields:
     electric_field: components
-  resolution: [176, 128]
-  num_frames: 49
-seed: 42
+  resolution: [160, 160]
+  num_frames: 57
+seed: 54
+

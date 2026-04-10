@@ -1,0 +1,179 @@
+preset: maxwell_pulse
+parameters:
+  epsilon_r:
+    sample: uniform
+    min: 1.05
+    max: 1.75
+  mu_r:
+    sample: uniform
+    min: 0.95
+    max: 1.45
+  sigma:
+    sample: uniform
+    min: 0.025
+    max: 0.075
+  pulse_amplitude:
+    sample: uniform
+    min: 1.8
+    max: 3.4
+  pulse_frequency:
+    sample: uniform
+    min: 4.5
+    max: 8.0
+  pulse_width:
+    sample: uniform
+    min: 0.075
+    max: 0.13
+  pulse_delay:
+    sample: uniform
+    min: 0.16
+    max: 0.29
+domain:
+  allow_sampling: true
+  type: rectangle
+  size:
+  - sample: uniform
+    min: 0.95
+    max: 1.16
+  - sample: uniform
+    min: 0.95
+    max: 1.16
+  mesh_resolution:
+  - sample: randint
+    min: 128
+    max: 152
+  - sample: randint
+    min: 128
+    max: 152
+inputs:
+  electric_field:
+    source:
+      components:
+        x:
+          type: sine_waves
+          params:
+            background: 0.0
+            modes:
+            - amplitude:
+                sample: uniform
+                min: 0.18
+                max: 0.34
+              cycles:
+              - sample: uniform
+                min: 2.0
+                max: 4.0
+              - sample: uniform
+                min: 1.0
+                max: 3.0
+              phase:
+                sample: uniform
+                min: 0.0
+                max: 6.283185307
+              angle:
+                sample: uniform
+                min: -0.4
+                max: 0.4
+        y:
+          type: sine_waves
+          params:
+            background: 0.0
+            modes:
+            - amplitude:
+                sample: uniform
+                min: -0.32
+                max: -0.16
+              cycles:
+              - sample: uniform
+                min: 1.0
+                max: 3.0
+              - sample: uniform
+                min: 2.0
+                max: 4.0
+              phase:
+                sample: uniform
+                min: 0.0
+                max: 6.283185307
+              angle:
+                sample: uniform
+                min: -0.35
+                max: 0.35
+    initial_condition:
+      components:
+        x:
+          type: sine_waves
+          params:
+            background: 0.0
+            modes:
+            - amplitude:
+                sample: uniform
+                min: 0.05
+                max: 0.11
+              cycles:
+              - sample: uniform
+                min: 2.0
+                max: 5.0
+              - sample: uniform
+                min: 1.0
+                max: 3.0
+              phase:
+                sample: uniform
+                min: 0.0
+                max: 6.283185307
+              angle:
+                sample: uniform
+                min: -0.5
+                max: 0.5
+        y:
+          type: quadrants
+          params:
+            split:
+            - sample: uniform
+              min: 0.44
+              max: 0.58
+            - sample: uniform
+              min: 0.44
+              max: 0.58
+            region_values:
+              "00":
+                sample: uniform
+                min: -0.035
+                max: -0.015
+              "01":
+                sample: uniform
+                min: 0.012
+                max: 0.04
+              "10":
+                sample: uniform
+                min: 0.012
+                max: 0.04
+              "11":
+                sample: uniform
+                min: -0.04
+                max: -0.012
+boundary_conditions:
+  electric_field:
+    x-:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+    x+:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+    y-:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+    y+:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+time:
+  dt: 0.007
+  t_end: 1.05
+solver:
+  $ref: solver.profile.constant_lhs_curl_direct
+output:
+  formats: [numpy, gif]
+  fields:
+    electric_field: components
+  resolution: [144, 144]
+  num_frames: 61
+seed: 52
+

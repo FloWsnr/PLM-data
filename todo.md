@@ -682,9 +682,37 @@ summaries and visual start/middle/end plus seed-comparison sheets.
 
 #### Maxwell Pulse (`configs/physics/maxwell_pulse`)
 
-1. `2d_guided_em_pulse`: localized electromagnetic pulse launched in a waveguide-like box with absorbing ends.
-2. `2d_parallelogram_guided_em_pulse`: localized electromagnetic pulse launched on a skew parallelogram cell.
-3. `3d_guided_em_pulse`: 3D localized electromagnetic pulse launched in a partially confined box.
+Validation note: all 20 2D configs were run with
+`./run.sh -n 2 ... --n-runs 2` under `output/maxwell_pulse_validation`,
+producing 40 successful runs with output grids at or above 128 on the shortest
+side. The sweep covers two configs each for rectangle, parallelogram, disk,
+annulus, dumbbell, L-shape, multi-hole plate, channel obstacle, venturi channel,
+and Y-bifurcation domains. Metadata health checks, clean log scans, masked
+finite/dynamic metrics, seed-pair difference metrics, and start/middle/end
+visual comparison sheets all passed; no retuning was needed after the
+validation pass.
+
+1. `2d_annulus_inner_outer_echo`: annular pulse with PEC inner rim and absorbing outer rim, emphasizing radial echoes and inner-wall scattering.
+2. `2d_annulus_orbiting_dual_pulse`: slower annulus case with opposing tangential wave packets and inner absorption against an outer PEC wall.
+3. `2d_channel_obstacle_reverse_wall_echo`: downstream-launched channel-obstacle pulse with obstacle absorption and PEC inlet/walls for reverse echoes.
+4. `2d_channel_obstacle_wake_diffraction`: inlet pulse diffracts around a sampled circular obstacle with absorbing channel ends.
+5. `2d_disk_pec_whispering_gallery`: off-center disk pulse in a PEC circular cavity, producing rim-guided reflections and standing interference.
+6. `2d_disk_radial_pulse_scatter`: faster absorbing-disk case with radial-cosine forcing and seeded off-center field texture.
+7. `2d_dumbbell_lobe_transfer_pulse`: absorbing dumbbell pulse launched from one lobe through a sampled neck into the opposite lobe.
+8. `2d_dumbbell_neck_trapped_echoes`: narrow-neck PEC dumbbell with neck-centered forcing, emphasizing trapped and delayed lobe echoes.
+9. `2d_guided_em_pulse`: randomized rectangular waveguide with absorbing ends, PEC walls, and localized source/IC variation.
+10. `2d_l_shape_corner_diffraction_pulse`: L-shaped domain with a corner-launched pulse diffracting around a PEC notch into absorbing outer walls.
+11. `2d_l_shape_notch_reflection_cavity`: slower L-shape cavity with PEC outer boundary and absorbing notch sink for reentrant-corner reflections.
+12. `2d_multi_hole_plate_hole_trapped_echoes`: perforated plate with PEC outer boundary and absorbing holes, giving hole-localized echo patterns.
+13. `2d_multi_hole_plate_perforation_diffraction`: absorbing outer plate with PEC holes, producing diffraction wakes around sampled perforations.
+14. `2d_parallelogram_guided_em_pulse`: skew waveguide pulse with randomized oblique geometry, absorbing sides, and seeded wave packets.
+15. `2d_parallelogram_pec_oblique_mode`: skew PEC/absorbing hybrid with oblique sine modes and radial forcing.
+16. `2d_rectangle_pec_cavity_sine_bounce`: slower rectangular PEC cavity with sampled sine forcing and quadrant starts for standing-wave bounce patterns.
+17. `2d_venturi_channel_reverse_focus_echo`: downstream venturi pulse reflected through a sampled throat with absorbing walls/outlet.
+18. `2d_venturi_channel_throat_lensing`: inlet-launched fast venturi pulse focused by the sampled constriction under PEC walls.
+19. `2d_y_bifurcation_branch_collision_echo`: branch-launched Y-bifurcation pulse collision back toward the junction with PEC walls.
+20. `2d_y_bifurcation_inlet_split_pulse`: inlet pulse splitting into sampled Y branches with absorbing outlets and PEC walls.
+21. `3d_guided_em_pulse`: 3D localized electromagnetic pulse launched in a partially confined box.
 
 #### Schnakenberg (`configs/physics/schnakenberg`)
 

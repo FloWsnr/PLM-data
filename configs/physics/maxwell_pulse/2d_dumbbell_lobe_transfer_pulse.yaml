@@ -1,58 +1,62 @@
 preset: maxwell_pulse
 parameters:
+  dumbbell_center_y:
+    sample: uniform
+    min: -0.04
+    max: 0.04
   epsilon_r:
     sample: uniform
-    min: 0.76
-    max: 1.12
+    min: 0.78
+    max: 1.22
   mu_r:
     sample: uniform
-    min: 0.92
-    max: 1.32
+    min: 0.82
+    max: 1.2
   sigma:
     sample: uniform
-    min: 0.006
-    max: 0.028
+    min: 0.004
+    max: 0.025
   pulse_amplitude:
     sample: uniform
-    min: 3.8
-    max: 6.4
+    min: 4.2
+    max: 7.0
   pulse_frequency:
     sample: uniform
-    min: 8.5
-    max: 14.0
+    min: 8.0
+    max: 13.5
   pulse_width:
     sample: uniform
-    min: 0.035
-    max: 0.062
+    min: 0.045
+    max: 0.08
   pulse_delay:
     sample: uniform
     min: 0.08
     max: 0.17
 domain:
   allow_sampling: true
-  type: parallelogram
-  origin: [0.0, 0.0]
-  axis_x:
+  type: dumbbell
+  left_center:
   - sample: uniform
-    min: 1.05
-    max: 1.24
+    min: -0.76
+    max: -0.62
+  - "param:dumbbell_center_y"
+  right_center:
   - sample: uniform
-    min: -0.04
-    max: 0.04
-  axis_y:
-  - sample: uniform
-    min: 0.22
-    max: 0.42
-  - sample: uniform
-    min: 0.88
-    max: 1.06
-  mesh_resolution:
-  - sample: randint
-    min: 128
-    max: 144
-  - sample: randint
-    min: 128
-    max: 144
+    min: 0.62
+    max: 0.76
+  - "param:dumbbell_center_y"
+  lobe_radius:
+    sample: uniform
+    min: 0.39
+    max: 0.48
+  neck_width:
+    sample: uniform
+    min: 0.16
+    max: 0.24
+  mesh_size:
+    sample: uniform
+    min: 0.018
+    max: 0.023
 inputs:
   electric_field:
     source:
@@ -62,37 +66,37 @@ inputs:
           params:
             amplitude:
               sample: uniform
-              min: 0.55
-              max: 1.05
+              min: 0.85
+              max: 1.35
             sigma:
               sample: uniform
-              min: 0.042
-              max: 0.07
+              min: 0.048
+              max: 0.08
             center:
             - sample: uniform
-              min: 0.16
-              max: 0.36
+              min: -0.82
+              max: -0.55
             - sample: uniform
-              min: 0.18
-              max: 0.36
+              min: -0.12
+              max: 0.12
         y:
           type: gaussian_bump
           params:
             amplitude:
               sample: uniform
-              min: 0.35
-              max: 0.85
+              min: -0.3
+              max: 0.3
             sigma:
               sample: uniform
-              min: 0.05
-              max: 0.08
+              min: 0.065
+              max: 0.11
             center:
             - sample: uniform
-              min: 0.22
-              max: 0.44
+              min: -0.72
+              max: -0.46
             - sample: uniform
-              min: 0.24
-              max: 0.48
+              min: -0.22
+              max: 0.22
     initial_condition:
       components:
         x:
@@ -100,26 +104,26 @@ inputs:
           params:
             amplitude:
               sample: uniform
-              min: -0.14
-              max: 0.14
+              min: 0.08
+              max: 0.18
             sigma:
               sample: uniform
               min: 0.08
               max: 0.14
             center:
             - sample: uniform
-              min: 0.48
-              max: 0.82
+              min: -0.78
+              max: -0.52
             - sample: uniform
-              min: 0.44
-              max: 0.74
+              min: 0.08
+              max: 0.28
             wavevector:
             - sample: uniform
-              min: 9.0
-              max: 15.0
+              min: 10.0
+              max: 18.0
             - sample: uniform
-              min: 5.0
-              max: 11.0
+              min: -4.0
+              max: 4.0
             phase:
               sample: uniform
               min: 0.0
@@ -131,36 +135,24 @@ inputs:
             std:
               sample: uniform
               min: 0.004
-              max: 0.014
+              max: 0.012
 boundary_conditions:
   electric_field:
-    x-:
+    outer:
     - operator: absorbing
       value:
         type: zero
         params: {}
-    x+:
-    - operator: absorbing
-      value:
-        type: zero
-        params: {}
-    y-:
-    - operator: absorbing
-      value:
-        type: zero
-        params: {}
-    y+:
-    - operator: dirichlet
-      value: [0.0, 0.0]
 time:
   dt: 0.005
-  t_end: 0.65
+  t_end: 0.82
 solver:
   $ref: solver.profile.constant_lhs_curl_direct
 output:
   formats: [numpy, gif]
   fields:
     electric_field: components
-  resolution: [176, 128]
-  num_frames: 53
-seed: 42
+  resolution: [192, 128]
+  num_frames: 57
+seed: 58
+
