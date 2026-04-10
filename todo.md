@@ -447,10 +447,34 @@ the shape being simulated.
 
 #### Burgers (`configs/fluids/burgers`)
 
-1. `2d_noisy_shear_mode_interaction`: Burgers shear-mode interaction with additive noise.
-2. `2d_parallelogram_shear_mode_interaction`: orthogonal shear-mode steepening on a skew parallelogram cell.
-3. `2d_shear_mode_interaction`: orthogonal sinusoidal velocity modes steepening, interacting, and diffusing on a periodic box.
-4. `3d_shear_mode_interaction`: three sinusoidal velocity modes steepening and diffusing in a 3D periodic box.
+The 2D Burgers suite now has 20 configs: two each for rectangle,
+parallelogram, disk, annulus, dumbbell, L-shape, multi-hole plate,
+channel-obstacle, venturi-channel, and Y-bifurcation domains. All 2D cases use
+`144x144` grid output and randomized geometry or field parameters so seed
+changes alter both the domain and the nonlinear steepening pattern where the
+domain supports sampling.
+
+1. `2d_annulus_counter_rotating_bands`: slip annulus with opposed oblique velocity bands wrapping around the hole and forming low-viscosity shock-like ring interactions.
+2. `2d_annulus_inner_wall_shock_layer`: spinning inner rim against a fixed outer rim, with radial cosine layers steepening into a boundary-launched shear transient.
+3. `2d_channel_obstacle_bypass_shock`: left-to-right inlet-driven channel flow where a sharp front splits around a sampled cylinder and forms asymmetric bypass wakes.
+4. `2d_channel_obstacle_wake_collision`: reverse outlet forcing and downstream source bias pull wake blobs back into the cylinder shadow.
+5. `2d_disk_radial_plume_collision`: clamped disk with random elongated plumes colliding against radial wave layers.
+6. `2d_disk_swirling_blob_collapse`: slower diffusive disk swirl with natural outer boundary, producing a smooth solid-body-like collapse baseline.
+7. `2d_dumbbell_counterlobe_collision`: opposing lobe velocities collide through the sampled neck under weak forcing near the bridge.
+8. `2d_dumbbell_lobe_jet_transfer`: left-lobe packet train jets through the neck into the right lobe before the no-slip boundary damps it.
+9. `2d_l_shape_corner_shock_capture`: localized wave packets hit the re-entrant corner from both arms and leave corner-focused steep fronts.
+10. `2d_l_shape_notch_shear_rebound`: notch-driven boundary shear rebounds into an oblique step field while the outer frame remains open.
+11. `2d_multi_hole_plate_hole_pinned_dipoles`: sampled holes pin small boundary velocities while many interior blob dipoles compete through the perforated web.
+12. `2d_multi_hole_plate_perforation_wake`: mean flow and signed packets weave around three sampled holes with no-flux perforation boundaries.
+13. `2d_noisy_shear_mode_interaction`: periodic rectangle with multi-mode shear steepening plus additive vector noise for persistent seed-dependent texture.
+14. `2d_parallelogram_oblique_shock_lattice`: low-viscosity skew-periodic step front crossing oblique bands on a randomized parallelogram.
+15. `2d_parallelogram_shear_mode_interaction`: randomized skew-cell version of the orthogonal shear interaction with extra oblique perturbation modes.
+16. `2d_shear_mode_interaction`: periodic rectangle baseline with two interacting shear families and sampled box aspect / phase / perturbation modes.
+17. `2d_venturi_channel_reverse_wall_peeling`: reverse outlet forcing peels signed wall-adjacent blobs back through the constriction.
+18. `2d_venturi_channel_throat_focusing`: inlet-driven packets compress through a sampled throat into a narrow high-speed Burgers front.
+19. `2d_y_bifurcation_branch_collision`: branch-outlet forcing drives counter-propagating waves into the Y junction for a slower collision transient.
+20. `2d_y_bifurcation_inlet_split_shock`: inlet-launched wave packet splits into randomized upper and lower branches with no-slip walls.
+21. `3d_shear_mode_interaction`: three sinusoidal velocity modes steepening and diffusing in a 3D periodic box.
 
 #### Compressible Navier-Stokes (`configs/fluids/compressible_navier_stokes`)
 

@@ -1,0 +1,110 @@
+preset: burgers
+parameters:
+  nu:
+    sample: uniform
+    min: 0.0025
+    max: 0.0055
+domain:
+  type: annulus
+  allow_sampling: true
+  center:
+  - sample: uniform
+    min: -0.035
+    max: 0.035
+  - sample: uniform
+    min: -0.035
+    max: 0.035
+  inner_radius:
+    sample: uniform
+    min: 0.22
+    max: 0.32
+  outer_radius:
+    sample: uniform
+    min: 0.98
+    max: 1.08
+  mesh_size:
+    sample: uniform
+    min: 0.014
+    max: 0.019
+time:
+  dt: 0.0035
+  t_end: 0.8
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: sine_waves
+          params:
+            background:
+              sample: uniform
+              min: -0.08
+              max: 0.08
+            modes:
+            - amplitude:
+                sample: uniform
+                min: 0.65
+                max: 1.05
+              cycles:
+              - sample: uniform
+                min: 1.0
+                max: 2.0
+              - sample: uniform
+                min: 2.0
+                max: 4.0
+              phase:
+                sample: uniform
+                min: 0.0
+                max: 6.283185
+              angle:
+                sample: uniform
+                min: -0.8
+                max: -0.25
+        y:
+          type: sine_waves
+          params:
+            background:
+              sample: uniform
+              min: -0.08
+              max: 0.08
+            modes:
+            - amplitude:
+                sample: uniform
+                min: -1.05
+                max: -0.65
+              cycles:
+              - sample: uniform
+                min: 2.0
+                max: 4.0
+              - sample: uniform
+                min: 1.0
+                max: 2.0
+              phase:
+                sample: uniform
+                min: 0.0
+                max: 6.283185
+              angle:
+                sample: uniform
+                min: 0.25
+                max: 0.8
+boundary_conditions:
+  velocity:
+    inner:
+    - operator: neumann
+      value: [0.0, 0.0]
+    outer:
+    - operator: neumann
+      value: [0.0, 0.0]
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct_bt
+output:
+  resolution: [144, 144]
+  num_frames: 43
+  formats: [numpy, gif]
+  fields:
+    velocity:
+      mode: components
+seed: 42

@@ -1,0 +1,137 @@
+preset: burgers
+parameters:
+  nu:
+    sample: uniform
+    min: 0.0028
+    max: 0.0065
+domain:
+  type: disk
+  allow_sampling: true
+  center:
+  - sample: uniform
+    min: -0.04
+    max: 0.04
+  - sample: uniform
+    min: -0.04
+    max: 0.04
+  radius:
+    sample: uniform
+    min: 0.94
+    max: 1.04
+  mesh_size:
+    sample: uniform
+    min: 0.014
+    max: 0.018
+time:
+  dt: 0.0035
+  t_end: 0.72
+inputs:
+  velocity:
+    source:
+      components:
+        x:
+          type: gaussian_bump
+          params:
+            amplitude:
+              sample: uniform
+              min: -0.16
+              max: 0.16
+            sigma:
+              sample: uniform
+              min: 0.18
+              max: 0.28
+            center:
+            - sample: uniform
+              min: -0.18
+              max: 0.18
+            - sample: uniform
+              min: -0.18
+              max: 0.18
+        y:
+          type: gaussian_bump
+          params:
+            amplitude:
+              sample: uniform
+              min: -0.16
+              max: 0.16
+            sigma:
+              sample: uniform
+              min: 0.18
+              max: 0.28
+            center:
+            - sample: uniform
+              min: -0.18
+              max: 0.18
+            - sample: uniform
+              min: -0.18
+              max: 0.18
+    initial_condition:
+      components:
+        x:
+          type: gaussian_blobs
+          params:
+            background:
+              sample: uniform
+              min: -0.12
+              max: 0.12
+            generators:
+            - count:
+                sample: randint
+                min: 3
+                max: 5
+              amplitude:
+                sample: uniform
+                min: -1.2
+                max: 1.2
+              sigma:
+                sample: uniform
+                min: 0.09
+                max: 0.15
+              center:
+              - sample: uniform
+                min: -0.62
+                max: 0.62
+              - sample: uniform
+                min: -0.62
+                max: 0.62
+              aspect_ratio:
+                sample: uniform
+                min: 1.0
+                max: 2.8
+        y:
+          type: radial_cosine
+          params:
+            base:
+              sample: uniform
+              min: -0.08
+              max: 0.08
+            amplitude:
+              sample: uniform
+              min: 0.55
+              max: 0.95
+            frequency:
+              sample: uniform
+              min: 7.5
+              max: 12.5
+            center:
+            - sample: uniform
+              min: -0.08
+              max: 0.08
+            - sample: uniform
+              min: -0.08
+              max: 0.08
+boundary_conditions:
+  velocity:
+    outer:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct_bt
+output:
+  resolution: [144, 144]
+  num_frames: 43
+  formats: [numpy, gif]
+  fields:
+    velocity:
+      mode: components
+seed: 42
