@@ -1,0 +1,128 @@
+preset: kuramoto_sivashinsky
+parameters:
+  theta:
+    sample: uniform
+    min: 0.58
+    max: 0.7
+  hyperdiffusion:
+    sample: uniform
+    min: 0.85
+    max: 1.15
+  anti_diffusion:
+    sample: uniform
+    min: 1.1
+    max: 1.62
+  nonlinear_strength:
+    sample: uniform
+    min: 0.85
+    max: 1.35
+  damping:
+    sample: uniform
+    min: 0.008
+    max: 0.035
+  advection_x:
+    sample: uniform
+    min: 0.06
+    max: 0.16
+  advection_y:
+    sample: uniform
+    min: -0.06
+    max: 0.06
+  advection_z: 0.0
+domain:
+  allow_sampling: true
+  type: dumbbell
+  left_center:
+  - sample: uniform
+    min: -14.0
+    max: -12.0
+  - 0.0
+  right_center:
+  - sample: uniform
+    min: 12.0
+    max: 14.0
+  - 0.0
+  lobe_radius:
+    sample: uniform
+    min: 11.5
+    max: 14.0
+  neck_width:
+    sample: uniform
+    min: 4.0
+    max: 7.0
+  mesh_size:
+    sample: uniform
+    min: 0.27
+    max: 0.33
+time:
+  dt: 0.04
+  t_end: 14.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.02
+          max: 0.02
+        generators:
+        - count:
+            sample: randint
+            min: 1
+            max: 2
+          amplitude:
+            sample: uniform
+            min: 0.22
+            max: 0.55
+          sigma:
+            sample: uniform
+            min: 1.7
+            max: 3.3
+          center:
+          - sample: uniform
+            min: -14.0
+            max: -5.0
+          - sample: uniform
+            min: -5.0
+            max: 5.0
+          aspect_ratio:
+            sample: uniform
+            min: 1.2
+            max: 3.5
+        - count:
+            sample: randint
+            min: 1
+            max: 2
+          amplitude:
+            sample: uniform
+            min: -0.5
+            max: -0.18
+          sigma:
+            sample: uniform
+            min: 1.7
+            max: 3.3
+          center:
+          - sample: uniform
+            min: 5.0
+            max: 14.0
+          - sample: uniform
+            min: -5.0
+            max: 5.0
+          aspect_ratio:
+            sample: uniform
+            min: 1.2
+            max: 3.5
+boundary_conditions:
+  u:
+    outer:
+    - operator: neumann
+      value: 0.0
+output:
+  $ref: output.template.scalar_uv
+  resolution: [128, 128]
+  num_frames: 41
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct_bt
+seed: 49
+

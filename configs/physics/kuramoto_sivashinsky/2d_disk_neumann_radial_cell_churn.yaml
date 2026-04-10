@@ -1,0 +1,89 @@
+preset: kuramoto_sivashinsky
+parameters:
+  theta:
+    sample: uniform
+    min: 0.56
+    max: 0.68
+  hyperdiffusion:
+    sample: uniform
+    min: 0.82
+    max: 1.12
+  anti_diffusion:
+    sample: uniform
+    min: 1.1
+    max: 1.6
+  nonlinear_strength:
+    sample: uniform
+    min: 0.8
+    max: 1.25
+  damping:
+    sample: uniform
+    min: 0.005
+    max: 0.03
+  advection_x:
+    sample: uniform
+    min: -0.08
+    max: 0.14
+  advection_y:
+    sample: uniform
+    min: -0.08
+    max: 0.14
+  advection_z: 0.0
+domain:
+  allow_sampling: true
+  type: disk
+  center:
+  - sample: uniform
+    min: -0.5
+    max: 0.5
+  - sample: uniform
+    min: -0.5
+    max: 0.5
+  radius:
+    sample: uniform
+    min: 15.0
+    max: 18.0
+  mesh_size:
+    sample: uniform
+    min: 0.24
+    max: 0.28
+time:
+  dt: 0.045
+  t_end: 15.0
+inputs:
+  u:
+    initial_condition:
+      type: radial_cosine
+      params:
+        base:
+          sample: uniform
+          min: -0.02
+          max: 0.02
+        amplitude:
+          sample: uniform
+          min: 0.18
+          max: 0.35
+        frequency:
+          sample: uniform
+          min: 0.5
+          max: 0.9
+        center:
+        - sample: uniform
+          min: -1.5
+          max: 1.5
+        - sample: uniform
+          min: -1.5
+          max: 1.5
+boundary_conditions:
+  u:
+    outer:
+    - operator: neumann
+      value: 0.0
+output:
+  $ref: output.template.scalar_uv
+  resolution: [128, 128]
+  num_frames: 41
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct_bt
+seed: 45
+

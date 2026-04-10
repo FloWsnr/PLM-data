@@ -1,0 +1,105 @@
+preset: kuramoto_sivashinsky
+parameters:
+  theta:
+    sample: uniform
+    min: 0.6
+    max: 0.72
+  hyperdiffusion:
+    sample: uniform
+    min: 0.95
+    max: 1.4
+  anti_diffusion:
+    sample: uniform
+    min: 0.8
+    max: 1.1
+  nonlinear_strength:
+    sample: uniform
+    min: 0.6
+    max: 1.0
+  damping:
+    sample: uniform
+    min: 0.02
+    max: 0.05
+  advection_x:
+    sample: uniform
+    min: 0.05
+    max: 0.12
+  advection_y:
+    sample: uniform
+    min: 0.02
+    max: 0.08
+  advection_z: 0.0
+domain:
+  allow_sampling: true
+  type: parallelogram
+  origin:
+  - sample: uniform
+    min: -1.0
+    max: 1.0
+  - sample: uniform
+    min: -1.0
+    max: 1.0
+  axis_x:
+  - sample: uniform
+    min: 44.0
+    max: 56.0
+  - sample: uniform
+    min: -1.5
+    max: 1.5
+  axis_y:
+  - sample: uniform
+    min: 10.0
+    max: 18.0
+  - sample: uniform
+    min: 26.0
+    max: 34.0
+  mesh_resolution: [160, 128]
+time:
+  dt: 0.05
+  t_end: 22.0
+inputs:
+  u:
+    initial_condition:
+      type: radial_cosine
+      params:
+        base:
+          sample: uniform
+          min: -0.015
+          max: 0.015
+        amplitude:
+          sample: uniform
+          min: 0.12
+          max: 0.25
+        frequency:
+          sample: uniform
+          min: 0.35
+          max: 0.65
+        center:
+        - sample: uniform
+          min: 16.0
+          max: 24.0
+        - sample: uniform
+          min: 12.0
+          max: 22.0
+boundary_conditions:
+  u:
+    x-:
+    - operator: periodic
+      pair_with: x+
+    x+:
+    - operator: periodic
+      pair_with: x-
+    y-:
+    - operator: neumann
+      value: 0.0
+    y+:
+    - operator: neumann
+      value: 0.0
+output:
+  $ref: output.template.scalar_uv
+  resolution: [128, 128]
+  num_frames: 45
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct_bt
+seed: 44
+

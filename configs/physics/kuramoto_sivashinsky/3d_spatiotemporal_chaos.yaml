@@ -1,6 +1,13 @@
 preset: kuramoto_sivashinsky
 parameters:
   theta: 0.5
+  hyperdiffusion: 1.0
+  anti_diffusion: 1.0
+  nonlinear_strength: 1.0
+  damping: 0.03
+  advection_x: 0.0
+  advection_y: 0.0
+  advection_z: 0.0
 domain:
   type: box
   size: [16.0, 16.0, 16.0]

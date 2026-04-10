@@ -617,9 +617,29 @@ with output resolutions at or above 128 on the shortest side.
 
 #### Kuramoto-Sivashinsky (`configs/physics/kuramoto_sivashinsky`)
 
-1. `2d_parallelogram_spatiotemporal_chaos`: wrinkling and spatiotemporal chaos on a skew parallelogram cell.
-2. `2d_spatiotemporal_chaos`: noise-seeded wrinkling and spatiotemporal chaos on a periodic plane.
-3. `3d_spatiotemporal_chaos`: 3D spatiotemporal chaos from small random perturbations.
+Validation note: all 20 2D configs were run with `./run.sh -n 2 ... --n-runs 2` under `output/ks_validation`, producing 40 successful runs with `128x128` outputs, passing health diagnostics, clean logs, and two configs each for rectangle, parallelogram, disk, annulus, dumbbell, L-shape, multi-hole plate, channel obstacle, venturi channel, and Y-bifurcation domains. Absorbing/quench variants were retuned after the first validation pass so they remain slower and more damped than the open/Neumann cases without becoming visually flat.
+
+1. `2d_annulus_absorbing_inner_outer_competition`: inner/outer absorbing annulus competition with sampled ring spacing; one seed damps into smooth rings while another retains stronger radial modulation.
+2. `2d_annulus_azimuthal_band_churn`: Neumann annulus seeded with azimuthal/radial bands, producing sustained ring-wrapped churn.
+3. `2d_channel_obstacle_absorbing_cylinder_shadow`: channel-obstacle shadowing with absorbing walls and cylinder damping, keeping a lower-amplitude wake variant.
+4. `2d_channel_obstacle_wake_wrinkle_shedding`: stronger obstacle-driven wake wrinkling and downstream shedding through a sampled channel.
+5. `2d_disk_absorbing_blob_collapse`: disk blob collapse against an absorbing rim, retuned to preserve a moving remnant instead of flattening.
+6. `2d_disk_neumann_radial_cell_churn`: reflective disk with radial cells and rotating/advection-biased churn.
+7. `2d_dumbbell_absorbing_neck_quench`: absorbing dumbbell neck transfer and quench, useful as a slow low-amplitude geometry-constrained case.
+8. `2d_dumbbell_lobe_exchange_chaos`: asymmetric lobe-to-lobe chaotic exchange through the dumbbell throat.
+9. `2d_l_shape_absorbing_notch_fronts`: absorbing L-shape fronts bent by the reentrant notch, retuned for seed-dependent weak/strong outcomes.
+10. `2d_l_shape_reentrant_corner_churn`: Neumann L-shape with corner-driven folding, wrinkles, and cell turnover.
+11. `2d_multi_hole_plate_absorbing_hole_shadows`: absorbing perforated-plate shadows around sampled holes, now retaining sparse active patches.
+12. `2d_multi_hole_plate_perforation_screened_chaos`: stronger screened chaos through sampled perforations and interstitial channels.
+13. `2d_parallelogram_slow_large_cell_wrinkles`: slow broad oblique wrinkles on a skew sampled cell.
+14. `2d_parallelogram_spatiotemporal_chaos`: skew-cell chaos retuned with sampled Gaussian blobs so the two seeds separate clearly.
+15. `2d_rectangle_x_periodic_wall_shear_fronts`: x-periodic rectangle with wall shear fronts and oblique drift.
+16. `2d_spatiotemporal_chaos`: periodic rectangle noise growth into classical cellular spatiotemporal chaos.
+17. `2d_venturi_channel_throat_accelerated_wrinkles`: high-energy venturi throat focusing with accelerated wrinkle bands.
+18. `2d_venturi_channel_wall_quench_bands`: slower venturi wall-quench bands with strong seed variability after retuning.
+19. `2d_y_bifurcation_branch_collision_chaos`: branch collision and junction-focused activity in a Y-domain, retuned to avoid late-time collapse.
+20. `2d_y_bifurcation_split_wrinkle_plumes`: stronger asymmetric plume splitting through the Y branches.
+21. `3d_spatiotemporal_chaos`: 3D spatiotemporal chaos from small random perturbations.
 
 #### Lorenz (`configs/physics/lorenz`)
 
