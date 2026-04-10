@@ -1,49 +1,91 @@
 preset: klausmeier_topography
 
 parameters:
-  a: 1.1
-  m: 0.63
-  D: 2.0
-  Dn: 1.0
-  V: 100.0
+  a:
+    sample: uniform
+    min: 1.0
+    max: 1.2
+  m:
+    sample: uniform
+    min: 0.56
+    max: 0.68
+  D:
+    sample: uniform
+    min: 1.7
+    max: 3.0
+  Dn:
+    sample: uniform
+    min: 0.7
+    max: 1.2
+  V:
+    sample: uniform
+    min: 86.0
+    max: 126.0
 
-# VisualPDE-style hillslope: terrain height T = 0.2*x increases with x, so
-# grad(T) = (0.2, 0) and water flows DOWNHILL in the -x direction while
-# vegetation bands migrate uphill (+x).
 coefficients:
   topography:
     type: affine
     params:
-      x: 0.2
+      x:
+        sample: uniform
+        min: 0.14
+        max: 0.22
+      y:
+        sample: uniform
+        min: 0.03
+        max: 0.08
 
 domain:
+  allow_sampling: true
   type: parallelogram
   origin: [0.0, 0.0]
-  axis_x: [100.0, 0.0]
-  axis_y: [25.0, 100.0]
-  mesh_resolution: [128, 128]
+  axis_x:
+    - sample: uniform
+      min: 96.0
+      max: 112.0
+    - sample: uniform
+      min: -6.0
+      max: 6.0
+  axis_y:
+    - sample: uniform
+      min: 18.0
+      max: 32.0
+    - sample: uniform
+      min: 96.0
+      max: 112.0
+  mesh_resolution:
+    - sample: randint
+      min: 128
+      max: 152
+    - sample: randint
+      min: 128
+      max: 152
 
 time:
   dt: 0.01
-  t_end: 40.0
+  t_end: 38.0
 
-# VisualPDE seeds biomass from a nonnegative random field and water from a
-# nearly uniform background. Starting near the old sparse-vegetation saddle
-# drives this discretization into the wrong basin; a denser noisy biomass seed
-# produces the migrating band dynamics instead of rapid collapse to a uniform
-# state.
 inputs:
   w:
     initial_condition:
       type: constant
       params:
-        value: 1.0
+        value:
+          sample: uniform
+          min: 0.92
+          max: 1.14
   n:
     initial_condition:
       type: gaussian_noise
       params:
-        mean: 1.0
-        std: 0.2
+        mean:
+          sample: uniform
+          min: 0.82
+          max: 1.08
+        std:
+          sample: uniform
+          min: 0.14
+          max: 0.3
 
 boundary_conditions:
   w:
@@ -56,7 +98,8 @@ solver:
 
 output:
   $ref: output.template.scalar_wn_topography
-  resolution: [96, 96]
-  num_frames: 200
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 121
 
 seed: 42

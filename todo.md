@@ -416,9 +416,32 @@ These 2D configs now cover ten domain families with two dynamics per shape, all 
 
 #### Klausmeier Topography (`configs/biology/klausmeier_topography`)
 
-1. `2d_parallelogram_uphill_vegetation_bands`: uphill vegetation bands forming on a skew sloped cell with oblique band alignment.
-2. `2d_uphill_vegetation_bands`: vegetation bands forming on a slope and migrating uphill.
-3. `3d_uphill_vegetation_bands`: 3D sloped-terrain vegetation bands or sheets migrating uphill.
+The 2D suite now spans 10 domain families with 2 configs each. All 2D configs
+sample PDE parameters, terrain coefficients, initial conditions, and geometry
+where the domain factory supports it, so seed changes alter both the pattern and
+the shape being simulated.
+
+1. `2d_annulus_inner_hill_orbiting_bands`: annular vegetation arcs orbit around an inner terrain hill while the inner and outer rims anchor water and biomass differently.
+2. `2d_annulus_outer_ridge_pinching`: outer-ridge forcing pinches annular biomass rings inward, contrasting the inner-hill annulus case.
+3. `2d_channel_obstacle_downhill_wake`: slope-driven vegetation bands split around a sampled channel obstacle and form a downstream wake.
+4. `2d_channel_obstacle_reversed_slope_split`: reversed terrain waves drive obstacle-split bands in the opposite direction, producing a complementary wake geometry.
+5. `2d_disk_annular_ridge_spot_necklace`: disk-confined annular ridges destabilize into spot necklaces with different radial phases per seed.
+6. `2d_disk_radial_dome_retreat`: radial dome topography drives ring retreat and reorganization inside a sampled disk.
+7. `2d_dumbbell_cross_neck_rain_shadow`: cross-slope forcing creates asymmetric rain-shadow patches across the dumbbell neck.
+8. `2d_dumbbell_lobe_exchange_bands`: lobe-seeded vegetation bands exchange through the dumbbell neck instead of staying in separate chambers.
+9. `2d_l_shape_corner_capture`: sloped L-shaped terrain captures band fronts near the re-entrant corner.
+10. `2d_l_shape_notch_shadow_pulses`: notch-centered terrain pulses leave persistent seed-dependent biomass spots around the L-shaped cutout.
+11. `2d_multi_hole_plate_hole_shadow_bands`: perforation shadows break vegetation bands around grouped sampled holes.
+12. `2d_multi_hole_plate_perforation_spot_wake`: spot wakes weave between individually sampled perforations instead of forming one global band set.
+13. `2d_parallelogram_cross_slope_labyrinths`: skew-periodic cross-slope terrain produces labyrinthine bands that avoid rectangular axis locking.
+14. `2d_parallelogram_uphill_vegetation_bands`: uphill vegetation bands form on a skew sloped cell with oblique band alignment.
+15. `2d_rectangle_diagonal_fast_bands`: faster diagonal transport produces dense periodic bands moving across the rectangular baseline domain.
+16. `2d_uphill_vegetation_bands`: vegetation bands form on a slope and migrate uphill in the rectangular baseline case.
+17. `2d_venturi_reverse_wall_pinning`: reverse terrain waves pin biomass near sampled venturi walls and throat shoulders.
+18. `2d_venturi_throat_focus_bands`: downhill forcing focuses bands through the venturi throat before they broaden downstream.
+19. `2d_y_bifurcation_branch_selection_bands`: Y-branch geometry selects one daughter branch for stronger band growth under sampled slope forcing.
+20. `2d_y_bifurcation_reverse_branch_collision`: branch-seeded biomass grows back toward the bifurcation junction and remains visibly seed-dependent through the final frames.
+21. `3d_uphill_vegetation_bands`: 3D sloped-terrain vegetation bands or sheets migrating uphill.
 
 ### Fluids
 
