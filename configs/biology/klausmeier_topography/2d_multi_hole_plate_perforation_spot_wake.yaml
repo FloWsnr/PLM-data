@@ -1,0 +1,209 @@
+preset: klausmeier_topography
+
+parameters:
+  a:
+    sample: uniform
+    min: 0.92
+    max: 1.14
+  m:
+    sample: uniform
+    min: 0.62
+    max: 0.78
+  D:
+    sample: uniform
+    min: 2.2
+    max: 4.0
+  Dn:
+    sample: uniform
+    min: 0.8
+    max: 1.35
+  V:
+    sample: uniform
+    min: 58.0
+    max: 90.0
+
+coefficients:
+  topography:
+    type: sine_waves
+    params:
+      background: 0.0
+      modes:
+        - amplitude:
+            sample: uniform
+            min: 2.2
+            max: 3.8
+          cycles:
+            - sample: uniform
+              min: 0.022
+              max: 0.038
+            - sample: uniform
+              min: 0.01
+              max: 0.02
+          phase:
+            sample: uniform
+            min: 0.0
+            max: 6.283185
+          angle:
+            sample: uniform
+            min: -0.5
+            max: 0.5
+        - amplitude:
+            sample: uniform
+            min: 0.8
+            max: 1.8
+          cycles:
+            - sample: uniform
+              min: 0.0
+              max: 0.012
+            - sample: uniform
+              min: 0.035
+              max: 0.055
+          phase:
+            sample: uniform
+            min: 0.0
+            max: 6.283185
+          angle: 0.0
+
+domain:
+  allow_sampling: true
+  type: multi_hole_plate
+  width:
+    sample: uniform
+    min: 116.0
+    max: 132.0
+  height:
+    sample: uniform
+    min: 96.0
+    max: 112.0
+  holes:
+    - center:
+        - sample: uniform
+          min: 26.0
+          max: 34.0
+        - sample: uniform
+          min: 28.0
+          max: 40.0
+      radius:
+        sample: uniform
+        min: 6.5
+        max: 9.5
+    - center:
+        - sample: uniform
+          min: 55.0
+          max: 65.0
+        - sample: uniform
+          min: 62.0
+          max: 76.0
+      radius:
+        sample: uniform
+        min: 7.0
+        max: 10.0
+    - center:
+        - sample: uniform
+          min: 84.0
+          max: 96.0
+        - sample: uniform
+          min: 30.0
+          max: 44.0
+      radius:
+        sample: uniform
+        min: 7.0
+        max: 10.0
+    - center:
+        - sample: uniform
+          min: 102.0
+          max: 114.0
+        - sample: uniform
+          min: 66.0
+          max: 80.0
+      radius:
+        sample: uniform
+        min: 6.0
+        max: 9.0
+  mesh_size:
+    sample: uniform
+    min: 0.48
+    max: 0.64
+
+time:
+  dt: 0.012
+  t_end: 48.0
+
+inputs:
+  w:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 0.88
+          max: 1.12
+        std:
+          sample: uniform
+          min: 0.02
+          max: 0.08
+  n:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.32
+          max: 0.52
+        generators:
+          - count:
+              sample: randint
+              min: 10
+              max: 16
+            amplitude:
+              sample: uniform
+              min: 0.45
+              max: 0.92
+            sigma:
+              sample: uniform
+              min: 4.0
+              max: 7.5
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.8
+            center:
+              - sample: uniform
+                min: 8.0
+                max: 116.0
+              - sample: uniform
+                min: 8.0
+                max: 96.0
+
+boundary_conditions:
+  w:
+    outer:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.88
+              max: 1.08
+    holes:
+      - operator: neumann
+        value: 0.0
+  n:
+    outer:
+      - operator: dirichlet
+        value: 0.0
+    holes:
+      - operator: neumann
+        value: 0.0
+
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+
+output:
+  $ref: output.template.scalar_wn_topography
+  formats: [numpy, gif]
+  resolution: [192, 160]
+  num_frames: 121
+
+seed: 42

@@ -1,0 +1,146 @@
+preset: klausmeier_topography
+
+parameters:
+  a:
+    sample: uniform
+    min: 0.92
+    max: 1.12
+  m:
+    sample: uniform
+    min: 0.62
+    max: 0.78
+  D:
+    sample: uniform
+    min: 2.5
+    max: 4.4
+  Dn:
+    sample: uniform
+    min: 0.8
+    max: 1.45
+  V:
+    sample: uniform
+    min: 54.0
+    max: 84.0
+
+coefficients:
+  topography:
+    type: radial_cosine
+    params:
+      base: 0.0
+      amplitude:
+        sample: uniform
+        min: 1.6
+        max: 2.7
+      frequency:
+        sample: uniform
+        min: 0.095
+        max: 0.15
+      center:
+        - sample: uniform
+          min: -4.0
+          max: 4.0
+        - sample: uniform
+          min: -4.0
+          max: 4.0
+
+domain:
+  allow_sampling: true
+  type: annulus
+  center:
+    - sample: uniform
+      min: -2.5
+      max: 2.5
+    - sample: uniform
+      min: -2.5
+      max: 2.5
+  inner_radius:
+    sample: uniform
+    min: 20.0
+    max: 27.0
+  outer_radius:
+    sample: uniform
+    min: 56.0
+    max: 66.0
+  mesh_size:
+    sample: uniform
+    min: 0.52
+    max: 0.72
+
+time:
+  dt: 0.012
+  t_end: 48.0
+
+inputs:
+  w:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 0.9
+          max: 1.12
+        std:
+          sample: uniform
+          min: 0.03
+          max: 0.08
+  n:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 0.68
+          max: 0.92
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.16
+              max: 0.3
+            cycles:
+              - sample: uniform
+                min: 0.02
+                max: 0.034
+              - sample: uniform
+                min: 0.02
+                max: 0.034
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185
+            angle:
+              sample: uniform
+              min: -0.6
+              max: 0.6
+
+boundary_conditions:
+  w:
+    inner:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.9
+              max: 1.08
+    outer:
+      - operator: neumann
+        value: 0.0
+  n:
+    inner:
+      - operator: dirichlet
+        value: 0.0
+    outer:
+      - operator: neumann
+        value: 0.0
+
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+
+output:
+  $ref: output.template.scalar_wn_topography
+  formats: [numpy, gif]
+  resolution: [176, 176]
+  num_frames: 121
+
+seed: 42

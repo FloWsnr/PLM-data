@@ -1,0 +1,186 @@
+preset: klausmeier_topography
+
+parameters:
+  a:
+    sample: uniform
+    min: 0.92
+    max: 1.14
+  m:
+    sample: uniform
+    min: 0.62
+    max: 0.78
+  D:
+    sample: uniform
+    min: 2.2
+    max: 4.0
+  Dn:
+    sample: uniform
+    min: 0.8
+    max: 1.35
+  V:
+    sample: uniform
+    min: 45.0
+    max: 72.0
+
+coefficients:
+  topography:
+    type: sine_waves
+    params:
+      background: 0.0
+      modes:
+        - amplitude:
+            sample: uniform
+            min: 1.5
+            max: 2.6
+          cycles:
+            - sample: uniform
+              min: 0.02
+              max: 0.034
+            - sample: uniform
+              min: 0.014
+              max: 0.026
+          phase:
+            sample: uniform
+            min: 0.0
+            max: 6.283185
+          angle:
+            sample: uniform
+            min: 2.35
+            max: 2.85
+        - amplitude:
+            sample: uniform
+            min: 0.6
+            max: 1.2
+          cycles:
+            - 0.0
+            - sample: uniform
+              min: 0.035
+              max: 0.055
+          phase:
+            sample: uniform
+            min: 0.0
+            max: 6.283185
+          angle: 0.0
+
+domain:
+  allow_sampling: true
+  type: venturi_channel
+  length:
+    sample: uniform
+    min: 134.0
+    max: 156.0
+  height:
+    sample: uniform
+    min: 76.0
+    max: 92.0
+  throat_height:
+    sample: uniform
+    min: 30.0
+    max: 42.0
+  constriction_center_x:
+    sample: uniform
+    min: 64.0
+    max: 92.0
+  constriction_radius:
+    sample: uniform
+    min: 42.0
+    max: 58.0
+  mesh_size:
+    sample: uniform
+    min: 0.5
+    max: 0.66
+
+time:
+  dt: 0.012
+  t_end: 46.0
+
+inputs:
+  w:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 0.88
+          max: 1.12
+        std:
+          sample: uniform
+          min: 0.02
+          max: 0.08
+  n:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 0.68
+          max: 0.92
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.16
+              max: 0.3
+            cycles:
+              - sample: uniform
+                min: 0.024
+                max: 0.04
+              - 0.0
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185
+            angle:
+              sample: uniform
+              min: -0.4
+              max: 0.4
+
+boundary_conditions:
+  w:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.88
+              max: 1.1
+    outlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.86
+              max: 1.08
+    walls:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.88
+              max: 1.1
+  n:
+    inlet:
+      - operator: dirichlet
+        value: 0.0
+    outlet:
+      - operator: dirichlet
+        value: 0.0
+    walls:
+      - operator: dirichlet
+        value: 0.0
+
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+
+output:
+  $ref: output.template.scalar_wn_topography
+  formats: [numpy, gif]
+  resolution: [192, 128]
+  num_frames: 121
+
+seed: 42

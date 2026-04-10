@@ -1,0 +1,125 @@
+preset: klausmeier_topography
+
+parameters:
+  a:
+    sample: uniform
+    min: 1.02
+    max: 1.24
+  m:
+    sample: uniform
+    min: 0.54
+    max: 0.68
+  D:
+    sample: uniform
+    min: 1.5
+    max: 2.8
+  Dn:
+    sample: uniform
+    min: 0.6
+    max: 1.05
+  V:
+    sample: uniform
+    min: 70.0
+    max: 104.0
+
+coefficients:
+  topography:
+    type: affine
+    params:
+      x:
+        sample: uniform
+        min: -0.14
+        max: -0.08
+      y:
+        sample: uniform
+        min: 0.08
+        max: 0.14
+
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width:
+    sample: uniform
+    min: 100.0
+    max: 116.0
+  outer_height:
+    sample: uniform
+    min: 100.0
+    max: 116.0
+  cutout_width:
+    sample: uniform
+    min: 35.0
+    max: 48.0
+  cutout_height:
+    sample: uniform
+    min: 35.0
+    max: 48.0
+  mesh_size:
+    sample: uniform
+    min: 0.5
+    max: 0.68
+
+time:
+  dt: 0.01
+  t_end: 34.0
+
+inputs:
+  w:
+    initial_condition:
+      type: constant
+      params:
+        value:
+          sample: uniform
+          min: 0.94
+          max: 1.18
+  n:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 0.74
+          max: 1.02
+        std:
+          sample: uniform
+          min: 0.16
+          max: 0.32
+
+boundary_conditions:
+  w:
+    outer:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.9
+              max: 1.14
+    notch:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.9
+              max: 1.14
+  n:
+    outer:
+      - operator: dirichlet
+        value: 0.0
+    notch:
+      - operator: dirichlet
+        value: 0.0
+
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+
+output:
+  $ref: output.template.scalar_wn_topography
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 101
+
+seed: 42

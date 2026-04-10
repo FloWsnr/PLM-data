@@ -1,0 +1,203 @@
+preset: klausmeier_topography
+
+parameters:
+  a:
+    sample: uniform
+    min: 0.92
+    max: 1.14
+  m:
+    sample: uniform
+    min: 0.62
+    max: 0.78
+  D:
+    sample: uniform
+    min: 2.1
+    max: 3.8
+  Dn:
+    sample: uniform
+    min: 0.8
+    max: 1.35
+  V:
+    sample: uniform
+    min: 45.0
+    max: 72.0
+
+coefficients:
+  topography:
+    type: sine_waves
+    params:
+      background: 0.0
+      modes:
+        - amplitude:
+            sample: uniform
+            min: 1.5
+            max: 2.6
+          cycles:
+            - sample: uniform
+              min: 0.02
+              max: 0.034
+            - sample: uniform
+              min: 0.012
+              max: 0.022
+          phase:
+            sample: uniform
+            min: 0.0
+            max: 6.283185
+          angle:
+            sample: uniform
+            min: 2.45
+            max: 2.9
+        - amplitude:
+            sample: uniform
+            min: 0.6
+            max: 1.2
+          cycles:
+            - 0.0
+            - sample: uniform
+              min: 0.035
+              max: 0.055
+          phase:
+            sample: uniform
+            min: 0.0
+            max: 6.283185
+          angle: 0.0
+
+domain:
+  allow_sampling: true
+  type: channel_obstacle
+  length:
+    sample: uniform
+    min: 126.0
+    max: 148.0
+  height:
+    sample: uniform
+    min: 74.0
+    max: 90.0
+  obstacle_center:
+    - sample: uniform
+      min: 62.0
+      max: 82.0
+    - sample: uniform
+      min: 34.0
+      max: 48.0
+  obstacle_radius:
+    sample: uniform
+    min: 10.0
+    max: 15.0
+  mesh_size:
+    sample: uniform
+    min: 0.5
+    max: 0.66
+
+time:
+  dt: 0.012
+  t_end: 46.0
+
+inputs:
+  w:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 0.9
+          max: 1.12
+        std:
+          sample: uniform
+          min: 0.02
+          max: 0.08
+  n:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.34
+          max: 0.56
+        generators:
+          - count:
+              sample: randint
+              min: 10
+              max: 16
+            amplitude:
+              sample: uniform
+              min: 0.45
+              max: 0.9
+            sigma:
+              sample: uniform
+              min: 4.0
+              max: 7.5
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.8
+            center:
+              - sample: uniform
+                min: 8.0
+                max: 132.0
+              - sample: uniform
+                min: 8.0
+                max: 80.0
+
+boundary_conditions:
+  w:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.88
+              max: 1.1
+    outlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.86
+              max: 1.08
+    walls:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.88
+              max: 1.1
+    obstacle:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.88
+              max: 1.1
+  n:
+    inlet:
+      - operator: dirichlet
+        value: 0.0
+    outlet:
+      - operator: dirichlet
+        value: 0.0
+    walls:
+      - operator: dirichlet
+        value: 0.0
+    obstacle:
+      - operator: dirichlet
+        value: 0.0
+
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+
+output:
+  $ref: output.template.scalar_wn_topography
+  formats: [numpy, gif]
+  resolution: [192, 128]
+  num_frames: 121
+
+seed: 42

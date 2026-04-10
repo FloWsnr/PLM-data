@@ -1,0 +1,118 @@
+preset: klausmeier_topography
+
+parameters:
+  a:
+    sample: uniform
+    min: 1.02
+    max: 1.26
+  m:
+    sample: uniform
+    min: 0.52
+    max: 0.66
+  D:
+    sample: uniform
+    min: 1.4
+    max: 2.5
+  Dn:
+    sample: uniform
+    min: 0.55
+    max: 1.0
+  V:
+    sample: uniform
+    min: 88.0
+    max: 126.0
+
+coefficients:
+  topography:
+    type: gaussian_bump
+    params:
+      amplitude:
+        sample: uniform
+        min: 7.5
+        max: 11.5
+      sigma:
+        sample: uniform
+        min: 22.0
+        max: 31.0
+      center:
+        - sample: uniform
+          min: -7.0
+          max: 7.0
+        - sample: uniform
+          min: -7.0
+          max: 7.0
+
+domain:
+  allow_sampling: true
+  type: disk
+  center:
+    - sample: uniform
+      min: -2.5
+      max: 2.5
+    - sample: uniform
+      min: -2.5
+      max: 2.5
+  radius:
+    sample: uniform
+    min: 48.0
+    max: 56.0
+  mesh_size:
+    sample: uniform
+    min: 0.5
+    max: 0.68
+
+time:
+  dt: 0.01
+  t_end: 34.0
+
+inputs:
+  w:
+    initial_condition:
+      type: constant
+      params:
+        value:
+          sample: uniform
+          min: 0.96
+          max: 1.18
+  n:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 0.76
+          max: 1.02
+        std:
+          sample: uniform
+          min: 0.16
+          max: 0.32
+
+boundary_conditions:
+  w:
+    outer:
+      - operator: neumann
+        value: 0.0
+  n:
+    outer:
+      - operator: neumann
+        value: 0.0
+
+stochastic:
+  coefficients:
+    topography:
+      mode: additive
+      std: 0.18
+      smoothing:
+        pseudo_dt: 3.0
+        steps: 3
+
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+
+output:
+  $ref: output.template.scalar_wn_topography
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 101
+
+seed: 42
