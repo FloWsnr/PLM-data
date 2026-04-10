@@ -3,8 +3,11 @@
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem
+from plm_data.core.boundary_conditions import apply_dirichlet_bcs_to_subspace
+from plm_data.core.config import BoundaryFieldConfig
 from plm_data.core.initial_conditions import apply_ic
 from plm_data.core.solver_strategies import NONLINEAR_MIXED_DIRECT
+from plm_data.core.spatial_fields import is_exact_zero_field_expression
 from plm_data.presets import register_preset
 from plm_data.presets.base import (
     PDEPreset,
@@ -21,6 +24,11 @@ from plm_data.presets.metadata import (
     SCALAR_STANDARD_BOUNDARY_OPERATORS,
     StateSpec,
 )
+
+_ZK_BOUNDARY_OPERATORS = {
+    name: SCALAR_STANDARD_BOUNDARY_OPERATORS[name]
+    for name in ("dirichlet", "neumann", "periodic")
+}
 
 _ZK_SPEC = PresetSpec(
     name="zakharov_kuznetsov",
@@ -50,8 +58,13 @@ _ZK_SPEC = PresetSpec(
         "u": BoundaryFieldSpec(
             name="u",
             shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for the primary field u.",
+            operators=_ZK_BOUNDARY_OPERATORS,
+            description=(
+                "Boundary conditions for the primary field u. Periodic side pairs "
+                "are constrained strongly; homogeneous Neumann entries use the "
+                "natural wall condition; homogeneous Dirichlet entries clamp the "
+                "mixed u/w state on named walls."
+            ),
         )
     },
     states={
@@ -72,16 +85,72 @@ _ZK_SPEC = PresetSpec(
 )
 
 
+def _validate_homogeneous_wall_values(
+    *,
+    boundary_field: BoundaryFieldConfig,
+    parameters: dict[str, float],
+) -> None:
+    for side_name, entries in boundary_field.sides.items():
+        for entry in entries:
+            if entry.type not in {"dirichlet", "neumann"}:
+                continue
+            if entry.value is None:
+                raise ValueError(
+                    "Zakharov-Kuznetsov wall boundary operators require an "
+                    f"explicit zero value. Side '{side_name}' is missing one."
+                )
+            if not is_exact_zero_field_expression(entry.value, parameters):
+                raise ValueError(
+                    "Zakharov-Kuznetsov currently supports only homogeneous "
+                    f"{entry.type} wall values. Side '{side_name}' is nonzero."
+                )
+
+
+def _build_zero_dirichlet_bcs(
+    mixed_space: fem.FunctionSpace,
+    domain_geom,
+    boundary_field: BoundaryFieldConfig,
+    parameters: dict[str, float],
+) -> list[fem.DirichletBC]:
+    return [
+        *apply_dirichlet_bcs_to_subspace(
+            mixed_space.sub(0),
+            domain_geom,
+            boundary_field,
+            parameters,
+        ),
+        *apply_dirichlet_bcs_to_subspace(
+            mixed_space.sub(1),
+            domain_geom,
+            boundary_field,
+            parameters,
+        ),
+    ]
+
+
+def _is_fully_periodic(boundary_field: BoundaryFieldConfig) -> bool:
+    return all(
+        entry.type == "periodic"
+        for entries in boundary_field.sides.values()
+        for entry in entries
+    )
+
+
 class _ZakharovKuznetsovProblem(TransientNonlinearProblem):
     supported_solver_strategies = (NONLINEAR_MIXED_DIRECT,)
 
     def validate_boundary_conditions(self, domain_geom):
+        boundary_field = self.config.boundary_field("u")
         validate_boundary_field_structure(
             preset_name=self.spec.name,
             field_name="u",
-            boundary_field=self.config.boundary_field("u"),
+            boundary_field=boundary_field,
             domain_geom=domain_geom,
-            allowed_operators={"periodic"},
+            allowed_operators=set(_ZK_BOUNDARY_OPERATORS),
+        )
+        _validate_homogeneous_wall_values(
+            boundary_field=boundary_field,
+            parameters=self.config.parameters,
         )
 
     def setup(self) -> None:
@@ -96,11 +165,17 @@ class _ZakharovKuznetsovProblem(TransientNonlinearProblem):
         theta = self.config.parameters["theta"]
         dt = self.config.time.dt
 
+        bcs = _build_zero_dirichlet_bcs(
+            ME,
+            domain_geom,
+            boundary_field,
+            self.config.parameters,
+        )
         mpc = self.create_periodic_constraint(
             ME,
             domain_geom,
             boundary_field,
-            [],
+            bcs,
             constrained_spaces=[ME.sub(0), ME.sub(1)],
         )
         solution_space = ME if mpc is None else mpc.function_space
@@ -116,8 +191,14 @@ class _ZakharovKuznetsovProblem(TransientNonlinearProblem):
             self.config.parameters,
             seed=self.config.seed,
         )
+        if mpc is None:
+            for bc in bcs:
+                bc.set(self.u.x.array)
         self.u.x.scatter_forward()
         self.u0.x.array[:] = self.u.x.array
+        if mpc is None:
+            for bc in bcs:
+                bc.set(self.u0.x.array)
         self.u0.x.scatter_forward()
 
         u, w = ufl.split(self.u)
@@ -127,16 +208,23 @@ class _ZakharovKuznetsovProblem(TransientNonlinearProblem):
         w_theta = (1.0 - theta) * w0 + theta * w
         dt_c = fem.Constant(self.msh, default_real_type(dt))
 
-        # Evolution equation:
-        #   du/dt + alpha*u*du/dx - dw/dx = 0
-        # Conservative form for advection: alpha*u*du/dx = d(alpha*u^2/2)/dx
-        # After IBP on both d/dx terms (boundary terms vanish for periodic):
-        F0 = (
-            ufl.inner(u, v) * ufl.dx
-            - ufl.inner(u0, v) * ufl.dx
-            - dt_c * (alpha / 2.0) * u**2 * ufl.grad(v)[0] * ufl.dx
-            + dt_c * w_theta * ufl.grad(v)[0] * ufl.dx
-        )
+        if _is_fully_periodic(boundary_field):
+            # Conservative periodic form:
+            # alpha*u*du/dx = d(alpha*u^2/2)/dx and boundary terms cancel.
+            F0 = (
+                ufl.inner(u, v) * ufl.dx
+                - ufl.inner(u0, v) * ufl.dx
+                - dt_c * (alpha / 2.0) * u**2 * ufl.grad(v)[0] * ufl.dx
+                + dt_c * w_theta * ufl.grad(v)[0] * ufl.dx
+            )
+        else:
+            # First-derivative wall form for non-periodic named boundaries.
+            F0 = (
+                ufl.inner(u, v) * ufl.dx
+                - ufl.inner(u0, v) * ufl.dx
+                + dt_c * alpha * u * ufl.grad(u)[0] * v * ufl.dx
+                - dt_c * ufl.grad(w_theta)[0] * v * ufl.dx
+            )
         # Constraint equation: w + laplacian(u) = 0
         # After IBP on laplacian(u):
         F1 = ufl.inner(w, q) * ufl.dx - ufl.inner(ufl.grad(u), ufl.grad(q)) * ufl.dx
@@ -146,7 +234,7 @@ class _ZakharovKuznetsovProblem(TransientNonlinearProblem):
         self.problem = self.create_nonlinear_problem(
             F,
             self.u,
-            bcs=[],
+            bcs=bcs,
             petsc_options_prefix="plm_zk_",
             J=J,
             mpc=mpc,

@@ -1,0 +1,109 @@
+preset: zakharov_kuznetsov
+parameters:
+  alpha:
+    sample: uniform
+    min: 2.8
+    max: 5.0
+  theta:
+    sample: uniform
+    min: 0.66
+    max: 0.84
+domain:
+  allow_sampling: true
+  type: y_bifurcation
+  inlet_length:
+    sample: uniform
+    min: 4.6
+    max: 5.8
+  branch_length:
+    sample: uniform
+    min: 5.8
+    max: 7.2
+  branch_angle_degrees:
+    sample: uniform
+    min: 36.0
+    max: 48.0
+  channel_width:
+    sample: uniform
+    min: 1.05
+    max: 1.34
+  mesh_size:
+    sample: uniform
+    min: 0.042
+    max: 0.052
+time:
+  dt: 0.0025
+  t_end: 0.95
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.015
+          max: 0.015
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.36
+            max: 0.64
+          sigma:
+            sample: uniform
+            min: 0.24
+            max: 0.42
+          aspect_ratio:
+            sample: uniform
+            min: 1.2
+            max: 2.6
+          center:
+          - sample: uniform
+            min: 5.4
+            max: 7.2
+          - sample: uniform
+            min: 1.2
+            max: 2.9
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: -0.64
+            max: -0.36
+          sigma:
+            sample: uniform
+            min: 0.24
+            max: 0.42
+          aspect_ratio:
+            sample: uniform
+            min: 1.2
+            max: 2.6
+          center:
+          - sample: uniform
+            min: 5.4
+            max: 7.2
+          - sample: uniform
+            min: -2.9
+            max: -1.2
+boundary_conditions:
+  u:
+    inlet:
+    - operator: neumann
+      value: 0.0
+    outlet_upper:
+    - operator: neumann
+      value: 0.0
+    outlet_lower:
+    - operator: neumann
+      value: 0.0
+    walls:
+    - operator: dirichlet
+      value: 0.0
+output:
+  formats: [numpy, gif]
+  fields:
+    u: scalar
+  resolution: [192, 144]
+  num_frames: 35
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct_bt
+seed: 61

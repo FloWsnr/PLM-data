@@ -761,9 +761,33 @@ set is the current validation target for dataset expansion.
 
 #### Zakharov-Kuznetsov (`configs/physics/zakharov_kuznetsov`)
 
-1. `2d_parallelogram_soliton_pulse_propagation`: localized soliton-like pulse propagating on a skew parallelogram cell.
-2. `2d_soliton_pulse_propagation`: localized soliton-like pulse propagating and reshaping on a periodic domain.
-3. `3d_soliton_pulse_propagation`: 3D localized soliton-like pulse propagating and reshaping.
+The 2D ZK set now emphasizes dispersive nonlinear pulse motion across ten
+domain families, with two randomized configs per domain shape. Periodic
+rectangle/parallelogram cells keep the conservative periodic weak form; Gmsh
+domains use homogeneous wall conditions to expose wall reflection, trapping,
+splitting, and obstacle scattering.
+
+1. `2d_soliton_pulse_propagation`: fast localized periodic rectangle pulse with randomized trailing satellites.
+2. `2d_rectangle_wall_reflected_bands`: slower x-periodic rectangle bands clamped on the y-walls for wall-reflected stripe motion.
+3. `2d_parallelogram_soliton_pulse_propagation`: fast oblique soliton-like pulse on a skew fully periodic cell.
+4. `2d_parallelogram_oblique_wave_packet`: skew-cell Gaussian wave packet with x-periodic and y-Neumann wall behavior.
+5. `2d_disk_radial_pulse_reflection`: Neumann disk radial cosine pulse that breaks into reflected dispersive rings.
+6. `2d_disk_absorbing_edge_pulses`: Dirichlet disk edge case with several randomized elongated blobs decaying at the rim.
+7. `2d_annulus_azimuthal_pulse_wrap`: annulus twin pulses wrapping around an inner obstacle under Neumann walls.
+8. `2d_annulus_inner_wall_echo`: annulus mixed inner-Dirichlet / outer-Neumann band dynamics.
+9. `2d_dumbbell_lobe_exchange`: Neumann dumbbell pulse transfer from one lobe through the neck.
+10. `2d_dumbbell_neck_collision`: Dirichlet dumbbell neck collision between opposite-signed packets.
+11. `2d_l_shape_corner_scatter`: L-shape corner scattering with a clamped notch and reflective outer boundary.
+12. `2d_l_shape_notch_wave_trap`: L-shape wave packet launched into the re-entrant notch with clamped outer walls.
+13. `2d_channel_obstacle_wake_split`: Neumann channel-obstacle pulse splitting around the cylinder.
+14. `2d_channel_obstacle_shadow_collision`: obstacle/wall-clamped channel bands that collide in the wake shadow.
+15. `2d_multi_hole_plate_perforation_scatter`: Neumann perforated plate pulse scattering through randomized holes.
+16. `2d_multi_hole_plate_hole_lane_pulses`: outer-clamped perforated plate wave packet guided between hole lanes.
+17. `2d_venturi_channel_throat_focus`: Neumann venturi pulse focusing through the throat.
+18. `2d_venturi_channel_wall_echo`: venturi wall-clamped bands producing throat echoes.
+19. `2d_y_bifurcation_branch_split`: Neumann Y-bifurcation inlet pulse splitting into both branches.
+20. `2d_y_bifurcation_junction_collision`: wall-clamped Y-bifurcation packets colliding near the junction.
+21. `3d_soliton_pulse_propagation`: 3D localized soliton-like pulse propagating and reshaping.
 
 ## Geometry Expansion Roadmap
 

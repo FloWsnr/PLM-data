@@ -1,0 +1,93 @@
+preset: zakharov_kuznetsov
+parameters:
+  alpha:
+    sample: uniform
+    min: 2.6
+    max: 4.8
+  theta:
+    sample: uniform
+    min: 0.68
+    max: 0.86
+domain:
+  allow_sampling: true
+  type: multi_hole_plate
+  width:
+    sample: uniform
+    min: 12.0
+    max: 14.0
+  height:
+    sample: uniform
+    min: 7.0
+    max: 8.4
+  holes:
+  - center: [3.2, 2.4]
+    radius:
+      sample: uniform
+      min: 0.42
+      max: 0.62
+  - center: [6.4, 5.3]
+    radius:
+      sample: uniform
+      min: 0.42
+      max: 0.62
+  - center: [9.6, 2.5]
+    radius:
+      sample: uniform
+      min: 0.42
+      max: 0.62
+  mesh_size:
+    sample: uniform
+    min: 0.052
+    max: 0.064
+time:
+  dt: 0.0028
+  t_end: 1.05
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_wave_packet
+      params:
+        amplitude:
+          sample: uniform
+          min: 0.34
+          max: 0.64
+        sigma:
+          sample: uniform
+          min: 0.75
+          max: 1.1
+        center:
+        - sample: uniform
+          min: 1.8
+          max: 3.4
+        - sample: uniform
+          min: 4.0
+          max: 6.2
+        wavevector:
+        - sample: uniform
+          min: 2.0
+          max: 3.6
+        - sample: uniform
+          min: -1.8
+          max: 1.8
+        phase:
+          sample: uniform
+          min: 0.0
+          max: 6.283
+boundary_conditions:
+  u:
+    outer:
+    - operator: dirichlet
+      value: 0.0
+    holes:
+    - operator: neumann
+      value: 0.0
+output:
+  formats: [numpy, gif]
+  fields:
+    u: scalar
+  resolution: [192, 144]
+  num_frames: 37
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct_bt
+seed: 57
+
