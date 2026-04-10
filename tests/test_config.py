@@ -353,12 +353,29 @@ def test_load_config_gray_scott_2d():
     assert cfg.preset == "gray_scott"
     assert cfg.domain.dimension == 2
     assert cfg.has_periodic_boundary_conditions is True
-    assert cfg.parameters["Du"] == 2.0e-5
-    assert cfg.parameters["Dv"] == 1.0e-5
-    assert cfg.parameters["F"] == 0.037
-    assert cfg.parameters["k"] == 0.06
-    assert cfg.coefficient("velocity").components["x"].params["value"] == 0.01
-    assert cfg.coefficient("velocity").components["y"].params["value"] == 0.0
+    assert cfg.domain.allow_sampling is True
+    assert cfg.parameters["Du"] == {
+        "sample": "uniform",
+        "min": 1.6e-5,
+        "max": 2.4e-5,
+    }
+    assert cfg.parameters["Dv"] == {
+        "sample": "uniform",
+        "min": 1.4e-5,
+        "max": 2.8e-5,
+    }
+    assert cfg.parameters["F"] == {"sample": "uniform", "min": 0.013, "max": 0.017}
+    assert cfg.parameters["k"] == {"sample": "uniform", "min": 0.052, "max": 0.056}
+    assert cfg.coefficient("velocity").components["x"].params["value"] == {
+        "sample": "uniform",
+        "min": 0.0015,
+        "max": 0.0035,
+    }
+    assert cfg.coefficient("velocity").components["y"].params["value"] == {
+        "sample": "uniform",
+        "min": -0.0012,
+        "max": 0.0012,
+    }
     assert cfg.input("u").initial_condition.type == "gaussian_blobs"
     assert cfg.input("v").initial_condition.type == "gaussian_blobs"
     assert cfg.output_mode("u") == "scalar"
@@ -524,10 +541,13 @@ def test_load_config_basic_heat_multi_hole_plate_domain():
     assert cfg.boundary_field("u").side_conditions("holes")[0].type == "dirichlet"
 
 
-def test_load_config_annulus_center_is_explicit():
+def test_load_config_gray_scott_annulus_center_uses_param_refs():
     cfg = load_config("configs/physics/gray_scott/2d_annular_spot_stripe_patterns.yaml")
     assert cfg.domain.type == "annulus"
-    assert cfg.domain.params["center"] == [0.0, 0.0]
+    assert cfg.domain.params["center"] == [
+        "param:domain_center_x",
+        "param:domain_center_y",
+    ]
 
 
 def test_load_config_basic_annulus_center_uses_param_refs():
