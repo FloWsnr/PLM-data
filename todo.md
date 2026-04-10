@@ -747,11 +747,40 @@ set is the current validation target for dataset expansion.
 
 #### Swift-Hohenberg (`configs/physics/swift_hohenberg`)
 
-1. `2d_advected_roll_growth`: localized seed growing into an advected stripe or roll pattern.
-2. `2d_directed_roll_growth`: stronger uniform advection producing more clearly directed stripe growth and drift.
-3. `2d_disk_roll_patterns`: noise-seeded roll formation in a disk with rotational advection and circular boundary pinning.
-4. `2d_rotating_roll_patterns`: noise-seeded pattern formation under rotational advection, giving swirling rolls.
-5. `3d_advected_pattern_growth`: localized seed growing into a 3D patterned structure under weak uniform advection.
+Validation note: all 21 2D configs were run with
+`./run.sh -n 2 ... --n-runs 2` under `output/swift_hohenberg_validation`,
+producing 42 successful runs with `>=128x128` output grids, solver
+convergence, passing health diagnostics, clean logs, and two configs each for
+rectangle, parallelogram, disk, annulus, dumbbell, L-shape, multi-hole plate,
+channel obstacle, venturi channel, and Y-bifurcation domains. The first pass
+identified five over-damped cases; `2d_channel_obstacle_reverse_shadow_defects`,
+`2d_disk_roll_patterns`, `2d_dumbbell_neck_defect_filter`,
+`2d_multi_hole_plate_screened_rolls`, and
+`2d_parallelogram_cellular_defect_drift` were retuned and rerun to keep visible
+final-frame dynamics and seed-to-seed separation.
+
+1. `2d_advected_roll_growth`: periodic rectangle with sampled localized blobs, positive near-critical growth, and oblique advection producing drifting roll/ring growth.
+2. `2d_annulus_azimuthal_roll_orbit`: simply supported annulus with sampled inner/outer radii and rotational velocity, producing orbiting roll islands around the hole.
+3. `2d_annulus_inner_outer_defect_competition`: wider annulus with radial target seeding and weak strain, producing inner/outer ring competition and defect locking.
+4. `2d_channel_obstacle_reverse_shadow_defects`: reverse-flow channel-obstacle case with oblique sine seeds, retuned to keep downstream/obstacle-shadow defects active.
+5. `2d_channel_obstacle_wake_roll_shedding`: forward-flow obstacle wake where sampled upstream blobs grow into obstacle-pinned roll patches.
+6. `2d_directed_roll_growth`: rectangular periodic domain with stronger diagonal advection and oblique modal seeds for fast directional roll drift.
+7. `2d_disk_radial_target_pinning`: disk with radial-cosine target seeding and slow rotation, producing concentric targets that pin to the circular boundary.
+8. `2d_disk_roll_patterns`: disk noise-seeded roll formation, retuned to maintain late-time circular roll texture rather than decaying to the wall.
+9. `2d_dumbbell_lobe_roll_exchange`: dumbbell with opposing lobe blob populations, producing lobe-specific growth and transfer through the neck.
+10. `2d_dumbbell_neck_defect_filter`: dumbbell step-seeded lobe imbalance, retuned so the narrow neck filters persistent roll defects instead of flattening.
+11. `2d_l_shape_notch_defect_cascade`: L-shape with oblique modal seeds and rotational shear, producing notch-triggered defect cascades.
+12. `2d_l_shape_reentrant_roll_quench`: L-shape quadrant seed where the reentrant corner bends and localizes roll growth.
+13. `2d_multi_hole_plate_hole_pinned_hexagons`: perforated plate with sampled holes and blob seeds, producing hole-pinned hexagon/spot structure.
+14. `2d_multi_hole_plate_screened_rolls`: perforated plate with noise seeds, retuned to preserve screened inter-hole roll remnants and seed variation.
+15. `2d_parallelogram_cellular_defect_drift`: periodic skew cell with sampled cellular velocity, retuned for persistent drifting defects.
+16. `2d_parallelogram_oblique_roll_shear`: periodic parallelogram with oblique shear and modal seeds, producing skew-aligned roll bands.
+17. `2d_rotating_roll_patterns`: simply supported rectangle with rotational advection and noise seeding, producing swirl-biased roll growth.
+18. `2d_venturi_channel_throat_roll_focusing`: venturi channel where sampled throat geometry focuses growing rolls through the constriction.
+19. `2d_venturi_channel_wall_pinned_labyrinth`: venturi channel with slower near-threshold wall-pinned labyrinth growth.
+20. `2d_y_bifurcation_branch_roll_selection`: Y-bifurcation with inlet and upper-branch seeds, producing branch-selective roll growth.
+21. `2d_y_bifurcation_junction_defect_collision`: Y-bifurcation with opposite-signed branch seeds, producing junction collisions and branch defects.
+22. `3d_advected_pattern_growth`: localized seed growing into a 3D patterned structure under weak uniform advection.
 
 #### Van der Pol (`configs/physics/van_der_pol`)
 

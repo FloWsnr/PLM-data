@@ -1,0 +1,149 @@
+preset: swift_hohenberg
+parameters:
+  r:
+    sample: uniform
+    min: 0.06
+    max: 0.24
+  q0:
+    sample: uniform
+    min: 1.05
+    max: 1.38
+  alpha:
+    sample: uniform
+    min: 0.85
+    max: 1.35
+  beta:
+    sample: uniform
+    min: -1.08
+    max: -0.68
+  gamma:
+    sample: uniform
+    min: -0.5
+    max: -0.12
+  theta:
+    sample: uniform
+    min: 0.52
+    max: 0.62
+coefficients:
+  velocity:
+    components:
+      x:
+        type: affine
+        params:
+          constant:
+            sample: uniform
+            min: -0.2
+            max: 0.2
+          y:
+            sample: uniform
+            min: -0.018
+            max: 0.018
+      y:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: 0.18
+            max: 0.48
+domain:
+  allow_sampling: true
+  type: multi_hole_plate
+  width:
+    sample: uniform
+    min: 46.0
+    max: 56.0
+  height:
+    sample: uniform
+    min: 34.0
+    max: 42.0
+  holes:
+  - center:
+    - sample: uniform
+      min: 11.0
+      max: 15.0
+    - sample: uniform
+      min: 11.0
+      max: 15.0
+    radius:
+      sample: uniform
+      min: 2.4
+      max: 3.8
+    boundary_name: holes
+  - center:
+    - sample: uniform
+      min: 24.0
+      max: 30.0
+    - sample: uniform
+      min: 24.0
+      max: 31.0
+    radius:
+      sample: uniform
+      min: 2.6
+      max: 4.2
+    boundary_name: holes
+  - center:
+    - sample: uniform
+      min: 38.0
+      max: 46.0
+    - sample: uniform
+      min: 12.0
+      max: 18.0
+    radius:
+      sample: uniform
+      min: 2.6
+      max: 4.2
+    boundary_name: holes
+  mesh_size:
+    sample: uniform
+    min: 0.18
+    max: 0.24
+time:
+  dt: 0.09
+  t_end: 16.2
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.025
+          max: 0.025
+        generators:
+        - count:
+            sample: randint
+            min: 7
+            max: 12
+          amplitude:
+            sample: uniform
+            min: 0.18
+            max: 0.48
+          sigma:
+            sample: uniform
+            min: 1.0
+            max: 2.4
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 2.4
+          center:
+          - sample: uniform
+            min: 7.0
+            max: 48.0
+          - sample: uniform
+            min: 6.0
+            max: 34.0
+boundary_conditions:
+  u:
+    outer:
+    - operator: simply_supported
+    holes:
+    - operator: simply_supported
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [192, 144]
+  num_frames: 55
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 5340

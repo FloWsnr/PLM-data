@@ -1,0 +1,147 @@
+preset: swift_hohenberg
+parameters:
+  r:
+    sample: uniform
+    min: 0.02
+    max: 0.22
+  q0:
+    sample: uniform
+    min: 1.02
+    max: 1.34
+  alpha:
+    sample: uniform
+    min: 0.5
+    max: 1.12
+  beta:
+    sample: uniform
+    min: -1.18
+    max: -0.72
+  gamma:
+    sample: uniform
+    min: -0.45
+    max: -0.08
+  theta:
+    sample: uniform
+    min: 0.52
+    max: 0.62
+coefficients:
+  velocity:
+    components:
+      x:
+        type: affine
+        params:
+          constant:
+            sample: uniform
+            min: -0.12
+            max: 0.28
+          y:
+            sample: uniform
+            min: -0.012
+            max: 0.012
+      y:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.18
+            max: 0.18
+domain:
+  allow_sampling: true
+  type: y_bifurcation
+  inlet_length:
+    sample: uniform
+    min: 18.0
+    max: 24.0
+  branch_length:
+    sample: uniform
+    min: 20.0
+    max: 28.0
+  branch_angle_degrees:
+    sample: uniform
+    min: 36.0
+    max: 52.0
+  channel_width:
+    sample: uniform
+    min: 8.0
+    max: 11.0
+  mesh_size:
+    sample: uniform
+    min: 0.16
+    max: 0.22
+time:
+  dt: 0.09
+  t_end: 16.2
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.025
+          max: 0.025
+        generators:
+        - count:
+            sample: randint
+            min: 3
+            max: 5
+          amplitude:
+            sample: uniform
+            min: 0.28
+            max: 0.7
+          sigma:
+            sample: uniform
+            min: 1.2
+            max: 2.6
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 3.0
+          center:
+          - sample: uniform
+            min: 20.0
+            max: 42.0
+          - sample: uniform
+            min: 6.0
+            max: 18.0
+        - count:
+            sample: randint
+            min: 3
+            max: 5
+          amplitude:
+            sample: uniform
+            min: -0.58
+            max: -0.22
+          sigma:
+            sample: uniform
+            min: 1.2
+            max: 2.6
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 3.0
+          center:
+          - sample: uniform
+            min: 20.0
+            max: 42.0
+          - sample: uniform
+            min: -18.0
+            max: -6.0
+boundary_conditions:
+  u:
+    inlet:
+    - operator: simply_supported
+    outlet_upper:
+    - operator: simply_supported
+    outlet_lower:
+    - operator: simply_supported
+    walls:
+    - operator: simply_supported
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [192, 160]
+  num_frames: 55
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 5400

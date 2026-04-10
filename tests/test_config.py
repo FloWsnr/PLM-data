@@ -572,13 +572,15 @@ def test_load_config_swift_hohenberg_2d_default():
     assert cfg.preset == "swift_hohenberg"
     assert cfg.domain.dimension == 2
     assert cfg.has_periodic_boundary_conditions is True
-    assert cfg.parameters["r"] == -0.28
-    assert cfg.parameters["alpha"] == 1.6
-    assert cfg.parameters["beta"] == -1.0
-    assert cfg.parameters["gamma"] == -1.0
-    assert cfg.coefficient("velocity").components["x"].params["value"] == 0.6
-    assert cfg.coefficient("velocity").components["y"].params["value"] == -0.25
+    assert cfg.parameters["r"]["sample"] == "uniform"
+    assert cfg.parameters["q0"]["min"] == 0.9
+    assert cfg.parameters["alpha"]["max"] == 1.25
+    assert cfg.parameters["gamma"]["max"] < 0.0
+    assert cfg.domain.params["mesh_resolution"] == [160, 160]
+    assert cfg.coefficient("velocity").components["x"].params["value"]["min"] == 0.55
+    assert cfg.coefficient("velocity").components["y"].params["value"]["max"] == -0.16
     assert cfg.input("u").initial_condition.type == "gaussian_blobs"
+    assert cfg.output.resolution == [160, 160]
     assert cfg.boundary_field("u").side_conditions("x-")[0].type == "periodic"
 
 
@@ -590,6 +592,8 @@ def test_load_config_swift_hohenberg_2d_rotational():
     assert cfg.coefficient("velocity").components["x"].type == "affine"
     assert cfg.coefficient("velocity").components["y"].type == "affine"
     assert cfg.input("u").initial_condition.type == "gaussian_noise"
+    assert cfg.domain.params["mesh_resolution"] == [160, 160]
+    assert cfg.output.resolution == [160, 160]
     assert cfg.boundary_field("u").side_conditions("x-")[0].type == "simply_supported"
 
 
@@ -598,8 +602,10 @@ def test_load_config_swift_hohenberg_2d_directed():
     assert cfg.preset == "swift_hohenberg"
     assert cfg.domain.dimension == 2
     assert cfg.has_periodic_boundary_conditions is True
-    assert cfg.coefficient("velocity").components["x"].params["value"] == 0.9
-    assert cfg.coefficient("velocity").components["y"].params["value"] == -0.4
+    assert cfg.coefficient("velocity").components["x"].params["value"]["min"] == 1.05
+    assert cfg.coefficient("velocity").components["y"].params["value"]["max"] == -0.36
+    assert cfg.domain.params["mesh_resolution"] == [192, 160]
+    assert cfg.output.resolution == [192, 160]
     assert cfg.boundary_field("u").side_conditions("x-")[0].type == "periodic"
 
 
