@@ -2,28 +2,24 @@ preset: gray_scott
 parameters:
   Du:
     sample: uniform
-    min: 1.6e-05
+    min: 1.7e-05
     max: 2.4e-05
   Dv:
     sample: uniform
-    min: 1.4e-05
-    max: 2.8e-05
+    min: 0.85e-05
+    max: 1.45e-05
   F:
     sample: uniform
-    min: 0.013
-    max: 0.017
+    min: 0.029
+    max: 0.033
   k:
     sample: uniform
-    min: 0.052
-    max: 0.056
-  domain_size_x:
+    min: 0.060
+    max: 0.064
+  obstacle_v_drive:
     sample: uniform
-    min: 2.45
-    max: 2.85
-  domain_size_y:
-    sample: uniform
-    min: 2.35
-    max: 2.75
+    min: 0.08
+    max: 0.16
 coefficients:
   velocity:
     components:
@@ -32,23 +28,44 @@ coefficients:
         params:
           value:
             sample: uniform
-            min: 0.0015
-            max: 0.0035
+            min: 0.0012
+            max: 0.0028
       y:
         type: constant
         params:
           value:
             sample: uniform
-            min: -0.0012
-            max: 0.0012
+            min: -0.0008
+            max: 0.0008
 domain:
   allow_sampling: true
-  type: rectangle
-  size: ["param:domain_size_x", "param:domain_size_y"]
-  mesh_resolution: [144, 144]
+  type: channel_obstacle
+  length:
+    sample: uniform
+    min: 4.0
+    max: 4.6
+  height:
+    sample: uniform
+    min: 2.25
+    max: 2.65
+  obstacle_center:
+    - sample: uniform
+      min: 1.55
+      max: 2.25
+    - sample: uniform
+      min: 0.85
+      max: 1.75
+  obstacle_radius:
+    sample: uniform
+    min: 0.24
+    max: 0.36
+  mesh_size:
+    sample: uniform
+    min: 0.016
+    max: 0.02
 time:
   dt: 0.5
-  t_end: 850.0
+  t_end: 520.0
 inputs:
   u:
     initial_condition:
@@ -61,16 +78,16 @@ inputs:
         generators:
           - count:
               sample: randint
-              min: 3
-              max: 5
+              min: 4
+              max: 7
             amplitude:
               sample: uniform
-              min: -0.36
-              max: -0.18
+              min: -0.46
+              max: -0.24
             sigma:
               sample: uniform
               min: 0.06
-              max: 0.12
+              max: 0.13
             aspect_ratio:
               sample: uniform
               min: 1.0
@@ -78,10 +95,10 @@ inputs:
             center:
               - sample: uniform
                 min: 0.45
-                max: 2.05
+                max: 3.6
               - sample: uniform
                 min: 0.45
-                max: 2.05
+                max: 2.0
   v:
     initial_condition:
       type: gaussian_blobs
@@ -93,37 +110,59 @@ inputs:
         generators:
           - count:
               sample: randint
-              min: 3
-              max: 5
+              min: 4
+              max: 7
             amplitude:
               sample: uniform
-              min: 0.045
-              max: 0.115
+              min: 0.11
+              max: 0.23
             sigma:
               sample: uniform
               min: 0.055
-              max: 0.11
+              max: 0.12
             aspect_ratio:
               sample: uniform
               min: 1.0
-              max: 2.4
+              max: 2.6
             center:
               - sample: uniform
                 min: 0.45
-                max: 2.05
+                max: 3.6
               - sample: uniform
                 min: 0.45
-                max: 2.05
+                max: 2.0
 boundary_conditions:
   u:
-    $ref: boundary_field.scalar.full_periodic_2d
+    inlet:
+      - operator: dirichlet
+        value: 1.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+    obstacle:
+      - operator: dirichlet
+        value: 0.92
   v:
-    $ref: boundary_field.scalar.full_periodic_2d
+    inlet:
+      - operator: dirichlet
+        value: 0.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+    obstacle:
+      - operator: dirichlet
+        value: "param:obstacle_v_drive"
 solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 output:
   $ref: output.template.scalar_uv
   formats: [numpy, gif]
-  resolution: [144, 144]
+  resolution: [192, 128]
   num_frames: 64
-seed: 4200
+seed: 4350

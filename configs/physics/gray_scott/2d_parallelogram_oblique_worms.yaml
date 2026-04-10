@@ -2,28 +2,32 @@ preset: gray_scott
 parameters:
   Du:
     sample: uniform
-    min: 1.6e-05
-    max: 2.4e-05
+    min: 1.9e-05
+    max: 2.8e-05
   Dv:
     sample: uniform
-    min: 1.4e-05
-    max: 2.8e-05
+    min: 0.9e-05
+    max: 1.6e-05
   F:
     sample: uniform
-    min: 0.013
-    max: 0.017
+    min: 0.014
+    max: 0.018
   k:
     sample: uniform
-    min: 0.052
-    max: 0.056
-  domain_size_x:
+    min: 0.050
+    max: 0.054
+  axis_x_length:
     sample: uniform
-    min: 2.45
-    max: 2.85
-  domain_size_y:
+    min: 2.3
+    max: 2.65
+  axis_y_x:
     sample: uniform
-    min: 2.35
-    max: 2.75
+    min: 0.45
+    max: 0.82
+  axis_y_y:
+    sample: uniform
+    min: 2.2
+    max: 2.6
 coefficients:
   velocity:
     components:
@@ -32,23 +36,25 @@ coefficients:
         params:
           value:
             sample: uniform
-            min: 0.0015
-            max: 0.0035
+            min: -0.0014
+            max: 0.0014
       y:
         type: constant
         params:
           value:
             sample: uniform
-            min: -0.0012
-            max: 0.0012
+            min: 0.0012
+            max: 0.003
 domain:
   allow_sampling: true
-  type: rectangle
-  size: ["param:domain_size_x", "param:domain_size_y"]
+  type: parallelogram
+  origin: [0.0, 0.0]
+  axis_x: ["param:axis_x_length", 0.0]
+  axis_y: ["param:axis_y_x", "param:axis_y_y"]
   mesh_resolution: [144, 144]
 time:
-  dt: 0.5
-  t_end: 850.0
+  dt: 0.4
+  t_end: 520.0
 inputs:
   u:
     initial_condition:
@@ -56,32 +62,32 @@ inputs:
       params:
         background:
           sample: uniform
-          min: 0.96
+          min: 0.94
           max: 1.02
         generators:
           - count:
               sample: randint
-              min: 3
-              max: 5
+              min: 5
+              max: 9
             amplitude:
               sample: uniform
-              min: -0.36
-              max: -0.18
+              min: -0.28
+              max: -0.11
             sigma:
               sample: uniform
-              min: 0.06
-              max: 0.12
+              min: 0.035
+              max: 0.075
             aspect_ratio:
               sample: uniform
-              min: 1.0
-              max: 2.6
+              min: 2.0
+              max: 5.0
             center:
               - sample: uniform
-                min: 0.45
-                max: 2.05
+                min: 0.35
+                max: 2.2
               - sample: uniform
-                min: 0.45
-                max: 2.05
+                min: 0.35
+                max: 2.2
   v:
     initial_condition:
       type: gaussian_blobs
@@ -93,27 +99,27 @@ inputs:
         generators:
           - count:
               sample: randint
-              min: 3
-              max: 5
+              min: 5
+              max: 9
             amplitude:
               sample: uniform
-              min: 0.045
-              max: 0.115
+              min: 0.1
+              max: 0.22
             sigma:
               sample: uniform
-              min: 0.055
+              min: 0.05
               max: 0.11
             aspect_ratio:
               sample: uniform
-              min: 1.0
-              max: 2.4
+              min: 2.0
+              max: 5.0
             center:
               - sample: uniform
-                min: 0.45
-                max: 2.05
+                min: 0.35
+                max: 2.2
               - sample: uniform
-                min: 0.45
-                max: 2.05
+                min: 0.35
+                max: 2.2
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.full_periodic_2d
@@ -125,5 +131,5 @@ output:
   $ref: output.template.scalar_uv
   formats: [numpy, gif]
   resolution: [144, 144]
-  num_frames: 64
-seed: 4200
+  num_frames: 56
+seed: 4270

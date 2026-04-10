@@ -586,11 +586,34 @@ Y-bifurcation collision cases.
 
 #### Gray-Scott (`configs/physics/gray_scott`)
 
-1. `2d_annular_spot_stripe_patterns`: Gray-Scott spot and stripe patterning on an annular domain from two seeded patches.
-2. `2d_drifting_spot_stripe_patterns`: two seeded reagent patches generating drifting Gray-Scott spots and stripes.
-3. `2d_dumbbell_spot_stripe_patterns`: spot and stripe colonies seeded in both dumbbell lobes and coupled through the narrow neck.
-4. `2d_noisy_spot_stripe_patterns`: Gray-Scott spots and stripes with stochastic roughening and variability.
-5. `3d_spot_blob_patterns`: 3D Gray-Scott spot and blob structures from two seeded reagent patches.
+The 2D Gray-Scott preset now has 20 randomized configs, with two configs each
+for `rectangle`, `annulus`, `disk`, `dumbbell`, `parallelogram`,
+`l_shape`, `multi_hole_plate`, `channel_obstacle`, `y_bifurcation`, and
+`serpentine_channel`. Validation outputs are under
+`output/gray_scott_validation`; the final two-seed sweep passed 40/40 runs,
+with output resolutions at or above 128 on the shortest side.
+
+1. `2d_annular_spot_stripe_patterns`: high-feed annulus patches form spot and stripe colonies around the hole.
+2. `2d_annulus_inner_outer_wave_collision`: nonnegative radial waves collide through an annular gap without boundary overdrive.
+3. `2d_channel_obstacle_obstacle_spot_shedding`: inlet flow and obstacle pinning shed spot packets into the wake.
+4. `2d_channel_obstacle_wake_labyrinths`: advected labyrinth fronts bend around a sampled obstacle with natural obstacle walls.
+5. `2d_disk_absorbing_rim_gliders`: disk gliders drift under weak rotation with a sampled circular boundary.
+6. `2d_disk_pulsating_spot_rings`: circular spot rings pulse and reorganize from radial seeds.
+7. `2d_drifting_spot_stripe_patterns`: periodic rectangle gliders drift under weak substrate advection.
+8. `2d_dumbbell_neck_glider_exchange`: low-feed gliders exchange through a sampled dumbbell neck.
+9. `2d_dumbbell_spot_stripe_patterns`: broad dumbbell spot and stripe fields evolve in both lobes with Neumann outer walls.
+10. `2d_l_shape_notch_worm_cascade`: high-feed worm cascades interact with a driven reentrant notch.
+11. `2d_l_shape_reentrant_hole_shadow`: L-shape fronts cast a corner shadow from reentrant geometry.
+12. `2d_multi_hole_plate_perforation_holes`: perforation rims pin substrate/autocatalyst values and split spot paths.
+13. `2d_multi_hole_plate_screened_gliders`: screened gliders weave through a randomized multi-hole plate.
+14. `2d_noisy_spot_stripe_patterns`: stochastic rectangle roughening keeps spot and stripe morphology varied across seeds.
+15. `2d_parallelogram_labyrinth_wraparound`: skew periodic boundaries wrap labyrinths through an oblique cell.
+16. `2d_parallelogram_oblique_worms`: advected oblique blobs generate skew worm motion.
+17. `2d_serpentine_channel_guided_worms`: broad activator bands travel around sampled serpentine bends.
+18. `2d_serpentine_channel_reverse_wave_train`: inlet/outlet forcing sends wave trains through the serpentine in the opposite regime.
+19. `2d_y_bifurcation_branch_wave_split`: inlet-driven fronts split into two Y branches with bounded wall pinning.
+20. `2d_y_bifurcation_junction_glider_collision`: opposing branch activator bands collide near the Y junction.
+21. `3d_spot_blob_patterns`: 3D Gray-Scott spot and blob structures from two seeded reagent patches.
 
 #### Kuramoto-Sivashinsky (`configs/physics/kuramoto_sivashinsky`)
 

@@ -1,0 +1,158 @@
+preset: gray_scott
+parameters:
+  Du:
+    sample: uniform
+    min: 1.7e-05
+    max: 2.4e-05
+  Dv:
+    sample: uniform
+    min: 0.85e-05
+    max: 1.45e-05
+  F:
+    sample: uniform
+    min: 0.036
+    max: 0.039
+  k:
+    sample: uniform
+    min: 0.058
+    max: 0.061
+  inlet_v_drive:
+    sample: uniform
+    min: 0.04
+    max: 0.09
+coefficients:
+  velocity:
+    components:
+      x:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: 0.001
+            max: 0.0025
+      y:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.0006
+            max: 0.0006
+domain:
+  allow_sampling: true
+  type: channel_obstacle
+  length:
+    sample: uniform
+    min: 4.0
+    max: 4.6
+  height:
+    sample: uniform
+    min: 2.25
+    max: 2.65
+  obstacle_center:
+    - sample: uniform
+      min: 1.6
+      max: 2.45
+    - sample: uniform
+      min: 0.85
+      max: 1.75
+  obstacle_radius:
+    sample: uniform
+    min: 0.25
+    max: 0.38
+  mesh_size:
+    sample: uniform
+    min: 0.016
+    max: 0.02
+time:
+  dt: 0.5
+  t_end: 420.0
+inputs:
+  u:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 0.94
+          max: 1.0
+        modes:
+          - amplitude:
+              sample: uniform
+              min: -0.09
+              max: -0.035
+            cycles: [2.0, 1.0]
+            phase:
+              sample: uniform
+              min: -0.7
+              max: 0.7
+            angle:
+              sample: uniform
+              min: -0.2
+              max: 0.45
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.0
+          max: 0.012
+        generators:
+          - count:
+              sample: randint
+              min: 5
+              max: 8
+            amplitude:
+              sample: uniform
+              min: 0.08
+              max: 0.17
+            sigma:
+              sample: uniform
+              min: 0.055
+              max: 0.12
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.8
+            center:
+              - sample: uniform
+                min: 0.4
+                max: 3.4
+              - sample: uniform
+                min: 0.4
+                max: 1.95
+boundary_conditions:
+  u:
+    inlet:
+      - operator: dirichlet
+        value: 1.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+    obstacle:
+      - operator: neumann
+        value: 0.0
+  v:
+    inlet:
+      - operator: dirichlet
+        value: "param:inlet_v_drive"
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+    obstacle:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [192, 128]
+  num_frames: 64
+seed: 4340
