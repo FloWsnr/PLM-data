@@ -1,0 +1,254 @@
+preset: superlattice
+parameters:
+  D_u1:
+    sample: uniform
+    min: 0.04
+    max: 0.072
+  D_v1:
+    sample: uniform
+    min: 0.55
+    max: 1.2
+  D_u2:
+    sample: uniform
+    min: 0.26
+    max: 0.46
+  D_v2:
+    sample: uniform
+    min: 9.2
+    max: 16.5
+  a:
+    sample: uniform
+    min: 2.9
+    max: 3.14
+  b:
+    sample: uniform
+    min: 8.75
+    max: 9.45
+  c:
+    sample: uniform
+    min: 14.5
+    max: 15.8
+  d:
+    sample: uniform
+    min: 8.4
+    max: 10.0
+  alpha:
+    sample: uniform
+    min: 0.12
+    max: 0.26
+  u1_inlet_value:
+    sample: uniform
+    min: 3.12
+    max: 3.38
+  u1_outlet_value:
+    sample: uniform
+    min: 2.72
+    max: 2.98
+  v1_inlet_value:
+    sample: uniform
+    min: 3.08
+    max: 3.34
+  v1_outlet_value:
+    sample: uniform
+    min: 2.7
+    max: 3.0
+  u2_inlet_value:
+    sample: uniform
+    min: 3.16
+    max: 3.48
+  u2_outlet_value:
+    sample: uniform
+    min: 2.7
+    max: 3.0
+  v2_inlet_value:
+    sample: uniform
+    min: 10.5
+    max: 11.5
+  v2_outlet_value:
+    sample: uniform
+    min: 9.0
+    max: 9.9
+domain:
+  allow_sampling: true
+  type: venturi_channel
+  length:
+    sample: uniform
+    min: 42.0
+    max: 54.0
+  height:
+    sample: uniform
+    min: 18.0
+    max: 24.0
+  throat_height:
+    sample: uniform
+    min: 7.0
+    max: 11.0
+  constriction_center_x:
+    sample: uniform
+    min: 19.0
+    max: 30.0
+  constriction_radius:
+    sample: uniform
+    min: 8.0
+    max: 13.0
+  mesh_size:
+    sample: uniform
+    min: 0.18
+    max: 0.25
+time:
+  dt: 0.03
+  t_end: 20.0
+inputs:
+  u_1:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 2.88
+          max: 3.08
+        generators:
+          - count:
+              sample: randint
+              min: 4
+              max: 8
+            amplitude:
+              sample: uniform
+              min: 0.1
+              max: 0.32
+            sigma:
+              sample: uniform
+              min: 1.0
+              max: 2.4
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 3.6
+            center:
+              - sample: uniform
+                min: 14.0
+                max: 30.0
+              - sample: uniform
+                min: 6.0
+                max: 17.0
+  v_1:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 2.84
+          max: 3.14
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.06
+              max: 0.18
+            cycles:
+              - sample: uniform
+                min: 0.12
+                max: 0.28
+              - sample: uniform
+                min: 0.1
+                max: 0.28
+            phase:
+              sample: uniform
+              min: -3.14159
+              max: 3.14159
+            angle:
+              sample: uniform
+              min: -0.55
+              max: 0.55
+  u_2:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 2.8
+          max: 3.2
+        std:
+          sample: uniform
+          min: 0.06
+          max: 0.18
+  v_2:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 9.8
+          max: 10.8
+        generators:
+          - count:
+              sample: randint
+              min: 3
+              max: 6
+            amplitude:
+              sample: uniform
+              min: -0.45
+              max: 0.35
+            sigma:
+              sample: uniform
+              min: 1.3
+              max: 2.8
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 3.0
+            center:
+              - sample: uniform
+                min: 14.0
+                max: 34.0
+              - sample: uniform
+                min: 5.0
+                max: 18.0
+boundary_conditions:
+  u_1:
+    inlet:
+      - operator: dirichlet
+        value: param:u1_inlet_value
+    outlet:
+      - operator: dirichlet
+        value: param:u1_outlet_value
+    walls:
+      - operator: neumann
+        value: 0.0
+  v_1:
+    inlet:
+      - operator: dirichlet
+        value: param:v1_inlet_value
+    outlet:
+      - operator: dirichlet
+        value: param:v1_outlet_value
+    walls:
+      - operator: neumann
+        value: 0.0
+  u_2:
+    inlet:
+      - operator: dirichlet
+        value: param:u2_inlet_value
+    outlet:
+      - operator: dirichlet
+        value: param:u2_outlet_value
+    walls:
+      - operator: neumann
+        value: 0.0
+  v_2:
+    inlet:
+      - operator: dirichlet
+        value: param:v2_inlet_value
+    outlet:
+      - operator: dirichlet
+        value: param:v2_outlet_value
+    walls:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_u1_v1_u2_v2
+  formats: [numpy, gif]
+  resolution: [224, 128]
+  num_frames: 71
+seed: 5490

@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 530 configs.
+Current baseline: 38 PDE presets and 548 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -687,9 +687,36 @@ Validation note: all 20 2D configs were run with `./run.sh -n 2 ... --n-runs 2` 
 
 #### Superlattice (`configs/physics/superlattice`)
 
-1. `2d_parallelogram_superlattice_pattern_formation`: coupled four-field superlattice pattern formation on a skew parallelogram cell.
-2. `2d_superlattice_pattern_formation`: coupled four-field reaction-diffusion pattern forming mixed-scale superlattice structures.
-3. `3d_superlattice_pattern_formation`: 3D coupled four-field superlattice-style pattern formation.
+The 2D sweep now covers 10 domains with 2 configs each and uses sampled
+geometry, coefficients, initial conditions, and boundary values so seed changes
+alter both the morphology and the timing. All 2D configs output at least a
+128-scale grid and were validated with `./run.sh -n 2 ... --n-runs 2`; the
+40 seed runs passed metadata health checks, log scans, masked finite/dynamic
+metrics, and visual start/middle/end GIF inspection.
+
+1. `2d_rectangle_dynamic_noise_lattice`: fast noisy lattice formation on a rectangular box with strong seed-to-seed variation.
+2. `2d_rectangle_edge_pinned_spot_invasion`: edge-pinned spot invasion on a rectangle with x-side Dirichlet bands and zero-flux y walls.
+3. `2d_annulus_azimuthal_necklace`: reliable azimuthal necklace spots wrapping around a sampled annulus.
+4. `2d_annulus_inner_outer_ring_competition`: slower inner/outer ring competition on an annulus with radial contrast.
+5. `2d_disk_radial_target_necklace`: radial target-like waves and necklace spots on a disk.
+6. `2d_disk_absorbing_rim_breakup`: absorbing-rim breakup on a disk, driving faster edge-driven fragmentation.
+7. `2d_dumbbell_lobe_phase_lag`: phase-lagged lobe exchange across a dumbbell neck.
+8. `2d_dumbbell_neck_pinned_exchange`: neck-pinned exchange in a dumbbell with zero-flux outer walls and delayed cross-lobe coupling.
+9. `2d_l_shape_reentrant_labyrinth`: re-entrant corner labyrinth formation in an L-shaped domain.
+10. `2d_l_shape_notch_quench_spots`: notch-quench spots in an L-shaped domain with a Dirichlet notch sink.
+11. `2d_multi_hole_plate_perforation_screening`: zero-flux perforation screening across a sampled multi-hole plate.
+12. `2d_multi_hole_plate_hole_rim_emitters`: hole-rim emitters on a perforated plate with alternating hot/cold Dirichlet rims.
+13. `2d_parallelogram_oblique_stripe_interference`: oblique stripe interference on a skew periodic cell.
+14. `2d_parallelogram_skew_wall_quench`: skew-wall quench on a parallelogram, with periodic x and Dirichlet y bands.
+15. `2d_channel_obstacle_obstacle_shadow_lattice`: obstacle-shadow lattice behind a channel cylinder.
+16. `2d_channel_obstacle_inlet_wake_spots`: inlet-biased wake spots around a channel obstacle with zero-flux walls.
+17. `2d_venturi_channel_throat_focusing`: venturi throat focusing, where the constriction sharpens the fast/slow scales.
+18. `2d_venturi_channel_wall_pinned_bands`: wall-pinned bands in a venturi channel with Dirichlet wall contrast.
+19. `2d_y_bifurcation_branch_split_lattice`: branch-split lattice patterns through a Y junction with branch-value Dirichlet ends.
+20. `2d_y_bifurcation_junction_collision`: junction-collision dynamics in a Y bifurcation with outlet-driven contrast.
+
+`3d_superlattice_pattern_formation` remains the 3D extension, but the new 2D
+set is the current validation target for dataset expansion.
 
 #### Swift-Hohenberg (`configs/physics/swift_hohenberg`)
 
