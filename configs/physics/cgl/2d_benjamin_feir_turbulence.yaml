@@ -1,33 +1,73 @@
 preset: cgl
 parameters:
-  # Canonical CGL: D_r=1, D_i=b, a_r=r, a_i=0, b_r=-1, b_i=-c
-  # Using r=1, b=2, c=-1.2 => 1+bc = 1+2*(-1.2) = -1.4 < 0 (Benjamin-Feir unstable)
-  D_r: 1.0
-  D_i: 2.0
-  a_r: 1.0
-  a_i: 0.0
-  b_r: -1.0
-  b_i: 1.2
-  theta: 0.5
+  # Canonical CGL-like Benjamin-Feir regime: D_i * b_i > D_r.
+  D_r:
+    sample: uniform
+    min: 0.85
+    max: 1.1
+  D_i:
+    sample: uniform
+    min: 1.7
+    max: 2.4
+  a_r:
+    sample: uniform
+    min: 0.82
+    max: 1.18
+  a_i:
+    sample: uniform
+    min: -0.16
+    max: 0.16
+  b_r:
+    sample: uniform
+    min: -1.16
+    max: -0.86
+  b_i:
+    sample: uniform
+    min: 1.02
+    max: 1.48
+  theta:
+    sample: uniform
+    min: 0.5
+    max: 0.6
 domain:
+  allow_sampling: true
   type: rectangle
-  size: [100.0, 100.0]
-  mesh_resolution: [256, 256]
+  size:
+    - sample: uniform
+      min: 56.0
+      max: 72.0
+    - sample: uniform
+      min: 56.0
+      max: 72.0
+  mesh_resolution: [160, 160]
 time:
-  $ref: time.cgl_default
+  dt: 0.12
+  t_end: 36.0
 inputs:
   u:
     initial_condition:
       type: gaussian_noise
       params:
-        mean: 1.0
-        std: 0.05
+        mean:
+          sample: uniform
+          min: 0.82
+          max: 1.08
+        std:
+          sample: uniform
+          min: 0.045
+          max: 0.13
   v:
     initial_condition:
       type: gaussian_noise
       params:
-        mean: 0.0
-        std: 0.05
+        mean:
+          sample: uniform
+          min: -0.06
+          max: 0.06
+        std:
+          sample: uniform
+          min: 0.045
+          max: 0.13
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.full_periodic_2d
@@ -35,8 +75,9 @@ boundary_conditions:
     $ref: boundary_field.scalar.full_periodic_2d
 output:
   $ref: output.template.cgl
-  resolution: [128, 128]
-  num_frames: 100
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 61
 solver:
   $ref: solver.profile.nonlinear_mixed_direct
 seed: 42

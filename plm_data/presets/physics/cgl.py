@@ -16,8 +16,10 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem
 
+from plm_data.core.boundary_conditions import apply_dirichlet_bcs_to_subspace
 from plm_data.core.initial_conditions import apply_ic
 from plm_data.core.solver_strategies import NONLINEAR_MIXED_DIRECT
+from plm_data.core.spatial_fields import is_exact_zero_field_expression
 from plm_data.presets import register_preset
 from plm_data.presets.base import (
     PDEPreset,
@@ -34,6 +36,11 @@ from plm_data.presets.metadata import (
     SCALAR_STANDARD_BOUNDARY_OPERATORS,
     StateSpec,
 )
+
+_CGL_BOUNDARY_OPERATORS = {
+    name: SCALAR_STANDARD_BOUNDARY_OPERATORS[name]
+    for name in ("dirichlet", "neumann", "periodic")
+}
 
 _CGL_SPEC = PresetSpec(
     name="cgl",
@@ -74,13 +81,13 @@ _CGL_SPEC = PresetSpec(
         "u": BoundaryFieldSpec(
             name="u",
             shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
+            operators=_CGL_BOUNDARY_OPERATORS,
             description="Boundary conditions for Re(A).",
         ),
         "v": BoundaryFieldSpec(
             name="v",
             shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
+            operators=_CGL_BOUNDARY_OPERATORS,
             description="Boundary conditions for Im(A).",
         ),
     },
@@ -119,19 +126,53 @@ class _CGLProblem(TransientNonlinearProblem):
     supported_solver_strategies = (NONLINEAR_MIXED_DIRECT,)
 
     def validate_boundary_conditions(self, domain_geom):
+        boundary_field_u = self.config.boundary_field("u")
+        boundary_field_v = self.config.boundary_field("v")
         for field_name in ("u", "v"):
+            boundary_field = self.config.boundary_field(field_name)
             validate_boundary_field_structure(
                 preset_name=self.spec.name,
                 field_name=field_name,
-                boundary_field=self.config.boundary_field(field_name),
+                boundary_field=boundary_field,
                 domain_geom=domain_geom,
-                allowed_operators={"periodic"},
+                allowed_operators=set(_CGL_BOUNDARY_OPERATORS),
             )
+            self._validate_homogeneous_neumann(field_name, boundary_field)
+
+        if (
+            boundary_field_u.periodic_pair_keys()
+            != boundary_field_v.periodic_pair_keys()
+        ):
+            raise ValueError(
+                "CGL requires matching periodic side pairs for the real and imaginary "
+                "fields because both components share one mixed periodic constraint."
+            )
+
+    def _validate_homogeneous_neumann(self, field_name, boundary_field) -> None:
+        for side_name, entries in boundary_field.sides.items():
+            for entry in entries:
+                if entry.type != "neumann":
+                    continue
+                if entry.value is None:
+                    raise ValueError(
+                        f"CGL boundary field '{field_name}' side '{side_name}' "
+                        "uses Neumann but is missing a value."
+                    )
+                if not is_exact_zero_field_expression(
+                    entry.value,
+                    self.config.parameters,
+                ):
+                    raise ValueError(
+                        "CGL currently supports homogeneous Neumann boundaries only. "
+                        f"Field '{field_name}' side '{side_name}' has a nonzero "
+                        "Neumann value."
+                    )
 
     def setup(self) -> None:
         domain_geom = self.load_domain_geometry()
         self.msh = domain_geom.mesh
         boundary_field_u = self.config.boundary_field("u")
+        boundary_field_v = self.config.boundary_field("v")
 
         P1 = element("Lagrange", self.msh.basix_cell(), 1, dtype=default_real_type)
         ME = fem.functionspace(self.msh, mixed_element([P1, P1]))
@@ -147,11 +188,25 @@ class _CGLProblem(TransientNonlinearProblem):
         dt = self.config.time.dt
 
         # Periodic constraint on both subspaces (u and v share the same BC structure)
+        bcs = [
+            *apply_dirichlet_bcs_to_subspace(
+                ME.sub(0),
+                domain_geom,
+                boundary_field_u,
+                params,
+            ),
+            *apply_dirichlet_bcs_to_subspace(
+                ME.sub(1),
+                domain_geom,
+                boundary_field_v,
+                params,
+            ),
+        ]
         mpc = self.create_periodic_constraint(
             ME,
             domain_geom,
             boundary_field_u,
-            [],
+            bcs,
             constrained_spaces=[ME.sub(0), ME.sub(1)],
         )
         solution_space = ME if mpc is None else mpc.function_space
@@ -213,7 +268,7 @@ class _CGLProblem(TransientNonlinearProblem):
         self.problem = self.create_nonlinear_problem(
             F,
             self.w,
-            bcs=[],
+            bcs=bcs,
             petsc_options_prefix="plm_cgl_",
             J=J,
             mpc=mpc,

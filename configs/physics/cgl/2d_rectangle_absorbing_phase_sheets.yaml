@@ -1,0 +1,155 @@
+preset: cgl
+parameters:
+  D_r:
+    sample: uniform
+    min: 0.42
+    max: 0.72
+  D_i:
+    sample: uniform
+    min: -1.45
+    max: -0.82
+  a_r:
+    sample: uniform
+    min: 0.55
+    max: 0.95
+  a_i:
+    sample: uniform
+    min: 0.65
+    max: 1.45
+  b_r:
+    sample: uniform
+    min: -1.05
+    max: -0.7
+  b_i:
+    sample: uniform
+    min: 0.52
+    max: 1.18
+  theta:
+    sample: uniform
+    min: 0.52
+    max: 0.64
+domain:
+  allow_sampling: true
+  type: rectangle
+  size:
+    - sample: uniform
+      min: 68.0
+      max: 82.0
+    - sample: uniform
+      min: 34.0
+      max: 44.0
+  mesh_resolution: [192, 128]
+time:
+  dt: 0.08
+  t_end: 24.0
+inputs:
+  u:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 0.45
+          max: 0.74
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.22
+              max: 0.42
+            cycles:
+              - sample: uniform
+                min: 0.08
+                max: 0.14
+              - sample: uniform
+                min: 0.02
+                max: 0.06
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185307179586
+            angle:
+              sample: uniform
+              min: -0.9
+              max: -0.25
+          - amplitude:
+              sample: uniform
+              min: 0.08
+              max: 0.18
+            cycles:
+              - sample: uniform
+                min: 0.03
+                max: 0.07
+              - sample: uniform
+                min: 0.09
+                max: 0.16
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185307179586
+            angle:
+              sample: uniform
+              min: 0.15
+              max: 0.65
+  v:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: -0.12
+          max: 0.12
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.24
+              max: 0.44
+            cycles:
+              - sample: uniform
+                min: 0.06
+                max: 0.11
+              - sample: uniform
+                min: 0.05
+                max: 0.12
+            phase:
+              sample: uniform
+              min: 0.0
+              max: 6.283185307179586
+            angle:
+              sample: uniform
+              min: 0.25
+              max: 0.95
+boundary_conditions:
+  u:
+    x-:
+      - operator: periodic
+        pair_with: x+
+    x+:
+      - operator: periodic
+        pair_with: x-
+    y-:
+      - operator: dirichlet
+        value: 0.0
+    y+:
+      - operator: dirichlet
+        value: 0.0
+  v:
+    x-:
+      - operator: periodic
+        pair_with: x+
+    x+:
+      - operator: periodic
+        pair_with: x-
+    y-:
+      - operator: dirichlet
+        value: 0.0
+    y+:
+      - operator: dirichlet
+        value: 0.0
+output:
+  $ref: output.template.cgl
+  formats: [numpy, gif]
+  resolution: [192, 128]
+  num_frames: 55
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 142

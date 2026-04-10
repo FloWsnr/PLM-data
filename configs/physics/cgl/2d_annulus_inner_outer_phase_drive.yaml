@@ -1,0 +1,137 @@
+preset: cgl
+parameters:
+  domain_center_x:
+    sample: uniform
+    min: -1.0
+    max: 1.0
+  domain_center_y:
+    sample: uniform
+    min: -1.0
+    max: 1.0
+  D_r:
+    sample: uniform
+    min: 0.22
+    max: 0.46
+  D_i:
+    sample: uniform
+    min: -1.25
+    max: -0.55
+  a_r:
+    sample: uniform
+    min: 0.45
+    max: 0.85
+  a_i:
+    sample: uniform
+    min: 0.7
+    max: 1.45
+  b_r:
+    sample: uniform
+    min: -0.95
+    max: -0.58
+  b_i:
+    sample: uniform
+    min: -1.15
+    max: -0.45
+  theta:
+    sample: uniform
+    min: 0.56
+    max: 0.7
+domain:
+  allow_sampling: true
+  type: annulus
+  center: ["param:domain_center_x", "param:domain_center_y"]
+  inner_radius:
+    sample: uniform
+    min: 8.0
+    max: 12.5
+  outer_radius:
+    sample: uniform
+    min: 28.0
+    max: 34.0
+  mesh_size:
+    sample: uniform
+    min: 0.36
+    max: 0.46
+time:
+  dt: 0.08
+  t_end: 24.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.15
+          max: 0.35
+        generators:
+          - count:
+              sample: randint
+              min: 4
+              max: 8
+            amplitude:
+              sample: uniform
+              min: 0.45
+              max: 0.9
+            sigma:
+              sample: uniform
+              min: 2.4
+              max: 5.2
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.8
+            center:
+              - sample: uniform
+                min: -18.0
+                max: 18.0
+              - sample: uniform
+                min: -18.0
+                max: 18.0
+  v:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: -0.04
+          max: 0.04
+        std:
+          sample: uniform
+          min: 0.04
+          max: 0.12
+boundary_conditions:
+  u:
+    inner:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.75
+              max: 1.1
+    outer:
+      - operator: dirichlet
+        value: 0.0
+  v:
+    inner:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.25
+              max: 0.65
+    outer:
+      - operator: dirichlet
+        value: 0.0
+output:
+  $ref: output.template.cgl
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 49
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 642

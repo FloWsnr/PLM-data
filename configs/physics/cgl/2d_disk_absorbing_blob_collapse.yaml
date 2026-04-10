@@ -1,0 +1,135 @@
+preset: cgl
+parameters:
+  domain_center_x:
+    sample: uniform
+    min: -1.2
+    max: 1.2
+  domain_center_y:
+    sample: uniform
+    min: -1.2
+    max: 1.2
+  D_r:
+    sample: uniform
+    min: 0.34
+    max: 0.68
+  D_i:
+    sample: uniform
+    min: 0.75
+    max: 1.42
+  a_r:
+    sample: uniform
+    min: 0.62
+    max: 1.05
+  a_i:
+    sample: uniform
+    min: 0.45
+    max: 1.18
+  b_r:
+    sample: uniform
+    min: -1.08
+    max: -0.72
+  b_i:
+    sample: uniform
+    min: -1.25
+    max: -0.52
+  theta:
+    sample: uniform
+    min: 0.55
+    max: 0.68
+domain:
+  allow_sampling: true
+  type: disk
+  center: ["param:domain_center_x", "param:domain_center_y"]
+  radius:
+    sample: uniform
+    min: 22.0
+    max: 28.0
+  mesh_size:
+    sample: uniform
+    min: 0.32
+    max: 0.4
+time:
+  dt: 0.08
+  t_end: 22.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.02
+          max: 0.08
+        generators:
+          - count:
+              sample: randint
+              min: 3
+              max: 6
+            amplitude:
+              sample: uniform
+              min: 0.72
+              max: 1.18
+            sigma:
+              sample: uniform
+              min: 2.0
+              max: 4.2
+            aspect_ratio:
+              sample: uniform
+              min: 1.2
+              max: 3.2
+            center:
+              - sample: uniform
+                min: -11.0
+                max: 11.0
+              - sample: uniform
+                min: -11.0
+                max: 11.0
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.03
+          max: 0.03
+        generators:
+          - count:
+              sample: randint
+              min: 3
+              max: 6
+            amplitude:
+              sample: uniform
+              min: -0.95
+              max: 0.95
+            sigma:
+              sample: uniform
+              min: 1.8
+              max: 3.8
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.6
+            center:
+              - sample: uniform
+                min: -11.0
+                max: 11.0
+              - sample: uniform
+                min: -11.0
+                max: 11.0
+boundary_conditions:
+  u:
+    outer:
+      - operator: dirichlet
+        value: 0.0
+  v:
+    outer:
+      - operator: dirichlet
+        value: 0.0
+output:
+  $ref: output.template.cgl
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 49
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 442

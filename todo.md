@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 331 configs.
+Current baseline: 38 PDE presets and 458 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -534,9 +534,33 @@ Validation: the 22 2D configs below were run with `./run.sh -n 2 ... --n-runs 2`
 
 #### Complex Ginzburg-Landau (`configs/physics/cgl`)
 
-1. `2d_benjamin_feir_turbulence`: Benjamin-Feir-unstable complex amplitude turbulence from a noisy background.
-2. `2d_parallelogram_benjamin_feir_turbulence`: Benjamin-Feir turbulence on a skew parallelogram cell.
-3. `3d_benjamin_feir_turbulence`: 3D complex amplitude turbulence from a noisy background.
+Validation: the 20 2D configs below were run with
+`./run.sh -n 2 ... --n-runs 2` into `output/cgl_validation`, producing 40
+successful runs with passing solver, finite-value, dynamic-range, and
+stagnation diagnostics after retuning the initially flat serpentine and
+Y-bifurcation collision cases.
+
+1. `2d_annulus_inner_outer_phase_drive`: inner and outer annulus rims impose different complex phases, driving ring-front competition through a sampled annular gap.
+2. `2d_annulus_ring_phase_slips`: Neumann annulus seeded with radial rings and oblique phase waves, producing ring-wrapped phase slips around the hole.
+3. `2d_benjamin_feir_turbulence`: randomized periodic rectangle in a Benjamin-Feir-unstable regime, evolving noisy amplitude into sustained defect turbulence.
+4. `2d_channel_obstacle_boundary_drive`: channel-obstacle geometry with inlet/outlet phase drive and natural walls, creating obstacle-scattered boundary layers.
+5. `2d_channel_obstacle_shadow_turbulence`: obstacle-pinned channel turbulence where the circular cutout damps the field and casts a phase shadow.
+6. `2d_disk_absorbing_blob_collapse`: absorbing circular rim collapses and reshapes sampled complex Gaussian blobs without becoming static.
+7. `2d_disk_radial_defect_glass`: Neumann disk seeded with radial amplitude rings plus random phase defects, yielding circular defect-glass dynamics.
+8. `2d_dumbbell_absorbing_neck_defects`: absorbing dumbbell boundary turns stripe and quadrant phase starts into neck-focused defects.
+9. `2d_dumbbell_lobe_exchange`: Neumann dumbbell with asymmetric lobe blobs that exchange activity through the sampled neck.
+10. `2d_l_shape_notch_quench`: L-shaped domain where the reentrant notch is absorbing and oblique phase sheets quench into corner-bent fronts.
+11. `2d_l_shape_reentrant_defect_cascade`: Neumann L-shape seeded near the reentrant corner, creating geometry-bent defect cascades.
+12. `2d_multi_hole_plate_pinned_defects`: sampled multi-hole plate with hole rims pinned to zero, forcing interstitial defects around perforations.
+13. `2d_multi_hole_plate_screened_phase_maze`: outer boundary phase drive with natural hole rims, producing a screened maze of phase fronts through the plate.
+14. `2d_parallelogram_benjamin_feir_turbulence`: skew periodic Benjamin-Feir turbulence with sampled cell vectors and mixed noisy/oblique initial phase.
+15. `2d_parallelogram_oblique_phase_glass`: skew periodic cell with quadrant phase jumps, generating oblique glassy phase domains.
+16. `2d_rectangle_absorbing_phase_sheets`: x-periodic, y-absorbing rectangle where oblique sheets shear into damped phase bands.
+17. `2d_serpentine_channel_lane_phase_drive`: serpentine channel with opposing inlet/outlet phases that drive lane-guided fronts around bends.
+18. `2d_serpentine_channel_neumann_pulse_train`: Neumann serpentine with stripe-plus-noise initial data retuned into sustained BF-style lane turbulence.
+19. `2d_y_bifurcation_branch_collision`: sampled Y branch with opposing outlet phases, producing branch-to-junction phase collision without late-time flattening.
+20. `2d_y_bifurcation_split_phase_drive`: inlet-driven Y branch with split outlet phases on a tightened mesh, emphasizing asymmetric branch filling.
+21. `3d_benjamin_feir_turbulence`: 3D complex amplitude turbulence from a noisy background.
 
 #### Gray-Scott (`configs/physics/gray_scott`)
 

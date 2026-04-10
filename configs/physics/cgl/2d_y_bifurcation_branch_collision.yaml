@@ -1,0 +1,203 @@
+preset: cgl
+parameters:
+  D_r:
+    sample: uniform
+    min: 0.72
+    max: 1.05
+  D_i:
+    sample: uniform
+    min: 1.45
+    max: 2.35
+  a_r:
+    sample: uniform
+    min: 0.78
+    max: 1.18
+  a_i:
+    sample: uniform
+    min: -0.18
+    max: 0.28
+  b_r:
+    sample: uniform
+    min: -1.14
+    max: -0.84
+  b_i:
+    sample: uniform
+    min: 1.08
+    max: 1.76
+  theta:
+    sample: uniform
+    min: 0.5
+    max: 0.64
+domain:
+  allow_sampling: true
+  type: y_bifurcation
+  inlet_length:
+    sample: uniform
+    min: 32.0
+    max: 42.0
+  branch_length:
+    sample: uniform
+    min: 34.0
+    max: 44.0
+  branch_angle_degrees:
+    sample: uniform
+    min: 30.0
+    max: 48.0
+  channel_width:
+    sample: uniform
+    min: 8.5
+    max: 11.0
+  mesh_size:
+    sample: uniform
+    min: 0.22
+    max: 0.3
+time:
+  dt: 0.1
+  t_end: 34.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.2
+          max: 0.42
+        generators:
+          - count:
+              sample: randint
+              min: 2
+              max: 4
+            amplitude:
+              sample: uniform
+              min: 0.55
+              max: 1.0
+            sigma:
+              sample: uniform
+              min: 2.2
+              max: 4.8
+            aspect_ratio:
+              sample: uniform
+              min: 1.2
+              max: 3.2
+            center:
+              - sample: uniform
+                min: 28.0
+                max: 54.0
+              - sample: uniform
+                min: 8.0
+                max: 28.0
+          - count:
+              sample: randint
+              min: 2
+              max: 4
+            amplitude:
+              sample: uniform
+              min: 0.35
+              max: 0.85
+            sigma:
+              sample: uniform
+              min: 2.2
+              max: 4.8
+            aspect_ratio:
+              sample: uniform
+              min: 1.2
+              max: 3.2
+            center:
+              - sample: uniform
+                min: 28.0
+                max: 54.0
+              - sample: uniform
+                min: -28.0
+                max: -8.0
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.04
+          max: 0.04
+        generators:
+          - count:
+              sample: randint
+              min: 3
+              max: 7
+            amplitude:
+              sample: uniform
+              min: -0.8
+              max: 0.8
+            sigma:
+              sample: uniform
+              min: 2.0
+              max: 4.4
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.8
+            center:
+              - sample: uniform
+                min: 12.0
+                max: 54.0
+              - sample: uniform
+                min: -26.0
+                max: 26.0
+boundary_conditions:
+  u:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet_upper:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.78
+              max: 1.08
+    outlet_lower:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.78
+              max: 1.08
+    walls:
+      - operator: neumann
+        value: 0.0
+  v:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet_upper:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.35
+              max: 0.72
+    outlet_lower:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -0.72
+              max: -0.35
+    walls:
+      - operator: neumann
+        value: 0.0
+output:
+  $ref: output.template.cgl
+  formats: [numpy, gif]
+  resolution: [192, 128]
+  num_frames: 55
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 1842
