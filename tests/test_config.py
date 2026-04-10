@@ -618,14 +618,15 @@ def test_load_config_van_der_pol_2d():
     assert cfg.preset == "van_der_pol"
     assert cfg.domain.dimension == 2
     assert cfg.has_periodic_boundary_conditions is True
-    assert cfg.parameters["Du"] == 0.2
-    assert cfg.parameters["Dv"] == 0.02
-    assert cfg.parameters["mu"] == 4.0
+    assert cfg.parameters["Du"] == {"sample": "uniform", "min": 0.1, "max": 0.22}
+    assert cfg.parameters["Dv"] == {"sample": "uniform", "min": 0.015, "max": 0.055}
+    assert cfg.parameters["mu"] == {"sample": "uniform", "min": 0.8, "max": 1.8}
     assert cfg.input("u").initial_condition.type == "sine_waves"
-    assert cfg.input("u").initial_condition.params["background"] == 0.0
-    assert len(cfg.input("u").initial_condition.params["modes"]) == 4
-    assert cfg.input("v").initial_condition.type == "constant"
-    assert cfg.input("v").initial_condition.params["value"] == 0.0
+    assert cfg.input("u").initial_condition.params["background"]["sample"] == "uniform"
+    assert len(cfg.input("u").initial_condition.params["modes"]) == 3
+    assert cfg.input("v").initial_condition.type == "sine_waves"
+    assert cfg.input("v").initial_condition.params["background"]["sample"] == "uniform"
+    assert len(cfg.input("v").initial_condition.params["modes"]) == 2
     assert cfg.output_mode("u") == "scalar"
     assert cfg.output_mode("v") == "scalar"
     assert cfg.boundary_field("u").side_conditions("x-")[0].pair_with == "x+"
