@@ -861,7 +861,14 @@ def test_load_config_maxwell_pulse():
     boundary_field = cfg.boundary_field("electric_field")
     assert cfg.output_mode("electric_field") == "components"
     assert electric_field.initial_condition.components["x"].type == "gaussian_noise"
-    assert electric_field.initial_condition.components["y"].params["value"] == 0.0
+    assert electric_field.initial_condition.components["y"].type == "gaussian_blobs"
+    assert electric_field.initial_condition.components["y"].params["background"] == 0.0
+    assert (
+        electric_field.initial_condition.components["y"].params["generators"][0][
+            "count"
+        ]["sample"]
+        == "randint"
+    )
     assert boundary_field.side_conditions("x-")[0].type == "absorbing"
     assert boundary_field.side_conditions("y-")[0].type == "dirichlet"
     assert cfg.solver.strategy == CONSTANT_LHS_CURL_DIRECT
