@@ -1,0 +1,151 @@
+preset: van_der_pol
+parameters:
+  obstacle_center_x:
+    sample: uniform
+    min: 24.0
+    max: 34.0
+  obstacle_center_y:
+    sample: uniform
+    min: 14.0
+    max: 24.0
+  Du:
+    sample: uniform
+    min: 0.14
+    max: 0.28
+  Dv:
+    sample: uniform
+    min: 0.08
+    max: 0.16
+  mu:
+    sample: uniform
+    min: 3.2
+    max: 5.8
+domain:
+  allow_sampling: true
+  type: channel_obstacle
+  length:
+    sample: uniform
+    min: 58.0
+    max: 70.0
+  height:
+    sample: uniform
+    min: 32.0
+    max: 38.0
+  obstacle_center: ["param:obstacle_center_x", "param:obstacle_center_y"]
+  obstacle_radius:
+    sample: uniform
+    min: 4.0
+    max: 5.6
+  mesh_size:
+    sample: uniform
+    min: 0.28
+    max: 0.4
+time:
+  dt: 0.0055
+  t_end: 16.0
+inputs:
+  u:
+    initial_condition:
+      type: radial_cosine
+      params:
+        base:
+          sample: uniform
+          min: -0.18
+          max: 0.18
+        amplitude:
+          sample: uniform
+          min: 0.55
+          max: 1.1
+        frequency:
+          sample: uniform
+          min: 0.24
+          max: 0.42
+        center: ["param:obstacle_center_x", "param:obstacle_center_y"]
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.05
+          max: 0.05
+        generators:
+          - count:
+              sample: randint
+              min: 2
+              max: 5
+            amplitude:
+              sample: uniform
+              min: 0.22
+              max: 0.65
+            sigma:
+              sample: uniform
+              min: 2.0
+              max: 4.2
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.6
+            center:
+              - sample: uniform
+                min: 12.0
+                max: 54.0
+              - sample: uniform
+                min: 7.0
+                max: 31.0
+boundary_conditions:
+  u:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha:
+            sample: uniform
+            min: 0.04
+            max: 0.12
+    obstacle:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.5
+              max: 1.1
+  v:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha:
+            sample: uniform
+            min: 0.04
+            max: 0.12
+    obstacle:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha:
+            sample: uniform
+            min: 0.1
+            max: 0.26
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [192, 128]
+  num_frames: 57
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+seed: 4331
