@@ -52,11 +52,13 @@ def test_load_config():
     assert cfg.preset == "heat"
     assert cfg.parameters == {}
     assert cfg.coefficient("kappa").type == "constant"
-    assert cfg.coefficient("kappa").params["value"] == 0.01
+    assert cfg.coefficient("kappa").params["value"]["sample"] == "uniform"
+    assert cfg.coefficient("kappa").params["value"]["min"] == 0.006
+    assert cfg.coefficient("kappa").params["value"]["max"] == 0.014
     assert cfg.domain.type == "rectangle"
-    assert cfg.output.resolution == [64, 64]
-    assert cfg.time.dt == 0.01
-    assert cfg.time.t_end == 1.0
+    assert cfg.output.resolution == [128, 128]
+    assert cfg.time.dt == 0.008
+    assert cfg.time.t_end == 1.2
     assert cfg.has_periodic_boundary_conditions is False
     assert cfg.input("u").initial_condition.type == "gaussian_blobs"
     assert (
@@ -146,8 +148,12 @@ def test_load_config_bistable_travelling_waves_2d():
     )
     assert cfg.preset == "bistable_travelling_waves"
     assert cfg.domain.dimension == 2
-    assert cfg.parameters["D"] == 1.0
-    assert cfg.parameters["a"] == 0.3
+    assert cfg.parameters["D"]["sample"] == "uniform"
+    assert cfg.parameters["D"]["min"] == 0.72
+    assert cfg.parameters["D"]["max"] == 1.05
+    assert cfg.parameters["a"]["sample"] == "uniform"
+    assert cfg.parameters["a"]["min"] == 0.22
+    assert cfg.parameters["a"]["max"] == 0.34
     assert cfg.coefficient("velocity").type == "zero"
     assert cfg.input("u").initial_condition.type == "step"
     assert cfg.input("u").initial_condition.params["value_left"] == 1.0
@@ -838,10 +844,16 @@ def test_load_config_wave():
     cfg = load_config("configs/basic/wave/2d_localized_pulse_propagation.yaml")
     boundary_field = cfg.boundary_field("u")
     assert cfg.preset == "wave"
-    assert cfg.parameters["damping"] == 0.01
+    assert cfg.parameters["damping"]["sample"] == "uniform"
+    assert cfg.parameters["damping"]["min"] == 0.006
+    assert cfg.parameters["damping"]["max"] == 0.022
     assert cfg.coefficient("c_sq").type == "radial_cosine"
-    assert cfg.coefficient("c_sq").params["base"] == 1.8
-    assert cfg.coefficient("c_sq").params["amplitude"] == 0.65
+    assert cfg.coefficient("c_sq").params["base"]["sample"] == "uniform"
+    assert cfg.coefficient("c_sq").params["base"]["min"] == 1.45
+    assert cfg.coefficient("c_sq").params["base"]["max"] == 1.95
+    assert cfg.coefficient("c_sq").params["amplitude"]["sample"] == "uniform"
+    assert cfg.coefficient("c_sq").params["amplitude"]["min"] == 0.28
+    assert cfg.coefficient("c_sq").params["amplitude"]["max"] == 0.72
     assert cfg.input("u").initial_condition.type == "constant"
     assert cfg.input("u").initial_condition.params["value"] == 0.0
     assert cfg.input("v").initial_condition.type == "gaussian_blobs"
@@ -863,14 +875,14 @@ def test_load_config_schrodinger():
     boundary_field_u = cfg.boundary_field("u")
     boundary_field_v = cfg.boundary_field("v")
     assert cfg.preset == "schrodinger"
-    assert cfg.parameters["D"] == 0.05
+    assert cfg.parameters["D"]["sample"] == "uniform"
+    assert cfg.parameters["D"]["min"] == 0.045
+    assert cfg.parameters["D"]["max"] == 0.065
     assert cfg.parameters["theta"] == 0.5
     assert cfg.coefficient("potential").type == "gaussian_bump"
-    assert cfg.coefficient("potential").params["amplitude"] == 8.0
+    assert cfg.coefficient("potential").params["amplitude"] == "param:barrier_amplitude"
     assert cfg.input("u").initial_condition.type == "gaussian_wave_packet"
-    assert (
-        cfg.input("u").initial_condition.params["wavevector"][0]["sample"] == "uniform"
-    )
+    assert cfg.input("u").initial_condition.params["wavevector"][0] == "param:packet_kx"
     assert cfg.input("v").initial_condition.params["phase"] == pytest.approx(
         -1.5707963267948966
     )

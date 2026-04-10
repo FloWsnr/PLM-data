@@ -47,7 +47,7 @@ def test_source_sine_waves(test_function, mesh_2d):
         type="sine_waves",
         params={
             "background": 0.0,
-            "modes": [{"amplitude": 1.0, "cycles": [1, 1], "phase": 0.0}]
+            "modes": [{"amplitude": 1.0, "cycles": [1, 1], "phase": 0.0}],
         },
     )
     result = build_source_form(test_function, mesh_2d, config, parameters={})

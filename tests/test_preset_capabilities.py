@@ -177,13 +177,33 @@ def _mixed_burgers_boundary_conditions() -> dict[str, BoundaryConditionConfig]:
 def _burgers_periodic_ic(*, gdim: int):
     if gdim == 2:
         return vector_expr(
-            x=scalar_expr("sine_waves", background=0.0, modes=[{"amplitude": 1.0, "cycles": [0.0, 2.0], "phase": 0.0}]),
-            y=scalar_expr("sine_waves", background=0.0, modes=[{"amplitude": -1.0, "cycles": [2.0, 0.0], "phase": 0.0}]),
+            x=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 1.0, "cycles": [0.0, 2.0], "phase": 0.0}],
+            ),
+            y=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": -1.0, "cycles": [2.0, 0.0], "phase": 0.0}],
+            ),
         )
     return vector_expr(
-        x=scalar_expr("sine_waves", background=0.0, modes=[{"amplitude": 0.9, "cycles": [0.0, 2.0, 0.0], "phase": 0.0}]),
-        y=scalar_expr("sine_waves", background=0.0, modes=[{"amplitude": 0.9, "cycles": [0.0, 0.0, 2.0], "phase": 0.0}]),
-        z=scalar_expr("sine_waves", background=0.0, modes=[{"amplitude": -0.9, "cycles": [2.0, 0.0, 0.0], "phase": 0.0}]),
+        x=scalar_expr(
+            "sine_waves",
+            background=0.0,
+            modes=[{"amplitude": 0.9, "cycles": [0.0, 2.0, 0.0], "phase": 0.0}],
+        ),
+        y=scalar_expr(
+            "sine_waves",
+            background=0.0,
+            modes=[{"amplitude": 0.9, "cycles": [0.0, 0.0, 2.0], "phase": 0.0}],
+        ),
+        z=scalar_expr(
+            "sine_waves",
+            background=0.0,
+            modes=[{"amplitude": -0.9, "cycles": [2.0, 0.0, 0.0], "phase": 0.0}],
+        ),
     )
 
 
@@ -893,7 +913,11 @@ SUCCESS_CASES = (
             boundary_conditions=_mixed_scalar_boundary_conditions(),
             initial_displacement=constant(0.0),
             initial_velocity=constant(0.0),
-            forcing=scalar_expr("sine_waves", background=0.0, modes=[{"amplitude": 1.0, "cycles": [1, 1], "phase": 0.0}]),
+            forcing=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 1.0, "cycles": [1, 1], "phase": 0.0}],
+            ),
             time=TimeConfig(dt=0.02, t_end=0.02),
         ),
         assert_result=_assert_wave_case,
@@ -925,7 +949,11 @@ SUCCESS_CASES = (
             parameters={},
             coefficients={"kappa": constant(0.01)},
             boundary_conditions=_mixed_scalar_boundary_conditions(),
-            source=scalar_expr("sine_waves", background=0.0, modes=[{"amplitude": 1.0, "cycles": [1, 1], "phase": 0.0}]),
+            source=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 1.0, "cycles": [1, 1], "phase": 0.0}],
+            ),
             initial_condition=scalar_expr(
                 "gaussian_bump",
                 amplitude=1.0,
@@ -1134,8 +1162,16 @@ SUCCESS_CASES = (
             tmp_path,
             gdim=2,
             velocity=vector_expr(
-                x=scalar_expr("sine_waves", background=0.0, modes=[{"amplitude": 1.0, "cycles": [0.0, 2.0], "phase": 0.0}]),
-                y=scalar_expr("sine_waves", background=0.0, modes=[{"amplitude": -1.0, "cycles": [2.0, 0.0], "phase": 0.0}]),
+                x=scalar_expr(
+                    "sine_waves",
+                    background=0.0,
+                    modes=[{"amplitude": 1.0, "cycles": [0.0, 2.0], "phase": 0.0}],
+                ),
+                y=scalar_expr(
+                    "sine_waves",
+                    background=0.0,
+                    modes=[{"amplitude": -1.0, "cycles": [2.0, 0.0], "phase": 0.0}],
+                ),
             ),
             diffusivity=constant(0.001),
             boundary_conditions={},
@@ -1202,7 +1238,9 @@ SUCCESS_CASES = (
             source=scalar_expr(
                 "sine_waves",
                 background=0.0,
-                modes=[{"amplitude": "param:f_amplitude", "cycles": [1, 1], "phase": 0.0}],
+                modes=[
+                    {"amplitude": "param:f_amplitude", "cycles": [1, 1], "phase": 0.0}
+                ],
             ),
         ),
         assert_result=_assert_scalar_signal,
@@ -1217,7 +1255,9 @@ SUCCESS_CASES = (
             source=scalar_expr(
                 "sine_waves",
                 background=0.0,
-                modes=[{"amplitude": "param:f_amplitude", "cycles": [1, 1], "phase": 0.0}],
+                modes=[
+                    {"amplitude": "param:f_amplitude", "cycles": [1, 1], "phase": 0.0}
+                ],
             ),
             periodic_axes=(0,),
         ),
@@ -1234,7 +1274,9 @@ SUCCESS_CASES = (
             source=scalar_expr(
                 "sine_waves",
                 background=0.0,
-                modes=[{"amplitude": "param:f_amplitude", "cycles": [1, 1], "phase": 0.0}],
+                modes=[
+                    {"amplitude": "param:f_amplitude", "cycles": [1, 1], "phase": 0.0}
+                ],
             ),
         ),
         assert_result=_assert_scalar_signal,
@@ -1249,7 +1291,9 @@ SUCCESS_CASES = (
             source=scalar_expr(
                 "sine_waves",
                 background=0.0,
-                modes=[{"amplitude": "param:f_amplitude", "cycles": [1, 1], "phase": 0.0}],
+                modes=[
+                    {"amplitude": "param:f_amplitude", "cycles": [1, 1], "phase": 0.0}
+                ],
             ),
             periodic_axes=(0,),
         ),
@@ -1331,7 +1375,11 @@ SUCCESS_CASES = (
                     sigma=0.12,
                     center=[0.35, 0.45],
                 ),
-                y=scalar_expr("sine_waves", background=0.0, modes=[{"amplitude": 0.2, "cycles": [1.0, 1.0], "phase": 0.0}]),
+                y=scalar_expr(
+                    "sine_waves",
+                    background=0.0,
+                    modes=[{"amplitude": 0.2, "cycles": [1.0, 1.0], "phase": 0.0}],
+                ),
             ),
             mesh_resolution=(12, 12),
             output_resolution=(6, 6),
@@ -1469,9 +1517,21 @@ SUCCESS_CASES = (
             tmp_path,
             gdim=3,
             velocity=vector_expr(
-                x=scalar_expr("sine_waves", background=0.0, modes=[{"amplitude": 0.9, "cycles": [0.0, 2.0, 0.0], "phase": 0.0}]),
-                y=scalar_expr("sine_waves", background=0.0, modes=[{"amplitude": 0.9, "cycles": [0.0, 0.0, 2.0], "phase": 0.0}]),
-                z=scalar_expr("sine_waves", background=0.0, modes=[{"amplitude": 0.9, "cycles": [2.0, 0.0, 0.0], "phase": 0.0}]),
+                x=scalar_expr(
+                    "sine_waves",
+                    background=0.0,
+                    modes=[{"amplitude": 0.9, "cycles": [0.0, 2.0, 0.0], "phase": 0.0}],
+                ),
+                y=scalar_expr(
+                    "sine_waves",
+                    background=0.0,
+                    modes=[{"amplitude": 0.9, "cycles": [0.0, 0.0, 2.0], "phase": 0.0}],
+                ),
+                z=scalar_expr(
+                    "sine_waves",
+                    background=0.0,
+                    modes=[{"amplitude": 0.9, "cycles": [2.0, 0.0, 0.0], "phase": 0.0}],
+                ),
             ),
             diffusivity=constant(0.001),
             boundary_conditions={},
@@ -2200,9 +2260,24 @@ SUCCESS_CASES = (
                 "sine_waves",
                 background=0.0,
                 modes=[
-                    {"amplitude": 0.03, "cycles": [1, 2, 1], "phase": 0.0, "angle": 0.0},
-                    {"amplitude": -0.02, "cycles": [2, 1, 2], "phase": 1.0, "angle": 0.0},
-                    {"amplitude": 0.01, "cycles": [3, 2, 1], "phase": 0.5, "angle": 0.0},
+                    {
+                        "amplitude": 0.03,
+                        "cycles": [1, 2, 1],
+                        "phase": 0.0,
+                        "angle": 0.0,
+                    },
+                    {
+                        "amplitude": -0.02,
+                        "cycles": [2, 1, 2],
+                        "phase": 1.0,
+                        "angle": 0.0,
+                    },
+                    {
+                        "amplitude": 0.01,
+                        "cycles": [3, 2, 1],
+                        "phase": 0.5,
+                        "angle": 0.0,
+                    },
                 ],
             ),
             v_initial_condition=constant(0.0),

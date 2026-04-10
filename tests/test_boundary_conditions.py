@@ -90,7 +90,9 @@ class TestApplyDirichletBCs:
                     type="sine_waves",
                     params={
                         "background": 0.0,
-                        "modes": [{"amplitude": 1.0, "cycles": [0.0, 1.0], "phase": 0.0}]
+                        "modes": [
+                            {"amplitude": 1.0, "cycles": [0.0, 1.0], "phase": 0.0}
+                        ],
                     },
                 ),
             ),
@@ -160,7 +162,13 @@ class TestApplyVectorDirichletBCs:
                             type="sine_waves",
                             params={
                                 "background": 0.0,
-                                "modes": [{"amplitude": 1.0, "cycles": [0.0, 1.0], "phase": 0.0}]
+                                "modes": [
+                                    {
+                                        "amplitude": 1.0,
+                                        "cycles": [0.0, 1.0],
+                                        "phase": 0.0,
+                                    }
+                                ],
                             },
                         ),
                         "y": constant(0.0),

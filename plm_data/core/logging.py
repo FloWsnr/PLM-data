@@ -95,4 +95,4 @@ def teardown_logging() -> None:
     """Flush and close all handlers on the plm_data logger."""
     logger = logging.getLogger(_PACKAGE_LOGGER_NAME)
     _clear_handlers(logger)
-    _clear_handlers(logging.getLogger())
+    logger.propagate = True

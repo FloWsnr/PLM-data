@@ -413,7 +413,11 @@ def test_burgers_vector_noise_run_stays_finite(tmp_path):
                 sigma=0.14,
                 center=[0.42, 0.5],
             ),
-            y=scalar_expr("sine_waves", background=0.0, modes=[{"amplitude": 0.15, "cycles": [1.0, 1.0], "phase": 0.0}]),
+            y=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 0.15, "cycles": [1.0, 1.0], "phase": 0.0}],
+            ),
         ),
         mesh_resolution=(14, 14),
         output_resolution=(8, 8),

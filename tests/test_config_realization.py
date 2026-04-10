@@ -336,7 +336,7 @@ def test_realize_simulation_config_concretizes_porous_channel_domain_sampling():
     assert isinstance(realized_a.domain.params["row_shift_fraction"], float)
     assert isinstance(realized_a.domain.params["mesh_size"], float)
     assert 2.55 <= realized_a.domain.params["length"] <= 2.75
-    assert realized_a.domain.params["height"] == 1.0
+    assert 0.95 <= realized_a.domain.params["height"] <= 1.06
     assert 0.085 <= realized_a.domain.params["obstacle_radius"] <= 0.11
     assert 2 <= realized_a.domain.params["n_rows"] <= 3
     assert 4 <= realized_a.domain.params["n_cols"] <= 5

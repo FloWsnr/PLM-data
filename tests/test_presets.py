@@ -2974,8 +2974,12 @@ def test_keller_segel_accepts_independent_periodic_fields(tmp_path):
             ),
             "c": BoundaryFieldConfig(
                 sides={
-                    "x-": [BoundaryConditionConfig(type="neumann", value=constant(0.0))],
-                    "x+": [BoundaryConditionConfig(type="neumann", value=constant(0.0))],
+                    "x-": [
+                        BoundaryConditionConfig(type="neumann", value=constant(0.0))
+                    ],
+                    "x+": [
+                        BoundaryConditionConfig(type="neumann", value=constant(0.0))
+                    ],
                     "y-": [BoundaryConditionConfig(type="periodic", pair_with="y+")],
                     "y+": [BoundaryConditionConfig(type="periodic", pair_with="y-")],
                 }

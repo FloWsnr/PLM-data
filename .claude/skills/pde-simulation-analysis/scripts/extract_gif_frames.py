@@ -52,7 +52,9 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     with Image.open(gif_path) as image:
-        frames = [frame.copy().convert("RGBA") for frame in ImageSequence.Iterator(image)]
+        frames = [
+            frame.copy().convert("RGBA") for frame in ImageSequence.Iterator(image)
+        ]
 
     for label, index in _frame_indices(len(frames)):
         output_path = output_dir / f"{gif_path.stem}_{label}.png"

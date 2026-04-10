@@ -842,23 +842,20 @@ def validate_domain_params(
                         "name is reserved for the plate exterior."
                     )
 
-            if (
-                width is not None
-                and height is not None
-                and center is not None
-                and radius is not None
-            ):
+            if center is not None and radius is not None:
                 cx, cy = center
-                if cx - radius <= 0.0 or cx + radius >= width:
-                    raise ValueError(
-                        "Multi_hole_plate domain requires each hole to lie strictly "
-                        "inside the plate in x."
-                    )
-                if cy - radius <= 0.0 or cy + radius >= height:
-                    raise ValueError(
-                        "Multi_hole_plate domain requires each hole to lie strictly "
-                        "inside the plate in y."
-                    )
+                if width is not None:
+                    if cx - radius <= 0.0 or cx + radius >= width:
+                        raise ValueError(
+                            "Multi_hole_plate domain requires each hole to lie "
+                            "strictly inside the plate in x."
+                        )
+                if height is not None:
+                    if cy - radius <= 0.0 or cy + radius >= height:
+                        raise ValueError(
+                            "Multi_hole_plate domain requires each hole to lie "
+                            "strictly inside the plate in y."
+                        )
                 concrete_holes.append((index, center, radius))
 
         for index, (hole_i, center_i, radius_i) in enumerate(concrete_holes):
