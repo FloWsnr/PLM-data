@@ -1,0 +1,175 @@
+preset: lorenz
+parameters:
+  sigma:
+    sample: uniform
+    min: 12.0
+    max: 17.0
+  rho:
+    sample: uniform
+    min: 30.0
+    max: 43.0
+  beta:
+    sample: uniform
+    min: 2.25
+    max: 3.15
+  D:
+    sample: uniform
+    min: 0.06
+    max: 0.15
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width:
+    sample: uniform
+    min: 1.28
+    max: 1.5
+  outer_height:
+    sample: uniform
+    min: 1.28
+    max: 1.5
+  cutout_width:
+    sample: uniform
+    min: 0.38
+    max: 0.52
+  cutout_height:
+    sample: uniform
+    min: 0.5
+    max: 0.68
+  mesh_size:
+    sample: uniform
+    min: 0.0095
+    max: 0.0115
+time:
+  dt: 0.0012
+  t_end: 3.8
+inputs:
+  x:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: -1.0
+          max: 1.0
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 6.0
+              max: 10.0
+            cycles:
+              - sample: uniform
+                min: 1.2
+                max: 2.0
+              - sample: uniform
+                min: 0.4
+                max: 0.9
+            phase:
+              sample: uniform
+              min: -0.4
+              max: 0.4
+            angle:
+              sample: uniform
+              min: -0.7
+              max: 0.7
+  y:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: -1.0
+          max: 1.0
+        modes:
+          - amplitude:
+              sample: uniform
+              min: -10.0
+              max: -6.0
+            cycles:
+              - sample: uniform
+                min: 0.5
+                max: 0.95
+              - sample: uniform
+                min: 1.2
+                max: 2.0
+            phase:
+              sample: uniform
+              min: 1.0
+              max: 2.4
+            angle:
+              sample: uniform
+              min: -0.7
+              max: 0.7
+  z:
+    initial_condition:
+      type: quadrants
+      params:
+        split:
+          - sample: uniform
+            min: 0.45
+            max: 0.75
+          - sample: uniform
+            min: 0.45
+            max: 0.75
+        region_values:
+          "00":
+            sample: uniform
+            min: 21.0
+            max: 27.0
+          "01":
+            sample: uniform
+            min: 29.0
+            max: 37.0
+          "10":
+            sample: uniform
+            min: 27.0
+            max: 34.0
+          "11":
+            sample: uniform
+            min: 20.0
+            max: 26.0
+boundary_conditions:
+  x:
+    outer:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha:
+            sample: uniform
+            min: 0.08
+            max: 0.22
+    notch:
+      - operator: dirichlet
+        value: 0.0
+  y:
+    outer:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha:
+            sample: uniform
+            min: 0.08
+            max: 0.22
+    notch:
+      - operator: dirichlet
+        value: 0.0
+  z:
+    outer:
+      - operator: neumann
+        value: 0.0
+    notch:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 18.0
+              max: 24.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_xyz
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 65
+seed: 4211

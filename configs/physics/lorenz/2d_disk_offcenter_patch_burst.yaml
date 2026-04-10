@@ -1,0 +1,137 @@
+preset: lorenz
+parameters:
+  sigma:
+    sample: uniform
+    min: 8.5
+    max: 12.5
+  rho:
+    sample: uniform
+    min: 27.0
+    max: 37.0
+  beta:
+    sample: uniform
+    min: 2.45
+    max: 2.95
+  D:
+    sample: uniform
+    min: 0.012
+    max: 0.032
+domain:
+  allow_sampling: true
+  type: disk
+  center:
+    - sample: uniform
+      min: -0.04
+      max: 0.04
+    - sample: uniform
+      min: -0.04
+      max: 0.04
+  radius:
+    sample: uniform
+    min: 0.92
+    max: 1.06
+  mesh_size:
+    sample: uniform
+    min: 0.013
+    max: 0.0155
+time:
+  dt: 0.0015
+  t_end: 4.2
+inputs:
+  x:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -1.0
+          max: 1.0
+        generators:
+          - count:
+              sample: randint
+              min: 2
+              max: 4
+            amplitude:
+              sample: uniform
+              min: 5.0
+              max: 10.0
+            sigma:
+              sample: uniform
+              min: 0.08
+              max: 0.16
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.6
+            center:
+              - sample: uniform
+                min: -0.55
+                max: 0.55
+              - sample: uniform
+                min: -0.55
+                max: 0.55
+  y:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -1.0
+          max: 1.0
+        generators:
+          - count:
+              sample: randint
+              min: 2
+              max: 4
+            amplitude:
+              sample: uniform
+              min: -10.0
+              max: -5.0
+            sigma:
+              sample: uniform
+              min: 0.08
+              max: 0.16
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.4
+            center:
+              - sample: uniform
+                min: -0.55
+                max: 0.55
+              - sample: uniform
+                min: -0.55
+                max: 0.55
+  z:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 25.0
+          max: 33.0
+        std:
+          sample: uniform
+          min: 2.0
+          max: 5.0
+boundary_conditions:
+  x:
+    outer:
+      - operator: neumann
+        value: 0.0
+  y:
+    outer:
+      - operator: neumann
+        value: 0.0
+  z:
+    outer:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_xyz
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 71
+seed: 4202

@@ -1,0 +1,211 @@
+preset: lorenz
+parameters:
+  sigma:
+    sample: uniform
+    min: 12.0
+    max: 17.0
+  rho:
+    sample: uniform
+    min: 31.0
+    max: 44.0
+  beta:
+    sample: uniform
+    min: 2.25
+    max: 3.15
+  D:
+    sample: uniform
+    min: 0.08
+    max: 0.18
+domain:
+  allow_sampling: true
+  type: serpentine_channel
+  channel_length:
+    sample: uniform
+    min: 0.98
+    max: 1.2
+  lane_spacing:
+    sample: uniform
+    min: 0.34
+    max: 0.46
+  n_bends:
+    sample: randint
+    min: 2
+    max: 4
+  channel_width:
+    sample: uniform
+    min: 0.2
+    max: 0.28
+  mesh_size:
+    sample: uniform
+    min: 0.0075
+    max: 0.009
+time:
+  dt: 0.0012
+  t_end: 3.8
+inputs:
+  x:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.8
+          max: 0.8
+        generators:
+          - count:
+              sample: randint
+              min: 2
+              max: 4
+            amplitude:
+              sample: uniform
+              min: 5.5
+              max: 9.5
+            sigma:
+              sample: uniform
+              min: 0.055
+              max: 0.1
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.4
+            center:
+              - sample: uniform
+                min: 0.1
+                max: 1.05
+              - sample: uniform
+                min: 0.05
+                max: 1.25
+  y:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.8
+          max: 0.8
+        generators:
+          - count:
+              sample: randint
+              min: 2
+              max: 4
+            amplitude:
+              sample: uniform
+              min: -9.5
+              max: -5.5
+            sigma:
+              sample: uniform
+              min: 0.055
+              max: 0.1
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 2.4
+            center:
+              - sample: uniform
+                min: 0.1
+                max: 1.05
+              - sample: uniform
+                min: 0.05
+                max: 1.25
+  z:
+    initial_condition:
+      type: step
+      params:
+        value_left:
+          sample: uniform
+          min: 21.0
+          max: 28.0
+        value_right:
+          sample: uniform
+          min: 31.0
+          max: 39.0
+        x_split:
+          sample: uniform
+          min: 0.45
+          max: 0.7
+        axis: 0
+boundary_conditions:
+  x:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -11.0
+              max: -7.0
+    outlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 7.0
+              max: 11.0
+    walls:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha:
+            sample: uniform
+            min: 0.08
+            max: 0.2
+  y:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 7.0
+              max: 11.0
+    outlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -11.0
+              max: -7.0
+    walls:
+      - operator: robin
+        value: 0.0
+        operator_parameters:
+          alpha:
+            sample: uniform
+            min: 0.08
+            max: 0.2
+  z:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 18.0
+              max: 26.0
+    outlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 31.0
+              max: 39.0
+    walls:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_xyz
+  formats: [numpy, gif]
+  resolution: [192, 224]
+  num_frames: 64
+seed: 4219
