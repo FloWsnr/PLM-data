@@ -1,0 +1,140 @@
+preset: brusselator
+parameters:
+  Du:
+    sample: uniform
+    min: 0.1
+    max: 0.14
+  Dv:
+    sample: uniform
+    min: 1.05
+    max: 1.35
+  a:
+    sample: uniform
+    min: 1.95
+    max: 2.15
+  b:
+    sample: uniform
+    min: 3.25
+    max: 3.85
+  u_notch_value:
+    sample: uniform
+    min: 1.78
+    max: 1.98
+  v_notch_value:
+    sample: uniform
+    min: 1.62
+    max: 1.92
+  u_outer_value:
+    sample: uniform
+    min: 1.95
+    max: 2.18
+  v_outer_value:
+    sample: uniform
+    min: 1.48
+    max: 1.78
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width:
+    sample: uniform
+    min: 22.0
+    max: 28.0
+  outer_height:
+    sample: uniform
+    min: 24.0
+    max: 30.0
+  cutout_width:
+    sample: uniform
+    min: 7.5
+    max: 11.0
+  cutout_height:
+    sample: uniform
+    min: 10.0
+    max: 14.0
+  mesh_size:
+    sample: uniform
+    min: 0.18
+    max: 0.24
+time:
+  dt: 0.02
+  t_end: 18.0
+inputs:
+  u:
+    initial_condition:
+      type: quadrants
+      params:
+        split:
+        - sample: uniform
+          min: 7.5
+          max: 12.5
+        - sample: uniform
+          min: 7.5
+          max: 12.5
+        region_values:
+          '00':
+            sample: uniform
+            min: 1.86
+            max: 2.02
+          '01':
+            sample: uniform
+            min: 2.0
+            max: 2.18
+          '10':
+            sample: uniform
+            min: 1.92
+            max: 2.1
+          '11':
+            sample: uniform
+            min: 1.76
+            max: 1.94
+  v:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 1.55
+          max: 1.85
+        std:
+          sample: uniform
+          min: 0.035
+          max: 0.08
+boundary_conditions:
+  u:
+    outer:
+    - operator: dirichlet
+      value:
+        type: constant
+        params:
+          value: param:u_outer_value
+    notch:
+    - operator: dirichlet
+      value:
+        type: constant
+        params:
+          value: param:u_notch_value
+  v:
+    outer:
+    - operator: dirichlet
+      value:
+        type: constant
+        params:
+          value: param:v_outer_value
+    notch:
+    - operator: dirichlet
+      value:
+        type: constant
+        params:
+          value: param:v_notch_value
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats:
+  - numpy
+  - gif
+  resolution:
+  - 176
+  - 176
+  num_frames: 73
+seed: 4310

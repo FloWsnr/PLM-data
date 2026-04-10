@@ -1,0 +1,169 @@
+preset: brusselator
+parameters:
+  Du:
+    sample: uniform
+    min: 0.07
+    max: 0.095
+  Dv:
+    sample: uniform
+    min: 0.76
+    max: 1.05
+  a:
+    sample: uniform
+    min: 2.0
+    max: 2.15
+  b:
+    sample: uniform
+    min: 3.25
+    max: 3.75
+  domain_center_x:
+    sample: uniform
+    min: -0.4
+    max: 0.4
+  domain_center_y:
+    sample: uniform
+    min: -0.4
+    max: 0.4
+  u_inner_value:
+    sample: uniform
+    min: 1.85
+    max: 2.08
+  u_outer_value:
+    sample: uniform
+    min: 2.15
+    max: 2.42
+  v_inner_value:
+    sample: uniform
+    min: 1.55
+    max: 1.9
+  v_outer_value:
+    sample: uniform
+    min: 1.85
+    max: 2.25
+  wall_exchange:
+    sample: uniform
+    min: 0.02
+    max: 0.06
+domain:
+  allow_sampling: true
+  type: annulus
+  center:
+  - param:domain_center_x
+  - param:domain_center_y
+  inner_radius:
+    sample: uniform
+    min: 5.5
+    max: 8.0
+  outer_radius:
+    sample: uniform
+    min: 17.0
+    max: 21.0
+  mesh_size:
+    sample: uniform
+    min: 0.25
+    max: 0.32
+time:
+  dt: 0.032
+  t_end: 22.0
+inputs:
+  u:
+    initial_condition:
+      type: radial_cosine
+      params:
+        base:
+          sample: uniform
+          min: 1.95
+          max: 2.18
+        amplitude:
+          sample: uniform
+          min: 0.16
+          max: 0.28
+        frequency:
+          sample: uniform
+          min: 0.42
+          max: 0.75
+        center:
+        - param:domain_center_x
+        - param:domain_center_y
+  v:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 1.55
+          max: 1.95
+        modes:
+        - amplitude:
+            sample: uniform
+            min: 0.06
+            max: 0.13
+          cycles:
+          - 2.0
+          - 0.0
+          phase:
+            sample: uniform
+            min: -0.5
+            max: 0.5
+          angle:
+            sample: uniform
+            min: -0.8
+            max: 0.8
+        - amplitude:
+            sample: uniform
+            min: 0.04
+            max: 0.1
+          cycles:
+          - 0.0
+          - 3.0
+          phase:
+            sample: uniform
+            min: -0.5
+            max: 0.5
+boundary_conditions:
+  u:
+    inner:
+    - operator: robin
+      value:
+        type: constant
+        params:
+          value: param:u_inner_value
+      operator_parameters:
+        alpha: param:wall_exchange
+    outer:
+    - operator: robin
+      value:
+        type: constant
+        params:
+          value: param:u_outer_value
+      operator_parameters:
+        alpha: param:wall_exchange
+  v:
+    inner:
+    - operator: robin
+      value:
+        type: constant
+        params:
+          value: param:v_inner_value
+      operator_parameters:
+        alpha: param:wall_exchange
+    outer:
+    - operator: robin
+      value:
+        type: constant
+        params:
+          value: param:v_outer_value
+      operator_parameters:
+        alpha: param:wall_exchange
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats:
+  - numpy
+  - gif
+  resolution:
+  - 192
+  - 192
+  num_frames: 73
+seed: 4270

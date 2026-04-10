@@ -1,0 +1,225 @@
+preset: brusselator
+parameters:
+  Du:
+    sample: uniform
+    min: 0.1
+    max: 0.14
+  Dv:
+    sample: uniform
+    min: 1.05
+    max: 1.35
+  a:
+    sample: uniform
+    min: 1.95
+    max: 2.15
+  b:
+    sample: uniform
+    min: 3.25
+    max: 3.85
+  u_outer_value:
+    sample: uniform
+    min: 1.82
+    max: 2.02
+  v_outer_value:
+    sample: uniform
+    min: 1.5
+    max: 1.78
+  u_hole_value:
+    sample: uniform
+    min: 2.0
+    max: 2.22
+  v_hole_value:
+    sample: uniform
+    min: 1.62
+    max: 1.92
+  hole_exchange:
+    sample: uniform
+    min: 0.005
+    max: 0.02
+domain:
+  allow_sampling: true
+  type: multi_hole_plate
+  width:
+    sample: uniform
+    min: 25.0
+    max: 30.0
+  height:
+    sample: uniform
+    min: 20.0
+    max: 23.0
+  holes:
+  - center:
+    - sample: uniform
+      min: 6.0
+      max: 7.2
+    - sample: uniform
+      min: 5.0
+      max: 6.2
+    radius:
+      sample: uniform
+      min: 1.0
+      max: 1.5
+    boundary_name: holes
+  - center:
+    - sample: uniform
+      min: 12.5
+      max: 14.5
+    - sample: uniform
+      min: 9.0
+      max: 11.0
+    radius:
+      sample: uniform
+      min: 1.15
+      max: 1.7
+    boundary_name: holes
+  - center:
+    - sample: uniform
+      min: 19.0
+      max: 21.2
+    - sample: uniform
+      min: 5.0
+      max: 6.2
+    radius:
+      sample: uniform
+      min: 1.0
+      max: 1.5
+    boundary_name: holes
+  - center:
+    - sample: uniform
+      min: 8.5
+      max: 10.2
+    - sample: uniform
+      min: 14.0
+      max: 16.4
+    radius:
+      sample: uniform
+      min: 1.1
+      max: 1.6
+    boundary_name: holes
+  - center:
+    - sample: uniform
+      min: 18.0
+      max: 20.5
+    - sample: uniform
+      min: 14.0
+      max: 16.4
+    radius:
+      sample: uniform
+      min: 1.1
+      max: 1.6
+    boundary_name: holes
+  mesh_size:
+    sample: uniform
+    min: 0.17
+    max: 0.23
+time:
+  dt: 0.02
+  t_end: 18.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 1.88
+          max: 2.05
+        generators:
+        - count:
+            sample: randint
+            min: 3
+            max: 5
+          amplitude:
+            sample: uniform
+            min: 0.05
+            max: 0.14
+          sigma:
+            sample: uniform
+            min: 0.9
+            max: 1.7
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 2.2
+          center:
+          - sample: uniform
+            min: 3.0
+            max: 24.0
+          - sample: uniform
+            min: 3.0
+            max: 18.5
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 1.55
+          max: 1.85
+        generators:
+        - count:
+            sample: randint
+            min: 2
+            max: 4
+          amplitude:
+            sample: uniform
+            min: 0.03
+            max: 0.1
+          sigma:
+            sample: uniform
+            min: 1.2
+            max: 2.2
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 2.2
+          center:
+          - sample: uniform
+            min: 3.0
+            max: 24.0
+          - sample: uniform
+            min: 3.0
+            max: 18.5
+boundary_conditions:
+  u:
+    outer:
+    - operator: dirichlet
+      value:
+        type: constant
+        params:
+          value: param:u_outer_value
+    holes:
+    - operator: robin
+      value:
+        type: constant
+        params:
+          value: param:u_hole_value
+      operator_parameters:
+        alpha: param:hole_exchange
+  v:
+    outer:
+    - operator: dirichlet
+      value:
+        type: constant
+        params:
+          value: param:v_outer_value
+    holes:
+    - operator: robin
+      value:
+        type: constant
+        params:
+          value: param:v_hole_value
+      operator_parameters:
+        alpha: param:hole_exchange
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats:
+  - numpy
+  - gif
+  resolution:
+  - 192
+  - 144
+  num_frames: 73
+seed: 4330

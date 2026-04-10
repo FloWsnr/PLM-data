@@ -1,0 +1,126 @@
+preset: brusselator
+parameters:
+  Du:
+    sample: uniform
+    min: 0.1
+    max: 0.14
+  Dv:
+    sample: uniform
+    min: 1.05
+    max: 1.35
+  a:
+    sample: uniform
+    min: 1.95
+    max: 2.15
+  b:
+    sample: uniform
+    min: 3.25
+    max: 3.85
+  u_outer_value:
+    sample: uniform
+    min: 1.85
+    max: 2.05
+  v_outer_value:
+    sample: uniform
+    min: 1.55
+    max: 1.85
+  wall_exchange:
+    sample: uniform
+    min: 0.005
+    max: 0.02
+  dumbbell_center_y:
+    sample: uniform
+    min: -0.8
+    max: 0.8
+domain:
+  allow_sampling: true
+  type: dumbbell
+  left_center:
+  - 0.0
+  - param:dumbbell_center_y
+  right_center:
+  - sample: uniform
+    min: 17.0
+    max: 21.0
+  - param:dumbbell_center_y
+  lobe_radius:
+    sample: uniform
+    min: 8.0
+    max: 10.2
+  neck_width:
+    sample: uniform
+    min: 1.9
+    max: 3.2
+  mesh_size:
+    sample: uniform
+    min: 0.17
+    max: 0.23
+time:
+  dt: 0.02
+  t_end: 18.0
+inputs:
+  u:
+    initial_condition:
+      type: step
+      params:
+        value_left:
+          sample: uniform
+          min: 1.85
+          max: 2.05
+        value_right:
+          sample: uniform
+          min: 2.0
+          max: 2.22
+        x_split:
+          sample: uniform
+          min: 7.5
+          max: 11.5
+        axis: 0
+  v:
+    initial_condition:
+      type: step
+      params:
+        value_left:
+          sample: uniform
+          min: 1.65
+          max: 1.92
+        value_right:
+          sample: uniform
+          min: 1.45
+          max: 1.75
+        x_split:
+          sample: uniform
+          min: 7.5
+          max: 11.5
+        axis: 0
+boundary_conditions:
+  u:
+    outer:
+    - operator: robin
+      value:
+        type: constant
+        params:
+          value: param:u_outer_value
+      operator_parameters:
+        alpha: param:wall_exchange
+  v:
+    outer:
+    - operator: robin
+      value:
+        type: constant
+        params:
+          value: param:v_outer_value
+      operator_parameters:
+        alpha: param:wall_exchange
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats:
+  - numpy
+  - gif
+  resolution:
+  - 192
+  - 144
+  num_frames: 73
+seed: 4290

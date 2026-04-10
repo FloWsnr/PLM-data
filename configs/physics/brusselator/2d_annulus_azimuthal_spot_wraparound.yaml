@@ -1,0 +1,126 @@
+preset: brusselator
+parameters:
+  Du:
+    sample: uniform
+    min: 0.07
+    max: 0.1
+  Dv:
+    sample: uniform
+    min: 0.92
+    max: 1.35
+  a:
+    sample: uniform
+    min: 2.2
+    max: 2.45
+  b:
+    sample: uniform
+    min: 4.6
+    max: 5.3
+  domain_center_x:
+    sample: uniform
+    min: -0.4
+    max: 0.4
+  domain_center_y:
+    sample: uniform
+    min: -0.4
+    max: 0.4
+domain:
+  allow_sampling: true
+  type: annulus
+  center:
+  - param:domain_center_x
+  - param:domain_center_y
+  inner_radius:
+    sample: uniform
+    min: 4.5
+    max: 6.5
+  outer_radius:
+    sample: uniform
+    min: 16.5
+    max: 20.0
+  mesh_size:
+    sample: uniform
+    min: 0.24
+    max: 0.31
+time:
+  dt: 0.025
+  t_end: 17.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 2.1
+          max: 2.38
+        generators:
+        - count:
+            sample: randint
+            min: 6
+            max: 10
+          amplitude:
+            sample: uniform
+            min: 0.08
+            max: 0.24
+          sigma:
+            sample: uniform
+            min: 0.9
+            max: 1.9
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 3.2
+          center:
+          - sample: uniform
+            min: -14.0
+            max: 14.0
+          - sample: uniform
+            min: -14.0
+            max: 14.0
+  v:
+    initial_condition:
+      type: radial_cosine
+      params:
+        base:
+          sample: uniform
+          min: 1.85
+          max: 2.25
+        amplitude:
+          sample: uniform
+          min: 0.07
+          max: 0.15
+        frequency:
+          sample: uniform
+          min: 0.75
+          max: 1.2
+        center:
+        - param:domain_center_x
+        - param:domain_center_y
+boundary_conditions:
+  u:
+    inner:
+    - operator: neumann
+      value: 0.0
+    outer:
+    - operator: neumann
+      value: 0.0
+  v:
+    inner:
+    - operator: neumann
+      value: 0.0
+    outer:
+    - operator: neumann
+      value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats:
+  - numpy
+  - gif
+  resolution:
+  - 192
+  - 192
+  num_frames: 65
+seed: 4260

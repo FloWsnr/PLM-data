@@ -1,0 +1,185 @@
+preset: brusselator
+parameters:
+  Du:
+    sample: uniform
+    min: 0.1
+    max: 0.14
+  Dv:
+    sample: uniform
+    min: 1.05
+    max: 1.35
+  a:
+    sample: uniform
+    min: 1.95
+    max: 2.15
+  b:
+    sample: uniform
+    min: 3.25
+    max: 3.85
+  u_wall_value:
+    sample: uniform
+    min: 1.88
+    max: 2.12
+  v_wall_value:
+    sample: uniform
+    min: 1.55
+    max: 1.85
+  u_outlet_value:
+    sample: uniform
+    min: 2.0
+    max: 2.22
+  v_outlet_value:
+    sample: uniform
+    min: 1.62
+    max: 1.92
+  wall_exchange:
+    sample: uniform
+    min: 0.005
+    max: 0.02
+domain:
+  allow_sampling: true
+  type: venturi_channel
+  length:
+    sample: uniform
+    min: 28.0
+    max: 34.0
+  height:
+    sample: uniform
+    min: 10.0
+    max: 14.0
+  throat_height:
+    sample: uniform
+    min: 3.2
+    max: 5.5
+  constriction_center_x:
+    sample: uniform
+    min: 12.0
+    max: 18.0
+  constriction_radius:
+    sample: uniform
+    min: 6.0
+    max: 8.0
+  mesh_size:
+    sample: uniform
+    min: 0.17
+    max: 0.23
+time:
+  dt: 0.02
+  t_end: 18.0
+inputs:
+  u:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 1.92
+          max: 2.08
+        modes:
+        - amplitude:
+            sample: uniform
+            min: 0.04
+            max: 0.1
+          cycles:
+          - 2.0
+          - 1.0
+          phase:
+            sample: uniform
+            min: -0.6
+            max: 0.6
+          angle:
+            sample: uniform
+            min: -0.5
+            max: 0.5
+        - amplitude:
+            sample: uniform
+            min: 0.03
+            max: 0.08
+          cycles:
+          - 0.0
+          - 3.0
+          phase:
+            sample: uniform
+            min: -0.6
+            max: 0.6
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 1.55
+          max: 1.82
+        generators:
+        - count:
+            sample: randint
+            min: 3
+            max: 5
+          amplitude:
+            sample: uniform
+            min: 0.03
+            max: 0.1
+          sigma:
+            sample: uniform
+            min: 1.0
+            max: 2.0
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 2.4
+          center:
+          - sample: uniform
+            min: 4.0
+            max: 28.0
+          - sample: uniform
+            min: 2.0
+            max: 11.0
+boundary_conditions:
+  u:
+    inlet:
+    - operator: neumann
+      value: 0.0
+    outlet:
+    - operator: dirichlet
+      value:
+        type: constant
+        params:
+          value: param:u_outlet_value
+    walls:
+    - operator: robin
+      value:
+        type: constant
+        params:
+          value: param:u_wall_value
+      operator_parameters:
+        alpha: param:wall_exchange
+  v:
+    inlet:
+    - operator: neumann
+      value: 0.0
+    outlet:
+    - operator: dirichlet
+      value:
+        type: constant
+        params:
+          value: param:v_outlet_value
+    walls:
+    - operator: robin
+      value:
+        type: constant
+        params:
+          value: param:v_wall_value
+      operator_parameters:
+        alpha: param:wall_exchange
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats:
+  - numpy
+  - gif
+  resolution:
+  - 192
+  - 128
+  num_frames: 73
+seed: 4410
