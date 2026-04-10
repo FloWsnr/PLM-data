@@ -1,0 +1,90 @@
+preset: lorenz
+parameters:
+  sigma:
+    sample: uniform
+    min: 7.5
+    max: 11.0
+  rho:
+    sample: uniform
+    min: 27.0
+    max: 36.0
+  beta:
+    sample: uniform
+    min: 2.45
+    max: 2.9
+  D:
+    sample: uniform
+    min: 0.08
+    max: 0.22
+domain:
+  allow_sampling: true
+  type: rectangle
+  size:
+    - sample: uniform
+      min: 8.0
+      max: 9.5
+    - sample: uniform
+      min: 7.2
+      max: 8.8
+  mesh_resolution:
+    - sample: randint
+      min: 128
+      max: 144
+    - sample: randint
+      min: 128
+      max: 144
+time:
+  dt: 0.0015
+  t_end: 4.5
+inputs:
+  x:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: -0.6
+          max: 0.8
+        std:
+          sample: uniform
+          min: 1.4
+          max: 2.6
+  y:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: -0.8
+          max: 0.6
+        std:
+          sample: uniform
+          min: 1.4
+          max: 2.8
+  z:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 24.0
+          max: 31.0
+        std:
+          sample: uniform
+          min: 1.8
+          max: 4.0
+boundary_conditions:
+  x:
+    $ref: boundary_field.scalar.full_periodic_2d
+  y:
+    $ref: boundary_field.scalar.full_periodic_2d
+  z:
+    $ref: boundary_field.scalar.full_periodic_2d
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_xyz
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 76
+seed: 4200

@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 530 configs.
+Current baseline: 38 PDE presets and 548 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -643,9 +643,36 @@ Validation note: all 20 2D configs were run with `./run.sh -n 2 ... --n-runs 2` 
 
 #### Lorenz (`configs/physics/lorenz`)
 
-1. `2d_parallelogram_spatial_lorenz_chaos`: spatially extended Lorenz chaos on a skew parallelogram cell.
-2. `2d_spatial_lorenz_chaos`: spatially extended Lorenz chaos seeded from random initial fields.
-3. `3d_spatial_lorenz_chaos`: 3D spatially extended Lorenz chaos seeded from random initial fields.
+The 2D Lorenz suite now has 20 randomized configs, with two configs each for
+`rectangle`, `annulus`, `disk`, `dumbbell`, `parallelogram`, `l_shape`,
+`multi_hole_plate`, `channel_obstacle`, `y_bifurcation`, and
+`serpentine_channel`. Validation outputs are under
+`output/lorenz_2d_validation`; the two-seed sweep passed 40/40 runs on two MPI
+ranks, with output resolutions at or above 128 on the shortest side. The
+analysis artifacts in `output/lorenz_2d_validation/_analysis` include metric
+summaries and visual start/middle/end plus seed-comparison sheets.
+
+1. `2d_annulus_inner_outer_lobe_collision`: sampled annulus with opposing inner/outer Lorenz lobe Dirichlet states, creating radially colliding synchronized rings.
+2. `2d_annulus_ring_phase_slips`: weakly coupled annulus with radial-cosine and oblique sine starts, producing ring phase slips around the inner hole.
+3. `2d_channel_obstacle_obstacle_pinned_wake`: sampled channel-obstacle domain with the cylinder pinned to a Lorenz lobe and interior blobs wrapping into obstacle shadows.
+4. `2d_channel_obstacle_wall_driven_lobe_collision`: inlet/outlet lobe forcing drives opposing sheets around the sampled obstacle under wall damping.
+5. `2d_disk_offcenter_patch_burst`: weakly coupled disk where off-center signed Gaussian patches break into fragmented local Lorenz bursts.
+6. `2d_disk_rim_pinned_synchronization`: stronger disk coupling with a pinned rim, smoothing interior waves into large-scale synchronized lobes.
+7. `2d_dumbbell_lobe_exchange_chaos`: unequal signed lobes exchange through a sampled dumbbell neck while weak coupling preserves chamber asymmetry.
+8. `2d_dumbbell_neck_synchronization_pulse`: narrow-neck dumbbell with stronger coupling and Robin damping, emphasizing bottleneck-mediated synchronization.
+9. `2d_l_shape_corner_burst`: L-shaped cavity with the reentrant notch pinned to a Lorenz lobe, launching corner-biased chaotic bursts.
+10. `2d_l_shape_notch_quenched_sheets`: notch-quenching L-shape where oblique sheets and quadrant `z` data are pulled toward a lossy inside corner.
+11. `2d_multi_hole_plate_hole_shadow_chaos`: perforated plate with sampled hole layout and hole boundary forcing, producing screened chaotic shadows around holes.
+12. `2d_multi_hole_plate_interstitial_lobe_exchange`: stronger plate coupling and left/right lobe starts drive exchange through interstitial corridors between sampled holes.
+13. `2d_parallelogram_oblique_band_chaos`: skew periodic cell with oblique sine bands and moderate coupling, giving wraparound slanted chaotic bands.
+14. `2d_parallelogram_synchronized_longwave_rolls`: strong-coupling skew periodic cell where low-frequency rolls synchronize into smooth longwave oscillations.
+15. `2d_rectangle_absorbing_lobe_fronts`: rectangular lobe fronts collide between opposing Dirichlet sides with Robin damping on the transverse walls.
+16. `2d_rectangle_fragmented_weak_coupling`: periodic rectangle with weak diffusion and random initial fields, retaining fragmented local chaotic patches.
+17. `2d_serpentine_channel_guided_phase_bands`: sampled serpentine channel with no-flux walls, where oblique phase bands follow the bend sequence.
+18. `2d_serpentine_channel_reverse_quench_pulses`: inlet/outlet lobe reversal in a sampled serpentine path creates bend-guided quench pulses.
+19. `2d_y_bifurcation_branch_collision_chaos`: sampled Y bifurcation with opposing outlet lobe states that collide back toward the junction.
+20. `2d_y_bifurcation_branch_split_chaos`: inlet-forced Y bifurcation where localized chaotic patches split unevenly into the two branches.
+21. `3d_spatial_lorenz_chaos`: 3D spatially extended Lorenz chaos seeded from random initial fields.
 
 #### Maxwell (`configs/physics/maxwell`)
 
