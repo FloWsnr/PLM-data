@@ -1,0 +1,130 @@
+preset: schnakenberg
+parameters:
+  Du:
+    sample: uniform
+    min: 0.04
+    max: 0.06
+  Dv:
+    sample: uniform
+    min: 1.7
+    max: 3.2
+  a:
+    sample: uniform
+    min: 0.08
+    max: 0.16
+  b:
+    sample: uniform
+    min: 0.8
+    max: 1.02
+  u_inlet_value:
+    sample: uniform
+    min: 0.95
+    max: 1.18
+  v_inlet_value:
+    sample: uniform
+    min: 0.62
+    max: 0.88
+domain:
+  allow_sampling: true
+  type: venturi_channel
+  length:
+    sample: uniform
+    min: 28.0
+    max: 34.0
+  height:
+    sample: uniform
+    min: 10.0
+    max: 14.0
+  throat_height:
+    sample: uniform
+    min: 4.0
+    max: 6.5
+  constriction_center_x:
+    sample: uniform
+    min: 13.0
+    max: 18.0
+  constriction_radius:
+    sample: uniform
+    min: 7.0
+    max: 10.0
+  mesh_size:
+    sample: uniform
+    min: 0.13
+    max: 0.18
+time:
+  dt: 0.015
+  t_end: 20.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.88
+          max: 1.08
+        generators:
+        - count:
+            sample: randint
+            min: 4
+            max: 7
+          amplitude:
+            sample: uniform
+            min: 0.04
+            max: 0.16
+          sigma:
+            sample: uniform
+            min: 0.7
+            max: 1.5
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 3.2
+          center:
+          - sample: uniform
+            min: 9.0
+            max: 22.0
+          - sample: uniform
+            min: 3.0
+            max: 10.5
+  v:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 0.68
+          max: 0.95
+        std:
+          sample: uniform
+          min: 0.035
+          max: 0.08
+boundary_conditions:
+  u:
+    inlet:
+    - operator: dirichlet
+      value: param:u_inlet_value
+    outlet:
+    - operator: neumann
+      value: 0.0
+    walls:
+    - operator: neumann
+      value: 0.0
+  v:
+    inlet:
+    - operator: dirichlet
+      value: param:v_inlet_value
+    outlet:
+    - operator: neumann
+      value: 0.0
+    walls:
+    - operator: neumann
+      value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [192, 128]
+  num_frames: 68
+seed: 4360

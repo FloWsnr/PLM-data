@@ -1,0 +1,143 @@
+preset: schnakenberg
+parameters:
+  Du:
+    sample: uniform
+    min: 0.045
+    max: 0.06
+  Dv:
+    sample: uniform
+    min: 1.4
+    max: 2.2
+  a:
+    sample: uniform
+    min: 0.08
+    max: 0.12
+  b:
+    sample: uniform
+    min: 0.8
+    max: 0.94
+  u_inlet_value:
+    sample: uniform
+    min: 0.9
+    max: 1.05
+  v_inlet_value:
+    sample: uniform
+    min: 0.75
+    max: 0.95
+  u_obstacle_value:
+    sample: uniform
+    min: 0.85
+    max: 1.02
+  v_obstacle_value:
+    sample: uniform
+    min: 0.75
+    max: 0.95
+domain:
+  allow_sampling: true
+  type: channel_obstacle
+  length:
+    sample: uniform
+    min: 28.0
+    max: 36.0
+  height:
+    sample: uniform
+    min: 10.0
+    max: 14.0
+  obstacle_center:
+  - sample: uniform
+    min: 10.5
+    max: 17.5
+  - sample: uniform
+    min: 3.2
+    max: 6.8
+  obstacle_radius:
+    sample: uniform
+    min: 1.8
+    max: 2.8
+  mesh_size:
+    sample: uniform
+    min: 0.13
+    max: 0.18
+time:
+  dt: 0.01
+  t_end: 18.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.9
+          max: 1.02
+        generators:
+        - count:
+            sample: randint
+            min: 4
+            max: 7
+          amplitude:
+            sample: uniform
+            min: -0.04
+            max: 0.08
+          sigma:
+            sample: uniform
+            min: 0.8
+            max: 1.8
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 3.4
+          center:
+          - sample: uniform
+            min: 2.5
+            max: 16.0
+          - sample: uniform
+            min: 2.5
+            max: 11.5
+  v:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 0.68
+          max: 0.95
+        std:
+          sample: uniform
+          min: 0.025
+          max: 0.055
+boundary_conditions:
+  u:
+    inlet:
+    - operator: dirichlet
+      value: param:u_inlet_value
+    outlet:
+    - operator: neumann
+      value: 0.0
+    walls:
+    - operator: neumann
+      value: 0.0
+    obstacle:
+    - operator: dirichlet
+      value: param:u_obstacle_value
+  v:
+    inlet:
+    - operator: dirichlet
+      value: param:v_inlet_value
+    outlet:
+    - operator: neumann
+      value: 0.0
+    walls:
+    - operator: neumann
+      value: 0.0
+    obstacle:
+    - operator: dirichlet
+      value: param:v_obstacle_value
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [192, 128]
+  num_frames: 64
+seed: 4340

@@ -1,0 +1,148 @@
+preset: schnakenberg
+parameters:
+  Du:
+    sample: uniform
+    min: 0.04
+    max: 0.065
+  Dv:
+    sample: uniform
+    min: 1.8
+    max: 3.4
+  a:
+    sample: uniform
+    min: 0.07
+    max: 0.14
+  b:
+    sample: uniform
+    min: 0.75
+    max: 1.0
+  u_inlet_value:
+    sample: uniform
+    min: 0.95
+    max: 1.2
+  v_inlet_value:
+    sample: uniform
+    min: 0.62
+    max: 0.88
+  u_upper_value:
+    sample: uniform
+    min: 0.78
+    max: 1.0
+  u_lower_value:
+    sample: uniform
+    min: 0.98
+    max: 1.2
+  v_upper_value:
+    sample: uniform
+    min: 0.82
+    max: 1.08
+  v_lower_value:
+    sample: uniform
+    min: 0.58
+    max: 0.82
+domain:
+  allow_sampling: true
+  type: y_bifurcation
+  inlet_length:
+    sample: uniform
+    min: 10.0
+    max: 14.0
+  branch_length:
+    sample: uniform
+    min: 12.0
+    max: 16.0
+  branch_angle_degrees:
+    sample: uniform
+    min: 35.0
+    max: 50.0
+  channel_width:
+    sample: uniform
+    min: 3.6
+    max: 5.0
+  mesh_size:
+    sample: uniform
+    min: 0.12
+    max: 0.17
+time:
+  dt: 0.015
+  t_end: 20.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.88
+          max: 1.08
+        generators:
+        - count:
+            sample: randint
+            min: 4
+            max: 7
+          amplitude:
+            sample: uniform
+            min: 0.04
+            max: 0.16
+          sigma:
+            sample: uniform
+            min: 0.7
+            max: 1.6
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 3.4
+          center:
+          - sample: uniform
+            min: 2.0
+            max: 14.0
+          - sample: uniform
+            min: -2.2
+            max: 2.2
+  v:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 0.68
+          max: 0.95
+        std:
+          sample: uniform
+          min: 0.035
+          max: 0.08
+boundary_conditions:
+  u:
+    inlet:
+    - operator: dirichlet
+      value: param:u_inlet_value
+    outlet_upper:
+    - operator: dirichlet
+      value: param:u_upper_value
+    outlet_lower:
+    - operator: dirichlet
+      value: param:u_lower_value
+    walls:
+    - operator: neumann
+      value: 0.0
+  v:
+    inlet:
+    - operator: dirichlet
+      value: param:v_inlet_value
+    outlet_upper:
+    - operator: dirichlet
+      value: param:v_upper_value
+    outlet_lower:
+    - operator: dirichlet
+      value: param:v_lower_value
+    walls:
+    - operator: neumann
+      value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [192, 160]
+  num_frames: 68
+seed: 4380

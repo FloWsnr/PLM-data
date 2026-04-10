@@ -1,0 +1,116 @@
+preset: schnakenberg
+parameters:
+  Du:
+    sample: uniform
+    min: 0.055
+    max: 0.09
+  Dv:
+    sample: uniform
+    min: 3.0
+    max: 5.5
+  a:
+    sample: uniform
+    min: 0.04
+    max: 0.11
+  b:
+    sample: uniform
+    min: 0.58
+    max: 0.82
+  notch_absorption:
+    sample: uniform
+    min: 0.006
+    max: 0.018
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width:
+    sample: uniform
+    min: 18.0
+    max: 24.0
+  outer_height:
+    sample: uniform
+    min: 18.0
+    max: 24.0
+  cutout_width:
+    sample: uniform
+    min: 6.0
+    max: 9.0
+  cutout_height:
+    sample: uniform
+    min: 6.0
+    max: 9.0
+  mesh_size:
+    sample: uniform
+    min: 0.13
+    max: 0.18
+time:
+  dt: 0.012
+  t_end: 18.0
+inputs:
+  u:
+    initial_condition:
+      type: quadrants
+      params:
+        split:
+        - sample: uniform
+          min: 8.0
+          max: 14.0
+        - sample: uniform
+          min: 8.0
+          max: 14.0
+        region_values:
+          "00":
+            sample: uniform
+            min: 0.78
+            max: 0.95
+          "01":
+            sample: uniform
+            min: 0.95
+            max: 1.16
+          "10":
+            sample: uniform
+            min: 0.72
+            max: 0.9
+          "11":
+            sample: uniform
+            min: 0.9
+            max: 1.12
+  v:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: 0.68
+          max: 0.95
+        std:
+          sample: uniform
+          min: 0.04
+          max: 0.09
+boundary_conditions:
+  u:
+    outer:
+    - operator: neumann
+      value: 0.0
+    notch:
+    - operator: robin
+      value: 0.0
+      operator_parameters:
+        alpha: param:notch_absorption
+  v:
+    outer:
+    - operator: neumann
+      value: 0.0
+    notch:
+    - operator: robin
+      value: 0.0
+      operator_parameters:
+        alpha: param:notch_absorption
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 64
+seed: 4310

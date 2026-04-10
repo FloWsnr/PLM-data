@@ -1,0 +1,130 @@
+preset: schnakenberg
+parameters:
+  Du:
+    sample: uniform
+    min: 0.04
+    max: 0.07
+  Dv:
+    sample: uniform
+    min: 1.7
+    max: 3.0
+  a:
+    sample: uniform
+    min: 0.07
+    max: 0.15
+  b:
+    sample: uniform
+    min: 0.8
+    max: 1.02
+  u_notch_value:
+    sample: uniform
+    min: 0.95
+    max: 1.18
+  v_notch_value:
+    sample: uniform
+    min: 0.58
+    max: 0.88
+domain:
+  allow_sampling: true
+  type: l_shape
+  outer_width:
+    sample: uniform
+    min: 18.0
+    max: 24.0
+  outer_height:
+    sample: uniform
+    min: 18.0
+    max: 24.0
+  cutout_width:
+    sample: uniform
+    min: 6.0
+    max: 9.0
+  cutout_height:
+    sample: uniform
+    min: 6.0
+    max: 9.0
+  mesh_size:
+    sample: uniform
+    min: 0.13
+    max: 0.18
+time:
+  dt: 0.015
+  t_end: 22.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.88
+          max: 1.08
+        generators:
+        - count:
+            sample: randint
+            min: 5
+            max: 8
+          amplitude:
+            sample: uniform
+            min: -0.08
+            max: 0.14
+          sigma:
+            sample: uniform
+            min: 0.75
+            max: 1.6
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 3.6
+          center:
+          - sample: uniform
+            min: 3.0
+            max: 17.0
+          - sample: uniform
+            min: 3.0
+            max: 17.0
+  v:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 0.7
+          max: 0.98
+        modes:
+        - amplitude:
+            sample: uniform
+            min: 0.04
+            max: 0.1
+          cycles: [3.0, 1.0]
+          phase:
+            sample: uniform
+            min: -1.2
+            max: 1.2
+          angle:
+            sample: uniform
+            min: -0.4
+            max: 0.8
+boundary_conditions:
+  u:
+    outer:
+    - operator: neumann
+      value: 0.0
+    notch:
+    - operator: dirichlet
+      value: param:u_notch_value
+  v:
+    outer:
+    - operator: neumann
+      value: 0.0
+    notch:
+    - operator: dirichlet
+      value: param:v_notch_value
+solver:
+  $ref: solver.profile.constant_lhs_scalar_spd
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 72
+seed: 4300
