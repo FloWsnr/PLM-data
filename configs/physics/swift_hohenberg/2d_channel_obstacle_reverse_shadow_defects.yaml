@@ -2,36 +2,28 @@ preset: swift_hohenberg
 parameters:
   r:
     sample: uniform
-    min: 0.02
-    max: 0.24
+    min: 0.14
+    max: 0.3
   q0:
     sample: uniform
     min: 1.05
     max: 1.38
   alpha:
     sample: uniform
-    min: 0.0
-    max: 0.35
+    min: 0.75
+    max: 1.35
   beta:
     sample: uniform
-    min: -1.35
-    max: -0.82
+    min: -1.18
+    max: -0.72
   gamma:
     sample: uniform
-    min: -0.28
-    max: -0.04
+    min: -0.22
+    max: -0.05
   theta:
     sample: uniform
     min: 0.52
     max: 0.62
-  domain_size_x:
-    sample: uniform
-    min: 42.0
-    max: 52.0
-  domain_size_y:
-    sample: uniform
-    min: 32.0
-    max: 42.0
 coefficients:
   velocity:
     components:
@@ -40,25 +32,48 @@ coefficients:
         params:
           value:
             sample: uniform
-            min: 1.05
-            max: 1.45
+            min: -0.82
+            max: -0.42
       y:
-        type: constant
+        type: affine
         params:
-          value:
+          constant:
             sample: uniform
-            min: -0.72
-            max: -0.36
+            min: 0.12
+            max: 0.42
+          x:
+            sample: uniform
+            min: -0.018
+            max: -0.004
 domain:
   allow_sampling: true
-  type: rectangle
-  size:
-  - param:domain_size_x
-  - param:domain_size_y
-  mesh_resolution: [192, 160]
+  type: channel_obstacle
+  length:
+    sample: uniform
+    min: 46.0
+    max: 56.0
+  height:
+    sample: uniform
+    min: 30.0
+    max: 38.0
+  obstacle_center:
+  - sample: uniform
+    min: 24.0
+    max: 36.0
+  - sample: uniform
+    min: 12.0
+    max: 22.0
+  obstacle_radius:
+    sample: uniform
+    min: 4.2
+    max: 6.8
+  mesh_size:
+    sample: uniform
+    min: 0.2
+    max: 0.27
 time:
-  dt: 0.08
-  t_end: 13.6
+  dt: 0.09
+  t_end: 16.2
 inputs:
   u:
     initial_condition:
@@ -71,31 +86,31 @@ inputs:
         modes:
         - amplitude:
             sample: uniform
-            min: 0.18
-            max: 0.34
+            min: 0.2
+            max: 0.42
           cycles:
           - sample: uniform
-            min: 0.18
-            max: 0.34
+            min: 0.16
+            max: 0.32
           - sample: uniform
             min: 0.05
-            max: 0.14
+            max: 0.16
           phase:
             sample: uniform
             min: -3.14159
             max: 3.14159
           angle:
             sample: uniform
-            min: -0.35
-            max: 0.25
+            min: -0.45
+            max: 0.45
         - amplitude:
             sample: uniform
-            min: -0.16
+            min: -0.18
             max: 0.18
           cycles:
           - sample: uniform
-            min: 0.06
-            max: 0.16
+            min: 0.04
+            max: 0.14
           - sample: uniform
             min: 0.18
             max: 0.36
@@ -103,18 +118,21 @@ inputs:
             sample: uniform
             min: -3.14159
             max: 3.14159
-          angle:
-            sample: uniform
-            min: -0.25
-            max: 0.45
 boundary_conditions:
   u:
-    $ref: boundary_field.scalar.full_periodic_2d
+    inlet:
+    - operator: simply_supported
+    outlet:
+    - operator: simply_supported
+    walls:
+    - operator: simply_supported
+    obstacle:
+    - operator: simply_supported
 output:
   $ref: output.template.scalar_u
   formats: [numpy, gif]
-  resolution: [192, 160]
+  resolution: [192, 128]
   num_frames: 55
 solver:
   $ref: solver.profile.nonlinear_mixed_direct
-seed: 5210
+seed: 5360

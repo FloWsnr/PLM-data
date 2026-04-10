@@ -1,0 +1,113 @@
+preset: swift_hohenberg
+parameters:
+  r:
+    sample: uniform
+    min: 0.08
+    max: 0.22
+  q0:
+    sample: uniform
+    min: 0.78
+    max: 1.06
+  alpha:
+    sample: uniform
+    min: 0.8
+    max: 1.4
+  beta:
+    sample: uniform
+    min: -1.28
+    max: -0.78
+  gamma:
+    sample: uniform
+    min: -0.24
+    max: -0.06
+  theta:
+    sample: uniform
+    min: 0.54
+    max: 0.64
+  axis_x_length:
+    sample: uniform
+    min: 38.0
+    max: 48.0
+  axis_y_x:
+    sample: uniform
+    min: -8.0
+    max: 8.0
+  axis_y_y:
+    sample: uniform
+    min: 36.0
+    max: 46.0
+coefficients:
+  velocity:
+    components:
+      x:
+        type: sine_waves
+        params:
+          background:
+            sample: uniform
+            min: -0.08
+            max: 0.08
+          modes:
+          - amplitude:
+              sample: uniform
+              min: 0.32
+              max: 0.7
+            cycles: [0.0, 0.08]
+            phase:
+              sample: uniform
+              min: -1.0
+              max: 1.0
+      y:
+        type: sine_waves
+        params:
+          background:
+            sample: uniform
+            min: -0.08
+            max: 0.08
+          modes:
+          - amplitude:
+              sample: uniform
+              min: -0.7
+              max: -0.32
+            cycles: [0.08, 0.0]
+            phase:
+              sample: uniform
+              min: -1.0
+              max: 1.0
+domain:
+  allow_sampling: true
+  type: parallelogram
+  origin: [0.0, 0.0]
+  axis_x:
+  - param:axis_x_length
+  - 0.0
+  axis_y:
+  - param:axis_y_x
+  - param:axis_y_y
+  mesh_resolution: [160, 160]
+time:
+  dt: 0.1
+  t_end: 20.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_noise
+      params:
+        mean:
+          sample: uniform
+          min: -0.02
+          max: 0.02
+        std:
+          sample: uniform
+          min: 0.12
+          max: 0.26
+boundary_conditions:
+  u:
+    $ref: boundary_field.scalar.full_periodic_2d
+output:
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 67
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 5250

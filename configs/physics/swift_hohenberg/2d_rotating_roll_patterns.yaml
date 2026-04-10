@@ -1,28 +1,65 @@
 preset: swift_hohenberg
 parameters:
-  r: -0.28
-  q0: 1.0
-  alpha: 1.6
-  beta: -1.0
-  gamma: -1.0
-  theta: 0.5
+  r:
+    sample: uniform
+    min: -0.12
+    max: 0.12
+  q0:
+    sample: uniform
+    min: 0.78
+    max: 1.08
+  alpha:
+    sample: uniform
+    min: 1.35
+    max: 1.9
+  beta:
+    sample: uniform
+    min: -1.18
+    max: -0.68
+  gamma:
+    sample: uniform
+    min: -0.34
+    max: -0.08
+  theta:
+    sample: uniform
+    min: 0.52
+    max: 0.62
+  domain_size:
+    sample: uniform
+    min: 40.0
+    max: 48.0
 coefficients:
   velocity:
     components:
       x:
         type: affine
         params:
-          constant: -2.0
-          y: 0.1
+          constant:
+            sample: uniform
+            min: -2.3
+            max: -1.5
+          y:
+            sample: uniform
+            min: 0.07
+            max: 0.11
       y:
         type: affine
         params:
-          constant: 2.0
-          x: -0.1
+          constant:
+            sample: uniform
+            min: 1.5
+            max: 2.3
+          x:
+            sample: uniform
+            min: -0.11
+            max: -0.07
 domain:
+  allow_sampling: true
   type: rectangle
-  size: [40.0, 40.0]
-  mesh_resolution: [128, 128]
+  size:
+  - param:domain_size
+  - param:domain_size
+  mesh_resolution: [160, 160]
 time:
   dt: 0.1
   t_end: 20.0
@@ -31,19 +68,22 @@ inputs:
     initial_condition:
       type: gaussian_noise
       params:
-        mean: 0.0
-        std: 0.2
+        mean:
+          sample: uniform
+          min: -0.015
+          max: 0.015
+        std:
+          sample: uniform
+          min: 0.14
+          max: 0.28
 boundary_conditions:
   u:
     $ref: boundary_field.scalar.simply_supported_2d
 output:
-  formats:
-    $ref: output.formats.standard
-  fields:
-    u:
-      $ref: output.mode.scalar
-  resolution: [64, 64]
-  num_frames: 10
+  $ref: output.template.scalar_u
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 67
 solver:
   $ref: solver.profile.nonlinear_mixed_direct
-seed: 42
+seed: 5220
