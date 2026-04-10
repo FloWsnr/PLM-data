@@ -1,0 +1,194 @@
+preset: gray_scott
+parameters:
+  Du:
+    sample: uniform
+    min: 1.7e-05
+    max: 2.6e-05
+  Dv:
+    sample: uniform
+    min: 1.3e-05
+    max: 2.8e-05
+  F:
+    sample: uniform
+    min: 0.013
+    max: 0.017
+  k:
+    sample: uniform
+    min: 0.052
+    max: 0.056
+  wall_exchange:
+    sample: uniform
+    min: 0.12
+    max: 0.32
+coefficients:
+  velocity:
+    components:
+      x:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: 0.001
+            max: 0.0024
+      y:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.0011
+            max: 0.0011
+domain:
+  allow_sampling: true
+  type: multi_hole_plate
+  width:
+    sample: uniform
+    min: 3.25
+    max: 3.7
+  height:
+    sample: uniform
+    min: 2.45
+    max: 2.85
+  holes:
+    - center:
+        - sample: uniform
+          min: 0.62
+          max: 0.82
+        - sample: uniform
+          min: 0.62
+          max: 0.9
+      radius:
+        sample: uniform
+        min: 0.12
+        max: 0.18
+      boundary_name: holes
+    - center:
+        - sample: uniform
+          min: 1.35
+          max: 1.65
+        - sample: uniform
+          min: 1.08
+          max: 1.4
+      radius:
+        sample: uniform
+        min: 0.13
+        max: 0.2
+      boundary_name: holes
+    - center:
+        - sample: uniform
+          min: 2.08
+          max: 2.42
+        - sample: uniform
+          min: 0.62
+          max: 0.9
+      radius:
+        sample: uniform
+        min: 0.12
+        max: 0.18
+      boundary_name: holes
+    - center:
+        - sample: uniform
+          min: 2.75
+          max: 3.05
+        - sample: uniform
+          min: 1.55
+          max: 2.02
+      radius:
+        sample: uniform
+        min: 0.12
+        max: 0.18
+      boundary_name: holes
+  mesh_size:
+    sample: uniform
+    min: 0.015
+    max: 0.019
+time:
+  dt: 0.25
+  t_end: 520.0
+inputs:
+  u:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.96
+          max: 1.02
+        generators:
+          - count:
+              sample: randint
+              min: 5
+              max: 8
+            amplitude:
+              sample: uniform
+              min: -0.32
+              max: -0.14
+            sigma:
+              sample: uniform
+              min: 0.04
+              max: 0.085
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 3.4
+            center:
+              - sample: uniform
+                min: 0.32
+                max: 3.0
+              - sample: uniform
+                min: 0.32
+                max: 2.1
+  v:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.0
+          max: 0.012
+        generators:
+          - count:
+              sample: randint
+              min: 5
+              max: 8
+            amplitude:
+              sample: uniform
+              min: 0.05
+              max: 0.12
+            sigma:
+              sample: uniform
+              min: 0.05
+              max: 0.11
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 3.4
+            center:
+              - sample: uniform
+                min: 0.32
+                max: 3.0
+              - sample: uniform
+                min: 0.32
+                max: 2.1
+boundary_conditions:
+  u:
+    outer:
+      - operator: neumann
+        value: 0.0
+    holes:
+      - operator: neumann
+        value: 0.0
+  v:
+    outer:
+      - operator: neumann
+        value: 0.0
+    holes:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [192, 144]
+  num_frames: 72
+seed: 4330

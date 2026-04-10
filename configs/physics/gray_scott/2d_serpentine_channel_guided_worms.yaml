@@ -1,0 +1,149 @@
+preset: gray_scott
+parameters:
+  Du:
+    sample: uniform
+    min: 1.9e-05
+    max: 2.8e-05
+  Dv:
+    sample: uniform
+    min: 0.9e-05
+    max: 1.6e-05
+  F:
+    sample: uniform
+    min: 0.036
+    max: 0.040
+  k:
+    sample: uniform
+    min: 0.058
+    max: 0.062
+  inlet_v_drive:
+    sample: uniform
+    min: 0.08
+    max: 0.14
+coefficients:
+  velocity:
+    components:
+      x:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: 0.0006
+            max: 0.0018
+      y:
+        type: constant
+        params:
+          value:
+            sample: uniform
+            min: -0.0004
+            max: 0.0004
+domain:
+  allow_sampling: true
+  type: serpentine_channel
+  channel_length:
+    sample: uniform
+    min: 2.85
+    max: 3.35
+  lane_spacing:
+    sample: uniform
+    min: 0.78
+    max: 0.98
+  n_bends:
+    sample: randint
+    min: 3
+    max: 4
+  channel_width:
+    sample: uniform
+    min: 0.64
+    max: 0.82
+  mesh_size:
+    sample: uniform
+    min: 0.012
+    max: 0.016
+time:
+  dt: 0.4
+  t_end: 640.0
+inputs:
+  u:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 0.92
+          max: 0.98
+        modes:
+          - amplitude:
+              sample: uniform
+              min: -0.12
+              max: -0.055
+            cycles: [2.0, 0.0]
+            phase:
+              sample: uniform
+              min: -0.8
+              max: 0.8
+          - amplitude:
+              sample: uniform
+              min: -0.055
+              max: 0.015
+            cycles: [0.0, 3.0]
+            phase:
+              sample: uniform
+              min: -0.8
+              max: 0.8
+  v:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 0.10
+          max: 0.14
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.02
+              max: 0.05
+            cycles: [2.0, 0.0]
+            phase:
+              sample: uniform
+              min: -0.8
+              max: 0.8
+          - amplitude:
+              sample: uniform
+              min: 0.0
+              max: 0.025
+            cycles: [0.0, 3.0]
+            phase:
+              sample: uniform
+              min: -0.8
+              max: 0.8
+boundary_conditions:
+  u:
+    inlet:
+      - operator: dirichlet
+        value: 1.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+  v:
+    inlet:
+      - operator: dirichlet
+        value: "param:inlet_v_drive"
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+output:
+  $ref: output.template.scalar_uv
+  formats: [numpy, gif]
+  resolution: [192, 160]
+  num_frames: 64
+seed: 4380

@@ -2,28 +2,24 @@ preset: gray_scott
 parameters:
   Du:
     sample: uniform
-    min: 1.6e-05
-    max: 2.4e-05
+    min: 1.8e-05
+    max: 2.6e-05
   Dv:
     sample: uniform
     min: 1.4e-05
-    max: 2.8e-05
+    max: 2.9e-05
   F:
     sample: uniform
     min: 0.013
-    max: 0.017
+    max: 0.016
   k:
     sample: uniform
-    min: 0.052
-    max: 0.056
-  domain_size_x:
+    min: 0.044
+    max: 0.048
+  inlet_v_drive:
     sample: uniform
-    min: 2.45
-    max: 2.85
-  domain_size_y:
-    sample: uniform
-    min: 2.35
-    max: 2.75
+    min: 0.055
+    max: 0.11
 coefficients:
   velocity:
     components:
@@ -32,23 +28,41 @@ coefficients:
         params:
           value:
             sample: uniform
-            min: 0.0015
-            max: 0.0035
+            min: -0.0018
+            max: -0.0006
       y:
         type: constant
         params:
           value:
             sample: uniform
-            min: -0.0012
-            max: 0.0012
+            min: -0.0005
+            max: 0.0005
 domain:
   allow_sampling: true
-  type: rectangle
-  size: ["param:domain_size_x", "param:domain_size_y"]
-  mesh_resolution: [144, 144]
+  type: serpentine_channel
+  channel_length:
+    sample: uniform
+    min: 2.85
+    max: 3.35
+  lane_spacing:
+    sample: uniform
+    min: 0.78
+    max: 0.98
+  n_bends:
+    sample: randint
+    min: 3
+    max: 4
+  channel_width:
+    sample: uniform
+    min: 0.64
+    max: 0.82
+  mesh_size:
+    sample: uniform
+    min: 0.012
+    max: 0.016
 time:
-  dt: 0.5
-  t_end: 850.0
+  dt: 0.4
+  t_end: 640.0
 inputs:
   u:
     initial_condition:
@@ -56,32 +70,32 @@ inputs:
       params:
         background:
           sample: uniform
-          min: 0.96
-          max: 1.02
+          min: 0.94
+          max: 1.0
         generators:
           - count:
               sample: randint
-              min: 3
-              max: 5
+              min: 4
+              max: 7
             amplitude:
               sample: uniform
-              min: -0.36
-              max: -0.18
+              min: -0.28
+              max: -0.12
             sigma:
               sample: uniform
-              min: 0.06
-              max: 0.12
+              min: 0.045
+              max: 0.09
             aspect_ratio:
               sample: uniform
               min: 1.0
-              max: 2.6
+              max: 2.8
             center:
               - sample: uniform
-                min: 0.45
-                max: 2.05
+                min: 0.25
+                max: 3.0
               - sample: uniform
-                min: 0.45
-                max: 2.05
+                min: -0.25
+                max: 2.8
   v:
     initial_condition:
       type: gaussian_blobs
@@ -93,37 +107,53 @@ inputs:
         generators:
           - count:
               sample: randint
-              min: 3
-              max: 5
+              min: 4
+              max: 7
             amplitude:
               sample: uniform
-              min: 0.045
-              max: 0.115
+              min: 0.07
+              max: 0.16
             sigma:
               sample: uniform
-              min: 0.055
+              min: 0.05
               max: 0.11
             aspect_ratio:
               sample: uniform
               min: 1.0
-              max: 2.4
+              max: 2.8
             center:
               - sample: uniform
-                min: 0.45
-                max: 2.05
+                min: 0.25
+                max: 3.0
               - sample: uniform
-                min: 0.45
-                max: 2.05
+                min: -0.25
+                max: 2.8
 boundary_conditions:
   u:
-    $ref: boundary_field.scalar.full_periodic_2d
+    inlet:
+      - operator: dirichlet
+        value: 1.0
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
   v:
-    $ref: boundary_field.scalar.full_periodic_2d
+    inlet:
+      - operator: dirichlet
+        value: "param:inlet_v_drive"
+    outlet:
+      - operator: neumann
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
 solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 output:
   $ref: output.template.scalar_uv
   formats: [numpy, gif]
-  resolution: [144, 144]
-  num_frames: 64
-seed: 4200
+  resolution: [192, 160]
+  num_frames: 72
+seed: 4390

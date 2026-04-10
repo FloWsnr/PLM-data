@@ -2,53 +2,62 @@ preset: gray_scott
 parameters:
   Du:
     sample: uniform
-    min: 1.6e-05
-    max: 2.4e-05
+    min: 1.7e-05
+    max: 2.5e-05
   Dv:
     sample: uniform
     min: 1.4e-05
-    max: 2.8e-05
+    max: 2.9e-05
   F:
     sample: uniform
     min: 0.013
-    max: 0.017
+    max: 0.016
   k:
     sample: uniform
     min: 0.052
     max: 0.056
-  domain_size_x:
+  rim_exchange:
     sample: uniform
-    min: 2.45
-    max: 2.85
-  domain_size_y:
-    sample: uniform
-    min: 2.35
-    max: 2.75
+    min: 0.2
+    max: 0.55
 coefficients:
   velocity:
     components:
       x:
-        type: constant
+        type: affine
         params:
-          value:
+          y:
             sample: uniform
-            min: 0.0015
-            max: 0.0035
+            min: -0.0016
+            max: -0.0006
       y:
-        type: constant
+        type: affine
         params:
-          value:
+          x:
             sample: uniform
-            min: -0.0012
-            max: 0.0012
+            min: 0.0006
+            max: 0.0016
 domain:
   allow_sampling: true
-  type: rectangle
-  size: ["param:domain_size_x", "param:domain_size_y"]
-  mesh_resolution: [144, 144]
+  type: disk
+  center:
+    - sample: uniform
+      min: -0.035
+      max: 0.035
+    - sample: uniform
+      min: -0.035
+      max: 0.035
+  radius:
+    sample: uniform
+    min: 1.14
+    max: 1.28
+  mesh_size:
+    sample: uniform
+    min: 0.015
+    max: 0.018
 time:
-  dt: 0.5
-  t_end: 850.0
+  dt: 0.25
+  t_end: 520.0
 inputs:
   u:
     initial_condition:
@@ -61,27 +70,27 @@ inputs:
         generators:
           - count:
               sample: randint
-              min: 3
-              max: 5
+              min: 4
+              max: 7
             amplitude:
               sample: uniform
-              min: -0.36
-              max: -0.18
+              min: -0.42
+              max: -0.22
             sigma:
               sample: uniform
-              min: 0.06
+              min: 0.055
               max: 0.12
             aspect_ratio:
               sample: uniform
               min: 1.0
-              max: 2.6
+              max: 2.8
             center:
               - sample: uniform
-                min: 0.45
-                max: 2.05
+                min: -0.78
+                max: 0.78
               - sample: uniform
-                min: 0.45
-                max: 2.05
+                min: -0.78
+                max: 0.78
   v:
     initial_condition:
       type: gaussian_blobs
@@ -93,37 +102,41 @@ inputs:
         generators:
           - count:
               sample: randint
-              min: 3
-              max: 5
+              min: 4
+              max: 7
             amplitude:
               sample: uniform
-              min: 0.045
-              max: 0.115
+              min: 0.10
+              max: 0.22
             sigma:
               sample: uniform
-              min: 0.055
+              min: 0.05
               max: 0.11
             aspect_ratio:
               sample: uniform
               min: 1.0
-              max: 2.4
+              max: 2.8
             center:
               - sample: uniform
-                min: 0.45
-                max: 2.05
+                min: -0.78
+                max: 0.78
               - sample: uniform
-                min: 0.45
-                max: 2.05
+                min: -0.78
+                max: 0.78
 boundary_conditions:
   u:
-    $ref: boundary_field.scalar.full_periodic_2d
+    outer:
+      - operator: neumann
+        value: 0.0
   v:
-    $ref: boundary_field.scalar.full_periodic_2d
+    outer:
+      - operator: neumann
+        value: 0.0
 solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 output:
   $ref: output.template.scalar_uv
   formats: [numpy, gif]
-  resolution: [144, 144]
-  num_frames: 64
-seed: 4200
+  resolution: [160, 160]
+  num_frames: 72
+seed: 4290
