@@ -1,0 +1,98 @@
+preset: burgers
+parameters:
+  nu:
+    sample: uniform
+    min: 0.004
+    max: 0.008
+  rim_spin:
+    sample: uniform
+    min: 0.55
+    max: 1.05
+domain:
+  type: annulus
+  allow_sampling: true
+  center:
+  - sample: uniform
+    min: -0.025
+    max: 0.025
+  - sample: uniform
+    min: -0.025
+    max: 0.025
+  inner_radius:
+    sample: uniform
+    min: 0.18
+    max: 0.28
+  outer_radius:
+    sample: uniform
+    min: 0.95
+    max: 1.06
+  mesh_size:
+    sample: uniform
+    min: 0.014
+    max: 0.018
+time:
+  dt: 0.0035
+  t_end: 0.82
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: radial_cosine
+          params:
+            base: 0.0
+            amplitude:
+              sample: uniform
+              min: 0.55
+              max: 0.95
+            frequency:
+              sample: uniform
+              min: 8.0
+              max: 13.0
+            center: [0.0, 0.0]
+        y:
+          type: radial_cosine
+          params:
+            base: 0.0
+            amplitude:
+              sample: uniform
+              min: -0.95
+              max: -0.55
+            frequency:
+              sample: uniform
+              min: 8.0
+              max: 13.0
+            center: [0.0, 0.0]
+boundary_conditions:
+  velocity:
+    inner:
+    - operator: dirichlet
+      value:
+        components:
+          x:
+            type: affine
+            params:
+              y: "param:rim_spin"
+          y:
+            type: affine
+            params:
+              x:
+                sample: uniform
+                min: -1.05
+                max: -0.55
+    outer:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct_bt
+output:
+  resolution: [144, 144]
+  num_frames: 43
+  formats: [numpy, gif]
+  fields:
+    velocity:
+      mode: components
+seed: 42

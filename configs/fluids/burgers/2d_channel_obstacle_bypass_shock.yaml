@@ -1,0 +1,125 @@
+preset: burgers
+parameters:
+  nu:
+    sample: uniform
+    min: 0.0025
+    max: 0.0055
+domain:
+  type: channel_obstacle
+  allow_sampling: true
+  length:
+    sample: uniform
+    min: 2.25
+    max: 2.55
+  height:
+    sample: uniform
+    min: 1.1
+    max: 1.28
+  obstacle_center:
+  - sample: uniform
+    min: 0.88
+    max: 1.12
+  - sample: uniform
+    min: 0.48
+    max: 0.72
+  obstacle_radius:
+    sample: uniform
+    min: 0.16
+    max: 0.22
+  mesh_size:
+    sample: uniform
+    min: 0.013
+    max: 0.018
+time:
+  dt: 0.003
+  t_end: 0.68
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: step
+          params:
+            value_left:
+              sample: uniform
+              min: 0.9
+              max: 1.25
+            value_right:
+              sample: uniform
+              min: 0.15
+              max: 0.45
+            x_split:
+              sample: uniform
+              min: 0.6
+              max: 0.9
+            axis: 0
+        y:
+          type: gaussian_blobs
+          params:
+            background: 0.0
+            generators:
+            - count:
+                sample: randint
+                min: 2
+                max: 4
+              amplitude:
+                sample: uniform
+                min: -0.65
+                max: 0.65
+              sigma:
+                sample: uniform
+                min: 0.08
+                max: 0.14
+              center:
+              - sample: uniform
+                min: 0.25
+                max: 1.35
+              - sample: uniform
+                min: 0.18
+                max: 0.92
+              aspect_ratio:
+                sample: uniform
+                min: 1.2
+                max: 3.0
+boundary_conditions:
+  velocity:
+    inlet:
+    - operator: dirichlet
+      value:
+        components:
+          x:
+            type: constant
+            params:
+              value:
+                sample: uniform
+                min: 0.75
+                max: 1.15
+          y:
+            type: constant
+            params:
+              value:
+                sample: uniform
+                min: -0.12
+                max: 0.12
+    outlet:
+    - operator: neumann
+      value: [0.0, 0.0]
+    walls:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+    obstacle:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct_bt
+output:
+  resolution: [144, 144]
+  num_frames: 41
+  formats: [numpy, gif]
+  fields:
+    velocity:
+      mode: components
+seed: 42
