@@ -36,8 +36,8 @@ Do not install `dolfinx_mpc` in the complex environment — no complex builds ex
 ## Architecture
 
 - **Presets** (`plm_data/presets/`) — Each PDE is a `PDEPreset` with a `PresetSpec` and a `build_problem(config)` factory. Specs now separate config-facing `coefficients` and `inputs`, boundary-condition fields/operators, solved `states`, selectable `outputs`, and explicit `static_fields` that are excluded from post-run stagnation warnings.
-- **Problem engines** (`plm_data/presets/base.py`) — Reusable runtime engines cover stationary linear, transient linear, transient nonlinear, and custom problems. Presets still own the formulation details and use shared runtime loops where that helps.
-- **Config** (`configs/`) — YAML uses explicit top-level `coefficients:`, `inputs:`, `boundary_conditions:`, and `output:` sections. Coefficients are preset-declared field expressions used directly in variational forms. Inputs configure sources and initial conditions; `boundary_conditions` configures each preset boundary field; `output.fields` selects which declared outputs to save and how to expand them. Time-dependent presets use a `time:` section; output resolution lives under `output.resolution`. The output root directory is chosen at the CLI with `--output-dir`; single runs clean and write into `<output-dir>/<category>/<preset>`, while batch runs use `--n-runs N` and write into `<output-dir>/<category>/<preset>/seed_<seed>`, incrementing from the config seed. `load_config()` is declarative and keeps sampler specs intact; `realize_simulation_config()` turns one config plus one seed into the concrete runtime values used for a solve. Periodic constraints are activated with boundary `periodic` operators and resolved against built-in or custom `domain.periodic_maps`. Shared scalar Robin is supported; vector boundaries use shared Dirichlet/Neumann or preset-specific types such as Maxwell `absorbing`, while generic vector Robin remains intentionally unsupported.
+- **Problem engines** (`plm_data/presets/base.py`) — Reusable runtime engines cover transient linear, transient nonlinear, and custom problems. Presets still own the formulation details and use shared runtime loops where that helps.
+- **Config** (`configs/`) — YAML uses explicit top-level `coefficients:`, `inputs:`, `boundary_conditions:`, and `output:` sections. Coefficients are preset-declared field expressions used directly in variational forms. Inputs configure sources and initial conditions; `boundary_conditions` configures each preset boundary field; `output.fields` selects which declared outputs to save and how to expand them. Presets use a `time:` section; output resolution lives under `output.resolution`. The output root directory is chosen at the CLI with `--output-dir`; single runs clean and write into `<output-dir>/<category>/<preset>`, while batch runs use `--n-runs N` and write into `<output-dir>/<category>/<preset>/seed_<seed>`, incrementing from the config seed. `load_config()` is declarative and keeps sampler specs intact; `realize_simulation_config()` turns one config plus one seed into the concrete runtime values used for a solve. Periodic constraints are activated with boundary `periodic` operators and resolved against built-in or custom `domain.periodic_maps`. Shared scalar Robin is supported; vector boundaries use shared Dirichlet/Neumann or preset-specific types such as Maxwell `absorbing`, while generic vector Robin remains intentionally unsupported.
 - **Domains** (`plm_data/core/mesh.py`) — Domain creation is registry-backed. The current repo ships `interval`, `rectangle`, `box`, `disk`, `dumbbell`, `parallelogram`, `channel_obstacle`, `y_bifurcation`, `venturi_channel`, `porous_channel`, `serpentine_channel`, `l_shape`, `airfoil_channel`, and `annulus`. The Gmsh-backed domains (`disk`, `dumbbell`, `channel_obstacle`, `y_bifurcation`, `venturi_channel`, `porous_channel`, `serpentine_channel`, `l_shape`, `airfoil_channel`, `annulus`) require `python-gmsh`.
 - **Output** (`plm_data/core/output.py`) — `FrameWriter` validates requested outputs against the preset spec, expands vector outputs into components for grid formats, and writes post-run stagnation diagnostics to `frames_meta.json`, skipping outputs listed in `static_fields`.
 
@@ -47,13 +47,13 @@ Use the `run.sh` wrapper script, which activates the `fenicsx-env` conda environ
 
 ```bash
 # Run a simulation (single core)
-./run.sh run configs/basic/poisson/2d_sinusoidal_source_response.yaml --output-dir ./output
+./run.sh run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
 
 # Run a simulation on 4 pinned physical cores
-./run.sh -n 4 run configs/basic/poisson/2d_sinusoidal_source_response.yaml --output-dir ./output
+./run.sh -n 4 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
 
 # Run the same config many times with incrementing seeds from the YAML config
-./run.sh -n 4 run configs/basic/poisson/2d_sinusoidal_source_response.yaml --output-dir ./output --n-runs 100
+./run.sh -n 4 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output --n-runs 100
 
 # List available presets
 ./run.sh list
@@ -62,11 +62,11 @@ Use the `run.sh` wrapper script, which activates the `fenicsx-env` conda environ
 ./run.sh gallery ./output
 
 # Use a different conda environment if needed
-PLM_CONDA_ENV=fenicsx-env-complex ./run.sh run configs/basic/poisson/2d_sinusoidal_source_response.yaml --output-dir ./output
+PLM_CONDA_ENV=fenicsx-env-complex ./run.sh run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
 
 # Reserve physical cores 0-3 for one simulation and 4-7 for another
-./run.sh -n 4 --core-list 0-3 run configs/basic/poisson/2d_sinusoidal_source_response.yaml --output-dir ./output
-./run.sh -n 4 --core-list 4-7 run configs/basic/poisson/2d_sinusoidal_source_response.yaml --output-dir ./output
+./run.sh -n 4 --core-list 0-3 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
+./run.sh -n 4 --core-list 4-7 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
 ```
 
 `-n` now means "use N physical cores" rather than "use N MPI ranks plus extra OpenMP threads". The wrapper forces threaded math backends to one thread and pins MPI ranks to physical cores. When you want multiple simulations to coexist on the same machine without fighting over the same cores, pass `--core-list` with physical core ids from `lscpu -e=CPU,CORE`.
@@ -77,9 +77,9 @@ The gallery command scans recursively for `.gif` files, groups them by output
 directory, and writes `pde_gif_gallery.html` into the scanned directory by
 default. Use `--output` to choose a different HTML path.
 
-Both `maxwell_pulse` and the time-harmonic `maxwell` preset run in the standard
-real-valued build. The `PLM_CONDA_ENV` override remains available if you want to
-activate a different environment explicitly.
+`maxwell_pulse` runs in the standard real-valued build. The `PLM_CONDA_ENV`
+override remains available if you want to activate a different environment
+explicitly.
 
 ## Adding a new PDE
 

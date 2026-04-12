@@ -119,7 +119,6 @@ _KLAUSMEIER_TOPOGRAPHY_SPEC = PresetSpec(
         ),
     },
     static_fields=["topography"],
-    steady_state=False,
     supported_dimensions=[2, 3],
     coefficients={
         "topography": CoefficientSpec(

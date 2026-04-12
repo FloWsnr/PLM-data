@@ -45,9 +45,8 @@ def cmd_list(_args):
     for category, specs in sorted(by_category.items()):
         print(f"\n{category}:")
         for spec in specs:
-            state = "steady" if spec.steady_state else "transient"
             dims = ", ".join(str(d) + "D" for d in spec.supported_dimensions)
-            print(f"  {spec.name:20s}  [{state}, {dims}]  {spec.description}")
+            print(f"  {spec.name:20s}  [{dims}]  {spec.description}")
 
 
 def cmd_gallery(args):

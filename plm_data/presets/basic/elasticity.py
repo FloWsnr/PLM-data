@@ -110,7 +110,6 @@ _ELASTICITY_SPEC = PresetSpec(
         ),
     },
     static_fields=[],
-    steady_state=False,
     supported_dimensions=[2, 3],
 )
 

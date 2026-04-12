@@ -79,12 +79,12 @@ def _scalar_heat_config(tmp_path, formats):
     )
 
 
-def _vector_stokes_config(tmp_path, formats):
-    """Build a Stokes config (velocity vector + pressure scalar)."""
+def _vector_navier_stokes_config(tmp_path, formats):
+    """Build a Navier-Stokes config (velocity vector + pressure scalar)."""
 
     return SimulationConfig(
-        preset="stokes",
-        parameters={"nu": 1.0},
+        preset="navier_stokes",
+        parameters={"Re": 25.0, "k": 1.0},
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
@@ -92,6 +92,21 @@ def _vector_stokes_config(tmp_path, formats):
         inputs={
             "velocity": InputConfig(
                 source=scalar_expr("none"),
+                initial_condition=FieldExpressionConfig(
+                    components={
+                        "x": FieldExpressionConfig(
+                            type="gaussian_bump",
+                            params={
+                                "amplitude": 0.5,
+                                "sigma": 0.15,
+                                "center": [0.5, 0.5],
+                            },
+                        ),
+                        "y": FieldExpressionConfig(
+                            type="constant", params={"value": 0.0}
+                        ),
+                    }
+                ),
             )
         },
         boundary_conditions={
@@ -112,6 +127,7 @@ def _vector_stokes_config(tmp_path, formats):
             fields=output_fields(velocity="components", pressure="scalar"),
         ),
         solver=flow_solver_config(),
+        time=TimeConfig(dt=0.01, t_end=0.01),
         seed=42,
     )
 
@@ -240,11 +256,11 @@ class TestNumpyWriter:
             writer.write_frame({"u": func}, t=0.0)
 
     def test_vector_components_output(self, tmp_path):
-        config = _vector_stokes_config(tmp_path, formats=["numpy"])
+        config = _vector_navier_stokes_config(tmp_path, formats=["numpy"])
         output_dir = tmp_path / "out"
-        spec = get_preset("stokes").spec
+        spec = get_preset("navier_stokes").spec
 
-        preset = get_preset("stokes")
+        preset = get_preset("navier_stokes")
         problem = preset.build_problem(config)
         writer = FrameWriter(output_dir, config, spec)
         problem.run(writer)
@@ -306,11 +322,11 @@ class TestGifWriter:
         assert not (output_dir / "u.npy").exists()
 
     def test_vector_components_output(self, tmp_path):
-        config = _vector_stokes_config(tmp_path, formats=["gif"])
+        config = _vector_navier_stokes_config(tmp_path, formats=["gif"])
         output_dir = tmp_path / "out"
-        spec = get_preset("stokes").spec
+        spec = get_preset("navier_stokes").spec
 
-        preset = get_preset("stokes")
+        preset = get_preset("navier_stokes")
         problem = preset.build_problem(config)
         writer = FrameWriter(output_dir, config, spec)
         problem.run(writer)
@@ -363,11 +379,11 @@ class TestVTKWriter:
         assert any(path.suffix in {".vtu", ".pvtu"} for path in paraview_dir.iterdir())
 
     def test_mixed_element_outputs_use_separate_series(self, tmp_path):
-        config = _vector_stokes_config(tmp_path, formats=["vtk"])
+        config = _vector_navier_stokes_config(tmp_path, formats=["vtk"])
         output_dir = tmp_path / "out"
-        spec = get_preset("stokes").spec
+        spec = get_preset("navier_stokes").spec
 
-        preset = get_preset("stokes")
+        preset = get_preset("navier_stokes")
         problem = preset.build_problem(config)
         writer = FrameWriter(output_dir, config, spec)
         problem.run(writer)
@@ -400,11 +416,11 @@ class TestVideoWriter:
         assert video_path.stat().st_size > 0
 
     def test_vector_components_output(self, tmp_path):
-        config = _vector_stokes_config(tmp_path, formats=["video"])
+        config = _vector_navier_stokes_config(tmp_path, formats=["video"])
         output_dir = tmp_path / "out"
-        spec = get_preset("stokes").spec
+        spec = get_preset("navier_stokes").spec
 
-        preset = get_preset("stokes")
+        preset = get_preset("navier_stokes")
         problem = preset.build_problem(config)
         writer = FrameWriter(output_dir, config, spec)
         problem.run(writer)

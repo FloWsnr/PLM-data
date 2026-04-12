@@ -1,15 +1,11 @@
 """Solver strategy identifiers and shared classification helpers."""
 
-STATIONARY_SCALAR_SPD = "stationary_scalar_spd"
 CONSTANT_LHS_SCALAR_SPD = "constant_lhs_scalar_spd"
 CONSTANT_LHS_SCALAR_NONSYMMETRIC = "constant_lhs_scalar_nonsymmetric"
-STEADY_SADDLE_POINT = "steady_saddle_point"
 TRANSIENT_SADDLE_POINT = "transient_saddle_point"
-STEADY_MIXED_DIRECT = "steady_mixed_direct"
 TRANSIENT_MIXED_DIRECT = "transient_mixed_direct"
 NONLINEAR_MIXED_DIRECT = "nonlinear_mixed_direct"
 TRANSIENT_EXPLICIT = "transient_explicit"
-STATIONARY_INDEFINITE_DIRECT = "stationary_indefinite_direct"
 CONSTANT_LHS_CURL_DIRECT = "constant_lhs_curl_direct"
 CONSTANT_LHS_BLOCK_DIRECT = "constant_lhs_block_direct"
 
@@ -21,21 +17,16 @@ CONSTANT_LHS_STRATEGIES = {
 }
 
 NESTED_MIXED_STRATEGIES = {
-    STEADY_SADDLE_POINT,
     TRANSIENT_SADDLE_POINT,
 }
 
 ALL_SOLVER_STRATEGIES = {
-    STATIONARY_SCALAR_SPD,
     CONSTANT_LHS_SCALAR_SPD,
     CONSTANT_LHS_SCALAR_NONSYMMETRIC,
-    STEADY_SADDLE_POINT,
     TRANSIENT_SADDLE_POINT,
-    STEADY_MIXED_DIRECT,
     TRANSIENT_MIXED_DIRECT,
     NONLINEAR_MIXED_DIRECT,
     TRANSIENT_EXPLICIT,
-    STATIONARY_INDEFINITE_DIRECT,
     CONSTANT_LHS_CURL_DIRECT,
     CONSTANT_LHS_BLOCK_DIRECT,
 }

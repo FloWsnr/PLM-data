@@ -83,7 +83,6 @@ def build_scalar_reaction_diffusion_spec(
             )
         },
         static_fields=[],
-        steady_state=False,
         supported_dimensions=[2, 3],
         coefficients={
             "velocity": CoefficientSpec(

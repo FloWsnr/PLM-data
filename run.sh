@@ -11,9 +11,9 @@ Wrapper options:
   -h, --help         Show this help
 
 Examples:
-  ./run.sh run configs/basic/poisson/2d_sinusoidal_source_response.yaml --output-dir ./output
-  ./run.sh -n 4 run configs/basic/poisson/2d_sinusoidal_source_response.yaml --output-dir ./output
-  ./run.sh -n 4 --core-list 0-3 run configs/basic/poisson/2d_sinusoidal_source_response.yaml --output-dir ./output
+  ./run.sh run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
+  ./run.sh -n 4 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
+  ./run.sh -n 4 --core-list 0-3 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
 EOF
 }
 
@@ -89,7 +89,7 @@ taskset_cpu_list_for_core_list() {
 
 # Activate conda environment.
 # Override with PLM_CONDA_ENV to use a non-default environment, e.g.:
-#   PLM_CONDA_ENV=fenicsx-env-complex ./run.sh -n 4 run configs/basic/poisson/2d_sinusoidal_source_response.yaml --output-dir ./output
+#   PLM_CONDA_ENV=fenicsx-env-complex ./run.sh -n 4 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
 eval "$(conda shell.bash hook)"
 conda activate "${PLM_CONDA_ENV:-fenicsx-env}"
 

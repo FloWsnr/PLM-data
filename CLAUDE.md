@@ -34,7 +34,7 @@ Tests run via `python -m pytest tests/`. pytest is configured to use 4 parallel 
 ## Conda Environments
 
 Two conda environments exist:
-- `fenicsx-env` — real-valued PETSc (default). Used by the shipped presets, including `maxwell` and `compressible_euler`.
+- `fenicsx-env` — real-valued PETSc (default). Used by the shipped presets, including `maxwell_pulse` and `compressible_euler`.
 - `fenicsx-env-complex` — complex-valued PETSc (`petsc=*=complex*`). Optional for separate experiments. Does not have `dolfinx_mpc`.
 
 Override the environment via `PLM_CONDA_ENV`:
@@ -49,8 +49,8 @@ The system has three layers:
 1. **Presets** (`plm_data/presets/`) — Each PDE is a self-contained class registered via `@register_preset("name")`. Presets expose:
    - `spec` — a `PresetSpec` describing parameters, config-facing coefficients/inputs, boundary-condition fields/operators, solved states, selectable outputs, `static_fields` excluded from stagnation warnings, and supported dimensions
    - `build_problem(config)` — returns a runtime problem object for one of the shared engines or for the custom escape hatch
-   Common solver families live in `plm_data/presets/base.py` as `StationaryLinearProblem`, `TransientLinearProblem`, `TransientNonlinearProblem`, and `CustomProblem`.
-   Family-specific helpers can live alongside presets when multiple presets share a discretization; for example, `plm_data/presets/fluids/_taylor_hood.py` is the shared Stokes / Navier-Stokes incompressible-flow helper.
+   Common solver families live in `plm_data/presets/base.py` as `TransientLinearProblem`, `TransientNonlinearProblem`, and `CustomProblem`.
+   Family-specific helpers can live alongside presets when multiple presets share a discretization; for example, `plm_data/presets/fluids/_taylor_hood.py` is the shared Navier-Stokes incompressible-flow helper.
 
 2. **Core** (`plm_data/core/`) — Shared infrastructure:
    - `config.py` — `SimulationConfig` dataclass loaded from YAML. `load_config()` is declarative: it parses and validates sampler specs, parameter references, and the preset schema, but it does not turn sampled values into concrete runtime numbers. The schema uses explicit top-level `coefficients`, `inputs`, `boundary_conditions`, and `output` sections. Coefficients are preset-declared field expressions used directly in forms; inputs own `source` and `initial_condition`; boundary conditions are declared separately per preset boundary field; `output.fields` selects which declared outputs are saved. Transient presets use a `time:` section. Output resolution lives under `output.resolution`, while the output root directory is provided at runtime via `--output-dir`. Single runs overwrite that preset directory after an initial cleanup; `--n-runs` uses the config seed as the base seed and writes each run into `seed_<seed>` subdirectories below the preset directory. Domains may declare extra `periodic_maps`, while built-in domains provide the standard face-pair maps used by periodic boundary operators.

@@ -13,9 +13,6 @@ from plm_data.core.solver_strategies import (
     CONSTANT_LHS_SCALAR_NONSYMMETRIC,
     CONSTANT_LHS_SCALAR_SPD,
     NONLINEAR_MIXED_DIRECT,
-    STATIONARY_INDEFINITE_DIRECT,
-    STATIONARY_SCALAR_SPD,
-    STEADY_SADDLE_POINT,
     TRANSIENT_EXPLICIT,
     TRANSIENT_MIXED_DIRECT,
     TRANSIENT_SADDLE_POINT,
@@ -257,12 +254,12 @@ def test_load_config_rejects_invalid_multi_hole_plate_geometry(tmp_path):
 
 
 def test_load_config_boundary_field_sections():
-    cfg = load_config("configs/basic/poisson/2d_sinusoidal_source_response.yaml")
+    cfg = load_config("configs/basic/heat/2d_localized_blob_diffusion.yaml")
     u_boundary = cfg.boundary_field("u")
     assert set(u_boundary.sides) == {"x-", "x+", "y-", "y+"}
-    assert cfg.input("u").source.type == "sine_waves"
+    assert cfg.input("u").source.type == "none"
     assert cfg.output_mode("u") == "scalar"
-    assert cfg.solver.strategy == STATIONARY_SCALAR_SPD
+    assert cfg.solver.strategy == CONSTANT_LHS_SCALAR_SPD
 
 
 def test_load_config_vector_input():
@@ -844,17 +841,6 @@ def test_load_config_burgers_3d():
     assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
 
 
-def test_load_config_maxwell():
-    cfg = load_config("configs/physics/maxwell/2d_localized_em_radiation.yaml")
-    electric_field = cfg.input("electric_field")
-    boundary_field = cfg.boundary_field("electric_field")
-    assert cfg.output_mode("electric_field_real") == "components"
-    assert cfg.output_mode("electric_field_imag") == "components"
-    assert electric_field.source.components["x"].type == "gaussian_bump"
-    assert boundary_field.side_conditions("x-")[0].type == "absorbing"
-    assert cfg.solver.strategy == STATIONARY_INDEFINITE_DIRECT
-
-
 def test_load_config_maxwell_pulse():
     cfg = load_config("configs/physics/maxwell_pulse/2d_guided_em_pulse.yaml")
     electric_field = cfg.input("electric_field")
@@ -1036,35 +1022,44 @@ def test_load_config_elasticity_3d():
 def _base_yaml_dict():
     """Return a minimal valid config dict with all required top-level fields."""
     return {
-        "preset": "poisson",
-        "parameters": {"kappa": 1.0, "f_amplitude": 1.0},
+        "preset": "heat",
+        "parameters": {},
+        "coefficients": {
+            "kappa": {"type": "constant", "params": {"value": 0.01}},
+        },
         "domain": {
             "type": "rectangle",
             "size": [1.0, 1.0],
             "mesh_resolution": [4, 4],
         },
+        "time": {"dt": 0.01, "t_end": 0.01},
         "inputs": {
             "u": {
                 "source": {"type": "none", "params": {}},
+                "initial_condition": {
+                    "type": "constant",
+                    "params": {"value": 0.0},
+                },
             },
         },
         "boundary_conditions": {
             "u": {
-                "x-": [{"operator": "dirichlet", "value": 0.0}],
-                "x+": [{"operator": "dirichlet", "value": 0.0}],
-                "y-": [{"operator": "dirichlet", "value": 0.0}],
-                "y+": [{"operator": "dirichlet", "value": 0.0}],
+                "x-": [{"operator": "neumann", "value": 0.0}],
+                "x+": [{"operator": "neumann", "value": 0.0}],
+                "y-": [{"operator": "neumann", "value": 0.0}],
+                "y+": [{"operator": "neumann", "value": 0.0}],
             }
         },
         "output": {
             "resolution": [8, 8],
-            "num_frames": 1,
+            "num_frames": 2,
             "formats": ["numpy"],
             "fields": {"u": "scalar"},
         },
         "solver": {
-            **_solver_block(STATIONARY_SCALAR_SPD),
+            **_solver_block(CONSTANT_LHS_SCALAR_SPD),
         },
+        "seed": 42,
     }
 
 
@@ -1111,10 +1106,10 @@ def _base_heat_yaml_dict():
     }
 
 
-def _base_stokes_yaml_dict():
+def _base_navier_stokes_yaml_dict():
     return {
-        "preset": "stokes",
-        "parameters": {"nu": 1.0},
+        "preset": "navier_stokes",
+        "parameters": {"Re": 25.0, "k": 1.0},
         "domain": {
             "type": "rectangle",
             "size": [1.0, 1.0],
@@ -1123,6 +1118,7 @@ def _base_stokes_yaml_dict():
         "inputs": {
             "velocity": {
                 "source": {"type": "none", "params": {}},
+                "initial_condition": [0.0, 0.0],
             },
         },
         "boundary_conditions": {
@@ -1140,8 +1136,9 @@ def _base_stokes_yaml_dict():
             "fields": {"velocity": "components", "pressure": "scalar"},
         },
         "solver": {
-            **_solver_block(STEADY_SADDLE_POINT),
+            **_solver_block(TRANSIENT_SADDLE_POINT),
         },
+        "time": {"dt": 0.01, "t_end": 0.01},
     }
 
 
@@ -1338,14 +1335,14 @@ def test_parse_domain_periodic_map(tmp_path):
 
 
 def test_load_config_vector_neumann_bc(tmp_path):
-    data = _base_stokes_yaml_dict()
+    data = _base_navier_stokes_yaml_dict()
     data["boundary_conditions"]["velocity"]["x-"] = [
         {
             "operator": "neumann",
             "value": [1.0, 0.0],
         }
     ]
-    p = _write_yaml(tmp_path, "stokes_vector_neumann.yaml", data)
+    p = _write_yaml(tmp_path, "navier_stokes_vector_neumann.yaml", data)
 
     cfg = load_config(p)
     bc = cfg.boundary_field("velocity").side_conditions("x-")[0]
@@ -1355,7 +1352,7 @@ def test_load_config_vector_neumann_bc(tmp_path):
 
 
 def test_vector_robin_bc_rejected_at_parse_time(tmp_path):
-    data = _base_stokes_yaml_dict()
+    data = _base_navier_stokes_yaml_dict()
     data["boundary_conditions"]["velocity"]["x-"] = [
         {
             "operator": "robin",
@@ -1363,7 +1360,7 @@ def test_vector_robin_bc_rejected_at_parse_time(tmp_path):
             "operator_parameters": {"alpha": 1.0},
         }
     ]
-    p = _write_yaml(tmp_path, "stokes_vector_robin.yaml", data)
+    p = _write_yaml(tmp_path, "navier_stokes_vector_robin.yaml", data)
 
     with pytest.raises(ValueError, match="unsupported operator"):
         load_config(p)
@@ -1381,12 +1378,12 @@ def test_load_config_vector_absorbing_bc(tmp_path):
 
 def test_load_config_resolves_mapping_fragment_ref(tmp_path):
     data = _base_yaml_dict()
-    data["solver"] = {"$ref": "solver.profile.stationary_scalar_spd"}
+    data["solver"] = {"$ref": "solver.profile.constant_lhs_scalar_spd"}
     p = _write_yaml(tmp_path, "solver_ref.yaml", data)
 
     cfg = load_config(p)
 
-    assert cfg.solver.strategy == STATIONARY_SCALAR_SPD
+    assert cfg.solver.strategy == CONSTANT_LHS_SCALAR_SPD
     assert cfg.solver.serial["pc_type"] == "lu"
     assert cfg.solver.mpi["pc_type"] == "hypre"
 
@@ -1410,7 +1407,7 @@ def test_load_config_resolves_list_and_scalar_fragment_refs(tmp_path):
 def test_load_config_fragment_override_deep_merges_mappings(tmp_path):
     data = _base_yaml_dict()
     data["solver"] = {
-        "$ref": "solver.profile.stationary_scalar_spd",
+        "$ref": "solver.profile.constant_lhs_scalar_spd",
         "mpi": {"ksp_rtol": 1.0e-8},
     }
     p = _write_yaml(tmp_path, "solver_override.yaml", data)

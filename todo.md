@@ -121,12 +121,6 @@ geometry, boundary values, or initial conditions so seed changes are visible.
 29. `3d_localized_blob_diffusion`: one or two hot blobs diffusing in a cube with no-flux walls.
 30. `3d_noisy_media_diffusion`: hot and cold blobs diffusing in noisy 3D media with additive state noise.
 
-#### Helmholtz (`configs/basic/helmholtz`)
-
-1. `2d_disk_localized_oscillatory_response`: localized forcing in a circular cavity producing curved nodal arcs and resonance hot spots.
-2. `2d_localized_oscillatory_response`: localized Gaussian forcing producing a confined oscillatory response.
-3. `3d_standing_wave_response`: volumetric sine forcing producing a box-scale standing-wave response.
-
 #### Plate (`configs/basic/plate`)
 
 All plate configs now use sampled geometry, material, and excitation parameters,
@@ -160,12 +154,6 @@ plate domain has at least two distinct configs.
 25. `2d_venturi_channel_throat_focusing_ringdown`: a throat-centered packet rings between converging walls before expanding into the outlet section.
 26. `2d_y_bifurcation_branch_split_ringdown`: an inlet pulse splits unevenly between the two branches and reflects off sampled branch geometry.
 27. `2d_y_bifurcation_junction_collision_beating`: counter-signed branch excitations collide at the junction and radiate back up the trunk in a short beating transient.
-
-#### Poisson (`configs/basic/poisson`)
-
-1. `2d_disk_sinusoidal_source_response`: static potential field from a sinusoidal source pattern on a disk with a grounded outer rim.
-2. `2d_sinusoidal_source_response`: static potential field from a 2D sinusoidal source pattern.
-3. `3d_sinusoidal_source_response`: static potential field from a 3D sinusoidal source pattern.
 
 #### Schrodinger (`configs/basic/schrodinger`)
 
@@ -508,12 +496,6 @@ domain supports sampling.
 1. `2d_parallelogram_gravity_wave_pulse`: localized free-surface hump radiating gravity waves on a skew parallelogram cell.
 2. `2d_rotating_gravity_wave_pulse`: localized free-surface hump radiating gravity waves with Coriolis deflection.
 
-#### Stokes (`configs/fluids/stokes`)
-
-1. `2d_channel_obstacle_flow`: steady creeping channel flow around a circular obstacle.
-2. `2d_lid_driven_cavity_flow`: steady lid-driven cavity recirculation.
-3. `3d_lid_driven_cavity_flow`: steady 3D lid-driven cavity recirculation.
-
 #### Thermal Convection (`configs/fluids/thermal_convection`)
 
 1. `2d_parallelogram_rayleigh_benard_rolls`: Rayleigh-Benard convection in a skew 2D cell, producing oblique rolls and plumes.
@@ -697,12 +679,6 @@ summaries and visual start/middle/end plus seed-comparison sheets.
 19. `2d_y_bifurcation_branch_collision_chaos`: sampled Y bifurcation with opposing outlet lobe states that collide back toward the junction.
 20. `2d_y_bifurcation_branch_split_chaos`: inlet-forced Y bifurcation where localized chaotic patches split unevenly into the two branches.
 21. `3d_spatial_lorenz_chaos`: 3D spatially extended Lorenz chaos seeded from random initial fields.
-
-#### Maxwell (`configs/physics/maxwell`)
-
-1. `2d_disk_localized_em_radiation`: time-harmonic electromagnetic radiation from a localized source in a circular cavity with absorbing outer wall.
-2. `2d_localized_em_radiation`: time-harmonic electromagnetic radiation from a localized source with absorbing walls.
-3. `3d_localized_em_radiation`: 3D time-harmonic electromagnetic radiation from a localized source with absorbing walls.
 
 #### Maxwell Pulse (`configs/physics/maxwell_pulse`)
 
@@ -915,9 +891,7 @@ periodic-geometry priority is `skew_box`.
 #### Basic
 
 1. `elasticity` -> `2d_l_shape_corner_ringdown`: impulse-driven vibration of an L-bracket, with stronger corner stresses and richer mode coupling than the cantilever and disk cases.
-2. `helmholtz` -> `2d_stadium_cavity_response`: localized forcing inside a stadium should show scar-like hot spots and geometry-dependent resonance structure.
-3. `poisson` -> `2d_l_shape_source_response`: static potential on an L-shape to capture corner singularities and distorted equipotential contours.
-4. `schrodinger` -> `2d_stadium_wavepacket_billiard`: wave packet launched into a stadium cavity for billiard reflections and interference.
+2. `schrodinger` -> `2d_stadium_wavepacket_billiard`: wave packet launched into a stadium cavity for billiard reflections and interference.
 
 #### Biology
 
@@ -929,13 +903,11 @@ periodic-geometry priority is `skew_box`.
 
 1. `darcy` -> `2d_dumbbell_porous_exchange`: pressure-driven porous transport between two reservoirs connected by a thin throat.
 2. `navier_stokes` -> `2d_cylinder_wake_rollup`: the canonical smooth-obstacle wake case, complementing the existing `channel_obstacle` example.
-3. `stokes` -> `2d_creeping_flow_past_cylinder`: steady low-Re cylinder flow as the clean companion to the channel-obstacle case.
-4. `thermal_convection` -> `3d_spherical_shell_convection_cells`: shell convection with plume columns, boundary layers, and curved-cell organization.
+3. `thermal_convection` -> `3d_spherical_shell_convection_cells`: shell convection with plume columns, boundary layers, and curved-cell organization.
 
 #### Physics
 
-1. `maxwell` -> `2d_stadium_cavity_radiation`: time-harmonic EM forcing in a stadium should show geometry-controlled standing-wave scars and hot spots.
-2. `maxwell_pulse` -> `2d_dumbbell_em_pulse_transfer`: launch a pulse in one lobe and watch partial transmission and trapping through the neck.
-3. `superlattice` -> `2d_disk_superlattice_targets`: circular geometry should favor concentric competition between the fast and slow pattern scales.
-4. `swift_hohenberg` -> `2d_eccentric_annulus_roll_pinning`: roll patterns and defects should lock to the broken-symmetry inner obstacle.
+1. `maxwell_pulse` -> `2d_dumbbell_em_pulse_transfer`: launch a pulse in one lobe and watch partial transmission and trapping through the neck.
+2. `superlattice` -> `2d_disk_superlattice_targets`: circular geometry should favor concentric competition between the fast and slow pattern scales.
+3. `swift_hohenberg` -> `2d_eccentric_annulus_roll_pinning`: roll patterns and defects should lock to the broken-symmetry inner obstacle.
 5. `van_der_pol` -> `2d_disk_relaxation_targets`: relaxation oscillations in a disk may form cleaner target-like wave trains than the rectangular and parallelogram cases.

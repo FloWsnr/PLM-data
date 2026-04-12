@@ -31,16 +31,6 @@ solver:
       ksp_error_if_not_converged: 1
     direct_mumps:
       $ref: solver.serial.direct_mumps
-    steady_saddle_point:
-      ksp_type: minres
-      ksp_rtol: 1.0e-9
-      ksp_error_if_not_converged: 1
-      pc_type: fieldsplit
-      pc_fieldsplit_type: additive
-      fieldsplit_velocity_0_ksp_type: preonly
-      fieldsplit_velocity_0_pc_type: gamg
-      fieldsplit_pressure_1_ksp_type: preonly
-      fieldsplit_pressure_1_pc_type: jacobi
     transient_saddle_point:
       ksp_type: gmres
       ksp_rtol: 1.0e-8
@@ -64,12 +54,6 @@ solver:
       mat_mumps_icntl_25: 0
       ksp_error_if_not_converged: 1
   profile:
-    stationary_scalar_spd:
-      strategy: stationary_scalar_spd
-      serial:
-        $ref: solver.serial.lu
-      mpi:
-        $ref: solver.mpi.scalar_spd
     constant_lhs_scalar_spd:
       strategy: constant_lhs_scalar_spd
       serial:
@@ -82,12 +66,6 @@ solver:
         $ref: solver.serial.lu
       mpi:
         $ref: solver.mpi.scalar_nonsymmetric
-    stationary_indefinite_direct:
-      strategy: stationary_indefinite_direct
-      serial:
-        $ref: solver.serial.lu
-      mpi:
-        $ref: solver.mpi.direct_mumps
     constant_lhs_block_direct:
       strategy: constant_lhs_block_direct
       serial:
@@ -106,12 +84,6 @@ solver:
         $ref: solver.serial.direct_mumps
       mpi:
         $ref: solver.mpi.direct_mumps
-    steady_saddle_point:
-      strategy: steady_saddle_point
-      serial:
-        $ref: solver.serial.direct_mumps
-      mpi:
-        $ref: solver.mpi.steady_saddle_point
     transient_saddle_point:
       strategy: transient_saddle_point
       serial:

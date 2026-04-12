@@ -2289,18 +2289,11 @@ def load_config(
         },
     )
 
-    if spec.steady_state:
-        if "time" in raw:
-            raise ValueError(
-                f"Preset '{preset_name}' is steady-state and cannot use 'time'"
-            )
-        time = None
-    else:
-        time_raw = _as_mapping(_require(raw, "time"), "time")
-        time = TimeConfig(
-            dt=float(_require(time_raw, "dt", "time")),
-            t_end=float(_require(time_raw, "t_end", "time")),
-        )
+    time_raw = _as_mapping(_require(raw, "time"), "time")
+    time = TimeConfig(
+        dt=float(_require(time_raw, "dt", "time")),
+        t_end=float(_require(time_raw, "t_end", "time")),
+    )
 
     inputs_raw = _as_mapping(_require(raw, "inputs"), "inputs")
     if set(inputs_raw) != set(spec.inputs):

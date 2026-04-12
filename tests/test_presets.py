@@ -1,12 +1,10 @@
 """Tests for running actual PDE preset simulations."""
 
 import importlib.util
-import logging
 from dataclasses import replace
 
 import numpy as np
 import pytest
-import ufl
 from dolfinx import fem
 
 import plm_data.core.periodic as periodic_mod
@@ -27,14 +25,11 @@ from plm_data.core.solver_strategies import (
     CONSTANT_LHS_CURL_DIRECT,
     CONSTANT_LHS_SCALAR_NONSYMMETRIC,
     CONSTANT_LHS_SCALAR_SPD,
-    STATIONARY_INDEFINITE_DIRECT,
-    STEADY_SADDLE_POINT,
     TRANSIENT_MIXED_DIRECT,
     TRANSIENT_SADDLE_POINT,
 )
 from plm_data.presets import get_preset
-from plm_data.presets.base import StationaryLinearProblem, TransientLinearProblem
-from plm_data.presets.basic.helmholtz import _check_resonance
+from plm_data.presets.base import TransientLinearProblem
 from plm_data.presets.metadata import (
     OutputSpec,
     PresetSpec,
@@ -117,28 +112,6 @@ def test_cahn_hilliard_rejects_nonzero_neumann_boundary(tmp_path):
 HAS_DOLFINX_MPC = importlib.util.find_spec("dolfinx_mpc") is not None
 
 
-_VECTOR_STATIONARY_SPEC = PresetSpec(
-    name="vector_dummy",
-    category="tests",
-    description="Dummy vector-valued stationary problem for engine tests",
-    equations={"u": "u = 0"},
-    parameters=[],
-    inputs={},
-    boundary_fields={},
-    states={"u": StateSpec(name="u", shape="vector")},
-    outputs={
-        "u": OutputSpec(
-            name="u",
-            shape="vector",
-            output_mode="components",
-            source_name="u",
-        )
-    },
-    static_fields=[],
-    steady_state=True,
-    supported_dimensions=[2],
-)
-
 _SCALAR_TRANSIENT_SPEC = PresetSpec(
     name="scalar_transient_dummy",
     category="tests",
@@ -157,35 +130,8 @@ _SCALAR_TRANSIENT_SPEC = PresetSpec(
         )
     },
     static_fields=[],
-    steady_state=False,
     supported_dimensions=[2],
 )
-
-
-class _DummyVectorStationaryProblem(StationaryLinearProblem):
-    def create_function_space(self, domain_geom):
-        gdim = domain_geom.mesh.geometry.dim
-        return fem.functionspace(domain_geom.mesh, ("Lagrange", 1, (gdim,)))
-
-    def create_boundary_conditions(self, V, domain_geom):
-        return []
-
-    def create_forms(self, V, domain_geom):
-        gdim = domain_geom.mesh.geometry.dim
-        u = ufl.TrialFunction(V)
-        v = ufl.TestFunction(V)
-        a = ufl.inner(u, v) * ufl.dx
-        L = (
-            ufl.inner(
-                fem.Constant(domain_geom.mesh, np.zeros(gdim, dtype=np.float64)), v
-            )
-            * ufl.dx
-        )
-        return a, L
-
-    def export_solution_fields(self, solution):
-        solution.name = "u"
-        return {"u": solution}
 
 
 class _DummyScalarTransientProblem(TransientLinearProblem):
@@ -315,90 +261,6 @@ def _make_maxwell_pulse_config(tmp_path, *, gdim: int):
     )
 
 
-def _make_maxwell_config(tmp_path, *, gdim: int):
-    if gdim == 2:
-        domain = DomainConfig(
-            type="rectangle",
-            params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-        )
-        center = [0.35, 0.5]
-        boundary_names = ("x-", "x+", "y-", "y+")
-        source = vector_expr(
-            x=scalar_expr(
-                "gaussian_bump",
-                amplitude="param:source_amplitude",
-                sigma=0.08,
-                center=center,
-            ),
-            y=constant(0.0),
-        )
-    else:
-        domain = DomainConfig(
-            type="box",
-            params={"size": [1.0, 1.0, 1.0], "mesh_resolution": [3, 3, 3]},
-        )
-        center = [0.35, 0.5, 0.5]
-        boundary_names = ("x-", "x+", "y-", "y+", "z-", "z+")
-        source = vector_expr(
-            x=scalar_expr(
-                "gaussian_bump",
-                amplitude="param:source_amplitude",
-                sigma=0.1,
-                center=center,
-            ),
-            y=constant(0.0),
-            z=constant(0.0),
-        )
-
-    return SimulationConfig(
-        preset="maxwell",
-        parameters={
-            "epsilon_r": 1.0,
-            "mu_r": 1.0,
-            "k0": 8.0,
-            "source_amplitude": 1.0,
-        },
-        domain=domain,
-        inputs={
-            "electric_field": InputConfig(
-                source=source,
-            )
-        },
-        boundary_conditions={
-            "electric_field": boundary_field_config(
-                {
-                    name: BoundaryConditionConfig(type="absorbing", value=vector_zero())
-                    for name in boundary_names
-                }
-            )
-        },
-        output=OutputConfig(
-            path=tmp_path,
-            resolution=[4] * gdim,
-            num_frames=1,
-            formats=["numpy"],
-            fields=output_fields(
-                electric_field_real="components",
-                electric_field_imag="components",
-            ),
-        ),
-        solver=direct_solver_config(STATIONARY_INDEFINITE_DIRECT),
-        seed=42,
-    )
-
-
-def test_helmholtz_resonance_warning(caplog):
-    """Warn when k^2 is near a Laplacian eigenvalue."""
-    with caplog.at_level(logging.WARNING):
-        _check_resonance(4.44, [1.0, 1.0])
-    assert "ill-conditioned" in caplog.text
-
-    caplog.clear()
-    with caplog.at_level(logging.WARNING):
-        _check_resonance(2.0, [1.0, 1.0])
-    assert caplog.text == ""
-
-
 def test_preset_spec_rejects_unknown_static_fields():
     with pytest.raises(ValueError, match="static field 'missing'"):
         replace(_SCALAR_TRANSIENT_SPEC, static_fields=["missing"])
@@ -455,59 +317,6 @@ def _make_ns_config(tmp_path, *, initial_condition, source=None, parameters=None
         ),
         solver=flow_solver_config(TRANSIENT_SADDLE_POINT),
         time=TimeConfig(dt=0.1, t_end=0.1),
-        seed=42,
-    )
-
-
-def _make_stokes_config(tmp_path, *, source=None, parameters=None):
-    domain = DomainConfig(
-        type="rectangle",
-        params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-    )
-    if parameters is None:
-        parameters = {"nu": 1.0}
-    if source is None:
-        source = scalar_expr("none")
-
-    return SimulationConfig(
-        preset="stokes",
-        parameters=parameters,
-        domain=domain,
-        inputs={
-            "velocity": InputConfig(
-                source=source,
-            ),
-        },
-        boundary_conditions={
-            "velocity": boundary_field_config(
-                {
-                    "x-": BoundaryConditionConfig(
-                        type="dirichlet",
-                        value=vector_expr(x=constant(0.0), y=constant(0.0)),
-                    ),
-                    "x+": BoundaryConditionConfig(
-                        type="dirichlet",
-                        value=vector_expr(x=constant(0.0), y=constant(0.0)),
-                    ),
-                    "y-": BoundaryConditionConfig(
-                        type="dirichlet",
-                        value=vector_expr(x=constant(0.0), y=constant(0.0)),
-                    ),
-                    "y+": BoundaryConditionConfig(
-                        type="dirichlet",
-                        value=vector_expr(x=constant(1.0), y=constant(0.0)),
-                    ),
-                }
-            )
-        },
-        output=OutputConfig(
-            path=tmp_path,
-            resolution=[4, 4],
-            num_frames=1,
-            formats=["numpy"],
-            fields=output_fields(velocity="components", pressure="scalar"),
-        ),
-        solver=flow_solver_config(STEADY_SADDLE_POINT),
         seed=42,
     )
 
@@ -1061,10 +870,10 @@ def _make_keller_segel_config(
     )
 
 
-def test_stokes_3d(tmp_path):
+def test_navier_stokes_3d(tmp_path):
     config = SimulationConfig(
-        preset="stokes",
-        parameters={"nu": 1.0},
+        preset="navier_stokes",
+        parameters={"Re": 25.0, "k": 1.0},
         domain=DomainConfig(
             type="box",
             params={"size": [1.0, 1.0, 1.0], "mesh_resolution": [4, 4, 4]},
@@ -1072,6 +881,16 @@ def test_stokes_3d(tmp_path):
         inputs={
             "velocity": InputConfig(
                 source=scalar_expr("none"),
+                initial_condition=vector_expr(
+                    x=scalar_expr(
+                        "gaussian_bump",
+                        amplitude=0.4,
+                        sigma=0.12,
+                        center=[0.45, 0.5, 0.5],
+                    ),
+                    y=constant(0.0),
+                    z=constant(0.0),
+                ),
             ),
         },
         boundary_conditions={
@@ -1123,7 +942,8 @@ def test_stokes_3d(tmp_path):
             formats=["numpy"],
             fields=output_fields(velocity="components", pressure="scalar"),
         ),
-        solver=flow_solver_config(STEADY_SADDLE_POINT),
+        solver=flow_solver_config(TRANSIENT_SADDLE_POINT),
+        time=TimeConfig(dt=0.05, t_end=0.05),
         seed=42,
     )
     result, output_dir = _run_preset(config)
@@ -1138,8 +958,13 @@ def test_stokes_3d(tmp_path):
     assert np.max(np.abs(vx)) > 0
 
 
-def test_stokes_hidden_pressure(tmp_path):
-    config = _make_stokes_config(tmp_path)
+def test_navier_stokes_hidden_pressure(tmp_path):
+    config = _make_ns_config(
+        tmp_path,
+        initial_condition=vector_expr(x=constant(0.0), y=constant(0.0)),
+        source=scalar_expr("none"),
+    )
+    config = replace(config, output=replace(config.output, num_frames=1))
     config.output.fields["pressure"] = OutputSelectionConfig(mode="hidden")
     result, output_dir = _run_preset(config)
     assert result.solver_converged is True
@@ -1147,42 +972,6 @@ def test_stokes_hidden_pressure(tmp_path):
     assert (output_dir / "velocity_x.npy").exists()
     assert (output_dir / "velocity_y.npy").exists()
     assert not (output_dir / "pressure.npy").exists()
-
-
-def test_stationary_linear_problem_counts_vector_dofs(tmp_path, direct_solver):
-    config = SimulationConfig(
-        preset="vector_dummy",
-        parameters={},
-        domain=DomainConfig(
-            type="rectangle",
-            params={"size": [1.0, 1.0], "mesh_resolution": [4, 4]},
-        ),
-        inputs={},
-        boundary_conditions={},
-        output=OutputConfig(
-            path=tmp_path,
-            resolution=[4, 4],
-            num_frames=1,
-            formats=["numpy"],
-            fields=output_fields(u="components"),
-        ),
-        solver=direct_solver,
-        seed=42,
-    )
-
-    output_dir = (
-        config.output.path
-        / _VECTOR_STATIONARY_SPEC.category
-        / _VECTOR_STATIONARY_SPEC.name
-    )
-    writer = FrameWriter(output_dir, config, _VECTOR_STATIONARY_SPEC)
-    result = _DummyVectorStationaryProblem(_VECTOR_STATIONARY_SPEC, config).run(writer)
-    writer.finalize()
-
-    domain_geom = create_domain(config.domain)
-    V = fem.functionspace(domain_geom.mesh, ("Lagrange", 1, (2,)))
-    expected_num_dofs = V.dofmap.index_map.size_global * V.dofmap.index_map_bs
-    assert result.num_dofs == expected_num_dofs
 
 
 def test_transient_problem_uses_exact_integer_step_count(tmp_path, direct_solver):
@@ -3094,37 +2883,3 @@ def test_maxwell_pulse_preset_3d_single_step(tmp_path):
     for field in ["electric_field_x", "electric_field_y", "electric_field_z"]:
         arr = np.load(output_dir / f"{field}.npy")
         assert arr.shape == (2, *config.output.resolution)
-
-
-def test_maxwell_preset_2d(tmp_path):
-    config = _make_maxwell_config(tmp_path, gdim=2)
-    result, output_dir = _run_preset(config)
-    assert result.solver_converged is True
-
-    for field in [
-        "electric_field_real_x",
-        "electric_field_real_y",
-        "electric_field_imag_x",
-        "electric_field_imag_y",
-    ]:
-        arr = np.load(output_dir / f"{field}.npy")
-        assert arr.shape == (1, *config.output.resolution)
-        assert not np.iscomplexobj(arr)
-
-
-def test_maxwell_preset_3d(tmp_path):
-    config = _make_maxwell_config(tmp_path, gdim=3)
-    result, output_dir = _run_preset(config)
-    assert result.solver_converged is True
-
-    for field in [
-        "electric_field_real_x",
-        "electric_field_real_y",
-        "electric_field_real_z",
-        "electric_field_imag_x",
-        "electric_field_imag_y",
-        "electric_field_imag_z",
-    ]:
-        arr = np.load(output_dir / f"{field}.npy")
-        assert arr.shape == (1, *config.output.resolution)
-        assert not np.iscomplexobj(arr)

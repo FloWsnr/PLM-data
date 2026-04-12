@@ -161,7 +161,6 @@ class PresetSpec:
     states: dict[str, StateSpec]
     outputs: dict[str, OutputSpec]
     static_fields: list[str]
-    steady_state: bool
     supported_dimensions: list[int]
     coefficients: dict[str, CoefficientSpec] = field(default_factory=dict)
 

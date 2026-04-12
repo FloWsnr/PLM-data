@@ -77,7 +77,6 @@ _ADVECTION_SPEC = PresetSpec(
         )
     },
     static_fields=[],
-    steady_state=False,
     supported_dimensions=[2, 3],
     coefficients={
         "velocity": CoefficientSpec(

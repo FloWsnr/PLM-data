@@ -27,9 +27,6 @@ from plm_data.core.solver_strategies import (
     CONSTANT_LHS_SCALAR_NONSYMMETRIC,
     CONSTANT_LHS_SCALAR_SPD,
     NONLINEAR_MIXED_DIRECT,
-    STATIONARY_INDEFINITE_DIRECT,
-    STATIONARY_SCALAR_SPD,
-    STEADY_SADDLE_POINT,
     TRANSIENT_EXPLICIT,
     TRANSIENT_MIXED_DIRECT,
     TRANSIENT_SADDLE_POINT,
@@ -114,7 +111,7 @@ def solver_config(
     )
 
 
-def direct_solver_config(strategy: str = STATIONARY_SCALAR_SPD) -> SolverConfig:
+def direct_solver_config(strategy: str = CONSTANT_LHS_SCALAR_SPD) -> SolverConfig:
     mpi = {
         "ksp_type": "preonly",
         "pc_type": "lu",
@@ -124,7 +121,7 @@ def direct_solver_config(strategy: str = STATIONARY_SCALAR_SPD) -> SolverConfig:
         "mat_mumps_icntl_25": "0",
         "ksp_error_if_not_converged": "1",
     }
-    if strategy in {STATIONARY_SCALAR_SPD, CONSTANT_LHS_SCALAR_SPD}:
+    if strategy == CONSTANT_LHS_SCALAR_SPD:
         mpi = {
             "ksp_type": "cg",
             "pc_type": "hypre",
@@ -148,7 +145,7 @@ def direct_solver_config(strategy: str = STATIONARY_SCALAR_SPD) -> SolverConfig:
 
 
 def flow_solver_config(
-    strategy: str = STEADY_SADDLE_POINT,
+    strategy: str = TRANSIENT_SADDLE_POINT,
 ) -> SolverConfig:
     serial = {
         "ksp_type": "preonly",
@@ -168,19 +165,7 @@ def flow_solver_config(
         "mat_mumps_icntl_25": "0",
         "ksp_error_if_not_converged": "1",
     }
-    if strategy == STEADY_SADDLE_POINT:
-        mpi = {
-            "ksp_type": "minres",
-            "ksp_rtol": "1.0e-9",
-            "ksp_error_if_not_converged": "1",
-            "pc_type": "fieldsplit",
-            "pc_fieldsplit_type": "additive",
-            "fieldsplit_velocity_0_ksp_type": "preonly",
-            "fieldsplit_velocity_0_pc_type": "gamg",
-            "fieldsplit_pressure_1_ksp_type": "preonly",
-            "fieldsplit_pressure_1_pc_type": "jacobi",
-        }
-    elif strategy == TRANSIENT_SADDLE_POINT:
+    if strategy == TRANSIENT_SADDLE_POINT:
         mpi = {
             "ksp_type": "preonly",
             "pc_type": "lu",
@@ -272,9 +257,7 @@ def make_scalar_preset_config(
         or direct_solver_config(
             {
                 "advection": CONSTANT_LHS_SCALAR_NONSYMMETRIC,
-                "poisson": STATIONARY_SCALAR_SPD,
                 "heat": CONSTANT_LHS_SCALAR_SPD,
-                "helmholtz": STATIONARY_INDEFINITE_DIRECT,
             }[preset]
         ),
         time=time,
@@ -458,11 +441,7 @@ def make_flow_preset_config(
             fields=output_fields(velocity="components", pressure="scalar"),
         ),
         solver=flow_solver_config(
-            STEADY_SADDLE_POINT
-            if preset == "stokes"
-            else TRANSIENT_SADDLE_POINT
-            if not periodic_axes
-            else TRANSIENT_MIXED_DIRECT
+            TRANSIENT_SADDLE_POINT if not periodic_axes else TRANSIENT_MIXED_DIRECT
         ),
         time=time,
         seed=seed,
@@ -1927,51 +1906,6 @@ def make_shallow_water_config(
         time=time,
         seed=seed,
         coefficients={"bathymetry": bathymetry},
-    )
-
-
-def make_maxwell_config(
-    tmp_path: Path,
-    *,
-    boundary_conditions: dict[str, BoundaryConditionConfig],
-    source: FieldExpressionConfig,
-    periodic_axes: tuple[int, ...] = (),
-    mesh_resolution: tuple[int, int] = (6, 6),
-    output_resolution: tuple[int, int] = (4, 4),
-    seed: int | None = 42,
-) -> SimulationConfig:
-    return SimulationConfig(
-        preset="maxwell",
-        parameters={
-            "epsilon_r": 1.0,
-            "mu_r": 1.0,
-            "k0": 8.0,
-            "source_amplitude": 1.0,
-        },
-        domain=rectangle_domain(mesh_resolution=mesh_resolution),
-        inputs={
-            "electric_field": InputConfig(
-                source=source,
-            )
-        },
-        boundary_conditions={
-            "electric_field": boundary_field_config(
-                boundary_conditions,
-                periodic_axes=periodic_axes,
-            )
-        },
-        output=OutputConfig(
-            path=tmp_path,
-            resolution=list(output_resolution),
-            num_frames=1,
-            formats=["numpy"],
-            fields=output_fields(
-                electric_field_real="components",
-                electric_field_imag="components",
-            ),
-        ),
-        solver=direct_solver_config(STATIONARY_INDEFINITE_DIRECT),
-        seed=seed,
     )
 
 

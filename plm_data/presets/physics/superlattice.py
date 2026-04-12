@@ -96,7 +96,6 @@ _SUPERLATTICE_SPEC = PresetSpec(
         for field_name in _FIELD_NAMES
     },
     static_fields=[],
-    steady_state=False,
     supported_dimensions=[2, 3],
 )
 

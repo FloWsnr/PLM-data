@@ -88,14 +88,19 @@ def test_simulation_runner_requires_explicit_seed(heat_config):
 
 
 def test_simulation_runner_materializes_sampled_runtime_values(tmp_path):
-    config_path = tmp_path / "poisson_sampled_runtime.yaml"
+    config_path = tmp_path / "heat_sampled_runtime.yaml"
     config_path.write_text(
         yaml.safe_dump(
             {
-                "preset": "poisson",
-                "parameters": {
-                    "kappa": {"sample": "uniform", "min": 0.8, "max": 1.2},
-                    "f_amplitude": 1.0,
+                "preset": "heat",
+                "parameters": {},
+                "coefficients": {
+                    "kappa": {
+                        "type": "constant",
+                        "params": {
+                            "value": {"sample": "uniform", "min": 0.8, "max": 1.2}
+                        },
+                    }
                 },
                 "domain": {
                     "type": "rectangle",
@@ -107,7 +112,11 @@ def test_simulation_runner_materializes_sampled_runtime_values(tmp_path):
                         "source": {
                             "type": "constant",
                             "params": {"value": 1.0},
-                        }
+                        },
+                        "initial_condition": {
+                            "type": "constant",
+                            "params": {"value": 0.0},
+                        },
                     }
                 },
                 "boundary_conditions": {
@@ -137,10 +146,11 @@ def test_simulation_runner_materializes_sampled_runtime_values(tmp_path):
                     "fields": {"u": "scalar"},
                 },
                 "solver": {
-                    "strategy": "stationary_scalar_spd",
+                    "strategy": "constant_lhs_scalar_spd",
                     "serial": {"ksp_type": "preonly", "pc_type": "lu"},
                     "mpi": {"ksp_type": "preonly", "pc_type": "lu"},
                 },
+                "time": {"dt": 0.01, "t_end": 0.01},
                 "seed": 42,
             }
         )
@@ -154,14 +164,17 @@ def test_simulation_runner_materializes_sampled_runtime_values(tmp_path):
     bc_b = runner_b.config.boundary_field("u").side_conditions("x-")[0]
     bc_c = runner_c.config.boundary_field("u").side_conditions("x-")[0]
 
-    assert runner_a.config.parameters["kappa"] == runner_b.config.parameters["kappa"]
     assert bc_a.value is not None
     assert bc_b.value is not None
     assert bc_c.value is not None
+    kappa_a = runner_a.config.coefficient("kappa").params["value"]
+    kappa_b = runner_b.config.coefficient("kappa").params["value"]
+    kappa_c = runner_c.config.coefficient("kappa").params["value"]
+
+    assert kappa_a == kappa_b
     assert bc_a.value.params["value"] == bc_b.value.params["value"]
     assert (
-        runner_a.config.parameters["kappa"] != runner_c.config.parameters["kappa"]
-        or bc_a.value.params["value"] != bc_c.value.params["value"]
+        kappa_a != kappa_c or bc_a.value.params["value"] != bc_c.value.params["value"]
     )
 
 

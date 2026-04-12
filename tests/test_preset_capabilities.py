@@ -28,7 +28,6 @@ from tests.preset_matrix import (
     make_flow_preset_config,
     make_gray_scott_config,
     make_lorenz_config,
-    make_maxwell_config,
     make_maxwell_pulse_config,
     make_plate_config,
     make_shallow_water_config,
@@ -293,18 +292,6 @@ def _thermal_temperature_boundary_conditions(
     return boundary_conditions
 
 
-def _maxwell_source():
-    return vector_expr(
-        x=scalar_expr(
-            "gaussian_bump",
-            amplitude="param:source_amplitude",
-            sigma=0.08,
-            center=[0.35, 0.5],
-        ),
-        y=constant(0.0),
-    )
-
-
 def _maxwell_pulse_source():
     return vector_expr(
         x=scalar_expr("gaussian_bump", amplitude=1.0, sigma=0.06, center=[0.25, 0.5]),
@@ -403,17 +390,6 @@ def _assert_wave_periodic_x(config, result, output_dir):
     assert_nontrivial(arrays["v"])
     assert_periodic_axis(arrays["u"], axis=0)
     assert_periodic_axis(arrays["v"], axis=0)
-
-
-def _assert_stokes_source(config, result, output_dir):
-    arrays = _assert_success(config, result, output_dir)
-    assert_nontrivial(arrays["velocity_y"])
-
-
-def _assert_stokes_periodic_x(config, result, output_dir):
-    arrays = _assert_success(config, result, output_dir)
-    assert_periodic_axis(arrays["velocity_x"], axis=0)
-    assert_periodic_axis(arrays["pressure"], axis=0)
 
 
 def _assert_navier_source_and_ic(config, result, output_dir):
@@ -852,14 +828,6 @@ def _assert_superlattice_mixed_bc(config, result, output_dir):
         assert_nontrivial(arrays[field_name])
 
 
-def _assert_maxwell_case(config, result, output_dir):
-    arrays = _assert_success(config, result, output_dir)
-    assert not np.iscomplexobj(arrays["electric_field_real_x"])
-    assert not np.iscomplexobj(arrays["electric_field_imag_x"])
-    assert_nontrivial(arrays["electric_field_real_x"])
-    assert_nontrivial(arrays["electric_field_imag_x"])
-
-
 def _assert_maxwell_pulse_case(config, result, output_dir):
     arrays = _assert_success(config, result, output_dir)
     assert result.num_timesteps == 1
@@ -1227,102 +1195,6 @@ SUCCESS_CASES = (
             time=TimeConfig(dt=0.01, t_end=0.01),
         ),
         assert_result=_assert_darcy_case,
-    ),
-    RuntimePresetCase(
-        name="poisson_mixed_scalar_bc",
-        make_config=lambda tmp_path: make_scalar_preset_config(
-            tmp_path,
-            preset="poisson",
-            parameters={"kappa": 1.0, "f_amplitude": 1.0},
-            boundary_conditions=_mixed_scalar_boundary_conditions(),
-            source=scalar_expr(
-                "sine_waves",
-                background=0.0,
-                modes=[
-                    {"amplitude": "param:f_amplitude", "cycles": [1, 1], "phase": 0.0}
-                ],
-            ),
-        ),
-        assert_result=_assert_scalar_signal,
-    ),
-    RuntimePresetCase(
-        name="poisson_periodic_x",
-        make_config=lambda tmp_path: make_scalar_preset_config(
-            tmp_path,
-            preset="poisson",
-            parameters={"kappa": 1.0, "f_amplitude": 1.0},
-            boundary_conditions=_periodic_scalar_boundary_conditions(),
-            source=scalar_expr(
-                "sine_waves",
-                background=0.0,
-                modes=[
-                    {"amplitude": "param:f_amplitude", "cycles": [1, 1], "phase": 0.0}
-                ],
-            ),
-            periodic_axes=(0,),
-        ),
-        assert_result=_assert_scalar_periodic_x,
-        skip_reason=skip_without_mpc,
-    ),
-    RuntimePresetCase(
-        name="helmholtz_mixed_scalar_bc",
-        make_config=lambda tmp_path: make_scalar_preset_config(
-            tmp_path,
-            preset="helmholtz",
-            parameters={"kappa": 1.0, "k": 2.0, "f_amplitude": 1.0},
-            boundary_conditions=_mixed_scalar_boundary_conditions(),
-            source=scalar_expr(
-                "sine_waves",
-                background=0.0,
-                modes=[
-                    {"amplitude": "param:f_amplitude", "cycles": [1, 1], "phase": 0.0}
-                ],
-            ),
-        ),
-        assert_result=_assert_scalar_signal,
-    ),
-    RuntimePresetCase(
-        name="helmholtz_periodic_x",
-        make_config=lambda tmp_path: make_scalar_preset_config(
-            tmp_path,
-            preset="helmholtz",
-            parameters={"kappa": 1.0, "k": 2.0, "f_amplitude": 1.0},
-            boundary_conditions=_periodic_scalar_boundary_conditions(),
-            source=scalar_expr(
-                "sine_waves",
-                background=0.0,
-                modes=[
-                    {"amplitude": "param:f_amplitude", "cycles": [1, 1], "phase": 0.0}
-                ],
-            ),
-            periodic_axes=(0,),
-        ),
-        assert_result=_assert_scalar_periodic_x,
-        skip_reason=skip_without_mpc,
-    ),
-    RuntimePresetCase(
-        name="stokes_body_force",
-        make_config=lambda tmp_path: make_flow_preset_config(
-            tmp_path,
-            preset="stokes",
-            parameters={"nu": 1.0},
-            boundary_conditions=_lid_velocity_boundary_conditions(),
-            source=vector_expr(x=constant(0.0), y=constant(-1.0)),
-        ),
-        assert_result=_assert_stokes_source,
-    ),
-    RuntimePresetCase(
-        name="stokes_periodic_x",
-        make_config=lambda tmp_path: make_flow_preset_config(
-            tmp_path,
-            preset="stokes",
-            parameters={"nu": 1.0},
-            boundary_conditions=_lid_velocity_boundary_conditions(periodic_x=True),
-            source=scalar_expr("none"),
-            periodic_axes=(0,),
-        ),
-        assert_result=_assert_stokes_periodic_x,
-        skip_reason=skip_without_mpc,
     ),
     RuntimePresetCase(
         name="navier_stokes_source_and_vector_ic",
@@ -2440,15 +2312,6 @@ SUCCESS_CASES = (
         assert_result=_assert_superlattice_mixed_bc,
     ),
     RuntimePresetCase(
-        name="maxwell_mixed_boundaries",
-        make_config=lambda tmp_path: make_maxwell_config(
-            tmp_path,
-            boundary_conditions=_mixed_maxwell_boundary_conditions(),
-            source=_maxwell_source(),
-        ),
-        assert_result=_assert_maxwell_case,
-    ),
-    RuntimePresetCase(
         name="maxwell_pulse_mixed_boundaries",
         make_config=lambda tmp_path: make_maxwell_pulse_config(
             tmp_path,
@@ -2624,17 +2487,6 @@ REJECTION_CASES = (
         ),
         expected_error=ValueError,
         expected_error_match="at least one Dirichlet boundary condition",
-    ),
-    RuntimePresetCase(
-        name="maxwell_periodic_domain_rejected",
-        make_config=lambda tmp_path: make_maxwell_config(
-            tmp_path,
-            boundary_conditions=_periodic_maxwell_boundary_conditions(),
-            source=_maxwell_source(),
-            periodic_axes=(0,),
-        ),
-        expected_error=NotImplementedError,
-        expected_error_match="N1curl spaces",
     ),
     RuntimePresetCase(
         name="maxwell_pulse_periodic_domain_rejected",
