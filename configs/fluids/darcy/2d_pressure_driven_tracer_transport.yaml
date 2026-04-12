@@ -1,32 +1,59 @@
 preset: darcy
 parameters:
-  storage: 0.12
-  porosity: 0.35
+  storage:
+    sample: uniform
+    min: 0.07
+    max: 0.11
+  porosity:
+    sample: uniform
+    min: 0.28
+    max: 0.38
+  inlet_pressure:
+    sample: uniform
+    min: 1.0
+    max: 1.22
+  outlet_pressure:
+    sample: uniform
+    min: -0.08
+    max: 0.04
 coefficients:
   mobility:
-    type: radial_cosine
+    type: step
     params:
-      base: 0.16
-      amplitude: 0.06
-      frequency: 14.0
-      center:
-      - 0.9
-      - 0.5
+      value_left:
+        sample: uniform
+        min: 0.14
+        max: 0.2
+      value_right:
+        sample: uniform
+        min: 0.24
+        max: 0.34
+      x_split:
+        sample: uniform
+        min: 0.44
+        max: 0.58
+      axis: 1
   dispersion:
     type: constant
     params:
-      value: 0.0025
+      value:
+        sample: uniform
+        min: 0.0011
+        max: 0.0019
 domain:
+  allow_sampling: true
   type: rectangle
   size:
-  - 2.0
-  - 1.0
-  mesh_resolution:
-  - 96
-  - 48
+    - sample: uniform
+      min: 2.0
+      max: 2.25
+    - sample: uniform
+      min: 1.0
+      max: 1.18
+  mesh_resolution: [160, 96]
 time:
-  dt: 0.01
-  t_end: 1.0
+  dt: 0.005
+  t_end: 1.1
 inputs:
   pressure:
     source:
@@ -45,59 +72,81 @@ inputs:
       params:
         background: 0.0
         generators:
-        - count:
-            sample: randint
-            min: 1
-            max: 2
-          amplitude:
-            sample: uniform
-            min: 0.85
-            max: 1.15
-          sigma:
-            sample: uniform
-            min: 0.05
-            max: 0.09
-          aspect_ratio: 1.0
-          center:
-          - sample: uniform
-            min: 0.16
-            max: 0.48
-          - sample: uniform
-            min: 0.395
-            max: 0.605
+          - count:
+              sample: randint
+              min: 1
+              max: 2
+            amplitude:
+              sample: uniform
+              min: 0.8
+              max: 1.1
+            sigma:
+              sample: uniform
+              min: 0.045
+              max: 0.075
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.7
+            center:
+              - sample: uniform
+                min: 0.18
+                max: 0.5
+              - sample: uniform
+                min: 0.24
+                max: 0.78
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.32
+              max: 0.56
+            sigma:
+              sample: uniform
+              min: 0.038
+              max: 0.06
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.4
+            center:
+              - sample: uniform
+                min: 0.46
+                max: 0.76
+              - sample: uniform
+                min: 0.2
+                max: 0.84
 boundary_conditions:
   pressure:
     x-:
-    - operator: dirichlet
-      value: 1.0
+      - operator: dirichlet
+        value: param:inlet_pressure
     x+:
-    - operator: dirichlet
-      value: 0.0
+      - operator: dirichlet
+        value: param:outlet_pressure
     y-:
-    - operator: neumann
-      value: 0.0
+      - operator: neumann
+        value: 0.0
     y+:
-    - operator: neumann
-      value: 0.0
+      - operator: neumann
+        value: 0.0
   concentration:
     x-:
-    - operator: dirichlet
-      value: 0.0
+      - operator: dirichlet
+        value: 0.0
     x+:
-    - operator: neumann
-      value: 0.0
+      - operator: neumann
+        value: 0.0
     y-:
-    - operator: neumann
-      value: 0.0
+      - operator: neumann
+        value: 0.0
     y+:
-    - operator: neumann
-      value: 0.0
+      - operator: neumann
+        value: 0.0
 output:
   $ref: output.template.darcy
-  resolution:
-  - 128
-  - 64
-  num_frames: 25
+  formats: [numpy, gif]
+  resolution: [224, 128]
+  num_frames: 45
 solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 seed: 42

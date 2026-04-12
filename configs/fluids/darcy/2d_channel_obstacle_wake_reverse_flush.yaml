@@ -2,79 +2,73 @@ preset: darcy
 parameters:
   storage:
     sample: uniform
-    min: 0.07
-    max: 0.11
+    min: 0.15
+    max: 0.22
   porosity:
     sample: uniform
-    min: 0.3
-    max: 0.4
+    min: 0.46
+    max: 0.62
   inlet_pressure:
     sample: uniform
-    min: 0.95
-    max: 1.18
+    min: 0.04
+    max: 0.16
   outlet_pressure:
     sample: uniform
-    min: -0.06
-    max: 0.04
+    min: 0.86
+    max: 1.04
 coefficients:
   mobility:
-    type: radial_cosine
+    type: step
     params:
-      base:
+      value_left:
         sample: uniform
-        min: 0.16
-        max: 0.22
-      amplitude:
+        min: 0.14
+        max: 0.2
+      value_right:
         sample: uniform
-        min: 0.04
-        max: 0.07
-      frequency:
+        min: 0.24
+        max: 0.32
+      x_split:
         sample: uniform
-        min: 9.0
-        max: 13.0
-      center:
-        - sample: uniform
-          min: 0.84
-          max: 1.08
-        - sample: uniform
-          min: 0.32
-          max: 0.68
+        min: 0.42
+        max: 0.58
+      axis: 1
   dispersion:
     type: constant
     params:
       value:
         sample: uniform
-        min: 0.0012
-        max: 0.002
+        min: 0.0017
+        max: 0.0028
 domain:
   allow_sampling: true
   type: channel_obstacle
   length:
     sample: uniform
-    min: 2.0
-    max: 2.25
+    min: 1.95
+    max: 2.2
   height:
     sample: uniform
-    min: 0.95
+    min: 0.92
     max: 1.08
   obstacle_center:
     - sample: uniform
-      min: 0.86
-      max: 1.06
+      min: 0.96
+      max: 1.16
     - sample: uniform
-      min: 0.34
-      max: 0.66
+      min: 0.26
+      max: 0.44
   obstacle_radius:
     sample: uniform
-    min: 0.11
-    max: 0.15
+    min: 0.1
+    max: 0.14
   mesh_size:
     sample: uniform
     min: 0.018
     max: 0.023
 time:
-  dt: 0.005
-  t_end: 1.05
+  dt: 0.006
+  t_end: 1.45
 inputs:
   pressure:
     source:
@@ -96,46 +90,43 @@ inputs:
           - count: 1
             amplitude:
               sample: uniform
-              min: 0.88
-              max: 1.12
+              min: 0.72
+              max: 1.0
             sigma:
               sample: uniform
-              min: 0.045
-              max: 0.065
+              min: 0.06
+              max: 0.09
             aspect_ratio:
               sample: uniform
               min: 1.15
-              max: 1.85
+              max: 1.9
             center:
               - sample: uniform
-                min: 0.28
-                max: 0.48
+                min: 1.1
+                max: 1.48
               - sample: uniform
-                min: 0.4
-                max: 0.62
-          - count:
-              sample: randint
-              min: 1
-              max: 2
+                min: 0.48
+                max: 0.74
+          - count: 1
             amplitude:
               sample: uniform
               min: 0.24
-              max: 0.48
+              max: 0.44
             sigma:
               sample: uniform
-              min: 0.036
-              max: 0.054
+              min: 0.04
+              max: 0.06
             aspect_ratio:
               sample: uniform
               min: 1.0
-              max: 1.5
+              max: 1.4
             center:
               - sample: uniform
-                min: 0.42
-                max: 0.78
+                min: 0.92
+                max: 1.18
               - sample: uniform
                 min: 0.22
-                max: 0.82
+                max: 0.4
 boundary_conditions:
   pressure:
     inlet:
@@ -152,22 +143,22 @@ boundary_conditions:
         value: 0.0
   concentration:
     inlet:
-      - operator: dirichlet
+      - operator: neumann
         value: 0.0
     outlet:
-      - operator: neumann
+      - operator: dirichlet
         value: 0.0
     walls:
       - operator: neumann
         value: 0.0
     obstacle:
-      - operator: dirichlet
+      - operator: neumann
         value: 0.0
 output:
   $ref: output.template.darcy
   formats: [numpy, gif]
   resolution: [224, 128]
-  num_frames: 45
+  num_frames: 49
 solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 seed: 42

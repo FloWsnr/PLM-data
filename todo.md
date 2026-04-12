@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 548 configs.
+Current baseline: 38 PDE presets and 566 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -484,8 +484,32 @@ domain supports sampling.
 
 #### Darcy (`configs/fluids/darcy`)
 
-1. `2d_channel_obstacle_tracer_transport`: pressure-driven porous flow bends around a channel obstacle while advecting and diffusing a tracer blob.
-2. `2d_pressure_driven_tracer_transport`: pressure-driven porous flow advecting and diffusing a tracer blob through heterogeneous mobility.
+The 2D Darcy suite now has 20 configs: two each for rectangle, disk,
+annulus, channel-obstacle, porous-channel, side-cavity-channel,
+venturi-channel, Y-bifurcation, serpentine-channel, and multi-hole-plate
+domains. All 2D cases use output resolutions with a shortest side of at least
+128 and sampled geometry where the domain factory supports it.
+
+1. `2d_annulus_azimuthal_pressure_skew`: phase-skewed annulus pressure forcing drives a slower curved annular sweep, so several broad ring-confined tracer packets smear into long azimuthal arcs rather than disappearing in an early radial flush.
+2. `2d_annulus_inner_outer_radial_purge`: high inner pressure and lower outer pressure drive a fast radial wash that strips concentric tracer bands outward from the hole.
+3. `2d_channel_obstacle_tracer_transport`: pressure-driven porous flow bends around a sampled channel obstacle while an inlet-side blob splits into obstacle-shadowed upper and lower bypass paths.
+4. `2d_channel_obstacle_wake_reverse_flush`: reverse pressure drive pulls a wake-side tracer release back around an off-center obstacle, producing a markedly different downstream-to-upstream obstacle shadow.
+5. `2d_diagonal_shear_tracer_wash`: mixed Dirichlet pressure values on all four rectangle sides create a slow diagonal wash that bends positive tracer bands across a heterogeneous box.
+6. `2d_disk_rim_shear_tracer_lensing`: nonuniform rim pressure values generate disk-confined saddle-like transport that lenses off-center tracer blobs into curved arcs before they reach the boundary.
+7. `2d_disk_transient_pressure_dipole_flush`: a transient dipole pressure pulse in a disk launches a compact three-packet flush that stays coherent through most of the short saved window, serving as the fast-decay outlier against the steadier rim-driven disk case.
+8. `2d_multi_hole_plate_hole_drain_screen`: one perforation acts as a gentler draining pressure sink so three broader interior tracer packets are screened by the holes and drawn into a visibly persistent center-hole capture pattern.
+9. `2d_multi_hole_plate_weaving_shadow`: affine outer pressure drives quadrant-style tracer structure across a perforated plate, leaving hole-shadowed corridors and sheltered interstitial pockets.
+10. `2d_porous_channel_reverse_scrub`: a downstream slug is scrubbed back through a sampled porous matrix under reverse pressure drive, emphasizing slow reverse percolation rather than inlet-fed advance.
+11. `2d_porous_channel_sinuous_percolation`: inlet-side tracer blobs percolate sinuously through a sampled porous obstacle field with clear obstacle-screened branchlets.
+12. `2d_pressure_driven_tracer_transport`: the rectangular baseline is now a faster pressure-driven strip with layered mobility, so seed changes alter both the sweep speed and the vertical shear of the transported blobs.
+13. `2d_serpentine_channel_reverse_flush`: reverse pressure drive drags bend-localized tracer back through the serpentine, producing a different turn ordering and much slower clearing than the forward slug case.
+14. `2d_serpentine_channel_slug_release`: a left-loaded tracer slug is pushed through sampled serpentine bends, giving clear lane-by-lane delay and bend compression.
+15. `2d_side_cavity_channel_cavity_capture`: a main-channel release is partially entrained into a sampled side cavity before rejoining the core stream.
+16. `2d_side_cavity_channel_cavity_release`: tracer initially stored in the side pocket is flushed into the main channel, contrasting with the cavity-capture case.
+17. `2d_venturi_channel_reverse_wall_release`: a wall-adjacent downstream release is pulled backward through a sampled venturi, with wall leakage and throat refraction softening the plume.
+18. `2d_venturi_channel_throat_focusing`: one or two upstream tracer packets are squeezed into a narrow high-speed ribbon by the venturi throat before broadening downstream.
+19. `2d_y_bifurcation_branch_collision_release`: two branch-localized releases are pulled back toward the junction under reverse pressure drive and collide before exiting through the trunk.
+20. `2d_y_bifurcation_inlet_split_plume`: a trunk-localized upstream release splits unevenly between the upper and lower daughter branches because the outlet pressures are intentionally asymmetric.
 
 #### MHD (`configs/fluids/mhd`)
 

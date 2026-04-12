@@ -2,79 +2,112 @@ preset: darcy
 parameters:
   storage:
     sample: uniform
-    min: 0.07
-    max: 0.11
+    min: 0.08
+    max: 0.12
   porosity:
     sample: uniform
-    min: 0.3
-    max: 0.4
+    min: 0.26
+    max: 0.34
   inlet_pressure:
     sample: uniform
-    min: 0.95
-    max: 1.18
+    min: 0.98
+    max: 1.24
   outlet_pressure:
     sample: uniform
     min: -0.06
-    max: 0.04
+    max: 0.05
 coefficients:
   mobility:
-    type: radial_cosine
+    type: sine_waves
     params:
-      base:
+      background:
         sample: uniform
-        min: 0.16
-        max: 0.22
-      amplitude:
-        sample: uniform
-        min: 0.04
-        max: 0.07
-      frequency:
-        sample: uniform
-        min: 9.0
-        max: 13.0
-      center:
-        - sample: uniform
-          min: 0.84
-          max: 1.08
-        - sample: uniform
-          min: 0.32
-          max: 0.68
+        min: 0.2
+        max: 0.26
+      modes:
+        - amplitude:
+            sample: uniform
+            min: 0.03
+            max: 0.05
+          cycles:
+            - sample: uniform
+              min: 0.45
+              max: 0.7
+            - 0.0
+          phase:
+            sample: uniform
+            min: -0.1
+            max: 0.3
+        - amplitude:
+            sample: uniform
+            min: 0.02
+            max: 0.04
+          cycles:
+            - 0.0
+            - sample: uniform
+              min: 2.0
+              max: 2.8
+          phase:
+            sample: uniform
+            min: 0.5
+            max: 1.1
   dispersion:
     type: constant
     params:
       value:
         sample: uniform
-        min: 0.0012
-        max: 0.002
+        min: 0.0008
+        max: 0.0013
 domain:
   allow_sampling: true
-  type: channel_obstacle
+  type: porous_channel
   length:
     sample: uniform
-    min: 2.0
-    max: 2.25
+    min: 2.55
+    max: 2.8
   height:
     sample: uniform
-    min: 0.95
+    min: 0.96
     max: 1.08
-  obstacle_center:
-    - sample: uniform
-      min: 0.86
-      max: 1.06
-    - sample: uniform
-      min: 0.34
-      max: 0.66
   obstacle_radius:
     sample: uniform
-    min: 0.11
-    max: 0.15
+    min: 0.082
+    max: 0.104
+  n_rows:
+    sample: randint
+    min: 2
+    max: 3
+  n_cols:
+    sample: randint
+    min: 4
+    max: 5
+  pitch_x:
+    sample: uniform
+    min: 0.34
+    max: 0.4
+  pitch_y:
+    sample: uniform
+    min: 0.24
+    max: 0.29
+  x_margin:
+    sample: uniform
+    min: 0.18
+    max: 0.28
+  y_margin:
+    sample: uniform
+    min: 0.1
+    max: 0.16
+  row_shift_fraction:
+    sample: uniform
+    min: 0.3
+    max: 0.5
   mesh_size:
     sample: uniform
-    min: 0.018
-    max: 0.023
+    min: 0.022
+    max: 0.028
 time:
   dt: 0.005
-  t_end: 1.05
+  t_end: 1.2
 inputs:
   pressure:
     source:
@@ -93,49 +126,26 @@ inputs:
       params:
         background: 0.0
         generators:
-          - count: 1
+          - count: 2
             amplitude:
               sample: uniform
-              min: 0.88
-              max: 1.12
+              min: 0.62
+              max: 0.95
             sigma:
               sample: uniform
-              min: 0.045
-              max: 0.065
+              min: 0.04
+              max: 0.06
             aspect_ratio:
               sample: uniform
-              min: 1.15
-              max: 1.85
+              min: 1.05
+              max: 1.6
             center:
               - sample: uniform
-                min: 0.28
-                max: 0.48
+                min: 0.12
+                max: 0.34
               - sample: uniform
-                min: 0.4
-                max: 0.62
-          - count:
-              sample: randint
-              min: 1
-              max: 2
-            amplitude:
-              sample: uniform
-              min: 0.24
-              max: 0.48
-            sigma:
-              sample: uniform
-              min: 0.036
-              max: 0.054
-            aspect_ratio:
-              sample: uniform
-              min: 1.0
-              max: 1.5
-            center:
-              - sample: uniform
-                min: 0.42
-                max: 0.78
-              - sample: uniform
-                min: 0.22
-                max: 0.82
+                min: 0.2
+                max: 0.8
 boundary_conditions:
   pressure:
     inlet:
@@ -147,7 +157,7 @@ boundary_conditions:
     walls:
       - operator: neumann
         value: 0.0
-    obstacle:
+    obstacles:
       - operator: neumann
         value: 0.0
   concentration:
@@ -160,14 +170,14 @@ boundary_conditions:
     walls:
       - operator: neumann
         value: 0.0
-    obstacle:
+    obstacles:
       - operator: dirichlet
         value: 0.0
 output:
   $ref: output.template.darcy
   formats: [numpy, gif]
   resolution: [224, 128]
-  num_frames: 45
+  num_frames: 49
 solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 seed: 42
