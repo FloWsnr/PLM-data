@@ -1,0 +1,160 @@
+preset: darcy
+parameters:
+  storage:
+    sample: uniform
+    min: 0.16
+    max: 0.24
+  porosity:
+    sample: uniform
+    min: 0.42
+    max: 0.6
+  inlet_pressure:
+    sample: uniform
+    min: 0.04
+    max: 0.16
+  outlet_pressure:
+    sample: uniform
+    min: 0.88
+    max: 1.06
+coefficients:
+  mobility:
+    type: sine_waves
+    params:
+      background:
+        sample: uniform
+        min: 0.18
+        max: 0.24
+      modes:
+        - amplitude:
+            sample: uniform
+            min: 0.025
+            max: 0.045
+          cycles:
+            - sample: uniform
+              min: 0.35
+              max: 0.55
+            - 0.0
+          phase:
+            sample: uniform
+            min: 0.0
+            max: 0.45
+        - amplitude:
+            sample: uniform
+            min: 0.02
+            max: 0.03
+          cycles:
+            - 0.0
+            - sample: uniform
+              min: 1.0
+              max: 1.5
+          phase:
+            sample: uniform
+            min: 0.6
+            max: 1.1
+  dispersion:
+    type: constant
+    params:
+      value:
+        sample: uniform
+        min: 0.0016
+        max: 0.0025
+domain:
+  allow_sampling: true
+  type: venturi_channel
+  length:
+    sample: uniform
+    min: 2.35
+    max: 2.7
+  height:
+    sample: uniform
+    min: 0.92
+    max: 1.08
+  throat_height:
+    sample: uniform
+    min: 0.3
+    max: 0.44
+  constriction_center_x:
+    sample: uniform
+    min: 1.06
+    max: 1.42
+  constriction_radius:
+    sample: uniform
+    min: 0.34
+    max: 0.48
+  mesh_size:
+    sample: uniform
+    min: 0.02
+    max: 0.026
+time:
+  dt: 0.006
+  t_end: 1.45
+inputs:
+  pressure:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: constant
+      params:
+        value: 0.0
+  concentration:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+          - count:
+              sample: randint
+              min: 1
+              max: 2
+            amplitude:
+              sample: uniform
+              min: 0.76
+              max: 1.02
+            sigma:
+              sample: uniform
+              min: 0.045
+              max: 0.07
+            aspect_ratio:
+              sample: uniform
+              min: 1.1
+              max: 1.7
+            center:
+              - sample: uniform
+                min: 1.72
+                max: 2.24
+              - sample: uniform
+                min: 0.56
+                max: 0.9
+boundary_conditions:
+  pressure:
+    inlet:
+      - operator: dirichlet
+        value: param:inlet_pressure
+    outlet:
+      - operator: dirichlet
+        value: param:outlet_pressure
+    walls:
+      - operator: neumann
+        value: 0.0
+  concentration:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: dirichlet
+        value: 0.0
+    walls:
+      - operator: dirichlet
+        value: 0.0
+output:
+  $ref: output.template.darcy
+  formats: [numpy, gif]
+  resolution: [224, 128]
+  num_frames: 49
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+seed: 42

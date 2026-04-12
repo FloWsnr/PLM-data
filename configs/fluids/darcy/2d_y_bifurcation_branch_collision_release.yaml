@@ -2,79 +2,74 @@ preset: darcy
 parameters:
   storage:
     sample: uniform
-    min: 0.07
-    max: 0.11
+    min: 0.16
+    max: 0.24
   porosity:
     sample: uniform
-    min: 0.3
-    max: 0.4
+    min: 0.44
+    max: 0.62
   inlet_pressure:
     sample: uniform
-    min: 0.95
-    max: 1.18
-  outlet_pressure:
+    min: 0.04
+    max: 0.14
+  upper_pressure:
     sample: uniform
-    min: -0.06
-    max: 0.04
+    min: 0.9
+    max: 1.08
+  lower_pressure:
+    sample: uniform
+    min: 0.78
+    max: 0.96
 coefficients:
   mobility:
-    type: radial_cosine
+    type: step
     params:
-      base:
+      value_left:
         sample: uniform
-        min: 0.16
-        max: 0.22
-      amplitude:
+        min: 0.15
+        max: 0.21
+      value_right:
         sample: uniform
-        min: 0.04
-        max: 0.07
-      frequency:
+        min: 0.2
+        max: 0.28
+      x_split:
         sample: uniform
-        min: 9.0
-        max: 13.0
-      center:
-        - sample: uniform
-          min: 0.84
-          max: 1.08
-        - sample: uniform
-          min: 0.32
-          max: 0.68
+        min: -0.03
+        max: 0.05
+      axis: 1
   dispersion:
     type: constant
     params:
       value:
         sample: uniform
-        min: 0.0012
-        max: 0.002
+        min: 0.0016
+        max: 0.0025
 domain:
   allow_sampling: true
-  type: channel_obstacle
-  length:
+  type: y_bifurcation
+  inlet_length:
     sample: uniform
-    min: 2.0
-    max: 2.25
-  height:
+    min: 0.88
+    max: 1.06
+  branch_length:
     sample: uniform
-    min: 0.95
-    max: 1.08
-  obstacle_center:
-    - sample: uniform
-      min: 0.86
-      max: 1.06
-    - sample: uniform
-      min: 0.34
-      max: 0.66
-  obstacle_radius:
+    min: 0.84
+    max: 1.05
+  branch_angle_degrees:
     sample: uniform
-    min: 0.11
-    max: 0.15
+    min: 34.0
+    max: 42.0
+  channel_width:
+    sample: uniform
+    min: 0.18
+    max: 0.24
   mesh_size:
     sample: uniform
-    min: 0.018
-    max: 0.023
+    min: 0.022
+    max: 0.028
 time:
-  dt: 0.005
-  t_end: 1.05
+  dt: 0.006
+  t_end: 1.55
 inputs:
   pressure:
     source:
@@ -96,78 +91,75 @@ inputs:
           - count: 1
             amplitude:
               sample: uniform
-              min: 0.88
-              max: 1.12
+              min: 0.76
+              max: 1.02
             sigma:
               sample: uniform
-              min: 0.045
-              max: 0.065
+              min: 0.05
+              max: 0.08
             aspect_ratio:
               sample: uniform
-              min: 1.15
-              max: 1.85
+              min: 1.05
+              max: 1.6
             center:
               - sample: uniform
-                min: 0.28
-                max: 0.48
+                min: 1.58
+                max: 1.86
               - sample: uniform
-                min: 0.4
+                min: 0.34
                 max: 0.62
-          - count:
-              sample: randint
-              min: 1
-              max: 2
+          - count: 1
             amplitude:
               sample: uniform
-              min: 0.24
-              max: 0.48
+              min: 0.52
+              max: 0.78
             sigma:
               sample: uniform
-              min: 0.036
-              max: 0.054
+              min: 0.05
+              max: 0.08
             aspect_ratio:
               sample: uniform
-              min: 1.0
-              max: 1.5
+              min: 1.05
+              max: 1.6
             center:
               - sample: uniform
-                min: 0.42
-                max: 0.78
+                min: 1.58
+                max: 1.86
               - sample: uniform
-                min: 0.22
-                max: 0.82
+                min: -0.62
+                max: -0.34
 boundary_conditions:
   pressure:
     inlet:
       - operator: dirichlet
         value: param:inlet_pressure
-    outlet:
+    outlet_upper:
       - operator: dirichlet
-        value: param:outlet_pressure
+        value: param:upper_pressure
+    outlet_lower:
+      - operator: dirichlet
+        value: param:lower_pressure
     walls:
-      - operator: neumann
-        value: 0.0
-    obstacle:
       - operator: neumann
         value: 0.0
   concentration:
     inlet:
+      - operator: neumann
+        value: 0.0
+    outlet_upper:
       - operator: dirichlet
         value: 0.0
-    outlet:
-      - operator: neumann
+    outlet_lower:
+      - operator: dirichlet
         value: 0.0
     walls:
       - operator: neumann
         value: 0.0
-    obstacle:
-      - operator: dirichlet
-        value: 0.0
 output:
   $ref: output.template.darcy
   formats: [numpy, gif]
-  resolution: [224, 128]
-  num_frames: 45
+  resolution: [224, 144]
+  num_frames: 49
 solver:
   $ref: solver.profile.constant_lhs_scalar_nonsymmetric
 seed: 42

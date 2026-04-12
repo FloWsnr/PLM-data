@@ -1,0 +1,153 @@
+preset: darcy
+parameters:
+  storage:
+    sample: uniform
+    min: 0.16
+    max: 0.24
+  porosity:
+    sample: uniform
+    min: 0.44
+    max: 0.62
+  inlet_pressure:
+    sample: uniform
+    min: 0.04
+    max: 0.16
+  outlet_pressure:
+    sample: uniform
+    min: 0.84
+    max: 1.04
+coefficients:
+  mobility:
+    type: step
+    params:
+      value_left:
+        sample: uniform
+        min: 0.14
+        max: 0.19
+      value_right:
+        sample: uniform
+        min: 0.22
+        max: 0.3
+      x_split:
+        sample: uniform
+        min: 0.42
+        max: 0.56
+      axis: 1
+  dispersion:
+    type: constant
+    params:
+      value:
+        sample: uniform
+        min: 0.0018
+        max: 0.0028
+domain:
+  allow_sampling: true
+  type: porous_channel
+  length:
+    sample: uniform
+    min: 2.55
+    max: 2.8
+  height:
+    sample: uniform
+    min: 0.96
+    max: 1.08
+  obstacle_radius:
+    sample: uniform
+    min: 0.086
+    max: 0.108
+  n_rows:
+    sample: randint
+    min: 2
+    max: 3
+  n_cols:
+    sample: randint
+    min: 4
+    max: 5
+  pitch_x:
+    sample: uniform
+    min: 0.34
+    max: 0.4
+  pitch_y:
+    sample: uniform
+    min: 0.24
+    max: 0.29
+  x_margin:
+    sample: uniform
+    min: 0.18
+    max: 0.28
+  y_margin:
+    sample: uniform
+    min: 0.1
+    max: 0.16
+  row_shift_fraction:
+    sample: uniform
+    min: 0.28
+    max: 0.48
+  mesh_size:
+    sample: uniform
+    min: 0.022
+    max: 0.028
+time:
+  dt: 0.006
+  t_end: 1.65
+inputs:
+  pressure:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: constant
+      params:
+        value: 0.0
+  concentration:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: step
+      params:
+        value_left: 0.0
+        value_right:
+          sample: uniform
+          min: 0.82
+          max: 1.08
+        x_split:
+          sample: uniform
+          min: 1.4
+          max: 1.88
+        axis: 0
+boundary_conditions:
+  pressure:
+    inlet:
+      - operator: dirichlet
+        value: param:inlet_pressure
+    outlet:
+      - operator: dirichlet
+        value: param:outlet_pressure
+    walls:
+      - operator: neumann
+        value: 0.0
+    obstacles:
+      - operator: neumann
+        value: 0.0
+  concentration:
+    inlet:
+      - operator: neumann
+        value: 0.0
+    outlet:
+      - operator: dirichlet
+        value: 0.0
+    walls:
+      - operator: neumann
+        value: 0.0
+    obstacles:
+      - operator: neumann
+        value: 0.0
+output:
+  $ref: output.template.darcy
+  formats: [numpy, gif]
+  resolution: [224, 128]
+  num_frames: 49
+solver:
+  $ref: solver.profile.constant_lhs_scalar_nonsymmetric
+seed: 42
