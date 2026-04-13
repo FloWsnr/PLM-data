@@ -571,6 +571,7 @@ class OpenFOAMMHDProblem(_OpenFOAMProblemBase):
         run_start = time.perf_counter()
         self._solve_openfoam_case()
         solve_seconds = time.perf_counter() - run_start
+        self._record_openfoam_log_health()
 
         num_cells, num_steps = self._sample_case_to_output(
             output=output,
@@ -589,20 +590,13 @@ class OpenFOAMMHDProblem(_OpenFOAMProblemBase):
             normalize_pressure_field="pressure",
         )
         num_dofs = num_cells * (2 * self._gdim + 2)
-        diagnostics = {
-            "solver_health": {"status": "pass", "applied": False, "checks": {}},
-            "runtime_health": {"status": "pass", "applied": False, "checks": {}},
-            "openfoam": {
-                "case_dir": str(case_dir),
-                "solver": self.solver_name,
-                "num_subdomains": self._n_subdomains,
-                "solve_seconds": solve_seconds,
-            },
-        }
         return RunResult(
             num_dofs=num_dofs,
             solver_converged=True,
             wall_time=solve_seconds,
             num_timesteps=num_steps,
-            diagnostics=diagnostics,
+            diagnostics=self._build_openfoam_diagnostics(
+                case_dir=case_dir,
+                solve_seconds=solve_seconds,
+            ),
         )

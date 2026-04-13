@@ -81,70 +81,114 @@ class SolverHealthTracker:
             residual_norm = _as_float(_safe_call(solver, "getResidualNorm"))
             function_norm = _as_float(_safe_call(solver, "getFunctionNorm"))
             max_iterations = _solver_max_iterations(solver)
-            iteration_fraction = (
-                float(iterations) / float(max_iterations)
-                if iterations is not None and max_iterations not in (None, 0)
-                else None
-            )
-            near_limit = (
-                iteration_fraction is not None
-                and iteration_fraction >= self._near_iteration_limit_fraction
-            )
-
-            summary = self._solver_summaries.setdefault(
-                name,
-                {
-                    "kind": _solver_kind(solver),
-                    "solver_type": _safe_call(solver, "getType"),
-                    "observations": 0,
-                    "non_converged_observations": 0,
-                    "near_iteration_limit_observations": 0,
-                    "last_context": None,
-                    "last_converged_reason": None,
-                    "last_iteration_count": None,
-                    "last_linear_iteration_count": None,
-                    "last_residual_norm": None,
-                    "last_function_norm": None,
-                    "max_iteration_count": None,
-                    "max_linear_iteration_count": None,
-                    "max_residual_norm": None,
-                    "max_function_norm": None,
-                    "max_iteration_fraction": None,
-                    "max_configured_iterations": max_iterations,
-                },
+            self.record_external_observation(
+                name=name,
+                context=context,
+                kind=_solver_kind(solver),
+                solver_type=_safe_call(solver, "getType"),
+                converged_reason=reason,
+                iterations=iterations,
+                linear_iterations=linear_iterations,
+                residual_norm=residual_norm,
+                function_norm=function_norm,
+                max_iterations=max_iterations,
             )
 
-            summary["observations"] += 1
-            if reason <= 0:
-                summary["non_converged_observations"] += 1
-            if near_limit:
-                summary["near_iteration_limit_observations"] += 1
+    def record_external_observation(
+        self,
+        *,
+        name: str,
+        context: str,
+        kind: str,
+        solver_type: str | None,
+        converged_reason: int,
+        iterations: int | None = None,
+        linear_iterations: int | None = None,
+        residual_norm: float | None = None,
+        function_norm: float | None = None,
+        max_iterations: int | None = None,
+        initial_residual: float | None = None,
+    ) -> None:
+        """Record one solver observation supplied by a non-PETSc backend."""
 
-            summary["last_context"] = context
-            summary["last_converged_reason"] = reason
-            summary["last_iteration_count"] = iterations
-            summary["last_linear_iteration_count"] = linear_iterations
-            summary["last_residual_norm"] = residual_norm
-            summary["last_function_norm"] = function_norm
-            summary["max_iteration_count"] = _max_optional(
-                summary["max_iteration_count"],
-                iterations,
+        iteration_fraction = (
+            float(iterations) / float(max_iterations)
+            if iterations is not None and max_iterations not in (None, 0)
+            else None
+        )
+        near_limit = (
+            iteration_fraction is not None
+            and iteration_fraction >= self._near_iteration_limit_fraction
+        )
+
+        summary = self._solver_summaries.setdefault(
+            name,
+            {
+                "kind": kind,
+                "solver_type": solver_type,
+                "observations": 0,
+                "non_converged_observations": 0,
+                "near_iteration_limit_observations": 0,
+                "last_context": None,
+                "last_converged_reason": None,
+                "last_iteration_count": None,
+                "last_linear_iteration_count": None,
+                "last_residual_norm": None,
+                "last_function_norm": None,
+                "max_iteration_count": None,
+                "max_linear_iteration_count": None,
+                "max_residual_norm": None,
+                "max_function_norm": None,
+                "max_iteration_fraction": None,
+                "max_configured_iterations": max_iterations,
+            },
+        )
+        if summary["solver_type"] is None and solver_type is not None:
+            summary["solver_type"] = solver_type
+        if max_iterations is not None:
+            summary["max_configured_iterations"] = _max_optional(
+                summary["max_configured_iterations"],
+                max_iterations,
             )
-            summary["max_linear_iteration_count"] = _max_optional(
-                summary["max_linear_iteration_count"],
-                linear_iterations,
-            )
-            summary["max_residual_norm"] = _max_optional(
-                summary["max_residual_norm"],
-                residual_norm,
-            )
-            summary["max_function_norm"] = _max_optional(
-                summary["max_function_norm"],
-                function_norm,
-            )
-            summary["max_iteration_fraction"] = _max_optional(
-                summary["max_iteration_fraction"],
-                iteration_fraction,
+
+        summary["observations"] += 1
+        if converged_reason <= 0:
+            summary["non_converged_observations"] += 1
+        if near_limit:
+            summary["near_iteration_limit_observations"] += 1
+
+        summary["last_context"] = context
+        summary["last_converged_reason"] = converged_reason
+        summary["last_iteration_count"] = iterations
+        summary["last_linear_iteration_count"] = linear_iterations
+        summary["last_residual_norm"] = residual_norm
+        summary["last_function_norm"] = function_norm
+        summary["max_iteration_count"] = _max_optional(
+            summary["max_iteration_count"],
+            iterations,
+        )
+        summary["max_linear_iteration_count"] = _max_optional(
+            summary["max_linear_iteration_count"],
+            linear_iterations,
+        )
+        summary["max_residual_norm"] = _max_optional(
+            summary["max_residual_norm"],
+            residual_norm,
+        )
+        summary["max_function_norm"] = _max_optional(
+            summary["max_function_norm"],
+            function_norm,
+        )
+        summary["max_iteration_fraction"] = _max_optional(
+            summary["max_iteration_fraction"],
+            iteration_fraction,
+        )
+        if initial_residual is not None:
+            last_initial = _as_float(initial_residual)
+            summary["last_initial_residual"] = last_initial
+            summary["max_initial_residual"] = _max_optional(
+                summary.get("max_initial_residual"),
+                last_initial,
             )
 
     def build_report(self) -> dict[str, Any]:
