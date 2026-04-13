@@ -3,6 +3,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
 import math
+from typing import Any
 
 import numpy as np
 import ufl
@@ -74,6 +75,8 @@ class DomainGeometry:
 
 DomainFactory = Callable[[DomainConfig], DomainGeometry]
 _DOMAIN_REGISTRY: dict[str, DomainFactory] = {}
+GmshPlanarBuilder = Callable[[Any, DomainConfig], None]
+_GMSH_PLANAR_REGISTRY: dict[str, GmshPlanarBuilder] = {}
 
 
 def register_domain(name: str) -> Callable[[DomainFactory], DomainFactory]:
@@ -89,6 +92,32 @@ def register_domain(name: str) -> Callable[[DomainFactory], DomainFactory]:
 def list_domains() -> list[str]:
     """Return the registered domain types."""
     return sorted(_DOMAIN_REGISTRY)
+
+
+def register_gmsh_planar_domain(
+    name: str,
+) -> Callable[[GmshPlanarBuilder], GmshPlanarBuilder]:
+    """Register one reusable 2D Gmsh builder under a domain name."""
+
+    def decorator(builder: GmshPlanarBuilder) -> GmshPlanarBuilder:
+        _GMSH_PLANAR_REGISTRY[name] = builder
+        return builder
+
+    return decorator
+
+
+def is_gmsh_planar_domain(name: str) -> bool:
+    """Return whether the domain has a reusable planar Gmsh builder."""
+    return name in _GMSH_PLANAR_REGISTRY
+
+
+def build_gmsh_planar_domain_model(domain: DomainConfig, model: Any) -> None:
+    """Populate the active Gmsh model with one tagged 2D built-in domain."""
+    if domain.type not in _GMSH_PLANAR_REGISTRY:
+        raise ValueError(
+            f"Domain '{domain.type}' does not expose a planar Gmsh builder."
+        )
+    _GMSH_PLANAR_REGISTRY[domain.type](model, domain)
 
 
 def _require_param(params: dict, key: str, domain_type: str):
@@ -248,6 +277,26 @@ def _finalize_gmsh_domain(
             f"Gmsh model '{name}' produced no named boundary physical groups."
         )
     return domain_geom
+
+
+def _create_gmsh_planar_domain(domain: DomainConfig) -> DomainGeometry:
+    """Build and import one reusable tagged 2D Gmsh domain."""
+    import gmsh
+
+    gmsh.initialize()
+    try:
+        gmsh.option.setNumber("General.Terminal", 0)
+        model = gmsh.model
+        model.add(domain.type)
+        model.setCurrent(domain.type)
+
+        if MPI.COMM_WORLD.rank == 0:
+            build_gmsh_planar_domain_model(domain, model)
+            model.mesh.generate(2)
+
+        return _finalize_gmsh_domain(model, name=domain.type, gdim=2)
+    finally:
+        gmsh.finalize()
 
 
 def _tag_single_gmsh_boundary(
@@ -597,43 +646,31 @@ def _create_box(domain: DomainConfig) -> DomainGeometry:
     )
 
 
-@register_domain("disk")
-def _create_disk(domain: DomainConfig) -> DomainGeometry:
-    import gmsh
-
+@register_gmsh_planar_domain("disk")
+def _build_disk_gmsh_model(model, domain: DomainConfig) -> None:
     p = domain.params
     center = np.asarray(_require_param(p, "center", domain.type), dtype=float)
     radius = float(_require_param(p, "radius", domain.type))
     mesh_size = float(_require_param(p, "mesh_size", domain.type))
     validate_domain_params(domain.type, p)
 
-    gmsh.initialize()
-    try:
-        gmsh.option.setNumber("General.Terminal", 0)
-        model = gmsh.model
-        model.add("disk")
-        model.setCurrent("disk")
+    disk = model.occ.addDisk(center[0], center[1], 0.0, radius, radius)
+    model.occ.synchronize()
 
-        if MPI.COMM_WORLD.rank == 0:
-            disk = model.occ.addDisk(center[0], center[1], 0.0, radius, radius)
-            model.occ.synchronize()
+    model.addPhysicalGroup(2, [disk], tag=1)
+    model.setPhysicalName(2, 1, "surface")
+    _tag_single_gmsh_boundary(model, [disk], "outer")
 
-            model.addPhysicalGroup(2, [disk], tag=1)
-            model.setPhysicalName(2, 1, "surface")
-            _tag_single_gmsh_boundary(model, [disk], "outer")
-
-            model.mesh.setSize(model.getEntities(0), mesh_size)
-            model.mesh.generate(2)
-
-        return _finalize_gmsh_domain(model, name="disk", gdim=2)
-    finally:
-        gmsh.finalize()
+    model.mesh.setSize(model.getEntities(0), mesh_size)
 
 
-@register_domain("dumbbell")
-def _create_dumbbell(domain: DomainConfig) -> DomainGeometry:
-    import gmsh
+@register_domain("disk")
+def _create_disk(domain: DomainConfig) -> DomainGeometry:
+    return _create_gmsh_planar_domain(domain)
 
+
+@register_gmsh_planar_domain("dumbbell")
+def _build_dumbbell_gmsh_model(model, domain: DomainConfig) -> None:
     p = domain.params
     left_center = np.asarray(_require_param(p, "left_center", domain.type), dtype=float)
     right_center = np.asarray(
@@ -645,60 +682,50 @@ def _create_dumbbell(domain: DomainConfig) -> DomainGeometry:
     mesh_size = float(_require_param(p, "mesh_size", domain.type))
     validate_domain_params(domain.type, p)
 
-    gmsh.initialize()
-    try:
-        gmsh.option.setNumber("General.Terminal", 0)
-        model = gmsh.model
-        model.add("dumbbell")
-        model.setCurrent("dumbbell")
+    left_disk = model.occ.addDisk(
+        left_center[0],
+        left_center[1],
+        0.0,
+        lobe_radius,
+        lobe_radius,
+    )
+    right_disk = model.occ.addDisk(
+        right_center[0],
+        right_center[1],
+        0.0,
+        lobe_radius,
+        lobe_radius,
+    )
+    bridge = model.occ.addRectangle(
+        left_center[0],
+        left_center[1] - 0.5 * neck_width,
+        0.0,
+        right_center[0] - left_center[0],
+        neck_width,
+    )
+    model.occ.fuse(
+        [(2, left_disk), (2, right_disk)],
+        [(2, bridge)],
+        removeObject=True,
+        removeTool=True,
+    )
+    model.occ.synchronize()
 
-        if MPI.COMM_WORLD.rank == 0:
-            left_disk = model.occ.addDisk(
-                left_center[0],
-                left_center[1],
-                0.0,
-                lobe_radius,
-                lobe_radius,
-            )
-            right_disk = model.occ.addDisk(
-                right_center[0],
-                right_center[1],
-                0.0,
-                lobe_radius,
-                lobe_radius,
-            )
-            bridge = model.occ.addRectangle(
-                left_center[0],
-                left_center[1] - 0.5 * neck_width,
-                0.0,
-                right_center[0] - left_center[0],
-                neck_width,
-            )
-            model.occ.fuse(
-                [(2, left_disk), (2, right_disk)],
-                [(2, bridge)],
-                removeObject=True,
-                removeTool=True,
-            )
-            model.occ.synchronize()
+    surfaces = [entity[1] for entity in model.getEntities(2)]
+    model.addPhysicalGroup(2, surfaces, tag=1)
+    model.setPhysicalName(2, 1, "surface")
+    _tag_single_gmsh_boundary(model, surfaces, "outer")
 
-            surfaces = [entity[1] for entity in model.getEntities(2)]
-            model.addPhysicalGroup(2, surfaces, tag=1)
-            model.setPhysicalName(2, 1, "surface")
-            _tag_single_gmsh_boundary(model, surfaces, "outer")
-
-            model.mesh.setSize(model.getEntities(0), mesh_size)
-            model.mesh.generate(2)
-
-        return _finalize_gmsh_domain(model, name="dumbbell", gdim=2)
-    finally:
-        gmsh.finalize()
+    model.mesh.setSize(model.getEntities(0), mesh_size)
 
 
-@register_domain("l_shape")
-def _create_l_shape(domain: DomainConfig) -> DomainGeometry:
-    import gmsh
+@register_domain("dumbbell")
+def _create_dumbbell(domain: DomainConfig) -> DomainGeometry:
+    return _create_gmsh_planar_domain(domain)
 
+
+@register_gmsh_planar_domain("l_shape")
+def _build_l_shape_gmsh_model(model, domain: DomainConfig) -> None:
     p = domain.params
     outer_width = float(_require_param(p, "outer_width", domain.type))
     outer_height = float(_require_param(p, "outer_height", domain.type))
@@ -710,82 +737,72 @@ def _create_l_shape(domain: DomainConfig) -> DomainGeometry:
     reentrant_x = outer_width - cutout_width
     reentrant_y = outer_height - cutout_height
 
-    gmsh.initialize()
-    try:
-        gmsh.option.setNumber("General.Terminal", 0)
-        model = gmsh.model
-        model.add("l_shape")
-        model.setCurrent("l_shape")
+    lower_arm = model.occ.addRectangle(
+        0.0,
+        0.0,
+        0.0,
+        outer_width,
+        reentrant_y,
+    )
+    left_arm = model.occ.addRectangle(
+        0.0,
+        0.0,
+        0.0,
+        reentrant_x,
+        outer_height,
+    )
+    surfaces = _fuse_planar_surfaces(model, [lower_arm, left_arm])
+    model.addPhysicalGroup(2, surfaces, tag=1)
+    model.setPhysicalName(2, 1, "surface")
 
-        if MPI.COMM_WORLD.rank == 0:
-            lower_arm = model.occ.addRectangle(
-                0.0,
-                0.0,
-                0.0,
-                outer_width,
-                reentrant_y,
-            )
-            left_arm = model.occ.addRectangle(
-                0.0,
-                0.0,
-                0.0,
-                reentrant_x,
-                outer_height,
-            )
-            surfaces = _fuse_planar_surfaces(model, [lower_arm, left_arm])
-            model.addPhysicalGroup(2, surfaces, tag=1)
-            model.setPhysicalName(2, 1, "surface")
+    tol = max(1.0e-8, 1.0e-6 * max(outer_width, outer_height))
+    outer: list[int] = []
+    notch: list[int] = []
+    boundary = model.getBoundary(
+        [(2, surface_tag) for surface_tag in surfaces],
+        oriented=False,
+    )
+    for dim, tag in boundary:
+        if dim != 1:
+            continue
+        x_min, y_min, _, x_max, y_max, _ = model.occ.getBoundingBox(dim, tag)
+        is_notch_vertical = np.isclose(x_min, reentrant_x, atol=tol) and np.isclose(
+            x_max,
+            reentrant_x,
+            atol=tol,
+        )
+        is_notch_horizontal = np.isclose(y_min, reentrant_y, atol=tol) and np.isclose(
+            y_max,
+            reentrant_y,
+            atol=tol,
+        )
+        if is_notch_vertical or is_notch_horizontal:
+            notch.append(tag)
+        else:
+            outer.append(tag)
 
-            tol = max(1.0e-8, 1.0e-6 * max(outer_width, outer_height))
-            outer: list[int] = []
-            notch: list[int] = []
-            boundary = model.getBoundary(
-                [(2, surface_tag) for surface_tag in surfaces],
-                oriented=False,
-            )
-            for dim, tag in boundary:
-                if dim != 1:
-                    continue
-                x_min, y_min, _, x_max, y_max, _ = model.occ.getBoundingBox(dim, tag)
-                is_notch_vertical = np.isclose(
-                    x_min, reentrant_x, atol=tol
-                ) and np.isclose(x_max, reentrant_x, atol=tol)
-                is_notch_horizontal = np.isclose(
-                    y_min,
-                    reentrant_y,
-                    atol=tol,
-                ) and np.isclose(y_max, reentrant_y, atol=tol)
-                if is_notch_vertical or is_notch_horizontal:
-                    notch.append(tag)
-                else:
-                    outer.append(tag)
+    for physical_tag, (name, curve_tags) in enumerate(
+        (
+            ("outer", outer),
+            ("notch", notch),
+        ),
+        start=1,
+    ):
+        if not curve_tags:
+            raise AssertionError(f"L-shape domain produced no curves for '{name}'.")
+        model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
+        model.setPhysicalName(1, physical_tag, name)
 
-            for physical_tag, (name, curve_tags) in enumerate(
-                (
-                    ("outer", outer),
-                    ("notch", notch),
-                ),
-                start=1,
-            ):
-                if not curve_tags:
-                    raise AssertionError(
-                        f"L-shape domain produced no curves for '{name}'."
-                    )
-                model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
-                model.setPhysicalName(1, physical_tag, name)
-
-            model.mesh.setSize(model.getEntities(0), mesh_size)
-            model.mesh.generate(2)
-
-        return _finalize_gmsh_domain(model, name="l_shape", gdim=2)
-    finally:
-        gmsh.finalize()
+    model.mesh.setSize(model.getEntities(0), mesh_size)
 
 
-@register_domain("multi_hole_plate")
-def _create_multi_hole_plate(domain: DomainConfig) -> DomainGeometry:
-    import gmsh
+@register_domain("l_shape")
+def _create_l_shape(domain: DomainConfig) -> DomainGeometry:
+    return _create_gmsh_planar_domain(domain)
 
+
+@register_gmsh_planar_domain("multi_hole_plate")
+def _build_multi_hole_plate_gmsh_model(model, domain: DomainConfig) -> None:
     p = domain.params
     width = float(_require_param(p, "width", domain.type))
     height = float(_require_param(p, "height", domain.type))
@@ -810,96 +827,80 @@ def _create_multi_hole_plate(domain: DomainConfig) -> DomainGeometry:
             )
         )
 
-    gmsh.initialize()
-    try:
-        gmsh.option.setNumber("General.Terminal", 0)
-        model = gmsh.model
-        model.add("multi_hole_plate")
-        model.setCurrent("multi_hole_plate")
+    plate = model.occ.addRectangle(0.0, 0.0, 0.0, width, height)
+    holes = [
+        model.occ.addDisk(center[0], center[1], 0.0, radius, radius)
+        for center, radius, _ in hole_specs
+    ]
+    model.occ.cut(
+        [(2, plate)],
+        [(2, hole) for hole in holes],
+        removeObject=True,
+        removeTool=True,
+    )
+    model.occ.synchronize()
 
-        if MPI.COMM_WORLD.rank == 0:
-            plate = model.occ.addRectangle(0.0, 0.0, 0.0, width, height)
-            holes = [
-                model.occ.addDisk(center[0], center[1], 0.0, radius, radius)
-                for center, radius, _ in hole_specs
-            ]
-            model.occ.cut(
-                [(2, plate)],
-                [(2, hole) for hole in holes],
-                removeObject=True,
-                removeTool=True,
+    surfaces = [entity[1] for entity in model.getEntities(2)]
+    model.addPhysicalGroup(2, surfaces, tag=1)
+    model.setPhysicalName(2, 1, "surface")
+
+    tol = max(1.0e-8, 1.0e-6 * max(width, height))
+    outer: list[int] = []
+    hole_groups: dict[str, list[int]] = {}
+    for _, _, boundary_name in hole_specs:
+        hole_groups.setdefault(boundary_name, [])
+
+    boundary = model.getBoundary(
+        [(2, surface_tag) for surface_tag in surfaces],
+        oriented=False,
+    )
+    for dim, tag in boundary:
+        if dim != 1:
+            continue
+        x_min, y_min, _, x_max, y_max, _ = model.occ.getBoundingBox(dim, tag)
+        if (
+            (np.isclose(x_min, 0.0, atol=tol) and np.isclose(x_max, 0.0, atol=tol))
+            or (
+                np.isclose(x_min, width, atol=tol)
+                and np.isclose(x_max, width, atol=tol)
             )
-            model.occ.synchronize()
-
-            surfaces = [entity[1] for entity in model.getEntities(2)]
-            model.addPhysicalGroup(2, surfaces, tag=1)
-            model.setPhysicalName(2, 1, "surface")
-
-            tol = max(1.0e-8, 1.0e-6 * max(width, height))
-            outer: list[int] = []
-            hole_groups: dict[str, list[int]] = {}
-            for _, _, boundary_name in hole_specs:
-                hole_groups.setdefault(boundary_name, [])
-
-            boundary = model.getBoundary(
-                [(2, surface_tag) for surface_tag in surfaces],
-                oriented=False,
+            or (np.isclose(y_min, 0.0, atol=tol) and np.isclose(y_max, 0.0, atol=tol))
+            or (
+                np.isclose(y_min, height, atol=tol)
+                and np.isclose(y_max, height, atol=tol)
             )
-            for dim, tag in boundary:
-                if dim != 1:
-                    continue
-                x_min, y_min, _, x_max, y_max, _ = model.occ.getBoundingBox(dim, tag)
-                if (
-                    (
-                        np.isclose(x_min, 0.0, atol=tol)
-                        and np.isclose(x_max, 0.0, atol=tol)
-                    )
-                    or (
-                        np.isclose(x_min, width, atol=tol)
-                        and np.isclose(x_max, width, atol=tol)
-                    )
-                    or (
-                        np.isclose(y_min, 0.0, atol=tol)
-                        and np.isclose(y_max, 0.0, atol=tol)
-                    )
-                    or (
-                        np.isclose(y_min, height, atol=tol)
-                        and np.isclose(y_max, height, atol=tol)
-                    )
-                ):
-                    outer.append(tag)
-                    continue
+        ):
+            outer.append(tag)
+            continue
 
-                curve_center = np.asarray(
-                    model.occ.getCenterOfMass(dim, tag)[:2],
-                    dtype=float,
-                )
-                hole_index = min(
-                    range(len(hole_specs)),
-                    key=lambda index: np.linalg.norm(
-                        curve_center - hole_specs[index][0]
-                    ),
-                )
-                hole_groups[hole_specs[hole_index][2]].append(tag)
+        curve_center = np.asarray(
+            model.occ.getCenterOfMass(dim, tag)[:2],
+            dtype=float,
+        )
+        hole_index = min(
+            range(len(hole_specs)),
+            key=lambda index: np.linalg.norm(curve_center - hole_specs[index][0]),
+        )
+        hole_groups[hole_specs[hole_index][2]].append(tag)
 
-            physical_groups = [("outer", outer), *hole_groups.items()]
-            for physical_tag, (name, curve_tags) in enumerate(
-                physical_groups,
-                start=1,
-            ):
-                if not curve_tags:
-                    raise AssertionError(
-                        f"Multi-hole plate domain produced no curves for '{name}'."
-                    )
-                model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
-                model.setPhysicalName(1, physical_tag, name)
+    physical_groups = [("outer", outer), *hole_groups.items()]
+    for physical_tag, (name, curve_tags) in enumerate(
+        physical_groups,
+        start=1,
+    ):
+        if not curve_tags:
+            raise AssertionError(
+                f"Multi-hole plate domain produced no curves for '{name}'."
+            )
+        model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
+        model.setPhysicalName(1, physical_tag, name)
 
-            model.mesh.setSize(model.getEntities(0), mesh_size)
-            model.mesh.generate(2)
+    model.mesh.setSize(model.getEntities(0), mesh_size)
 
-        return _finalize_gmsh_domain(model, name="multi_hole_plate", gdim=2)
-    finally:
-        gmsh.finalize()
+
+@register_domain("multi_hole_plate")
+def _create_multi_hole_plate(domain: DomainConfig) -> DomainGeometry:
+    return _create_gmsh_planar_domain(domain)
 
 
 @register_domain("parallelogram")
@@ -977,10 +978,8 @@ def _create_parallelogram(domain: DomainConfig) -> DomainGeometry:
     )
 
 
-@register_domain("channel_obstacle")
-def _create_channel_obstacle(domain: DomainConfig) -> DomainGeometry:
-    import gmsh
-
+@register_gmsh_planar_domain("channel_obstacle")
+def _build_channel_obstacle_gmsh_model(model, domain: DomainConfig) -> None:
     p = domain.params
     length = float(_require_param(p, "length", domain.type))
     height = float(_require_param(p, "height", domain.type))
@@ -992,67 +991,57 @@ def _create_channel_obstacle(domain: DomainConfig) -> DomainGeometry:
     mesh_size = float(_require_param(p, "mesh_size", domain.type))
     validate_domain_params(domain.type, p)
 
-    gmsh.initialize()
-    try:
-        gmsh.option.setNumber("General.Terminal", 0)
-        model = gmsh.model
-        model.add("channel_obstacle")
-        model.setCurrent("channel_obstacle")
+    channel = model.occ.addRectangle(0.0, 0.0, 0.0, length, height)
+    obstacle = model.occ.addDisk(
+        obstacle_center[0],
+        obstacle_center[1],
+        0.0,
+        obstacle_radius,
+        obstacle_radius,
+    )
+    model.occ.cut(
+        [(2, channel)],
+        [(2, obstacle)],
+        removeObject=True,
+        removeTool=True,
+    )
+    model.occ.synchronize()
 
-        if MPI.COMM_WORLD.rank == 0:
-            channel = model.occ.addRectangle(0.0, 0.0, 0.0, length, height)
-            obstacle = model.occ.addDisk(
-                obstacle_center[0],
-                obstacle_center[1],
-                0.0,
-                obstacle_radius,
-                obstacle_radius,
-            )
-            model.occ.cut(
-                [(2, channel)],
-                [(2, obstacle)],
-                removeObject=True,
-                removeTool=True,
-            )
-            model.occ.synchronize()
+    surfaces = [entity[1] for entity in model.getEntities(2)]
+    model.addPhysicalGroup(2, surfaces, tag=1)
+    model.setPhysicalName(2, 1, "surface")
 
-            surfaces = [entity[1] for entity in model.getEntities(2)]
-            model.addPhysicalGroup(2, surfaces, tag=1)
-            model.setPhysicalName(2, 1, "surface")
+    tol = max(mesh_size, 1.0e-8)
+    inlet, outlet, walls, obstacle_curves = (
+        _classify_rectangular_channel_hole_boundaries(
+            model,
+            surfaces,
+            length=length,
+            height=height,
+            tol=tol,
+        )
+    )
+    _add_named_gmsh_boundaries(
+        model,
+        (
+            ("inlet", inlet),
+            ("outlet", outlet),
+            ("walls", walls),
+            ("obstacle", obstacle_curves),
+        ),
+        domain_name="Channel-obstacle",
+    )
 
-            tol = max(mesh_size, 1.0e-8)
-            inlet, outlet, walls, obstacle_curves = (
-                _classify_rectangular_channel_hole_boundaries(
-                    model,
-                    surfaces,
-                    length=length,
-                    height=height,
-                    tol=tol,
-                )
-            )
-            _add_named_gmsh_boundaries(
-                model,
-                (
-                    ("inlet", inlet),
-                    ("outlet", outlet),
-                    ("walls", walls),
-                    ("obstacle", obstacle_curves),
-                ),
-                domain_name="Channel-obstacle",
-            )
-
-            model.mesh.setSize(model.getEntities(0), mesh_size)
-            model.mesh.generate(2)
-
-        return _finalize_gmsh_domain(model, name="channel_obstacle", gdim=2)
-    finally:
-        gmsh.finalize()
+    model.mesh.setSize(model.getEntities(0), mesh_size)
 
 
-@register_domain("annulus")
-def _create_annulus(domain: DomainConfig) -> DomainGeometry:
-    import gmsh
+@register_domain("channel_obstacle")
+def _create_channel_obstacle(domain: DomainConfig) -> DomainGeometry:
+    return _create_gmsh_planar_domain(domain)
 
+
+@register_gmsh_planar_domain("annulus")
+def _build_annulus_gmsh_model(model, domain: DomainConfig) -> None:
     p = domain.params
     center = np.asarray(_require_param(p, "center", domain.type), dtype=float)
     inner_radius = float(_require_param(p, "inner_radius", domain.type))
@@ -1060,66 +1049,56 @@ def _create_annulus(domain: DomainConfig) -> DomainGeometry:
     mesh_size = float(_require_param(p, "mesh_size", domain.type))
     validate_domain_params(domain.type, p)
 
-    comm = MPI.COMM_WORLD
-    gmsh.initialize()
-    try:
-        gmsh.option.setNumber("General.Terminal", 0)
-        model = gmsh.model
-        model.add("annulus")
-        model.setCurrent("annulus")
+    outer_disk = model.occ.addDisk(
+        center[0],
+        center[1],
+        0.0,
+        outer_radius,
+        outer_radius,
+    )
+    inner_disk = model.occ.addDisk(
+        center[0],
+        center[1],
+        0.0,
+        inner_radius,
+        inner_radius,
+    )
+    model.occ.cut([(2, outer_disk)], [(2, inner_disk)])
+    model.occ.synchronize()
 
-        if comm.rank == 0:
-            outer_disk = model.occ.addDisk(
-                center[0],
-                center[1],
-                0.0,
-                outer_radius,
-                outer_radius,
-            )
-            inner_disk = model.occ.addDisk(
-                center[0],
-                center[1],
-                0.0,
-                inner_radius,
-                inner_radius,
-            )
-            model.occ.cut([(2, outer_disk)], [(2, inner_disk)])
-            model.occ.synchronize()
+    surfaces = [entity[1] for entity in model.getEntities(2)]
+    model.addPhysicalGroup(2, surfaces, tag=1)
+    model.setPhysicalName(2, 1, "surface")
 
-            surfaces = [e[1] for e in model.getEntities(2)]
-            model.addPhysicalGroup(2, surfaces, tag=1)
-            model.setPhysicalName(2, 1, "surface")
+    boundary = model.getBoundary(
+        [(2, surface_tag) for surface_tag in surfaces], oriented=False
+    )
+    r_mid = inner_radius + outer_radius
+    inner_curves: list[int] = []
+    outer_curves: list[int] = []
+    for dim, tag in boundary:
+        bb = model.occ.getBoundingBox(dim, tag)
+        extent = max(bb[3] - bb[0], bb[4] - bb[1])
+        if extent < r_mid:
+            inner_curves.append(tag)
+        else:
+            outer_curves.append(tag)
 
-            boundary = model.getBoundary([(2, s) for s in surfaces], oriented=False)
-            r_mid = inner_radius + outer_radius
-            inner_curves: list[int] = []
-            outer_curves: list[int] = []
-            for dim, tag in boundary:
-                bb = model.occ.getBoundingBox(dim, tag)
-                extent = max(bb[3] - bb[0], bb[4] - bb[1])
-                if extent < r_mid:
-                    inner_curves.append(tag)
-                else:
-                    outer_curves.append(tag)
+    model.addPhysicalGroup(1, inner_curves, tag=1)
+    model.setPhysicalName(1, 1, "inner")
+    model.addPhysicalGroup(1, outer_curves, tag=2)
+    model.setPhysicalName(1, 2, "outer")
 
-            model.addPhysicalGroup(1, inner_curves, tag=1)
-            model.setPhysicalName(1, 1, "inner")
-            model.addPhysicalGroup(1, outer_curves, tag=2)
-            model.setPhysicalName(1, 2, "outer")
-
-            model.mesh.setSize(model.getEntities(0), mesh_size)
-            model.mesh.generate(2)
-
-        mesh_data = _model_to_mesh_shared_facet(model, comm, rank=0, gdim=2)
-    finally:
-        gmsh.finalize()
-    return _domain_geometry_from_gmsh_mesh_data(mesh_data)
+    model.mesh.setSize(model.getEntities(0), mesh_size)
 
 
-@register_domain("y_bifurcation")
-def _create_y_bifurcation(domain: DomainConfig) -> DomainGeometry:
-    import gmsh
+@register_domain("annulus")
+def _create_annulus(domain: DomainConfig) -> DomainGeometry:
+    return _create_gmsh_planar_domain(domain)
 
+
+@register_gmsh_planar_domain("y_bifurcation")
+def _build_y_bifurcation_gmsh_model(model, domain: DomainConfig) -> None:
     p = domain.params
     inlet_length = float(_require_param(p, "inlet_length", domain.type))
     branch_length = float(_require_param(p, "branch_length", domain.type))
@@ -1138,133 +1117,123 @@ def _create_y_bifurcation(domain: DomainConfig) -> DomainGeometry:
     )
     cap_tolerance = 0.45 * channel_width + 1.0e-8
 
-    gmsh.initialize()
-    try:
-        gmsh.option.setNumber("General.Terminal", 0)
-        model = gmsh.model
-        model.add("y_bifurcation")
-        model.setCurrent("y_bifurcation")
+    half_width = 0.5 * channel_width
+    trunk = model.occ.addRectangle(
+        0.0,
+        -half_width,
+        0.0,
+        inlet_length,
+        channel_width,
+    )
+    upper_branch = model.occ.addRectangle(
+        inlet_length,
+        -half_width,
+        0.0,
+        branch_length,
+        channel_width,
+    )
+    lower_branch = model.occ.addRectangle(
+        inlet_length,
+        -half_width,
+        0.0,
+        branch_length,
+        channel_width,
+    )
+    model.occ.rotate(
+        [(2, upper_branch)],
+        inlet_length,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        branch_angle,
+    )
+    model.occ.rotate(
+        [(2, lower_branch)],
+        inlet_length,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -branch_angle,
+    )
+    junction_disk = model.occ.addDisk(
+        inlet_length,
+        0.0,
+        0.0,
+        half_width,
+        half_width,
+    )
+    model.occ.fuse(
+        [(2, trunk)],
+        [
+            (2, upper_branch),
+            (2, lower_branch),
+            (2, junction_disk),
+        ],
+        removeObject=True,
+        removeTool=True,
+    )
+    model.occ.synchronize()
 
-        if MPI.COMM_WORLD.rank == 0:
-            half_width = 0.5 * channel_width
-            trunk = model.occ.addRectangle(
-                0.0,
-                -half_width,
-                0.0,
-                inlet_length,
-                channel_width,
+    surfaces = [entity[1] for entity in model.getEntities(2)]
+    model.addPhysicalGroup(2, surfaces, tag=1)
+    model.setPhysicalName(2, 1, "surface")
+
+    inlet: list[int] = []
+    outlet_upper: list[int] = []
+    outlet_lower: list[int] = []
+    walls: list[int] = []
+    boundary = model.getBoundary(
+        [(2, surface_tag) for surface_tag in surfaces],
+        oriented=False,
+    )
+    for dim, tag in boundary:
+        if dim != 1:
+            continue
+        center = np.asarray(
+            model.occ.getCenterOfMass(dim, tag)[:2],
+            dtype=float,
+        )
+        if np.linalg.norm(center - inlet_center) <= cap_tolerance:
+            inlet.append(tag)
+            continue
+        if np.linalg.norm(center - outlet_upper_center) <= cap_tolerance:
+            outlet_upper.append(tag)
+            continue
+        if np.linalg.norm(center - outlet_lower_center) <= cap_tolerance:
+            outlet_lower.append(tag)
+            continue
+        walls.append(tag)
+
+    for physical_tag, (name, curve_tags) in enumerate(
+        (
+            ("inlet", inlet),
+            ("outlet_upper", outlet_upper),
+            ("outlet_lower", outlet_lower),
+            ("walls", walls),
+        ),
+        start=1,
+    ):
+        if not curve_tags:
+            raise AssertionError(
+                f"Y-bifurcation domain produced no curves for '{name}'."
             )
-            upper_branch = model.occ.addRectangle(
-                inlet_length,
-                -half_width,
-                0.0,
-                branch_length,
-                channel_width,
-            )
-            lower_branch = model.occ.addRectangle(
-                inlet_length,
-                -half_width,
-                0.0,
-                branch_length,
-                channel_width,
-            )
-            model.occ.rotate(
-                [(2, upper_branch)],
-                inlet_length,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                1.0,
-                branch_angle,
-            )
-            model.occ.rotate(
-                [(2, lower_branch)],
-                inlet_length,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                1.0,
-                -branch_angle,
-            )
-            junction_disk = model.occ.addDisk(
-                inlet_length,
-                0.0,
-                0.0,
-                half_width,
-                half_width,
-            )
-            model.occ.fuse(
-                [(2, trunk)],
-                [
-                    (2, upper_branch),
-                    (2, lower_branch),
-                    (2, junction_disk),
-                ],
-                removeObject=True,
-                removeTool=True,
-            )
-            model.occ.synchronize()
+        model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
+        model.setPhysicalName(1, physical_tag, name)
 
-            surfaces = [entity[1] for entity in model.getEntities(2)]
-            model.addPhysicalGroup(2, surfaces, tag=1)
-            model.setPhysicalName(2, 1, "surface")
-
-            inlet: list[int] = []
-            outlet_upper: list[int] = []
-            outlet_lower: list[int] = []
-            walls: list[int] = []
-            boundary = model.getBoundary(
-                [(2, surface_tag) for surface_tag in surfaces],
-                oriented=False,
-            )
-            for dim, tag in boundary:
-                if dim != 1:
-                    continue
-                center = np.asarray(
-                    model.occ.getCenterOfMass(dim, tag)[:2],
-                    dtype=float,
-                )
-                if np.linalg.norm(center - inlet_center) <= cap_tolerance:
-                    inlet.append(tag)
-                    continue
-                if np.linalg.norm(center - outlet_upper_center) <= cap_tolerance:
-                    outlet_upper.append(tag)
-                    continue
-                if np.linalg.norm(center - outlet_lower_center) <= cap_tolerance:
-                    outlet_lower.append(tag)
-                    continue
-                walls.append(tag)
-
-            for physical_tag, (name, curve_tags) in enumerate(
-                (
-                    ("inlet", inlet),
-                    ("outlet_upper", outlet_upper),
-                    ("outlet_lower", outlet_lower),
-                    ("walls", walls),
-                ),
-                start=1,
-            ):
-                if not curve_tags:
-                    raise AssertionError(
-                        f"Y-bifurcation domain produced no curves for '{name}'."
-                    )
-                model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
-                model.setPhysicalName(1, physical_tag, name)
-
-            model.mesh.setSize(model.getEntities(0), mesh_size)
-            model.mesh.generate(2)
-
-        return _finalize_gmsh_domain(model, name="y_bifurcation", gdim=2)
-    finally:
-        gmsh.finalize()
+    model.mesh.setSize(model.getEntities(0), mesh_size)
 
 
-@register_domain("venturi_channel")
-def _create_venturi_channel(domain: DomainConfig) -> DomainGeometry:
-    import gmsh
+@register_domain("y_bifurcation")
+def _create_y_bifurcation(domain: DomainConfig) -> DomainGeometry:
+    return _create_gmsh_planar_domain(domain)
 
+
+@register_gmsh_planar_domain("venturi_channel")
+def _build_venturi_channel_gmsh_model(model, domain: DomainConfig) -> None:
     p = domain.params
     length = float(_require_param(p, "length", domain.type))
     height = float(_require_param(p, "height", domain.type))
@@ -1280,96 +1249,86 @@ def _create_venturi_channel(domain: DomainConfig) -> DomainGeometry:
     top_center_y = height + constriction_radius - indentation
     bottom_center_y = -constriction_radius + indentation
 
-    gmsh.initialize()
-    try:
-        gmsh.option.setNumber("General.Terminal", 0)
-        model = gmsh.model
-        model.add("venturi_channel")
-        model.setCurrent("venturi_channel")
+    channel = model.occ.addRectangle(0.0, 0.0, 0.0, length, height)
+    top_cut = model.occ.addDisk(
+        constriction_center_x,
+        top_center_y,
+        0.0,
+        constriction_radius,
+        constriction_radius,
+    )
+    bottom_cut = model.occ.addDisk(
+        constriction_center_x,
+        bottom_center_y,
+        0.0,
+        constriction_radius,
+        constriction_radius,
+    )
+    model.occ.cut(
+        [(2, channel)],
+        [(2, top_cut), (2, bottom_cut)],
+        removeObject=True,
+        removeTool=True,
+    )
+    model.occ.synchronize()
 
-        if MPI.COMM_WORLD.rank == 0:
-            channel = model.occ.addRectangle(0.0, 0.0, 0.0, length, height)
-            top_cut = model.occ.addDisk(
-                constriction_center_x,
-                top_center_y,
-                0.0,
-                constriction_radius,
-                constriction_radius,
+    surfaces = [entity[1] for entity in model.getEntities(2)]
+    model.addPhysicalGroup(2, surfaces, tag=1)
+    model.setPhysicalName(2, 1, "surface")
+
+    inlet: list[int] = []
+    outlet: list[int] = []
+    walls: list[int] = []
+    boundary_tol = 1.0e-6
+    boundary = model.getBoundary(
+        [(2, surface_tag) for surface_tag in surfaces],
+        oriented=False,
+    )
+    for dim, tag in boundary:
+        if dim != 1:
+            continue
+        bb = model.occ.getBoundingBox(dim, tag)
+        x_min, _, _, x_max, _, _ = bb
+        if np.isclose(x_min, 0.0, atol=boundary_tol) and np.isclose(
+            x_max,
+            0.0,
+            atol=boundary_tol,
+        ):
+            inlet.append(tag)
+        elif np.isclose(x_min, length, atol=boundary_tol) and np.isclose(
+            x_max,
+            length,
+            atol=boundary_tol,
+        ):
+            outlet.append(tag)
+        else:
+            walls.append(tag)
+
+    for physical_tag, (name, curve_tags) in enumerate(
+        (
+            ("inlet", inlet),
+            ("outlet", outlet),
+            ("walls", walls),
+        ),
+        start=1,
+    ):
+        if not curve_tags:
+            raise AssertionError(
+                f"Venturi-channel domain produced no curves for '{name}'."
             )
-            bottom_cut = model.occ.addDisk(
-                constriction_center_x,
-                bottom_center_y,
-                0.0,
-                constriction_radius,
-                constriction_radius,
-            )
-            model.occ.cut(
-                [(2, channel)],
-                [(2, top_cut), (2, bottom_cut)],
-                removeObject=True,
-                removeTool=True,
-            )
-            model.occ.synchronize()
+        model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
+        model.setPhysicalName(1, physical_tag, name)
 
-            surfaces = [entity[1] for entity in model.getEntities(2)]
-            model.addPhysicalGroup(2, surfaces, tag=1)
-            model.setPhysicalName(2, 1, "surface")
-
-            inlet: list[int] = []
-            outlet: list[int] = []
-            walls: list[int] = []
-            boundary_tol = 1.0e-6
-            boundary = model.getBoundary(
-                [(2, surface_tag) for surface_tag in surfaces],
-                oriented=False,
-            )
-            for dim, tag in boundary:
-                if dim != 1:
-                    continue
-                bb = model.occ.getBoundingBox(dim, tag)
-                x_min, _, _, x_max, _, _ = bb
-                if np.isclose(x_min, 0.0, atol=boundary_tol) and np.isclose(
-                    x_max,
-                    0.0,
-                    atol=boundary_tol,
-                ):
-                    inlet.append(tag)
-                elif np.isclose(x_min, length, atol=boundary_tol) and np.isclose(
-                    x_max,
-                    length,
-                    atol=boundary_tol,
-                ):
-                    outlet.append(tag)
-                else:
-                    walls.append(tag)
-
-            for physical_tag, (name, curve_tags) in enumerate(
-                (
-                    ("inlet", inlet),
-                    ("outlet", outlet),
-                    ("walls", walls),
-                ),
-                start=1,
-            ):
-                if not curve_tags:
-                    raise AssertionError(
-                        f"Venturi-channel domain produced no curves for '{name}'."
-                    )
-                model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
-                model.setPhysicalName(1, physical_tag, name)
-
-            model.mesh.setSize(model.getEntities(0), mesh_size)
-            model.mesh.generate(2)
-
-        return _finalize_gmsh_domain(model, name="venturi_channel", gdim=2)
-    finally:
-        gmsh.finalize()
+    model.mesh.setSize(model.getEntities(0), mesh_size)
 
 
-@register_domain("porous_channel")
-def _create_porous_channel(domain: DomainConfig) -> DomainGeometry:
-    import gmsh
+@register_domain("venturi_channel")
+def _create_venturi_channel(domain: DomainConfig) -> DomainGeometry:
+    return _create_gmsh_planar_domain(domain)
 
+
+@register_gmsh_planar_domain("porous_channel")
+def _build_porous_channel_gmsh_model(model, domain: DomainConfig) -> None:
     p = domain.params
     length = float(_require_param(p, "length", domain.type))
     height = float(_require_param(p, "height", domain.type))
@@ -1395,70 +1354,60 @@ def _create_porous_channel(domain: DomainConfig) -> DomainGeometry:
         row_shift_fraction=row_shift_fraction,
     )
 
-    gmsh.initialize()
-    try:
-        gmsh.option.setNumber("General.Terminal", 0)
-        model = gmsh.model
-        model.add("porous_channel")
-        model.setCurrent("porous_channel")
+    channel = model.occ.addRectangle(0.0, 0.0, 0.0, length, height)
+    obstacles = [
+        model.occ.addDisk(
+            center_x,
+            center_y,
+            0.0,
+            obstacle_radius,
+            obstacle_radius,
+        )
+        for center_x, center_y in obstacle_centers
+    ]
+    model.occ.cut(
+        [(2, channel)],
+        [(2, obstacle) for obstacle in obstacles],
+        removeObject=True,
+        removeTool=True,
+    )
+    model.occ.synchronize()
 
-        if MPI.COMM_WORLD.rank == 0:
-            channel = model.occ.addRectangle(0.0, 0.0, 0.0, length, height)
-            obstacles = [
-                model.occ.addDisk(
-                    center_x,
-                    center_y,
-                    0.0,
-                    obstacle_radius,
-                    obstacle_radius,
-                )
-                for center_x, center_y in obstacle_centers
-            ]
-            model.occ.cut(
-                [(2, channel)],
-                [(2, obstacle) for obstacle in obstacles],
-                removeObject=True,
-                removeTool=True,
-            )
-            model.occ.synchronize()
+    surfaces = [entity[1] for entity in model.getEntities(2)]
+    model.addPhysicalGroup(2, surfaces, tag=1)
+    model.setPhysicalName(2, 1, "surface")
 
-            surfaces = [entity[1] for entity in model.getEntities(2)]
-            model.addPhysicalGroup(2, surfaces, tag=1)
-            model.setPhysicalName(2, 1, "surface")
+    tol = max(mesh_size, 1.0e-8)
+    inlet, outlet, walls, obstacle_curves = (
+        _classify_rectangular_channel_hole_boundaries(
+            model,
+            surfaces,
+            length=length,
+            height=height,
+            tol=tol,
+        )
+    )
+    _add_named_gmsh_boundaries(
+        model,
+        (
+            ("inlet", inlet),
+            ("outlet", outlet),
+            ("walls", walls),
+            ("obstacles", obstacle_curves),
+        ),
+        domain_name="Porous-channel",
+    )
 
-            tol = max(mesh_size, 1.0e-8)
-            inlet, outlet, walls, obstacle_curves = (
-                _classify_rectangular_channel_hole_boundaries(
-                    model,
-                    surfaces,
-                    length=length,
-                    height=height,
-                    tol=tol,
-                )
-            )
-            _add_named_gmsh_boundaries(
-                model,
-                (
-                    ("inlet", inlet),
-                    ("outlet", outlet),
-                    ("walls", walls),
-                    ("obstacles", obstacle_curves),
-                ),
-                domain_name="Porous-channel",
-            )
-
-            model.mesh.setSize(model.getEntities(0), mesh_size)
-            model.mesh.generate(2)
-
-        return _finalize_gmsh_domain(model, name="porous_channel", gdim=2)
-    finally:
-        gmsh.finalize()
+    model.mesh.setSize(model.getEntities(0), mesh_size)
 
 
-@register_domain("serpentine_channel")
-def _create_serpentine_channel(domain: DomainConfig) -> DomainGeometry:
-    import gmsh
+@register_domain("porous_channel")
+def _create_porous_channel(domain: DomainConfig) -> DomainGeometry:
+    return _create_gmsh_planar_domain(domain)
 
+
+@register_gmsh_planar_domain("serpentine_channel")
+def _build_serpentine_channel_gmsh_model(model, domain: DomainConfig) -> None:
     p = domain.params
     channel_length = float(_require_param(p, "channel_length", domain.type))
     lane_spacing = float(_require_param(p, "lane_spacing", domain.type))
@@ -1484,71 +1433,61 @@ def _create_serpentine_channel(domain: DomainConfig) -> DomainGeometry:
     outlet_center = centerline_points[-1]
     cap_tolerance = 0.45 * channel_width + 1.0e-8
 
-    gmsh.initialize()
-    try:
-        gmsh.option.setNumber("General.Terminal", 0)
-        model = gmsh.model
-        model.add("serpentine_channel")
-        model.setCurrent("serpentine_channel")
+    surfaces = _add_orthogonal_channel_surfaces(
+        model,
+        centerline_points=centerline_points,
+        channel_width=channel_width,
+    )
+    model.addPhysicalGroup(2, surfaces, tag=1)
+    model.setPhysicalName(2, 1, "surface")
 
-        if MPI.COMM_WORLD.rank == 0:
-            surfaces = _add_orthogonal_channel_surfaces(
-                model,
-                centerline_points=centerline_points,
-                channel_width=channel_width,
+    inlet: list[int] = []
+    outlet: list[int] = []
+    walls: list[int] = []
+    boundary = model.getBoundary(
+        [(2, surface_tag) for surface_tag in surfaces],
+        oriented=False,
+    )
+    for dim, tag in boundary:
+        if dim != 1:
+            continue
+        center = np.asarray(
+            model.occ.getCenterOfMass(dim, tag)[:2],
+            dtype=float,
+        )
+        if np.linalg.norm(center - inlet_center) <= cap_tolerance:
+            inlet.append(tag)
+            continue
+        if np.linalg.norm(center - outlet_center) <= cap_tolerance:
+            outlet.append(tag)
+            continue
+        walls.append(tag)
+
+    for physical_tag, (name, curve_tags) in enumerate(
+        (
+            ("inlet", inlet),
+            ("outlet", outlet),
+            ("walls", walls),
+        ),
+        start=1,
+    ):
+        if not curve_tags:
+            raise AssertionError(
+                f"Serpentine-channel domain produced no curves for '{name}'."
             )
-            model.addPhysicalGroup(2, surfaces, tag=1)
-            model.setPhysicalName(2, 1, "surface")
+        model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
+        model.setPhysicalName(1, physical_tag, name)
 
-            inlet: list[int] = []
-            outlet: list[int] = []
-            walls: list[int] = []
-            boundary = model.getBoundary(
-                [(2, surface_tag) for surface_tag in surfaces],
-                oriented=False,
-            )
-            for dim, tag in boundary:
-                if dim != 1:
-                    continue
-                center = np.asarray(
-                    model.occ.getCenterOfMass(dim, tag)[:2],
-                    dtype=float,
-                )
-                if np.linalg.norm(center - inlet_center) <= cap_tolerance:
-                    inlet.append(tag)
-                    continue
-                if np.linalg.norm(center - outlet_center) <= cap_tolerance:
-                    outlet.append(tag)
-                    continue
-                walls.append(tag)
-
-            for physical_tag, (name, curve_tags) in enumerate(
-                (
-                    ("inlet", inlet),
-                    ("outlet", outlet),
-                    ("walls", walls),
-                ),
-                start=1,
-            ):
-                if not curve_tags:
-                    raise AssertionError(
-                        f"Serpentine-channel domain produced no curves for '{name}'."
-                    )
-                model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
-                model.setPhysicalName(1, physical_tag, name)
-
-            model.mesh.setSize(model.getEntities(0), mesh_size)
-            model.mesh.generate(2)
-
-        return _finalize_gmsh_domain(model, name="serpentine_channel", gdim=2)
-    finally:
-        gmsh.finalize()
+    model.mesh.setSize(model.getEntities(0), mesh_size)
 
 
-@register_domain("airfoil_channel")
-def _create_airfoil_channel(domain: DomainConfig) -> DomainGeometry:
-    import gmsh
+@register_domain("serpentine_channel")
+def _create_serpentine_channel(domain: DomainConfig) -> DomainGeometry:
+    return _create_gmsh_planar_domain(domain)
 
+
+@register_gmsh_planar_domain("airfoil_channel")
+def _build_airfoil_channel_gmsh_model(model, domain: DomainConfig) -> None:
     p = domain.params
     length = float(_require_param(p, "length", domain.type))
     height = float(_require_param(p, "height", domain.type))
@@ -1569,108 +1508,96 @@ def _create_airfoil_channel(domain: DomainConfig) -> DomainGeometry:
         attack_angle_degrees=attack_angle_degrees,
     )
 
-    gmsh.initialize()
-    try:
-        gmsh.option.setNumber("General.Terminal", 0)
-        model = gmsh.model
-        model.add("airfoil_channel")
-        model.setCurrent("airfoil_channel")
+    channel = model.occ.addRectangle(0.0, 0.0, 0.0, length, height)
 
-        if MPI.COMM_WORLD.rank == 0:
-            channel = model.occ.addRectangle(0.0, 0.0, 0.0, length, height)
+    upper_tags = [
+        model.occ.addPoint(float(x_coord), float(y_coord), 0.0)
+        for x_coord, y_coord in upper_points
+    ]
+    leading_edge_tag = upper_tags[-1]
+    lower_tags = [leading_edge_tag] + [
+        model.occ.addPoint(float(x_coord), float(y_coord), 0.0)
+        for x_coord, y_coord in lower_points
+    ]
+    upper_spline = model.occ.addSpline(upper_tags)
+    lower_spline = model.occ.addSpline(lower_tags)
+    trailing_edge = model.occ.addLine(lower_tags[-1], upper_tags[0])
+    airfoil_loop = model.occ.addCurveLoop([upper_spline, lower_spline, trailing_edge])
+    airfoil_surface = model.occ.addPlaneSurface([airfoil_loop])
 
-            upper_tags = [
-                model.occ.addPoint(float(x_coord), float(y_coord), 0.0)
-                for x_coord, y_coord in upper_points
-            ]
-            leading_edge_tag = upper_tags[-1]
-            lower_tags = [leading_edge_tag] + [
-                model.occ.addPoint(float(x_coord), float(y_coord), 0.0)
-                for x_coord, y_coord in lower_points
-            ]
-            upper_spline = model.occ.addSpline(upper_tags)
-            lower_spline = model.occ.addSpline(lower_tags)
-            trailing_edge = model.occ.addLine(lower_tags[-1], upper_tags[0])
-            airfoil_loop = model.occ.addCurveLoop(
-                [upper_spline, lower_spline, trailing_edge]
+    model.occ.cut(
+        [(2, channel)],
+        [(2, airfoil_surface)],
+        removeObject=True,
+        removeTool=True,
+    )
+    model.occ.synchronize()
+
+    surfaces = [entity[1] for entity in model.getEntities(2)]
+    model.addPhysicalGroup(2, surfaces, tag=1)
+    model.setPhysicalName(2, 1, "surface")
+
+    tol = max(mesh_size, 1.0e-8)
+    inlet: list[int] = []
+    outlet: list[int] = []
+    walls: list[int] = []
+    airfoil_curves: list[int] = []
+    boundary = model.getBoundary(
+        [(2, surface_tag) for surface_tag in surfaces],
+        oriented=False,
+    )
+    for dim, tag in boundary:
+        if dim != 1:
+            continue
+        bb = model.occ.getBoundingBox(dim, tag)
+        x_min, y_min, _, x_max, y_max, _ = bb
+        if np.isclose(x_min, 0.0, atol=tol) and np.isclose(
+            x_max,
+            0.0,
+            atol=tol,
+        ):
+            inlet.append(tag)
+        elif np.isclose(x_min, length, atol=tol) and np.isclose(
+            x_max,
+            length,
+            atol=tol,
+        ):
+            outlet.append(tag)
+        elif np.isclose(y_min, 0.0, atol=tol) or np.isclose(
+            y_max,
+            height,
+            atol=tol,
+        ):
+            walls.append(tag)
+        else:
+            airfoil_curves.append(tag)
+
+    for physical_tag, (name, curve_tags) in enumerate(
+        (
+            ("inlet", inlet),
+            ("outlet", outlet),
+            ("walls", walls),
+            ("airfoil", airfoil_curves),
+        ),
+        start=1,
+    ):
+        if not curve_tags:
+            raise AssertionError(
+                f"Airfoil-channel domain produced no curves for '{name}'."
             )
-            airfoil_surface = model.occ.addPlaneSurface([airfoil_loop])
+        model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
+        model.setPhysicalName(1, physical_tag, name)
 
-            model.occ.cut(
-                [(2, channel)],
-                [(2, airfoil_surface)],
-                removeObject=True,
-                removeTool=True,
-            )
-            model.occ.synchronize()
-
-            surfaces = [entity[1] for entity in model.getEntities(2)]
-            model.addPhysicalGroup(2, surfaces, tag=1)
-            model.setPhysicalName(2, 1, "surface")
-
-            tol = max(mesh_size, 1.0e-8)
-            inlet: list[int] = []
-            outlet: list[int] = []
-            walls: list[int] = []
-            airfoil_curves: list[int] = []
-            boundary = model.getBoundary(
-                [(2, surface_tag) for surface_tag in surfaces],
-                oriented=False,
-            )
-            for dim, tag in boundary:
-                if dim != 1:
-                    continue
-                bb = model.occ.getBoundingBox(dim, tag)
-                x_min, y_min, _, x_max, y_max, _ = bb
-                if np.isclose(x_min, 0.0, atol=tol) and np.isclose(
-                    x_max,
-                    0.0,
-                    atol=tol,
-                ):
-                    inlet.append(tag)
-                elif np.isclose(x_min, length, atol=tol) and np.isclose(
-                    x_max,
-                    length,
-                    atol=tol,
-                ):
-                    outlet.append(tag)
-                elif np.isclose(y_min, 0.0, atol=tol) or np.isclose(
-                    y_max,
-                    height,
-                    atol=tol,
-                ):
-                    walls.append(tag)
-                else:
-                    airfoil_curves.append(tag)
-
-            for physical_tag, (name, curve_tags) in enumerate(
-                (
-                    ("inlet", inlet),
-                    ("outlet", outlet),
-                    ("walls", walls),
-                    ("airfoil", airfoil_curves),
-                ),
-                start=1,
-            ):
-                if not curve_tags:
-                    raise AssertionError(
-                        f"Airfoil-channel domain produced no curves for '{name}'."
-                    )
-                model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
-                model.setPhysicalName(1, physical_tag, name)
-
-            model.mesh.setSize(model.getEntities(0), mesh_size)
-            model.mesh.generate(2)
-
-        return _finalize_gmsh_domain(model, name="airfoil_channel", gdim=2)
-    finally:
-        gmsh.finalize()
+    model.mesh.setSize(model.getEntities(0), mesh_size)
 
 
-@register_domain("side_cavity_channel")
-def _create_side_cavity_channel(domain: DomainConfig) -> DomainGeometry:
-    import gmsh
+@register_domain("airfoil_channel")
+def _create_airfoil_channel(domain: DomainConfig) -> DomainGeometry:
+    return _create_gmsh_planar_domain(domain)
 
+
+@register_gmsh_planar_domain("side_cavity_channel")
+def _build_side_cavity_channel_gmsh_model(model, domain: DomainConfig) -> None:
     p = domain.params
     length = float(_require_param(p, "length", domain.type))
     height = float(_require_param(p, "height", domain.type))
@@ -1682,72 +1609,64 @@ def _create_side_cavity_channel(domain: DomainConfig) -> DomainGeometry:
 
     cavity_left = cavity_center_x - 0.5 * cavity_width
 
-    gmsh.initialize()
-    try:
-        gmsh.option.setNumber("General.Terminal", 0)
-        model = gmsh.model
-        model.add("side_cavity_channel")
-        model.setCurrent("side_cavity_channel")
+    channel = model.occ.addRectangle(0.0, 0.0, 0.0, length, height)
+    cavity = model.occ.addRectangle(
+        cavity_left,
+        height,
+        0.0,
+        cavity_width,
+        cavity_depth,
+    )
+    surfaces = _fuse_planar_surfaces(model, [channel, cavity])
+    model.addPhysicalGroup(2, surfaces, tag=1)
+    model.setPhysicalName(2, 1, "surface")
 
-        if MPI.COMM_WORLD.rank == 0:
-            channel = model.occ.addRectangle(0.0, 0.0, 0.0, length, height)
-            cavity = model.occ.addRectangle(
-                cavity_left,
-                height,
-                0.0,
-                cavity_width,
-                cavity_depth,
+    inlet: list[int] = []
+    outlet: list[int] = []
+    walls: list[int] = []
+    boundary_tol = 1.0e-6
+    boundary = model.getBoundary(
+        [(2, surface_tag) for surface_tag in surfaces],
+        oriented=False,
+    )
+    for dim, tag in boundary:
+        if dim != 1:
+            continue
+        bb = model.occ.getBoundingBox(dim, tag)
+        x_min, _, _, x_max, _, _ = bb
+        if np.isclose(x_min, 0.0, atol=boundary_tol) and np.isclose(
+            x_max,
+            0.0,
+            atol=boundary_tol,
+        ):
+            inlet.append(tag)
+        elif np.isclose(x_min, length, atol=boundary_tol) and np.isclose(
+            x_max,
+            length,
+            atol=boundary_tol,
+        ):
+            outlet.append(tag)
+        else:
+            walls.append(tag)
+
+    for physical_tag, (name, curve_tags) in enumerate(
+        (
+            ("inlet", inlet),
+            ("outlet", outlet),
+            ("walls", walls),
+        ),
+        start=1,
+    ):
+        if not curve_tags:
+            raise AssertionError(
+                f"Side-cavity channel domain produced no curves for '{name}'."
             )
-            surfaces = _fuse_planar_surfaces(model, [channel, cavity])
-            model.addPhysicalGroup(2, surfaces, tag=1)
-            model.setPhysicalName(2, 1, "surface")
+        model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
+        model.setPhysicalName(1, physical_tag, name)
 
-            inlet: list[int] = []
-            outlet: list[int] = []
-            walls: list[int] = []
-            boundary_tol = 1.0e-6
-            boundary = model.getBoundary(
-                [(2, surface_tag) for surface_tag in surfaces],
-                oriented=False,
-            )
-            for dim, tag in boundary:
-                if dim != 1:
-                    continue
-                bb = model.occ.getBoundingBox(dim, tag)
-                x_min, _, _, x_max, _, _ = bb
-                if np.isclose(x_min, 0.0, atol=boundary_tol) and np.isclose(
-                    x_max,
-                    0.0,
-                    atol=boundary_tol,
-                ):
-                    inlet.append(tag)
-                elif np.isclose(x_min, length, atol=boundary_tol) and np.isclose(
-                    x_max,
-                    length,
-                    atol=boundary_tol,
-                ):
-                    outlet.append(tag)
-                else:
-                    walls.append(tag)
+    model.mesh.setSize(model.getEntities(0), mesh_size)
 
-            for physical_tag, (name, curve_tags) in enumerate(
-                (
-                    ("inlet", inlet),
-                    ("outlet", outlet),
-                    ("walls", walls),
-                ),
-                start=1,
-            ):
-                if not curve_tags:
-                    raise AssertionError(
-                        f"Side-cavity channel domain produced no curves for '{name}'."
-                    )
-                model.addPhysicalGroup(1, curve_tags, tag=physical_tag)
-                model.setPhysicalName(1, physical_tag, name)
 
-            model.mesh.setSize(model.getEntities(0), mesh_size)
-            model.mesh.generate(2)
-
-        return _finalize_gmsh_domain(model, name="side_cavity_channel", gdim=2)
-    finally:
-        gmsh.finalize()
+@register_domain("side_cavity_channel")
+def _create_side_cavity_channel(domain: DomainConfig) -> DomainGeometry:
+    return _create_gmsh_planar_domain(domain)

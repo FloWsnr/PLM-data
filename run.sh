@@ -150,6 +150,35 @@ export BLIS_NUM_THREADS=1
 export NUMEXPR_NUM_THREADS=1
 export VECLIB_MAXIMUM_THREADS=1
 
+USE_OPENFOAM_LAUNCH=0
+if [[ "$1" == "run" && $# -ge 2 ]]; then
+    PRESET_NAME=$(python - "$2" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], "r", encoding="utf-8") as f:
+    data = yaml.safe_load(f)
+
+print(data.get("preset", ""))
+PY
+)
+    case "$PRESET_NAME" in
+        navier_stokes|thermal_convection|compressible_navier_stokes)
+            USE_OPENFOAM_LAUNCH=1
+            ;;
+    esac
+fi
+
+if [[ "$USE_OPENFOAM_LAUNCH" -eq 1 ]]; then
+    export PLM_OPENFOAM_NPROCS="$NPROCS"
+    PY_CMD=(python -m plm_data)
+    if [[ -n "$TASKSET_CPU_LIST" ]]; then
+        exec taskset -c "$TASKSET_CPU_LIST" "${PY_CMD[@]}" "$@"
+    else
+        exec "${PY_CMD[@]}" "$@"
+    fi
+fi
+
 MPI_CMD=(
     mpirun
     -bind-to core

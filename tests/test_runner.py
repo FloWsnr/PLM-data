@@ -9,15 +9,8 @@ from types import SimpleNamespace
 import pytest
 import yaml
 
-from plm_data.core.config import BoundaryConditionConfig, TimeConfig
 import plm_data.core.runner as runner_mod
 from plm_data.core.runner import SimulationRunner
-from tests.preset_matrix import (
-    constant,
-    make_compressible_euler_config,
-    scalar_expr,
-    vector_zero,
-)
 
 
 class _FakeComm:
@@ -383,45 +376,3 @@ def test_simulation_runner_writes_failure_metadata(heat_config, monkeypatch):
     assert run_meta["summary"]["health_status"] == "fail"
     assert run_meta["summary"]["status"] == "failed"
     assert run_meta["config"]["resolved"]["preset"] == "heat"
-
-
-def test_simulation_runner_compressible_euler_preserves_logging(tmp_path):
-    config = make_compressible_euler_config(
-        tmp_path,
-        parameters={
-            "gamma": 1.4,
-            "cfl": 0.45,
-            "density_floor": 1.0e-06,
-            "pressure_floor": 1.0e-06,
-        },
-        state_boundary_conditions={
-            "x-": BoundaryConditionConfig(type="reflective"),
-            "x+": BoundaryConditionConfig(type="reflective"),
-            "y-": BoundaryConditionConfig(type="reflective"),
-            "y+": BoundaryConditionConfig(type="reflective"),
-        },
-        density_initial_condition=constant(1.0),
-        velocity_initial_condition=vector_zero(),
-        pressure_initial_condition=scalar_expr(
-            "step",
-            value_left=1.5,
-            value_right=0.15,
-            x_split=0.5,
-            axis=0,
-        ),
-        mesh_resolution=(16, 8),
-        output_resolution=(8, 4),
-        time=TimeConfig(dt=0.02, t_end=0.04),
-    )
-    runner = SimulationRunner(config)
-
-    summary = runner.run(console_level=logging.WARNING)
-
-    assert summary["preset"] == "compressible_euler"
-    assert summary["solver_converged"] is True
-    log_text = (Path(summary["output_dir"]) / "simulation.log").read_text()
-    assert "Time stepping: adaptive explicit finite volume" in log_text
-    assert "Frame 1 captured at t=0" in log_text
-    assert "Step 1 (t=" in log_text
-    assert "Frame 2 captured at t=0.04" in log_text
-    assert "Time stepping complete" in log_text

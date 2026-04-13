@@ -11,7 +11,6 @@ def test_list_presets():
     assert "advection" in presets
     assert "bistable_travelling_waves" in presets
     assert "burgers" in presets
-    assert "compressible_euler" in presets
     assert "elasticity" in presets
     assert "fisher_kpp" in presets
     assert "shallow_water" in presets

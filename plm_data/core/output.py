@@ -69,6 +69,8 @@ class FrameWriter:
         self._interp_cache: InterpolationCache | None = None
         self._mask_dispatched = False
         self._vector_vis_cache: dict[str, fem.Function] = {}
+        self._external_valid_mask: np.ndarray | None = None
+        self._external_paraview_source: Path | None = None
 
         output_modes = {
             output_name: selection.mode
@@ -137,6 +139,28 @@ class FrameWriter:
     def needs_fem_fields(self) -> bool:
         """Return whether this run needs FEM fields for native-mesh output."""
         return bool(self._fem_writers)
+
+    def use_external_paraview_case(self, case_dir: Path) -> None:
+        """Use an externally generated ParaView/OpenFOAM case instead of FEM VTK."""
+        self._external_paraview_source = case_dir
+        self._fem_writers = []
+
+    def set_domain_mask(self, mask: np.ndarray) -> None:
+        """Provide a backend-sampled validity mask for grid outputs."""
+        grid_mask = np.asarray(mask, dtype=bool)
+        if grid_mask.shape != self._resolution:
+            raise ValueError(
+                f"Domain mask has shape {grid_mask.shape}; expected {self._resolution}."
+            )
+        self._external_valid_mask = grid_mask
+        if self._mask_dispatched:
+            return
+        self._mask_dispatched = True
+        if self._rank != 0:
+            return
+        for writer in self._grid_writers:
+            if isinstance(writer, NumpyWriter):
+                writer.save_mask(grid_mask)
 
     def needs_grid_sampling(self) -> bool:
         """Return whether this run needs concrete grid arrays for output or health."""
@@ -288,6 +312,8 @@ class FrameWriter:
                 and self._interp_cache.outside_mask is not None
             ):
                 valid_mask = ~self._interp_cache.outside_mask.reshape(self._resolution)
+            elif self._external_valid_mask is not None:
+                valid_mask = self._external_valid_mask
             self._output_health = build_output_health_report(
                 self._diagnostic_frames,
                 num_frames=self.frame_count,
@@ -496,6 +522,17 @@ class FrameWriter:
             elapsed = time.perf_counter() - finalize_start
             self._timings.writer_finalize_seconds += elapsed
             self._timings.format_finalize_seconds[writer_name] = elapsed
+
+        if self._rank == 0 and self._external_paraview_source is not None:
+            target = self.output_dir / "paraview"
+            if target.exists() or target.is_symlink():
+                target.unlink() if target.is_symlink() or target.is_file() else None
+            if not target.exists():
+                target.symlink_to(
+                    self._external_paraview_source.relative_to(self.output_dir),
+                    target_is_directory=True,
+                )
+            self._logger.info("  ParaView case: %s", target)
 
         if self._rank != 0:
             return
