@@ -26,6 +26,7 @@ from .core import (
     _set_boundary_patch_type,
     _write_text,
 )
+from .diagnostics import ingest_openfoam_log_health, sampled_field_runtime_metrics
 from .sampling import (
     _extract_internal_mesh,
     _openfoam_reader,
@@ -112,6 +113,32 @@ class _OpenFOAMProblemBase(CustomProblem):
         _write_text(
             self._current_case_dir() / "constant" / "momentumTransport", content
         )
+
+    def _positive_runtime_output_fields(self) -> set[str]:
+        return set()
+
+    def _record_openfoam_log_health(self) -> None:
+        with self._current_log_path().open(encoding="utf-8", errors="replace") as log:
+            ingest_openfoam_log_health(
+                log,
+                solver_tracker=self._solver_health_tracker,
+                runtime_tracker=self._runtime_health_tracker,
+            )
+
+    def _build_openfoam_diagnostics(
+        self,
+        *,
+        case_dir: Path,
+        solve_seconds: float,
+    ) -> dict[str, object]:
+        diagnostics = self.build_health_diagnostics()
+        diagnostics["openfoam"] = {
+            "case_dir": str(case_dir),
+            "solver": self.solver_name,
+            "num_subdomains": self._n_subdomains,
+            "solve_seconds": solve_seconds,
+        }
+        return diagnostics
 
     def _expected_output_times(self) -> np.ndarray:
         if self.config.time is None:
@@ -745,15 +772,10 @@ class _OpenFOAMProblemBase(CustomProblem):
         )
         scalar_offsets = scalar_offsets or {}
 
-        selected_field_map = {
-            output_name: source_name
-            for output_name, source_name in field_map.items()
-            if output_name in output.field_names
-        }
         vector_labels = component_labels_for_dim(self._gdim)
         vector_field_map: dict[str, dict[str, str]] = {}
         scalar_field_map: dict[str, str] = {}
-        for output_name, source_name in selected_field_map.items():
+        for output_name, source_name in field_map.items():
             matched_label = next(
                 (label for label in vector_labels if output_name.endswith(f"_{label}")),
                 None,
@@ -837,8 +859,25 @@ class _OpenFOAMProblemBase(CustomProblem):
                     subtract_offset=scalar_offsets.get(output_name, 0.0),
                 )
 
+            context = f"t={float(expected_time):.12g}"
+            self._runtime_health_tracker.record(
+                context,
+                sampled_field_runtime_metrics(
+                    sampled_fields,
+                    valid_mask,
+                    positive_fields=self._positive_runtime_output_fields(),
+                    context=context,
+                ),
+            )
+            selected_sampled_fields = {
+                name: values
+                for name, values in sampled_fields.items()
+                if name in output.field_names
+            }
             output.write_frame(
-                {}, t=float(expected_time), sampled_fields=sampled_fields
+                {},
+                t=float(expected_time),
+                sampled_fields=selected_sampled_fields,
             )
 
         return num_cells, num_steps
