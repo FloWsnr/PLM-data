@@ -8,6 +8,7 @@ import numpy as np
 from plm_data.core.config import SimulationConfig
 from plm_data.core.logging import get_logger
 from plm_data.core.mesh import build_gmsh_planar_domain_model, is_gmsh_planar_domain
+from plm_data.core.spatial_fields import component_labels_for_dim
 from plm_data.presets.base import CustomProblem
 
 from .core import (
@@ -40,6 +41,7 @@ from .sampling import (
 
 class _OpenFOAMProblemBase(CustomProblem):
     solver_name = ""
+    solver_executable: str | None = None
 
     def __init__(self, spec, config: SimulationConfig):
         super().__init__(spec, config)
@@ -55,6 +57,11 @@ class _OpenFOAMProblemBase(CustomProblem):
                 f"Preset '{self.spec.name}' does not currently support OpenFOAM "
                 f"domain '{self.config.domain.type}' in {self._gdim}D."
             )
+
+    def validate_boundary_conditions(self, domain_geom) -> None:
+        validator = getattr(self, "_validate_boundary_conditions", None)
+        if validator is not None:
+            validator()
 
     def _current_case_dir(self) -> Path:
         if self._case_dir is None:
@@ -670,9 +677,20 @@ class _OpenFOAMProblemBase(CustomProblem):
         reader = _openfoam_reader(self._current_case_dir() / "case.foam")
         return np.asarray(reader.time_values, dtype=float)
 
+    def _serial_solver_command(self) -> str:
+        if self.solver_executable is None:
+            return "foamRun"
+        return self.solver_executable
+
+    def _parallel_solver_command(self) -> str:
+        serial_command = self._serial_solver_command()
+        if self.solver_executable is None:
+            return f"{serial_command} -parallel"
+        return f"{serial_command} -parallel"
+
     def _solve_openfoam_case(self) -> None:
         if self._n_subdomains <= 1:
-            self._run_case_command("foamRun")
+            self._run_case_command(self._serial_solver_command())
             return
         mpi_launcher = shutil.which("mpirun.openmpi") or shutil.which("mpirun")
         if mpi_launcher is None:
@@ -681,7 +699,7 @@ class _OpenFOAMProblemBase(CustomProblem):
         self._run_case_command(
             f"{shlex.quote(mpi_launcher)} -bind-to core -map-by core -n "
             f"{self._n_subdomains} "
-            "foamRun -parallel"
+            f"{self._parallel_solver_command()}"
         )
         self._run_case_command("reconstructPar")
         _remove_processor_dirs(self._current_case_dir())
@@ -727,6 +745,24 @@ class _OpenFOAMProblemBase(CustomProblem):
         )
         scalar_offsets = scalar_offsets or {}
 
+        selected_field_map = {
+            output_name: source_name
+            for output_name, source_name in field_map.items()
+            if output_name in output.field_names
+        }
+        vector_labels = component_labels_for_dim(self._gdim)
+        vector_field_map: dict[str, dict[str, str]] = {}
+        scalar_field_map: dict[str, str] = {}
+        for output_name, source_name in selected_field_map.items():
+            matched_label = next(
+                (label for label in vector_labels if output_name.endswith(f"_{label}")),
+                None,
+            )
+            if matched_label is None:
+                scalar_field_map[output_name] = source_name
+                continue
+            vector_field_map.setdefault(source_name, {})[matched_label] = output_name
+
         for expected_time in expected_times:
             time_index = int(np.argmin(np.abs(available_times - expected_time)))
             actual_time = float(available_times[time_index])
@@ -737,9 +773,7 @@ class _OpenFOAMProblemBase(CustomProblem):
                 sample_points=sample_points,
             )
             sampled_fields: dict[str, np.ndarray] = {}
-            for output_name, source_name in field_map.items():
-                if output_name.startswith("velocity_"):
-                    continue
+            for output_name, source_name in scalar_field_map.items():
                 if output_name == "density" and source_name == "rho":
                     if "rho" in sampled.point_data:
                         continue
@@ -755,61 +789,53 @@ class _OpenFOAMProblemBase(CustomProblem):
                         f"time {actual_time}."
                     )
 
-            if "U" in set(field_map.values()):
+            for source_name, output_names in vector_field_map.items():
                 components = _sampled_vector_components(
                     sampled,
-                    name="U",
+                    name=source_name,
                     resolution=resolution,
                     valid_mask=valid_mask,
                     gdim=self._gdim,
                 )
-                for label, array in components.items():
-                    concrete_name = f"velocity_{label}"
-                    if concrete_name in output.field_names:
-                        sampled_fields[concrete_name] = array
+                for label, output_name in output_names.items():
+                    sampled_fields[output_name] = components[label]
 
-            if "p" in set(field_map.values()) and "pressure" in output.field_names:
-                sampled_fields["pressure"] = _sampled_scalar_array(
-                    sampled,
-                    name="p",
-                    resolution=resolution,
-                    valid_mask=valid_mask,
-                    normalize_mean=normalize_pressure_field == "pressure",
-                    subtract_offset=scalar_offsets.get("pressure", 0.0),
-                )
-
-            if "T" in set(field_map.values()) and "temperature" in output.field_names:
-                sampled_fields["temperature"] = _sampled_scalar_array(
-                    sampled,
-                    name="T",
-                    resolution=resolution,
-                    valid_mask=valid_mask,
-                    subtract_offset=scalar_offsets.get("temperature", 0.0),
-                )
-
-            if "rho" in set(field_map.values()) and "density" in output.field_names:
-                if "rho" in sampled.point_data:
-                    sampled_fields["density"] = _sampled_scalar_array(
-                        sampled,
-                        name="rho",
-                        resolution=resolution,
-                        valid_mask=valid_mask,
-                    )
-                else:
-                    if density_from_pressure_temperature_gas_constant is None:
-                        raise RuntimeError(
-                            "OpenFOAM density output was requested, but neither "
-                            "a rho field nor a pressure/temperature fallback was "
-                            "available."
-                        )
-                    sampled_fields["density"] = (
-                        _sampled_density_array_from_pressure_temperature(
+            for output_name, source_name in scalar_field_map.items():
+                if output_name == "density" and source_name == "rho":
+                    if "rho" in sampled.point_data:
+                        sampled_fields[output_name] = _sampled_scalar_array(
                             sampled,
+                            name="rho",
                             resolution=resolution,
                             valid_mask=valid_mask,
-                            gas_constant=density_from_pressure_temperature_gas_constant,
                         )
-                    )
+                    else:
+                        if density_from_pressure_temperature_gas_constant is None:
+                            raise RuntimeError(
+                                "OpenFOAM density output was requested, but neither "
+                                "a rho field nor a pressure/temperature fallback was "
+                                "available."
+                            )
+                        sampled_fields[output_name] = (
+                            _sampled_density_array_from_pressure_temperature(
+                                sampled,
+                                resolution=resolution,
+                                valid_mask=valid_mask,
+                                gas_constant=(
+                                    density_from_pressure_temperature_gas_constant
+                                ),
+                            )
+                        )
+                    continue
+
+                sampled_fields[output_name] = _sampled_scalar_array(
+                    sampled,
+                    name=source_name,
+                    resolution=resolution,
+                    valid_mask=valid_mask,
+                    normalize_mean=normalize_pressure_field == output_name,
+                    subtract_offset=scalar_offsets.get(output_name, 0.0),
+                )
 
             output.write_frame(
                 {}, t=float(expected_time), sampled_fields=sampled_fields

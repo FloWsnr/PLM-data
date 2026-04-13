@@ -501,11 +501,11 @@ domains. All 2D cases use output resolutions with a shortest side of at least
 
 #### MHD (`configs/fluids/mhd`)
 
-1. `2d_decaying_alfven_waves`: coupled velocity and magnetic wave patterns decaying under viscosity and resistivity.
-2. `2d_orszag_tang_vortex`: Orszag-Tang vortex evolving into interacting current sheets and MHD turbulence.
-3. `2d_parallelogram_decaying_alfven_waves`: decaying velocity-magnetic wave patterns on a skew parallelogram cell.
-4. `3d_cyclic_alfven_waves`: 3D periodic Alfvenic wave cells cycling and decaying.
-5. `3d_helical_magnetic_cells`: helical flow cells coupled to magnetic structures in a 3D periodic box.
+1. `2d_wall_bounded_magnetic_vortex_decay`: a localized velocity pulse and transverse magnetic pulse decay inside a closed square cavity.
+2. `2d_rectangle_x_periodic_magnetic_sheet_decay`: an x-periodic strip with wall-bounded shear and magnetic sheet structure decaying under viscosity and resistivity.
+3. `2d_parallelogram_x_periodic_magnetic_sheet_decay`: the same strip-style decay on a skew periodic cell to exercise non-orthogonal geometry.
+4. `3d_wall_bounded_magnetic_pulse`: localized 3D velocity and magnetic pulses relax inside a wall-bounded box.
+5. `3d_xy_periodic_magnetic_cells`: a box periodic in x and y with z-wall anchoring, producing coupled magnetic cell dynamics without a fully periodic magnetic domain.
 
 #### Navier-Stokes (`configs/fluids/navier_stokes`)
 
