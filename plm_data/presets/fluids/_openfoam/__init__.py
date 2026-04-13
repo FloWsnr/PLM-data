@@ -5,9 +5,11 @@ from .incompressible import (
     OpenFOAMNavierStokesProblem,
     OpenFOAMThermalConvectionProblem,
 )
+from .mhd import OpenFOAMMHDProblem
 
 __all__ = [
     "OpenFOAMCompressibleNavierStokesProblem",
+    "OpenFOAMMHDProblem",
     "OpenFOAMNavierStokesProblem",
     "OpenFOAMThermalConvectionProblem",
 ]

@@ -581,7 +581,7 @@ def _is_uniform_vector_expression(
     gdim: int,
 ) -> np.ndarray | None:
     if not expr.is_componentwise and expr.type in {"none", "zero"}:
-        return np.zeros(gdim, dtype=float)
+        return _pad_to_foam_vector(np.zeros(gdim, dtype=float))
 
     components = component_expressions(expr, gdim)
     values: list[float] = []

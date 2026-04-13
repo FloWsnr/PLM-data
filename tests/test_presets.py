@@ -582,7 +582,7 @@ def _make_mhd_runtime_config(
     tmp_path,
     *,
     gdim: int,
-    periodic: bool = True,
+    periodic_axes: tuple[int, ...] = (),
     hidden_lagrange_outputs: bool = False,
 ):
     if gdim == 2:
@@ -616,10 +616,9 @@ def _make_mhd_runtime_config(
                 modes=[{"amplitude": 0.3, "cycles": [4.0, 0.0], "phase": 0.0}],
             ),
         )
-        periodic_axes = (0, 1) if periodic else ()
         mesh_resolution = (8, 8)
         output_resolution = (6, 6)
-        time = TimeConfig(dt=0.02, t_end=0.04 if periodic else 0.02)
+        time = TimeConfig(dt=0.02, t_end=0.04 if periodic_axes else 0.02)
     else:
         zero_vector_bc = {
             "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
@@ -681,7 +680,6 @@ def _make_mhd_runtime_config(
                 ],
             ),
         )
-        periodic_axes = (0, 1, 2) if periodic else ()
         mesh_resolution = (4, 4, 4)
         output_resolution = (4, 4, 4)
         time = TimeConfig(dt=0.02, t_end=0.02)
@@ -2309,7 +2307,7 @@ def test_mhd_accepts_standard_vector_boundary_fields(tmp_path):
 
 
 def test_mhd_rejects_mismatched_periodic_fields(tmp_path):
-    config = _make_mhd_runtime_config(tmp_path, gdim=2, periodic=True)
+    config = _make_mhd_runtime_config(tmp_path, gdim=2, periodic_axes=(0,))
     config.boundary_conditions["magnetic_field"] = boundary_field_config(
         {
             "x-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
@@ -2329,7 +2327,7 @@ def test_mhd_hidden_lagrange_multiplier_outputs(tmp_path):
     config = _make_mhd_runtime_config(
         tmp_path,
         gdim=2,
-        periodic=False,
+        periodic_axes=(),
         hidden_lagrange_outputs=True,
     )
 
@@ -2361,20 +2359,20 @@ def test_mhd_nonperiodic_run_stays_finite_and_nontrivial(tmp_path):
             "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
             "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
         },
-        velocity_source=vector_expr(
+        velocity_source=vector_zero(),
+        velocity_initial_condition=vector_expr(
             x=scalar_expr(
                 "gaussian_bump", amplitude=1.2, sigma=0.1, center=[0.35, 0.5]
             ),
             y=constant(0.0),
         ),
-        velocity_initial_condition=vector_zero(),
-        magnetic_source=vector_expr(
+        magnetic_source=vector_zero(),
+        magnetic_initial_condition=vector_expr(
             x=constant(0.0),
             y=scalar_expr(
                 "gaussian_bump", amplitude=0.8, sigma=0.12, center=[0.65, 0.5]
             ),
         ),
-        magnetic_initial_condition=vector_zero(),
         mesh_resolution=(8, 8),
         output_resolution=(6, 6),
         time=TimeConfig(dt=0.02, t_end=0.02),
@@ -2399,12 +2397,66 @@ def test_mhd_nonperiodic_run_stays_finite_and_nontrivial(tmp_path):
     assert np.std(np.load(output_dir / "magnetic_field_y.npy")[-1]) > 1.0e-4
 
 
-@pytest.mark.skipif(
-    not HAS_DOLFINX_MPC,
-    reason="periodic MHD solve requires dolfinx_mpc",
-)
-def test_mhd_periodic_2d_run_stays_nontrivial(tmp_path):
-    config = _make_mhd_runtime_config(tmp_path, gdim=2, periodic=True)
+def test_mhd_fully_periodic_magnetic_domain_rejected(tmp_path):
+    config = _make_mhd_runtime_config(tmp_path, gdim=2, periodic_axes=(0, 1))
+    preset = get_preset(config.preset)
+    problem = preset.build_problem(config)
+    with pytest.raises(
+        ValueError,
+        match="fully periodic magnetic domains are not supported",
+    ):
+        problem.load_domain_geometry()
+
+
+def test_mhd_x_periodic_2d_run_stays_nontrivial(tmp_path):
+    config = make_mhd_config(
+        tmp_path,
+        gdim=2,
+        parameters={"Re": 30.0, "Rm": 25.0, "k": 1.0},
+        velocity_boundary_conditions={
+            "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+        },
+        magnetic_boundary_conditions={
+            "x-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+        },
+        velocity_source=vector_zero(),
+        velocity_initial_condition=vector_expr(
+            x=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 0.4, "cycles": [0.0, 2.0], "phase": 0.0}],
+            ),
+            y=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": -0.4, "cycles": [2.0, 0.0], "phase": 0.0}],
+            ),
+        ),
+        magnetic_source=vector_zero(),
+        magnetic_initial_condition=vector_expr(
+            x=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 0.3, "cycles": [0.0, 2.0], "phase": 0.0}],
+            ),
+            y=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 0.3, "cycles": [4.0, 0.0], "phase": 0.0}],
+            ),
+        ),
+        velocity_periodic_axes=(0,),
+        magnetic_periodic_axes=(0,),
+        mesh_resolution=(8, 8),
+        output_resolution=(6, 6),
+        time=TimeConfig(dt=0.02, t_end=0.04),
+    )
     result, output_dir = _run_preset(config)
     assert result.solver_converged is True
     assert result.num_timesteps == 2
@@ -2421,12 +2473,87 @@ def test_mhd_periodic_2d_run_stays_nontrivial(tmp_path):
     assert np.linalg.norm(velocity_x[-1] - velocity_x[0]) > 1.0e-4
 
 
-@pytest.mark.skipif(
-    not HAS_DOLFINX_MPC,
-    reason="periodic MHD solve requires dolfinx_mpc",
-)
-def test_mhd_periodic_3d_run_stays_finite(tmp_path):
-    config = _make_mhd_runtime_config(tmp_path, gdim=3, periodic=True)
+def test_mhd_xy_periodic_3d_run_stays_finite(tmp_path):
+    config = make_mhd_config(
+        tmp_path,
+        gdim=3,
+        parameters={"Re": 30.0, "Rm": 25.0, "k": 1.0},
+        velocity_boundary_conditions={
+            "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "z-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "z+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+        },
+        magnetic_boundary_conditions={
+            "x-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "z-": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+            "z+": BoundaryConditionConfig(type="neumann", value=vector_zero()),
+        },
+        velocity_source=vector_zero(),
+        velocity_initial_condition=vector_expr(
+            x=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 0.2, "cycles": [0.0, 2.0, 0.0], "phase": 0.0}],
+            ),
+            y=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 0.2, "cycles": [0.0, 0.0, 2.0], "phase": 0.0}],
+            ),
+            z=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[{"amplitude": 0.2, "cycles": [2.0, 0.0, 0.0], "phase": 0.0}],
+            ),
+        ),
+        magnetic_source=vector_zero(),
+        magnetic_initial_condition=vector_expr(
+            x=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[
+                    {
+                        "amplitude": 0.15,
+                        "cycles": [0.0, 2.0, 0.0],
+                        "phase": 1.5707963267948966,
+                    }
+                ],
+            ),
+            y=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[
+                    {
+                        "amplitude": 0.15,
+                        "cycles": [0.0, 0.0, 2.0],
+                        "phase": 1.5707963267948966,
+                    }
+                ],
+            ),
+            z=scalar_expr(
+                "sine_waves",
+                background=0.0,
+                modes=[
+                    {
+                        "amplitude": 0.15,
+                        "cycles": [2.0, 0.0, 0.0],
+                        "phase": 1.5707963267948966,
+                    }
+                ],
+            ),
+        ),
+        velocity_periodic_axes=(0, 1),
+        magnetic_periodic_axes=(0, 1),
+        mesh_resolution=(4, 4, 4),
+        output_resolution=(4, 4, 4),
+        time=TimeConfig(dt=0.02, t_end=0.02),
+    )
     result, output_dir = _run_preset(config)
     assert result.solver_converged is True
     assert result.num_timesteps == 1

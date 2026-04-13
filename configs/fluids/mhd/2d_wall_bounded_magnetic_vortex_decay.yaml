@@ -1,0 +1,65 @@
+preset: mhd
+parameters:
+  Re: 18.0
+  Rm: 14.0
+  k: 1.0
+domain:
+  type: rectangle
+  size: [1.0, 1.0]
+  mesh_resolution: [28, 28]
+time:
+  dt: 0.01
+  t_end: 0.4
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: gaussian_bump
+          params:
+            amplitude: 1.2
+            sigma: 0.1
+            center: [0.35, 0.5]
+        y:
+          type: constant
+          params:
+            value: 0.0
+  magnetic_field:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: constant
+          params:
+            value: 0.0
+        y:
+          type: gaussian_bump
+          params:
+            amplitude: 0.8
+            sigma: 0.12
+            center: [0.65, 0.5]
+boundary_conditions:
+  velocity:
+    $ref: boundary_field.vector.homogeneous_dirichlet_2d
+  magnetic_field:
+    $ref: boundary_field.vector.homogeneous_dirichlet_2d
+output:
+  formats:
+    $ref: output.formats.standard
+  fields:
+    velocity:
+      $ref: output.mode.components
+    pressure: hidden
+    magnetic_field:
+      $ref: output.mode.components
+    magnetic_constraint: hidden
+  resolution: [96, 96]
+  num_frames: 24
+solver:
+  $ref: solver.profile.transient_mixed_direct
+seed: 42
