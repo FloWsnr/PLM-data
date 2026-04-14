@@ -46,6 +46,7 @@ from tests.preset_matrix import (
     make_advection_config,
     make_burgers_config,
     make_elasticity_config,
+    make_euler_config,
     make_fisher_kpp_config,
     make_gray_scott_config,
     make_mhd_config,
@@ -575,6 +576,59 @@ def _make_compressible_ns_runtime_config(
         mesh_resolution=mesh_resolution,
         output_resolution=output_resolution,
         time=time,
+    )
+
+
+def _make_euler_runtime_config(tmp_path, *, gdim: int, periodic: bool):
+    if gdim == 2:
+        scalar_sides = ("x-", "x+", "y-", "y+")
+        mesh_resolution = (48, 12)
+        output_resolution = (32, 8)
+    else:
+        scalar_sides = ("x-", "x+", "y-", "y+", "z-", "z+")
+        mesh_resolution = (24, 8, 8)
+        output_resolution = (12, 6, 6)
+
+    density_boundary_conditions = {
+        side: BoundaryConditionConfig(type="neumann", value=constant(0.0))
+        for side in scalar_sides
+    }
+    pressure_boundary_conditions = {
+        side: BoundaryConditionConfig(type="neumann", value=constant(0.0))
+        for side in scalar_sides
+    }
+    velocity_boundary_conditions = {
+        side: BoundaryConditionConfig(type="neumann", value=vector_zero())
+        for side in scalar_sides
+    }
+
+    return make_euler_config(
+        tmp_path,
+        gdim=gdim,
+        parameters={"gas_constant": 1.0, "c_v": 2.5, "k": 1.0},
+        density_boundary_conditions=density_boundary_conditions,
+        velocity_boundary_conditions=velocity_boundary_conditions,
+        pressure_boundary_conditions=pressure_boundary_conditions,
+        density_initial_condition=scalar_expr(
+            "step",
+            axis=0,
+            x_split=0.5,
+            value_left=1.0,
+            value_right=0.125,
+        ),
+        velocity_initial_condition=vector_zero(),
+        pressure_initial_condition=scalar_expr(
+            "step",
+            axis=0,
+            x_split=0.5,
+            value_left=1.0,
+            value_right=0.1,
+        ),
+        periodic_axes=(0,) if periodic else (),
+        mesh_resolution=mesh_resolution,
+        output_resolution=output_resolution,
+        time=TimeConfig(dt=0.002, t_end=0.02),
+        seed=11,
     )
 
 
@@ -2269,6 +2323,81 @@ def test_compressible_navier_stokes_nonperiodic_run_stays_finite_and_positive(tm
 
 def test_compressible_navier_stokes_3d_accepts_standard_boundary_fields(tmp_path):
     config = _make_compressible_ns_runtime_config(tmp_path, gdim=3, periodic=False)
+
+    preset = get_preset(config.preset)
+    problem = preset.build_problem(config)
+    problem.load_domain_geometry()
+
+
+def test_euler_rejects_mismatched_periodic_fields(tmp_path):
+    config = _make_euler_runtime_config(tmp_path, gdim=2, periodic=True)
+    config.boundary_conditions["pressure"] = boundary_field_config(
+        {
+            "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+        }
+    )
+
+    preset = get_preset(config.preset)
+    problem = preset.build_problem(config)
+    with pytest.raises(ValueError, match="identical periodic side pairs"):
+        problem._periodic_vectors()
+
+
+def test_euler_nonperiodic_run_stays_finite_and_nontrivial(tmp_path):
+    config = _make_euler_runtime_config(tmp_path, gdim=2, periodic=False)
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 10
+
+    density = np.load(output_dir / "density.npy")
+    velocity_x = np.load(output_dir / "velocity_x.npy")
+    velocity_y = np.load(output_dir / "velocity_y.npy")
+    pressure = np.load(output_dir / "pressure.npy")
+    temperature = np.load(output_dir / "temperature.npy")
+
+    assert np.all(np.isfinite(density))
+    assert np.all(np.isfinite(velocity_x))
+    assert np.all(np.isfinite(velocity_y))
+    assert np.all(np.isfinite(pressure))
+    assert np.all(np.isfinite(temperature))
+    assert np.min(density) > 0.0
+    assert np.min(pressure) > 0.0
+    assert np.min(temperature) > 0.0
+    assert np.linalg.norm(density[-1] - density[0]) > 1.0e-3
+    assert np.linalg.norm(pressure[-1] - pressure[0]) > 1.0e-3
+    assert np.linalg.norm(velocity_x[-1]) > 1.0e-5
+    assert np.std(density[-1]) > 1.0e-3
+
+
+def test_euler_slip_wall_run_stays_finite(tmp_path):
+    config = _make_euler_runtime_config(tmp_path, gdim=2, periodic=False)
+    config.boundary_field("velocity").sides["y-"] = [
+        BoundaryConditionConfig(type="slip")
+    ]
+    config.boundary_field("velocity").sides["y+"] = [
+        BoundaryConditionConfig(type="slip")
+    ]
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+
+    density = np.load(output_dir / "density.npy")
+    pressure = np.load(output_dir / "pressure.npy")
+    velocity_y = np.load(output_dir / "velocity_y.npy")
+
+    assert np.all(np.isfinite(density))
+    assert np.all(np.isfinite(pressure))
+    assert np.all(np.isfinite(velocity_y))
+    assert np.min(density) > 0.0
+    assert np.min(pressure) > 0.0
+
+
+def test_euler_3d_accepts_standard_boundary_fields(tmp_path):
+    config = _make_euler_runtime_config(tmp_path, gdim=3, periodic=False)
 
     preset = get_preset(config.preset)
     problem = preset.build_problem(config)

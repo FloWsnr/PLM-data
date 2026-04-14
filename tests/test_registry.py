@@ -21,6 +21,7 @@ def test_list_presets():
     assert "cahn_hilliard" in presets
     assert "cgl" in presets
     assert "darcy" in presets
+    assert "euler" in presets
     assert "van_der_pol" in presets
     assert "maxwell_pulse" in presets
     assert "navier_stokes" in presets

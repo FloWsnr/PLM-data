@@ -664,6 +664,91 @@ def make_compressible_navier_stokes_config(
     )
 
 
+def make_euler_config(
+    tmp_path: Path,
+    *,
+    gdim: int,
+    parameters: dict[str, float],
+    density_boundary_conditions: dict[str, BoundaryConditionConfig],
+    velocity_boundary_conditions: dict[str, BoundaryConditionConfig],
+    pressure_boundary_conditions: dict[str, BoundaryConditionConfig],
+    density_initial_condition: FieldExpressionConfig,
+    velocity_initial_condition: FieldExpressionConfig,
+    pressure_initial_condition: FieldExpressionConfig,
+    periodic_axes: tuple[int, ...] = (),
+    mesh_resolution: tuple[int, ...] = (8, 8),
+    output_resolution: tuple[int, ...] = (4, 4),
+    output_modes: dict[str, OutputSelectionConfig] | None = None,
+    time: TimeConfig | None = None,
+    seed: int | None = 42,
+) -> SimulationConfig:
+    if gdim == 2:
+        domain = rectangle_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    elif gdim == 3:
+        domain = box_domain(
+            mesh_resolution=tuple(int(value) for value in mesh_resolution)
+        )
+    else:
+        raise ValueError(f"Euler test helper only supports 2D/3D, got {gdim}D")
+
+    selected_output_modes = (
+        output_fields(
+            density="scalar",
+            velocity="components",
+            pressure="scalar",
+            temperature="scalar",
+        )
+        if output_modes is None
+        else output_modes
+    )
+
+    return SimulationConfig(
+        preset="euler",
+        parameters=parameters,
+        domain=domain,
+        inputs={
+            "density": InputConfig(
+                source=None,
+                initial_condition=density_initial_condition,
+            ),
+            "velocity": InputConfig(
+                source=None,
+                initial_condition=velocity_initial_condition,
+            ),
+            "pressure": InputConfig(
+                source=None,
+                initial_condition=pressure_initial_condition,
+            ),
+        },
+        boundary_conditions={
+            "density": boundary_field_config(
+                density_boundary_conditions,
+                periodic_axes=periodic_axes,
+            ),
+            "velocity": boundary_field_config(
+                velocity_boundary_conditions,
+                periodic_axes=periodic_axes,
+            ),
+            "pressure": boundary_field_config(
+                pressure_boundary_conditions,
+                periodic_axes=periodic_axes,
+            ),
+        },
+        output=OutputConfig(
+            path=tmp_path,
+            resolution=list(output_resolution),
+            num_frames=2 if time is not None else 1,
+            formats=["numpy"],
+            fields=selected_output_modes,
+        ),
+        solver=nonlinear_mixed_direct_solver_config(),
+        time=time,
+        seed=seed,
+    )
+
+
 def make_mhd_config(
     tmp_path: Path,
     *,
