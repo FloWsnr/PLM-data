@@ -1,0 +1,153 @@
+preset: euler
+parameters:
+  gas_constant:
+    sample: uniform
+    min: 0.95
+    max: 1.08
+  c_v:
+    sample: uniform
+    min: 2.2
+    max: 3.1
+  k: 1.0
+  channel_length:
+    sample: uniform
+    min: 0.94
+    max: 1.08
+  lane_spacing:
+    sample: uniform
+    min: 0.38
+    max: 0.48
+  outlet_density:
+    sample: uniform
+    min: 0.94
+    max: 1.08
+  outlet_pressure:
+    sample: uniform
+    min: 0.84
+    max: 1.04
+  reverse_speed:
+    sample: uniform
+    min: -0.9
+    max: -0.45
+domain:
+  allow_sampling: true
+  type: serpentine_channel
+  channel_length: param:channel_length
+  lane_spacing: param:lane_spacing
+  n_bends:
+    sample: randint
+    min: 2
+    max: 4
+  channel_width:
+    sample: uniform
+    min: 0.18
+    max: 0.24
+  mesh_size:
+    sample: uniform
+    min: 0.01
+    max: 0.014
+time:
+  dt: 0.0005
+  t_end: 0.16
+inputs:
+  density:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: param:outlet_density
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.04
+            max: 0.12
+          sigma:
+            sample: uniform
+            min: 0.06
+            max: 0.1
+          aspect_ratio:
+            sample: uniform
+            min: 1.2
+            max: 2.2
+          center:
+          - sample: uniform
+            min: 1.5
+            max: 2.2
+          - sample: uniform
+            min: 0.54
+            max: 1.0
+  velocity:
+    initial_condition:
+      components:
+        x:
+          type: constant
+          params:
+            value: param:reverse_speed
+        y:
+          type: constant
+          params:
+            value: 0.0
+  pressure:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: param:outlet_pressure
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.14
+            max: 0.28
+          sigma:
+            sample: uniform
+            min: 0.06
+            max: 0.1
+          aspect_ratio:
+            sample: uniform
+            min: 1.2
+            max: 2.2
+          center:
+          - sample: uniform
+            min: 1.5
+            max: 2.2
+          - sample: uniform
+            min: 0.54
+            max: 1.0
+boundary_conditions:
+  density:
+    inlet:
+    - operator: neumann
+      value: 0.0
+    outlet:
+    - operator: neumann
+      value: 0.0
+    walls:
+    - operator: neumann
+      value: 0.0
+  velocity:
+    inlet:
+    - operator: neumann
+      value: [0.0, 0.0]
+    outlet:
+    - operator: neumann
+      value: [0.0, 0.0]
+    walls:
+    - operator: slip
+  pressure:
+    inlet:
+    - operator: neumann
+      value: 0.0
+    outlet:
+    - operator: neumann
+      value: 0.0
+    walls:
+    - operator: neumann
+      value: 0.0
+output:
+  $ref: output.template.density_velocity_pressure_temperature
+  formats: [numpy, gif]
+  resolution: [192, 224]
+  num_frames: 57
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

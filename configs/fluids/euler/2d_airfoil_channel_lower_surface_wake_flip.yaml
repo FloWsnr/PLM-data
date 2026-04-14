@@ -11,53 +11,65 @@ parameters:
   k: 1.0
   inlet_density:
     sample: uniform
-    min: 0.96
+    min: 0.94
     max: 1.08
   inlet_pressure:
     sample: uniform
-    min: 1.16
-    max: 1.42
+    min: 0.84
+    max: 1.04
   inlet_speed:
     sample: uniform
-    min: 1.18
-    max: 1.52
+    min: 1.35
+    max: 1.95
+  inlet_crossflow:
+    sample: uniform
+    min: -0.18
+    max: -0.06
   pulse_center_x:
     sample: uniform
-    min: 0.18
-    max: 0.34
+    min: 0.28
+    max: 0.58
   pulse_center_y:
     sample: uniform
-    min: 0.24
-    max: 0.42
+    min: 0.3
+    max: 0.5
 domain:
   allow_sampling: true
-  type: channel_obstacle
+  type: airfoil_channel
   length:
     sample: uniform
-    min: 1.65
-    max: 1.9
+    min: 2.4
+    max: 2.8
   height:
     sample: uniform
-    min: 0.66
-    max: 0.82
-  obstacle_center:
+    min: 1.0
+    max: 1.16
+  airfoil_center:
   - sample: uniform
-    min: 0.62
-    max: 0.84
+    min: 1.06
+    max: 1.34
   - sample: uniform
-    min: 0.28
-    max: 0.42
-  obstacle_radius:
+    min: 0.46
+    max: 0.62
+  chord_length:
     sample: uniform
-    min: 0.06
-    max: 0.095
+    min: 0.52
+    max: 0.66
+  thickness_ratio:
+    sample: uniform
+    min: 0.1
+    max: 0.16
+  attack_angle_degrees:
+    sample: uniform
+    min: -12.0
+    max: -4.0
   mesh_size:
     sample: uniform
-    min: 0.009
-    max: 0.013
+    min: 0.01
+    max: 0.014
 time:
   dt: 0.00045
-  t_end: 0.18
+  t_end: 0.22
 inputs:
   density:
     initial_condition:
@@ -68,16 +80,16 @@ inputs:
         - count: 1
           amplitude:
             sample: uniform
-            min: 0.02
-            max: 0.08
+            min: 0.04
+            max: 0.12
           sigma:
             sample: uniform
-            min: 0.05
-            max: 0.08
+            min: 0.06
+            max: 0.1
           aspect_ratio:
             sample: uniform
-            min: 1.0
-            max: 1.6
+            min: 1.2
+            max: 2.0
           center: ["param:pulse_center_x", "param:pulse_center_y"]
   velocity:
     initial_condition:
@@ -89,7 +101,7 @@ inputs:
         y:
           type: constant
           params:
-            value: 0.0
+            value: param:inlet_crossflow
   pressure:
     initial_condition:
       type: gaussian_blobs
@@ -99,16 +111,16 @@ inputs:
         - count: 1
           amplitude:
             sample: uniform
-            min: 0.12
-            max: 0.3
+            min: 0.2
+            max: 0.52
           sigma:
             sample: uniform
-            min: 0.05
-            max: 0.08
+            min: 0.06
+            max: 0.1
           aspect_ratio:
             sample: uniform
-            min: 1.0
-            max: 1.6
+            min: 1.2
+            max: 2.0
           center: ["param:pulse_center_x", "param:pulse_center_y"]
 boundary_conditions:
   density:
@@ -124,7 +136,7 @@ boundary_conditions:
     walls:
     - operator: neumann
       value: 0.0
-    obstacle:
+    airfoil:
     - operator: neumann
       value: 0.0
   velocity:
@@ -139,13 +151,13 @@ boundary_conditions:
           y:
             type: constant
             params:
-              value: 0.0
+              value: param:inlet_crossflow
     outlet:
     - operator: neumann
       value: [0.0, 0.0]
     walls:
     - operator: slip
-    obstacle:
+    airfoil:
     - operator: slip
   pressure:
     inlet:
@@ -160,15 +172,13 @@ boundary_conditions:
     walls:
     - operator: neumann
       value: 0.0
-    obstacle:
+    airfoil:
     - operator: neumann
       value: 0.0
 output:
   $ref: output.template.density_velocity_pressure_temperature
   formats: [numpy, gif]
-  resolution:
-  - 224
-  - 160
+  resolution: [224, 160]
   num_frames: 57
 solver:
   $ref: solver.profile.nonlinear_mixed_direct
