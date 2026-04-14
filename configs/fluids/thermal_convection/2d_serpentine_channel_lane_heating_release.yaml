@@ -1,0 +1,211 @@
+preset: thermal_convection
+parameters:
+  source_x:
+    sample: uniform
+    min: 0.08
+    max: 0.22
+  source_y:
+    sample: uniform
+    min: 0.32
+    max: 0.58
+  Ra:
+    sample: uniform
+    min: 100000.0
+    max: 280000.0
+  Pr:
+    sample: uniform
+    min: 1.0
+    max: 4.2
+  k: 1.0
+domain:
+  type: serpentine_channel
+  allow_sampling: true
+  channel_length:
+    sample: uniform
+    min: 0.9
+    max: 1.08
+  lane_spacing:
+    sample: uniform
+    min: 0.34
+    max: 0.52
+  n_bends:
+    sample: randint
+    min: 2
+    max: 5
+  channel_width:
+    sample: uniform
+    min: 0.16
+    max: 0.22
+  mesh_size:
+    sample: uniform
+    min: 0.02
+    max: 0.028
+time:
+  dt: 0.016
+  t_end: 6.8
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: sine_waves
+          params:
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: -0.02
+                  max: 0.02
+                cycles:
+                  - sample: uniform
+                    min: 0.4
+                    max: 0.9
+                  - sample: uniform
+                    min: 1.0
+                    max: 1.8
+                phase:
+                  sample: uniform
+                  min: -0.8
+                  max: 0.8
+                angle:
+                  sample: uniform
+                  min: -0.2
+                  max: 0.2
+        y:
+          type: sine_waves
+          params:
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: -0.035
+                  max: 0.035
+                cycles:
+                  - sample: uniform
+                    min: 0.8
+                    max: 1.6
+                  - sample: uniform
+                    min: 0.2
+                    max: 0.7
+                phase:
+                  sample: uniform
+                  min: -0.8
+                  max: 0.8
+                angle:
+                  sample: uniform
+                  min: -0.15
+                  max: 0.15
+  temperature:
+    source:
+      type: gaussian_bump
+      params:
+        amplitude:
+          sample: uniform
+          min: 0.75
+          max: 1.25
+        sigma:
+          sample: uniform
+          min: 0.06
+          max: 0.1
+        center: ["param:source_x", "param:source_y"]
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: -0.05
+          max: 0.05
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.3
+              max: 0.58
+            sigma:
+              sample: uniform
+              min: 0.07
+              max: 0.11
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.6
+            center:
+              - sample: uniform
+                min: 0.14
+                max: 0.32
+              - sample: uniform
+                min: -0.04
+                max: 0.04
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: -0.34
+              max: -0.12
+            sigma:
+              sample: uniform
+              min: 0.08
+              max: 0.13
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.8
+            center:
+              - sample: uniform
+                min: 0.58
+                max: 0.94
+              - sample: uniform
+                min: 0.18
+                max: 0.72
+boundary_conditions:
+  velocity:
+    inlet:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+    outlet:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+    walls:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+  temperature:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -0.08
+              max: 0.08
+    outlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -0.34
+              max: -0.04
+    walls:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -0.1
+              max: 0.02
+output:
+  formats: [numpy, gif]
+  resolution: [160, 224]
+  num_frames: 47
+  fields:
+    velocity: components
+    pressure: scalar
+    temperature: scalar
+solver:
+  $ref: solver.profile.transient_mixed_direct
+seed: 42

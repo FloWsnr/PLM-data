@@ -1,0 +1,121 @@
+preset: thermal_convection
+parameters:
+  Ra:
+    sample: uniform
+    min: 45000.0
+    max: 160000.0
+  Pr:
+    sample: uniform
+    min: 2.4
+    max: 7.5
+  k: 1.0
+domain:
+  type: rectangle
+  allow_sampling: true
+  size:
+    - sample: uniform
+      min: 1.05
+      max: 1.35
+    - sample: uniform
+      min: 1.0
+      max: 1.25
+  mesh_resolution: [128, 128]
+time:
+  dt: 0.02
+  t_end: 9.5
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: constant
+          params:
+            value: 0.0
+        y:
+          type: constant
+          params:
+            value: 0.0
+  temperature:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: quadrants
+      params:
+        split:
+          - sample: uniform
+            min: 0.42
+            max: 0.66
+          - sample: uniform
+            min: 0.42
+            max: 0.72
+        region_values:
+          "00":
+            sample: uniform
+            min: 0.65
+            max: 1.0
+          "01":
+            sample: uniform
+            min: -0.45
+            max: -0.12
+          "10":
+            sample: uniform
+            min: 0.18
+            max: 0.5
+          "11":
+            sample: uniform
+            min: -0.22
+            max: 0.16
+boundary_conditions:
+  velocity:
+    x-:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+    x+:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+    y-:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+    y+:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+  temperature:
+    x-:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.95
+              max: 1.28
+    x+:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -0.35
+              max: 0.02
+    y-:
+      - operator: neumann
+        value: 0.0
+    y+:
+      - operator: neumann
+        value: 0.0
+output:
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 45
+  fields:
+    velocity: components
+    pressure: scalar
+    temperature: scalar
+solver:
+  $ref: solver.profile.transient_mixed_direct
+seed: 42
