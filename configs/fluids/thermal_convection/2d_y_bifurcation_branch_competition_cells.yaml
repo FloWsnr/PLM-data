@@ -1,0 +1,139 @@
+preset: thermal_convection
+parameters:
+  Ra:
+    sample: uniform
+    min: 50000.0
+    max: 160000.0
+  Pr:
+    sample: uniform
+    min: 2.2
+    max: 6.8
+  k: 1.0
+domain:
+  type: y_bifurcation
+  allow_sampling: true
+  inlet_length:
+    sample: uniform
+    min: 0.88
+    max: 1.08
+  branch_length:
+    sample: uniform
+    min: 0.82
+    max: 1.04
+  branch_angle_degrees:
+    sample: uniform
+    min: 32.0
+    max: 44.0
+  channel_width:
+    sample: uniform
+    min: 0.18
+    max: 0.24
+  mesh_size:
+    sample: uniform
+    min: 0.022
+    max: 0.03
+time:
+  dt: 0.018
+  t_end: 7.8
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: constant
+          params:
+            value: 0.0
+        y:
+          type: constant
+          params:
+            value: 0.0
+  temperature:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: -0.08
+          max: 0.08
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.42
+              max: 0.7
+            cycles:
+              - sample: uniform
+                min: 1.0
+                max: 1.6
+              - sample: uniform
+                min: 1.4
+                max: 2.2
+            phase:
+              sample: uniform
+              min: -0.8
+              max: 0.8
+            angle:
+              sample: uniform
+              min: -0.45
+              max: 0.45
+boundary_conditions:
+  velocity:
+    inlet:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+    outlet_upper:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+    outlet_lower:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+    walls:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+  temperature:
+    inlet:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.0
+              max: 0.2
+    outlet_upper:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.95
+              max: 1.25
+    outlet_lower:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -0.42
+              max: -0.08
+    walls:
+      - operator: neumann
+        value: 0.0
+output:
+  formats: [numpy, gif]
+  resolution: [224, 160]
+  num_frames: 45
+  fields:
+    velocity: components
+    pressure: scalar
+    temperature: scalar
+solver:
+  $ref: solver.profile.transient_mixed_direct
+seed: 42

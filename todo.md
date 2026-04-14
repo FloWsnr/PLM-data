@@ -522,9 +522,37 @@ domains. All 2D cases use output resolutions with a shortest side of at least
 
 #### Thermal Convection (`configs/fluids/thermal_convection`)
 
-1. `2d_parallelogram_rayleigh_benard_rolls`: Rayleigh-Benard convection in a skew 2D cell, producing oblique rolls and plumes.
-2. `2d_rayleigh_benard_rolls`: noisy stratification between hot bottom and cold top evolving into convection rolls and plumes.
-3. `3d_rayleigh_benard_plumes`: 3D Rayleigh-Benard-style convection evolving into plumes and cells.
+Validation: the 20 2D configs below were run one at a time with
+`./run.sh -n 2 ... --n-runs 2` into `output/thermal_convection_validation`,
+producing 40 successful runs with passing solver, output, and stagnation
+diagnostics. Representative and aggregate post-run analysis in
+`output/thermal_convection_validation/analysis` confirmed fast and slow
+regimes, seed-dependent geometry variation, and visibly different trajectories
+across the suite. Repeated parallelogram variants were numerically unstable in
+this OpenFOAM backend at the requested validation settings, so the final 2D
+set uses 10 other domain families with 2 configs each.
+
+1. `2d_annulus_inner_heating_circulation`: annular inner-rim heating drives ring-confined circulation and wrapped thermal layers between sampled inner and outer walls.
+2. `2d_annulus_rotating_shear_plumes`: offset annular forcing produces rotating shear plumes and asymmetric spiral-like recirculation around the hole.
+3. `2d_channel_obstacle_endwall_convection_shadow`: endwall-driven heating and cooling interact with a channel obstacle, leaving a clear obstacle-shadowed convection wake.
+4. `2d_channel_obstacle_hot_cylinder_plumes`: a hot obstacle core sheds buoyant plumes into the surrounding channel and bends the cells around the cylinder.
+5. `2d_disk_buoyant_cap_plumes`: cap-biased heating inside a sampled disk produces rounded rising plumes and broad circular recirculation.
+6. `2d_disk_rotating_thermal_dipole`: a hot-cold dipole in the disk evolves into strong rotating convection with seed-dependent lobe balance.
+7. `2d_dumbbell_bridge_heating_oscillation`: bridge-centered heating excites oscillatory lobe exchange through the dumbbell neck.
+8. `2d_dumbbell_lobe_exchange_convection`: lobe-biased thermal forcing drives slower inter-lobe transfer and asymmetric chamber filling.
+9. `2d_l_shape_diagonal_cavity_exchange`: diagonal hot/cold structure circulates across the two L-shaped arms with strong re-entrant-corner influence.
+10. `2d_l_shape_notch_plume_rollup`: heating near the notch seeds re-entrant-corner plume rollup and corner-pinned recirculation.
+11. `2d_rayleigh_benard_rolls`: randomized Rayleigh-Benard stratification in a periodic-sided rectangle produces strong roll competition and plume merging.
+12. `2d_rectangle_sidewall_convection_cells`: lateral wall forcing creates sidewall-driven convection cells distinct from the bottom-heated Rayleigh-Benard case.
+13. `2d_serpentine_channel_bend_pocket_plumes`: a localized bend-pocket heat source creates trapped plumes that release differently at successive sampled turns.
+14. `2d_serpentine_channel_lane_heating_release`: a retuned interior lane source drives a slower buoyant plume up the serpentine guide, giving geometry-sensitive branch-by-branch rise.
+15. `2d_side_cavity_channel_cavity_plume_release`: side-cavity heating spills buoyant structure out of the pocket and back into the main channel.
+16. `2d_side_cavity_channel_endwall_recirculation`: endwall forcing drives coupled main-channel and cavity recirculation with slower cavity turnover.
+17. `2d_venturi_channel_buoyant_counterflow_cells`: venturi geometry supports competing buoyant counter-cells across the converging and diverging sections.
+18. `2d_venturi_channel_throat_heating_focus`: a throat-centered heating pattern focuses plumes through the constriction before they spread downstream.
+19. `2d_y_bifurcation_branch_competition_cells`: unequal branch forcing creates competing daughter-branch convection cells with junction-controlled asymmetry.
+20. `2d_y_bifurcation_split_heating_plumes`: a retuned junction hotspot splits rising plumes into both branches, with seed-to-seed differences in branch occupancy and plume strength.
+21. `3d_rayleigh_benard_plumes`: 3D Rayleigh-Benard-style convection evolving into plumes and cells.
 
 ### Physics
 
