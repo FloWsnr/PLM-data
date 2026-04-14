@@ -159,11 +159,11 @@ import yaml
 with open(sys.argv[1], "r", encoding="utf-8") as f:
     data = yaml.safe_load(f)
 
-print(data.get("preset", ""))
+    print(data.get("preset", ""))
 PY
 )
     case "$PRESET_NAME" in
-        navier_stokes|thermal_convection|compressible_navier_stokes)
+        navier_stokes|thermal_convection|compressible_navier_stokes|euler|mhd)
             USE_OPENFOAM_LAUNCH=1
             ;;
     esac

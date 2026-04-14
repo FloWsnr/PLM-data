@@ -1,0 +1,71 @@
+preset: euler
+parameters:
+  gas_constant: 1.0
+  c_v: 2.5
+  k: 1.0
+domain:
+  type: rectangle
+  size:
+  - 1.0
+  - 0.125
+  mesh_resolution:
+  - 256
+  - 32
+time:
+  dt: 0.0005
+  t_end: 0.12
+inputs:
+  density:
+    initial_condition:
+      type: step
+      params:
+        axis: 0
+        x_split: 0.5
+        value_left: 1.0
+        value_right: 0.125
+  velocity:
+    initial_condition:
+      components:
+        x:
+          type: constant
+          params:
+            value: 0.0
+        y:
+          type: constant
+          params:
+            value: 0.0
+  pressure:
+    initial_condition:
+      type: step
+      params:
+        axis: 0
+        x_split: 0.5
+        value_left: 1.0
+        value_right: 0.1
+boundary_conditions:
+  density:
+    $ref: boundary_field.scalar.homogeneous_neumann_2d
+  velocity:
+    x-:
+    - operator: neumann
+      value: [0.0, 0.0]
+    x+:
+    - operator: neumann
+      value: [0.0, 0.0]
+    y-:
+    - operator: neumann
+      value: [0.0, 0.0]
+    y+:
+    - operator: neumann
+      value: [0.0, 0.0]
+  pressure:
+    $ref: boundary_field.scalar.homogeneous_neumann_2d
+output:
+  $ref: output.template.density_velocity_pressure_temperature
+  resolution:
+  - 256
+  - 64
+  num_frames: 48
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42
