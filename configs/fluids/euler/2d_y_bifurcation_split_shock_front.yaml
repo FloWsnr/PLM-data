@@ -11,46 +11,47 @@ parameters:
   k: 1.0
   inlet_density:
     sample: uniform
-    min: 0.96
+    min: 0.94
     max: 1.08
   inlet_pressure:
     sample: uniform
-    min: 1.16
-    max: 1.42
+    min: 0.84
+    max: 1.04
   inlet_speed:
     sample: uniform
-    min: 1.18
-    max: 1.52
+    min: 1.2
+    max: 1.8
+  inlet_crossflow:
+    sample: uniform
+    min: -0.08
+    max: 0.08
   pulse_center_x:
     sample: uniform
-    min: 0.18
-    max: 0.34
+    min: 0.2
+    max: 0.42
   pulse_center_y:
     sample: uniform
-    min: 0.24
-    max: 0.42
+    min: -0.06
+    max: 0.06
 domain:
   allow_sampling: true
-  type: channel_obstacle
-  length:
+  type: y_bifurcation
+  inlet_length:
     sample: uniform
-    min: 1.65
-    max: 1.9
-  height:
+    min: 0.94
+    max: 1.14
+  branch_length:
     sample: uniform
-    min: 0.66
-    max: 0.82
-  obstacle_center:
-  - sample: uniform
-    min: 0.62
-    max: 0.84
-  - sample: uniform
-    min: 0.28
-    max: 0.42
-  obstacle_radius:
+    min: 0.96
+    max: 1.22
+  branch_angle_degrees:
     sample: uniform
-    min: 0.06
-    max: 0.095
+    min: 32.0
+    max: 46.0
+  channel_width:
+    sample: uniform
+    min: 0.22
+    max: 0.3
   mesh_size:
     sample: uniform
     min: 0.009
@@ -68,12 +69,12 @@ inputs:
         - count: 1
           amplitude:
             sample: uniform
-            min: 0.02
-            max: 0.08
+            min: 0.04
+            max: 0.14
           sigma:
             sample: uniform
-            min: 0.05
-            max: 0.08
+            min: 0.07
+            max: 0.12
           aspect_ratio:
             sample: uniform
             min: 1.0
@@ -89,7 +90,7 @@ inputs:
         y:
           type: constant
           params:
-            value: 0.0
+            value: param:inlet_crossflow
   pressure:
     initial_condition:
       type: gaussian_blobs
@@ -99,12 +100,12 @@ inputs:
         - count: 1
           amplitude:
             sample: uniform
-            min: 0.12
-            max: 0.3
+            min: 0.28
+            max: 0.74
           sigma:
             sample: uniform
-            min: 0.05
-            max: 0.08
+            min: 0.07
+            max: 0.12
           aspect_ratio:
             sample: uniform
             min: 1.0
@@ -118,13 +119,13 @@ boundary_conditions:
         type: constant
         params:
           value: param:inlet_density
-    outlet:
+    outlet_upper:
+    - operator: neumann
+      value: 0.0
+    outlet_lower:
     - operator: neumann
       value: 0.0
     walls:
-    - operator: neumann
-      value: 0.0
-    obstacle:
     - operator: neumann
       value: 0.0
   velocity:
@@ -139,13 +140,14 @@ boundary_conditions:
           y:
             type: constant
             params:
-              value: 0.0
-    outlet:
+              value: param:inlet_crossflow
+    outlet_upper:
+    - operator: neumann
+      value: [0.0, 0.0]
+    outlet_lower:
     - operator: neumann
       value: [0.0, 0.0]
     walls:
-    - operator: slip
-    obstacle:
     - operator: slip
   pressure:
     inlet:
@@ -154,21 +156,19 @@ boundary_conditions:
         type: constant
         params:
           value: param:inlet_pressure
-    outlet:
+    outlet_upper:
+    - operator: neumann
+      value: 0.0
+    outlet_lower:
     - operator: neumann
       value: 0.0
     walls:
     - operator: neumann
       value: 0.0
-    obstacle:
-    - operator: neumann
-      value: 0.0
 output:
   $ref: output.template.density_velocity_pressure_temperature
   formats: [numpy, gif]
-  resolution:
-  - 224
-  - 160
+  resolution: [224, 160]
   num_frames: 57
 solver:
   $ref: solver.profile.nonlinear_mixed_direct

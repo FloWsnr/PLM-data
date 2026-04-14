@@ -1,0 +1,168 @@
+preset: euler
+parameters:
+  gas_constant:
+    sample: uniform
+    min: 0.96
+    max: 1.08
+  c_v:
+    sample: uniform
+    min: 2.1
+    max: 3.1
+  k: 1.0
+  base_density:
+    sample: uniform
+    min: 0.98
+    max: 1.06
+  base_pressure:
+    sample: uniform
+    min: 1.35
+    max: 1.65
+  shear_interface:
+    sample: uniform
+    min: 0.44
+    max: 0.56
+  shear_speed:
+    sample: uniform
+    min: 0.34
+    max: 0.52
+domain:
+  allow_sampling: true
+  type: rectangle
+  size:
+  - sample: uniform
+    min: 0.94
+    max: 1.08
+  - sample: uniform
+    min: 0.94
+    max: 1.08
+  mesh_resolution: [160, 160]
+time:
+  dt: 0.0006
+  t_end: 0.45
+inputs:
+  density:
+    initial_condition:
+      type: constant
+      params:
+        value: param:base_density
+  velocity:
+    initial_condition:
+      components:
+        x:
+          type: step
+          params:
+            axis: 1
+            x_split: param:shear_interface
+            value_left: param:shear_speed
+            value_right:
+              sample: uniform
+              min: -0.52
+              max: -0.34
+        y:
+          type: sine_waves
+          params:
+            background: 0.0
+            modes:
+            - amplitude:
+                sample: uniform
+                min: 0.02
+                max: 0.05
+              cycles:
+              - sample: uniform
+                min: 4.0
+                max: 7.0
+              - 0.0
+              phase:
+                sample: uniform
+                min: 0.0
+                max: 6.283185
+              angle:
+                sample: uniform
+                min: -0.08
+                max: 0.08
+  pressure:
+    initial_condition:
+      type: constant
+      params:
+        value: param:base_pressure
+boundary_conditions:
+  density:
+    x-:
+    - operator: periodic
+      pair_with: x+
+    x+:
+    - operator: periodic
+      pair_with: x-
+    y-:
+    - operator: dirichlet
+      value:
+        type: constant
+        params:
+          value: param:base_density
+    y+:
+    - operator: dirichlet
+      value:
+        type: constant
+        params:
+          value: param:base_density
+  velocity:
+    x-:
+    - operator: periodic
+      pair_with: x+
+    x+:
+    - operator: periodic
+      pair_with: x-
+    y-:
+    - operator: dirichlet
+      value:
+        components:
+          x:
+            type: constant
+            params:
+              value: param:shear_speed
+          y:
+            type: constant
+            params:
+              value: 0.0
+    y+:
+    - operator: dirichlet
+      value:
+        components:
+          x:
+            type: constant
+            params:
+              value:
+                sample: uniform
+                min: -0.52
+                max: -0.34
+          y:
+            type: constant
+            params:
+              value: 0.0
+  pressure:
+    x-:
+    - operator: periodic
+      pair_with: x+
+    x+:
+    - operator: periodic
+      pair_with: x-
+    y-:
+    - operator: dirichlet
+      value:
+        type: constant
+        params:
+          value: param:base_pressure
+    y+:
+    - operator: dirichlet
+      value:
+        type: constant
+        params:
+          value: param:base_pressure
+output:
+  $ref: output.template.density_velocity_pressure_temperature
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 49
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

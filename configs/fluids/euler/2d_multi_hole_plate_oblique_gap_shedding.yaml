@@ -1,0 +1,181 @@
+preset: euler
+parameters:
+  gas_constant:
+    sample: uniform
+    min: 0.96
+    max: 1.08
+  c_v:
+    sample: uniform
+    min: 2.0
+    max: 3.0
+  k: 1.0
+domain:
+  allow_sampling: true
+  type: multi_hole_plate
+  width:
+    sample: uniform
+    min: 1.16
+    max: 1.28
+  height:
+    sample: uniform
+    min: 0.88
+    max: 0.98
+  holes:
+  - center:
+    - sample: uniform
+      min: 0.24
+      max: 0.32
+    - sample: uniform
+      min: 0.22
+      max: 0.34
+    radius:
+      sample: uniform
+      min: 0.05
+      max: 0.07
+    boundary_name: holes_left
+  - center:
+    - sample: uniform
+      min: 0.56
+      max: 0.68
+    - sample: uniform
+      min: 0.44
+      max: 0.62
+    radius:
+      sample: uniform
+      min: 0.05
+      max: 0.07
+    boundary_name: hole_center
+  - center:
+    - sample: uniform
+      min: 0.9
+      max: 0.98
+    - sample: uniform
+      min: 0.22
+      max: 0.34
+    radius:
+      sample: uniform
+      min: 0.05
+      max: 0.07
+    boundary_name: holes_right
+  mesh_size:
+    sample: uniform
+    min: 0.009
+    max: 0.013
+time:
+  dt: 0.0011
+  t_end: 0.22
+inputs:
+  density:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 0.96
+          max: 1.04
+        modes:
+        - amplitude:
+            sample: uniform
+            min: 0.03
+            max: 0.08
+          cycles:
+          - sample: uniform
+            min: 0.8
+            max: 1.6
+          - sample: uniform
+            min: 1.4
+            max: 2.6
+          phase:
+            sample: uniform
+            min: 0.0
+            max: 6.283185
+          angle:
+            sample: uniform
+            min: 0.28
+            max: 0.56
+  velocity:
+    initial_condition:
+      components:
+        x:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: 0.08
+              max: 0.16
+        y:
+          type: constant
+          params:
+            value: 0.0
+  pressure:
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 0.98
+          max: 1.1
+        modes:
+        - amplitude:
+            sample: uniform
+            min: 0.05
+            max: 0.14
+          cycles:
+          - sample: uniform
+            min: 0.8
+            max: 1.6
+          - sample: uniform
+            min: 1.4
+            max: 2.6
+          phase:
+            sample: uniform
+            min: 0.0
+            max: 6.283185
+          angle:
+            sample: uniform
+            min: 0.28
+            max: 0.56
+boundary_conditions:
+  density:
+    outer:
+    - operator: neumann
+      value: 0.0
+    holes_left:
+    - operator: neumann
+      value: 0.0
+    hole_center:
+    - operator: neumann
+      value: 0.0
+    holes_right:
+    - operator: neumann
+      value: 0.0
+  velocity:
+    outer:
+    - operator: slip
+    holes_left:
+    - operator: slip
+    hole_center:
+    - operator: slip
+    holes_right:
+    - operator: slip
+  pressure:
+    outer:
+    - operator: neumann
+      value: 0.0
+    holes_left:
+    - operator: neumann
+      value: 0.0
+    hole_center:
+    - operator: neumann
+      value: 0.0
+    holes_right:
+    - operator: neumann
+      value: 0.0
+output:
+  $ref: output.template.density_velocity_pressure_temperature
+  formats: [numpy, gif]
+  resolution: [192, 144]
+  num_frames: 61
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

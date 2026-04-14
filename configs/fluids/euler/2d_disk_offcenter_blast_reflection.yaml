@@ -1,0 +1,120 @@
+preset: euler
+parameters:
+  gas_constant:
+    sample: uniform
+    min: 0.95
+    max: 1.08
+  c_v:
+    sample: uniform
+    min: 2.1
+    max: 3.1
+  k: 1.0
+  pulse_center_x:
+    sample: uniform
+    min: -0.24
+    max: 0.18
+  pulse_center_y:
+    sample: uniform
+    min: -0.2
+    max: 0.2
+  base_density:
+    sample: uniform
+    min: 0.92
+    max: 1.06
+  base_pressure:
+    sample: uniform
+    min: 0.76
+    max: 0.94
+domain:
+  allow_sampling: true
+  type: disk
+  center: [0.0, 0.0]
+  radius:
+    sample: uniform
+    min: 0.94
+    max: 1.05
+  mesh_size:
+    sample: uniform
+    min: 0.012
+    max: 0.016
+time:
+  dt: 0.0013
+  t_end: 0.82
+inputs:
+  density:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: param:base_density
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.12
+            max: 0.34
+          sigma:
+            sample: uniform
+            min: 0.08
+            max: 0.14
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 1.45
+          center: ["param:pulse_center_x", "param:pulse_center_y"]
+  velocity:
+    initial_condition:
+      components:
+        x:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -0.18
+              max: 0.18
+        y:
+          type: constant
+          params:
+            value:
+              sample: uniform
+              min: -0.18
+              max: 0.18
+  pressure:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: param:base_pressure
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.8
+            max: 1.35
+          sigma:
+            sample: uniform
+            min: 0.08
+            max: 0.14
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 1.45
+          center: ["param:pulse_center_x", "param:pulse_center_y"]
+boundary_conditions:
+  density:
+    outer:
+    - operator: neumann
+      value: 0.0
+  velocity:
+    outer:
+    - operator: slip
+  pressure:
+    outer:
+    - operator: neumann
+      value: 0.0
+output:
+  $ref: output.template.density_velocity_pressure_temperature
+  formats: [numpy, gif]
+  resolution: [176, 176]
+  num_frames: 57
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

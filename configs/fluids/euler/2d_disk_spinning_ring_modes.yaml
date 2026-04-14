@@ -1,0 +1,110 @@
+preset: euler
+parameters:
+  gas_constant:
+    sample: uniform
+    min: 0.96
+    max: 1.08
+  c_v:
+    sample: uniform
+    min: 2.0
+    max: 3.0
+  k: 1.0
+domain:
+  allow_sampling: true
+  type: disk
+  center: [0.0, 0.0]
+  radius:
+    sample: uniform
+    min: 0.92
+    max: 1.04
+  mesh_size:
+    sample: uniform
+    min: 0.012
+    max: 0.016
+time:
+  dt: 0.0012
+  t_end: 0.8
+inputs:
+  density:
+    initial_condition:
+      type: radial_cosine
+      params:
+        base:
+          sample: uniform
+          min: 0.96
+          max: 1.08
+        amplitude:
+          sample: uniform
+          min: 0.04
+          max: 0.1
+        frequency:
+          sample: uniform
+          min: 5.0
+          max: 8.0
+        center:
+        - sample: uniform
+          min: -0.08
+          max: 0.08
+        - sample: uniform
+          min: -0.08
+          max: 0.08
+  velocity:
+    initial_condition:
+      components:
+        x:
+          type: affine
+          params:
+            y:
+              sample: uniform
+              min: -0.5
+              max: -0.24
+        y:
+          type: affine
+          params:
+            x:
+              sample: uniform
+              min: 0.24
+              max: 0.5
+  pressure:
+    initial_condition:
+      type: radial_cosine
+      params:
+        base:
+          sample: uniform
+          min: 0.98
+          max: 1.14
+        amplitude:
+          sample: uniform
+          min: 0.1
+          max: 0.24
+        frequency:
+          sample: uniform
+          min: 5.0
+          max: 8.0
+        center:
+        - sample: uniform
+          min: -0.08
+          max: 0.08
+        - sample: uniform
+          min: -0.08
+          max: 0.08
+boundary_conditions:
+  density:
+    outer:
+    - operator: neumann
+      value: 0.0
+  velocity:
+    outer:
+    - operator: slip
+  pressure:
+    outer:
+    - operator: neumann
+      value: 0.0
+output:
+  $ref: output.template.density_velocity_pressure_temperature
+  formats: [numpy, gif]
+  resolution: [176, 176]
+  num_frames: 57
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

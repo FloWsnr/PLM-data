@@ -9,55 +9,49 @@ parameters:
     min: 2.2
     max: 3.1
   k: 1.0
+  cavity_center_x:
+    sample: uniform
+    min: 1.0
+    max: 1.5
   inlet_density:
     sample: uniform
-    min: 0.96
+    min: 0.94
     max: 1.08
   inlet_pressure:
     sample: uniform
-    min: 1.16
-    max: 1.42
+    min: 0.84
+    max: 1.04
   inlet_speed:
     sample: uniform
-    min: 1.18
-    max: 1.52
-  pulse_center_x:
-    sample: uniform
-    min: 0.18
-    max: 0.34
-  pulse_center_y:
-    sample: uniform
-    min: 0.24
-    max: 0.42
+    min: 0.45
+    max: 0.9
 domain:
   allow_sampling: true
-  type: channel_obstacle
+  type: side_cavity_channel
   length:
     sample: uniform
-    min: 1.65
-    max: 1.9
+    min: 2.2
+    max: 2.8
   height:
     sample: uniform
-    min: 0.66
-    max: 0.82
-  obstacle_center:
-  - sample: uniform
-    min: 0.62
+    min: 0.7
     max: 0.84
-  - sample: uniform
-    min: 0.28
-    max: 0.42
-  obstacle_radius:
+  cavity_width:
     sample: uniform
-    min: 0.06
-    max: 0.095
+    min: 0.38
+    max: 0.58
+  cavity_depth:
+    sample: uniform
+    min: 0.3
+    max: 0.5
+  cavity_center_x: param:cavity_center_x
   mesh_size:
     sample: uniform
-    min: 0.009
-    max: 0.013
+    min: 0.01
+    max: 0.014
 time:
-  dt: 0.00045
-  t_end: 0.18
+  dt: 0.00055
+  t_end: 0.26
 inputs:
   density:
     initial_condition:
@@ -68,17 +62,21 @@ inputs:
         - count: 1
           amplitude:
             sample: uniform
-            min: 0.02
-            max: 0.08
+            min: 0.08
+            max: 0.2
           sigma:
             sample: uniform
-            min: 0.05
-            max: 0.08
+            min: 0.06
+            max: 0.1
           aspect_ratio:
             sample: uniform
             min: 1.0
             max: 1.6
-          center: ["param:pulse_center_x", "param:pulse_center_y"]
+          center:
+          - param:cavity_center_x
+          - sample: uniform
+            min: 0.84
+            max: 1.02
   velocity:
     initial_condition:
       components:
@@ -99,17 +97,21 @@ inputs:
         - count: 1
           amplitude:
             sample: uniform
-            min: 0.12
-            max: 0.3
+            min: 0.42
+            max: 0.86
           sigma:
             sample: uniform
-            min: 0.05
-            max: 0.08
+            min: 0.06
+            max: 0.1
           aspect_ratio:
             sample: uniform
             min: 1.0
             max: 1.6
-          center: ["param:pulse_center_x", "param:pulse_center_y"]
+          center:
+          - param:cavity_center_x
+          - sample: uniform
+            min: 0.84
+            max: 1.02
 boundary_conditions:
   density:
     inlet:
@@ -122,9 +124,6 @@ boundary_conditions:
     - operator: neumann
       value: 0.0
     walls:
-    - operator: neumann
-      value: 0.0
-    obstacle:
     - operator: neumann
       value: 0.0
   velocity:
@@ -145,8 +144,6 @@ boundary_conditions:
       value: [0.0, 0.0]
     walls:
     - operator: slip
-    obstacle:
-    - operator: slip
   pressure:
     inlet:
     - operator: dirichlet
@@ -160,16 +157,11 @@ boundary_conditions:
     walls:
     - operator: neumann
       value: 0.0
-    obstacle:
-    - operator: neumann
-      value: 0.0
 output:
   $ref: output.template.density_velocity_pressure_temperature
   formats: [numpy, gif]
-  resolution:
-  - 224
-  - 160
-  num_frames: 57
+  resolution: [224, 160]
+  num_frames: 61
 solver:
   $ref: solver.profile.nonlinear_mixed_direct
 seed: 42
