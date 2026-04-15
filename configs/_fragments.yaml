@@ -761,6 +761,15 @@ output:
           $ref: output.mode.components
         speed:
           $ref: output.mode.scalar
+    mhd_velocity_magnetic:
+      formats: [numpy, gif]
+      fields:
+        velocity:
+          $ref: output.mode.components
+        pressure: hidden
+        magnetic_field:
+          $ref: output.mode.components
+        magnetic_constraint: hidden
 
 time:
   unit_interval_dt_0p01:

@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 686 configs.
+Current baseline: 38 PDE presets and 703 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -567,11 +567,39 @@ fast shock-like events and slower trapped-wave transients.
 
 #### MHD (`configs/fluids/mhd`)
 
-1. `2d_wall_bounded_magnetic_vortex_decay`: a localized velocity pulse and transverse magnetic pulse decay inside a closed square cavity.
-2. `2d_rectangle_x_periodic_magnetic_sheet_decay`: an x-periodic strip with wall-bounded shear and magnetic sheet structure decaying under viscosity and resistivity.
-3. `2d_parallelogram_x_periodic_magnetic_sheet_decay`: the same strip-style decay on a skew periodic cell to exercise non-orthogonal geometry.
-4. `3d_wall_bounded_magnetic_pulse`: localized 3D velocity and magnetic pulses relax inside a wall-bounded box.
-5. `3d_xy_periodic_magnetic_cells`: a box periodic in x and y with z-wall anchoring, producing coupled magnetic cell dynamics without a fully periodic magnetic domain.
+Validation: the 20 2D configs below were run one at a time with
+`./run.sh -n 2 ... --n-runs 2` into `output/mhd_validation`, producing 40
+successful runs with passing solver, output, and stagnation diagnostics after
+retuning the fast Y-bifurcation release window. Aggregate metrics and
+start/middle/end frame contact sheets in `output/mhd_validation/analysis`
+confirmed real seed-to-seed variation and visibly different magnetic / flow
+regimes across the suite. Additional sampled parallelogram, L-shaped, and
+serpentine MHD prototypes were explored during tuning but were unstable in
+this OpenFOAM backend at the requested validation settings, so the committed
+2D set focuses on the stable families below.
+
+1. `2d_annulus_inner_ring_shear_decay`: annular inner-rim shear and magnetic structure decay around the sampled hole, producing ring-confined relaxation rather than a box-like pulse.
+2. `2d_annulus_wraparound_flux_packets`: compact annular flux packets wrap azimuthally around the ring and smooth while staying trapped between the sampled inner and outer walls.
+3. `2d_channel_obstacle_magnetic_wake_deflection`: inlet-driven magnetic wake is deflected around the obstacle and leaves a clear downstream obstacle-shadowed flow pattern.
+4. `2d_channel_obstacle_oblique_flux_shadow`: an oblique channel-fed magnetic layer slides past the obstacle, giving a distinctly skewed wake and upper/lower shielding pattern.
+5. `2d_disk_offset_vortex_flux_decay`: an off-center vortex-plus-flux packet decays inside a sampled disk, producing rounded recirculation and wall-filtered asymmetry.
+6. `2d_disk_ring_current_release`: concentric disk-confined ring currents collapse into asymmetric interior circulations instead of a single localized decay spot.
+7. `2d_dumbbell_bridge_current_snap`: opposite-signed lobe structure snaps through the dumbbell neck, producing a short high-contrast bridge-transfer transient.
+8. `2d_dumbbell_lobe_exchange_vortices`: one dumbbell lobe seeds slower vortex and magnetic exchange through the neck, giving a more gradual inter-chamber transfer than the bridge-snap case.
+9. `2d_rectangle_dual_quadrant_flux_relaxation`: quadrant-seeded rectangular flux relaxes into broad tilted interfaces and smooth cavity-scale recirculation.
+10. `2d_rectangle_edge_launched_flux_packets`: paired edge-launched packets travel inward from the walls and fade into broad cavity modes instead of periodic wrap-around.
+11. `2d_rectangle_lid_driven_magnetic_slosh`: lid-driven shear drags a magnetic layer across the cavity, giving a sloshing wall-bounded response rather than a purely decaying pulse.
+12. `2d_rectangle_oblique_cell_relaxation`: oblique cell-like stripe structure fills the box and relaxes through diagonal smoothing rather than localized blob dynamics.
+13. `2d_rectangle_x_periodic_magnetic_sheet_decay`: x-periodic magnetic sheets and wall-bounded shear decay on a strip, preserving a wraparound banded character absent from the closed-box variants.
+14. `2d_side_cavity_channel_cavity_capture`: inlet-fed channel structure is pulled into the side cavity and then released back into the main stream, emphasizing cavity capture rather than simple downstream advection.
+15. `2d_side_cavity_channel_cavity_purge_current`: a cavity-seeded current pocket is purged into the main channel under weaker inflow, giving a release transient complementary to the capture case.
+16. `2d_venturi_channel_throat_flux_focusing`: upstream magnetic structure is squeezed through the sampled venturi throat into a narrow focused jet before broadening downstream.
+17. `2d_venturi_channel_wall_layer_release`: wall-adjacent magnetic structure peels off the converging venturi wall and releases into an asymmetric throat-to-outlet layer.
+18. `2d_wall_bounded_magnetic_vortex_decay`: a localized square-cavity pulse remains the cleanest compact wall-bounded decay baseline, now with stronger seed-dependent structure than the original version.
+19. `2d_y_bifurcation_branch_selection_flux`: inlet-driven flux preferentially fills one daughter branch before spreading through the other, making the bifurcation geometry the main selector.
+20. `2d_y_bifurcation_split_current_release`: branch-seeded current is released through the bifurcation in a short fast transient, providing a compact split-and-decay counterpart to the longer branch-selection case.
+21. `3d_wall_bounded_magnetic_pulse`: localized 3D velocity and magnetic pulses relax inside a wall-bounded box.
+22. `3d_xy_periodic_magnetic_cells`: a box periodic in x and y with z-wall anchoring, producing coupled magnetic cell dynamics without a fully periodic magnetic domain.
 
 #### Navier-Stokes (`configs/fluids/navier_stokes`)
 

@@ -1,0 +1,228 @@
+preset: mhd
+parameters:
+  Re:
+    sample: uniform
+    min: 40.0
+    max: 90.0
+  Rm:
+    sample: uniform
+    min: 24.0
+    max: 52.0
+  inlet_speed:
+    sample: uniform
+    min: 0.05
+    max: 0.16
+  inlet_field:
+    sample: uniform
+    min: 0.02
+    max: 0.1
+  lower_bias:
+    sample: uniform
+    min: -0.48
+    max: -0.18
+  k: 1.0
+domain:
+  type: y_bifurcation
+  allow_sampling: true
+  inlet_length:
+    sample: uniform
+    min: 0.88
+    max: 1.06
+  branch_length:
+    sample: uniform
+    min: 0.84
+    max: 1.04
+  branch_angle_degrees:
+    sample: uniform
+    min: 34.0
+    max: 42.0
+  channel_width:
+    sample: uniform
+    min: 0.18
+    max: 0.24
+  mesh_size:
+    sample: uniform
+    min: 0.014
+    max: 0.018
+time:
+  dt: 0.008
+  t_end: 0.48
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: gaussian_blobs
+          params:
+            background: 0.0
+            generators:
+              - count: 1
+                amplitude:
+                  sample: uniform
+                  min: 0.24
+                  max: 0.48
+                sigma:
+                  sample: uniform
+                  min: 0.05
+                  max: 0.085
+                aspect_ratio:
+                  sample: uniform
+                  min: 1.0
+                  max: 1.6
+                center:
+                  - sample: uniform
+                    min: 1.0
+                    max: 1.26
+                  - sample: uniform
+                    min: 0.22
+                    max: 0.44
+              - count: 1
+                amplitude:
+                  sample: uniform
+                  min: -0.48
+                  max: -0.24
+                sigma:
+                  sample: uniform
+                  min: 0.05
+                  max: 0.085
+                aspect_ratio:
+                  sample: uniform
+                  min: 1.0
+                  max: 1.6
+                center:
+                  - sample: uniform
+                    min: 1.0
+                    max: 1.26
+                  - sample: uniform
+                    min: -0.44
+                    max: -0.22
+        y:
+          type: gaussian_blobs
+          params:
+            background: 0.0
+            generators:
+              - count:
+                  sample: randint
+                  min: 1
+                  max: 2
+                amplitude:
+                  sample: uniform
+                  min: -0.28
+                  max: 0.28
+                sigma:
+                  sample: uniform
+                  min: 0.05
+                  max: 0.085
+                aspect_ratio:
+                  sample: uniform
+                  min: 1.0
+                  max: 1.6
+                center:
+                  - sample: uniform
+                    min: 0.98
+                    max: 1.28
+                  - sample: uniform
+                    min: -0.42
+                    max: 0.42
+  magnetic_field:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: gaussian_blobs
+          params:
+            background: 0.0
+            generators:
+              - count: 1
+                amplitude:
+                  sample: uniform
+                  min: 0.32
+                  max: 0.62
+                sigma:
+                  sample: uniform
+                  min: 0.05
+                  max: 0.085
+                aspect_ratio:
+                  sample: uniform
+                  min: 1.0
+                  max: 1.7
+                center:
+                  - sample: uniform
+                    min: 1.0
+                    max: 1.26
+                  - sample: uniform
+                    min: 0.22
+                    max: 0.44
+              - count: 1
+                amplitude:
+                  sample: uniform
+                  min: -0.62
+                  max: -0.32
+                sigma:
+                  sample: uniform
+                  min: 0.05
+                  max: 0.085
+                aspect_ratio:
+                  sample: uniform
+                  min: 1.0
+                  max: 1.7
+                center:
+                  - sample: uniform
+                    min: 1.0
+                    max: 1.26
+                  - sample: uniform
+                    min: -0.44
+                    max: -0.22
+        y:
+          type: sine_waves
+          params:
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: 0.12
+                  max: 0.26
+                cycles: [2.0, 0.0]
+                phase:
+                  sample: uniform
+                  min: 0.0
+                  max: 6.283185
+boundary_conditions:
+  velocity:
+    inlet:
+      - operator: dirichlet
+        value: ["param:inlet_speed", 0.0]
+    outlet_upper:
+      - operator: neumann
+        value: [0.0, 0.0]
+    outlet_lower:
+      - operator: neumann
+        value: [0.0, 0.0]
+    walls:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+  magnetic_field:
+    inlet:
+      - operator: dirichlet
+        value: ["param:inlet_field", 0.0]
+    outlet_upper:
+      - operator: neumann
+        value: [0.0, 0.0]
+    outlet_lower:
+      - operator: dirichlet
+        value: [0.0, "param:lower_bias"]
+    walls:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+output:
+  $ref: output.template.mhd_velocity_magnetic
+  resolution: [192, 144]
+  num_frames: 38
+solver:
+  $ref: solver.profile.transient_mixed_direct
+seed: 42

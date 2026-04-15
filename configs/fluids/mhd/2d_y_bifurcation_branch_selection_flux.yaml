@@ -1,0 +1,183 @@
+preset: mhd
+parameters:
+  Re:
+    sample: uniform
+    min: 50.0
+    max: 120.0
+  Rm:
+    sample: uniform
+    min: 30.0
+    max: 76.0
+  inlet_speed:
+    sample: uniform
+    min: 0.85
+    max: 1.2
+  jet_center:
+    sample: uniform
+    min: -0.02
+    max: 0.02
+  jet_sigma:
+    sample: uniform
+    min: 0.08
+    max: 0.14
+  inlet_field:
+    sample: uniform
+    min: 0.18
+    max: 0.38
+  upper_bias:
+    sample: uniform
+    min: 0.18
+    max: 0.48
+  k: 1.0
+domain:
+  type: y_bifurcation
+  allow_sampling: true
+  inlet_length:
+    sample: uniform
+    min: 0.88
+    max: 1.06
+  branch_length:
+    sample: uniform
+    min: 0.84
+    max: 1.04
+  branch_angle_degrees:
+    sample: uniform
+    min: 34.0
+    max: 42.0
+  channel_width:
+    sample: uniform
+    min: 0.18
+    max: 0.24
+  mesh_size:
+    sample: uniform
+    min: 0.014
+    max: 0.018
+time:
+  dt: 0.008
+  t_end: 1.45
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: zero
+      params: {}
+  magnetic_field:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: gaussian_blobs
+          params:
+            background: 0.0
+            generators:
+              - count:
+                  sample: randint
+                  min: 1
+                  max: 2
+                amplitude:
+                  sample: uniform
+                  min: 0.22
+                  max: 0.44
+                sigma:
+                  sample: uniform
+                  min: 0.05
+                  max: 0.09
+                aspect_ratio:
+                  sample: uniform
+                  min: 1.0
+                  max: 1.6
+                center:
+                  - sample: uniform
+                    min: 0.7
+                    max: 1.08
+                  - sample: uniform
+                    min: -0.18
+                    max: 0.18
+        y:
+          type: gaussian_blobs
+          params:
+            background: 0.0
+            generators:
+              - count:
+                  sample: randint
+                  min: 1
+                  max: 2
+                amplitude:
+                  sample: uniform
+                  min: -0.28
+                  max: 0.28
+                sigma:
+                  sample: uniform
+                  min: 0.05
+                  max: 0.09
+                aspect_ratio:
+                  sample: uniform
+                  min: 1.0
+                  max: 1.6
+                center:
+                  - sample: uniform
+                    min: 0.72
+                    max: 1.12
+                  - sample: uniform
+                    min: -0.22
+                    max: 0.22
+boundary_conditions:
+  velocity:
+    inlet:
+      - operator: dirichlet
+        value:
+          components:
+            x:
+              type: gaussian_bump
+              params:
+                amplitude: "param:inlet_speed"
+                sigma: "param:jet_sigma"
+                center: [0.0, "param:jet_center"]
+            y:
+              type: constant
+              params:
+                value: 0.0
+    outlet_upper:
+      - operator: neumann
+        value: [0.0, 0.0]
+    outlet_lower:
+      - operator: neumann
+        value: [0.0, 0.0]
+    walls:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+  magnetic_field:
+    inlet:
+      - operator: dirichlet
+        value:
+          components:
+            x:
+              type: constant
+              params:
+                value: 0.0
+            y:
+              type: gaussian_bump
+              params:
+                amplitude: "param:inlet_field"
+                sigma: "param:jet_sigma"
+                center: [0.0, "param:jet_center"]
+    outlet_upper:
+      - operator: dirichlet
+        value: [0.0, "param:upper_bias"]
+    outlet_lower:
+      - operator: neumann
+        value: [0.0, 0.0]
+    walls:
+      - operator: neumann
+        value: [0.0, 0.0]
+output:
+  $ref: output.template.mhd_velocity_magnetic
+  resolution: [192, 144]
+  num_frames: 50
+solver:
+  $ref: solver.profile.transient_mixed_direct
+seed: 42
