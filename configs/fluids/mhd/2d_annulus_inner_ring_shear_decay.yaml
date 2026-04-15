@@ -1,36 +1,45 @@
 preset: mhd
 parameters:
+  domain_center_x:
+    sample: uniform
+    min: -0.04
+    max: 0.04
+  domain_center_y:
+    sample: uniform
+    min: -0.04
+    max: 0.04
   Re:
     sample: uniform
-    min: 34.0
-    max: 82.0
+    min: 46.0
+    max: 92.0
   Rm:
     sample: uniform
-    min: 24.0
-    max: 70.0
-  lower_wall_speed:
+    min: 30.0
+    max: 72.0
+  inner_field:
     sample: uniform
-    min: 0.45
-    max: 0.9
-  upper_wall_speed:
-    sample: uniform
-    min: -0.9
-    max: -0.45
+    min: 0.25
+    max: 0.6
   k: 1.0
 domain:
-  type: rectangle
+  type: annulus
   allow_sampling: true
-  size:
-    - sample: uniform
-      min: 1.8
-      max: 2.3
-    - sample: uniform
-      min: 0.9
-      max: 1.15
-  mesh_resolution: [192, 128]
+  center: ["param:domain_center_x", "param:domain_center_y"]
+  inner_radius:
+    sample: uniform
+    min: 0.22
+    max: 0.32
+  outer_radius:
+    sample: uniform
+    min: 0.94
+    max: 1.08
+  mesh_size:
+    sample: uniform
+    min: 0.014
+    max: 0.017
 time:
-  dt: 0.008
-  t_end: 1.0
+  dt: 0.007
+  t_end: 0.9
 inputs:
   velocity:
     source:
@@ -45,22 +54,17 @@ inputs:
             modes:
               - amplitude:
                   sample: uniform
-                  min: 0.18
-                  max: 0.32
-                cycles: [0.0, 3.0]
-                phase:
-                  sample: uniform
-                  min: 0.0
-                  max: 6.283185
-              - amplitude:
-                  sample: uniform
-                  min: 0.08
-                  max: 0.16
+                  min: 0.16
+                  max: 0.28
                 cycles: [2.0, 1.0]
                 phase:
                   sample: uniform
                   min: 0.0
                   max: 6.283185
+                angle:
+                  sample: uniform
+                  min: -0.8
+                  max: 0.8
         y:
           type: sine_waves
           params:
@@ -70,11 +74,15 @@ inputs:
                   sample: uniform
                   min: 0.12
                   max: 0.24
-                cycles: [2.0, 0.0]
+                cycles: [1.0, 2.0]
                 phase:
                   sample: uniform
                   min: 0.0
                   max: 6.283185
+                angle:
+                  sample: uniform
+                  min: -0.8
+                  max: 0.8
   magnetic_field:
     source:
       type: none
@@ -82,21 +90,18 @@ inputs:
     initial_condition:
       components:
         x:
-          type: step
+          type: radial_cosine
           params:
-            value_left:
+            base: 0.0
+            amplitude:
               sample: uniform
-              min: 0.4
-              max: 0.7
-            value_right:
+              min: 0.25
+              max: 0.5
+            frequency:
               sample: uniform
-              min: -0.7
-              max: -0.4
-            x_split:
-              sample: uniform
-              min: 0.42
-              max: 0.58
-            axis: 1
+              min: 10.0
+              max: 14.0
+            center: ["param:domain_center_x", "param:domain_center_y"]
         y:
           type: sine_waves
           params:
@@ -105,51 +110,34 @@ inputs:
               - amplitude:
                   sample: uniform
                   min: 0.16
-                  max: 0.3
-                cycles: [3.0, 0.0]
+                  max: 0.28
+                cycles: [2.0, 1.0]
                 phase:
                   sample: uniform
                   min: 0.0
                   max: 6.283185
-              - amplitude:
+                angle:
                   sample: uniform
-                  min: 0.08
-                  max: 0.16
-                cycles: [0.0, 2.0]
-                phase:
-                  sample: uniform
-                  min: 0.0
-                  max: 6.283185
+                  min: -0.8
+                  max: 0.8
 boundary_conditions:
   velocity:
-    x-:
-      - operator: periodic
-        pair_with: x+
-    x+:
-      - operator: periodic
-        pair_with: x-
-    y-:
+    inner:
       - operator: dirichlet
-        value: ["param:lower_wall_speed", 0.0]
-    y+:
-      - operator: dirichlet
-        value: ["param:upper_wall_speed", 0.0]
-  magnetic_field:
-    x-:
-      - operator: periodic
-        pair_with: x+
-    x+:
-      - operator: periodic
-        pair_with: x-
-    y-:
-      - operator: neumann
         value: [0.0, 0.0]
-    y+:
+    outer:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+  magnetic_field:
+    inner:
+      - operator: dirichlet
+        value: ["param:inner_field", 0.0]
+    outer:
       - operator: neumann
         value: [0.0, 0.0]
 output:
   $ref: output.template.mhd_velocity_magnetic
-  resolution: [224, 128]
+  resolution: [160, 160]
   num_frames: 44
 solver:
   $ref: solver.profile.transient_mixed_direct

@@ -1,0 +1,169 @@
+preset: mhd
+parameters:
+  Re:
+    sample: uniform
+    min: 20.0
+    max: 44.0
+  Rm:
+    sample: uniform
+    min: 12.0
+    max: 28.0
+  k: 1.0
+domain:
+  type: rectangle
+  allow_sampling: true
+  size:
+    - sample: uniform
+      min: 1.0
+      max: 1.22
+    - sample: uniform
+      min: 1.0
+      max: 1.22
+  mesh_resolution: [144, 144]
+time:
+  dt: 0.008
+  t_end: 0.72
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: quadrants
+          params:
+            split:
+              - sample: uniform
+                min: 0.42
+                max: 0.58
+              - sample: uniform
+                min: 0.42
+                max: 0.58
+            region_values:
+              "00":
+                sample: uniform
+                min: 0.2
+                max: 0.45
+              "01":
+                sample: uniform
+                min: -0.45
+                max: -0.2
+              "10":
+                sample: uniform
+                min: -0.2
+                max: 0.05
+              "11":
+                sample: uniform
+                min: 0.05
+                max: 0.28
+        y:
+          type: quadrants
+          params:
+            split:
+              - sample: uniform
+                min: 0.42
+                max: 0.58
+              - sample: uniform
+                min: 0.42
+                max: 0.58
+            region_values:
+              "00":
+                sample: uniform
+                min: -0.28
+                max: -0.05
+              "01":
+                sample: uniform
+                min: 0.05
+                max: 0.28
+              "10":
+                sample: uniform
+                min: -0.18
+                max: 0.08
+              "11":
+                sample: uniform
+                min: -0.08
+                max: 0.18
+  magnetic_field:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: quadrants
+          params:
+            split:
+              - sample: uniform
+                min: 0.4
+                max: 0.6
+              - sample: uniform
+                min: 0.4
+                max: 0.6
+            region_values:
+              "00":
+                sample: uniform
+                min: 0.28
+                max: 0.52
+              "01":
+                sample: uniform
+                min: -0.52
+                max: -0.28
+              "10":
+                sample: uniform
+                min: 0.08
+                max: 0.28
+              "11":
+                sample: uniform
+                min: -0.28
+                max: -0.08
+        y:
+          type: quadrants
+          params:
+            split:
+              - sample: uniform
+                min: 0.4
+                max: 0.6
+              - sample: uniform
+                min: 0.4
+                max: 0.6
+            region_values:
+              "00":
+                sample: uniform
+                min: -0.42
+                max: -0.18
+              "01":
+                sample: uniform
+                min: 0.18
+                max: 0.42
+              "10":
+                sample: uniform
+                min: -0.16
+                max: 0.08
+              "11":
+                sample: uniform
+                min: -0.08
+                max: 0.16
+boundary_conditions:
+  velocity:
+    $ref: boundary_field.vector.homogeneous_dirichlet_2d
+  magnetic_field:
+    x-:
+      - operator: neumann
+        value: [0.0, 0.0]
+    x+:
+      - operator: neumann
+        value: [0.0, 0.0]
+    y-:
+      - operator: neumann
+        value: [0.0, 0.0]
+    y+:
+      - operator: neumann
+        value: [0.0, 0.0]
+output:
+  $ref: output.template.mhd_velocity_magnetic
+  resolution: [160, 160]
+  num_frames: 40
+solver:
+  $ref: solver.profile.transient_mixed_direct
+seed: 42
