@@ -466,9 +466,35 @@ domain supports sampling.
 
 #### Compressible Navier-Stokes (`configs/fluids/compressible_navier_stokes`)
 
-1. `2d_channel_obstacle_heating_expansion`: localized heating in a channel with an obstacle drives expansion waves and a thermal wake around the blockage.
-2. `2d_localized_heating_expansion`: localized heating drives expansion and pressure waves in a closed box.
-3. `3d_localized_heating_expansion`: 3D localized heating drives expansion and pressure waves in a closed box.
+The 2D compressible Navier-Stokes suite now has 20 validated configs: two each
+for rectangle, annulus, disk, dumbbell, L-shape, multi-hole plate,
+channel-obstacle, parallelogram, venturi-channel, and Y-bifurcation domains.
+All 2D cases use output resolutions with a shortest side of at least 128, all
+sample both physical and geometric parameters where the domain allows it, and
+each config was rerun with `-n 2 --n-runs 2` to confirm both seed-to-seed
+variation and numerical stability.
+
+1. `2d_annulus_azimuthal_shear_ring_modes`: annular ring modes are given a mild azimuthal bias, producing smooth rotating thermal-pressure structure around the hole rather than a single radial blast.
+2. `2d_annulus_inner_wall_heating_wave`: a hot inner rim drives a bright ring-confined heating wave outward through the annulus while the outer wall reflects the expanding band.
+3. `2d_channel_obstacle_heating_expansion`: a milder obstacle-heating setup generates a rounded thermal expansion plume and symmetric obstacle-shadow wake.
+4. `2d_channel_obstacle_oblique_hot_bypass`: an oblique inlet and off-axis hot packet send a distinctly one-sided thermal wake around the obstacle, creating an upper-bypass channel case rather than a centered expansion.
+5. `2d_disk_offcenter_thermal_pulse_reflection`: an off-center hot pulse expands across a disk and reflects back as curved, asymmetric arcs.
+6. `2d_disk_rotating_ring_heat_release`: ring-like temperature structure in the disk evolves under seeded swirl, giving slower rotating cavity bands instead of one localized burst.
+7. `2d_dumbbell_counter_lobe_thermal_collision`: separate lobe excitations push thermal and pressure structure through the neck and force a central collision transient.
+8. `2d_dumbbell_lobe_exchange_blast`: a stronger one-sided lobe release drives delayed left-to-right exchange through the bridge, emphasizing chamber-to-chamber transfer rather than symmetric collision.
+9. `2d_l_shape_corner_shock_focusing`: a directional pulse in the L-shaped cavity focuses into the re-entrant corner and returns as bent reflected compressible fronts.
+10. `2d_l_shape_notch_shear_release`: skewed inlet and heating release slower corner-shear structure past the notch, contrasting with the sharper corner-focus case.
+11. `2d_localized_heating_expansion`: the rectangular baseline remains a centered expansion-wave case in a closed box, now with stronger randomized heating and stable output resolution.
+12. `2d_multi_hole_plate_hole_shadow_pulse_train`: localized compressible pulses weave through the perforations and leave hole-shadowed thermal corridors behind the plate.
+13. `2d_multi_hole_plate_perforated_heat_weave`: a softer perforated-plate forcing produces broader interstitial heating lanes and slower screened motion between the holes.
+14. `2d_parallelogram_diagonal_hotspot_echoes`: a skew-cell hot spot launches diagonally biased echoes that repeatedly wrap along the parallelogram geometry.
+15. `2d_parallelogram_oblique_shear_heating`: oblique inlet shear plus heating generates a slanted compressible sweep, clearly separating the skewed-cell dynamics from the axis-aligned rectangle case.
+16. `2d_periodic_shear_thermal_billows`: the periodic rectangle case now produces non-wall-dominated thermal billows and shear-driven compressible mixing rather than a cavity reflection movie.
+17. `2d_venturi_channel_throat_heating_focus`: a stable throat-focused venturi setup squeezes a central thermal packet through the nozzle and into a narrow downstream compression plume.
+18. `2d_venturi_channel_wall_skimming_thermal_ribbon`: the second venturi case is now a passive upper-wall ribbon advected through the throat, giving a clear wall-skimming counterpart to the throat-heating case.
+19. `2d_y_bifurcation_branch_bias_hot_jet`: a lower-side seeded hot packet in the trunk biases the split toward one daughter branch, producing asymmetric branch selection without sustained forcing.
+20. `2d_y_bifurcation_split_heating_plumes`: a weaker central split source plus sinusoidal thermal background produces more symmetric daughter-branch plume development than the branch-bias case.
+21. `3d_localized_heating_expansion`: 3D localized heating drives expansion and pressure waves in a closed box.
 
 #### Darcy (`configs/fluids/darcy`)
 

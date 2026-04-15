@@ -6,67 +6,67 @@ parameters:
     max: 1.04
   c_v:
     sample: uniform
-    min: 1.55
-    max: 1.95
+    min: 1.56
+    max: 1.9
   mu:
     sample: uniform
-    min: 0.022
-    max: 0.036
+    min: 0.02
+    max: 0.032
   bulk_viscosity:
     sample: uniform
-    min: 0.006
+    min: 0.008
     max: 0.016
   thermal_conductivity:
     sample: uniform
-    min: 0.04
-    max: 0.06
+    min: 0.03
+    max: 0.05
   k: 1.0
   base_density:
     sample: uniform
-    min: 0.97
-    max: 1.04
+    min: 0.98
+    max: 1.05
   inlet_temperature:
     sample: uniform
-    min: 0.94
-    max: 1.04
+    min: 0.96
+    max: 1.06
   wall_temperature:
     sample: uniform
     min: 0.96
     max: 1.02
   obstacle_temperature:
     sample: uniform
-    min: 1.08
-    max: 1.22
+    min: 1.0
+    max: 1.08
   inlet_speed:
     sample: uniform
-    min: 0.26
-    max: 0.38
+    min: 0.28
+    max: 0.4
   inlet_crossflow:
     sample: uniform
-    min: -0.03
-    max: 0.03
+    min: 0.03
+    max: 0.09
   obstacle_center_x:
     sample: uniform
-    min: 0.72
+    min: 0.74
     max: 0.92
   obstacle_center_y:
     sample: uniform
-    min: 0.34
-    max: 0.46
+    min: 0.28
+    max: 0.38
   pulse_center_x:
     sample: uniform
-    min: 0.38
-    max: 0.58
+    min: 0.36
+    max: 0.56
   pulse_center_y:
     sample: uniform
-    min: 0.36
-    max: 0.58
+    min: 0.46
+    max: 0.6
 domain:
   type: channel_obstacle
   allow_sampling: true
   length:
     sample: uniform
-    min: 1.65
+    min: 1.68
     max: 1.95
   height:
     sample: uniform
@@ -82,7 +82,7 @@ domain:
     min: 0.01
     max: 0.014
 time:
-  dt: 0.0022
+  dt: 0.0016
   t_end: 0.36
 inputs:
   density:
@@ -90,24 +90,9 @@ inputs:
       type: none
       params: {}
     initial_condition:
-      type: gaussian_blobs
+      type: constant
       params:
-        background: param:base_density
-        generators:
-          - count: 1
-            amplitude:
-              sample: uniform
-              min: 0.015
-              max: 0.05
-            sigma:
-              sample: uniform
-              min: 0.05
-              max: 0.08
-            aspect_ratio:
-              sample: uniform
-              min: 1.0
-              max: 1.6
-            center: ["param:pulse_center_x", "param:pulse_center_y"]
+        value: param:base_density
   velocity:
     source:
       type: none
@@ -124,8 +109,17 @@ inputs:
             value: param:inlet_crossflow
   temperature:
     source:
-      type: none
-      params: {}
+      type: gaussian_bump
+      params:
+        amplitude:
+          sample: uniform
+          min: 0.12
+          max: 0.28
+        sigma:
+          sample: uniform
+          min: 0.045
+          max: 0.075
+        center: ["param:pulse_center_x", "param:pulse_center_y"]
     initial_condition:
       type: gaussian_blobs
       params:
@@ -134,23 +128,17 @@ inputs:
           - count: 1
             amplitude:
               sample: uniform
-              min: 0.06
-              max: 0.16
+              min: 0.05
+              max: 0.14
             sigma:
               sample: uniform
-              min: 0.055
-              max: 0.09
+              min: 0.045
+              max: 0.075
             aspect_ratio:
               sample: uniform
               min: 1.0
-              max: 1.8
-            center:
-              - sample: uniform
-                min: 0.26
-                max: 0.58
-              - sample: uniform
-                min: 0.28
-                max: 0.62
+              max: 2.2
+            center: ["param:pulse_center_x", "param:pulse_center_y"]
 boundary_conditions:
   density:
     inlet:
@@ -228,7 +216,7 @@ output:
   $ref: output.template.density_velocity_pressure_temperature
   formats: [numpy, gif]
   resolution: [224, 160]
-  num_frames: 53
+  num_frames: 57
 solver:
   $ref: solver.profile.nonlinear_mixed_direct
 seed: 42

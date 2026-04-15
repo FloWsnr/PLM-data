@@ -1,0 +1,249 @@
+preset: compressible_navier_stokes
+parameters:
+  gas_constant:
+    sample: uniform
+    min: 0.96
+    max: 1.04
+  c_v:
+    sample: uniform
+    min: 1.52
+    max: 1.88
+  mu:
+    sample: uniform
+    min: 0.012
+    max: 0.024
+  bulk_viscosity:
+    sample: uniform
+    min: 0.004
+    max: 0.012
+  thermal_conductivity:
+    sample: uniform
+    min: 0.016
+    max: 0.03
+  k: 1.0
+  base_density:
+    sample: uniform
+    min: 0.98
+    max: 1.05
+  wall_temperature:
+    sample: uniform
+    min: 0.9
+    max: 1.02
+  hole_temperature:
+    sample: uniform
+    min: 0.82
+    max: 0.94
+  drift_x:
+    sample: uniform
+    min: 0.18
+    max: 0.3
+domain:
+  type: multi_hole_plate
+  allow_sampling: true
+  width:
+    sample: uniform
+    min: 1.16
+    max: 1.28
+  height:
+    sample: uniform
+    min: 0.88
+    max: 0.98
+  holes:
+    - center:
+        - sample: uniform
+          min: 0.24
+          max: 0.32
+        - sample: uniform
+          min: 0.24
+          max: 0.34
+      radius:
+        sample: uniform
+        min: 0.05
+        max: 0.075
+      boundary_name: holes
+    - center:
+        - sample: uniform
+          min: 0.56
+          max: 0.68
+        - sample: uniform
+          min: 0.46
+          max: 0.62
+      radius:
+        sample: uniform
+        min: 0.055
+        max: 0.08
+      boundary_name: holes
+    - center:
+        - sample: uniform
+          min: 0.88
+          max: 0.98
+        - sample: uniform
+          min: 0.22
+          max: 0.34
+      radius:
+        sample: uniform
+        min: 0.05
+        max: 0.075
+      boundary_name: holes
+  mesh_size:
+    sample: uniform
+    min: 0.01
+    max: 0.014
+time:
+  dt: 0.0028
+  t_end: 0.64
+inputs:
+  density:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: param:base_density
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.02
+              max: 0.06
+            sigma:
+              sample: uniform
+              min: 0.04
+              max: 0.07
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.6
+            center:
+              - sample: uniform
+                min: 0.16
+                max: 0.26
+              - sample: uniform
+                min: 0.26
+                max: 0.42
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.02
+              max: 0.06
+            sigma:
+              sample: uniform
+              min: 0.04
+              max: 0.07
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.6
+            center:
+              - sample: uniform
+                min: 0.18
+                max: 0.3
+              - sample: uniform
+                min: 0.56
+                max: 0.72
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: constant
+          params:
+            value: param:drift_x
+        y:
+          type: constant
+          params:
+            value: 0.0
+  temperature:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: param:wall_temperature
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.22
+              max: 0.4
+            sigma:
+              sample: uniform
+              min: 0.045
+              max: 0.075
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.8
+            center:
+              - sample: uniform
+                min: 0.16
+                max: 0.26
+              - sample: uniform
+                min: 0.24
+                max: 0.4
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.2
+              max: 0.36
+            sigma:
+              sample: uniform
+              min: 0.045
+              max: 0.075
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.8
+            center:
+              - sample: uniform
+                min: 0.18
+                max: 0.3
+              - sample: uniform
+                min: 0.56
+                max: 0.74
+boundary_conditions:
+  density:
+    outer:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:base_density
+    holes:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:base_density
+  velocity:
+    outer:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+    holes:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+  temperature:
+    outer:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:wall_temperature
+    holes:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:hole_temperature
+output:
+  $ref: output.template.density_velocity_pressure_temperature
+  formats: [numpy, gif]
+  resolution: [192, 144]
+  num_frames: 57
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

@@ -6,15 +6,15 @@ parameters:
     max: 1.04
   c_v:
     sample: uniform
-    min: 1.55
-    max: 1.95
+    min: 1.52
+    max: 1.86
   mu:
     sample: uniform
-    min: 0.022
-    max: 0.036
+    min: 0.02
+    max: 0.032
   bulk_viscosity:
     sample: uniform
-    min: 0.006
+    min: 0.008
     max: 0.016
   thermal_conductivity:
     sample: uniform
@@ -23,91 +23,71 @@ parameters:
   k: 1.0
   base_density:
     sample: uniform
-    min: 0.97
-    max: 1.04
+    min: 0.98
+    max: 1.05
   inlet_temperature:
     sample: uniform
-    min: 0.94
-    max: 1.04
+    min: 0.96
+    max: 1.06
   wall_temperature:
     sample: uniform
-    min: 0.96
-    max: 1.02
-  obstacle_temperature:
-    sample: uniform
-    min: 1.08
-    max: 1.22
+    min: 0.98
+    max: 1.04
   inlet_speed:
     sample: uniform
-    min: 0.26
-    max: 0.38
+    min: 0.28
+    max: 0.4
   inlet_crossflow:
     sample: uniform
-    min: -0.03
-    max: 0.03
-  obstacle_center_x:
-    sample: uniform
-    min: 0.72
-    max: 0.92
-  obstacle_center_y:
-    sample: uniform
-    min: 0.34
-    max: 0.46
+    min: -0.06
+    max: -0.015
   pulse_center_x:
     sample: uniform
-    min: 0.38
-    max: 0.58
+    min: 0.34
+    max: 0.6
   pulse_center_y:
     sample: uniform
-    min: 0.36
-    max: 0.58
+    min: 0.66
+    max: 0.8
 domain:
-  type: channel_obstacle
+  type: venturi_channel
   allow_sampling: true
   length:
     sample: uniform
-    min: 1.65
-    max: 1.95
+    min: 2.0
+    max: 2.4
   height:
     sample: uniform
-    min: 0.72
-    max: 0.88
-  obstacle_center: ["param:obstacle_center_x", "param:obstacle_center_y"]
-  obstacle_radius:
+    min: 0.9
+    max: 1.08
+  throat_height:
     sample: uniform
-    min: 0.06
-    max: 0.09
+    min: 0.42
+    max: 0.54
+  constriction_center_x:
+    sample: uniform
+    min: 0.92
+    max: 1.24
+  constriction_radius:
+    sample: uniform
+    min: 0.5
+    max: 0.68
   mesh_size:
     sample: uniform
-    min: 0.01
-    max: 0.014
+    min: 0.011
+    max: 0.015
 time:
   dt: 0.0022
-  t_end: 0.36
+  t_end: 0.3
 inputs:
   density:
     source:
       type: none
       params: {}
     initial_condition:
-      type: gaussian_blobs
+      type: constant
       params:
-        background: param:base_density
-        generators:
-          - count: 1
-            amplitude:
-              sample: uniform
-              min: 0.015
-              max: 0.05
-            sigma:
-              sample: uniform
-              min: 0.05
-              max: 0.08
-            aspect_ratio:
-              sample: uniform
-              min: 1.0
-              max: 1.6
-            center: ["param:pulse_center_x", "param:pulse_center_y"]
+        value: param:base_density
   velocity:
     source:
       type: none
@@ -134,23 +114,17 @@ inputs:
           - count: 1
             amplitude:
               sample: uniform
-              min: 0.06
-              max: 0.16
+              min: 0.08
+              max: 0.18
             sigma:
               sample: uniform
-              min: 0.055
+              min: 0.05
               max: 0.09
             aspect_ratio:
               sample: uniform
-              min: 1.0
-              max: 1.8
-            center:
-              - sample: uniform
-                min: 0.26
-                max: 0.58
-              - sample: uniform
-                min: 0.28
-                max: 0.62
+              min: 1.6
+              max: 2.6
+            center: ["param:pulse_center_x", "param:pulse_center_y"]
 boundary_conditions:
   density:
     inlet:
@@ -166,12 +140,6 @@ boundary_conditions:
           params:
             value: param:base_density
     walls:
-      - operator: dirichlet
-        value:
-          type: constant
-          params:
-            value: param:base_density
-    obstacle:
       - operator: dirichlet
         value:
           type: constant
@@ -196,9 +164,6 @@ boundary_conditions:
     walls:
       - operator: dirichlet
         value: [0.0, 0.0]
-    obstacle:
-      - operator: dirichlet
-        value: [0.0, 0.0]
   temperature:
     inlet:
       - operator: dirichlet
@@ -218,17 +183,11 @@ boundary_conditions:
           type: constant
           params:
             value: param:wall_temperature
-    obstacle:
-      - operator: dirichlet
-        value:
-          type: constant
-          params:
-            value: param:obstacle_temperature
 output:
   $ref: output.template.density_velocity_pressure_temperature
   formats: [numpy, gif]
-  resolution: [224, 160]
-  num_frames: 53
+  resolution: [224, 128]
+  num_frames: 57
 solver:
   $ref: solver.profile.nonlinear_mixed_direct
 seed: 42
