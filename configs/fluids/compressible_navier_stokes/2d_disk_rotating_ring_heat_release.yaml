@@ -1,0 +1,132 @@
+preset: compressible_navier_stokes
+parameters:
+  gas_constant:
+    sample: uniform
+    min: 0.96
+    max: 1.04
+  c_v:
+    sample: uniform
+    min: 1.55
+    max: 1.88
+  mu:
+    sample: uniform
+    min: 0.012
+    max: 0.022
+  bulk_viscosity:
+    sample: uniform
+    min: 0.004
+    max: 0.012
+  thermal_conductivity:
+    sample: uniform
+    min: 0.016
+    max: 0.03
+  k: 1.0
+  domain_center_x:
+    sample: uniform
+    min: -0.04
+    max: 0.04
+  domain_center_y:
+    sample: uniform
+    min: -0.04
+    max: 0.04
+  base_density:
+    sample: uniform
+    min: 0.98
+    max: 1.05
+  rim_temperature:
+    sample: uniform
+    min: 0.92
+    max: 1.04
+domain:
+  type: disk
+  allow_sampling: true
+  center: ["param:domain_center_x", "param:domain_center_y"]
+  radius:
+    sample: uniform
+    min: 0.94
+    max: 1.04
+  mesh_size:
+    sample: uniform
+    min: 0.01
+    max: 0.014
+time:
+  dt: 0.0035
+  t_end: 0.82
+inputs:
+  density:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: constant
+      params:
+        value: param:base_density
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: affine
+          params:
+            y:
+              sample: uniform
+              min: -0.7
+              max: -0.42
+        y:
+          type: affine
+          params:
+            x:
+              sample: uniform
+              min: 0.42
+              max: 0.7
+  temperature:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: radial_cosine
+      params:
+        base:
+          sample: uniform
+          min: 0.96
+          max: 1.08
+        amplitude:
+          sample: uniform
+          min: 0.16
+          max: 0.28
+        frequency:
+          sample: uniform
+          min: 5.2
+          max: 8.0
+        center:
+          - 0.0
+          - 0.0
+boundary_conditions:
+  density:
+    outer:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:base_density
+  velocity:
+    outer:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+  temperature:
+    outer:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:rim_temperature
+output:
+  $ref: output.template.density_velocity_pressure_temperature
+  formats: [numpy, gif]
+  resolution: [176, 176]
+  num_frames: 57
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

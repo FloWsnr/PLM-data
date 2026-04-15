@@ -1,0 +1,212 @@
+preset: compressible_navier_stokes
+parameters:
+  gas_constant:
+    sample: uniform
+    min: 0.96
+    max: 1.05
+  c_v:
+    sample: uniform
+    min: 1.52
+    max: 1.88
+  mu:
+    sample: uniform
+    min: 0.012
+    max: 0.024
+  bulk_viscosity:
+    sample: uniform
+    min: 0.004
+    max: 0.012
+  thermal_conductivity:
+    sample: uniform
+    min: 0.016
+    max: 0.03
+  k: 1.0
+  base_density:
+    sample: uniform
+    min: 0.98
+    max: 1.04
+  notch_temperature:
+    sample: uniform
+    min: 1.12
+    max: 1.3
+  outer_temperature:
+    sample: uniform
+    min: 0.88
+    max: 0.98
+domain:
+  type: l_shape
+  allow_sampling: true
+  outer_width:
+    sample: uniform
+    min: 1.0
+    max: 1.18
+  outer_height:
+    sample: uniform
+    min: 1.0
+    max: 1.18
+  cutout_width:
+    sample: uniform
+    min: 0.32
+    max: 0.46
+  cutout_height:
+    sample: uniform
+    min: 0.32
+    max: 0.46
+  mesh_size:
+    sample: uniform
+    min: 0.01
+    max: 0.014
+time:
+  dt: 0.0032
+  t_end: 0.92
+inputs:
+  density:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: constant
+      params:
+        value: param:base_density
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: sine_waves
+          params:
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: -0.24
+                  max: 0.24
+                cycles:
+                  - sample: uniform
+                    min: 1.2
+                    max: 2.2
+                  - sample: uniform
+                    min: 0.8
+                    max: 1.8
+                phase:
+                  sample: uniform
+                  min: -0.6
+                  max: 0.6
+                angle:
+                  sample: uniform
+                  min: 0.1
+                  max: 0.52
+        y:
+          type: sine_waves
+          params:
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: -0.28
+                  max: 0.28
+                cycles:
+                  - sample: uniform
+                    min: 0.8
+                    max: 1.8
+                  - sample: uniform
+                    min: 1.2
+                    max: 2.4
+                phase:
+                  sample: uniform
+                  min: -0.6
+                  max: 0.6
+                angle:
+                  sample: uniform
+                  min: -0.4
+                  max: 0.4
+  temperature:
+    source:
+      type: gaussian_bump
+      params:
+        amplitude:
+          sample: uniform
+          min: 0.3
+          max: 0.64
+        sigma:
+          sample: uniform
+          min: 0.05
+          max: 0.09
+        center:
+          - sample: uniform
+            min: 0.54
+            max: 0.72
+          - sample: uniform
+            min: 0.54
+            max: 0.72
+    initial_condition:
+      type: sine_waves
+      params:
+        background:
+          sample: uniform
+          min: 0.94
+          max: 1.04
+        modes:
+          - amplitude:
+              sample: uniform
+              min: 0.12
+              max: 0.26
+            cycles:
+              - sample: uniform
+                min: 1.1
+                max: 2.0
+              - sample: uniform
+                min: 1.6
+                max: 3.0
+            phase:
+              sample: uniform
+              min: -0.4
+              max: 0.4
+            angle:
+              sample: uniform
+              min: -0.4
+              max: 0.4
+boundary_conditions:
+  density:
+    outer:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:base_density
+    notch:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:base_density
+  velocity:
+    outer:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+    notch:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+  temperature:
+    outer:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:outer_temperature
+    notch:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:notch_temperature
+output:
+  $ref: output.template.density_velocity_pressure_temperature
+  formats: [numpy, gif]
+  resolution: [192, 192]
+  num_frames: 61
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

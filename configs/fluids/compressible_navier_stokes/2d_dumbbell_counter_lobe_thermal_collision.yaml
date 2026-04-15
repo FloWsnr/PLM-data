@@ -1,0 +1,205 @@
+preset: compressible_navier_stokes
+parameters:
+  gas_constant:
+    sample: uniform
+    min: 0.96
+    max: 1.04
+  c_v:
+    sample: uniform
+    min: 1.52
+    max: 1.86
+  mu:
+    sample: uniform
+    min: 0.012
+    max: 0.022
+  bulk_viscosity:
+    sample: uniform
+    min: 0.004
+    max: 0.012
+  thermal_conductivity:
+    sample: uniform
+    min: 0.016
+    max: 0.028
+  k: 1.0
+  center_y:
+    sample: uniform
+    min: 0.46
+    max: 0.54
+  base_density:
+    sample: uniform
+    min: 0.98
+    max: 1.05
+  wall_temperature:
+    sample: uniform
+    min: 0.9
+    max: 1.02
+  left_speed:
+    sample: uniform
+    min: 0.18
+    max: 0.32
+  right_speed:
+    sample: uniform
+    min: -0.32
+    max: -0.18
+domain:
+  type: dumbbell
+  allow_sampling: true
+  left_center:
+    - sample: uniform
+      min: 0.28
+      max: 0.34
+    - param:center_y
+  right_center:
+    - sample: uniform
+      min: 0.66
+      max: 0.72
+    - param:center_y
+  lobe_radius:
+    sample: uniform
+    min: 0.22
+    max: 0.26
+  neck_width:
+    sample: uniform
+    min: 0.11
+    max: 0.16
+  mesh_size:
+    sample: uniform
+    min: 0.01
+    max: 0.014
+time:
+  dt: 0.003
+  t_end: 0.88
+inputs:
+  density:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: step
+      params:
+        axis: 0
+        x_split: 0.5
+        value_left:
+          sample: uniform
+          min: 1.0
+          max: 1.06
+        value_right:
+          sample: uniform
+          min: 0.94
+          max: 1.0
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: step
+          params:
+            axis: 0
+            x_split: 0.5
+            value_left: param:left_speed
+            value_right: param:right_speed
+        y:
+          type: sine_waves
+          params:
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: -0.05
+                  max: 0.05
+                cycles:
+                  - sample: uniform
+                    min: 1.6
+                    max: 2.8
+                  - sample: uniform
+                    min: 1.6
+                    max: 2.8
+                phase:
+                  sample: uniform
+                  min: -0.5
+                  max: 0.5
+                angle:
+                  sample: uniform
+                  min: -0.18
+                  max: 0.18
+  temperature:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background:
+          sample: uniform
+          min: 0.92
+          max: 1.02
+        generators:
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.18
+              max: 0.34
+            sigma:
+              sample: uniform
+              min: 0.05
+              max: 0.08
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.4
+            center:
+              - sample: uniform
+                min: 0.18
+                max: 0.32
+              - sample: uniform
+                min: 0.42
+                max: 0.58
+          - count: 1
+            amplitude:
+              sample: uniform
+              min: 0.18
+              max: 0.34
+            sigma:
+              sample: uniform
+              min: 0.05
+              max: 0.08
+            aspect_ratio:
+              sample: uniform
+              min: 1.0
+              max: 1.4
+            center:
+              - sample: uniform
+                min: 0.68
+                max: 0.82
+              - sample: uniform
+                min: 0.42
+                max: 0.58
+boundary_conditions:
+  density:
+    outer:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:base_density
+  velocity:
+    outer:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+  temperature:
+    outer:
+      - operator: dirichlet
+        value:
+          type: constant
+          params:
+            value: param:wall_temperature
+output:
+  $ref: output.template.density_velocity_pressure_temperature
+  formats: [numpy, gif]
+  resolution: [192, 144]
+  num_frames: 57
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42
