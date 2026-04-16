@@ -790,6 +790,47 @@ def _make_shallow_water_runtime_config(tmp_path):
     )
 
 
+def _make_shallow_water_closed_basin_runtime_config(tmp_path):
+    return make_shallow_water_config(
+        tmp_path,
+        parameters={
+            "gravity": 1.0,
+            "mean_depth": 1.0,
+            "drag": 0.03,
+            "viscosity": 0.004,
+            "coriolis": 0.0,
+        },
+        bathymetry=scalar_expr(
+            "gaussian_bump",
+            amplitude=0.05,
+            sigma=0.12,
+            center=[0.62, 0.48],
+        ),
+        initial_height=scalar_expr(
+            "gaussian_bump",
+            amplitude=0.12,
+            sigma=0.08,
+            center=[0.34, 0.41],
+        ),
+        initial_velocity=vector_zero(),
+        height_boundary_conditions={
+            "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+        },
+        velocity_boundary_conditions={
+            "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "x+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+        },
+        mesh_resolution=(40, 40),
+        output_resolution=(24, 24),
+        time=TimeConfig(dt=0.01, t_end=0.3),
+    )
+
+
 def _make_keller_segel_config(
     tmp_path,
     *,
@@ -2727,6 +2768,41 @@ def test_shallow_water_periodic_run_stays_nontrivial_and_positive(tmp_path):
     assert np.std(height[-1]) > 1.0e-3
     assert np.std(velocity_x[-1]) > 1.0e-3
     assert np.linalg.norm(height[-1] - height[len(height) // 2]) > 1.0e-1
+
+
+def test_shallow_water_nonperiodic_run_stays_nontrivial_and_positive(tmp_path):
+    config = _make_shallow_water_closed_basin_runtime_config(tmp_path)
+    config.output.num_frames = 7
+
+    result, output_dir = _run_preset(config)
+    assert result.solver_converged is True
+    assert result.num_timesteps == 30
+
+    height = np.load(output_dir / "height.npy")
+    velocity_x = np.load(output_dir / "velocity_x.npy")
+    velocity_y = np.load(output_dir / "velocity_y.npy")
+
+    assert np.all(np.isfinite(height))
+    assert np.all(np.isfinite(velocity_x))
+    assert np.all(np.isfinite(velocity_y))
+    assert np.min(1.0 + height) > 0.0
+    assert np.std(height[-1]) > 1.0e-4
+    assert np.max(np.abs(velocity_x)) > 1.0e-4
+    assert np.max(np.abs(velocity_y)) > 1.0e-4
+    assert np.linalg.norm(height[-1] - height[0]) > 1.0e-1
+
+
+def test_shallow_water_rejects_nonzero_height_neumann_boundary(tmp_path):
+    config = _make_shallow_water_closed_basin_runtime_config(tmp_path)
+    config.boundary_field("height").sides["x-"] = [
+        BoundaryConditionConfig(type="neumann", value=constant(0.1))
+    ]
+
+    problem = get_preset(config.preset).build_problem(config)
+    domain_geom = create_domain(config.domain)
+
+    with pytest.raises(ValueError, match="zero-valued free boundary"):
+        problem.validate_boundary_conditions(domain_geom)
 
 
 def test_shallow_water_3d_domain_rejected(tmp_path):

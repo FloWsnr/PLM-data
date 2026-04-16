@@ -1,4 +1,4 @@
-"""Periodic 2D shallow-water equations with height anomaly and velocity."""
+"""2D shallow-water equations with height anomaly and velocity."""
 
 import numpy as np
 import ufl
@@ -6,9 +6,18 @@ from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem
 from mpi4py import MPI
 
+from plm_data.core.boundary_conditions import (
+    apply_dirichlet_bcs_to_subspace,
+    apply_vector_dirichlet_bcs_to_subspace,
+    build_vector_natural_bc_forms,
+)
 from plm_data.core.initial_conditions import apply_ic, apply_vector_ic
 from plm_data.core.solver_strategies import NONLINEAR_MIXED_DIRECT
-from plm_data.core.spatial_fields import build_ufl_field, scalar_expression_to_config
+from plm_data.core.spatial_fields import (
+    build_ufl_field,
+    resolve_param_ref,
+    scalar_expression_to_config,
+)
 from plm_data.presets import register_preset
 from plm_data.presets.base import (
     PDEPreset,
@@ -27,6 +36,18 @@ from plm_data.presets.metadata import (
     StateSpec,
     VECTOR_STANDARD_BOUNDARY_OPERATORS,
 )
+
+_SHALLOW_WATER_HEIGHT_BOUNDARY_OPERATORS = {
+    "dirichlet": SCALAR_STANDARD_BOUNDARY_OPERATORS["dirichlet"],
+    "neumann": SCALAR_STANDARD_BOUNDARY_OPERATORS["neumann"],
+    "periodic": SCALAR_STANDARD_BOUNDARY_OPERATORS["periodic"],
+}
+
+_SHALLOW_WATER_VELOCITY_BOUNDARY_OPERATORS = {
+    "dirichlet": VECTOR_STANDARD_BOUNDARY_OPERATORS["dirichlet"],
+    "neumann": VECTOR_STANDARD_BOUNDARY_OPERATORS["neumann"],
+    "periodic": VECTOR_STANDARD_BOUNDARY_OPERATORS["periodic"],
+}
 
 _SHALLOW_WATER_SPEC = PresetSpec(
     name="shallow_water",
@@ -68,13 +89,13 @@ _SHALLOW_WATER_SPEC = PresetSpec(
         "height": BoundaryFieldSpec(
             name="height",
             shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
+            operators=_SHALLOW_WATER_HEIGHT_BOUNDARY_OPERATORS,
             description="Boundary conditions for the height anomaly.",
         ),
         "velocity": BoundaryFieldSpec(
             name="velocity",
             shape="vector",
-            operators=VECTOR_STANDARD_BOUNDARY_OPERATORS,
+            operators=_SHALLOW_WATER_VELOCITY_BOUNDARY_OPERATORS,
             description="Boundary conditions for the depth-averaged velocity.",
         ),
     },
@@ -112,6 +133,18 @@ def _perp(u):
     return ufl.as_vector((-u[1], u[0]))
 
 
+def _is_zero_scalar_boundary_value(value_expr, parameters: dict[str, float]) -> bool:
+    field_config = scalar_expression_to_config(value_expr)
+    field_type = field_config["type"]
+    if field_type in ("none", "zero"):
+        return True
+    if field_type != "constant":
+        return False
+    return (
+        abs(resolve_param_ref(field_config["params"]["value"], parameters)) <= 1.0e-12
+    )
+
+
 class _ShallowWaterProblem(TransientNonlinearProblem):
     supported_solver_strategies = (NONLINEAR_MIXED_DIRECT,)
 
@@ -130,14 +163,14 @@ class _ShallowWaterProblem(TransientNonlinearProblem):
             field_name="height",
             boundary_field=height_boundary_field,
             domain_geom=domain_geom,
-            allowed_operators={"periodic"},
+            allowed_operators={"dirichlet", "neumann", "periodic"},
         )
         validate_boundary_field_structure(
             preset_name=self.spec.name,
             field_name="velocity",
             boundary_field=velocity_boundary_field,
             domain_geom=domain_geom,
-            allowed_operators={"periodic"},
+            allowed_operators={"dirichlet", "neumann", "periodic"},
         )
 
         if (
@@ -148,6 +181,19 @@ class _ShallowWaterProblem(TransientNonlinearProblem):
                 "Height and velocity boundary conditions must use identical "
                 "periodic side pairs."
             )
+
+        for entries in height_boundary_field.sides.values():
+            for entry in entries:
+                if entry.type != "neumann":
+                    continue
+                if entry.value is None or not _is_zero_scalar_boundary_value(
+                    entry.value,
+                    self.config.parameters,
+                ):
+                    raise ValueError(
+                        "Shallow-water height Neumann boundaries currently only "
+                        "support a zero-valued free boundary."
+                    )
 
     def _update_output_views(self) -> None:
         self.height_out.x.array[:] = self.solution.x.array[self._height_dofs]
@@ -181,6 +227,7 @@ class _ShallowWaterProblem(TransientNonlinearProblem):
         self.mean_depth = self.config.parameters["mean_depth"]
 
         height_boundary_field = self.config.boundary_field("height")
+        velocity_boundary_field = self.config.boundary_field("velocity")
         scalar_element = element(
             "Lagrange",
             self.msh.basix_cell(),
@@ -199,11 +246,25 @@ class _ShallowWaterProblem(TransientNonlinearProblem):
             mixed_element([scalar_element, vector_element]),
         )
 
+        bcs = [
+            *apply_dirichlet_bcs_to_subspace(
+                mixed_space.sub(0),
+                domain_geom,
+                height_boundary_field,
+                self.config.parameters,
+            ),
+            *apply_vector_dirichlet_bcs_to_subspace(
+                mixed_space.sub(1),
+                domain_geom,
+                velocity_boundary_field,
+                self.config.parameters,
+            ),
+        ]
         mpc = self.create_periodic_constraint(
             mixed_space,
             domain_geom,
             height_boundary_field,
-            [],
+            bcs,
             constrained_spaces=[mixed_space.sub(0), mixed_space.sub(1)],
         )
         solution_space = mixed_space if mpc is None else mpc.function_space
@@ -250,10 +311,22 @@ class _ShallowWaterProblem(TransientNonlinearProblem):
         test_height, test_velocity = ufl.TestFunctions(mixed_space)
         trial = ufl.TrialFunction(mixed_space)
 
-        gravity = self.config.parameters["gravity"]
-        drag = self.config.parameters["drag"]
-        viscosity = self.config.parameters["viscosity"]
-        coriolis = self.config.parameters["coriolis"]
+        gravity = fem.Constant(
+            self.msh,
+            default_real_type(self.config.parameters["gravity"]),
+        )
+        drag = fem.Constant(
+            self.msh,
+            default_real_type(self.config.parameters["drag"]),
+        )
+        viscosity = fem.Constant(
+            self.msh,
+            default_real_type(self.config.parameters["viscosity"]),
+        )
+        coriolis = fem.Constant(
+            self.msh,
+            default_real_type(self.config.parameters["coriolis"]),
+        )
         delta_t = fem.Constant(self.msh, default_real_type(self.config.time.dt))
         total_depth = self.mean_depth + height
 
@@ -272,13 +345,21 @@ class _ShallowWaterProblem(TransientNonlinearProblem):
             * ufl.dx
             + coriolis * ufl.inner(_perp(velocity), test_velocity) * ufl.dx
         )
+        traction_form = build_vector_natural_bc_forms(
+            test_velocity,
+            domain_geom,
+            velocity_boundary_field,
+            self.config.parameters,
+        )
+        if traction_form is not None:
+            F_velocity = F_velocity - traction_form
         F = F_height + F_velocity
         J = ufl.derivative(F, self.solution, trial)
 
         self.problem = self.create_nonlinear_problem(
             F,
             self.solution,
-            bcs=[],
+            bcs=bcs,
             petsc_options_prefix="plm_shallow_water_",
             J=J,
             mpc=mpc,

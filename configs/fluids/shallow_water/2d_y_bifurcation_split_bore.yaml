@@ -1,0 +1,164 @@
+preset: shallow_water
+parameters:
+  gravity:
+    sample: uniform
+    min: 1.02
+    max: 1.1
+  mean_depth:
+    sample: uniform
+    min: 1.22
+    max: 1.32
+  drag:
+    sample: uniform
+    min: 0.03
+    max: 0.045
+  viscosity:
+    sample: uniform
+    min: 0.0048
+    max: 0.0068
+  coriolis:
+    sample: uniform
+    min: -0.015
+    max: 0.03
+  inlet_height:
+    sample: uniform
+    min: 0.015
+    max: 0.045
+  inlet_speed:
+    sample: uniform
+    min: 0.06
+    max: 0.12
+  inlet_crossflow:
+    sample: uniform
+    min: -0.01
+    max: 0.01
+coefficients:
+  bathymetry:
+    type: gaussian_bump
+    params:
+      amplitude:
+        sample: uniform
+        min: -0.02
+        max: 0.02
+      sigma:
+        sample: uniform
+        min: 0.14
+        max: 0.22
+      center:
+      - sample: uniform
+        min: 0.88
+        max: 1.12
+      - sample: uniform
+        min: -0.06
+        max: 0.06
+domain:
+  allow_sampling: true
+  type: y_bifurcation
+  inlet_length:
+    sample: uniform
+    min: 0.94
+    max: 1.1
+  branch_length:
+    sample: uniform
+    min: 0.96
+    max: 1.16
+  branch_angle_degrees:
+    sample: uniform
+    min: 36.0
+    max: 42.0
+  channel_width:
+    sample: uniform
+    min: 0.25
+    max: 0.3
+  mesh_size:
+    sample: uniform
+    min: 0.0095
+    max: 0.0135
+time:
+  dt: 0.0032
+  t_end: 0.68
+inputs:
+  height:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+        - count: 1
+          amplitude:
+            sample: uniform
+            min: 0.02
+            max: 0.05
+          sigma:
+            sample: uniform
+            min: 0.06
+            max: 0.1
+          aspect_ratio:
+            sample: uniform
+            min: 1.2
+            max: 2.0
+          center:
+          - sample: uniform
+            min: 0.14
+            max: 0.34
+          - sample: uniform
+            min: -0.08
+            max: 0.08
+  velocity:
+    initial_condition:
+      components:
+        x:
+          type: constant
+          params:
+            value: param:inlet_speed
+        y:
+          type: constant
+          params:
+            value: param:inlet_crossflow
+boundary_conditions:
+  height:
+    inlet:
+    - operator: dirichlet
+      value:
+        type: constant
+        params:
+          value: param:inlet_height
+    outlet_upper:
+    - operator: neumann
+      value: 0.0
+    outlet_lower:
+    - operator: neumann
+      value: 0.0
+    walls:
+    - operator: neumann
+      value: 0.0
+  velocity:
+    inlet:
+    - operator: dirichlet
+      value:
+        components:
+          x:
+            type: constant
+            params:
+              value: param:inlet_speed
+          y:
+            type: constant
+            params:
+              value: param:inlet_crossflow
+    outlet_upper:
+    - operator: neumann
+      value: [0.0, 0.0]
+    outlet_lower:
+    - operator: neumann
+      value: [0.0, 0.0]
+    walls:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+output:
+  $ref: output.template.height_velocity
+  formats: [numpy, gif]
+  resolution: [224, 160]
+  num_frames: 57
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

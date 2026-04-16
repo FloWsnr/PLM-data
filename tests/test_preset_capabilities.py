@@ -872,6 +872,14 @@ def _assert_shallow_water_periodic_xy(config, result, output_dir):
     assert_periodic_axis(arrays["velocity_y"], axis=1)
 
 
+def _assert_shallow_water_closed_basin(config, result, output_dir):
+    arrays = _assert_success(config, result, output_dir)
+    assert result.num_timesteps == 1
+    assert_nontrivial(arrays["height"])
+    assert_nontrivial(arrays["velocity_x"])
+    assert_nontrivial(arrays["velocity_y"])
+
+
 SUCCESS_CASES = (
     RuntimePresetCase(
         name="wave_mixed_scalar_bc",
@@ -1382,6 +1390,43 @@ SUCCESS_CASES = (
         ),
         assert_result=_assert_shallow_water_periodic_xy,
         skip_reason=skip_without_mpc,
+    ),
+    RuntimePresetCase(
+        name="shallow_water_closed_basin",
+        make_config=lambda tmp_path: make_shallow_water_config(
+            tmp_path,
+            parameters={
+                "gravity": 1.0,
+                "mean_depth": 1.0,
+                "drag": 0.03,
+                "viscosity": 0.004,
+                "coriolis": 0.0,
+            },
+            bathymetry=constant(0.0),
+            initial_height=scalar_expr(
+                "gaussian_bump",
+                amplitude=0.08,
+                sigma=0.12,
+                center=[0.4, 0.45],
+            ),
+            initial_velocity=vector_zero(),
+            height_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+            },
+            velocity_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+                "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+                "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            },
+            mesh_resolution=(8, 8),
+            output_resolution=(5, 5),
+            time=TimeConfig(dt=0.02, t_end=0.02),
+        ),
+        assert_result=_assert_shallow_water_closed_basin,
     ),
     RuntimePresetCase(
         name="advection_3d_periodic_xyz",
@@ -2501,7 +2546,7 @@ REJECTION_CASES = (
         expected_error_match="N1curl spaces",
     ),
     RuntimePresetCase(
-        name="shallow_water_nonperiodic_height_rejected",
+        name="shallow_water_nonzero_height_neumann_rejected",
         make_config=lambda tmp_path: make_shallow_water_config(
             tmp_path,
             parameters={
@@ -2515,17 +2560,21 @@ REJECTION_CASES = (
             initial_height=constant(0.0),
             initial_velocity=vector_zero(),
             height_boundary_conditions={
-                "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
-                "x+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
-                "y-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
-                "y+": BoundaryConditionConfig(type="dirichlet", value=constant(0.0)),
+                "x-": BoundaryConditionConfig(type="neumann", value=constant(0.1)),
+                "x+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y-": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
+                "y+": BoundaryConditionConfig(type="neumann", value=constant(0.0)),
             },
-            velocity_boundary_conditions={},
-            velocity_periodic_axes=(0, 1),
+            velocity_boundary_conditions={
+                "x-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+                "x+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+                "y-": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+                "y+": BoundaryConditionConfig(type="dirichlet", value=vector_zero()),
+            },
             time=TimeConfig(dt=0.02, t_end=0.02),
         ),
         expected_error=ValueError,
-        expected_error_match="unsupported operator 'dirichlet'",
+        expected_error_match="zero-valued free boundary",
     ),
 )
 

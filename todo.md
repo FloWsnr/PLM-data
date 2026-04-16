@@ -2,7 +2,7 @@
 
 ## Existing PDE / Config Inventory
 
-Current baseline: 38 PDE presets and 703 configs.
+Current baseline: 38 PDE presets and 686 configs.
 
 The descriptions below capture the main visible behavior of each committed
 config so future additions can target genuinely different dynamics rather than
@@ -466,35 +466,9 @@ domain supports sampling.
 
 #### Compressible Navier-Stokes (`configs/fluids/compressible_navier_stokes`)
 
-The 2D compressible Navier-Stokes suite now has 20 validated configs: two each
-for rectangle, annulus, disk, dumbbell, L-shape, multi-hole plate,
-channel-obstacle, parallelogram, venturi-channel, and Y-bifurcation domains.
-All 2D cases use output resolutions with a shortest side of at least 128, all
-sample both physical and geometric parameters where the domain allows it, and
-each config was rerun with `-n 2 --n-runs 2` to confirm both seed-to-seed
-variation and numerical stability.
-
-1. `2d_annulus_azimuthal_shear_ring_modes`: annular ring modes are given a mild azimuthal bias, producing smooth rotating thermal-pressure structure around the hole rather than a single radial blast.
-2. `2d_annulus_inner_wall_heating_wave`: a hot inner rim drives a bright ring-confined heating wave outward through the annulus while the outer wall reflects the expanding band.
-3. `2d_channel_obstacle_heating_expansion`: a milder obstacle-heating setup generates a rounded thermal expansion plume and symmetric obstacle-shadow wake.
-4. `2d_channel_obstacle_oblique_hot_bypass`: an oblique inlet and off-axis hot packet send a distinctly one-sided thermal wake around the obstacle, creating an upper-bypass channel case rather than a centered expansion.
-5. `2d_disk_offcenter_thermal_pulse_reflection`: an off-center hot pulse expands across a disk and reflects back as curved, asymmetric arcs.
-6. `2d_disk_rotating_ring_heat_release`: ring-like temperature structure in the disk evolves under seeded swirl, giving slower rotating cavity bands instead of one localized burst.
-7. `2d_dumbbell_counter_lobe_thermal_collision`: separate lobe excitations push thermal and pressure structure through the neck and force a central collision transient.
-8. `2d_dumbbell_lobe_exchange_blast`: a stronger one-sided lobe release drives delayed left-to-right exchange through the bridge, emphasizing chamber-to-chamber transfer rather than symmetric collision.
-9. `2d_l_shape_corner_shock_focusing`: a directional pulse in the L-shaped cavity focuses into the re-entrant corner and returns as bent reflected compressible fronts.
-10. `2d_l_shape_notch_shear_release`: skewed inlet and heating release slower corner-shear structure past the notch, contrasting with the sharper corner-focus case.
-11. `2d_localized_heating_expansion`: the rectangular baseline remains a centered expansion-wave case in a closed box, now with stronger randomized heating and stable output resolution.
-12. `2d_multi_hole_plate_hole_shadow_pulse_train`: localized compressible pulses weave through the perforations and leave hole-shadowed thermal corridors behind the plate.
-13. `2d_multi_hole_plate_perforated_heat_weave`: a softer perforated-plate forcing produces broader interstitial heating lanes and slower screened motion between the holes.
-14. `2d_parallelogram_diagonal_hotspot_echoes`: a skew-cell hot spot launches diagonally biased echoes that repeatedly wrap along the parallelogram geometry.
-15. `2d_parallelogram_oblique_shear_heating`: oblique inlet shear plus heating generates a slanted compressible sweep, clearly separating the skewed-cell dynamics from the axis-aligned rectangle case.
-16. `2d_periodic_shear_thermal_billows`: the periodic rectangle case now produces non-wall-dominated thermal billows and shear-driven compressible mixing rather than a cavity reflection movie.
-17. `2d_venturi_channel_throat_heating_focus`: a stable throat-focused venturi setup squeezes a central thermal packet through the nozzle and into a narrow downstream compression plume.
-18. `2d_venturi_channel_wall_skimming_thermal_ribbon`: the second venturi case is now a passive upper-wall ribbon advected through the throat, giving a clear wall-skimming counterpart to the throat-heating case.
-19. `2d_y_bifurcation_branch_bias_hot_jet`: a lower-side seeded hot packet in the trunk biases the split toward one daughter branch, producing asymmetric branch selection without sustained forcing.
-20. `2d_y_bifurcation_split_heating_plumes`: a weaker central split source plus sinusoidal thermal background produces more symmetric daughter-branch plume development than the branch-bias case.
-21. `3d_localized_heating_expansion`: 3D localized heating drives expansion and pressure waves in a closed box.
+1. `2d_channel_obstacle_heating_expansion`: localized heating in a channel with an obstacle drives expansion waves and a thermal wake around the blockage.
+2. `2d_localized_heating_expansion`: localized heating drives expansion and pressure waves in a closed box.
+3. `3d_localized_heating_expansion`: 3D localized heating drives expansion and pressure waves in a closed box.
 
 #### Darcy (`configs/fluids/darcy`)
 
@@ -567,39 +541,11 @@ fast shock-like events and slower trapped-wave transients.
 
 #### MHD (`configs/fluids/mhd`)
 
-Validation: the 20 2D configs below were run one at a time with
-`./run.sh -n 2 ... --n-runs 2` into `output/mhd_validation`, producing 40
-successful runs with passing solver, output, and stagnation diagnostics after
-retuning the fast Y-bifurcation release window. Aggregate metrics and
-start/middle/end frame contact sheets in `output/mhd_validation/analysis`
-confirmed real seed-to-seed variation and visibly different magnetic / flow
-regimes across the suite. Additional sampled parallelogram, L-shaped, and
-serpentine MHD prototypes were explored during tuning but were unstable in
-this OpenFOAM backend at the requested validation settings, so the committed
-2D set focuses on the stable families below.
-
-1. `2d_annulus_inner_ring_shear_decay`: annular inner-rim shear and magnetic structure decay around the sampled hole, producing ring-confined relaxation rather than a box-like pulse.
-2. `2d_annulus_wraparound_flux_packets`: compact annular flux packets wrap azimuthally around the ring and smooth while staying trapped between the sampled inner and outer walls.
-3. `2d_channel_obstacle_magnetic_wake_deflection`: inlet-driven magnetic wake is deflected around the obstacle and leaves a clear downstream obstacle-shadowed flow pattern.
-4. `2d_channel_obstacle_oblique_flux_shadow`: an oblique channel-fed magnetic layer slides past the obstacle, giving a distinctly skewed wake and upper/lower shielding pattern.
-5. `2d_disk_offset_vortex_flux_decay`: an off-center vortex-plus-flux packet decays inside a sampled disk, producing rounded recirculation and wall-filtered asymmetry.
-6. `2d_disk_ring_current_release`: concentric disk-confined ring currents collapse into asymmetric interior circulations instead of a single localized decay spot.
-7. `2d_dumbbell_bridge_current_snap`: opposite-signed lobe structure snaps through the dumbbell neck, producing a short high-contrast bridge-transfer transient.
-8. `2d_dumbbell_lobe_exchange_vortices`: one dumbbell lobe seeds slower vortex and magnetic exchange through the neck, giving a more gradual inter-chamber transfer than the bridge-snap case.
-9. `2d_rectangle_dual_quadrant_flux_relaxation`: quadrant-seeded rectangular flux relaxes into broad tilted interfaces and smooth cavity-scale recirculation.
-10. `2d_rectangle_edge_launched_flux_packets`: paired edge-launched packets travel inward from the walls and fade into broad cavity modes instead of periodic wrap-around.
-11. `2d_rectangle_lid_driven_magnetic_slosh`: lid-driven shear drags a magnetic layer across the cavity, giving a sloshing wall-bounded response rather than a purely decaying pulse.
-12. `2d_rectangle_oblique_cell_relaxation`: oblique cell-like stripe structure fills the box and relaxes through diagonal smoothing rather than localized blob dynamics.
-13. `2d_rectangle_x_periodic_magnetic_sheet_decay`: x-periodic magnetic sheets and wall-bounded shear decay on a strip, preserving a wraparound banded character absent from the closed-box variants.
-14. `2d_side_cavity_channel_cavity_capture`: inlet-fed channel structure is pulled into the side cavity and then released back into the main stream, emphasizing cavity capture rather than simple downstream advection.
-15. `2d_side_cavity_channel_cavity_purge_current`: a cavity-seeded current pocket is purged into the main channel under weaker inflow, giving a release transient complementary to the capture case.
-16. `2d_venturi_channel_throat_flux_focusing`: upstream magnetic structure is squeezed through the sampled venturi throat into a narrow focused jet before broadening downstream.
-17. `2d_venturi_channel_wall_layer_release`: wall-adjacent magnetic structure peels off the converging venturi wall and releases into an asymmetric throat-to-outlet layer.
-18. `2d_wall_bounded_magnetic_vortex_decay`: a localized square-cavity pulse remains the cleanest compact wall-bounded decay baseline, now with stronger seed-dependent structure than the original version.
-19. `2d_y_bifurcation_branch_selection_flux`: inlet-driven flux preferentially fills one daughter branch before spreading through the other, making the bifurcation geometry the main selector.
-20. `2d_y_bifurcation_split_current_release`: branch-seeded current is released through the bifurcation in a short fast transient, providing a compact split-and-decay counterpart to the longer branch-selection case.
-21. `3d_wall_bounded_magnetic_pulse`: localized 3D velocity and magnetic pulses relax inside a wall-bounded box.
-22. `3d_xy_periodic_magnetic_cells`: a box periodic in x and y with z-wall anchoring, producing coupled magnetic cell dynamics without a fully periodic magnetic domain.
+1. `2d_wall_bounded_magnetic_vortex_decay`: a localized velocity pulse and transverse magnetic pulse decay inside a closed square cavity.
+2. `2d_rectangle_x_periodic_magnetic_sheet_decay`: an x-periodic strip with wall-bounded shear and magnetic sheet structure decaying under viscosity and resistivity.
+3. `2d_parallelogram_x_periodic_magnetic_sheet_decay`: the same strip-style decay on a skew periodic cell to exercise non-orthogonal geometry.
+4. `3d_wall_bounded_magnetic_pulse`: localized 3D velocity and magnetic pulses relax inside a wall-bounded box.
+5. `3d_xy_periodic_magnetic_cells`: a box periodic in x and y with z-wall anchoring, producing coupled magnetic cell dynamics without a fully periodic magnetic domain.
 
 #### Navier-Stokes (`configs/fluids/navier_stokes`)
 
@@ -611,8 +557,50 @@ this OpenFOAM backend at the requested validation settings, so the committed
 
 #### Shallow Water (`configs/fluids/shallow_water`)
 
-1. `2d_parallelogram_gravity_wave_pulse`: localized free-surface hump radiating gravity waves on a skew parallelogram cell.
-2. `2d_rotating_gravity_wave_pulse`: localized free-surface hump radiating gravity waves with Coriolis deflection.
+Validation: the 28 2D configs below now span 14 domain families with 2
+configs each, and every config randomizes both physical parameters and domain
+geometry where the domain supports sampling. All 28 configs were run one at a
+time with `./run.sh -n 2 run <config> --output-dir ./output/shallow-water-validation/<config> --n-runs 2`,
+producing 56 successful runs. Every run finished with `status=success`,
+`solver_converged=true`, and passing solver/output/runtime health checks; no
+actual warnings or errors appeared in the simulation logs. Automated cross-seed
+checks on the saved height fields showed nonzero end-frame differences for
+every config (minimum RMSE about `0.009`, median about `0.043`), and the
+representative comparison sheet at
+`output/shallow-water-validation/representative_height_comparison.png` shows
+clearly different periodic, closed-basin, and geometry-locked wake regimes.
+The airfoil-wake pair was also independently reanalyzed by a subagent and
+judged physically plausible, seed-distinct, and clearly different from the
+periodic rectangle case.
+
+1. `2d_rotating_gravity_wave_pulse`: a periodic free-surface hump radiates outward and then curves under randomized Coriolis deflection instead of reflecting from walls.
+2. `2d_closed_basin_step_seiche`: a rectangular height step releases a basin-scale seiche with reflected fronts, shear, and slow wall-bounded sloshing.
+3. `2d_parallelogram_gravity_wave_pulse`: a localized pulse wraps around a skew periodic cell, giving oblique wave travel that never aligns with the grid axes.
+4. `2d_parallelogram_skew_shear_rollup`: a skew cell with background flow and shear turns the free surface into slanted rolling ridges instead of a symmetric ring wave.
+5. `2d_disk_offcenter_seiche_reflection`: an off-center hump in a disk reflects into crescent-like rings and re-focuses across the circular basin.
+6. `2d_disk_coriolis_dipole_orbit`: a dipolar height pattern in the disk precesses around the center and leaves curved rotating lobes rather than simple radial reflections.
+7. `2d_annulus_azimuthal_ring_modes`: annular ring disturbances circulate around the inner hole while radial reflections keep the pattern confined to the ring.
+8. `2d_annulus_inner_rim_pulse_drift`: a pulse launched near the inner rim drifts around the obstacle and repeatedly re-interferes with the outer wall return waves.
+9. `2d_dumbbell_lobe_exchange_slosh`: one lobe is excited first and then transfers energy through the neck into the opposite chamber with a visible delay.
+10. `2d_dumbbell_counterrotating_neck_pumping`: counter-rotating lobe motions pump oscillatory flow through the bridge, producing a neck-dominated exchange mode.
+11. `2d_l_shape_corner_focusing_slosh`: reflected fronts in the L-shaped cavity focus into the re-entrant corner before re-emerging down the two arms.
+12. `2d_l_shape_reentrant_shear_release`: a notch-biased shear release drives asymmetric arm waves and corner-trapped recirculation near the missing quadrant.
+13. `2d_multi_hole_plate_perforation_wave_weave`: waves thread between sampled holes and leave alternating perforation shadows rather than one global cavity mode.
+14. `2d_multi_hole_plate_hole_shadow_orbits`: off-axis structure bends around the holes and produces orbit-like wakes in the interstitial corridors.
+15. `2d_channel_obstacle_bypass_bore`: an inlet-fed bore splits around a circular obstacle and reforms downstream as a wake-striped bypass flow.
+16. `2d_channel_obstacle_wake_eddy_release`: a stronger obstacle-channel transient emphasizes wake release and downstream recirculating patches instead of a single clean bore.
+17. `2d_y_bifurcation_split_bore`: an incoming surge reaches the junction and splits unevenly into the daughter branches with seed-dependent branch preference.
+18. `2d_y_bifurcation_branch_collision_slosh`: branch-launched bores collide near the junction and rebound into both arms, giving a very different direction of travel from the split case.
+19. `2d_venturi_channel_throat_focus`: converging walls focus the free surface through the throat and then let it fan back out downstream.
+20. `2d_venturi_channel_wall_skimming_surge`: a wall-skimming surge hugs one side of the constriction and peels away along the venturi shoulder.
+21. `2d_porous_channel_sinuous_percolation`: a channel pulse percolates through the porous obstacle field and repeatedly splits into narrow meandering corridors.
+22. `2d_porous_channel_reverse_flush_pockets`: a reverse-biased flush empties trapped pockets between obstacles and creates short-lived backflow cells in the pore network.
+23. `2d_serpentine_channel_guided_surge`: a guided surge follows the full bend sequence of the sampled serpentine duct with turn-by-turn travel delays.
+24. `2d_serpentine_channel_reverse_bend_reflection`: a reverse launch reflects off successive bends and produces alternating hot spots at the inner and outer walls.
+25. `2d_airfoil_channel_upper_surface_skimming`: a packet rides over the airfoil upper surface and peels into a smooth asymmetric wake.
+26. `2d_airfoil_channel_lower_surface_wake_flip`: lower-surface structure flips behind the airfoil into a sharper wake pattern with stronger seed-to-seed asymmetry.
+27. `2d_side_cavity_channel_cavity_entrainment`: main-channel motion entrains the side cavity, pulling the free surface into the pocket before releasing it again.
+28. `2d_side_cavity_channel_cavity_release_slosh`: the cavity starts as the main reservoir and sloshes back into the trunk channel as a delayed pocket-emptying transient.
 
 #### Thermal Convection (`configs/fluids/thermal_convection`)
 

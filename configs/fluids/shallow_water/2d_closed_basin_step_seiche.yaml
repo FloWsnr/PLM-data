@@ -1,0 +1,129 @@
+preset: shallow_water
+parameters:
+  gravity:
+    sample: uniform
+    min: 1.18
+    max: 1.52
+  mean_depth:
+    sample: uniform
+    min: 1.0
+    max: 1.26
+  drag:
+    sample: uniform
+    min: 0.012
+    max: 0.028
+  viscosity:
+    sample: uniform
+    min: 0.002
+    max: 0.0046
+  coriolis:
+    sample: uniform
+    min: -0.12
+    max: 0.12
+coefficients:
+  bathymetry:
+    type: affine
+    params:
+      constant: 0.0
+      x:
+        sample: uniform
+        min: -0.08
+        max: 0.08
+      y:
+        sample: uniform
+        min: -0.05
+        max: 0.05
+domain:
+  allow_sampling: true
+  type: rectangle
+  size:
+  - sample: uniform
+    min: 1.18
+    max: 1.34
+  - sample: uniform
+    min: 0.82
+    max: 0.96
+  mesh_resolution: [192, 160]
+time:
+  dt: 0.004
+  t_end: 1.5
+inputs:
+  height:
+    initial_condition:
+      type: step
+      params:
+        axis: 0
+        x_split:
+          sample: uniform
+          min: 0.5
+          max: 0.78
+        value_left:
+          sample: uniform
+          min: 0.12
+          max: 0.24
+        value_right:
+          sample: uniform
+          min: -0.1
+          max: -0.02
+  velocity:
+    initial_condition:
+      components:
+        x:
+          type: constant
+          params:
+            value: 0.0
+        y:
+          type: sine_waves
+          params:
+            background: 0.0
+            modes:
+            - amplitude:
+                sample: uniform
+                min: 0.01
+                max: 0.035
+              cycles:
+              - sample: uniform
+                min: 0.8
+                max: 1.4
+              - sample: uniform
+                min: 1.0
+                max: 2.0
+              phase:
+                sample: uniform
+                min: 0.0
+                max: 6.283185
+boundary_conditions:
+  height:
+    x-:
+    - operator: neumann
+      value: 0.0
+    x+:
+    - operator: neumann
+      value: 0.0
+    y-:
+    - operator: neumann
+      value: 0.0
+    y+:
+    - operator: neumann
+      value: 0.0
+  velocity:
+    x-:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+    x+:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+    y-:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+    y+:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+output:
+  $ref: output.template.height_velocity
+  formats: [numpy, gif]
+  resolution: [192, 160]
+  num_frames: 53
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42

@@ -1,0 +1,177 @@
+preset: shallow_water
+parameters:
+  gravity:
+    sample: uniform
+    min: 0.88
+    max: 1.08
+  mean_depth:
+    sample: uniform
+    min: 0.94
+    max: 1.12
+  drag:
+    sample: uniform
+    min: 0.006
+    max: 0.015
+  viscosity:
+    sample: uniform
+    min: 0.0018
+    max: 0.0038
+  coriolis:
+    sample: uniform
+    min: 0.44
+    max: 0.82
+coefficients:
+  bathymetry:
+    type: gaussian_bump
+    params:
+      amplitude:
+        sample: uniform
+        min: 0.03
+        max: 0.08
+      sigma:
+        sample: uniform
+        min: 0.12
+        max: 0.2
+      center:
+      - sample: uniform
+        min: 0.52
+        max: 0.74
+      - sample: uniform
+        min: 0.34
+        max: 0.6
+domain:
+  allow_sampling: true
+  type: multi_hole_plate
+  width:
+    sample: uniform
+    min: 1.16
+    max: 1.28
+  height:
+    sample: uniform
+    min: 0.88
+    max: 0.98
+  holes:
+  - center:
+    - sample: uniform
+      min: 0.24
+      max: 0.32
+    - sample: uniform
+      min: 0.24
+      max: 0.34
+    radius:
+      sample: uniform
+      min: 0.05
+      max: 0.075
+    boundary_name: holes_left
+  - center:
+    - sample: uniform
+      min: 0.58
+      max: 0.68
+    - sample: uniform
+      min: 0.46
+      max: 0.6
+    radius:
+      sample: uniform
+      min: 0.05
+      max: 0.08
+    boundary_name: hole_center
+  - center:
+    - sample: uniform
+      min: 0.9
+      max: 0.98
+    - sample: uniform
+      min: 0.22
+      max: 0.34
+    radius:
+      sample: uniform
+      min: 0.05
+      max: 0.075
+    boundary_name: holes_right
+  mesh_size:
+    sample: uniform
+    min: 0.0095
+    max: 0.0135
+time:
+  dt: 0.004
+  t_end: 1.4
+inputs:
+  height:
+    initial_condition:
+      type: gaussian_blobs
+      params:
+        background: 0.0
+        generators:
+        - count: 2
+          amplitude:
+            sample: uniform
+            min: -0.12
+            max: 0.12
+          sigma:
+            sample: uniform
+            min: 0.05
+            max: 0.08
+          aspect_ratio:
+            sample: uniform
+            min: 1.0
+            max: 1.6
+          center:
+          - sample: uniform
+            min: 0.36
+            max: 0.88
+          - sample: uniform
+            min: 0.24
+            max: 0.68
+  velocity:
+    initial_condition:
+      components:
+        x:
+          type: affine
+          params:
+            constant: 0.16
+            y:
+              sample: uniform
+              min: -0.34
+              max: -0.22
+        y:
+          type: affine
+          params:
+            constant: -0.14
+            x:
+              sample: uniform
+              min: 0.22
+              max: 0.34
+boundary_conditions:
+  height:
+    outer:
+    - operator: neumann
+      value: 0.0
+    holes_left:
+    - operator: neumann
+      value: 0.0
+    hole_center:
+    - operator: neumann
+      value: 0.0
+    holes_right:
+    - operator: neumann
+      value: 0.0
+  velocity:
+    outer:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+    holes_left:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+    hole_center:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+    holes_right:
+    - operator: dirichlet
+      value: [0.0, 0.0]
+output:
+  $ref: output.template.height_velocity
+  formats: [numpy, gif]
+  resolution: [192, 144]
+  num_frames: 53
+solver:
+  $ref: solver.profile.nonlinear_mixed_direct
+seed: 42
