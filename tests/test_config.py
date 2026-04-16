@@ -724,11 +724,9 @@ def test_euler_2d_inventory():
     assert counts_by_domain["side_cavity_channel"] >= 2
 
 
-def test_compressible_navier_stokes_2d_inventory():
-    config_paths = sorted(
-        Path("configs/fluids/compressible_navier_stokes").glob("2d*.yaml")
-    )
-    assert len(config_paths) >= 20
+def test_shallow_water_2d_inventory():
+    config_paths = sorted(Path("configs/fluids/shallow_water").glob("2d*.yaml"))
+    assert len(config_paths) >= 28
 
     counts_by_domain: dict[str, int] = {}
     for path in config_paths:
@@ -736,6 +734,7 @@ def test_compressible_navier_stokes_2d_inventory():
         counts_by_domain[cfg.domain.type] = counts_by_domain.get(cfg.domain.type, 0) + 1
         assert cfg.output.resolution[0] >= 128
         assert cfg.output.resolution[1] >= 128
+        assert cfg.domain.allow_sampling is True
 
         if cfg.domain.type in {"rectangle", "parallelogram"}:
             mesh_resolution = cfg.domain.params["mesh_resolution"]
@@ -743,7 +742,7 @@ def test_compressible_navier_stokes_2d_inventory():
             assert mesh_resolution[1] >= 128
         else:
             mesh_size = cfg.domain.params["mesh_size"]
-            assert mesh_size["max"] <= 0.015
+            assert mesh_size["max"] <= 0.016
 
     assert counts_by_domain["rectangle"] >= 2
     assert counts_by_domain["parallelogram"] >= 2
@@ -753,8 +752,12 @@ def test_compressible_navier_stokes_2d_inventory():
     assert counts_by_domain["l_shape"] >= 2
     assert counts_by_domain["multi_hole_plate"] >= 2
     assert counts_by_domain["channel_obstacle"] >= 2
-    assert counts_by_domain["venturi_channel"] >= 2
     assert counts_by_domain["y_bifurcation"] >= 2
+    assert counts_by_domain["venturi_channel"] >= 2
+    assert counts_by_domain["porous_channel"] >= 2
+    assert counts_by_domain["serpentine_channel"] >= 2
+    assert counts_by_domain["airfoil_channel"] >= 2
+    assert counts_by_domain["side_cavity_channel"] >= 2
 
 
 def test_load_config_shallow_water():
@@ -763,8 +766,9 @@ def test_load_config_shallow_water():
     )
     assert cfg.preset == "shallow_water"
     assert cfg.domain.dimension == 2
-    assert cfg.parameters["gravity"] == 1.0
-    assert cfg.parameters["mean_depth"] == 1.0
+    assert cfg.parameters["gravity"]["sample"] == "uniform"
+    assert cfg.parameters["gravity"]["min"] == 0.9
+    assert cfg.parameters["mean_depth"]["max"] == 1.16
     assert cfg.coefficient("bathymetry").type == "constant"
     assert cfg.coefficient("bathymetry").params["value"] == 0.0
     assert cfg.input("height").initial_condition.type == "gaussian_blobs"
@@ -778,17 +782,20 @@ def test_load_config_shallow_water():
     )
     assert (
         cfg.input("height").initial_condition.params["generators"][0]["count"]["max"]
-        == 2
+        == 3
     )
-    assert cfg.input("velocity").initial_condition.components["x"].type == "constant"
+    assert cfg.input("velocity").initial_condition.components["x"].type == "affine"
     assert (
-        cfg.input("velocity").initial_condition.components["y"].params["value"] == 0.0
+        cfg.input("velocity").initial_condition.components["x"].params["y"]["min"]
+        == -0.48
     )
+    assert cfg.input("velocity").initial_condition.components["y"].type == "affine"
     assert cfg.has_periodic_boundary_conditions is True
     assert cfg.boundary_field("height").side_conditions("x-")[0].pair_with == "x+"
     assert cfg.boundary_field("velocity").side_conditions("y+")[0].pair_with == "y-"
     assert cfg.output_mode("height") == "scalar"
     assert cfg.output_mode("velocity") == "components"
+    assert cfg.output.resolution == [160, 160]
     assert cfg.solver.strategy == NONLINEAR_MIXED_DIRECT
 
 

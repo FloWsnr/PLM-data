@@ -1,64 +1,128 @@
 preset: shallow_water
 parameters:
-  gravity: 1.0
-  mean_depth: 1.0
-  drag: 0.01
-  viscosity: 0.002
-  coriolis: 0.5
+  gravity:
+    sample: uniform
+    min: 0.82
+    max: 1.08
+  mean_depth:
+    sample: uniform
+    min: 0.92
+    max: 1.18
+  drag:
+    sample: uniform
+    min: 0.003
+    max: 0.012
+  viscosity:
+    sample: uniform
+    min: 0.0014
+    max: 0.003
+  coriolis:
+    sample: uniform
+    min: 0.34
+    max: 0.72
 coefficients:
   bathymetry:
-    type: constant
+    type: sine_waves
     params:
-      value: 0.0
+      background: 0.0
+      modes:
+      - amplitude:
+          sample: uniform
+          min: 0.02
+          max: 0.06
+        cycles:
+        - sample: uniform
+          min: 1.0
+          max: 2.0
+        - sample: uniform
+          min: 2.0
+          max: 3.5
+        phase:
+          sample: uniform
+          min: 0.0
+          max: 6.283185
+        angle:
+          sample: uniform
+          min: 0.28
+          max: 0.72
 domain:
+  allow_sampling: true
   type: parallelogram
   origin: [0.0, 0.0]
   axis_x: [1.0, 0.0]
-  axis_y: [0.25, 1.0]
-  mesh_resolution:
-  - 64
-  - 64
+  axis_y:
+  - sample: uniform
+    min: 0.3
+    max: 0.48
+  - sample: uniform
+    min: 0.92
+    max: 1.08
+  mesh_resolution: [160, 160]
 time:
-  dt: 0.005
-  t_end: 2.0
+  dt: 0.0045
+  t_end: 1.8
 inputs:
   height:
     initial_condition:
-      type: gaussian_blobs
+      type: sine_waves
       params:
         background: 0.0
-        generators:
-        - count:
-            sample: randint
-            min: 1
-            max: 2
-          amplitude:
+        modes:
+        - amplitude:
             sample: uniform
-            min: 0.1275
-            max: 0.1725
-          sigma:
+            min: 0.06
+            max: 0.12
+          cycles:
+          - sample: uniform
+            min: 1.0
+            max: 2.0
+          - sample: uniform
+            min: 2.0
+            max: 4.0
+          phase:
             sample: uniform
-            min: 0.04
-            max: 0.08
-          aspect_ratio: 1.0
-          center:
+            min: 0.0
+            max: 6.283185
+          angle:
+            sample: uniform
+            min: 0.2
+            max: 0.78
+        - amplitude:
+            sample: uniform
+            min: -0.05
+            max: 0.05
+          cycles:
           - sample: uniform
-            min: 0.22
-            max: 0.4
+            min: 3.0
+            max: 5.0
           - sample: uniform
-            min: 0.34
-            max: 0.52
+            min: 1.0
+            max: 2.0
+          phase:
+            sample: uniform
+            min: 0.0
+            max: 6.283185
+          angle:
+            sample: uniform
+            min: 0.2
+            max: 0.78
   velocity:
     initial_condition:
       components:
         x:
           type: constant
           params:
-            value: 0.0
+            value:
+              sample: uniform
+              min: 0.04
+              max: 0.14
         y:
           type: constant
           params:
-            value: 0.0
+            value:
+              sample: uniform
+              min: -0.08
+              max: 0.08
 boundary_conditions:
   height:
     $ref: boundary_field.scalar.full_periodic_2d
@@ -66,10 +130,9 @@ boundary_conditions:
     $ref: boundary_field.vector.full_periodic_2d
 output:
   $ref: output.template.height_velocity
-  resolution:
-  - 96
-  - 96
-  num_frames: 41
+  formats: [numpy, gif]
+  resolution: [160, 160]
+  num_frames: 49
 solver:
   $ref: solver.profile.nonlinear_mixed_direct
 seed: 42
