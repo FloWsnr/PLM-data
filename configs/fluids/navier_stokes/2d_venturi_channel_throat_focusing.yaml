@@ -2,44 +2,43 @@ preset: navier_stokes
 parameters:
   Re:
     sample: uniform
-    min: 150.0
-    max: 240.0
+    min: 90.0
+    max: 180.0
   k: 1.0
   inlet_speed:
     sample: uniform
-    min: 0.8
-    max: 1.08
-  obstacle_center_x:
-    sample: uniform
-    min: 0.76
-    max: 0.9
-  obstacle_center_y:
-    sample: uniform
-    min: 0.42
-    max: 0.58
+    min: 0.66
+    max: 0.98
 domain:
-  type: channel_obstacle
+  type: venturi_channel
   allow_sampling: true
   length:
     sample: uniform
-    min: 1.8
-    max: 2.1
+    min: 2.1
+    max: 2.5
   height:
     sample: uniform
-    min: 0.86
-    max: 1.02
-  obstacle_center: ["param:obstacle_center_x", "param:obstacle_center_y"]
-  obstacle_radius:
+    min: 0.92
+    max: 1.08
+  throat_height:
     sample: uniform
-    min: 0.09
-    max: 0.12
+    min: 0.34
+    max: 0.5
+  constriction_center_x:
+    sample: uniform
+    min: 0.96
+    max: 1.32
+  constriction_radius:
+    sample: uniform
+    min: 0.56
+    max: 0.82
   mesh_size:
     sample: uniform
-    min: 0.012
-    max: 0.016
+    min: 0.01
+    max: 0.014
 time:
-  dt: 0.008
-  t_end: 4.8
+  dt: 0.003
+  t_end: 1.2
 inputs:
   velocity:
     source:
@@ -56,24 +55,24 @@ inputs:
           params:
             amplitude:
               sample: uniform
-              min: 0.03
-              max: 0.08
+              min: 0.02
+              max: 0.06
             sigma:
               sample: uniform
-              min: 0.08
-              max: 0.14
+              min: 0.07
+              max: 0.11
             center:
               - sample: uniform
-                min: 0.18
-                max: 0.34
+                min: 0.26
+                max: 0.54
               - sample: uniform
                 min: 0.28
                 max: 0.72
             wavevector:
               - 0.0
               - sample: uniform
-                min: 5.0
-                max: 8.0
+                min: 4.0
+                max: 7.0
             phase:
               sample: uniform
               min: 0.0
@@ -98,16 +97,11 @@ boundary_conditions:
     walls:
       - operator: dirichlet
         value: [0.0, 0.0]
-    obstacle:
-      - operator: dirichlet
-        value: [0.0, 0.0]
 output:
   $ref: output.template.velocity_pressure
   formats: [numpy, gif]
-  resolution:
-  - 224
-  - 160
-  num_frames: 49
+  resolution: [224, 160]
+  num_frames: 53
 solver:
   $ref: solver.profile.transient_saddle_point
 seed: 42

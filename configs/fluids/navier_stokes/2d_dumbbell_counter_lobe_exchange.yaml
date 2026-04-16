@@ -1,0 +1,176 @@
+preset: navier_stokes
+parameters:
+  Re:
+    sample: uniform
+    min: 140.0
+    max: 260.0
+  k: 1.0
+  center_y:
+    sample: uniform
+    min: 0.46
+    max: 0.54
+  x_circulation:
+    sample: uniform
+    min: -0.74
+    max: -0.44
+  y_circulation:
+    sample: uniform
+    min: 0.44
+    max: 0.74
+  x_offset:
+    sample: uniform
+    min: 0.18
+    max: 0.42
+  y_offset:
+    sample: uniform
+    min: -0.42
+    max: -0.18
+domain:
+  type: dumbbell
+  allow_sampling: true
+  left_center:
+    - sample: uniform
+      min: 0.28
+      max: 0.34
+    - param:center_y
+  right_center:
+    - sample: uniform
+      min: 0.66
+      max: 0.72
+    - param:center_y
+  lobe_radius:
+    sample: uniform
+    min: 0.22
+    max: 0.27
+  neck_width:
+    sample: uniform
+    min: 0.12
+    max: 0.18
+  mesh_size:
+    sample: uniform
+    min: 0.01
+    max: 0.014
+time:
+  dt: 0.0035
+  t_end: 1.2
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: gaussian_blobs
+          params:
+            background: 0.0
+            generators:
+              - count: 1
+                amplitude:
+                  sample: uniform
+                  min: 0.12
+                  max: 0.26
+                sigma:
+                  sample: uniform
+                  min: 0.05
+                  max: 0.09
+                aspect_ratio:
+                  sample: uniform
+                  min: 1.0
+                  max: 1.8
+                center:
+                  - sample: uniform
+                    min: 0.22
+                    max: 0.38
+                  - sample: uniform
+                    min: 0.56
+                    max: 0.7
+              - count: 1
+                amplitude:
+                  sample: uniform
+                  min: -0.26
+                  max: -0.12
+                sigma:
+                  sample: uniform
+                  min: 0.05
+                  max: 0.09
+                aspect_ratio:
+                  sample: uniform
+                  min: 1.0
+                  max: 1.8
+                center:
+                  - sample: uniform
+                    min: 0.62
+                    max: 0.78
+                  - sample: uniform
+                    min: 0.3
+                    max: 0.44
+        y:
+          type: gaussian_blobs
+          params:
+            background: 0.0
+            generators:
+              - count: 1
+                amplitude:
+                  sample: uniform
+                  min: -0.24
+                  max: -0.12
+                sigma:
+                  sample: uniform
+                  min: 0.05
+                  max: 0.09
+                aspect_ratio:
+                  sample: uniform
+                  min: 1.0
+                  max: 1.8
+                center:
+                  - sample: uniform
+                    min: 0.24
+                    max: 0.4
+                  - sample: uniform
+                    min: 0.3
+                    max: 0.44
+              - count: 1
+                amplitude:
+                  sample: uniform
+                  min: 0.12
+                  max: 0.24
+                sigma:
+                  sample: uniform
+                  min: 0.05
+                  max: 0.09
+                aspect_ratio:
+                  sample: uniform
+                  min: 1.0
+                  max: 1.8
+                center:
+                  - sample: uniform
+                    min: 0.6
+                    max: 0.76
+                  - sample: uniform
+                    min: 0.56
+                    max: 0.7
+boundary_conditions:
+  velocity:
+    outer:
+      - operator: dirichlet
+        value:
+          components:
+            x:
+              type: affine
+              params:
+                y: param:x_circulation
+                constant: param:x_offset
+            y:
+              type: affine
+              params:
+                x: param:y_circulation
+                constant: param:y_offset
+output:
+  $ref: output.template.velocity_pressure
+  formats: [numpy, gif]
+  resolution: [192, 160]
+  num_frames: 57
+solver:
+  $ref: solver.profile.transient_saddle_point
+seed: 42

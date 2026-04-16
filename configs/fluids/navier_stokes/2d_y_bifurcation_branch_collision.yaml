@@ -1,0 +1,110 @@
+preset: navier_stokes
+parameters:
+  Re:
+    sample: uniform
+    min: 110.0
+    max: 220.0
+  k: 1.0
+  upper_branch_cross:
+    sample: uniform
+    min: -0.42
+    max: -0.22
+  lower_branch_cross:
+    sample: uniform
+    min: 0.18
+    max: 0.36
+domain:
+  type: y_bifurcation
+  allow_sampling: true
+  inlet_length:
+    sample: uniform
+    min: 0.92
+    max: 1.12
+  branch_length:
+    sample: uniform
+    min: 0.9
+    max: 1.16
+  branch_angle_degrees:
+    sample: uniform
+    min: 32.0
+    max: 46.0
+  channel_width:
+    sample: uniform
+    min: 0.22
+    max: 0.3
+  mesh_size:
+    sample: uniform
+    min: 0.009
+    max: 0.013
+time:
+  dt: 0.003
+  t_end: 0.7
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: gaussian_noise
+          params:
+            mean: 0.0
+            std:
+              sample: uniform
+              min: 0.006
+              max: 0.014
+        y:
+          type: gaussian_noise
+          params:
+            mean: 0.0
+            std:
+              sample: uniform
+              min: 0.006
+              max: 0.014
+boundary_conditions:
+  velocity:
+    inlet:
+      - operator: neumann
+        value: [0.0, 0.0]
+    outlet_upper:
+      - operator: dirichlet
+        value:
+          components:
+            x:
+              type: constant
+              params:
+                value:
+                  sample: uniform
+                  min: -0.72
+                  max: -0.42
+            y:
+              type: constant
+              params:
+                value: param:upper_branch_cross
+    outlet_lower:
+      - operator: dirichlet
+        value:
+          components:
+            x:
+              type: constant
+              params:
+                value:
+                  sample: uniform
+                  min: -0.64
+                  max: -0.32
+            y:
+              type: constant
+              params:
+                value: param:lower_branch_cross
+    walls:
+      - operator: dirichlet
+        value: [0.0, 0.0]
+output:
+  $ref: output.template.velocity_pressure
+  formats: [numpy, gif]
+  resolution: [224, 160]
+  num_frames: 45
+solver:
+  $ref: solver.profile.transient_saddle_point
+seed: 42
