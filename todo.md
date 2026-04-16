@@ -549,11 +549,44 @@ fast shock-like events and slower trapped-wave transients.
 
 #### Navier-Stokes (`configs/fluids/navier_stokes`)
 
-1. `2d_channel_obstacle_vortex_shedding`: channel flow past a circular obstacle shedding an alternating wake.
-2. `2d_high_re_shear_layer_rollup`: higher-Re shear layer with finer roll-up and stronger secondary instabilities.
-3. `2d_lid_driven_cavity_vortices`: lid-driven cavity building the primary vortex and corner eddies.
-4. `2d_shear_layer_rollup`: perturbed double shear layer rolling up into vortices.
-5. `3d_lid_driven_cavity_flow`: 3D lid-driven cavity starting from rest and building cavity circulation.
+Validation: the 21 2D configs below were run one at a time with
+`./run.sh -n 2 ... --n-runs 2` into `output/navier_stokes_validation`,
+producing 42 successful 2D runs. The final suite covers 10 domain families
+with at least 2 configs each and 3 rectangle cases, keeps every output
+resolution at or above the requested `128x128` baseline, and samples geometry
+plus inlet / boundary / initial-condition parameters so seed changes alter
+both the shape and the transient. `2d_l_shape_reentrant_corner_spinup` and
+`2d_side_cavity_channel_cavity_release` were pinned to later stable base seeds
+after validation because their original `42/43` pair hit rare unstable
+OpenFOAM samples. Three outlet-driven cases still raise late-time stagnation
+warnings on pressure (and on one `2d_y_bifurcation_split_jet` seed also on
+velocity) once they settle near a steady state, but they remain solver-
+converged, finite, and visually distinct, so they stay in the dataset as the
+more weakly transient open-flow end of the suite. The section also keeps the
+existing `3d_lid_driven_cavity_flow` sanity case.
+
+1. `2d_annulus_counter_rotating_couette`: counter-rotating annular wall drive creates a wrapped ring-shear transient with seed-dependent asymmetry in the inner-gap recirculation.
+2. `2d_annulus_swirl_relaxation`: paired annular swirl packets relax into a broad ring-confined circulation pattern with slower decay than the wall-driven Couette case.
+3. `2d_channel_obstacle_oblique_bypass`: an obliquely biased channel inflow slips around the cylinder on one preferred side and sheds a strongly asymmetric wake.
+4. `2d_channel_obstacle_vortex_shedding`: the canonical cylinder wake, producing alternating downstream vortices and clear seed-to-seed differences in the wake phase.
+5. `2d_disk_offcenter_vortex_dipole`: off-center disk-confined dipoles orbit and deform against the circular wall instead of forming a wall-driven global spin.
+6. `2d_disk_rotating_rim_spinup`: boundary-driven disk spin-up builds a smoother whole-domain swirl and circular wall layers distinct from the off-center dipole case.
+7. `2d_dumbbell_bridge_vortex_decay`: bridge-centered momentum in a dumbbell relaxes into lobe-coupled recirculation with delayed neck-mediated transfer.
+8. `2d_dumbbell_counter_lobe_exchange`: a divergence-free moving-wall dumbbell drive sustains opposing lobe circulation and neck transfer, giving a boundary-driven chamber-exchange regime distinct from the decaying bridge-vortex case.
+9. `2d_high_re_shear_layer_rollup`: a high-Re double shear layer rolls into finer, faster billows with stronger secondary instability than the baseline shear case.
+10. `2d_l_shape_notch_shear_release`: notch-biased forcing releases a shear plume around the re-entrant corner and into the two L-shaped arms.
+11. `2d_l_shape_reentrant_corner_spinup`: a quieter re-entrant-corner spin-up case where circulation grows around the inside corner and remains geometry-trapped rather than wake-driven.
+12. `2d_lid_driven_cavity_vortices`: the classic lid-driven square cavity building one main vortex and several slower corner eddies.
+13. `2d_parallelogram_diagonal_vortex_lattice`: a denser oblique-billow case on a skew cell, giving tighter slanted roll-up than the broader skew-shear companion config.
+14. `2d_parallelogram_skew_shear_rollup`: broad shear layers roll and tilt along the parallelogram geometry, emphasizing skew-driven advection over square-box symmetry.
+15. `2d_shear_layer_rollup`: the baseline perturbed double shear layer, slower and cleaner than the higher-Re instability cascade.
+16. `2d_side_cavity_channel_cavity_entrainment`: main-channel flow entrains the side pocket and repeatedly stretches cavity recirculation back into the passing stream.
+17. `2d_side_cavity_channel_cavity_release`: momentum seeded inside the pocket spills back into the main channel, giving a reservoir-release transient rather than a pass-by capture.
+18. `2d_venturi_channel_throat_focusing`: a sampled venturi squeezes the flow through the throat, producing a visibly focused high-speed core before downstream re-expansion.
+19. `2d_venturi_channel_wall_skimming_shear`: a wall-hugging shear layer rides the venturi wall and throat shoulder instead of forming a symmetric centerline focus.
+20. `2d_y_bifurcation_branch_collision`: reverse branch forcing drives both daughter arms back toward the junction, producing a sustained Y-junction collision instead of the original fast-decay branch launch.
+21. `2d_y_bifurcation_split_jet`: an inlet-fed jet splits unevenly into the two daughter branches, then gradually settles into a branch-preference state with geometry- and forcing-dependent asymmetry.
+22. `3d_lid_driven_cavity_flow`: 3D lid-driven cavity starting from rest and building cavity circulation.
 
 #### Shallow Water (`configs/fluids/shallow_water`)
 

@@ -2,44 +2,43 @@ preset: navier_stokes
 parameters:
   Re:
     sample: uniform
-    min: 150.0
-    max: 240.0
+    min: 80.0
+    max: 160.0
   k: 1.0
   inlet_speed:
     sample: uniform
-    min: 0.8
-    max: 1.08
-  obstacle_center_x:
+    min: 0.66
+    max: 0.96
+  inlet_crossflow:
     sample: uniform
-    min: 0.76
-    max: 0.9
-  obstacle_center_y:
-    sample: uniform
-    min: 0.42
-    max: 0.58
+    min: -0.1
+    max: 0.1
 domain:
-  type: channel_obstacle
+  type: y_bifurcation
   allow_sampling: true
-  length:
+  inlet_length:
     sample: uniform
-    min: 1.8
-    max: 2.1
-  height:
+    min: 0.9
+    max: 1.1
+  branch_length:
     sample: uniform
     min: 0.86
-    max: 1.02
-  obstacle_center: ["param:obstacle_center_x", "param:obstacle_center_y"]
-  obstacle_radius:
+    max: 1.12
+  branch_angle_degrees:
     sample: uniform
-    min: 0.09
-    max: 0.12
+    min: 30.0
+    max: 48.0
+  channel_width:
+    sample: uniform
+    min: 0.2
+    max: 0.28
   mesh_size:
     sample: uniform
-    min: 0.012
-    max: 0.016
+    min: 0.009
+    max: 0.013
 time:
-  dt: 0.008
-  t_end: 4.8
+  dt: 0.003
+  t_end: 1.1
 inputs:
   velocity:
     source:
@@ -60,20 +59,22 @@ inputs:
               max: 0.08
             sigma:
               sample: uniform
-              min: 0.08
-              max: 0.14
+              min: 0.05
+              max: 0.09
             center:
               - sample: uniform
-                min: 0.18
-                max: 0.34
+                min: 0.24
+                max: 0.42
               - sample: uniform
-                min: 0.28
-                max: 0.72
+                min: -0.04
+                max: 0.04
             wavevector:
-              - 0.0
               - sample: uniform
-                min: 5.0
-                max: 8.0
+                min: 2.0
+                max: 4.0
+              - sample: uniform
+                min: 2.0
+                max: 5.0
             phase:
               sample: uniform
               min: 0.0
@@ -91,23 +92,21 @@ boundary_conditions:
             y:
               type: constant
               params:
-                value: 0.0
-    outlet:
+                value: param:inlet_crossflow
+    outlet_upper:
+      - operator: neumann
+        value: [0.0, 0.0]
+    outlet_lower:
       - operator: neumann
         value: [0.0, 0.0]
     walls:
       - operator: dirichlet
         value: [0.0, 0.0]
-    obstacle:
-      - operator: dirichlet
-        value: [0.0, 0.0]
 output:
   $ref: output.template.velocity_pressure
   formats: [numpy, gif]
-  resolution:
-  - 224
-  - 160
-  num_frames: 49
+  resolution: [224, 160]
+  num_frames: 53
 solver:
   $ref: solver.profile.transient_saddle_point
 seed: 42

@@ -1,0 +1,97 @@
+preset: navier_stokes
+parameters:
+  Re:
+    sample: uniform
+    min: 90.0
+    max: 220.0
+  k: 1.0
+  inner_spin:
+    sample: uniform
+    min: 0.42
+    max: 0.78
+  outer_spin:
+    sample: uniform
+    min: -0.58
+    max: -0.26
+domain:
+  type: annulus
+  allow_sampling: true
+  center: [0.0, 0.0]
+  inner_radius:
+    sample: uniform
+    min: 0.24
+    max: 0.34
+  outer_radius:
+    sample: uniform
+    min: 0.94
+    max: 1.04
+  mesh_size:
+    sample: uniform
+    min: 0.01
+    max: 0.014
+time:
+  dt: 0.004
+  t_end: 2.2
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: gaussian_noise
+          params:
+            mean: 0.0
+            std:
+              sample: uniform
+              min: 0.008
+              max: 0.02
+        y:
+          type: gaussian_noise
+          params:
+            mean: 0.0
+            std:
+              sample: uniform
+              min: 0.008
+              max: 0.02
+boundary_conditions:
+  velocity:
+    inner:
+      - operator: dirichlet
+        value:
+          components:
+            x:
+              type: affine
+              params:
+                y:
+                  sample: uniform
+                  min: -0.78
+                  max: -0.42
+            y:
+              type: affine
+              params:
+                x: param:inner_spin
+    outer:
+      - operator: dirichlet
+        value:
+          components:
+            x:
+              type: affine
+              params:
+                y: param:outer_spin
+            y:
+              type: affine
+              params:
+                x:
+                  sample: uniform
+                  min: -0.58
+                  max: -0.26
+output:
+  $ref: output.template.velocity_pressure
+  formats: [numpy, gif]
+  resolution: [176, 176]
+  num_frames: 57
+solver:
+  $ref: solver.profile.transient_saddle_point
+seed: 42

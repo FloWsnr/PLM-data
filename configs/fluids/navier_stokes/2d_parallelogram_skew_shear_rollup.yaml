@@ -1,0 +1,116 @@
+preset: navier_stokes
+parameters:
+  Re:
+    sample: uniform
+    min: 240.0
+    max: 420.0
+  k: 1.0
+  lower_shear:
+    sample: uniform
+    min: 0.86
+    max: 1.08
+  upper_shear:
+    sample: uniform
+    min: -1.08
+    max: -0.86
+domain:
+  type: parallelogram
+  allow_sampling: true
+  origin: [0.0, 0.0]
+  axis_x:
+    - sample: uniform
+      min: 1.55
+      max: 1.82
+    - 0.0
+  axis_y:
+    - sample: uniform
+      min: 0.34
+      max: 0.5
+    - sample: uniform
+      min: 0.92
+      max: 1.08
+  mesh_resolution: [192, 144]
+time:
+  dt: 0.002
+  t_end: 1.0
+inputs:
+  velocity:
+    source:
+      type: none
+      params: {}
+    initial_condition:
+      components:
+        x:
+          type: step
+          params:
+            axis: 1
+            x_split:
+              sample: uniform
+              min: 0.44
+              max: 0.58
+            value_left: param:lower_shear
+            value_right: param:upper_shear
+        y:
+          type: sine_waves
+          params:
+            background: 0.0
+            modes:
+              - amplitude:
+                  sample: uniform
+                  min: 0.05
+                  max: 0.1
+                cycles:
+                  - sample: uniform
+                    min: 2.0
+                    max: 4.0
+                  - sample: uniform
+                    min: 0.8
+                    max: 1.6
+                phase:
+                  sample: uniform
+                  min: 0.0
+                  max: 6.283185
+                angle:
+                  sample: uniform
+                  min: -0.18
+                  max: 0.18
+boundary_conditions:
+  velocity:
+    x-:
+      - operator: periodic
+        pair_with: x+
+    x+:
+      - operator: periodic
+        pair_with: x-
+    y-:
+      - operator: dirichlet
+        value:
+          components:
+            x:
+              type: constant
+              params:
+                value: param:lower_shear
+            y:
+              type: constant
+              params:
+                value: 0.0
+    y+:
+      - operator: dirichlet
+        value:
+          components:
+            x:
+              type: constant
+              params:
+                value: param:upper_shear
+            y:
+              type: constant
+              params:
+                value: 0.0
+output:
+  $ref: output.template.velocity_pressure
+  formats: [numpy, gif]
+  resolution: [192, 160]
+  num_frames: 49
+solver:
+  $ref: solver.profile.transient_mixed_direct
+seed: 42
