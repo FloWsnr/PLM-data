@@ -1,37 +1,25 @@
 # PLM-data
 
-Generate PDE simulation datasets using [DOLFINx](https://github.com/FEniCS/dolfinx) (FEniCSx) and custom structured-grid solvers. Each simulation produces numpy arrays on a regular grid, suitable for training machine learning models.
+Generate PDE simulation datasets using [DOLFINx](https://github.com/FEniCS/dolfinx) (FEniCSx) and openfoam.
 
 ## Installation
 
-### DOLFINx (FEniCSx) — real-valued (default)
+### DOLFINx (FEniCSx)
 
 Create a conda environment with DOLFINx and its dependencies:
 
 ```bash
-conda create -n fenicsx-env -c conda-forge fenics-dolfinx mpich python=3.12 ffmpeg
+conda create -n fenicsx-env -c conda-forge fenics-dolfinx mpich python=3.12 ffmpeg python-gmsh
 conda activate fenicsx-env
-pip install pyyaml pytest pytest-xdist pyright matplotlib dolfinx_mpc
-```
-
-See the [DOLFINx README](https://github.com/FEniCS/dolfinx#installation) for alternative installation methods (Docker, apt, Spack, Windows).
-Install `python-gmsh` as well if you want to use the Gmsh-backed `disk`, `dumbbell`,
-`channel_obstacle`, `y_bifurcation`, `venturi_channel`, `porous_channel`,
-`serpentine_channel`, `l_shape`, `airfoil_channel`, or `annulus` domains.
-
-### DOLFINx (FEniCSx) — complex-valued (optional)
-
-Most presets run in the standard real-valued environment above. If you want a
-separate complex-valued PETSc build for other experiments, create an additional
-environment:
-
-```bash
-conda create -n fenicsx-env-complex -c conda-forge fenics-dolfinx mpich "petsc=*=complex*" python=3.12 ffmpeg
-conda activate fenicsx-env-complex
+conda install -c conda-forge dolfinx_mpc
 pip install pyyaml pytest pytest-xdist pyright matplotlib
 ```
 
-Do not install `dolfinx_mpc` in the complex environment — no complex builds exist.
+See the [DOLFINx README](https://github.com/FEniCS/dolfinx#installation) for alternative installation methods (Docker, apt, Spack, Windows).
+
+### Openfoam
+
+Either install openfoam (https://openfoam.org/download/13-ubuntu/) or load it as a module if available on your HPC.
 
 ## Architecture
 
