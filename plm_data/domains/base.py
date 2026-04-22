@@ -122,12 +122,21 @@ class DomainSpec:
 
 
 DomainFactory = Callable[[Any], DomainGeometry]
-GmshPlanarBuilder = Callable[[Any, Any], None]
+GmshDomainBuilder = Callable[[Any, Any], None]
+
+
+@dataclass(frozen=True)
+class GmshDomainSpec:
+    """Registered Gmsh model builder and mesh dimension for one domain."""
+
+    dimension: int
+    builder: GmshDomainBuilder
+
 
 _DOMAIN_REGISTRY: dict[str, DomainFactory] = {}
 _DOMAIN_SPEC_REGISTRY: dict[str, DomainSpec] = {}
-_GMSH_PLANAR_REGISTRY: dict[str, GmshPlanarBuilder] = {}
-_LEGACY_DOMAIN_FACTORIES_LOADED = False
+_GMSH_DOMAIN_REGISTRY: dict[str, GmshDomainSpec] = {}
+_DOMAIN_FACTORY_MODULES_LOADED = False
 
 COMMON_SCALAR_INITIAL_CONDITION_FAMILIES = (
     "constant",
@@ -176,28 +185,28 @@ def get_domain_spec(name: str) -> DomainSpec:
     return _DOMAIN_SPEC_REGISTRY[name]
 
 
-def _ensure_legacy_domain_factories_loaded() -> None:
-    """Load domain factories that have not yet moved out of core.mesh."""
-    global _LEGACY_DOMAIN_FACTORIES_LOADED
-    if _LEGACY_DOMAIN_FACTORIES_LOADED:
+def _ensure_domain_factory_modules_loaded() -> None:
+    """Load domain factory modules for registration side effects."""
+    global _DOMAIN_FACTORY_MODULES_LOADED
+    if _DOMAIN_FACTORY_MODULES_LOADED:
         return
-    _LEGACY_DOMAIN_FACTORIES_LOADED = True
+    _DOMAIN_FACTORY_MODULES_LOADED = True
 
     # Import for registration side effects. This is intentionally lazy so callers
     # can use domain specs without importing all mesh-generation dependencies.
-    importlib.import_module("plm_data.core.mesh")
+    importlib.import_module("plm_data.domains")
 
 
 def list_domains() -> list[str]:
     """Return the registered domain factory names."""
-    _ensure_legacy_domain_factories_loaded()
+    _ensure_domain_factory_modules_loaded()
     return sorted(_DOMAIN_REGISTRY)
 
 
 def create_domain(domain: Any) -> DomainGeometry:
     """Create a mesh with tagged boundaries from a domain configuration."""
     if domain.type not in _DOMAIN_REGISTRY:
-        _ensure_legacy_domain_factories_loaded()
+        _ensure_domain_factory_modules_loaded()
     if domain.type not in _DOMAIN_REGISTRY:
         raise ValueError(
             f"Unknown domain type: '{domain.type}'. "
@@ -206,31 +215,66 @@ def create_domain(domain: Any) -> DomainGeometry:
     return _DOMAIN_REGISTRY[domain.type](domain)
 
 
-def register_gmsh_planar_domain(
+def register_gmsh_domain(
     name: str,
-) -> Callable[[GmshPlanarBuilder], GmshPlanarBuilder]:
-    """Register one reusable 2D Gmsh builder under a domain name."""
+    *,
+    dimension: int,
+) -> Callable[[GmshDomainBuilder], GmshDomainBuilder]:
+    """Register one reusable Gmsh model builder under a domain name."""
 
-    def decorator(builder: GmshPlanarBuilder) -> GmshPlanarBuilder:
-        _GMSH_PLANAR_REGISTRY[name] = builder
+    def decorator(builder: GmshDomainBuilder) -> GmshDomainBuilder:
+        _GMSH_DOMAIN_REGISTRY[name] = GmshDomainSpec(
+            dimension=dimension,
+            builder=builder,
+        )
         return builder
 
     return decorator
 
 
+def is_gmsh_domain(name: str) -> bool:
+    """Return whether the domain has a reusable Gmsh builder."""
+    if name not in _GMSH_DOMAIN_REGISTRY:
+        _ensure_domain_factory_modules_loaded()
+    return name in _GMSH_DOMAIN_REGISTRY
+
+
+def get_gmsh_domain_dimension(name: str) -> int:
+    """Return the registered Gmsh mesh dimension for one domain."""
+    if name not in _GMSH_DOMAIN_REGISTRY:
+        _ensure_domain_factory_modules_loaded()
+    if name not in _GMSH_DOMAIN_REGISTRY:
+        raise ValueError(f"Domain '{name}' does not expose a Gmsh builder.")
+    return _GMSH_DOMAIN_REGISTRY[name].dimension
+
+
+def build_gmsh_domain_model(domain: Any, model: Any) -> None:
+    """Populate the active Gmsh model with one tagged built-in domain."""
+    if domain.type not in _GMSH_DOMAIN_REGISTRY:
+        _ensure_domain_factory_modules_loaded()
+    if domain.type not in _GMSH_DOMAIN_REGISTRY:
+        raise ValueError(f"Domain '{domain.type}' does not expose a Gmsh builder.")
+    _GMSH_DOMAIN_REGISTRY[domain.type].builder(model, domain)
+
+
+def register_gmsh_planar_domain(
+    name: str,
+) -> Callable[[GmshDomainBuilder], GmshDomainBuilder]:
+    """Register one reusable 2D Gmsh builder under a domain name."""
+    return register_gmsh_domain(name, dimension=2)
+
+
 def is_gmsh_planar_domain(name: str) -> bool:
     """Return whether the domain has a reusable planar Gmsh builder."""
-    if name not in _GMSH_PLANAR_REGISTRY:
-        _ensure_legacy_domain_factories_loaded()
-    return name in _GMSH_PLANAR_REGISTRY
+    if not is_gmsh_domain(name):
+        return False
+    return get_gmsh_domain_dimension(name) == 2
 
 
 def build_gmsh_planar_domain_model(domain: Any, model: Any) -> None:
     """Populate the active Gmsh model with one tagged 2D built-in domain."""
-    if domain.type not in _GMSH_PLANAR_REGISTRY:
-        _ensure_legacy_domain_factories_loaded()
-    if domain.type not in _GMSH_PLANAR_REGISTRY:
+    if not is_gmsh_planar_domain(domain.type):
         raise ValueError(
             f"Domain '{domain.type}' does not expose a planar Gmsh builder."
         )
-    _GMSH_PLANAR_REGISTRY[domain.type](model, domain)
+    build_gmsh_domain_model(domain, model)

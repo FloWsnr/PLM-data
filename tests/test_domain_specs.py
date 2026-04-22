@@ -3,7 +3,9 @@
 from plm_data.core.config import DomainConfig
 from plm_data.core.mesh import create_domain
 from plm_data.domains import (
+    get_gmsh_domain_dimension,
     get_domain_spec,
+    is_gmsh_domain,
     is_gmsh_planar_domain,
     list_domain_specs,
     list_domains,
@@ -70,5 +72,11 @@ def test_domain_registry_keeps_moved_rectangle_factory_available():
     assert domain_geom.has_periodic_maps is True
 
 
-def test_gmsh_planar_domain_lookup_loads_legacy_registrations():
+def test_gmsh_planar_domain_lookup_loads_domain_modules():
     assert is_gmsh_planar_domain("disk") is True
+
+
+def test_all_registered_domains_are_gmsh_backed():
+    for name in list_domains():
+        assert is_gmsh_domain(name) is True
+        assert get_gmsh_domain_dimension(name) == get_domain_spec(name).dimension

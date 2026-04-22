@@ -1,12 +1,9 @@
-"""Reusable mesh-construction helpers for concrete domain packages."""
+"""Reusable helpers for concrete domain packages."""
 
 from collections.abc import Callable
 from typing import Any
 
 import numpy as np
-import ufl
-from dolfinx import mesh
-from dolfinx.mesh import locate_entities_boundary, meshtags
 
 from plm_data.domains.base import PeriodicBoundaryMap
 
@@ -19,40 +16,6 @@ def require_param(params: dict[str, Any], key: str, domain_type: str) -> Any:
             f"Got params: {params}"
         )
     return params[key]
-
-
-def tag_boundaries(
-    msh: mesh.Mesh,
-    predicates: dict[str, Callable[[np.ndarray], np.ndarray]],
-) -> tuple[mesh.MeshTags, dict[str, int], ufl.Measure]:  # type: ignore[reportInvalidTypeForm]
-    """Tag boundary facets using geometric predicates."""
-    tdim = msh.topology.dim
-    fdim = tdim - 1
-    msh.topology.create_connectivity(fdim, tdim)
-
-    boundary_names: dict[str, int] = {}
-    all_facets = []
-    all_tags = []
-
-    for tag_idx, (name, marker) in enumerate(predicates.items(), start=1):
-        boundary_names[name] = tag_idx
-        facets = locate_entities_boundary(msh, fdim, marker)
-        all_facets.append(facets)
-        all_tags.append(np.full_like(facets, tag_idx))
-
-    if all_facets:
-        facet_indices = np.concatenate(all_facets)
-        tag_values = np.concatenate(all_tags)
-        sort_order = np.argsort(facet_indices)
-        facet_indices = facet_indices[sort_order]
-        tag_values = tag_values[sort_order]
-    else:
-        facet_indices = np.empty(0, dtype=np.int32)
-        tag_values = np.empty(0, dtype=np.int32)
-
-    ft = meshtags(msh, fdim, facet_indices, tag_values)
-    ds = ufl.Measure("ds", domain=msh, subdomain_data=ft)
-    return ft, boundary_names, ds
 
 
 def compile_config_periodic_maps(
