@@ -1,6 +1,6 @@
 # PLM-data
 
-Generate PDE simulation datasets using [DOLFINx](https://github.com/FEniCS/dolfinx) (FEniCSx) and openfoam.
+Generate PDE simulation datasets using [DOLFINx](https://github.com/FEniCS/dolfinx) (FEniCSx).
 
 ## Installation
 
@@ -16,10 +16,6 @@ pip install pyyaml pytest pytest-xdist pyright matplotlib
 ```
 
 See the [DOLFINx README](https://github.com/FEniCS/dolfinx#installation) for alternative installation methods (Docker, apt, Spack, Windows).
-
-### Openfoam
-
-Either install openfoam (https://openfoam.org/download/13-ubuntu/) or load it as a module if available on your HPC.
 
 ## Architecture
 

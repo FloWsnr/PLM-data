@@ -254,29 +254,28 @@ def test_load_config_vector_input():
     assert cfg.solver.profile_name == "serial"
 
 
-def test_load_config_transient_saddle_point_uses_fieldsplit_mpi_profile():
+def test_load_config_navier_stokes_uses_mixed_direct_mpi_profile():
     cfg = load_config("configs/fluids/navier_stokes/2d_lid_driven_cavity_vortices.yaml")
 
-    assert cfg.solver.strategy == TRANSIENT_SADDLE_POINT
+    assert cfg.solver.strategy == TRANSIENT_MIXED_DIRECT
     assert cfg.solver.serial["pc_type"] == "lu"
 
     mpi_options = cfg.solver.options_for_size(4)
-    assert mpi_options["pc_type"] == "fieldsplit"
-    assert mpi_options["pc_fieldsplit_type"] == "schur"
-    assert mpi_options["pc_fieldsplit_schur_fact_type"] == "upper"
-    assert mpi_options["pc_fieldsplit_schur_precondition"] == "a11"
+    assert mpi_options["pc_type"] == "lu"
+    assert mpi_options["pc_factor_mat_solver_type"] == "mumps"
 
 
-def test_load_config_navier_stokes_channel_obstacle_uses_transient_saddle_point():
+def test_load_config_navier_stokes_channel_obstacle_uses_mixed_direct():
     cfg = load_config(
         "configs/fluids/navier_stokes/2d_channel_obstacle_vortex_shedding.yaml"
     )
 
-    assert cfg.solver.strategy == TRANSIENT_SADDLE_POINT
+    assert cfg.solver.strategy == TRANSIENT_MIXED_DIRECT
     inlet = cfg.boundary_field("velocity").side_conditions("inlet")[0]
     outlet = cfg.boundary_field("velocity").side_conditions("outlet")[0]
     assert inlet.type == "dirichlet"
-    assert inlet.value.components["x"].type == "sine_waves"
+    assert inlet.value.components["x"].type == "constant"
+    assert inlet.value.components["x"].params["value"] == "param:inlet_speed"
     assert outlet.type == "neumann"
 
 
@@ -687,41 +686,6 @@ def test_cyclic_competition_2d_inventory():
     assert counts_by_domain["y_bifurcation"] >= 2
     assert counts_by_domain["multi_hole_plate"] >= 2
     assert counts_by_domain["serpentine_channel"] >= 2
-
-
-def test_euler_2d_inventory():
-    config_paths = sorted(Path("configs/fluids/euler").glob("2d*.yaml"))
-    assert len(config_paths) >= 28
-
-    counts_by_domain: dict[str, int] = {}
-    for path in config_paths:
-        cfg = load_config(str(path))
-        counts_by_domain[cfg.domain.type] = counts_by_domain.get(cfg.domain.type, 0) + 1
-        assert cfg.output.resolution[0] >= 128
-        assert cfg.output.resolution[1] >= 128
-
-        if cfg.domain.type in {"rectangle", "parallelogram"}:
-            mesh_resolution = cfg.domain.params["mesh_resolution"]
-            assert mesh_resolution[0] >= 128
-            assert mesh_resolution[1] >= 128
-        else:
-            mesh_size = cfg.domain.params["mesh_size"]
-            assert mesh_size["max"] <= 0.016
-
-    assert counts_by_domain["rectangle"] >= 2
-    assert counts_by_domain["parallelogram"] >= 2
-    assert counts_by_domain["disk"] >= 2
-    assert counts_by_domain["annulus"] >= 2
-    assert counts_by_domain["dumbbell"] >= 2
-    assert counts_by_domain["l_shape"] >= 2
-    assert counts_by_domain["multi_hole_plate"] >= 2
-    assert counts_by_domain["channel_obstacle"] >= 2
-    assert counts_by_domain["y_bifurcation"] >= 2
-    assert counts_by_domain["venturi_channel"] >= 2
-    assert counts_by_domain["porous_channel"] >= 2
-    assert counts_by_domain["serpentine_channel"] >= 2
-    assert counts_by_domain["airfoil_channel"] >= 2
-    assert counts_by_domain["side_cavity_channel"] >= 2
 
 
 def test_shallow_water_2d_inventory():

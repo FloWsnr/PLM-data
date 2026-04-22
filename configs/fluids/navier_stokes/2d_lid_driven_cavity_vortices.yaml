@@ -79,5 +79,5 @@ output:
   - 160
   num_frames: 49
 solver:
-  $ref: solver.profile.transient_saddle_point
+  $ref: solver.profile.transient_mixed_direct
 seed: 42

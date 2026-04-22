@@ -681,30 +681,6 @@ output:
           $ref: output.mode.scalar
         temperature:
           $ref: output.mode.scalar
-    density_velocity_pressure_temperature:
-      formats:
-        $ref: output.formats.standard
-      fields:
-        density:
-          $ref: output.mode.scalar
-        velocity:
-          $ref: output.mode.components
-        pressure:
-          $ref: output.mode.scalar
-        temperature:
-          $ref: output.mode.scalar
-    density_velocity_pressure_temperature_numpy:
-      formats:
-        $ref: output.formats.standard
-      fields:
-        density:
-          $ref: output.mode.scalar
-        velocity:
-          $ref: output.mode.components
-        pressure:
-          $ref: output.mode.scalar
-        temperature:
-          $ref: output.mode.scalar
     electric_field:
       formats:
         $ref: output.formats.standard
@@ -761,16 +737,6 @@ output:
           $ref: output.mode.components
         speed:
           $ref: output.mode.scalar
-    mhd_velocity_magnetic:
-      formats: [numpy, gif]
-      fields:
-        velocity:
-          $ref: output.mode.components
-        pressure: hidden
-        magnetic_field:
-          $ref: output.mode.components
-        magnetic_constraint: hidden
-
 time:
   unit_interval_dt_0p01:
     dt: 0.01

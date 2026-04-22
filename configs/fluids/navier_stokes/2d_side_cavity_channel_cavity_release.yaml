@@ -159,5 +159,5 @@ output:
   resolution: [224, 160]
   num_frames: 57
 solver:
-  $ref: solver.profile.transient_saddle_point
+  $ref: solver.profile.transient_mixed_direct
 seed: 44

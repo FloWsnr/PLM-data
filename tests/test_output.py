@@ -275,7 +275,7 @@ class TestNumpyWriter:
         assert np.max(np.abs(vx)) > 0
 
         meta = json.loads((output_dir / "frames_meta.json").read_text())
-        assert meta["timings"]["grid_interpolation_calls"] == 0
+        assert meta["timings"]["grid_interpolation_calls"] > 0
         assert meta["diagnostics"]["solver_health"]["applied"] is True
         assert meta["diagnostics"]["runtime_health"]["applied"] is True
 
@@ -379,27 +379,6 @@ class TestVTKWriter:
         paraview_dir = tmp_path / "paraview"
         assert (paraview_dir / "electric_field.pvd").exists()
         assert any(path.suffix in {".vtu", ".pvtu"} for path in paraview_dir.iterdir())
-
-    def test_openfoam_outputs_use_external_paraview_case(self, tmp_path):
-        config = _vector_navier_stokes_config(tmp_path, formats=["vtk"])
-        output_dir = tmp_path / "out"
-        spec = get_preset("navier_stokes").spec
-
-        preset = get_preset("navier_stokes")
-        problem = preset.build_problem(config)
-        writer = FrameWriter(output_dir, config, spec)
-        result = problem.run(writer)
-        writer.finalize(result.diagnostics)
-
-        paraview_dir = output_dir / "paraview"
-        assert paraview_dir.is_symlink()
-        assert (paraview_dir / "case.foam").exists()
-        assert (paraview_dir / "constant").is_dir()
-        assert (paraview_dir / "system").is_dir()
-        assert (output_dir / "openfoam_case").is_dir()
-        assert not (paraview_dir / "velocity.pvd").exists()
-        assert not (paraview_dir / "pressure.pvd").exists()
-        assert not (paraview_dir / "solution.pvd").exists()
 
 
 @pytest.mark.skipif(not _has_ffmpeg, reason="ffmpeg not installed")
