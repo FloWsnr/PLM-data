@@ -464,12 +464,6 @@ domain supports sampling.
 20. `2d_y_bifurcation_inlet_split_shock`: inlet-launched wave packet splits into randomized upper and lower branches with no-slip walls.
 21. `3d_shear_mode_interaction`: three sinusoidal velocity modes steepening and diffusing in a 3D periodic box.
 
-#### Compressible Navier-Stokes (`configs/fluids/compressible_navier_stokes`)
-
-1. `2d_channel_obstacle_heating_expansion`: localized heating in a channel with an obstacle drives expansion waves and a thermal wake around the blockage.
-2. `2d_localized_heating_expansion`: localized heating drives expansion and pressure waves in a closed box.
-3. `3d_localized_heating_expansion`: 3D localized heating drives expansion and pressure waves in a closed box.
-
 #### Darcy (`configs/fluids/darcy`)
 
 The 2D Darcy suite now has 20 configs: two each for rectangle, disk,
@@ -499,54 +493,6 @@ domains. All 2D cases use output resolutions with a shortest side of at least
 19. `2d_y_bifurcation_branch_collision_release`: two branch-localized releases are pulled back toward the junction under reverse pressure drive and collide before exiting through the trunk.
 20. `2d_y_bifurcation_inlet_split_plume`: a trunk-localized upstream release splits unevenly between the upper and lower daughter branches because the outlet pressures are intentionally asymmetric.
 
-#### Euler (`configs/fluids/euler`)
-
-The 2D Euler suite now has 28 configs: two each for rectangle,
-parallelogram, disk, annulus, dumbbell, L-shape, multi-hole plate,
-channel-obstacle, Y-bifurcation, venturi-channel, porous-channel,
-serpentine-channel, airfoil-channel, and side-cavity-channel domains.
-All 2D cases use output resolutions with a shortest side of at least 128, and
-the suite mixes periodic shear roll-up, cavity blast reflections, geometry-fed
-compression, reverse flushing, and branch collisions so the dataset spans both
-fast shock-like events and slower trapped-wave transients.
-
-1. `2d_airfoil_channel_lower_surface_wake_flip`: a lower-surface pressure pulse and downward-biased inlet sweep under the sampled airfoil, then flip into a tight lower wake.
-2. `2d_airfoil_channel_upper_surface_bow_wave`: an upper-surface pulse and upward-biased inlet flow produce a sampled bow-wave arc over the airfoil and a cleaner upper wake.
-3. `2d_annulus_inner_rim_blast`: an off-center hot spot near the inner rim launches curved shocks that wrap around the hole before reflecting off the outer wall.
-4. `2d_annulus_rotating_ring_modes`: radial cosine pressure bands spin around the annulus under a seeded swirl, giving slower ring-confined rotating wave structure.
-5. `2d_channel_obstacle_oblique_jet_bypass`: a cross-stream-biased jet is forced above a sampled obstacle, creating a distinctly one-sided bypass and wake.
-6. `2d_channel_obstacle_supersonic_bow_shock`: the baseline obstacle case is now a randomized higher-resolution bow-shock setup with an upstream compression pulse feeding the cylinder shadow.
-7. `2d_disk_offcenter_blast_reflection`: an off-center disk blast sends asymmetric circular fronts into the wall and back across the cavity.
-8. `2d_disk_spinning_ring_modes`: sampled radial rings plus solid-body swirl create slower rotating pressure bands instead of one localized explosion.
-9. `2d_dumbbell_dual_lobe_collision`: pulses launched from both lobes drive counter-propagating fronts into the neck for a central collision transient.
-10. `2d_dumbbell_neck_shock_transfer`: a left-lobe pressure burst propagates through the sampled bridge and transfers into the opposite chamber with a clear delay.
-11. `2d_l_shape_corner_shock_focusing`: a pulse fired down the upper arm of the L-shaped cavity focuses into the re-entrant corner and returns as bent reflected fronts.
-12. `2d_l_shape_notch_swirl_release`: a notch-adjacent pulse mixed with cavity swirl produces slower corner release and multi-path reflection rather than one direct impact.
-13. `2d_multi_hole_plate_oblique_gap_shedding`: oblique density and pressure bands squeeze through sampled perforation gaps and shed alternating interstitial wakes.
-14. `2d_multi_hole_plate_perforated_blast_weave`: a localized blast threads the sampled holes and creates hole-shadowed pressure corridors across the plate.
-15. `2d_parallelogram_four_state_collision`: a skew-periodic four-state Riemann setup sends several shock and expansion fronts into each other across the sampled cell.
-16. `2d_parallelogram_skew_shear_rollup`: the skew periodic shear-layer case rolls up more obliquely than the rectangular Kelvin-Helmholtz baseline.
-17. `2d_periodic_kelvin_helmholtz_rollup`: a fully periodic rectangular shear layer with a sampled transverse perturbation rolls into seed-dependent Kelvin-Helmholtz billows.
-18. `2d_porous_channel_reverse_flush_compression`: reverse outlet forcing pulls a downstream pulse back through the porous maze, emphasizing slow obstacle-to-obstacle compression.
-19. `2d_porous_channel_shock_maze_percolation`: an inlet-driven compression pulse percolates through the sampled porous matrix and leaves staggered obstacle wakes.
-20. `2d_serpentine_channel_lane_switching_jet`: a forward inlet jet follows the sampled serpentine bends and switches lanes at successive turns.
-21. `2d_serpentine_channel_reverse_slug_release`: reverse forcing drags a downstream slug back through the sampled bends, reordering the bend timing relative to the forward jet case.
-22. `2d_shock_tube`: the original tube is now a higher-resolution, weakly perturbed shock tube with slip top/bottom walls and broader seed-dependent reflection structure.
-23. `2d_side_cavity_channel_cavity_entrainment`: a main-channel pulse is partially pulled into the sampled side cavity before being re-ejected downstream.
-24. `2d_side_cavity_channel_cavity_release_burst`: a cavity-seeded pressure burst vents into the main channel under slower background flow, giving a release transient rather than capture.
-25. `2d_venturi_channel_throat_compression`: an inlet pulse is squeezed through the sampled venturi throat into a narrow accelerated compression front.
-26. `2d_venturi_channel_wall_skimming_pulse`: a wall-skimming pulse rides the converging wall and is refracted through the throat with strong asymmetry.
-27. `2d_y_bifurcation_branch_collision`: upper and lower branch inlets drive inward jets that collide at the sampled Y junction before exiting through the trunk.
-28. `2d_y_bifurcation_split_shock_front`: a trunk-launched compression pulse splits into the two daughter branches with seed-dependent branch preference.
-
-#### MHD (`configs/fluids/mhd`)
-
-1. `2d_wall_bounded_magnetic_vortex_decay`: a localized velocity pulse and transverse magnetic pulse decay inside a closed square cavity.
-2. `2d_rectangle_x_periodic_magnetic_sheet_decay`: an x-periodic strip with wall-bounded shear and magnetic sheet structure decaying under viscosity and resistivity.
-3. `2d_parallelogram_x_periodic_magnetic_sheet_decay`: the same strip-style decay on a skew periodic cell to exercise non-orthogonal geometry.
-4. `3d_wall_bounded_magnetic_pulse`: localized 3D velocity and magnetic pulses relax inside a wall-bounded box.
-5. `3d_xy_periodic_magnetic_cells`: a box periodic in x and y with z-wall anchoring, producing coupled magnetic cell dynamics without a fully periodic magnetic domain.
-
 #### Navier-Stokes (`configs/fluids/navier_stokes`)
 
 Validation: the 21 2D configs below were run one at a time with
@@ -558,7 +504,7 @@ plus inlet / boundary / initial-condition parameters so seed changes alter
 both the shape and the transient. `2d_l_shape_reentrant_corner_spinup` and
 `2d_side_cavity_channel_cavity_release` were pinned to later stable base seeds
 after validation because their original `42/43` pair hit rare unstable
-OpenFOAM samples. Three outlet-driven cases still raise late-time stagnation
+samples. Three outlet-driven cases still raise late-time stagnation
 warnings on pressure (and on one `2d_y_bifurcation_split_jet` seed also on
 velocity) once they settle near a steady state, but they remain solver-
 converged, finite, and visually distinct, so they stay in the dataset as the
@@ -643,9 +589,9 @@ producing 40 successful runs with passing solver, output, and stagnation
 diagnostics. Representative and aggregate post-run analysis in
 `output/thermal_convection_validation/analysis` confirmed fast and slow
 regimes, seed-dependent geometry variation, and visibly different trajectories
-across the suite. Repeated parallelogram variants were numerically unstable in
-this OpenFOAM backend at the requested validation settings, so the final 2D
-set uses 10 other domain families with 2 configs each.
+across the suite. Repeated parallelogram variants were numerically unstable at
+the requested validation settings, so the final 2D set uses 10 other domain
+families with 2 configs each.
 
 1. `2d_annulus_inner_heating_circulation`: annular inner-rim heating drives ring-confined circulation and wrapped thermal layers between sampled inner and outer walls.
 2. `2d_annulus_rotating_shear_plumes`: offset annular forcing produces rotating shear plumes and asymmetric spiral-like recirculation around the hole.
