@@ -1,9 +1,7 @@
-"""Mesh creation helpers with a pluggable domain registry."""
+"""Mesh creation helpers and legacy domain factory registrations."""
 
 from collections.abc import Callable
-from dataclasses import dataclass, field
 import math
-from typing import Any
 
 import numpy as np
 import ufl
@@ -17,107 +15,25 @@ from plm_data.core.config import (
     PeriodicMapConfig,
     validate_domain_params,
 )
+from plm_data.domains.base import (
+    DomainGeometry,
+    PeriodicBoundaryMap,
+    build_gmsh_planar_domain_model,
+    create_domain,
+    is_gmsh_planar_domain,
+    list_domains,
+    register_domain,
+    register_gmsh_planar_domain,
+)
 
-
-@dataclass
-class PeriodicBoundaryMap:
-    """Resolved geometric map for one named periodic boundary pair."""
-
-    name: str
-    slave_boundary: str
-    master_boundary: str
-    matrix: np.ndarray
-    offset: np.ndarray
-    group_id: str
-    slave_selector: Callable[[np.ndarray, float], np.ndarray] | None = None
-
-    def apply(self, x: np.ndarray) -> np.ndarray:
-        """Map slave-side coordinates to master-side coordinates."""
-        gdim = self.matrix.shape[0]
-        out = x.copy()
-        out[:gdim, :] = self.matrix @ x[:gdim, :] + self.offset[:, None]
-        return out
-
-    def on_slave(self, x: np.ndarray, tol: float) -> np.ndarray:
-        """Return a mask selecting points on the slave side."""
-        if self.slave_selector is None:
-            return np.ones(x.shape[1], dtype=bool)
-        return self.slave_selector(x, tol)
-
-
-@dataclass
-class DomainGeometry:
-    """Mesh plus named boundary identification."""
-
-    mesh: mesh.Mesh
-    facet_tags: mesh.MeshTags  # type: ignore[reportInvalidTypeForm]
-    boundary_names: dict[str, int]
-    ds: ufl.Measure  # type: ignore[reportInvalidTypeForm]
-    periodic_maps: dict[frozenset[str], PeriodicBoundaryMap] = field(
-        default_factory=dict
-    )
-
-    @property
-    def has_periodic_maps(self) -> bool:
-        """Return whether the domain exposes any periodic pair maps."""
-        return bool(self.periodic_maps)
-
-    def periodic_map(self, side_a: str, side_b: str) -> PeriodicBoundaryMap:
-        """Return the resolved periodic map for one side pair."""
-        key = frozenset({side_a, side_b})
-        if key not in self.periodic_maps:
-            raise KeyError(
-                f"Domain does not define a periodic map for boundary pair "
-                f"{sorted(key)}."
-            )
-        return self.periodic_maps[key]
-
-
-DomainFactory = Callable[[DomainConfig], DomainGeometry]
-_DOMAIN_REGISTRY: dict[str, DomainFactory] = {}
-GmshPlanarBuilder = Callable[[Any, DomainConfig], None]
-_GMSH_PLANAR_REGISTRY: dict[str, GmshPlanarBuilder] = {}
-
-
-def register_domain(name: str) -> Callable[[DomainFactory], DomainFactory]:
-    """Register a domain factory under a config-facing type name."""
-
-    def decorator(factory: DomainFactory) -> DomainFactory:
-        _DOMAIN_REGISTRY[name] = factory
-        return factory
-
-    return decorator
-
-
-def list_domains() -> list[str]:
-    """Return the registered domain types."""
-    return sorted(_DOMAIN_REGISTRY)
-
-
-def register_gmsh_planar_domain(
-    name: str,
-) -> Callable[[GmshPlanarBuilder], GmshPlanarBuilder]:
-    """Register one reusable 2D Gmsh builder under a domain name."""
-
-    def decorator(builder: GmshPlanarBuilder) -> GmshPlanarBuilder:
-        _GMSH_PLANAR_REGISTRY[name] = builder
-        return builder
-
-    return decorator
-
-
-def is_gmsh_planar_domain(name: str) -> bool:
-    """Return whether the domain has a reusable planar Gmsh builder."""
-    return name in _GMSH_PLANAR_REGISTRY
-
-
-def build_gmsh_planar_domain_model(domain: DomainConfig, model: Any) -> None:
-    """Populate the active Gmsh model with one tagged 2D built-in domain."""
-    if domain.type not in _GMSH_PLANAR_REGISTRY:
-        raise ValueError(
-            f"Domain '{domain.type}' does not expose a planar Gmsh builder."
-        )
-    _GMSH_PLANAR_REGISTRY[domain.type](model, domain)
+__all__ = [
+    "DomainGeometry",
+    "PeriodicBoundaryMap",
+    "build_gmsh_planar_domain_model",
+    "create_domain",
+    "is_gmsh_planar_domain",
+    "list_domains",
+]
 
 
 def _require_param(params: dict, key: str, domain_type: str):
@@ -128,16 +44,6 @@ def _require_param(params: dict, key: str, domain_type: str):
             f"Got params: {params}"
         )
     return params[key]
-
-
-def create_domain(domain: DomainConfig) -> DomainGeometry:
-    """Create a mesh with tagged boundaries from a domain configuration."""
-    if domain.type not in _DOMAIN_REGISTRY:
-        raise ValueError(
-            f"Unknown domain type: '{domain.type}'. "
-            f"Available: {', '.join(list_domains())}"
-        )
-    return _DOMAIN_REGISTRY[domain.type](domain)
 
 
 def _tag_boundaries(
@@ -506,63 +412,6 @@ def _create_interval(domain: DomainConfig) -> DomainGeometry:
             x[0], lim, atol=tol, rtol=tol
         ),
         offset=(-length,),
-    )
-    periodic_maps = _merge_periodic_maps(
-        builtin_maps,
-        _compile_config_periodic_maps(domain.periodic_maps),
-    )
-    return DomainGeometry(
-        mesh=msh,
-        facet_tags=ft,
-        boundary_names=boundary_names,
-        ds=ds,
-        periodic_maps=periodic_maps,
-    )
-
-
-@register_domain("rectangle")
-def _create_rectangle(domain: DomainConfig) -> DomainGeometry:
-    p = domain.params
-    size = _require_param(p, "size", domain.type)
-    res = _require_param(p, "mesh_resolution", domain.type)
-    Lx, Ly = size[0], size[1]
-
-    msh = mesh.create_rectangle(
-        comm=MPI.COMM_WORLD,
-        points=((0.0, 0.0), (Lx, Ly)),
-        n=(res[0], res[1]),
-        cell_type=CellType.triangle,
-        ghost_mode=GhostMode.shared_facet,
-    )
-
-    predicates = {
-        "x-": lambda x, lim=0.0: np.isclose(x[0], lim),
-        "x+": lambda x, lim=Lx: np.isclose(x[0], lim),
-        "y-": lambda x, lim=0.0: np.isclose(x[1], lim),
-        "y+": lambda x, lim=Ly: np.isclose(x[1], lim),
-    }
-    ft, boundary_names, ds = _tag_boundaries(msh, predicates)
-    builtin_maps = _merge_periodic_maps(
-        _builtin_periodic_map(
-            name="x",
-            group_id="x",
-            slave_boundary="x+",
-            master_boundary="x-",
-            slave_selector=lambda x, tol, lim=Lx: np.isclose(
-                x[0], lim, atol=tol, rtol=tol
-            ),
-            offset=(-Lx, 0.0),
-        ),
-        _builtin_periodic_map(
-            name="y",
-            group_id="y",
-            slave_boundary="y+",
-            master_boundary="y-",
-            slave_selector=lambda x, tol, lim=Ly: np.isclose(
-                x[1], lim, atol=tol, rtol=tol
-            ),
-            offset=(0.0, -Ly),
-        ),
     )
     periodic_maps = _merge_periodic_maps(
         builtin_maps,

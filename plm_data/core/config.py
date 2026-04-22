@@ -467,6 +467,13 @@ def _validate_initial_condition_expression(
 
 def _infer_domain_dimension(domain_type: str, params: dict[str, Any]) -> int:
     """Infer the spatial dimension from the configured domain."""
+    try:
+        from plm_data.domains import get_domain_spec
+
+        return get_domain_spec(domain_type).dimension
+    except ValueError:
+        pass
+
     builtin_dims = {
         "interval": 1,
         "rectangle": 2,
