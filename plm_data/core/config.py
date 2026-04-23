@@ -13,6 +13,11 @@ import yaml
 from plm_data.core.airfoil import symmetric_naca_airfoil_outline
 from plm_data.core.sampling import is_sampler_spec
 from plm_data.core.solver_strategies import ALL_SOLVER_STRATEGIES
+from plm_data.initial_conditions import (
+    get_initial_condition_spec,
+    has_initial_condition_spec,
+    list_initial_condition_specs,
+)
 
 _COMPONENT_LABELS = ("x", "y", "z")
 _VALID_FORMATS = {"numpy", "gif", "video", "vtk"}
@@ -20,21 +25,6 @@ _GRID_FORMATS = {"numpy", "gif", "video"}
 _REF_KEY = "$ref"
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _FRAGMENT_CATALOG_PATH = _REPO_ROOT / "configs" / "_fragments.yaml"
-_INITIAL_CONDITION_EXPR_TYPES = {
-    "none",
-    "zero",
-    "custom",
-    "constant",
-    "gaussian_bump",
-    "radial_cosine",
-    "affine",
-    "step",
-    "gaussian_noise",
-    "gaussian_blobs",
-    "gaussian_wave_packet",
-    "sine_waves",
-    "quadrants",
-}
 _TOP_LEVEL_CONFIG_KEYS = {
     "preset",
     "parameters",
@@ -194,14 +184,25 @@ def _validate_initial_condition_scalar_expression(
     *,
     gdim: int,
 ) -> None:
-    if expr.type not in _INITIAL_CONDITION_EXPR_TYPES:
+    expr_type = expr.type
+    if expr_type is None or not has_initial_condition_spec(expr_type):
         raise ValueError(
-            f"{context} uses unsupported initial_condition type '{expr.type}'. "
-            f"Allowed types: {sorted(_INITIAL_CONDITION_EXPR_TYPES)}."
+            f"{context} uses unsupported initial_condition type '{expr_type}'. "
+            f"Allowed types: {sorted(list_initial_condition_specs())}."
+        )
+    spec = get_initial_condition_spec(expr_type)
+    if "scalar" not in spec.supported_field_shapes:
+        raise ValueError(
+            f"{context} uses initial_condition type '{expr_type}', which does not "
+            "support scalar fields."
+        )
+    if gdim not in spec.supported_dimensions:
+        raise ValueError(
+            f"{context} uses initial_condition type '{expr_type}', which supports "
+            f"dimensions {spec.supported_dimensions}, not {gdim}D."
         )
 
     params = expr.params
-    expr_type = expr.type
     coordinate_keys = {"x", "y", "z"} & set(_component_labels(gdim))
 
     if expr_type in {"none", "zero", "custom"}:

@@ -14,6 +14,11 @@ from plm_data.boundary_conditions import (
     get_boundary_family_spec,
     has_boundary_family_spec,
 )
+from plm_data.initial_conditions import (
+    COMMON_SCALAR_INITIAL_CONDITION_FAMILIES as _COMMON_SCALAR_INITIAL_CONDITION_FAMILIES,
+    get_initial_condition_spec,
+    has_initial_condition_spec,
+)
 
 
 @dataclass
@@ -137,6 +142,18 @@ class DomainSpec:
                     f"Boundary-condition family '{family_name}' is not compatible "
                     f"with domain spec '{self.name}'."
                 )
+        for family_name in self.allowed_initial_condition_families:
+            if not has_initial_condition_spec(family_name):
+                raise ValueError(
+                    f"Domain spec '{self.name}' references unknown initial-condition "
+                    f"family '{family_name}'."
+                )
+            family_spec = get_initial_condition_spec(family_name)
+            if not family_spec.is_compatible_with_domain(self):
+                raise ValueError(
+                    f"Initial-condition family '{family_name}' is not compatible "
+                    f"with domain spec '{self.name}'."
+                )
 
 
 DomainFactory = Callable[[Any], DomainGeometry]
@@ -156,17 +173,7 @@ _DOMAIN_SPEC_REGISTRY: dict[str, DomainSpec] = {}
 _GMSH_DOMAIN_REGISTRY: dict[str, GmshDomainSpec] = {}
 _DOMAIN_FACTORY_MODULES_LOADED = False
 
-COMMON_SCALAR_INITIAL_CONDITION_FAMILIES = (
-    "constant",
-    "gaussian_bump",
-    "gaussian_blobs",
-    "gaussian_noise",
-    "gaussian_wave_packet",
-    "quadrants",
-    "radial_cosine",
-    "sine_waves",
-    "step",
-)
+COMMON_SCALAR_INITIAL_CONDITION_FAMILIES = _COMMON_SCALAR_INITIAL_CONDITION_FAMILIES
 COMMON_BOUNDARY_FAMILIES = _COMMON_BOUNDARY_FAMILIES
 
 
