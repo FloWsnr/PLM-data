@@ -9,6 +9,12 @@ import numpy as np
 import ufl
 from dolfinx import mesh
 
+from plm_data.boundary_conditions import (
+    COMMON_BOUNDARY_FAMILIES as _COMMON_BOUNDARY_FAMILIES,
+    get_boundary_family_spec,
+    has_boundary_family_spec,
+)
+
 
 @dataclass
 class PeriodicBoundaryMap:
@@ -119,6 +125,18 @@ class DomainSpec:
                     f"Domain spec '{self.name}' parameter key '{name}' does not "
                     f"match DomainParameterSpec.name '{parameter.name}'."
                 )
+        for family_name in self.allowed_boundary_families:
+            if not has_boundary_family_spec(family_name):
+                raise ValueError(
+                    f"Domain spec '{self.name}' references unknown boundary-condition "
+                    f"family '{family_name}'."
+                )
+            family_spec = get_boundary_family_spec(family_name)
+            if not family_spec.is_compatible_with_domain(self):
+                raise ValueError(
+                    f"Boundary-condition family '{family_name}' is not compatible "
+                    f"with domain spec '{self.name}'."
+                )
 
 
 DomainFactory = Callable[[Any], DomainGeometry]
@@ -149,11 +167,7 @@ COMMON_SCALAR_INITIAL_CONDITION_FAMILIES = (
     "sine_waves",
     "step",
 )
-COMMON_BOUNDARY_FAMILIES = (
-    "all_dirichlet",
-    "all_neumann",
-    "all_robin",
-)
+COMMON_BOUNDARY_FAMILIES = _COMMON_BOUNDARY_FAMILIES
 
 
 def register_domain(name: str) -> Callable[[DomainFactory], DomainFactory]:

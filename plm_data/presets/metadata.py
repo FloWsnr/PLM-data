@@ -2,6 +2,13 @@
 
 from dataclasses import dataclass, field
 
+from plm_data.boundary_conditions import (
+    BoundaryOperatorSpec,
+    MAXWELL_BOUNDARY_OPERATORS,
+    SCALAR_STANDARD_BOUNDARY_OPERATORS,
+    VECTOR_STANDARD_BOUNDARY_OPERATORS,
+)
+
 _COMPONENT_LABELS = ("x", "y", "z")
 _VALID_STOCHASTIC_COUPLINGS = {
     "additive",
@@ -14,6 +21,22 @@ SATURATING_STOCHASTIC_COUPLINGS = (
     "multiplicative_self",
     "saturating_self",
 )
+__all__ = [
+    "BoundaryFieldSpec",
+    "BoundaryOperatorSpec",
+    "CoefficientSpec",
+    "ConcreteOutputSpec",
+    "GENERIC_STOCHASTIC_COUPLINGS",
+    "InputSpec",
+    "MAXWELL_BOUNDARY_OPERATORS",
+    "OutputSpec",
+    "PDEParameter",
+    "PresetSpec",
+    "SATURATING_STOCHASTIC_COUPLINGS",
+    "SCALAR_STANDARD_BOUNDARY_OPERATORS",
+    "StateSpec",
+    "VECTOR_STANDARD_BOUNDARY_OPERATORS",
+]
 
 
 def _component_labels(gdim: int) -> tuple[str, ...]:
@@ -70,17 +93,6 @@ class StateSpec:
         if self.shape != "vector":
             return ()
         return _component_labels(gdim)
-
-
-@dataclass(frozen=True)
-class BoundaryOperatorSpec:
-    """Config-facing declaration for one named boundary operator."""
-
-    name: str
-    value_shape: str | None
-    requires_pair_with: bool = False
-    operator_parameter_names: tuple[str, ...] = ()
-    description: str = ""
 
 
 @dataclass(frozen=True)
@@ -207,6 +219,12 @@ class PresetSpec:
                         f"'{operator_name}' does not match "
                         f"BoundaryOperatorSpec.name '{operator_spec.name}'"
                     )
+                if spec.shape not in operator_spec.allowed_field_shapes:
+                    raise ValueError(
+                        f"Preset '{self.name}' boundary field '{name}' has shape "
+                        f"'{spec.shape}', but operator '{operator_name}' only "
+                        f"supports {operator_spec.allowed_field_shapes}."
+                    )
 
         for name, spec in self.states.items():
             if name != spec.name:
@@ -315,58 +333,3 @@ class PresetSpec:
                 f"Preset '{self.name}' supports dimensions "
                 f"{self.supported_dimensions}, not {gdim}D."
             )
-
-
-SCALAR_STANDARD_BOUNDARY_OPERATORS = {
-    "dirichlet": BoundaryOperatorSpec(
-        name="dirichlet",
-        value_shape="field",
-        description="Strong value boundary condition.",
-    ),
-    "neumann": BoundaryOperatorSpec(
-        name="neumann",
-        value_shape="field",
-        description="Natural flux boundary condition.",
-    ),
-    "robin": BoundaryOperatorSpec(
-        name="robin",
-        value_shape="field",
-        operator_parameter_names=("alpha",),
-        description="Scalar Robin boundary condition.",
-    ),
-    "periodic": BoundaryOperatorSpec(
-        name="periodic",
-        value_shape=None,
-        requires_pair_with=True,
-        description="Periodic side-pair constraint.",
-    ),
-}
-
-VECTOR_STANDARD_BOUNDARY_OPERATORS = {
-    "dirichlet": BoundaryOperatorSpec(
-        name="dirichlet",
-        value_shape="field",
-        description="Strong vector boundary condition.",
-    ),
-    "neumann": BoundaryOperatorSpec(
-        name="neumann",
-        value_shape="field",
-        description="Natural vector traction boundary condition.",
-    ),
-    "periodic": BoundaryOperatorSpec(
-        name="periodic",
-        value_shape=None,
-        requires_pair_with=True,
-        description="Periodic side-pair constraint.",
-    ),
-}
-
-MAXWELL_BOUNDARY_OPERATORS = {
-    "dirichlet": VECTOR_STANDARD_BOUNDARY_OPERATORS["dirichlet"],
-    "periodic": VECTOR_STANDARD_BOUNDARY_OPERATORS["periodic"],
-    "absorbing": BoundaryOperatorSpec(
-        name="absorbing",
-        value_shape="field",
-        description="Absorbing Maxwell boundary condition.",
-    ),
-}

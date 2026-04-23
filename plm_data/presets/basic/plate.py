@@ -14,12 +14,12 @@ from plm_data.core.spatial_fields import (
     resolve_param_ref,
     scalar_expression_to_config,
 )
+from plm_data.boundary_conditions import get_boundary_operator_spec
 from plm_data.presets import register_preset
 from plm_data.presets.base import PDEPreset, ProblemInstance, TransientLinearProblem
 from plm_data.presets.boundary_validation import validate_boundary_field_structure
 from plm_data.presets.metadata import (
     BoundaryFieldSpec,
-    BoundaryOperatorSpec,
     CoefficientSpec,
     InputSpec,
     OutputSpec,
@@ -29,11 +29,7 @@ from plm_data.presets.metadata import (
 )
 
 _PLATE_BOUNDARY_OPERATORS = {
-    "simply_supported": BoundaryOperatorSpec(
-        name="simply_supported",
-        value_shape=None,
-        description="Zero deflection and zero bending moment boundary condition.",
-    ),
+    "simply_supported": get_boundary_operator_spec("simply_supported"),
 }
 
 _PLATE_SPEC = PresetSpec(

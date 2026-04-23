@@ -3,6 +3,7 @@
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem
+from plm_data.boundary_conditions import get_boundary_operator_spec
 from plm_data.core.config import BoundaryFieldConfig
 from plm_data.core.initial_conditions import apply_ic
 from plm_data.core.solver_strategies import NONLINEAR_MIXED_DIRECT
@@ -15,7 +16,6 @@ from plm_data.presets.base import (
 )
 from plm_data.presets.boundary_validation import validate_boundary_field_structure
 from plm_data.presets.metadata import (
-    BoundaryOperatorSpec,
     BoundaryFieldSpec,
     CoefficientSpec,
     InputSpec,
@@ -28,11 +28,7 @@ from plm_data.presets.metadata import (
 
 _SWIFT_HOHENBERG_BOUNDARY_OPERATORS = {
     "periodic": SCALAR_STANDARD_BOUNDARY_OPERATORS["periodic"],
-    "simply_supported": BoundaryOperatorSpec(
-        name="simply_supported",
-        value_shape=None,
-        description="Homogeneous simply supported wall: u = 0 and (q0^2*u + laplacian(u)) = 0.",
-    ),
+    "simply_supported": get_boundary_operator_spec("simply_supported"),
 }
 
 _SWIFT_HOHENBERG_SPEC = PresetSpec(

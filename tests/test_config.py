@@ -245,11 +245,19 @@ def test_load_config_vector_input():
     assert cfg.output_mode("pressure") == "scalar"
     assert velocity.source.type == "none"
     assert velocity.initial_condition.components["x"].type == "gaussian_noise"
-    assert velocity.initial_condition.components["x"].params["std"] == 0.03
-    assert velocity.initial_condition.components["y"].params["std"] == 0.03
+    assert velocity.initial_condition.components["x"].params["std"] == {
+        "sample": "uniform",
+        "min": 0.02,
+        "max": 0.05,
+    }
+    assert velocity.initial_condition.components["y"].params["std"] == {
+        "sample": "uniform",
+        "min": 0.02,
+        "max": 0.05,
+    }
     assert (
         velocity_bcs.side_conditions("y+")[0].value.components["x"].params["value"]
-        == 1.0
+        == "param:lid_speed"
     )
     assert cfg.solver.profile_name == "serial"
 
@@ -286,18 +294,21 @@ def test_load_config_thermal_convection_2d():
     assert cfg.output_mode("velocity") == "components"
     assert cfg.output_mode("pressure") == "scalar"
     assert cfg.output_mode("temperature") == "scalar"
-    assert cfg.input("velocity").initial_condition.components["x"].type == "constant"
+    assert cfg.input("velocity").initial_condition.components["x"].type == "sine_waves"
     assert (
-        cfg.input("velocity").initial_condition.components["y"].params["value"] == 0.0
+        cfg.input("velocity").initial_condition.components["y"].params["background"]
+        == 0.0
     )
-    assert cfg.input("temperature").initial_condition.type == "gaussian_noise"
-    assert cfg.input("temperature").initial_condition.params["mean"] == 0.5
-    assert cfg.input("temperature").initial_condition.params["std"] == 0.15
+    assert cfg.input("temperature").initial_condition.type == "sine_waves"
+    assert cfg.input("temperature").initial_condition.params["background"] == {
+        "sample": "uniform",
+        "min": 0.22,
+        "max": 0.42,
+    }
     assert cfg.boundary_field("velocity").side_conditions("x-")[0].type == "periodic"
-    assert (
-        cfg.boundary_field("temperature").side_conditions("y-")[0].value.params["value"]
-        == 1.0
-    )
+    assert cfg.boundary_field("temperature").side_conditions("y-")[0].value.params[
+        "value"
+    ] == {"sample": "uniform", "min": 1.0, "max": 1.3}
     assert cfg.solver.strategy == TRANSIENT_MIXED_DIRECT
 
 
@@ -409,7 +420,7 @@ def test_load_config_darcy_channel_obstacle_domain():
     )
     assert (
         cfg.boundary_field("concentration").side_conditions("obstacle")[0].type
-        == "neumann"
+        == "dirichlet"
     )
 
 
