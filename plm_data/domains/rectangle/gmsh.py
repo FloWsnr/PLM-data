@@ -2,7 +2,6 @@
 
 import numpy as np
 
-from plm_data.core.config import DomainConfig, validate_domain_params
 from plm_data.domains.base import DomainGeometry, register_domain, register_gmsh_domain
 from plm_data.domains.gmsh import add_named_gmsh_boundaries, create_gmsh_domain
 from plm_data.domains.helpers import (
@@ -11,9 +10,10 @@ from plm_data.domains.helpers import (
     merge_periodic_maps,
     require_param,
 )
+from plm_data.domains.validation import DomainConfigLike, validate_domain_params
 
 
-def _size_and_resolution(domain: DomainConfig) -> tuple[float, float, int, int]:
+def _size_and_resolution(domain: DomainConfigLike) -> tuple[float, float, int, int]:
     p = domain.params
     size = require_param(p, "size", domain.type)
     res = require_param(p, "mesh_resolution", domain.type)
@@ -21,7 +21,7 @@ def _size_and_resolution(domain: DomainConfig) -> tuple[float, float, int, int]:
 
 
 @register_gmsh_domain("rectangle", dimension=2)
-def build_rectangle_gmsh_model(model, domain: DomainConfig) -> None:
+def build_rectangle_gmsh_model(model, domain: DomainConfigLike) -> None:
     """Populate the active Gmsh model with a tagged rectangle."""
     validate_domain_params(domain.type, domain.params)
     Lx, Ly, nx, ny = _size_and_resolution(domain)
@@ -86,7 +86,7 @@ def build_rectangle_gmsh_model(model, domain: DomainConfig) -> None:
 
 
 @register_domain("rectangle")
-def create_rectangle(domain: DomainConfig) -> DomainGeometry:
+def create_rectangle(domain: DomainConfigLike) -> DomainGeometry:
     """Create a tagged 2D rectangle through Gmsh."""
     Lx, Ly, _, _ = _size_and_resolution(domain)
     domain_geom = create_gmsh_domain(domain)

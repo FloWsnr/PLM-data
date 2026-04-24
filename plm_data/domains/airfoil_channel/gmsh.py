@@ -2,14 +2,14 @@
 
 import numpy as np
 
-from plm_data.core.airfoil import symmetric_naca_airfoil_surfaces
-from plm_data.core.config import DomainConfig, validate_domain_params
+from plm_data.domains.airfoil import symmetric_naca_airfoil_surfaces
 from plm_data.domains.gmsh import register_gmsh_domain_factory
 from plm_data.domains.helpers import require_param
+from plm_data.domains.validation import DomainConfigLike, validate_domain_params
 
 
 @register_gmsh_domain_factory("airfoil_channel", dimension=2)
-def build_airfoil_channel_gmsh_model(model, domain: DomainConfig) -> None:
+def build_airfoil_channel_gmsh_model(model, domain: DomainConfigLike) -> None:
     """Populate the active Gmsh model with a tagged airfoil channel."""
     p = domain.params
     length = float(require_param(p, "length", domain.type))

@@ -2,17 +2,17 @@
 
 import numpy as np
 
-from plm_data.core.config import DomainConfig, validate_domain_params
 from plm_data.domains.gmsh import (
     add_named_gmsh_boundaries,
     classify_rectangular_channel_hole_boundaries,
     register_gmsh_domain_factory,
 )
 from plm_data.domains.helpers import require_param
+from plm_data.domains.validation import DomainConfigLike, validate_domain_params
 
 
 @register_gmsh_domain_factory("channel_obstacle", dimension=2)
-def build_channel_obstacle_gmsh_model(model, domain: DomainConfig) -> None:
+def build_channel_obstacle_gmsh_model(model, domain: DomainConfigLike) -> None:
     """Populate the active Gmsh model with a tagged obstacle channel."""
     p = domain.params
     length = float(require_param(p, "length", domain.type))

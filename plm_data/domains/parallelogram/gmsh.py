@@ -2,7 +2,6 @@
 
 import numpy as np
 
-from plm_data.core.config import DomainConfig, validate_domain_params
 from plm_data.domains.base import DomainGeometry, register_domain, register_gmsh_domain
 from plm_data.domains.gmsh import create_gmsh_domain
 from plm_data.domains.helpers import (
@@ -11,6 +10,7 @@ from plm_data.domains.helpers import (
     merge_periodic_maps,
     require_param,
 )
+from plm_data.domains.validation import DomainConfigLike, validate_domain_params
 
 
 def _local_coordinates(
@@ -23,7 +23,7 @@ def _local_coordinates(
 
 
 def _params(
-    domain: DomainConfig,
+    domain: DomainConfigLike,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, int, int]:
     p = domain.params
     origin = np.asarray(require_param(p, "origin", domain.type), dtype=float)
@@ -34,7 +34,7 @@ def _params(
 
 
 @register_gmsh_domain("parallelogram", dimension=2)
-def build_parallelogram_gmsh_model(model, domain: DomainConfig) -> None:
+def build_parallelogram_gmsh_model(model, domain: DomainConfigLike) -> None:
     """Populate the active Gmsh model with a tagged parallelogram."""
     validate_domain_params(domain.type, domain.params)
     origin, axis_x, axis_y, nx, ny = _params(domain)
@@ -77,7 +77,7 @@ def build_parallelogram_gmsh_model(model, domain: DomainConfig) -> None:
 
 
 @register_domain("parallelogram")
-def create_parallelogram(domain: DomainConfig) -> DomainGeometry:
+def create_parallelogram(domain: DomainConfigLike) -> DomainGeometry:
     """Create a tagged 2D parallelogram through Gmsh."""
     origin, axis_x, axis_y, _, _ = _params(domain)
     domain_geom = create_gmsh_domain(domain)

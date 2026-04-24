@@ -2,16 +2,16 @@
 
 import numpy as np
 
-from plm_data.core.config import DomainConfig, validate_domain_params
 from plm_data.domains.gmsh import (
     add_orthogonal_channel_surfaces,
     register_gmsh_domain_factory,
 )
 from plm_data.domains.helpers import require_param
+from plm_data.domains.validation import DomainConfigLike, validate_domain_params
 
 
 @register_gmsh_domain_factory("serpentine_channel", dimension=2)
-def build_serpentine_channel_gmsh_model(model, domain: DomainConfig) -> None:
+def build_serpentine_channel_gmsh_model(model, domain: DomainConfigLike) -> None:
     """Populate the active Gmsh model with a tagged serpentine channel."""
     p = domain.params
     channel_length = float(require_param(p, "channel_length", domain.type))

@@ -2,7 +2,6 @@
 
 import numpy as np
 
-from plm_data.core.config import DomainConfig, validate_domain_params
 from plm_data.domains.base import DomainGeometry, register_domain, register_gmsh_domain
 from plm_data.domains.gmsh import create_gmsh_domain
 from plm_data.domains.helpers import (
@@ -11,10 +10,11 @@ from plm_data.domains.helpers import (
     merge_periodic_maps,
     require_param,
 )
+from plm_data.domains.validation import DomainConfigLike, validate_domain_params
 
 
 def _size_and_resolution(
-    domain: DomainConfig,
+    domain: DomainConfigLike,
 ) -> tuple[float, float, float, int, int, int]:
     p = domain.params
     size = require_param(p, "size", domain.type)
@@ -108,7 +108,7 @@ def _set_box_transfinite_mesh(
 
 
 @register_gmsh_domain("box", dimension=3)
-def build_box_gmsh_model(model, domain: DomainConfig) -> None:
+def build_box_gmsh_model(model, domain: DomainConfigLike) -> None:
     """Populate the active Gmsh model with a tagged axis-aligned box."""
     validate_domain_params(domain.type, domain.params)
     Lx, Ly, Lz, nx, ny, nz = _size_and_resolution(domain)
@@ -123,7 +123,7 @@ def build_box_gmsh_model(model, domain: DomainConfig) -> None:
 
 
 @register_domain("box")
-def create_box(domain: DomainConfig) -> DomainGeometry:
+def create_box(domain: DomainConfigLike) -> DomainGeometry:
     """Create a tagged 3D box through Gmsh."""
     Lx, Ly, Lz, _, _, _ = _size_and_resolution(domain)
     domain_geom = create_gmsh_domain(domain)

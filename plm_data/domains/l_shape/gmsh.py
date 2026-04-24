@@ -2,13 +2,13 @@
 
 import numpy as np
 
-from plm_data.core.config import DomainConfig, validate_domain_params
 from plm_data.domains.gmsh import fuse_planar_surfaces, register_gmsh_domain_factory
 from plm_data.domains.helpers import require_param
+from plm_data.domains.validation import DomainConfigLike, validate_domain_params
 
 
 @register_gmsh_domain_factory("l_shape", dimension=2)
-def build_l_shape_gmsh_model(model, domain: DomainConfig) -> None:
+def build_l_shape_gmsh_model(model, domain: DomainConfigLike) -> None:
     """Populate the active Gmsh model with a tagged L-shaped domain."""
     p = domain.params
     outer_width = float(require_param(p, "outer_width", domain.type))

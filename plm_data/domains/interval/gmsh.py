@@ -2,7 +2,6 @@
 
 import numpy as np
 
-from plm_data.core.config import DomainConfig, validate_domain_params
 from plm_data.domains.base import DomainGeometry, register_domain, register_gmsh_domain
 from plm_data.domains.gmsh import create_gmsh_domain
 from plm_data.domains.helpers import (
@@ -11,9 +10,10 @@ from plm_data.domains.helpers import (
     merge_periodic_maps,
     require_param,
 )
+from plm_data.domains.validation import DomainConfigLike, validate_domain_params
 
 
-def _length_and_resolution(domain: DomainConfig) -> tuple[float, int]:
+def _length_and_resolution(domain: DomainConfigLike) -> tuple[float, int]:
     p = domain.params
     size = require_param(p, "size", domain.type)
     res = require_param(p, "mesh_resolution", domain.type)
@@ -23,7 +23,7 @@ def _length_and_resolution(domain: DomainConfig) -> tuple[float, int]:
 
 
 @register_gmsh_domain("interval", dimension=1)
-def build_interval_gmsh_model(model, domain: DomainConfig) -> None:
+def build_interval_gmsh_model(model, domain: DomainConfigLike) -> None:
     """Populate the active Gmsh model with a tagged interval."""
     validate_domain_params(domain.type, domain.params)
     length, nx = _length_and_resolution(domain)
@@ -44,7 +44,7 @@ def build_interval_gmsh_model(model, domain: DomainConfig) -> None:
 
 
 @register_domain("interval")
-def create_interval(domain: DomainConfig) -> DomainGeometry:
+def create_interval(domain: DomainConfigLike) -> DomainGeometry:
     """Create a tagged 1D interval through Gmsh."""
     length, _ = _length_and_resolution(domain)
     domain_geom = create_gmsh_domain(domain)

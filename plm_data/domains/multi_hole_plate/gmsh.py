@@ -2,13 +2,13 @@
 
 import numpy as np
 
-from plm_data.core.config import DomainConfig, validate_domain_params
 from plm_data.domains.gmsh import register_gmsh_domain_factory
 from plm_data.domains.helpers import require_param
+from plm_data.domains.validation import DomainConfigLike, validate_domain_params
 
 
 @register_gmsh_domain_factory("multi_hole_plate", dimension=2)
-def build_multi_hole_plate_gmsh_model(model, domain: DomainConfig) -> None:
+def build_multi_hole_plate_gmsh_model(model, domain: DomainConfigLike) -> None:
     """Populate the active Gmsh model with a tagged multi-hole plate."""
     p = domain.params
     width = float(require_param(p, "width", domain.type))

@@ -1,8 +1,8 @@
 """Domain registry, geometry contracts, and sampling-facing metadata."""
 
+import importlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
-import importlib
 from typing import Any
 
 import numpy as np
@@ -213,9 +213,11 @@ def _ensure_domain_factory_modules_loaded() -> None:
         return
     _DOMAIN_FACTORY_MODULES_LOADED = True
 
-    # Import for registration side effects. This is intentionally lazy so callers
-    # can use domain specs without importing all mesh-generation dependencies.
-    importlib.import_module("plm_data.domains")
+    # Import factories lazily so callers can inspect domain specs without pulling
+    # in all mesh-generation dependencies.
+    domains_package = importlib.import_module("plm_data.domains")
+    factory_loader = getattr(domains_package, "_load_domain_factory_modules")
+    factory_loader()
 
 
 def list_domains() -> list[str]:

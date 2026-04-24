@@ -2,16 +2,16 @@
 
 import numpy as np
 
-from plm_data.core.config import DomainConfig, validate_domain_params
 from plm_data.domains.gmsh import (
     register_gmsh_domain_factory,
     tag_single_gmsh_boundary,
 )
 from plm_data.domains.helpers import require_param
+from plm_data.domains.validation import DomainConfigLike, validate_domain_params
 
 
 @register_gmsh_domain_factory("disk", dimension=2)
-def build_disk_gmsh_model(model, domain: DomainConfig) -> None:
+def build_disk_gmsh_model(model, domain: DomainConfigLike) -> None:
     """Populate the active Gmsh model with a tagged disk."""
     p = domain.params
     center = np.asarray(require_param(p, "center", domain.type), dtype=float)
