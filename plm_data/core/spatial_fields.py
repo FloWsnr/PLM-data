@@ -7,7 +7,7 @@ import ufl
 from dolfinx import default_real_type, fem
 from dolfinx import mesh as dmesh
 
-from plm_data.core.config import FieldExpressionConfig
+from plm_data.core.runtime_config import FieldExpressionConfig
 
 _COMPONENT_LABELS = ("x", "y", "z")
 _PI = np.pi

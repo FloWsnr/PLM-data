@@ -1,119 +1,57 @@
-"""CLI entry point: python -m plm_data"""
+"""CLI entry point: python -m plm_data."""
 
 import argparse
 import logging
-import sys
 
 
-def _positive_int(raw: str) -> int:
+def _seed(raw: str) -> int:
     value = int(raw)
-    if value < 1:
-        raise argparse.ArgumentTypeError("must be at least 1")
+    if value < 0:
+        raise argparse.ArgumentTypeError("must be a non-negative integer")
     return value
 
 
-def cmd_run(args):
-    from plm_data.core.runner import SimulationRunner
+def cmd_random(args: argparse.Namespace) -> dict[str, object]:
+    """Run one fully sampled random simulation."""
+    from mpi4py import MPI
+
+    from plm_data.core.runner import run_random_simulation
 
     level = getattr(logging, args.log_level)
-    if args.n_runs is None:
-        runner = SimulationRunner.from_yaml(args.config, args.output_dir)
-        runner.run(console_level=level)
-        return
-
-    SimulationRunner.run_many_from_yaml(
-        args.config,
-        args.output_dir,
-        n_runs=args.n_runs,
+    summary = run_random_simulation(
+        seed=args.seed,
+        output_root=args.output_dir,
         console_level=level,
     )
+    if MPI.COMM_WORLD.rank == 0:
+        print(f"Output: {summary['output_dir']}")
+    return summary
 
 
-def cmd_list(_args):
-    from plm_data.presets import list_presets
-
-    presets = list_presets()
-    if not presets:
-        print("No presets registered.")
-        return
-
-    by_category: dict[str, list] = {}
-    for _, cls in sorted(presets.items()):
-        spec = cls().spec
-        by_category.setdefault(spec.category, []).append(spec)
-
-    for category, specs in sorted(by_category.items()):
-        print(f"\n{category}:")
-        for spec in specs:
-            dims = ", ".join(str(d) + "D" for d in spec.supported_dimensions)
-            print(f"  {spec.name:20s}  [{dims}]  {spec.description}")
-
-
-def cmd_gallery(args):
-    from plm_data.tools.gif_gallery import write_gallery_html
-
-    summary = write_gallery_html(args.directory, args.output, title=args.title)
-    print(
-        f"Wrote {summary.output_path} "
-        f"({summary.num_rows} PDE rows, {summary.num_fields} fields)."
-    )
-
-
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
-        prog="plm_data", description="PDE simulation data generation"
+        prog="plm_data",
+        description="Generate one random 2D time-dependent PDE simulation.",
     )
-    sub = parser.add_subparsers(dest="command")
-
-    p_run = sub.add_parser("run", help="Run a simulation from a YAML config")
-    p_run.add_argument("config", help="Path to YAML config file")
-    p_run.add_argument(
-        "--output-dir",
+    parser.add_argument(
+        "--seed",
         required=True,
-        help=(
-            "Base output directory. Single runs write to <dir>/<category>/<preset>; "
-            "--n-runs writes to <dir>/<category>/<preset>/seed_<seed>"
-        ),
+        type=_seed,
+        help="Required deterministic simulation seed.",
     )
-    p_run.add_argument(
+    parser.add_argument(
+        "--output-dir",
+        default="./output",
+        help="Output root. Defaults to ./output.",
+    )
+    parser.add_argument(
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING"],
         default="INFO",
-        help="Console log level (file always logs DEBUG)",
+        help="Console log level (file always logs DEBUG).",
     )
-    p_run.add_argument(
-        "--n-runs",
-        type=_positive_int,
-        help="Run the config repeatedly with seeds seed, seed+1, ...",
-    )
-    p_run.set_defaults(func=cmd_run)
-
-    p_list = sub.add_parser("list", help="List available PDE presets")
-    p_list.set_defaults(func=cmd_list)
-
-    p_gallery = sub.add_parser(
-        "gallery", help="Build one HTML page from GIF outputs under a directory"
-    )
-    p_gallery.add_argument(
-        "directory",
-        help="Root directory to scan recursively for GIF outputs",
-    )
-    p_gallery.add_argument(
-        "--output",
-        help="HTML file to write. Defaults to <directory>/pde_gif_gallery.html",
-    )
-    p_gallery.add_argument(
-        "--title",
-        default="PDE GIF Gallery",
-        help="Title shown in the generated HTML",
-    )
-    p_gallery.set_defaults(func=cmd_gallery)
-
     args = parser.parse_args()
-    if not hasattr(args, "func"):
-        parser.print_help()
-        sys.exit(1)
-    args.func(args)
+    cmd_random(args)
 
 
 if __name__ == "__main__":

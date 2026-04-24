@@ -4,13 +4,10 @@ from plm_data.boundary_conditions import (
     MAXWELL_BOUNDARY_OPERATORS,
     SCALAR_STANDARD_BOUNDARY_OPERATORS,
     VECTOR_STANDARD_BOUNDARY_OPERATORS,
-    get_boundary_family_spec,
     get_boundary_operator_spec,
-    list_boundary_family_specs,
     list_boundary_operator_specs,
 )
-from plm_data.domains import list_domain_specs
-from plm_data.presets import metadata as preset_metadata
+from plm_data.pdes import metadata as pde_metadata
 
 
 def test_boundary_operator_registry_covers_standard_operators():
@@ -52,48 +49,13 @@ def test_boundary_operator_registry_covers_standard_operators():
     assert periodic.requires_pair_with is True
 
 
-def test_preset_metadata_reexports_boundary_operator_specs():
+def test_pde_metadata_reexports_boundary_operator_specs():
     assert (
-        preset_metadata.SCALAR_STANDARD_BOUNDARY_OPERATORS
+        pde_metadata.SCALAR_STANDARD_BOUNDARY_OPERATORS
         is SCALAR_STANDARD_BOUNDARY_OPERATORS
     )
     assert (
-        preset_metadata.VECTOR_STANDARD_BOUNDARY_OPERATORS
+        pde_metadata.VECTOR_STANDARD_BOUNDARY_OPERATORS
         is VECTOR_STANDARD_BOUNDARY_OPERATORS
     )
-    assert preset_metadata.MAXWELL_BOUNDARY_OPERATORS is MAXWELL_BOUNDARY_OPERATORS
-
-
-def test_boundary_family_registry_covers_domain_recipes():
-    families = list_boundary_family_specs()
-
-    assert set(families) == {
-        "all_dirichlet",
-        "all_neumann",
-        "all_robin",
-        "branch_drive",
-        "cavity_drive",
-        "full_periodic",
-        "inlet_outlet_drive",
-        "inner_outer_drive",
-        "lid_driven_cavity",
-        "no_slip_airfoil",
-        "no_slip_obstacle",
-        "notch_drive",
-        "open_channel",
-        "outer_hole_drive",
-        "periodic_axis",
-        "porous_obstacle_drive",
-    }
-
-    operators = set(list_boundary_operator_specs())
-    for family in families.values():
-        assert set(family.operators).issubset(operators)
-
-
-def test_domain_allowed_boundary_families_are_compatible():
-    for domain_spec in list_domain_specs().values():
-        assert domain_spec.allowed_boundary_families
-        for family_name in domain_spec.allowed_boundary_families:
-            family = get_boundary_family_spec(family_name)
-            assert family.is_compatible_with_domain(domain_spec)
+    assert pde_metadata.MAXWELL_BOUNDARY_OPERATORS is MAXWELL_BOUNDARY_OPERATORS

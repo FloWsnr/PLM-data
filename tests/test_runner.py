@@ -7,7 +7,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-import yaml
 
 import plm_data.core.runner as runner_mod
 from plm_data.core.runner import SimulationRunner
@@ -28,7 +27,7 @@ def test_simulation_runner_heat(heat_config):
     runner = SimulationRunner(heat_config)
     summary = runner.run(console_level=logging.WARNING)
 
-    assert summary["preset"] == "heat"
+    assert summary["pde"] == "heat"
     assert summary["category"] == "basic"
     assert summary["solver_converged"] is True
     assert summary["num_frames"] == 2
@@ -41,6 +40,8 @@ def test_simulation_runner_heat(heat_config):
 
     meta = json.loads((Path(summary["output_dir"]) / "frames_meta.json").read_text())
     run_meta = json.loads((Path(summary["output_dir"]) / "run_meta.json").read_text())
+    assert meta["pde"] == "heat"
+    assert meta["domain_type"] == "rectangle"
     assert meta["diagnostics"]["solver_health"]["applied"] is True
     assert meta["diagnostics"]["solver_health"]["status"] == "pass"
     assert meta["diagnostics"]["runtime_health"]["applied"] is False
@@ -54,8 +55,7 @@ def test_simulation_runner_heat(heat_config):
     assert run_meta["num_frames"] == summary["num_frames"]
     assert run_meta["summary"]["health_status"] == "pass"
     assert run_meta["summary"]["status"] == "success"
-    assert run_meta["config"]["source_path"] is None
-    assert run_meta["config"]["resolved"]["preset"] == "heat"
+    assert run_meta["config"]["resolved"]["pde"] == "heat"
     assert run_meta["config"]["resolved"]["seed"] == 42
 
 
@@ -78,181 +78,6 @@ def test_simulation_runner_cleans_output_dir_before_single_run(heat_config):
 def test_simulation_runner_requires_explicit_seed(heat_config):
     with pytest.raises(ValueError, match="explicit seed"):
         SimulationRunner(replace(heat_config, seed=None))
-
-
-def test_simulation_runner_materializes_sampled_runtime_values(tmp_path):
-    config_path = tmp_path / "heat_sampled_runtime.yaml"
-    config_path.write_text(
-        yaml.safe_dump(
-            {
-                "preset": "heat",
-                "parameters": {},
-                "coefficients": {
-                    "kappa": {
-                        "type": "constant",
-                        "params": {
-                            "value": {"sample": "uniform", "min": 0.8, "max": 1.2}
-                        },
-                    }
-                },
-                "domain": {
-                    "type": "rectangle",
-                    "size": [1.0, 1.0],
-                    "mesh_resolution": [6, 6],
-                },
-                "inputs": {
-                    "u": {
-                        "source": {
-                            "type": "constant",
-                            "params": {"value": 1.0},
-                        },
-                        "initial_condition": {
-                            "type": "constant",
-                            "params": {"value": 0.0},
-                        },
-                    }
-                },
-                "boundary_conditions": {
-                    "u": {
-                        side: [
-                            {
-                                "operator": "dirichlet",
-                                "value": {
-                                    "type": "constant",
-                                    "params": {
-                                        "value": {
-                                            "sample": "uniform",
-                                            "min": -0.2,
-                                            "max": 0.2,
-                                        }
-                                    },
-                                },
-                            }
-                        ]
-                        for side in ("x-", "x+", "y-", "y+")
-                    }
-                },
-                "output": {
-                    "resolution": [8, 8],
-                    "num_frames": 1,
-                    "formats": ["numpy"],
-                    "fields": {"u": "scalar"},
-                },
-                "solver": {
-                    "strategy": "constant_lhs_scalar_spd",
-                    "serial": {"ksp_type": "preonly", "pc_type": "lu"},
-                    "mpi": {"ksp_type": "preonly", "pc_type": "lu"},
-                },
-                "time": {"dt": 0.01, "t_end": 0.01},
-                "seed": 42,
-            }
-        )
-    )
-
-    runner_a = SimulationRunner.from_yaml(config_path, tmp_path / "out_a", seed=7)
-    runner_b = SimulationRunner.from_yaml(config_path, tmp_path / "out_b", seed=7)
-    runner_c = SimulationRunner.from_yaml(config_path, tmp_path / "out_c", seed=8)
-
-    bc_a = runner_a.config.boundary_field("u").side_conditions("x-")[0]
-    bc_b = runner_b.config.boundary_field("u").side_conditions("x-")[0]
-    bc_c = runner_c.config.boundary_field("u").side_conditions("x-")[0]
-
-    assert bc_a.value is not None
-    assert bc_b.value is not None
-    assert bc_c.value is not None
-    kappa_a = runner_a.config.coefficient("kappa").params["value"]
-    kappa_b = runner_b.config.coefficient("kappa").params["value"]
-    kappa_c = runner_c.config.coefficient("kappa").params["value"]
-
-    assert kappa_a == kappa_b
-    assert bc_a.value.params["value"] == bc_b.value.params["value"]
-    assert (
-        kappa_a != kappa_c or bc_a.value.params["value"] != bc_c.value.params["value"]
-    )
-
-
-def test_simulation_runner_run_many_from_yaml_uses_seed_subdirs(tmp_path):
-    config_path = tmp_path / "heat_batch.yaml"
-    config_path.write_text(
-        yaml.safe_dump(
-            {
-                "preset": "heat",
-                "parameters": {},
-                "domain": {
-                    "type": "rectangle",
-                    "size": [1.0, 1.0],
-                    "mesh_resolution": [8, 8],
-                },
-                "coefficients": {
-                    "kappa": {"type": "constant", "params": {"value": 0.01}}
-                },
-                "inputs": {
-                    "u": {
-                        "source": {"type": "none"},
-                        "initial_condition": {
-                            "type": "gaussian_bump",
-                            "params": {
-                                "sigma": 0.1,
-                                "amplitude": 1.0,
-                                "center": [0.5, 0.5],
-                            },
-                        },
-                    }
-                },
-                "boundary_conditions": {
-                    "u": {
-                        side: [
-                            {
-                                "operator": "neumann",
-                                "value": {
-                                    "type": "constant",
-                                    "params": {"value": 0.0},
-                                },
-                            }
-                        ]
-                        for side in ("x-", "x+", "y-", "y+")
-                    }
-                },
-                "output": {
-                    "resolution": [4, 4],
-                    "num_frames": 2,
-                    "formats": ["numpy"],
-                    "fields": {"u": "scalar"},
-                },
-                "solver": {
-                    "strategy": "constant_lhs_scalar_spd",
-                    "serial": {"ksp_type": "preonly", "pc_type": "lu"},
-                    "mpi": {"ksp_type": "preonly", "pc_type": "lu"},
-                },
-                "time": {"dt": 0.01, "t_end": 0.01},
-                "seed": 42,
-            }
-        )
-    )
-
-    batch_output_dir = tmp_path / "out" / "basic" / "heat"
-    batch_output_dir.mkdir(parents=True)
-    (batch_output_dir / "stale.txt").write_text("stale")
-
-    summaries = SimulationRunner.run_many_from_yaml(
-        config_path,
-        tmp_path / "out",
-        n_runs=2,
-        console_level=logging.WARNING,
-    )
-
-    assert [Path(summary["output_dir"]).name for summary in summaries] == [
-        "seed_42",
-        "seed_43",
-    ]
-    assert not (batch_output_dir / "stale.txt").exists()
-
-    for expected_seed, summary in zip((42, 43), summaries, strict=True):
-        run_dir = Path(summary["output_dir"])
-        assert run_dir == batch_output_dir / f"seed_{expected_seed}"
-        assert (run_dir / "u.npy").is_file()
-        run_meta = json.loads((run_dir / "run_meta.json").read_text())
-        assert run_meta["config"]["resolved"]["seed"] == expected_seed
 
 
 def test_prepare_output_dir_only_resets_on_rank_zero(monkeypatch, tmp_path):
@@ -347,6 +172,66 @@ def test_cleanup_runtime_problem_destroys_unique_petsc_handles_once():
     assert wrapper_b._P_mat is None
 
 
+def test_run_random_simulation_retries_and_cleans_failed_attempt(monkeypatch, tmp_path):
+    class Sampled:
+        def __init__(self, attempt: int) -> None:
+            self.config = SimpleNamespace(seed=99)
+            self.pde_name = "heat"
+            self.domain_name = "rectangle"
+            self.attempt = attempt
+
+        def output_dir(self, output_root):
+            return Path(output_root) / f"attempt_{self.attempt}"
+
+        def metadata(self):
+            return {"run_id": f"run_{self.attempt}", "attempt": self.attempt}
+
+    samples = [Sampled(0), Sampled(1)]
+    cleaned: list[Path] = []
+    runs: list[Path] = []
+
+    def fake_sample(seed: int, attempt: int):
+        assert seed == 99
+        return samples[attempt]
+
+    class FakeRunner:
+        def __init__(
+            self,
+            config,
+            output_root,
+            *,
+            output_dir_override,
+            sampled_info,
+        ) -> None:
+            self.output_dir_override = Path(output_dir_override)
+            runs.append(self.output_dir_override)
+
+        def run(self, console_level):
+            if len(runs) == 1:
+                raise RuntimeError("synthetic failure")
+            return {"output_dir": str(self.output_dir_override)}
+
+    monkeypatch.setattr(runner_mod, "_sample_random_config_on_rank_zero", fake_sample)
+    monkeypatch.setattr(runner_mod, "SimulationRunner", FakeRunner)
+    monkeypatch.setattr(
+        runner_mod,
+        "_cleanup_failed_random_output",
+        lambda output_dir: cleaned.append(Path(output_dir)),
+    )
+
+    summary = runner_mod.run_random_simulation(
+        seed=99,
+        output_root=tmp_path,
+        attempt_budget=2,
+    )
+
+    assert cleaned == [tmp_path / "attempt_0"]
+    assert summary["output_dir"] == str(tmp_path / "attempt_1")
+    random_sampling = summary["random_sampling"]
+    assert isinstance(random_sampling, dict)
+    assert random_sampling["run_id"] == "run_1"
+
+
 def test_simulation_runner_writes_failure_metadata(heat_config, monkeypatch):
     runner = SimulationRunner(heat_config)
 
@@ -355,7 +240,7 @@ def test_simulation_runner_writes_failure_metadata(heat_config, monkeypatch):
             raise RuntimeError("synthetic runner failure")
 
     monkeypatch.setattr(
-        runner.preset,
+        runner.pde,
         "build_problem",
         lambda config: _FailingProblem(),
     )
@@ -375,4 +260,4 @@ def test_simulation_runner_writes_failure_metadata(heat_config, monkeypatch):
     assert run_meta["timings"]["output"]["frame_count"] == 0
     assert run_meta["summary"]["health_status"] == "fail"
     assert run_meta["summary"]["status"] == "failed"
-    assert run_meta["config"]["resolved"]["preset"] == "heat"
+    assert run_meta["config"]["resolved"]["pde"] == "heat"

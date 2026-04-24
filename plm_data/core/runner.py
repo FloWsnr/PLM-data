@@ -12,13 +12,13 @@ from pathlib import Path
 import numpy as np
 from mpi4py import MPI
 
-from plm_data.core.config import SimulationConfig, load_config
-from plm_data.core.config_realization import realize_simulation_config
+from plm_data.core.runtime_config import SimulationConfig
 from plm_data.core.health import combine_health_status
 from plm_data.core.health import discover_solver_targets
 from plm_data.core.logging import get_logger, setup_logging, teardown_logging
 from plm_data.core.output import FrameWriter
-from plm_data.presets import get_preset
+from plm_data.core.runtime_realization import realize_simulation_config
+from plm_data.pdes import get_pde
 
 
 def _json_compatible(value):
@@ -45,10 +45,13 @@ def _reset_output_dir(output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
 
-def _seed_output_subdir(seed: int) -> str:
-    """Return the batch subdirectory name for one seed."""
+def _delete_output_dir(output_dir: Path) -> None:
+    """Delete one run output directory if it exists."""
 
-    return f"seed_{seed}"
+    if output_dir.is_dir():
+        shutil.rmtree(output_dir)
+    elif output_dir.exists():
+        output_dir.unlink()
 
 
 def _prepare_output_dir(
@@ -79,6 +82,7 @@ def _prepare_output_dir(
 
 
 _PETSC_HANDLE_ATTRS = ("_solver", "_snes", "_A", "_b", "_x", "_P_mat")
+RANDOM_ATTEMPT_BUDGET = 8
 
 
 def _destroy_petsc_handles(target: object, *, destroyed_handle_ids: set[int]) -> None:
@@ -122,7 +126,8 @@ class SimulationRunner:
         config: SimulationConfig,
         output_root: str | Path | None = None,
         *,
-        config_source: str | Path | None = None,
+        output_dir_override: str | Path | None = None,
+        sampled_info: dict[str, object] | None = None,
     ):
         if config.seed is None:
             raise ValueError(
@@ -130,70 +135,21 @@ class SimulationRunner:
                 "explicit seed override."
             )
         self.config = realize_simulation_config(config)
-        self.preset = get_preset(self.config.preset)
-        self.config_source = (
-            Path(config_source).resolve() if config_source is not None else None
-        )
+        self.pde = get_pde(self.config.pde)
         self.output_root = (
             Path(output_root) if output_root is not None else self.config.output.path
         )
         if self.output_root is None:
             raise ValueError("SimulationRunner requires an output root directory.")
-
-    @classmethod
-    def from_yaml(
-        cls,
-        path: str | Path,
-        output_root: str | Path,
-        *,
-        seed: int | None = None,
-    ) -> "SimulationRunner":
-        config = load_config(path, seed_override=seed)
-        return cls(config, output_root, config_source=path)
-
-    @classmethod
-    def run_many_from_yaml(
-        cls,
-        path: str | Path,
-        output_root: str | Path,
-        *,
-        n_runs: int,
-        console_level: int = logging.INFO,
-    ) -> list[dict[str, object]]:
-        """Run one YAML config repeatedly with incrementing seeds."""
-
-        if n_runs < 1:
-            raise ValueError("n_runs must be at least 1.")
-
-        initial_runner = cls.from_yaml(path, output_root)
-        base_seed = initial_runner.config.seed
-        if base_seed is None:
-            raise ValueError(
-                "Simulation runs require an explicit seed from the config or an "
-                "explicit seed override."
-            )
-
-        _prepare_output_dir(initial_runner.resolve_output_dir(), reset=True)
-
-        summaries: list[dict[str, object]] = []
-        for seed in range(base_seed, base_seed + n_runs):
-            runner = cls.from_yaml(path, output_root, seed=seed)
-            summaries.append(
-                runner.run(
-                    console_level=console_level,
-                    output_subdir=_seed_output_subdir(seed),
-                    cleanup_output_dir=False,
-                )
-            )
-        return summaries
+        self.output_dir_override = (
+            Path(output_dir_override) if output_dir_override is not None else None
+        )
+        self.sampled_info = {} if sampled_info is None else dict(sampled_info)
 
     def _serialize_config(self) -> dict:
         """Return the resolved simulation config in JSON-compatible form."""
 
         return {
-            "source_path": None
-            if self.config_source is None
-            else str(self.config_source),
             "output_root": str(self.output_root),
             "resolved": _json_compatible(self.config),
         }
@@ -284,8 +240,11 @@ class SimulationRunner:
         run_meta = {
             "status": status,
             "stage": stage,
-            "preset": self.preset.spec.name,
-            "category": self.preset.spec.category,
+            "pde": self.pde.spec.name,
+            "category": self.pde.spec.category,
+            "domain": self.config.domain.type,
+            "seed": self.config.seed,
+            "run_id": self.sampled_info.get("run_id"),
             "output_dir": str(output_dir),
             "log_path": str(output_dir / "simulation.log"),
             "num_dofs": None if result is None else result.num_dofs,
@@ -301,6 +260,7 @@ class SimulationRunner:
                 error=error,
             ),
             "config": self._serialize_config(),
+            "random_sampling": self.sampled_info or None,
             "diagnostics": diagnostics,
             "frames_meta_path": (
                 str(output_dir / "frames_meta.json")
@@ -326,9 +286,10 @@ class SimulationRunner:
     def resolve_output_dir(self, output_subdir: str | None = None) -> Path:
         """Return the target directory for this run."""
 
-        output_dir = (
-            self.output_root / self.preset.spec.category / self.preset.spec.name
-        )
+        if self.output_dir_override is None:
+            output_dir = self.output_root / self.pde.spec.category / self.pde.spec.name
+        else:
+            output_dir = self.output_dir_override
         if output_subdir is not None:
             output_dir = output_dir / output_subdir
         return output_dir
@@ -340,7 +301,7 @@ class SimulationRunner:
         output_subdir: str | None = None,
         cleanup_output_dir: bool = True,
     ) -> dict:
-        spec = self.preset.spec
+        spec = self.pde.spec
         output_dir = self.resolve_output_dir(output_subdir)
         problem = None
         if cleanup_output_dir:
@@ -392,7 +353,7 @@ class SimulationRunner:
             stage = "build_output"
             output = FrameWriter(output_dir, self.config, spec)
             stage = "build_problem"
-            problem = self.preset.build_problem(self.config)
+            problem = self.pde.build_problem(self.config)
 
             stage = "problem_run"
             t_start = time.perf_counter()
@@ -465,8 +426,11 @@ class SimulationRunner:
             teardown_logging()
 
         return {
-            "preset": spec.name,
+            "pde": spec.name,
             "category": spec.category,
+            "domain": self.config.domain.type,
+            "seed": self.config.seed,
+            "run_id": self.sampled_info.get("run_id"),
             "wall_time": result.wall_time,
             "num_dofs": result.num_dofs,
             "solver_converged": result.solver_converged,
@@ -475,3 +439,82 @@ class SimulationRunner:
             "timings": result.diagnostics["timings"],
             "output_dir": str(output_dir),
         }
+
+
+def _sample_random_config_on_rank_zero(seed: int, attempt: int):
+    """Sample on rank 0 and broadcast the result to every MPI rank."""
+
+    from plm_data.sampling import sample_random_runtime_config
+
+    comm = MPI.COMM_WORLD
+    payload: dict[str, object] | None = None
+    if comm.rank == 0:
+        try:
+            payload = {
+                "sampled": sample_random_runtime_config(seed=seed, attempt=attempt),
+                "error": None,
+            }
+        except Exception as exc:
+            payload = {
+                "sampled": None,
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+
+    payload = comm.bcast(payload, root=0)
+    if payload is None:
+        raise RuntimeError("Random sampling broadcast failed.")
+    if payload["error"] is not None:
+        raise RuntimeError(f"Random sampling failed: {payload['error']}")
+    return payload["sampled"]
+
+
+def _cleanup_failed_random_output(output_dir: Path) -> None:
+    """Remove failed random-attempt output once all ranks leave the runner."""
+
+    comm = MPI.COMM_WORLD
+    comm.barrier()
+    if comm.rank == 0:
+        _delete_output_dir(output_dir)
+    comm.barrier()
+
+
+def run_random_simulation(
+    *,
+    seed: int,
+    output_root: str | Path = "./output",
+    console_level: int = logging.INFO,
+    attempt_budget: int = RANDOM_ATTEMPT_BUDGET,
+) -> dict[str, object]:
+    """Run one bounded-retry random simulation from an explicit seed."""
+
+    if attempt_budget < 1:
+        raise ValueError("attempt_budget must be at least 1.")
+
+    failures: list[str] = []
+    output_root = Path(output_root)
+
+    for attempt in range(attempt_budget):
+        sampled = _sample_random_config_on_rank_zero(seed, attempt)
+        output_dir = sampled.output_dir(output_root)
+        sampled_info = sampled.metadata()
+        try:
+            runner = SimulationRunner(
+                sampled.config,
+                output_root,
+                output_dir_override=output_dir,
+                sampled_info=sampled_info,
+            )
+            summary = runner.run(console_level=console_level)
+            summary["random_sampling"] = sampled_info
+            return summary
+        except Exception as exc:
+            failures.append(
+                f"attempt {attempt}: {sampled.pde_name}/{sampled.domain_name} "
+                f"failed with {type(exc).__name__}: {exc}"
+            )
+            _cleanup_failed_random_output(output_dir)
+
+    failure_summary = "; ".join(failures[-3:]) if failures else "no attempts ran"
+    raise RuntimeError(
+        f"Random simulation failed after {attempt_budget} attempts. {failure_summary}"
+    )

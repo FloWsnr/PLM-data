@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from dolfinx import fem
 
-from plm_data.core.config import DomainConfig
+from plm_data.core.runtime_config import DomainConfig
 from plm_data.core.interpolation import function_to_array, function_to_grid
 from plm_data.core.mesh import create_domain
 

@@ -5,7 +5,7 @@ import pytest
 import ufl
 from dolfinx import fem
 
-from plm_data.core.config import FieldExpressionConfig
+from plm_data.core.runtime_config import FieldExpressionConfig
 from plm_data.core.mesh import create_domain
 from plm_data.core.spatial_fields import (
     build_interpolator,
@@ -41,16 +41,6 @@ def points_2d():
     ys = np.linspace(0.0, 1.0, 5)
     xx, yy = np.meshgrid(xs, ys)
     return np.vstack([xx.ravel(), yy.ravel()])  # shape (2, 25)
-
-
-@pytest.fixture
-def points_3d():
-    """Mock point array with shape (3, N) for 3D interpolation tests."""
-    xs = np.linspace(0.0, 1.0, 3)
-    ys = np.linspace(0.0, 1.0, 3)
-    zs = np.linspace(0.0, 1.0, 3)
-    xx, yy, zz = np.meshgrid(xs, ys, zs)
-    return np.vstack([xx.ravel(), yy.ravel(), zz.ravel()])  # shape (3, 27)
 
 
 # ===========================================================================
@@ -479,21 +469,6 @@ class TestBuildInterpolator:
         result = fn(x)
         assert result[0] > result[1] > result[2]
 
-    def test_gaussian_bump_3d(self, points_3d):
-        cfg = {
-            "type": "gaussian_bump",
-            "params": {"amplitude": 2.0, "sigma": 0.3, "center": [0.5, 0.5, 0.5]},
-        }
-        fn = build_interpolator(cfg, {})
-        assert fn is not None
-        result = fn(points_3d)
-        assert result.shape == (points_3d.shape[1],)
-
-        # Center point should be the peak
-        dists = sum((points_3d[i] - 0.5) ** 2 for i in range(3))
-        center_idx = np.argmin(dists)
-        assert result[center_idx] == pytest.approx(2.0, abs=1e-10)
-
     def test_gaussian_bump_param_refs(self, points_2d):
         cfg = {
             "type": "gaussian_bump",
@@ -622,18 +597,3 @@ class TestBuildInterpolator:
     def test_unknown_type_raises(self):
         with pytest.raises(ValueError, match="Unknown field type"):
             build_interpolator({"type": "bogus_type"}, {})
-
-    def test_zero_with_3d_points(self, points_3d):
-        fn = build_interpolator({"type": "zero"}, {})
-        assert fn is not None
-        result = fn(points_3d)
-        assert result.shape == (points_3d.shape[1],)
-        np.testing.assert_array_equal(result, 0.0)
-
-    def test_constant_with_3d_points(self, points_3d):
-        cfg = {"type": "constant", "params": {"value": -2.5}}
-        fn = build_interpolator(cfg, {})
-        assert fn is not None
-        result = fn(points_3d)
-        assert result.shape == (points_3d.shape[1],)
-        np.testing.assert_array_equal(result, -2.5)

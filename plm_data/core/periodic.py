@@ -8,7 +8,7 @@ from typing import Any
 import numpy as np
 from dolfinx import fem
 
-from plm_data.core.config import BoundaryFieldConfig
+from plm_data.core.runtime_config import BoundaryFieldConfig
 from plm_data.core.mesh import DomainGeometry, PeriodicBoundaryMap
 
 
@@ -34,7 +34,7 @@ def require_dolfinx_mpc() -> Any:
 
 
 def require_unverified_periodic_support(
-    preset_name: str,
+    pde_name: str,
     boundary_field: BoundaryFieldConfig,
     detail: str,
 ) -> None:
@@ -42,7 +42,7 @@ def require_unverified_periodic_support(
     if not boundary_field.has_periodic:
         return
     raise NotImplementedError(
-        f"Preset '{preset_name}' does not yet verify periodic boundaries for {detail}."
+        f"PDE '{pde_name}' does not yet verify periodic boundaries for {detail}."
     )
 
 
@@ -170,6 +170,6 @@ def _build_periodic_relation(
     return _relation
 
 
-def _periodic_tol(domain_geom: DomainGeometry) -> float:
+def _periodic_tol(_domain_geom: DomainGeometry) -> float:
     """Return the MPC tolerance used for periodic matching."""
-    return float(500 * np.finfo(domain_geom.mesh.geometry.x.dtype).eps)
+    return float(500 * np.finfo(np.float64).eps)

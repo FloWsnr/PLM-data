@@ -57,10 +57,10 @@ def test_write_gallery_html_requires_gifs(tmp_path):
 def test_collect_gif_runs_uses_run_meta_for_root_directory_label(tmp_path):
     _write_fake_gif(tmp_path / "u.gif")
     (tmp_path / "run_meta.json").write_text(
-        '{"category": "basic", "preset": "heat"}',
+        '{"pde": "heat", "domain": "rectangle"}',
         encoding="utf-8",
     )
 
     runs = collect_gif_runs(tmp_path)
 
-    assert [run.label for run in runs] == ["basic/heat"]
+    assert [run.label for run in runs] == ["heat/rectangle"]

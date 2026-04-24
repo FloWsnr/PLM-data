@@ -8,7 +8,7 @@ import numpy as np
 import ufl
 from dolfinx import default_real_type, fem
 
-from plm_data.core.config import (
+from plm_data.core.runtime_config import (
     CoefficientSmoothingConfig,
     CoefficientStochasticConfig,
     FieldExpressionConfig,
@@ -21,7 +21,7 @@ from plm_data.core.spatial_fields import (
 )
 
 if TYPE_CHECKING:
-    from plm_data.presets.base import ProblemInstance
+    from plm_data.pdes.base import ProblemInstance
 
 _SPLITMIX_CONST_0 = np.uint64(0x9E3779B97F4A7C15)
 _SPLITMIX_CONST_1 = np.uint64(0xBF58476D1CE4E5B9)

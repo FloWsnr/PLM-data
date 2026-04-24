@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 from dolfinx import fem
 
-from plm_data.core.config import (
+from plm_data.core.runtime_config import (
     BoundaryConditionConfig,
     DomainConfig,
     FieldExpressionConfig,
@@ -21,13 +21,17 @@ from plm_data.core.config import (
 from plm_data.core.formats.vtk_writer import VTKWriter
 from plm_data.core.mesh import create_domain
 from plm_data.core.output import FrameWriter
-from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
-from plm_data.presets import get_preset
-from tests.conftest import output_fields, scalar_expr
-from tests.preset_matrix import (
+from plm_data.core.solver_strategies import (
+    CONSTANT_LHS_SCALAR_NONSYMMETRIC,
+    CONSTANT_LHS_SCALAR_SPD,
+)
+from plm_data.pdes import get_pde
+from tests.runtime_helpers import (
     boundary_field_config,
     constant,
-    flow_solver_config,
+    direct_solver_config,
+    output_fields,
+    scalar_expr,
     solver_config,
 )
 
@@ -38,7 +42,7 @@ def _scalar_heat_config(tmp_path, formats):
     """Build a minimal scalar heat config with the given output formats."""
 
     return SimulationConfig(
-        preset="heat",
+        pde="heat",
         parameters={},
         domain=DomainConfig(
             type="rectangle",
@@ -79,56 +83,70 @@ def _scalar_heat_config(tmp_path, formats):
     )
 
 
-def _vector_navier_stokes_config(tmp_path, formats):
-    """Build a Navier-Stokes config (velocity vector + pressure scalar)."""
+def _vector_darcy_config(tmp_path, formats):
+    """Build a Darcy config with a derived vector velocity output."""
 
     return SimulationConfig(
-        preset="navier_stokes",
-        parameters={"Re": 25.0, "k": 1.0},
+        pde="darcy",
+        parameters={"storage": 1.0, "porosity": 0.6},
         domain=DomainConfig(
             type="rectangle",
             params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
         ),
         inputs={
-            "velocity": InputConfig(
+            "pressure": InputConfig(
                 source=scalar_expr("none"),
-                initial_condition=FieldExpressionConfig(
-                    components={
-                        "x": FieldExpressionConfig(
-                            type="gaussian_bump",
-                            params={
-                                "amplitude": 0.5,
-                                "sigma": 0.15,
-                                "center": [0.5, 0.5],
-                            },
-                        ),
-                        "y": FieldExpressionConfig(
-                            type="constant", params={"value": 0.0}
-                        ),
-                    }
+                initial_condition=scalar_expr(
+                    "gaussian_bump",
+                    amplitude=0.8,
+                    sigma=0.16,
+                    center=[0.45, 0.52],
                 ),
-            )
+            ),
+            "concentration": InputConfig(
+                source=scalar_expr("none"),
+                initial_condition=scalar_expr(
+                    "gaussian_bump",
+                    amplitude=0.5,
+                    sigma=0.14,
+                    center=[0.55, 0.5],
+                ),
+            ),
         },
         boundary_conditions={
-            "velocity": boundary_field_config(
+            "pressure": boundary_field_config(
                 {
-                    "x-": _dirichlet_vector_zero(),
-                    "x+": _dirichlet_vector_zero(),
-                    "y-": _dirichlet_vector_zero(),
-                    "y+": _dirichlet_vector([1.0, 0.0]),
+                    "x-": _dirichlet_scalar(1.0),
+                    "x+": _dirichlet_scalar(0.0),
+                    "y-": _neumann_zero(),
+                    "y+": _neumann_zero(),
                 }
-            )
+            ),
+            "concentration": boundary_field_config(
+                {
+                    "x-": _neumann_zero(),
+                    "x+": _neumann_zero(),
+                    "y-": _neumann_zero(),
+                    "y+": _neumann_zero(),
+                }
+            ),
         },
         output=OutputConfig(
             path=tmp_path,
             resolution=[4, 4],
             num_frames=1,
             formats=formats,
-            fields=output_fields(velocity="components", pressure="scalar"),
+            fields=output_fields(
+                pressure="scalar",
+                concentration="hidden",
+                velocity="components",
+                speed="hidden",
+            ),
         ),
-        solver=flow_solver_config(),
+        solver=direct_solver_config(CONSTANT_LHS_SCALAR_NONSYMMETRIC),
         time=TimeConfig(dt=0.01, t_end=0.01),
         seed=42,
+        coefficients={"mobility": constant(0.2), "dispersion": constant(0.01)},
     )
 
 
@@ -139,31 +157,10 @@ def _neumann_zero():
     )
 
 
-def _dirichlet_vector_zero():
+def _dirichlet_scalar(value):
     return BoundaryConditionConfig(
         type="dirichlet",
-        value=FieldExpressionConfig(
-            components={
-                "x": FieldExpressionConfig(type="constant", params={"value": 0.0}),
-                "y": FieldExpressionConfig(type="constant", params={"value": 0.0}),
-            }
-        ),
-    )
-
-
-def _dirichlet_vector(values):
-    return BoundaryConditionConfig(
-        type="dirichlet",
-        value=FieldExpressionConfig(
-            components={
-                "x": FieldExpressionConfig(
-                    type="constant", params={"value": values[0]}
-                ),
-                "y": FieldExpressionConfig(
-                    type="constant", params={"value": values[1]}
-                ),
-            }
-        ),
+        value=FieldExpressionConfig(type="constant", params={"value": value}),
     )
 
 
@@ -187,7 +184,7 @@ class TestNumpyWriter:
     def test_scalar_output(self, tmp_path, caplog):
         config = _scalar_heat_config(tmp_path, formats=["numpy"])
         output_dir = tmp_path / "out"
-        spec = get_preset("heat").spec
+        spec = get_pde("heat").spec
         writer = FrameWriter(output_dir, config, spec)
 
         func = _create_scalar_function(config)
@@ -224,7 +221,7 @@ class TestNumpyWriter:
     def test_static_fields_are_skipped(self, tmp_path, caplog):
         config = _scalar_heat_config(tmp_path, formats=["numpy"])
         output_dir = tmp_path / "out"
-        spec = replace(get_preset("heat").spec, static_fields=["u"])
+        spec = replace(get_pde("heat").spec, static_fields=["u"])
         writer = FrameWriter(output_dir, config, spec)
 
         func = _create_scalar_function(config)
@@ -246,7 +243,7 @@ class TestNumpyWriter:
     def test_nonfinite_base_field_fails_fast(self, tmp_path):
         config = _scalar_heat_config(tmp_path, formats=["numpy"])
         output_dir = tmp_path / "out"
-        spec = get_preset("heat").spec
+        spec = get_pde("heat").spec
         writer = FrameWriter(output_dir, config, spec)
 
         func = _create_scalar_function(config)
@@ -256,12 +253,12 @@ class TestNumpyWriter:
             writer.write_frame({"u": func}, t=0.0)
 
     def test_vector_components_output(self, tmp_path):
-        config = _vector_navier_stokes_config(tmp_path, formats=["numpy"])
+        config = _vector_darcy_config(tmp_path, formats=["numpy"])
         output_dir = tmp_path / "out"
-        spec = get_preset("navier_stokes").spec
+        spec = get_pde("darcy").spec
 
-        preset = get_preset("navier_stokes")
-        problem = preset.build_problem(config)
+        pde = get_pde("darcy")
+        problem = pde.build_problem(config)
         writer = FrameWriter(output_dir, config, spec)
         result = problem.run(writer)
         writer.finalize(result.diagnostics)
@@ -277,12 +274,11 @@ class TestNumpyWriter:
         meta = json.loads((output_dir / "frames_meta.json").read_text())
         assert meta["timings"]["grid_interpolation_calls"] > 0
         assert meta["diagnostics"]["solver_health"]["applied"] is True
-        assert meta["diagnostics"]["runtime_health"]["applied"] is True
 
     def test_sampled_grid_output_bypasses_interpolation(self, tmp_path):
         config = _scalar_heat_config(tmp_path, formats=["numpy"])
         output_dir = tmp_path / "out"
-        spec = get_preset("heat").spec
+        spec = get_pde("heat").spec
         writer = FrameWriter(output_dir, config, spec)
 
         frame0 = np.arange(16, dtype=float).reshape(4, 4)
@@ -308,7 +304,7 @@ class TestGifWriter:
     def test_scalar_output(self, tmp_path):
         config = _scalar_heat_config(tmp_path, formats=["gif"])
         output_dir = tmp_path / "out"
-        spec = get_preset("heat").spec
+        spec = get_pde("heat").spec
         writer = FrameWriter(output_dir, config, spec)
 
         func = _create_scalar_function(config)
@@ -324,12 +320,12 @@ class TestGifWriter:
         assert not (output_dir / "u.npy").exists()
 
     def test_vector_components_output(self, tmp_path):
-        config = _vector_navier_stokes_config(tmp_path, formats=["gif"])
+        config = _vector_darcy_config(tmp_path, formats=["gif"])
         output_dir = tmp_path / "out"
-        spec = get_preset("navier_stokes").spec
+        spec = get_pde("darcy").spec
 
-        preset = get_preset("navier_stokes")
-        problem = preset.build_problem(config)
+        pde = get_pde("darcy")
+        problem = pde.build_problem(config)
         writer = FrameWriter(output_dir, config, spec)
         problem.run(writer)
         writer.finalize()
@@ -344,7 +340,7 @@ class TestVTKWriter:
     def test_scalar_output_uses_native_fem_mesh(self, tmp_path):
         config = _scalar_heat_config(tmp_path, formats=["vtk"])
         output_dir = tmp_path / "out"
-        spec = get_preset("heat").spec
+        spec = get_pde("heat").spec
         writer = FrameWriter(output_dir, config, spec)
 
         func = _create_scalar_function(config)
@@ -390,7 +386,7 @@ class TestVideoWriter:
     def test_scalar_output(self, tmp_path):
         config = _scalar_heat_config(tmp_path, formats=["video"])
         output_dir = tmp_path / "out"
-        spec = get_preset("heat").spec
+        spec = get_pde("heat").spec
         writer = FrameWriter(output_dir, config, spec)
 
         func = _create_scalar_function(config)
@@ -401,12 +397,12 @@ class TestVideoWriter:
         assert video_path.stat().st_size > 0
 
     def test_vector_components_output(self, tmp_path):
-        config = _vector_navier_stokes_config(tmp_path, formats=["video"])
+        config = _vector_darcy_config(tmp_path, formats=["video"])
         output_dir = tmp_path / "out"
-        spec = get_preset("navier_stokes").spec
+        spec = get_pde("darcy").spec
 
-        preset = get_preset("navier_stokes")
-        problem = preset.build_problem(config)
+        pde = get_pde("darcy")
+        problem = pde.build_problem(config)
         writer = FrameWriter(output_dir, config, spec)
         problem.run(writer)
         writer.finalize()

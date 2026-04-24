@@ -4,16 +4,10 @@ import importlib
 import pkgutil
 
 from plm_data.boundary_conditions.base import (
-    COMMON_BOUNDARY_FAMILIES,
-    BoundaryFamilySpec,
     BoundaryOperatorParameterSpec,
     BoundaryOperatorSpec,
-    get_boundary_family_spec,
     get_boundary_operator_spec,
-    has_boundary_family_spec,
-    list_boundary_family_specs,
     list_boundary_operator_specs,
-    register_boundary_family_spec,
     register_boundary_operator_spec,
 )
 
@@ -27,7 +21,6 @@ def _load_package_modules(package_name: str) -> None:
 
 
 _load_package_modules(__name__ + ".operators")
-_load_package_modules(__name__ + ".families")
 
 SCALAR_STANDARD_BOUNDARY_OPERATORS = {
     name: get_boundary_operator_spec(name)
@@ -43,18 +36,12 @@ MAXWELL_BOUNDARY_OPERATORS = {
 }
 
 __all__ = [
-    "COMMON_BOUNDARY_FAMILIES",
-    "BoundaryFamilySpec",
     "BoundaryOperatorParameterSpec",
     "BoundaryOperatorSpec",
     "MAXWELL_BOUNDARY_OPERATORS",
     "SCALAR_STANDARD_BOUNDARY_OPERATORS",
     "VECTOR_STANDARD_BOUNDARY_OPERATORS",
-    "get_boundary_family_spec",
     "get_boundary_operator_spec",
-    "has_boundary_family_spec",
-    "list_boundary_family_specs",
     "list_boundary_operator_specs",
-    "register_boundary_family_spec",
     "register_boundary_operator_spec",
 ]

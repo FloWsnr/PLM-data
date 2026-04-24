@@ -10,13 +10,13 @@ from plm_data.core.boundary_conditions import (
     build_natural_bc_forms,
     build_vector_natural_bc_forms,
 )
-from plm_data.core.config import (
+from plm_data.core.runtime_config import (
     BoundaryConditionConfig,
     DomainConfig,
     FieldExpressionConfig,
 )
 from plm_data.core.mesh import create_domain
-from tests.preset_matrix import boundary_field_config
+from tests.runtime_helpers import boundary_field_config
 
 
 def constant(value):

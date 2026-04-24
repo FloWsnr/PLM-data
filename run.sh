@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
     cat <<'EOF'
-Usage: ./run.sh [-n NPROCS] [--core-list LIST] <plm_data args...>
+Usage: ./run.sh [-n NPROCS] [--core-list LIST] --seed SEED [plm_data options...]
 
 Wrapper options:
   -n NPROCS          Number of MPI ranks / physical cores to use (default: 1)
@@ -11,9 +11,9 @@ Wrapper options:
   -h, --help         Show this help
 
 Examples:
-  ./run.sh run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
-  ./run.sh -n 4 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
-  ./run.sh -n 4 --core-list 0-3 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
+  ./run.sh --seed 1234
+  ./run.sh -n 4 --seed 1234
+  ./run.sh -n 4 --core-list 0-3 --seed 1234
 EOF
 }
 
@@ -89,8 +89,20 @@ taskset_cpu_list_for_core_list() {
 
 # Activate conda environment.
 # Override with PLM_CONDA_ENV to use a non-default environment, e.g.:
-#   PLM_CONDA_ENV=fenicsx-env-complex ./run.sh -n 4 run configs/basic/heat/2d_localized_blob_diffusion.yaml --output-dir ./output
-eval "$(conda shell.bash hook)"
+#   PLM_CONDA_ENV=fenicsx-env-complex ./run.sh -n 4 --seed 1234
+if command -v conda >/dev/null 2>&1; then
+    eval "$(conda shell.bash hook)"
+elif [[ -f "$HOME/miniforge3/etc/profile.d/conda.sh" ]]; then
+    # Non-interactive shells used by automation often do not load conda onto PATH.
+    # Source the local profile script without hard-coding the binary after that.
+    # shellcheck source=/dev/null
+    source "$HOME/miniforge3/etc/profile.d/conda.sh"
+elif [[ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]]; then
+    # shellcheck source=/dev/null
+    source "$HOME/miniconda3/etc/profile.d/conda.sh"
+else
+    die "conda is required but was not found on PATH or under ~/miniforge3 / ~/miniconda3"
+fi
 conda activate "${PLM_CONDA_ENV:-fenicsx-env}"
 
 NPROCS=1
@@ -128,7 +140,6 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-[[ $# -gt 0 ]] || die "missing plm_data command; run './run.sh --help' for usage"
 is_positive_int "$NPROCS" || die "-n expects a positive integer, got '$NPROCS'"
 command -v lscpu >/dev/null 2>&1 || die "lscpu is required for pinned-core launches"
 

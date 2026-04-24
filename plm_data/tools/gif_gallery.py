@@ -54,10 +54,10 @@ def _run_label(root_dir: Path, directory: Path) -> str:
             meta = None
 
         if isinstance(meta, dict):
-            category = meta.get("category")
-            preset = meta.get("preset")
-            if isinstance(category, str) and isinstance(preset, str):
-                return f"{category}/{preset}"
+            pde = meta.get("pde")
+            domain = meta.get("domain")
+            if isinstance(pde, str) and isinstance(domain, str):
+                return f"{pde}/{domain}"
 
     return directory.name
 

@@ -1,4 +1,4 @@
-"""Runtime health tracking for solver and preset-level diagnostics."""
+"""Runtime health tracking for solver and PDE-level diagnostics."""
 
 from collections.abc import Mapping
 from typing import Any

@@ -1,12 +1,11 @@
 """Sampling and validation metadata for the serpentine-channel domain."""
 
 from plm_data.domains.base import (
-    COMMON_BOUNDARY_FAMILIES,
-    COMMON_SCALAR_INITIAL_CONDITION_FAMILIES,
     DomainParameterSpec,
     DomainSpec,
     register_domain_spec,
 )
+from plm_data.domains.validators import validate_serpentine_channel_params
 
 
 DOMAIN_SPEC = register_domain_spec(
@@ -65,9 +64,7 @@ DOMAIN_SPEC = register_domain_spec(
             "solid": ("walls",),
             "open": ("inlet", "outlet"),
         },
-        allowed_boundary_families=COMMON_BOUNDARY_FAMILIES
-        + ("open_channel", "inlet_outlet_drive"),
-        allowed_initial_condition_families=COMMON_SCALAR_INITIAL_CONDITION_FAMILIES,
         coordinate_regions=("interior", "inlet_lane", "outlet_lane", "bend"),
+        validate_params=validate_serpentine_channel_params,
     )
 )

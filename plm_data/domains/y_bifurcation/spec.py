@@ -1,12 +1,11 @@
 """Sampling and validation metadata for the Y-bifurcation domain."""
 
 from plm_data.domains.base import (
-    COMMON_BOUNDARY_FAMILIES,
-    COMMON_SCALAR_INITIAL_CONDITION_FAMILIES,
     DomainParameterSpec,
     DomainSpec,
     register_domain_spec,
 )
+from plm_data.domains.validators import validate_y_bifurcation_params
 
 
 DOMAIN_SPEC = register_domain_spec(
@@ -68,9 +67,6 @@ DOMAIN_SPEC = register_domain_spec(
             "solid": ("walls",),
             "open": ("inlet", "outlet_upper", "outlet_lower"),
         },
-        allowed_boundary_families=COMMON_BOUNDARY_FAMILIES
-        + ("open_channel", "branch_drive", "inlet_outlet_drive"),
-        allowed_initial_condition_families=COMMON_SCALAR_INITIAL_CONDITION_FAMILIES,
         coordinate_regions=(
             "interior",
             "trunk",
@@ -78,5 +74,6 @@ DOMAIN_SPEC = register_domain_spec(
             "lower_branch",
             "junction",
         ),
+        validate_params=validate_y_bifurcation_params,
     )
 )

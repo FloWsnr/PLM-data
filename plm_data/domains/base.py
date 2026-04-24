@@ -9,17 +9,6 @@ import numpy as np
 import ufl
 from dolfinx import mesh
 
-from plm_data.boundary_conditions import (
-    COMMON_BOUNDARY_FAMILIES as _COMMON_BOUNDARY_FAMILIES,
-    get_boundary_family_spec,
-    has_boundary_family_spec,
-)
-from plm_data.initial_conditions import (
-    COMMON_SCALAR_INITIAL_CONDITION_FAMILIES as _COMMON_SCALAR_INITIAL_CONDITION_FAMILIES,
-    get_initial_condition_spec,
-    has_initial_condition_spec,
-)
-
 
 @dataclass
 class PeriodicBoundaryMap:
@@ -76,6 +65,18 @@ class DomainGeometry:
 
 
 @dataclass(frozen=True)
+class CoordinateSample:
+    """One sampled coordinate-region point plus a domain-local scale."""
+
+    point: list[float]
+    scale: float
+
+
+DomainParameterValidator = Callable[[Any], None]
+CoordinateRegionSampler = Callable[[Any, Any], CoordinateSample]
+
+
+@dataclass(frozen=True)
 class DomainParameterSpec:
     """Sampling-facing declaration for one domain parameter."""
 
@@ -100,10 +101,14 @@ class DomainSpec:
     boundary_roles: dict[str, tuple[str, ...]]
     dynamic_boundary_patterns: tuple[str, ...] = ()
     periodic_pairs: tuple[tuple[str, str], ...] = ()
-    allowed_boundary_families: tuple[str, ...] = ()
-    allowed_initial_condition_families: tuple[str, ...] = ()
+    supported_boundary_scenarios: tuple[str, ...] = ()
+    supported_initial_condition_scenarios: tuple[str, ...] = ()
     coordinate_regions: tuple[str, ...] = ("interior",)
     description: str = ""
+    validate_params: DomainParameterValidator | None = None
+    coordinate_region_samplers: dict[str, CoordinateRegionSampler] = field(
+        default_factory=dict
+    )
 
     def __post_init__(self) -> None:
         boundary_names = set(self.boundary_names)
@@ -130,30 +135,14 @@ class DomainSpec:
                     f"Domain spec '{self.name}' parameter key '{name}' does not "
                     f"match DomainParameterSpec.name '{parameter.name}'."
                 )
-        for family_name in self.allowed_boundary_families:
-            if not has_boundary_family_spec(family_name):
-                raise ValueError(
-                    f"Domain spec '{self.name}' references unknown boundary-condition "
-                    f"family '{family_name}'."
-                )
-            family_spec = get_boundary_family_spec(family_name)
-            if not family_spec.is_compatible_with_domain(self):
-                raise ValueError(
-                    f"Boundary-condition family '{family_name}' is not compatible "
-                    f"with domain spec '{self.name}'."
-                )
-        for family_name in self.allowed_initial_condition_families:
-            if not has_initial_condition_spec(family_name):
-                raise ValueError(
-                    f"Domain spec '{self.name}' references unknown initial-condition "
-                    f"family '{family_name}'."
-                )
-            family_spec = get_initial_condition_spec(family_name)
-            if not family_spec.is_compatible_with_domain(self):
-                raise ValueError(
-                    f"Initial-condition family '{family_name}' is not compatible "
-                    f"with domain spec '{self.name}'."
-                )
+        missing_samplers = set(self.coordinate_region_samplers) - set(
+            self.coordinate_regions
+        )
+        if missing_samplers:
+            raise ValueError(
+                f"Domain spec '{self.name}' has samplers for undeclared coordinate "
+                f"regions {sorted(missing_samplers)}."
+            )
 
 
 DomainFactory = Callable[[Any], DomainGeometry]
@@ -172,9 +161,6 @@ _DOMAIN_REGISTRY: dict[str, DomainFactory] = {}
 _DOMAIN_SPEC_REGISTRY: dict[str, DomainSpec] = {}
 _GMSH_DOMAIN_REGISTRY: dict[str, GmshDomainSpec] = {}
 _DOMAIN_FACTORY_MODULES_LOADED = False
-
-COMMON_SCALAR_INITIAL_CONDITION_FAMILIES = _COMMON_SCALAR_INITIAL_CONDITION_FAMILIES
-COMMON_BOUNDARY_FAMILIES = _COMMON_BOUNDARY_FAMILIES
 
 
 def register_domain(name: str) -> Callable[[DomainFactory], DomainFactory]:
@@ -204,6 +190,26 @@ def get_domain_spec(name: str) -> DomainSpec:
         available = ", ".join(sorted(_DOMAIN_SPEC_REGISTRY))
         raise ValueError(f"Unknown domain spec '{name}'. Available: {available}")
     return _DOMAIN_SPEC_REGISTRY[name]
+
+
+def sample_coordinate_region(
+    domain: Any,
+    region: str,
+    context: Any,
+) -> CoordinateSample:
+    """Sample one point from a declared domain coordinate region."""
+    spec = get_domain_spec(domain.type)
+    if region not in spec.coordinate_regions:
+        raise ValueError(
+            f"Domain '{domain.type}' does not declare coordinate region '{region}'. "
+            f"Available: {sorted(spec.coordinate_regions)}."
+        )
+    if region not in spec.coordinate_region_samplers:
+        raise ValueError(
+            f"Domain '{domain.type}' does not expose a sampler for coordinate "
+            f"region '{region}'."
+        )
+    return spec.coordinate_region_samplers[region](context, domain)
 
 
 def _ensure_domain_factory_modules_loaded() -> None:

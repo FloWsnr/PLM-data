@@ -1,12 +1,11 @@
 """Sampling and validation metadata for the L-shaped domain."""
 
 from plm_data.domains.base import (
-    COMMON_BOUNDARY_FAMILIES,
-    COMMON_SCALAR_INITIAL_CONDITION_FAMILIES,
     DomainParameterSpec,
     DomainSpec,
     register_domain_spec,
 )
+from plm_data.domains.validators import validate_l_shape_params
 
 
 DOMAIN_SPEC = register_domain_spec(
@@ -63,8 +62,7 @@ DOMAIN_SPEC = register_domain_spec(
             "notch": ("notch",),
             "walls": ("outer", "notch"),
         },
-        allowed_boundary_families=COMMON_BOUNDARY_FAMILIES + ("notch_drive",),
-        allowed_initial_condition_families=COMMON_SCALAR_INITIAL_CONDITION_FAMILIES,
         coordinate_regions=("interior", "lower_arm", "left_arm", "near_notch"),
+        validate_params=validate_l_shape_params,
     )
 )

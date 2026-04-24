@@ -4,7 +4,7 @@ import pytest
 import ufl
 from dolfinx import fem
 
-from plm_data.core.config import DomainConfig, FieldExpressionConfig
+from plm_data.core.runtime_config import DomainConfig, FieldExpressionConfig
 from plm_data.core.mesh import create_domain
 from plm_data.core.source_terms import build_source_form
 

@@ -3,7 +3,7 @@
 import ufl
 from dolfinx import fem
 
-from plm_data.core.config import BoundaryConditionConfig, BoundaryFieldConfig
+from plm_data.core.runtime_config import BoundaryConditionConfig, BoundaryFieldConfig
 from plm_data.core.mesh import DomainGeometry
 from plm_data.core.spatial_fields import (
     build_interpolator,
@@ -299,7 +299,7 @@ def build_vector_natural_bc_forms(
             if bc.type == "robin":
                 raise ValueError(
                     "Shared vector Robin is intentionally unsupported. "
-                    "Use vector neumann data or a preset-specific boundary type."
+                    "Use vector neumann data or a PDE-specific boundary type."
                 )
             if bc.type != "neumann":
                 continue

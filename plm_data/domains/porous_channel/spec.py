@@ -1,12 +1,11 @@
 """Sampling and validation metadata for the porous-channel domain."""
 
 from plm_data.domains.base import (
-    COMMON_BOUNDARY_FAMILIES,
-    COMMON_SCALAR_INITIAL_CONDITION_FAMILIES,
     DomainParameterSpec,
     DomainSpec,
     register_domain_spec,
 )
+from plm_data.domains.validators import validate_porous_channel_params
 
 
 DOMAIN_SPEC = register_domain_spec(
@@ -107,9 +106,6 @@ DOMAIN_SPEC = register_domain_spec(
             "solid": ("walls", "obstacles"),
             "open": ("inlet", "outlet"),
         },
-        allowed_boundary_families=COMMON_BOUNDARY_FAMILIES
-        + ("open_channel", "porous_obstacle_drive", "inlet_outlet_drive"),
-        allowed_initial_condition_families=COMMON_SCALAR_INITIAL_CONDITION_FAMILIES,
         coordinate_regions=(
             "interior",
             "pore_space",
@@ -117,5 +113,6 @@ DOMAIN_SPEC = register_domain_spec(
             "downstream",
             "near_obstacles",
         ),
+        validate_params=validate_porous_channel_params,
     )
 )

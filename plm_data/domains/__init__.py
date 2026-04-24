@@ -2,15 +2,14 @@
 
 import importlib
 import pkgutil
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 _DOMAIN_PACKAGE_SKIP_MODULES = {"base", "gmsh", "helpers", "validation"}
 _DOMAIN_MODULES_LOADED = False
 _DOMAIN_FACTORY_MODULES_LOADED = False
 
 _BASE_EXPORTS = {
-    "COMMON_BOUNDARY_FAMILIES",
-    "COMMON_SCALAR_INITIAL_CONDITION_FAMILIES",
+    "CoordinateSample",
     "DomainGeometry",
     "DomainParameterSpec",
     "DomainSpec",
@@ -28,6 +27,7 @@ _BASE_EXPORTS = {
     "register_domain_spec",
     "register_gmsh_domain",
     "register_gmsh_planar_domain",
+    "sample_coordinate_region",
 }
 _VALIDATION_EXPORTS = {
     "DomainConfigLike",
@@ -35,9 +35,36 @@ _VALIDATION_EXPORTS = {
     "validate_domain_params",
 }
 
+if TYPE_CHECKING:
+    from plm_data.domains.base import (
+        CoordinateSample,
+        DomainGeometry,
+        DomainParameterSpec,
+        DomainSpec,
+        PeriodicBoundaryMap,
+        build_gmsh_domain_model,
+        build_gmsh_planar_domain_model,
+        create_domain,
+        get_domain_spec,
+        get_gmsh_domain_dimension,
+        is_gmsh_domain,
+        is_gmsh_planar_domain,
+        list_domain_specs,
+        list_domains,
+        register_domain,
+        register_domain_spec,
+        register_gmsh_domain,
+        register_gmsh_planar_domain,
+        sample_coordinate_region,
+    )
+    from plm_data.domains.validation import (
+        DomainConfigLike,
+        infer_domain_dimension,
+        validate_domain_params,
+    )
+
 __all__ = [
-    "COMMON_BOUNDARY_FAMILIES",
-    "COMMON_SCALAR_INITIAL_CONDITION_FAMILIES",
+    "CoordinateSample",
     "DomainConfigLike",
     "DomainGeometry",
     "DomainParameterSpec",
@@ -57,6 +84,7 @@ __all__ = [
     "register_domain_spec",
     "register_gmsh_domain",
     "register_gmsh_planar_domain",
+    "sample_coordinate_region",
     "validate_domain_params",
 ]
 

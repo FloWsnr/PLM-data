@@ -1,12 +1,11 @@
 """Sampling and validation metadata for the multi-hole plate domain."""
 
 from plm_data.domains.base import (
-    COMMON_BOUNDARY_FAMILIES,
-    COMMON_SCALAR_INITIAL_CONDITION_FAMILIES,
     DomainParameterSpec,
     DomainSpec,
     register_domain_spec,
 )
+from plm_data.domains.validators import validate_multi_hole_plate_params
 
 
 DOMAIN_SPEC = register_domain_spec(
@@ -56,8 +55,7 @@ DOMAIN_SPEC = register_domain_spec(
             "holes": ("holes",),
             "solid": ("outer", "holes"),
         },
-        allowed_boundary_families=COMMON_BOUNDARY_FAMILIES + ("outer_hole_drive",),
-        allowed_initial_condition_families=COMMON_SCALAR_INITIAL_CONDITION_FAMILIES,
         coordinate_regions=("interior", "near_holes", "between_holes", "near_outer"),
+        validate_params=validate_multi_hole_plate_params,
     )
 )

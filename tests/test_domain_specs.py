@@ -1,6 +1,6 @@
 """Tests for first-class domain specifications."""
 
-from plm_data.core.config import DomainConfig
+from plm_data.core.runtime_config import DomainConfig
 from plm_data.core.mesh import create_domain
 from plm_data.domains import (
     get_gmsh_domain_dimension,
@@ -17,11 +17,9 @@ def test_all_current_domains_have_specs():
     expected = {
         "airfoil_channel",
         "annulus",
-        "box",
         "channel_obstacle",
         "disk",
         "dumbbell",
-        "interval",
         "l_shape",
         "multi_hole_plate",
         "parallelogram",
@@ -36,7 +34,7 @@ def test_all_current_domains_have_specs():
     assert set(specs) == expected
     for name, spec in specs.items():
         assert spec.name == name
-        assert spec.dimension in {1, 2, 3}
+        assert spec.dimension == 2
         assert spec.boundary_names
         assert spec.boundary_roles["all"]
         assert set(spec.boundary_roles["all"]).issubset(set(spec.boundary_names))
@@ -53,9 +51,10 @@ def test_rectangle_spec_exposes_boundary_roles_and_periodic_pairs():
     assert spec.boundary_roles["x_pair"] == ("x-", "x+")
     assert spec.boundary_roles["walls"] == ("x-", "x+", "y-", "y+")
     assert spec.periodic_pairs == (("x-", "x+"), ("y-", "y+"))
-    assert "periodic_axis" in spec.allowed_boundary_families
-    assert "gaussian_blobs" in spec.allowed_initial_condition_families
-    assert "radial_cosine" in spec.allowed_initial_condition_families
+    assert "scalar_all_neumann" in spec.supported_boundary_scenarios
+    assert "heat_gaussian_bump" in spec.supported_initial_condition_scenarios
+    assert "center" in spec.coordinate_regions
+    assert "left_half" in spec.coordinate_regions
 
 
 def test_domain_registry_keeps_moved_rectangle_factory_available():

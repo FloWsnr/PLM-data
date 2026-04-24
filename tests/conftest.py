@@ -2,7 +2,7 @@
 
 import pytest
 
-from plm_data.core.config import (
+from plm_data.core.runtime_config import (
     BoundaryConditionConfig,
     DomainConfig,
     InputConfig,
@@ -11,7 +11,7 @@ from plm_data.core.config import (
     TimeConfig,
 )
 from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
-from tests.preset_matrix import (
+from tests.runtime_helpers import (
     boundary_field_config,
     constant,
     direct_solver_config,
@@ -36,7 +36,7 @@ def direct_solver():
 @pytest.fixture
 def heat_config(tmp_path, rectangle_domain, direct_solver):
     return SimulationConfig(
-        preset="heat",
+        pde="heat",
         parameters={},
         domain=rectangle_domain,
         inputs={

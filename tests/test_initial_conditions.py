@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from dolfinx import fem
 
-from plm_data.core.config import FieldExpressionConfig
+from plm_data.core.runtime_config import FieldExpressionConfig
 from plm_data.core.initial_conditions import apply_ic, apply_vector_ic
 from plm_data.core.mesh import create_domain
 

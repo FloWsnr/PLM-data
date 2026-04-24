@@ -1,12 +1,11 @@
 """Sampling and validation metadata for the dumbbell domain."""
 
 from plm_data.domains.base import (
-    COMMON_BOUNDARY_FAMILIES,
-    COMMON_SCALAR_INITIAL_CONDITION_FAMILIES,
     DomainParameterSpec,
     DomainSpec,
     register_domain_spec,
 )
+from plm_data.domains.validators import validate_dumbbell_params
 
 
 DOMAIN_SPEC = register_domain_spec(
@@ -58,8 +57,7 @@ DOMAIN_SPEC = register_domain_spec(
             "outer": ("outer",),
             "walls": ("outer",),
         },
-        allowed_boundary_families=COMMON_BOUNDARY_FAMILIES,
-        allowed_initial_condition_families=COMMON_SCALAR_INITIAL_CONDITION_FAMILIES,
         coordinate_regions=("interior", "left_lobe", "right_lobe", "neck"),
+        validate_params=validate_dumbbell_params,
     )
 )

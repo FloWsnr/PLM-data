@@ -10,7 +10,7 @@ import numpy as np
 from dolfinx import fem
 from mpi4py import MPI
 
-from plm_data.core.config import SimulationConfig
+from plm_data.core.runtime_config import SimulationConfig
 from plm_data.core.diagnostics import build_output_health_report
 from plm_data.core.formats.gif_writer import GifWriter
 from plm_data.core.formats.numpy_writer import NumpyWriter
@@ -19,7 +19,7 @@ from plm_data.core.formats.vtk_writer import VTKWriter
 from plm_data.core.health import combine_health_status
 from plm_data.core.interpolation import InterpolationCache, function_to_grid
 from plm_data.core.logging import get_logger
-from plm_data.presets.metadata import ConcreteOutputSpec, OutputSpec, PresetSpec
+from plm_data.pdes.metadata import ConcreteOutputSpec, OutputSpec, PDESpec
 
 GridWriter = NumpyWriter | GifWriter | VideoWriter
 FEMWriter = VTKWriter
@@ -55,7 +55,7 @@ class OutputTimingStats:
 class FrameWriter:
     """Capture simulation snapshots and delegate to format-specific writers."""
 
-    def __init__(self, output_dir: Path, config: SimulationConfig, spec: PresetSpec):
+    def __init__(self, output_dir: Path, config: SimulationConfig, spec: PDESpec):
         self.output_dir = output_dir
         self.config = config
         self.spec = spec
@@ -598,6 +598,7 @@ class FrameWriter:
             "times": self.frame_times,
             "field_names": self.field_names,
             "output_resolution": self.config.output.resolution,
+            "pde": self.config.pde,
             "domain_type": self.config.domain.type,
             "domain_params": self.config.domain.params,
             "expected_outputs": [

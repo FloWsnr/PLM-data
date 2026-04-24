@@ -10,7 +10,7 @@ from dolfinx import mesh as dmesh
 from mpi4py import MPI
 
 import plm_data.core.mesh as mesh_module
-from plm_data.core.config import DomainConfig
+from plm_data.core.runtime_config import DomainConfig
 from plm_data.core.mesh import create_domain
 
 HAS_GMSH = importlib.util.find_spec("gmsh") is not None

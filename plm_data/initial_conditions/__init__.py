@@ -4,13 +4,13 @@ import importlib
 import pkgutil
 
 from plm_data.initial_conditions.base import (
-    COMMON_SCALAR_INITIAL_CONDITION_FAMILIES,
-    InitialConditionParameterSpec,
-    InitialConditionSpec,
-    get_initial_condition_spec,
-    has_initial_condition_spec,
-    list_initial_condition_specs,
-    register_initial_condition_spec,
+    COMMON_SCALAR_INITIAL_CONDITION_OPERATORS,
+    InitialConditionOperatorParameterSpec,
+    InitialConditionOperatorSpec,
+    get_initial_condition_operator_spec,
+    has_initial_condition_operator_spec,
+    list_initial_condition_operator_specs,
+    register_initial_condition_operator_spec,
 )
 
 
@@ -22,14 +22,14 @@ def _load_package_modules(package_name: str) -> None:
         importlib.import_module(module_info.name)
 
 
-_load_package_modules(__name__ + ".families")
+_load_package_modules(__name__ + ".operators")
 
 __all__ = [
-    "COMMON_SCALAR_INITIAL_CONDITION_FAMILIES",
-    "InitialConditionParameterSpec",
-    "InitialConditionSpec",
-    "get_initial_condition_spec",
-    "has_initial_condition_spec",
-    "list_initial_condition_specs",
-    "register_initial_condition_spec",
+    "COMMON_SCALAR_INITIAL_CONDITION_OPERATORS",
+    "InitialConditionOperatorParameterSpec",
+    "InitialConditionOperatorSpec",
+    "get_initial_condition_operator_spec",
+    "has_initial_condition_operator_spec",
+    "list_initial_condition_operator_specs",
+    "register_initial_condition_operator_spec",
 ]

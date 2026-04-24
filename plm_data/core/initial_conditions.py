@@ -5,7 +5,7 @@ from typing import Any, Callable
 import numpy as np
 from dolfinx import fem
 
-from plm_data.core.config import FieldExpressionConfig
+from plm_data.core.runtime_config import FieldExpressionConfig
 from plm_data.core.sampling import (
     rng_for_stream,
     sample_coordinate_list,

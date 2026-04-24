@@ -3,7 +3,7 @@
 import ufl
 from dolfinx import mesh as dmesh
 
-from plm_data.core.config import FieldExpressionConfig
+from plm_data.core.runtime_config import FieldExpressionConfig
 from plm_data.core.spatial_fields import (
     build_ufl_field,
     component_expressions,

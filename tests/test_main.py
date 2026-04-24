@@ -6,82 +6,38 @@ import pytest
 
 import plm_data.__main__ as main_mod
 import plm_data.core.runner as runner_mod
-import plm_data.tools.gif_gallery as gallery_mod
 
 
-def test_cmd_run_passes_output_dir(monkeypatch, tmp_path):
+def test_cmd_random_passes_seed_and_output_dir(monkeypatch, tmp_path, capsys):
     calls: dict[str, object] = {}
 
-    class DummyRunner:
-        def run(self, console_level, *, output_subdir=None, cleanup_output_dir=True):
-            calls["console_level"] = console_level
-            calls["output_subdir"] = output_subdir
-            calls["cleanup_output_dir"] = cleanup_output_dir
+    class FakeComm:
+        rank = 0
 
-    class FakeSimulationRunner:
-        @classmethod
-        def from_yaml(cls, config_path, output_dir, *, seed=None):
-            calls["config_path"] = config_path
-            calls["output_dir"] = output_dir
-            calls["seed"] = seed
-            return DummyRunner()
+    class FakeMPI:
+        COMM_WORLD = FakeComm()
 
-    monkeypatch.setattr(runner_mod, "SimulationRunner", FakeSimulationRunner)
+    def fake_run_random_simulation(*, seed, output_root, console_level):
+        calls["seed"] = seed
+        calls["output_root"] = output_root
+        calls["console_level"] = console_level
+        return {"output_dir": str(tmp_path / "out")}
 
-    main_mod.cmd_run(
-        SimpleNamespace(
-            config="configs/basic/heat/2d_localized_blob_diffusion.yaml",
-            output_dir=str(tmp_path),
-            log_level="WARNING",
-            n_runs=None,
-        )
+    monkeypatch.setattr(runner_mod, "run_random_simulation", fake_run_random_simulation)
+    monkeypatch.setattr("mpi4py.MPI", FakeMPI)
+
+    summary = main_mod.cmd_random(
+        SimpleNamespace(seed=1234, output_dir=str(tmp_path), log_level="WARNING")
     )
 
-    assert calls["config_path"] == "configs/basic/heat/2d_localized_blob_diffusion.yaml"
-    assert calls["output_dir"] == str(tmp_path)
-    assert calls["seed"] is None
-    assert calls["cleanup_output_dir"] is True
-    assert calls["output_subdir"] is None
+    assert calls["seed"] == 1234
+    assert calls["output_root"] == str(tmp_path)
+    assert summary["output_dir"] == str(tmp_path / "out")
+    assert str(tmp_path / "out") in capsys.readouterr().out
 
 
-def test_cmd_run_uses_batch_mode_when_n_runs_is_set(monkeypatch, tmp_path):
-    calls: dict[str, object] = {}
-
-    class FakeSimulationRunner:
-        @classmethod
-        def from_yaml(cls, config_path, output_dir, *, seed=None):
-            calls["config_path"] = config_path
-            calls["output_dir"] = output_dir
-            calls["seed"] = seed
-
-        @classmethod
-        def run_many_from_yaml(cls, config_path, output_dir, *, n_runs, console_level):
-            calls["config_path"] = config_path
-            calls["output_dir"] = output_dir
-            calls["n_runs"] = n_runs
-            calls["console_level"] = console_level
-
-    monkeypatch.setattr(runner_mod, "SimulationRunner", FakeSimulationRunner)
-
-    main_mod.cmd_run(
-        SimpleNamespace(
-            config="configs/basic/heat/2d_localized_blob_diffusion.yaml",
-            output_dir=str(tmp_path),
-            log_level="INFO",
-            n_runs=3,
-        )
-    )
-
-    assert calls["config_path"] == "configs/basic/heat/2d_localized_blob_diffusion.yaml"
-    assert calls["output_dir"] == str(tmp_path)
-    assert calls["n_runs"] == 3
-
-
-def test_main_run_requires_output_dir(monkeypatch):
-    monkeypatch.setattr(
-        "sys.argv",
-        ["plm_data", "run", "configs/basic/heat/2d_localized_blob_diffusion.yaml"],
-    )
+def test_main_requires_seed(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["plm_data"])
 
     with pytest.raises(SystemExit) as exc_info:
         main_mod.main()
@@ -89,31 +45,19 @@ def test_main_run_requires_output_dir(monkeypatch):
     assert exc_info.value.code == 2
 
 
-def test_cmd_gallery_passes_arguments(monkeypatch, tmp_path, capsys):
-    calls: dict[str, object] = {}
+def test_main_rejects_removed_run_subcommand(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["plm_data", "run", "old-entrypoint"])
 
-    class Summary:
-        output_path = tmp_path / "gallery.html"
-        num_rows = 3
-        num_fields = 4
+    with pytest.raises(SystemExit) as exc_info:
+        main_mod.main()
 
-    def fake_write_gallery_html(directory, output_path, *, title):
-        calls["directory"] = directory
-        calls["output_path"] = output_path
-        calls["title"] = title
-        return Summary()
+    assert exc_info.value.code == 2
 
-    monkeypatch.setattr(gallery_mod, "write_gallery_html", fake_write_gallery_html)
 
-    main_mod.cmd_gallery(
-        SimpleNamespace(
-            directory=str(tmp_path),
-            output=str(tmp_path / "custom.html"),
-            title="Custom Title",
-        )
-    )
+def test_main_rejects_removed_gallery_subcommand(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["plm_data", "gallery", "./output"])
 
-    assert calls["directory"] == str(tmp_path)
-    assert calls["output_path"] == str(tmp_path / "custom.html")
-    assert calls["title"] == "Custom Title"
-    assert "3 PDE rows, 4 fields" in capsys.readouterr().out
+    with pytest.raises(SystemExit) as exc_info:
+        main_mod.main()
+
+    assert exc_info.value.code == 2
