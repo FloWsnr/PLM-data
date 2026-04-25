@@ -7,7 +7,23 @@ from plm_data.boundary_conditions import (
     get_boundary_operator_spec,
     list_boundary_operator_specs,
 )
+import plm_data.boundary_conditions.base as boundary_base
+from plm_data.boundary_conditions.base import (
+    BoundaryOperatorSpec,
+    register_boundary_operator_spec,
+)
 from plm_data.pdes import metadata as pde_metadata
+
+
+def test_register_boundary_operator_spec_adds_spec(monkeypatch):
+    registry: dict[str, BoundaryOperatorSpec] = {}
+    monkeypatch.setattr(boundary_base, "_BOUNDARY_OPERATOR_REGISTRY", registry)
+    spec = BoundaryOperatorSpec(name="unit_test", value_shape="field")
+
+    registered = register_boundary_operator_spec(spec)
+
+    assert registered is spec
+    assert registry == {"unit_test": spec}
 
 
 def test_boundary_operator_registry_covers_standard_operators():

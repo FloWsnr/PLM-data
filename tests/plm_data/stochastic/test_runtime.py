@@ -1,9 +1,11 @@
 """Tests for shared stochastic forcing and random-media support."""
 
 from dataclasses import replace
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
+import ufl
 from dolfinx import fem
 
 from plm_data.core.runtime_config import (
@@ -22,6 +24,7 @@ from plm_data.stochastic.noise import (
     _ScalarCellNoise,
     _cell_volumes,
 )
+from plm_data.stochastic.states import build_vector_state_stochastic_term
 from plm_data.pdes import get_pde
 from tests.runtime_helpers import (
     assert_expected_output_arrays,
@@ -142,6 +145,34 @@ def test_dynamic_vector_noise_uses_independent_component_streams():
     component_1 = runtime._components[1].function.x.array.copy()
 
     assert not np.allclose(component_0, component_1)
+
+
+def test_build_vector_state_stochastic_term_returns_form_and_runtime():
+    mesh = _rectangle_mesh()
+    V = fem.functionspace(mesh, ("Lagrange", 1, (2,)))
+    previous_state = fem.Function(V)
+    test_function = ufl.TestFunction(V)
+    stochastic = StateStochasticConfig(coupling="additive", intensity=0.5)
+    problem = SimpleNamespace(
+        msh=mesh,
+        config=SimpleNamespace(
+            seed=29,
+            stochastic_state=lambda name: stochastic if name == "velocity" else None,
+        ),
+        spec=SimpleNamespace(name="unit_test"),
+    )
+
+    form, runtime = build_vector_state_stochastic_term(
+        problem,
+        state_name="velocity",
+        previous_state=previous_state,
+        test=test_function,
+        dt=0.05,
+    )
+
+    assert form is not None
+    assert isinstance(runtime, DynamicStateNoiseRuntime)
+    assert runtime.state_shape == "vector"
 
 
 def test_build_scalar_coefficient_randomization_is_reproducible_and_clamped(

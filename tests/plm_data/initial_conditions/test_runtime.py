@@ -7,8 +7,13 @@ import pytest
 from dolfinx import fem
 
 from plm_data.core.runtime_config import FieldExpressionConfig
-from plm_data.initial_conditions.runtime import apply_ic, apply_vector_ic
 from plm_data.domains import create_domain
+from plm_data.initial_conditions.runtime import (
+    apply_ic,
+    apply_vector_ic,
+    build_scalar_ic_interpolator,
+    build_vector_ic_interpolator,
+)
 
 
 def _make_function(rectangle_domain):
@@ -39,6 +44,32 @@ def test_apply_constant(rectangle_domain):
     ic = FieldExpressionConfig(type="constant", params={"value": 3.14})
     apply_ic(f, ic, {})
     np.testing.assert_allclose(f.x.array, 3.14)
+
+
+def test_build_scalar_ic_interpolator_constant():
+    ic = FieldExpressionConfig(type="constant", params={"value": 2.5})
+    interpolator = build_scalar_ic_interpolator(ic, {}, gdim=2)
+    points = np.array([[0.0, 0.5, 1.0], [0.25, 0.5, 0.75]])
+
+    assert interpolator is not None
+    np.testing.assert_allclose(interpolator(points), 2.5)
+
+
+def test_build_vector_ic_interpolator_componentwise_constants():
+    ic = FieldExpressionConfig(
+        components={
+            "x": FieldExpressionConfig(type="constant", params={"value": 1.0}),
+            "y": FieldExpressionConfig(type="constant", params={"value": -1.0}),
+        }
+    )
+    interpolator = build_vector_ic_interpolator(ic, {}, gdim=2)
+    points = np.array([[0.0, 0.5, 1.0], [0.25, 0.5, 0.75]])
+
+    assert interpolator is not None
+    np.testing.assert_allclose(
+        interpolator(points),
+        np.array([[1.0, 1.0, 1.0], [-1.0, -1.0, -1.0]]),
+    )
 
 
 def test_apply_gaussian_noise(rectangle_domain):

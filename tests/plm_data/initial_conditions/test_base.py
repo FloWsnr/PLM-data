@@ -6,6 +6,26 @@ from plm_data.initial_conditions import (
     has_initial_condition_operator_spec,
     list_initial_condition_operator_specs,
 )
+import plm_data.initial_conditions.base as ic_base
+from plm_data.initial_conditions.base import (
+    InitialConditionOperatorSpec,
+    register_initial_condition_operator_spec,
+)
+
+
+def test_register_initial_condition_operator_spec_adds_spec(monkeypatch):
+    registry: dict[str, InitialConditionOperatorSpec] = {}
+    monkeypatch.setattr(ic_base, "_INITIAL_CONDITION_OPERATOR_REGISTRY", registry)
+    spec = InitialConditionOperatorSpec(
+        name="unit_test",
+        description="test operator",
+        parameters={},
+    )
+
+    registered = register_initial_condition_operator_spec(spec)
+
+    assert registered is spec
+    assert registry == {"unit_test": spec}
 
 
 def test_initial_condition_operator_registry_covers_runtime_operators():

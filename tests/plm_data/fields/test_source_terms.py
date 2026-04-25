@@ -6,7 +6,7 @@ from dolfinx import fem
 
 from plm_data.core.runtime_config import DomainConfig, FieldExpressionConfig
 from plm_data.domains import create_domain
-from plm_data.fields.source_terms import build_source_form
+from plm_data.fields.source_terms import build_source_form, build_vector_source_form
 
 
 @pytest.fixture
@@ -21,6 +21,12 @@ def mesh_2d():
 @pytest.fixture
 def test_function(mesh_2d):
     V = fem.functionspace(mesh_2d, ("Lagrange", 1))
+    return ufl.TestFunction(V)
+
+
+@pytest.fixture
+def vector_test_function(mesh_2d):
+    V = fem.functionspace(mesh_2d, ("Lagrange", 1, (2,)))
     return ufl.TestFunction(V)
 
 
@@ -70,4 +76,22 @@ def test_source_with_param_references(test_function, mesh_2d):
     )
     parameters = {"f_amplitude": 3.14}
     result = build_source_form(test_function, mesh_2d, config, parameters)
+    assert result is not None
+
+
+def test_vector_source_form(vector_test_function, mesh_2d):
+    config = FieldExpressionConfig(
+        components={
+            "x": FieldExpressionConfig(type="constant", params={"value": 1.0}),
+            "y": FieldExpressionConfig(type="zero", params={}),
+        }
+    )
+
+    result = build_vector_source_form(
+        vector_test_function,
+        mesh_2d,
+        config,
+        parameters={},
+    )
+
     assert result is not None

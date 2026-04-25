@@ -2,11 +2,15 @@
 
 import pytest
 import ufl
+from basix.ufl import element, mixed_element
+from dolfinx import default_real_type
 from dolfinx import fem
 
 from plm_data.boundary_conditions.runtime import (
     apply_dirichlet_bcs,
+    apply_dirichlet_bcs_to_subspace,
     apply_vector_dirichlet_bcs,
+    apply_vector_dirichlet_bcs_to_subspace,
     build_natural_bc_forms,
     build_vector_natural_bc_forms,
 )
@@ -49,6 +53,35 @@ def V(domain_geom):
 @pytest.fixture
 def V_vec(domain_geom):
     return fem.functionspace(domain_geom.mesh, ("Lagrange", 1, (2,)))
+
+
+@pytest.fixture
+def W_scalar(domain_geom):
+    P1 = element(
+        "Lagrange",
+        domain_geom.mesh.basix_cell(),
+        1,
+        dtype=default_real_type,
+    )
+    return fem.functionspace(domain_geom.mesh, mixed_element([P1, P1]))
+
+
+@pytest.fixture
+def W_vector_scalar(domain_geom):
+    vector = element(
+        "Lagrange",
+        domain_geom.mesh.basix_cell(),
+        1,
+        shape=(2,),
+        dtype=default_real_type,
+    )
+    scalar = element(
+        "Lagrange",
+        domain_geom.mesh.basix_cell(),
+        1,
+        dtype=default_real_type,
+    )
+    return fem.functionspace(domain_geom.mesh, mixed_element([vector, scalar]))
 
 
 @pytest.fixture
@@ -139,6 +172,23 @@ class TestApplyDirichletBCs:
         )
 
 
+class TestApplyDirichletBCsToSubspace:
+    def test_constant_value(self, W_scalar, domain_geom):
+        bc_configs = {
+            "x-": BoundaryConditionConfig(type="dirichlet", value=constant(0.0))
+        }
+
+        bcs = apply_dirichlet_bcs_to_subspace(
+            W_scalar.sub(0),
+            domain_geom,
+            boundary_field_config(bc_configs),
+            parameters={},
+        )
+
+        assert len(bcs) == 1
+        assert isinstance(bcs[0], fem.DirichletBC)
+
+
 class TestApplyVectorDirichletBCs:
     def test_constant_value(self, V_vec, domain_geom):
         bc_configs = {
@@ -208,6 +258,25 @@ class TestApplyVectorDirichletBCs:
             )
             == []
         )
+
+
+class TestApplyVectorDirichletBCsToSubspace:
+    def test_constant_value(self, W_vector_scalar, domain_geom):
+        bc_configs = {
+            "x-": BoundaryConditionConfig(
+                type="dirichlet", value=vector_constant(0.0, 1.0)
+            )
+        }
+
+        bcs = apply_vector_dirichlet_bcs_to_subspace(
+            W_vector_scalar.sub(0),
+            domain_geom,
+            boundary_field_config(bc_configs),
+            parameters={},
+        )
+
+        assert len(bcs) == 1
+        assert isinstance(bcs[0], fem.DirichletBC)
 
 
 class TestBuildNaturalBCForms:
