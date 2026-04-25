@@ -11,28 +11,24 @@ from dolfinx import fem
 
 from plm_data.core.runtime_config import (
     BoundaryConditionConfig,
-    DomainConfig,
-    FieldExpressionConfig,
     InputConfig,
     OutputConfig,
     SimulationConfig,
     TimeConfig,
 )
 from plm_data.core.formats.vtk_writer import VTKWriter
-from plm_data.domains import create_domain
 from plm_data.core.output import FrameWriter
-from plm_data.core.solver_strategies import (
-    CONSTANT_LHS_SCALAR_NONSYMMETRIC,
-    CONSTANT_LHS_SCALAR_SPD,
-)
+from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_NONSYMMETRIC
+from plm_data.domains import create_domain
 from plm_data.pdes import get_pde
 from tests.runtime_helpers import (
     boundary_field_config,
     constant,
     direct_solver_config,
+    make_heat_config,
     output_fields,
+    rectangle_domain as make_rectangle_domain,
     scalar_expr,
-    solver_config,
 )
 
 _has_ffmpeg = shutil.which("ffmpeg") is not None
@@ -41,45 +37,23 @@ _has_ffmpeg = shutil.which("ffmpeg") is not None
 def _scalar_heat_config(tmp_path, formats):
     """Build a minimal scalar heat config with the given output formats."""
 
-    return SimulationConfig(
-        pde="heat",
-        parameters={},
-        domain=DomainConfig(
-            type="rectangle",
-            params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-        ),
-        inputs={
-            "u": InputConfig(
-                source=scalar_expr("none"),
-                initial_condition=scalar_expr(
-                    "gaussian_bump", sigma=0.1, amplitude=1.0, center=[0.5, 0.5]
-                ),
-            )
-        },
+    return make_heat_config(
+        tmp_path,
         boundary_conditions={
-            "u": boundary_field_config(
-                {
-                    "x-": _neumann_zero(),
-                    "x+": _neumann_zero(),
-                    "y-": _neumann_zero(),
-                    "y+": _neumann_zero(),
-                }
-            )
+            "x-": _neumann_zero(),
+            "x+": _neumann_zero(),
+            "y-": _neumann_zero(),
+            "y+": _neumann_zero(),
         },
-        output=OutputConfig(
-            path=tmp_path,
-            resolution=[4, 4],
-            num_frames=2,
-            formats=formats,
-            fields=output_fields(u="scalar"),
+        source=scalar_expr("none"),
+        initial_condition=scalar_expr(
+            "gaussian_bump",
+            sigma=0.1,
+            amplitude=1.0,
+            center=[0.5, 0.5],
         ),
-        solver=solver_config(
-            CONSTANT_LHS_SCALAR_SPD,
-            serial={"ksp_type": "preonly", "pc_type": "lu"},
-        ),
-        time=TimeConfig(dt=0.01, t_end=0.01),
-        seed=42,
         coefficients={"kappa": constant(0.01)},
+        formats=formats,
     )
 
 
@@ -89,10 +63,7 @@ def _vector_darcy_config(tmp_path, formats):
     return SimulationConfig(
         pde="darcy",
         parameters={"storage": 1.0, "porosity": 0.6},
-        domain=DomainConfig(
-            type="rectangle",
-            params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-        ),
+        domain=make_rectangle_domain(),
         inputs={
             "pressure": InputConfig(
                 source=scalar_expr("none"),
@@ -153,14 +124,14 @@ def _vector_darcy_config(tmp_path, formats):
 def _neumann_zero():
     return BoundaryConditionConfig(
         type="neumann",
-        value=FieldExpressionConfig(type="constant", params={"value": 0.0}),
+        value=constant(0.0),
     )
 
 
 def _dirichlet_scalar(value):
     return BoundaryConditionConfig(
         type="dirichlet",
-        value=FieldExpressionConfig(type="constant", params={"value": value}),
+        value=constant(value),
     )
 
 
@@ -356,12 +327,7 @@ class TestVTKWriter:
         assert meta["timings"]["vtk_write_seconds"] > 0.0
 
     def test_noncg_fields_are_visualized_on_same_mesh(self, tmp_path):
-        domain = create_domain(
-            DomainConfig(
-                type="rectangle",
-                params={"size": [1.0, 1.0], "mesh_resolution": [8, 8]},
-            )
-        )
+        domain = create_domain(make_rectangle_domain())
         V = fem.functionspace(domain.mesh, ("N1curl", 1))
         field = fem.Function(V, name="electric_field")
         field.interpolate(

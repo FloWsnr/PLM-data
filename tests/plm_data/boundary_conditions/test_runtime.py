@@ -20,11 +20,7 @@ from plm_data.core.runtime_config import (
     FieldExpressionConfig,
 )
 from plm_data.domains import create_domain
-from tests.runtime_helpers import boundary_field_config
-
-
-def constant(value):
-    return FieldExpressionConfig(type="constant", params={"value": value})
+from tests.runtime_helpers import boundary_field_config, constant
 
 
 def vector_constant(*values):

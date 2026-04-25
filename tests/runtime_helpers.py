@@ -1,5 +1,6 @@
 """Shared helpers for focused runtime tests."""
 
+from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
@@ -32,10 +33,6 @@ def constant(value):
 
 def scalar_expr(expr_type: str, **params):
     return FieldExpressionConfig(type=expr_type, params=params)
-
-
-def vector_expr(**components):
-    return FieldExpressionConfig(components=components)
 
 
 def vector_zero():
@@ -125,6 +122,7 @@ def make_heat_config(
     coefficients: dict[str, FieldExpressionConfig],
     mesh_resolution: tuple[int, int] = (8, 8),
     output_resolution: tuple[int, int] = (4, 4),
+    formats: Sequence[str] = ("numpy",),
     time: TimeConfig = TimeConfig(dt=0.01, t_end=0.01),
 ) -> SimulationConfig:
     return SimulationConfig(
@@ -142,7 +140,7 @@ def make_heat_config(
             path=tmp_path,
             resolution=list(output_resolution),
             num_frames=2,
-            formats=["numpy"],
+            formats=list(formats),
             fields=output_fields(u="scalar"),
         ),
         solver=direct_solver_config(CONSTANT_LHS_SCALAR_SPD),
