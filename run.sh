@@ -87,9 +87,7 @@ taskset_cpu_list_for_core_list() {
     TASKSET_CPU_LIST=$(printf '%s\n' "${logical_cpus[@]}" | paste -sd, -)
 }
 
-# Activate conda environment.
-# Override with PLM_CONDA_ENV to use a non-default environment, e.g.:
-#   PLM_CONDA_ENV=fenicsx-env-complex ./run.sh -n 4 --seed 1234
+# Activate the project conda environment.
 if command -v conda >/dev/null 2>&1; then
     eval "$(conda shell.bash hook)"
 elif [[ -f "$HOME/miniforge3/etc/profile.d/conda.sh" ]]; then
@@ -103,7 +101,7 @@ elif [[ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]]; then
 else
     die "conda is required but was not found on PATH or under ~/miniforge3 / ~/miniconda3"
 fi
-conda activate "${PLM_CONDA_ENV:-fenicsx-env}"
+conda activate fenicsx-env
 
 NPROCS=1
 CORE_LIST_SPEC=""

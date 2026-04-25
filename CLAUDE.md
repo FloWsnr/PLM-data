@@ -36,20 +36,6 @@ python -m ruff format plm_data tests
 python -m pyright plm_data
 ```
 
-## Conda Environments
-
-Two conda environments exist:
-
-- `fenicsx-env` - real-valued PETSc (default).
-- `fenicsx-env-complex` - complex-valued PETSc (`petsc=*=complex*`), optional
-  for separate experiments.
-
-Override the environment via `PLM_CONDA_ENV`:
-
-```bash
-PLM_CONDA_ENV=fenicsx-env-complex ./run.sh -n 4 --seed 1234
-```
-
 ## Architecture
 
 The active random-run architecture is built around first-class objects:
