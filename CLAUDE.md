@@ -54,16 +54,14 @@ PLM_CONDA_ENV=fenicsx-env-complex ./run.sh -n 4 --seed 1234
 
 The active random-run architecture is built around first-class objects:
 
-1. **PDEs** (`plm_data/pdes/`) - PDE specs and runtime factories. The migrated
-   random-run slice currently includes `heat`, `elasticity`, `fisher_kpp`, and
-   `darcy`.
+1. **PDEs** (`plm_data/pdes/`) - PDE specs and runtime factories for the
+   migrated random-run PDE set.
 2. **Runtime config** (`plm_data/core/runtime_config.py`) - concrete in-memory
    dataclasses used by the sampler, runner, output writers, and PDE runtimes.
 3. **Sampling** (`plm_data/sampling/`) - seed-based random runtime-config
    generation, compatibility checks, bounded retry, and run identity metadata.
-4. **Domains** (`plm_data/domains/`) - Gmsh-backed 2D domain specs and mesh
-   builders. Heat currently samples rectangle, disk, and annulus; the other
-   migrated PDEs use rectangle while domain-specific scenarios expand.
+4. **Domains** (`plm_data/domains/`) - Gmsh-backed 2D domain specs, mesh
+   builders, validation, and domain sampling used by random PDE profiles.
 5. **Boundary-condition operators and scenarios**
    (`plm_data/boundary_conditions/`) - low-level operator specs remain under
    `operators/`; complete PDE-level random choices live under `scenarios/`.

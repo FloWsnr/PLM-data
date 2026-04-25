@@ -41,22 +41,21 @@ Default random-run formats are:
 - `gif`
 - `vtk`
 
-Video output remains supported in the writer layer but is not part of the first
-random-run default.
+Video output remains supported in the writer layer but is not enabled by the
+default random-run output set.
 
 ## Architecture
 
-- **PDEs** (`plm_data/pdes/`) expose PDE specs and runtime factories. The first
-  migrated random-run slice includes `heat`, `elasticity`, `fisher_kpp`, and
-  `darcy`.
+- **PDEs** (`plm_data/pdes/`) expose PDE specs and runtime factories for the
+  migrated random-run PDE set.
 - **Runtime config** (`plm_data/core/runtime_config.py`) contains the concrete
   in-memory dataclasses passed to PDE runtimes. YAML configs and shared
   fragments are not part of the refactored architecture.
 - **Sampling** (`plm_data/sampling/`) chooses a compatible random PDE/domain
   case, boundary scenario, initial-condition scenario, parameters, solver
   profile, time settings, and output settings from a required seed.
-- **Domains** (`plm_data/domains/`) provide Gmsh-backed domain specs and mesh
-  builders.
+- **Domains** (`plm_data/domains/`) provide Gmsh-backed domain specs, mesh
+  builders, validation, and domain sampling used by random PDE profiles.
 - **Boundary-condition operators and scenarios**
   (`plm_data/boundary_conditions/`) separate low-level operator behavior from
   PDE-level scenario generation.
