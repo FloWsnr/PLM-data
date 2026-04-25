@@ -1,4 +1,4 @@
-"""Airfoil profile helpers for Gmsh-backed channel domains."""
+"""Airfoil profile helpers for the airfoil-channel domain."""
 
 import math
 

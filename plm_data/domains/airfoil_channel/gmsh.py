@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from plm_data.domains.airfoil import symmetric_naca_airfoil_surfaces
+from plm_data.domains.airfoil_channel.profile import symmetric_naca_airfoil_surfaces
 from plm_data.domains.gmsh import register_gmsh_domain_factory
 from plm_data.domains.helpers import require_param
 from plm_data.domains.validation import DomainConfigLike, validate_domain_params

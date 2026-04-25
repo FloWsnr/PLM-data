@@ -5,7 +5,7 @@ from plm_data.domains.base import (
     DomainSpec,
     register_domain_spec,
 )
-from plm_data.domains.validators import validate_airfoil_channel_params
+from plm_data.domains.airfoil_channel.validation import validate_airfoil_channel_params
 
 
 DOMAIN_SPEC = register_domain_spec(
