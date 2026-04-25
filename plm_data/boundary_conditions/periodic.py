@@ -9,7 +9,7 @@ import numpy as np
 from dolfinx import fem
 
 from plm_data.core.runtime_config import BoundaryFieldConfig
-from plm_data.core.mesh import DomainGeometry, PeriodicBoundaryMap
+from plm_data.domains import DomainGeometry, PeriodicBoundaryMap
 
 
 def periodic_boundary_names(boundary_field: BoundaryFieldConfig) -> set[str]:

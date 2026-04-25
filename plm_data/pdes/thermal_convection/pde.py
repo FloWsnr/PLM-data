@@ -8,13 +8,13 @@ from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem
 from mpi4py import MPI
 
-from plm_data.core.boundary_conditions import (
+from plm_data.boundary_conditions.runtime import (
     apply_dirichlet_bcs_to_subspace,
     apply_vector_dirichlet_bcs_to_subspace,
     build_natural_bc_forms,
     build_vector_natural_bc_forms,
 )
-from plm_data.core.initial_conditions import apply_ic, apply_vector_ic
+from plm_data.initial_conditions.runtime import apply_ic, apply_vector_ic
 from plm_data.core.solver_strategies import TRANSIENT_MIXED_DIRECT
 from plm_data.core.source_terms import build_source_form, build_vector_source_form
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem

@@ -5,7 +5,7 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem
 
-from plm_data.core.initial_conditions import apply_ic
+from plm_data.initial_conditions.runtime import apply_ic
 from plm_data.core.solver_strategies import CONSTANT_LHS_BLOCK_DIRECT
 from plm_data.core.spatial_fields import build_interpolator, scalar_expression_to_config
 from plm_data.core.stochastic import build_scalar_coefficient

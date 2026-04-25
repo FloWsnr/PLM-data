@@ -6,12 +6,12 @@ from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem
 from mpi4py import MPI
 
-from plm_data.core.boundary_conditions import (
+from plm_data.boundary_conditions.runtime import (
     apply_dirichlet_bcs_to_subspace,
     apply_vector_dirichlet_bcs_to_subspace,
     build_vector_natural_bc_forms,
 )
-from plm_data.core.initial_conditions import apply_ic, apply_vector_ic
+from plm_data.initial_conditions.runtime import apply_ic, apply_vector_ic
 from plm_data.core.solver_strategies import NONLINEAR_MIXED_DIRECT
 from plm_data.core.spatial_fields import (
     build_ufl_field,

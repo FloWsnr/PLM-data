@@ -3,11 +3,11 @@
 import ufl
 from dolfinx import fem
 
-from plm_data.core.boundary_conditions import (
+from plm_data.boundary_conditions.runtime import (
     apply_dirichlet_bcs,
     build_natural_bc_forms,
 )
-from plm_data.core.initial_conditions import apply_ic
+from plm_data.initial_conditions.runtime import apply_ic
 from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_SPD
 from plm_data.core.stochastic import build_scalar_state_stochastic_term
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem

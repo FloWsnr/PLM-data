@@ -6,7 +6,7 @@ import ufl
 from dolfinx import fem
 
 from plm_data.core.runtime_config import FieldExpressionConfig
-from plm_data.core.mesh import create_domain
+from plm_data.domains import create_domain
 from plm_data.core.spatial_fields import (
     build_interpolator,
     build_ufl_field,

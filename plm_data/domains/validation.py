@@ -3,7 +3,7 @@
 import math
 from typing import Any, Protocol
 
-from plm_data.core.sampling import is_param_ref, is_sampler_spec
+from plm_data.sampling.values import is_param_ref, is_sampler_spec
 
 
 class DomainConfigLike(Protocol):

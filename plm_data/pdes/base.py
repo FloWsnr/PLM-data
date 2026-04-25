@@ -19,8 +19,11 @@ from plm_data.core.health import (
 )
 from plm_data.core.linear_problem import ManagedLinearProblem
 from plm_data.core.logging import get_logger
-from plm_data.core.mesh import DomainGeometry, create_domain
-from plm_data.core.periodic import build_periodic_mpc, require_dolfinx_mpc
+from plm_data.domains import DomainGeometry, create_domain
+from plm_data.boundary_conditions.periodic import (
+    build_periodic_mpc,
+    require_dolfinx_mpc,
+)
 from plm_data.core.solver_strategies import CONSTANT_LHS_STRATEGIES
 from plm_data.pdes.metadata import PDESpec
 

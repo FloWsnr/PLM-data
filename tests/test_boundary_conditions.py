@@ -1,10 +1,10 @@
-"""Tests for plm_data.core.boundary_conditions."""
+"""Tests for plm_data.boundary_conditions.runtime."""
 
 import pytest
 import ufl
 from dolfinx import fem
 
-from plm_data.core.boundary_conditions import (
+from plm_data.boundary_conditions.runtime import (
     apply_dirichlet_bcs,
     apply_vector_dirichlet_bcs,
     build_natural_bc_forms,
@@ -15,7 +15,7 @@ from plm_data.core.runtime_config import (
     DomainConfig,
     FieldExpressionConfig,
 )
-from plm_data.core.mesh import create_domain
+from plm_data.domains import create_domain
 from tests.runtime_helpers import boundary_field_config
 
 

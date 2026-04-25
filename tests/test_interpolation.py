@@ -8,7 +8,7 @@ from dolfinx import fem
 
 from plm_data.core.runtime_config import DomainConfig
 from plm_data.core.interpolation import function_to_array, function_to_grid
-from plm_data.core.mesh import create_domain
+from plm_data.domains import create_domain
 
 HAS_GMSH = importlib.util.find_spec("gmsh") is not None
 

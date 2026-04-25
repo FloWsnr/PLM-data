@@ -5,9 +5,9 @@ import math
 import ufl
 from dolfinx import default_scalar_type, fem
 
-from plm_data.core.boundary_conditions import apply_vector_dirichlet_bcs
-from plm_data.core.initial_conditions import apply_vector_ic
-from plm_data.core.periodic import require_unverified_periodic_support
+from plm_data.boundary_conditions.runtime import apply_vector_dirichlet_bcs
+from plm_data.initial_conditions.runtime import apply_vector_ic
+from plm_data.boundary_conditions.periodic import require_unverified_periodic_support
 from plm_data.core.runtime_config import BoundaryFieldConfig, FieldExpressionConfig
 from plm_data.core.solver_strategies import CONSTANT_LHS_CURL_DIRECT
 from plm_data.core.source_terms import build_vector_source_form

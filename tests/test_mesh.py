@@ -1,4 +1,4 @@
-"""Tests for plm_data.core.mesh."""
+"""Tests for plm_data.domains."""
 
 import importlib.util
 import sys
@@ -9,9 +9,9 @@ import pytest
 from dolfinx import mesh as dmesh
 from mpi4py import MPI
 
-import plm_data.core.mesh as mesh_module
+import plm_data.domains.gmsh as gmsh_module
 from plm_data.core.runtime_config import DomainConfig
-from plm_data.core.mesh import create_domain
+from plm_data.domains import create_domain
 
 HAS_GMSH = importlib.util.find_spec("gmsh") is not None
 
@@ -862,7 +862,7 @@ def test_model_to_mesh_shared_facet_uses_partitioner(monkeypatch):
         return "mesh-data"
 
     monkeypatch.setattr(
-        mesh_module.mesh,
+        gmsh_module.mesh,
         "create_cell_partitioner",
         _fake_create_cell_partitioner,
     )
@@ -872,7 +872,7 @@ def test_model_to_mesh_shared_facet_uses_partitioner(monkeypatch):
         types.SimpleNamespace(model_to_mesh=_fake_model_to_mesh),
     )
 
-    result = mesh_module._model_to_mesh_shared_facet(
+    result = gmsh_module.model_to_mesh_shared_facet(
         np.array([[0.0]]),
         MPI.COMM_WORLD,
         rank=0,
@@ -880,6 +880,6 @@ def test_model_to_mesh_shared_facet_uses_partitioner(monkeypatch):
     )
 
     assert result == "mesh-data"
-    assert calls["ghost_mode"] == mesh_module.GhostMode.shared_facet
+    assert calls["ghost_mode"] == gmsh_module.GhostMode.shared_facet
     assert calls["max_links"] == 2
     assert calls["partitioner"] is sentinel_partitioner

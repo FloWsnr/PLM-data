@@ -1,7 +1,7 @@
 """Tests for first-class domain specifications."""
 
 from plm_data.core.runtime_config import DomainConfig
-from plm_data.core.mesh import create_domain
+from plm_data.domains import create_domain
 from plm_data.domains import (
     get_gmsh_domain_dimension,
     get_domain_spec,

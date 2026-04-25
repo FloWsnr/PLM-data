@@ -19,7 +19,7 @@ class SamplingContext:
 
     def child(self, label: str) -> "SamplingContext":
         """Return a deterministic child context for one sampling stream."""
-        from plm_data.core.sampling import rng_for_stream
+        from plm_data.sampling.values import rng_for_stream
 
         return SamplingContext(
             seed=self.seed,

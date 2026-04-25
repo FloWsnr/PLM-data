@@ -1,4 +1,4 @@
-"""Tests for plm_data.core.initial_conditions."""
+"""Tests for plm_data.initial_conditions.runtime."""
 
 from typing import cast
 
@@ -7,8 +7,8 @@ import pytest
 from dolfinx import fem
 
 from plm_data.core.runtime_config import FieldExpressionConfig
-from plm_data.core.initial_conditions import apply_ic, apply_vector_ic
-from plm_data.core.mesh import create_domain
+from plm_data.initial_conditions.runtime import apply_ic, apply_vector_ic
+from plm_data.domains import create_domain
 
 
 def _make_function(rectangle_domain):

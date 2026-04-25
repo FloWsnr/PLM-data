@@ -19,7 +19,7 @@ from plm_data.core.runtime_config import (
     TimeConfig,
 )
 from plm_data.core.formats.vtk_writer import VTKWriter
-from plm_data.core.mesh import create_domain
+from plm_data.domains import create_domain
 from plm_data.core.output import FrameWriter
 from plm_data.core.solver_strategies import (
     CONSTANT_LHS_SCALAR_NONSYMMETRIC,

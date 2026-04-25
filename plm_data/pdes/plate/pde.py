@@ -5,8 +5,8 @@ import ufl
 from dolfinx import default_real_type, fem
 
 from plm_data.boundary_conditions import get_boundary_operator_spec
-from plm_data.core.initial_conditions import apply_ic
-from plm_data.core.mesh import DomainGeometry
+from plm_data.initial_conditions.runtime import apply_ic
+from plm_data.domains import DomainGeometry
 from plm_data.core.runtime_config import BoundaryFieldConfig
 from plm_data.core.solver_strategies import CONSTANT_LHS_BLOCK_DIRECT
 from plm_data.core.source_terms import build_source_form

@@ -6,7 +6,7 @@ import numpy as np
 from dolfinx import fem
 
 from plm_data.core.runtime_config import FieldExpressionConfig
-from plm_data.core.sampling import (
+from plm_data.sampling.values import (
     rng_for_stream,
     sample_coordinate_list,
     sample_integer,

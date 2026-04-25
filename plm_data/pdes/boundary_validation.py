@@ -1,7 +1,7 @@
 """Shared PDE-level boundary-condition validation helpers."""
 
 from plm_data.core.runtime_config import BoundaryFieldConfig
-from plm_data.core.mesh import DomainGeometry
+from plm_data.domains import DomainGeometry
 
 
 def validate_boundary_field_structure(

@@ -15,7 +15,7 @@ from plm_data.core.runtime_config import (
     StochasticConfig,
     TimeConfig,
 )
-from plm_data.core.mesh import create_domain
+from plm_data.domains import create_domain
 from plm_data.core.stochastic import (
     DynamicStateNoiseRuntime,
     _ScalarCellNoise,

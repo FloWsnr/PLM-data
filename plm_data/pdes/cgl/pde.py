@@ -5,8 +5,8 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem
 
-from plm_data.core.boundary_conditions import apply_dirichlet_bcs_to_subspace
-from plm_data.core.initial_conditions import apply_ic
+from plm_data.boundary_conditions.runtime import apply_dirichlet_bcs_to_subspace
+from plm_data.initial_conditions.runtime import apply_ic
 from plm_data.core.solver_strategies import NONLINEAR_MIXED_DIRECT
 from plm_data.core.spatial_fields import is_exact_zero_field_expression
 from plm_data.pdes.base import PDE, ProblemInstance, TransientNonlinearProblem

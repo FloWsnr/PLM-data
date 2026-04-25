@@ -4,7 +4,7 @@ from typing import Any
 
 import numpy as np
 
-from plm_data.core.sampling import rng_for_stream
+from plm_data.sampling.values import rng_for_stream
 from plm_data.sampling.context import SamplingContext
 
 

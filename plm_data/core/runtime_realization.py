@@ -13,7 +13,7 @@ from plm_data.core.runtime_config import (
     InputConfig,
     SimulationConfig,
 )
-from plm_data.core.sampling import (
+from plm_data.sampling.values import (
     is_sampler_spec,
     rng_for_stream,
     sample_coordinate_list,

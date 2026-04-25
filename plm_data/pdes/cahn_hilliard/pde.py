@@ -4,7 +4,7 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem
 
-from plm_data.core.initial_conditions import apply_ic
+from plm_data.initial_conditions.runtime import apply_ic
 from plm_data.core.solver_strategies import NONLINEAR_MIXED_DIRECT
 from plm_data.pdes.base import PDE, ProblemInstance, TransientNonlinearProblem
 from plm_data.pdes.boundary_validation import validate_boundary_field_structure
