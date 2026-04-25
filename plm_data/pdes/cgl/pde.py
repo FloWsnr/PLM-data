@@ -12,100 +12,9 @@ from plm_data.fields import is_exact_zero_field_expression
 from plm_data.pdes.base import PDE, ProblemInstance, TransientNonlinearProblem
 from plm_data.pdes.boundary_validation import validate_boundary_field_structure
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
 )
-
-_CGL_BOUNDARY_OPERATORS = {
-    name: SCALAR_STANDARD_BOUNDARY_OPERATORS[name]
-    for name in ("dirichlet", "neumann", "periodic")
-}
-
-_CGL_SPEC = PDESpec(
-    name="cgl",
-    category="physics",
-    description=(
-        "Complex Ginzburg-Landau equation solved via real/imaginary split, "
-        "covering canonical CGL and NLS-like dynamics as parameter cases."
-    ),
-    equations={
-        "u": (
-            "du/dt = D_r*lap(u) - D_i*lap(v) + a_r*u - a_i*v + |A|^2*(b_r*u - b_i*v)"
-        ),
-        "v": (
-            "dv/dt = D_i*lap(u) + D_r*lap(v) + a_i*u + a_r*v + |A|^2*(b_i*u + b_r*v)"
-        ),
-    },
-    parameters=[
-        PDEParameter("D_r", "Real part of diffusion coefficient"),
-        PDEParameter("D_i", "Imaginary part of diffusion coefficient"),
-        PDEParameter("a_r", "Real part of linear coefficient"),
-        PDEParameter("a_i", "Imaginary part of linear coefficient"),
-        PDEParameter("b_r", "Real part of nonlinear coefficient"),
-        PDEParameter("b_i", "Imaginary part of nonlinear coefficient"),
-        PDEParameter("theta", "Time-stepping parameter"),
-    ],
-    inputs={
-        "u": InputSpec(
-            name="u",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-        "v": InputSpec(
-            name="v",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-    },
-    boundary_fields={
-        "u": BoundaryFieldSpec(
-            name="u",
-            shape="scalar",
-            operators=_CGL_BOUNDARY_OPERATORS,
-            description="Boundary conditions for Re(A).",
-        ),
-        "v": BoundaryFieldSpec(
-            name="v",
-            shape="scalar",
-            operators=_CGL_BOUNDARY_OPERATORS,
-            description="Boundary conditions for Im(A).",
-        ),
-    },
-    states={
-        "u": StateSpec(name="u", shape="scalar"),
-        "v": StateSpec(name="v", shape="scalar"),
-    },
-    outputs={
-        "u": OutputSpec(
-            name="u",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="u",
-        ),
-        "v": OutputSpec(
-            name="v",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="v",
-        ),
-        "amplitude": OutputSpec(
-            name="amplitude",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="amplitude",
-            source_kind="derived",
-        ),
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-)
+from plm_data.pdes.cgl.spec import PDE_SPEC
 
 
 class _CGLProblem(TransientNonlinearProblem):
@@ -121,7 +30,7 @@ class _CGLProblem(TransientNonlinearProblem):
                 field_name=field_name,
                 boundary_field=boundary_field,
                 domain_geom=domain_geom,
-                allowed_operators=set(_CGL_BOUNDARY_OPERATORS),
+                allowed_operators=set(self.spec.boundary_fields[field_name].operators),
             )
             self._validate_homogeneous_neumann(field_name, boundary_field)
 
@@ -276,7 +185,7 @@ class _CGLProblem(TransientNonlinearProblem):
 class CGLPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _CGL_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _CGLProblem(self.spec, config)

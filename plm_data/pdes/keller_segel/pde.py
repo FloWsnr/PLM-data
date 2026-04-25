@@ -21,100 +21,9 @@ from plm_data.pdes.boundary_validation import (
     validate_scalar_standard_boundary_field,
 )
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    SATURATING_STOCHASTIC_COUPLINGS,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
 )
-
-_KELLER_SEGEL_RHO_BOUNDARY_OPERATORS = SCALAR_STANDARD_BOUNDARY_OPERATORS
-_KELLER_SEGEL_C_BOUNDARY_OPERATORS = {
-    name: SCALAR_STANDARD_BOUNDARY_OPERATORS[name]
-    for name in ("neumann", "robin", "periodic")
-}
-
-_KELLER_SEGEL_SPEC = PDESpec(
-    name="keller_segel",
-    category="biology",
-    description=(
-        "Keller-Segel chemotaxis model with logistic growth and receptor saturation."
-    ),
-    equations={
-        "rho": (
-            "drho/dt = D_rho * laplacian(rho) "
-            "- div(chi0 * rho / (1 + rho^2) * grad(c)) + r * rho * (1 - rho)"
-        ),
-        "c": "dc/dt = D_c * laplacian(c) + alpha * rho - beta * c",
-    },
-    parameters=[
-        PDEParameter("D_rho", "Cell diffusivity"),
-        PDEParameter("D_c", "Chemoattractant diffusivity"),
-        PDEParameter("chi0", "Chemotactic coefficient"),
-        PDEParameter("alpha", "Chemoattractant production rate"),
-        PDEParameter("beta", "Chemoattractant degradation rate"),
-        PDEParameter("r", "Logistic growth rate"),
-    ],
-    inputs={
-        "rho": InputSpec(
-            name="rho",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-        "c": InputSpec(
-            name="c",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-    },
-    boundary_fields={
-        "rho": BoundaryFieldSpec(
-            name="rho",
-            shape="scalar",
-            operators=_KELLER_SEGEL_RHO_BOUNDARY_OPERATORS,
-            description="Boundary conditions for cell density rho.",
-        ),
-        "c": BoundaryFieldSpec(
-            name="c",
-            shape="scalar",
-            operators=_KELLER_SEGEL_C_BOUNDARY_OPERATORS,
-            description="Boundary conditions for chemoattractant c.",
-        ),
-    },
-    states={
-        "rho": StateSpec(
-            name="rho",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-        "c": StateSpec(
-            name="c",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-    },
-    outputs={
-        "rho": OutputSpec(
-            name="rho",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="rho",
-        ),
-        "c": OutputSpec(
-            name="c",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="c",
-        ),
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-)
+from plm_data.pdes.keller_segel.spec import PDE_SPEC
 
 
 def _space_num_dofs(V: fem.FunctionSpace) -> int:
@@ -389,7 +298,7 @@ class _KellerSegelProblem(TransientLinearProblem):
 class KellerSegelPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _KELLER_SEGEL_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _KellerSegelProblem(self.spec, config)

@@ -16,6 +16,7 @@ from plm_data.pdes.metadata import (
     InputSpec,
     OutputSpec,
     PDEParameter,
+    PDEParameterSampler,
     PDESpec,
     StateSpec,
 )
@@ -29,6 +30,7 @@ __all__ = [
     "OutputSpec",
     "PDE",
     "PDEParameter",
+    "PDEParameterSampler",
     "PDESpec",
     "ProblemInstance",
     "RunResult",

@@ -9,67 +9,9 @@ from plm_data.core.solver_strategies import NONLINEAR_MIXED_DIRECT
 from plm_data.pdes.base import PDE, ProblemInstance, TransientNonlinearProblem
 from plm_data.pdes.boundary_validation import validate_boundary_field_structure
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
 )
-
-_CAHN_HILLIARD_SPEC = PDESpec(
-    name="cahn_hilliard",
-    category="physics",
-    description=(
-        "Cahn-Hilliard equation for phase separation using a mixed "
-        "concentration/chemical-potential formulation."
-    ),
-    equations={
-        "c": "dc/dt = div(M * grad(mu))",
-        "mu": "mu = df/dc - lambda * laplacian(c)",
-    },
-    parameters=[
-        PDEParameter("lmbda", "Surface parameter (interface width)"),
-        PDEParameter("barrier_height", "Height of the double-well free-energy barrier"),
-        PDEParameter("mobility", "Mobility coefficient M"),
-        PDEParameter("theta", "Time-stepping parameter"),
-    ],
-    inputs={
-        "c": InputSpec(
-            name="c",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        )
-    },
-    boundary_fields={
-        "c": BoundaryFieldSpec(
-            name="c",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description=(
-                "Boundary conditions for concentration. Periodic side pairs are "
-                "constrained strongly; homogeneous Neumann entries mark the natural "
-                "no-flux boundary condition."
-            ),
-        )
-    },
-    states={
-        "c": StateSpec(name="c", shape="scalar"),
-        "mu": StateSpec(name="mu", shape="scalar"),
-    },
-    outputs={
-        "c": OutputSpec(
-            name="c",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="c",
-        )
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-)
+from plm_data.pdes.cahn_hilliard.spec import PDE_SPEC
 
 
 class _CahnHilliardProblem(TransientNonlinearProblem):
@@ -195,7 +137,7 @@ class _CahnHilliardProblem(TransientNonlinearProblem):
 class CahnHilliardPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _CAHN_HILLIARD_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _CahnHilliardProblem(self.spec, config)

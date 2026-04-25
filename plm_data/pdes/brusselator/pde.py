@@ -13,87 +13,9 @@ from plm_data.stochastic import build_scalar_state_stochastic_term
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import validate_scalar_standard_boundary_field
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    SATURATING_STOCHASTIC_COUPLINGS,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
 )
-
-_BRUSSELATOR_SPEC = PDESpec(
-    name="brusselator",
-    category="physics",
-    description=("Brusselator reaction-diffusion system for Turing pattern formation."),
-    equations={
-        "u": "du/dt = Du * laplacian(u) + a - (b + 1) * u + u^2 * v",
-        "v": "dv/dt = Dv * laplacian(v) + b * u - u^2 * v",
-    },
-    parameters=[
-        PDEParameter("Du", "Diffusion coefficient of species u"),
-        PDEParameter("Dv", "Diffusion coefficient of species v"),
-        PDEParameter("a", "Feed kinetic parameter"),
-        PDEParameter("b", "Reaction kinetic parameter"),
-    ],
-    inputs={
-        "u": InputSpec(
-            name="u",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-        "v": InputSpec(
-            name="v",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-    },
-    boundary_fields={
-        "u": BoundaryFieldSpec(
-            name="u",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for species u.",
-        ),
-        "v": BoundaryFieldSpec(
-            name="v",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for species v.",
-        ),
-    },
-    states={
-        "u": StateSpec(
-            name="u",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-        "v": StateSpec(
-            name="v",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-    },
-    outputs={
-        "u": OutputSpec(
-            name="u",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="u",
-        ),
-        "v": OutputSpec(
-            name="v",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="v",
-        ),
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-)
+from plm_data.pdes.brusselator.spec import PDE_SPEC
 
 
 def _space_num_dofs(V: fem.FunctionSpace) -> int:
@@ -302,7 +224,7 @@ class _BrusselatorProblem(TransientLinearProblem):
 class BrusselatorPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _BRUSSELATOR_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _BrusselatorProblem(self.spec, config)

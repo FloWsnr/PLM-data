@@ -41,8 +41,14 @@ def build_scalar_reaction_diffusion_spec(
     description: str,
     reaction_equation: str,
     parameters: list[PDEParameter],
+    diffusion_parameter: PDEParameter | None = None,
 ) -> PDESpec:
     """Build a standard scalar reaction-diffusion PDE spec."""
+    diffusion = (
+        diffusion_parameter
+        if diffusion_parameter is not None
+        else PDEParameter("D", "Diffusion coefficient")
+    )
     return PDESpec(
         name=name,
         category="biology",
@@ -50,7 +56,7 @@ def build_scalar_reaction_diffusion_spec(
         equations={
             "u": (f"du/dt + velocity·grad(u) = D * laplacian(u) + {reaction_equation}")
         },
-        parameters=[PDEParameter("D", "Diffusion coefficient"), *parameters],
+        parameters=[diffusion, *parameters],
         inputs={
             "u": InputSpec(
                 name="u",

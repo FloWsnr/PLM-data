@@ -1,6 +1,11 @@
 """PDE specifications and public extension contracts."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from plm_data.sampling.context import SamplingContext
 
 from plm_data.boundary_conditions import (
     BoundaryOperatorSpec,
@@ -31,12 +36,15 @@ __all__ = [
     "MAXWELL_BOUNDARY_OPERATORS",
     "OutputSpec",
     "PDEParameter",
+    "PDEParameterSampler",
     "PDESpec",
     "SATURATING_STOCHASTIC_COUPLINGS",
     "SCALAR_STANDARD_BOUNDARY_OPERATORS",
     "StateSpec",
     "VECTOR_STANDARD_BOUNDARY_OPERATORS",
 ]
+
+PDEParameterSampler = Callable[["SamplingContext", str], float | int]
 
 
 def _component_labels(gdim: int) -> tuple[str, ...]:
@@ -49,6 +57,81 @@ class PDEParameter:
 
     name: str
     description: str
+    kind: str = "float"
+    hard_min: float | int | None = None
+    hard_max: float | int | None = None
+    sampling_min: float | int | None = None
+    sampling_max: float | int | None = None
+    default: float | int | None = None
+    sampler: PDEParameterSampler | None = field(
+        default=None,
+        compare=False,
+        repr=False,
+    )
+
+    def __post_init__(self) -> None:
+        if self.kind not in {"float", "int"}:
+            raise ValueError(
+                f"PDE parameter '{self.name}' has unsupported kind '{self.kind}'."
+            )
+        if (self.sampling_min is None) != (self.sampling_max is None):
+            raise ValueError(
+                f"PDE parameter '{self.name}' must define both sampling_min and "
+                "sampling_max, or neither."
+            )
+        if (
+            self.sampling_min is not None
+            and self.sampling_max is not None
+            and self.sampling_min > self.sampling_max
+        ):
+            raise ValueError(
+                f"PDE parameter '{self.name}' has sampling_min greater than "
+                "sampling_max."
+            )
+        if (
+            self.hard_min is not None
+            and self.hard_max is not None
+            and self.hard_min > self.hard_max
+        ):
+            raise ValueError(
+                f"PDE parameter '{self.name}' has hard_min greater than hard_max."
+            )
+        if self.sampling_min is not None:
+            self.validate_value(
+                self.sampling_min,
+                context=f"PDE parameter '{self.name}' sampling_min",
+            )
+            self.validate_value(
+                self.sampling_max,
+                context=f"PDE parameter '{self.name}' sampling_max",
+            )
+        if self.default is not None:
+            self.validate_value(
+                self.default,
+                context=f"PDE parameter '{self.name}' default",
+            )
+
+    @property
+    def has_sampling_rule(self) -> bool:
+        """Return whether this parameter can be sampled directly from its spec."""
+        return (
+            self.default is not None
+            or self.sampler is not None
+            or (self.sampling_min is not None and self.sampling_max is not None)
+        )
+
+    def validate_value(self, value: float | int | None, *, context: str) -> None:
+        """Validate one concrete parameter value against declared hard bounds."""
+        if value is None:
+            raise ValueError(f"{context} cannot be None.")
+        if self.kind == "int":
+            rounded = int(round(value))
+            if abs(float(value) - rounded) > 1.0e-9:
+                raise ValueError(f"{context} must be integer-valued. Got {value!r}.")
+        if self.hard_min is not None and value < self.hard_min:
+            raise ValueError(f"{context} must be >= {self.hard_min}. Got {value!r}.")
+        if self.hard_max is not None and value > self.hard_max:
+            raise ValueError(f"{context} must be <= {self.hard_max}. Got {value!r}.")
 
 
 @dataclass(frozen=True)
@@ -177,6 +260,15 @@ class PDESpec:
     coefficients: dict[str, CoefficientSpec] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        seen_parameters: set[str] = set()
+        for parameter in self.parameters:
+            if parameter.name in seen_parameters:
+                raise ValueError(
+                    f"PDE '{self.name}' declares duplicate parameter "
+                    f"'{parameter.name}'."
+                )
+            seen_parameters.add(parameter.name)
+
         for name, spec in self.coefficients.items():
             if name != spec.name:
                 raise ValueError(
@@ -285,6 +377,24 @@ class PDESpec:
 
     def parameter_names(self) -> set[str]:
         return {parameter.name for parameter in self.parameters}
+
+    def parameter_specs(self) -> dict[str, PDEParameter]:
+        return {parameter.name: parameter for parameter in self.parameters}
+
+    def validate_parameters(self, parameters: dict[str, float | int]) -> None:
+        """Validate a concrete parameter dictionary against the PDE spec."""
+        expected = self.parameter_names()
+        actual = set(parameters)
+        if actual != expected:
+            raise ValueError(
+                f"PDE '{self.name}' parameters must be {sorted(expected)}. "
+                f"Got {sorted(actual)}."
+            )
+        for parameter in self.parameters:
+            parameter.validate_value(
+                parameters[parameter.name],
+                context=f"PDE '{self.name}' parameter '{parameter.name}'",
+            )
 
     def coefficient_names(self) -> list[str]:
         return list(self.coefficients.keys())

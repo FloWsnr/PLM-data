@@ -12,66 +12,9 @@ from plm_data.fields import is_exact_zero_field_expression
 from plm_data.pdes.base import PDE, ProblemInstance, TransientNonlinearProblem
 from plm_data.pdes.boundary_validation import validate_boundary_field_structure
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
 )
-
-_ZK_BOUNDARY_OPERATORS = {
-    name: SCALAR_STANDARD_BOUNDARY_OPERATORS[name]
-    for name in ("dirichlet", "neumann", "periodic")
-}
-
-_ZK_SPEC = PDESpec(
-    name="zakharov_kuznetsov",
-    category="physics",
-    description=(
-        "Zakharov-Kuznetsov equation for dispersive nonlinear waves using a "
-        "mixed u/w formulation where w = -laplacian(u)."
-    ),
-    equations={
-        "u": "du/dt + alpha*u*du/dx - dw/dx = 0",
-        "w": "w + laplacian(u) = 0",
-    },
-    parameters=[
-        PDEParameter("alpha", "Nonlinear advection coefficient"),
-        PDEParameter("theta", "Time-stepping parameter"),
-    ],
-    inputs={
-        "u": InputSpec(
-            name="u",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        )
-    },
-    boundary_fields={
-        "u": BoundaryFieldSpec(
-            name="u",
-            shape="scalar",
-            operators=_ZK_BOUNDARY_OPERATORS,
-            description="Boundary conditions for the primary field u.",
-        )
-    },
-    states={
-        "u": StateSpec(name="u", shape="scalar"),
-        "w": StateSpec(name="w", shape="scalar"),
-    },
-    outputs={
-        "u": OutputSpec(
-            name="u",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="u",
-        ),
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-)
+from plm_data.pdes.zakharov_kuznetsov.spec import PDE_SPEC
 
 
 def _validate_homogeneous_wall_values(
@@ -135,7 +78,7 @@ class _ZakharovKuznetsovProblem(TransientNonlinearProblem):
             field_name="u",
             boundary_field=boundary_field,
             domain_geom=domain_geom,
-            allowed_operators=set(_ZK_BOUNDARY_OPERATORS),
+            allowed_operators=set(self.spec.boundary_fields["u"].operators),
         )
         _validate_homogeneous_wall_values(
             boundary_field=boundary_field,
@@ -253,7 +196,7 @@ class _ZakharovKuznetsovProblem(TransientNonlinearProblem):
 class ZakharovKuznetsovPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _ZK_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _ZakharovKuznetsovProblem(self.spec, config)

@@ -13,115 +13,9 @@ from plm_data.stochastic import build_scalar_state_stochastic_term
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import validate_scalar_standard_boundary_field
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    SATURATING_STOCHASTIC_COUPLINGS,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
 )
-
-_CYCLIC_COMPETITION_SPEC = PDESpec(
-    name="cyclic_competition",
-    category="biology",
-    description=(
-        "Three-species competitive Lotka-Volterra reaction-diffusion system "
-        "with cyclic dominance."
-    ),
-    equations={
-        "u": "du/dt = Du * laplacian(u) + u * (1 - u - a * v - b * w)",
-        "v": "dv/dt = Dv * laplacian(v) + v * (1 - b * u - v - a * w)",
-        "w": "dw/dt = Dw * laplacian(w) + w * (1 - a * u - b * v - w)",
-    },
-    parameters=[
-        PDEParameter("Du", "Diffusion coefficient of species u"),
-        PDEParameter("Dv", "Diffusion coefficient of species v"),
-        PDEParameter("Dw", "Diffusion coefficient of species w"),
-        PDEParameter("a", "Weak interspecific competition coefficient"),
-        PDEParameter("b", "Strong interspecific competition coefficient"),
-    ],
-    inputs={
-        "u": InputSpec(
-            name="u",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-        "v": InputSpec(
-            name="v",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-        "w": InputSpec(
-            name="w",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-    },
-    boundary_fields={
-        "u": BoundaryFieldSpec(
-            name="u",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for species u.",
-        ),
-        "v": BoundaryFieldSpec(
-            name="v",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for species v.",
-        ),
-        "w": BoundaryFieldSpec(
-            name="w",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for species w.",
-        ),
-    },
-    states={
-        "u": StateSpec(
-            name="u",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-        "v": StateSpec(
-            name="v",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-        "w": StateSpec(
-            name="w",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-    },
-    outputs={
-        "u": OutputSpec(
-            name="u",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="u",
-        ),
-        "v": OutputSpec(
-            name="v",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="v",
-        ),
-        "w": OutputSpec(
-            name="w",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="w",
-        ),
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-)
+from plm_data.pdes.cyclic_competition.spec import PDE_SPEC
 
 
 def _space_num_dofs(V: fem.FunctionSpace) -> int:
@@ -367,7 +261,7 @@ class _CyclicCompetitionProblem(TransientLinearProblem):
 class CyclicCompetitionPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _CYCLIC_COMPETITION_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _CyclicCompetitionProblem(self.spec, config)

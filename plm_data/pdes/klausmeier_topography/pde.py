@@ -20,106 +20,9 @@ from plm_data.stochastic import (
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import validate_scalar_standard_boundary_field
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    CoefficientSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    SATURATING_STOCHASTIC_COUPLINGS,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
 )
-
-_KLAUSMEIER_TOPOGRAPHY_SPEC = PDESpec(
-    name="klausmeier_topography",
-    category="biology",
-    description=(
-        "Klausmeier vegetation model coupling water and biomass on static terrain."
-    ),
-    equations={
-        "w": "dw/dt = a - w - w * n^2 + D * laplacian(w) + V * div(w * grad(T))",
-        "n": "dn/dt = w * n^2 - m * n + Dn * laplacian(n)",
-    },
-    parameters=[
-        PDEParameter("a", "Rainfall rate"),
-        PDEParameter("m", "Plant mortality rate"),
-        PDEParameter("D", "Water diffusion coefficient"),
-        PDEParameter("Dn", "Vegetation diffusion coefficient"),
-        PDEParameter("V", "Topography advection strength"),
-    ],
-    inputs={
-        "w": InputSpec(
-            name="w",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-        "n": InputSpec(
-            name="n",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-    },
-    boundary_fields={
-        "w": BoundaryFieldSpec(
-            name="w",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for water w.",
-        ),
-        "n": BoundaryFieldSpec(
-            name="n",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for vegetation n.",
-        ),
-    },
-    states={
-        "w": StateSpec(
-            name="w",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-        "n": StateSpec(
-            name="n",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-    },
-    outputs={
-        "w": OutputSpec(
-            name="w",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="w",
-        ),
-        "n": OutputSpec(
-            name="n",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="n",
-        ),
-        "topography": OutputSpec(
-            name="topography",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="topography",
-            source_kind="derived",
-        ),
-    },
-    static_fields=["topography"],
-    supported_dimensions=[2],
-    coefficients={
-        "topography": CoefficientSpec(
-            name="topography",
-            shape="scalar",
-            description="Static terrain height T(x, y).",
-            allow_randomization=True,
-        )
-    },
-)
+from plm_data.pdes.klausmeier_topography.spec import PDE_SPEC
 
 
 def _space_num_dofs(V: fem.FunctionSpace) -> int:
@@ -367,7 +270,7 @@ class _KlausmeierTopographyProblem(TransientLinearProblem):
 class KlausmeierTopographyPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _KLAUSMEIER_TOPOGRAPHY_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _KlausmeierTopographyProblem(self.spec, config)

@@ -15,85 +15,12 @@ from plm_data.stochastic import build_scalar_coefficient
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import validate_scalar_standard_boundary_field
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    CoefficientSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
 )
+from plm_data.pdes.wave.spec import PDE_SPEC
 
 _BETA = 0.25
 _GAMMA = 0.5
-
-_WAVE_SPEC = PDESpec(
-    name="wave",
-    category="basic",
-    description="Damped wave equation with scalar displacement and velocity outputs.",
-    equations={
-        "u": "d2u/dt2 + damping * du/dt = div(c_sq grad(u)) + f",
-        "v": "v = du/dt",
-    },
-    parameters=[PDEParameter("damping", "Linear damping coefficient")],
-    inputs={
-        "u": InputSpec(
-            name="u",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-        "v": InputSpec(
-            name="v",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-        "forcing": InputSpec(
-            name="forcing",
-            shape="scalar",
-            allow_source=True,
-            allow_initial_condition=False,
-        ),
-    },
-    boundary_fields={
-        "u": BoundaryFieldSpec(
-            name="u",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for the scalar displacement field.",
-        )
-    },
-    states={
-        "u": StateSpec(name="u", shape="scalar"),
-        "v": StateSpec(name="v", shape="scalar"),
-    },
-    outputs={
-        "u": OutputSpec(
-            name="u",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="u",
-        ),
-        "v": OutputSpec(
-            name="v",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="v",
-        ),
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-    coefficients={
-        "c_sq": CoefficientSpec(
-            name="c_sq",
-            shape="scalar",
-            description="Wave-speed-squared coefficient field.",
-            allow_randomization=True,
-        )
-    },
-)
 
 
 def _zero_dirichlet_bcs(
@@ -291,7 +218,7 @@ class _WaveProblem(TransientLinearProblem):
 class WavePDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _WAVE_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _WaveProblem(self.spec, config)

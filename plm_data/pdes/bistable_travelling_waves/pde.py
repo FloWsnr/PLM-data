@@ -1,24 +1,11 @@
 """Bistable Allen-Cahn / Chaffee-Infante travelling-wave PDE."""
 
 from plm_data.pdes.base import PDE, ProblemInstance
-from plm_data.pdes.metadata import PDEParameter
 
 from plm_data.pdes.fisher_kpp.helpers import (
     ScalarReactionDiffusionProblem,
-    build_scalar_reaction_diffusion_spec,
 )
-
-_BISTABLE_TRAVELLING_WAVES_SPEC = build_scalar_reaction_diffusion_spec(
-    name="bistable_travelling_waves",
-    description=(
-        "Bistable reaction-diffusion equation with Allen-Cahn / "
-        "Chaffee-Infante kinetics for travelling fronts."
-    ),
-    reaction_equation="u * (u - a) * (1 - u)",
-    parameters=[
-        PDEParameter("a", "Bistability threshold parameter"),
-    ],
-)
+from plm_data.pdes.bistable_travelling_waves.spec import PDE_SPEC
 
 
 class _BistableTravellingWavesProblem(ScalarReactionDiffusionProblem):
@@ -30,7 +17,7 @@ class _BistableTravellingWavesProblem(ScalarReactionDiffusionProblem):
 class BistableTravellingWavesPDE(PDE):
     @property
     def spec(self):
-        return _BISTABLE_TRAVELLING_WAVES_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _BistableTravellingWavesProblem(self.spec, config)

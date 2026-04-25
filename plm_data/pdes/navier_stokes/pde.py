@@ -19,14 +19,9 @@ from plm_data.fields.source_terms import build_vector_source_form
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import validate_vector_standard_boundary_field
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    StateSpec,
-    VECTOR_STANDARD_BOUNDARY_OPERATORS,
 )
+from plm_data.pdes.navier_stokes.spec import PDE_SPEC
 
 
 def _space_num_dofs(V: fem.FunctionSpace) -> int:
@@ -65,57 +60,6 @@ def _domain_average(msh, value) -> float:
         op=MPI.SUM,
     )
     return float(total / volume)
-
-
-_NAVIER_STOKES_SPEC = PDESpec(
-    name="navier_stokes",
-    category="fluids",
-    description="Incompressible Navier-Stokes equations.",
-    equations={
-        "velocity": "du/dt + (u.grad)u = -grad(p) + (1/Re)*laplacian(u)",
-        "pressure": "div(u) = 0",
-    },
-    parameters=[
-        PDEParameter("Re", "Reynolds number"),
-        PDEParameter("k", "Polynomial degree parameter"),
-    ],
-    inputs={
-        "velocity": InputSpec(
-            name="velocity",
-            shape="vector",
-            allow_source=True,
-            allow_initial_condition=True,
-        ),
-    },
-    boundary_fields={
-        "velocity": BoundaryFieldSpec(
-            name="velocity",
-            shape="vector",
-            operators=VECTOR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for the velocity field.",
-        )
-    },
-    states={
-        "velocity": StateSpec(name="velocity", shape="vector"),
-        "pressure": StateSpec(name="pressure", shape="scalar"),
-    },
-    outputs={
-        "velocity": OutputSpec(
-            name="velocity",
-            shape="vector",
-            output_mode="components",
-            source_name="velocity",
-        ),
-        "pressure": OutputSpec(
-            name="pressure",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="pressure",
-        ),
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-)
 
 
 class _NavierStokesProblem(TransientLinearProblem):
@@ -306,7 +250,7 @@ class _NavierStokesProblem(TransientLinearProblem):
 class NavierStokesPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _NAVIER_STOKES_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _NavierStokesProblem(self.spec, config)

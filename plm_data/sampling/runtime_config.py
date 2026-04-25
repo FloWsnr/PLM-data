@@ -34,7 +34,13 @@ from plm_data.initial_conditions.scenarios import (
     get_initial_condition_scenario,
 )
 from plm_data.sampling.context import SamplingContext
-from plm_data.sampling.samplers import attempt_rng, choose, randint, uniform
+from plm_data.sampling.samplers import (
+    attempt_rng,
+    choose,
+    randint,
+    sample_numeric_parameter,
+    uniform,
+)
 
 DEFAULT_RANDOM_OUTPUT_FORMATS = ("numpy", "gif", "vtk")
 MIGRATED_RANDOM_PDES = (
@@ -297,13 +303,30 @@ def _output_config(
     )
 
 
+def _sample_pde_parameters(
+    context: SamplingContext,
+    pde_name: str,
+) -> dict[str, float]:
+    spec = get_pde(pde_name).spec
+    parameters: dict[str, float] = {}
+    for parameter in spec.parameters:
+        parameters[parameter.name] = float(
+            sample_numeric_parameter(
+                context,
+                f"{pde_name}.{parameter.name}",
+                parameter,
+            )
+        )
+    return parameters
+
+
 def _build_heat(
     context: SamplingContext,
     domain: DomainConfig,
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters: dict[str, float] = {}
+    parameters = _sample_pde_parameters(context, "heat")
     return SimulationConfig(
         pde="heat",
         parameters=parameters,
@@ -338,7 +361,7 @@ def _build_advection(
 ) -> SimulationConfig:
     speed = uniform(context, "advection.speed", 0.35, 0.75)
     angle = uniform(context, "advection.angle", -0.25, 0.25)
-    parameters: dict[str, float] = {}
+    parameters = _sample_pde_parameters(context, "advection")
     return SimulationConfig(
         pde="advection",
         parameters=parameters,
@@ -379,9 +402,7 @@ def _build_wave(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "damping": uniform(context, "wave.damping", 0.04, 0.16),
-    }
+    parameters = _sample_pde_parameters(context, "wave")
     return SimulationConfig(
         pde="wave",
         parameters=parameters,
@@ -414,9 +435,7 @@ def _build_plate(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "theta": uniform(context, "plate.theta", 0.55, 0.75),
-    }
+    parameters = _sample_pde_parameters(context, "plate")
     return SimulationConfig(
         pde="plate",
         parameters=parameters,
@@ -453,10 +472,7 @@ def _build_schrodinger(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "D": uniform(context, "schrodinger.D", 0.025, 0.06),
-        "theta": uniform(context, "schrodinger.theta", 0.5, 0.6),
-    }
+    parameters = _sample_pde_parameters(context, "schrodinger")
     return SimulationConfig(
         pde="schrodinger",
         parameters=parameters,
@@ -498,9 +514,7 @@ def _build_burgers(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "nu": uniform(context, "burgers.nu", 0.02, 0.05),
-    }
+    parameters = _sample_pde_parameters(context, "burgers")
     return SimulationConfig(
         pde="burgers",
         parameters=parameters,
@@ -532,10 +546,7 @@ def _build_bistable_travelling_waves(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "D": uniform(context, "bistable.D", 0.025, 0.06),
-        "a": uniform(context, "bistable.a", 0.25, 0.45),
-    }
+    parameters = _sample_pde_parameters(context, "bistable_travelling_waves")
     return SimulationConfig(
         pde="bistable_travelling_waves",
         parameters=parameters,
@@ -568,12 +579,7 @@ def _build_brusselator(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "Du": uniform(context, "brusselator.Du", 0.006, 0.014),
-        "Dv": uniform(context, "brusselator.Dv", 0.06, 0.14),
-        "a": uniform(context, "brusselator.a", 0.9, 1.15),
-        "b": uniform(context, "brusselator.b", 2.2, 3.0),
-    }
+    parameters = _sample_pde_parameters(context, "brusselator")
     return SimulationConfig(
         pde="brusselator",
         parameters=parameters,
@@ -605,13 +611,7 @@ def _build_fitzhugh_nagumo(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "Du": uniform(context, "fitzhugh.Du", 0.008, 0.018),
-        "Dv": uniform(context, "fitzhugh.Dv", 0.03, 0.08),
-        "tau": uniform(context, "fitzhugh.tau", 0.8, 1.3),
-        "b": uniform(context, "fitzhugh.b", 0.7, 1.0),
-        "a": uniform(context, "fitzhugh.a", 0.05, 0.18),
-    }
+    parameters = _sample_pde_parameters(context, "fitzhugh_nagumo")
     return SimulationConfig(
         pde="fitzhugh_nagumo",
         parameters=parameters,
@@ -643,12 +643,7 @@ def _build_gray_scott(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "Du": uniform(context, "gray_scott.Du", 0.08, 0.16),
-        "Dv": uniform(context, "gray_scott.Dv", 0.04, 0.08),
-        "F": uniform(context, "gray_scott.F", 0.026, 0.045),
-        "k": uniform(context, "gray_scott.k", 0.052, 0.068),
-    }
+    parameters = _sample_pde_parameters(context, "gray_scott")
     return SimulationConfig(
         pde="gray_scott",
         parameters=parameters,
@@ -681,17 +676,7 @@ def _build_gierer_meinhardt(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "Da": uniform(context, "gierer.Da", 0.004, 0.012),
-        "Dh": uniform(context, "gierer.Dh", 0.06, 0.14),
-        "rho_a": uniform(context, "gierer.rho_a", 0.12, 0.28),
-        "rho_h": uniform(context, "gierer.rho_h", 0.18, 0.38),
-        "mu_a": uniform(context, "gierer.mu_a", 0.35, 0.65),
-        "mu_h": uniform(context, "gierer.mu_h", 0.45, 0.75),
-        "sigma_a": uniform(context, "gierer.sigma_a", 0.02, 0.06),
-        "sigma_h": uniform(context, "gierer.sigma_h", 0.02, 0.06),
-        "tau": uniform(context, "gierer.tau", 0.9, 1.4),
-    }
+    parameters = _sample_pde_parameters(context, "gierer_meinhardt")
     return SimulationConfig(
         pde="gierer_meinhardt",
         parameters=parameters,
@@ -723,12 +708,7 @@ def _build_schnakenberg(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "Du": uniform(context, "schnakenberg.Du", 0.004, 0.012),
-        "Dv": uniform(context, "schnakenberg.Dv", 0.14, 0.3),
-        "a": uniform(context, "schnakenberg.a", 0.08, 0.16),
-        "b": uniform(context, "schnakenberg.b", 0.75, 1.05),
-    }
+    parameters = _sample_pde_parameters(context, "schnakenberg")
     return SimulationConfig(
         pde="schnakenberg",
         parameters=parameters,
@@ -760,14 +740,7 @@ def _build_cyclic_competition(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    base_diffusion = uniform(context, "cyclic.diffusion", 0.006, 0.016)
-    parameters = {
-        "Du": base_diffusion * uniform(context, "cyclic.Du_scale", 0.8, 1.2),
-        "Dv": base_diffusion * uniform(context, "cyclic.Dv_scale", 0.6, 1.4),
-        "Dw": base_diffusion * uniform(context, "cyclic.Dw_scale", 0.7, 1.5),
-        "a": uniform(context, "cyclic.a", 0.35, 0.75),
-        "b": uniform(context, "cyclic.b", 1.15, 1.65),
-    }
+    parameters = _sample_pde_parameters(context, "cyclic_competition")
     return SimulationConfig(
         pde="cyclic_competition",
         parameters=parameters,
@@ -799,22 +772,7 @@ def _build_immunotherapy(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "Du": uniform(context, "immunotherapy.Du", 24.0, 42.0),
-        "Dv": uniform(context, "immunotherapy.Dv", 0.55, 1.0),
-        "Dw": uniform(context, "immunotherapy.Dw", 18.0, 34.0),
-        "alpha": uniform(context, "immunotherapy.alpha", 0.045, 0.085),
-        "mu_u": uniform(context, "immunotherapy.mu_u", 0.16, 0.24),
-        "rho_u": uniform(context, "immunotherapy.rho_u", 0.38, 0.62),
-        "gamma_v": uniform(context, "immunotherapy.gamma_v", 0.12, 0.22),
-        "rho_w": uniform(context, "immunotherapy.rho_w", 1.2, 2.1),
-        "gamma_w": uniform(context, "immunotherapy.gamma_w", 0.0015, 0.0045),
-        "mu_w": uniform(context, "immunotherapy.mu_w", 24.0, 40.0),
-        "sigma_u": uniform(context, "immunotherapy.sigma_u", 0.0, 0.006),
-        "Ku": uniform(context, "immunotherapy.Ku", 0.0, 0.00004),
-        "sigma_w": uniform(context, "immunotherapy.sigma_w", 0.0, 0.003),
-        "Kw": uniform(context, "immunotherapy.Kw", 0.0, 0.00002),
-    }
+    parameters = _sample_pde_parameters(context, "immunotherapy")
     return SimulationConfig(
         pde="immunotherapy",
         parameters=parameters,
@@ -846,11 +804,7 @@ def _build_van_der_pol(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "Du": uniform(context, "vdp.Du", 0.08, 0.2),
-        "Dv": uniform(context, "vdp.Dv", 0.015, 0.06),
-        "mu": uniform(context, "vdp.mu", 0.8, 2.2),
-    }
+    parameters = _sample_pde_parameters(context, "van_der_pol")
     return SimulationConfig(
         pde="van_der_pol",
         parameters=parameters,
@@ -882,12 +836,7 @@ def _build_lorenz(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "sigma": uniform(context, "lorenz.sigma", 7.5, 11.0),
-        "rho": uniform(context, "lorenz.rho", 27.0, 36.0),
-        "beta": uniform(context, "lorenz.beta", 2.45, 2.9),
-        "D": uniform(context, "lorenz.D", 0.08, 0.22),
-    }
+    parameters = _sample_pde_parameters(context, "lorenz")
     return SimulationConfig(
         pde="lorenz",
         parameters=parameters,
@@ -919,14 +868,7 @@ def _build_keller_segel(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "D_rho": uniform(context, "keller.D_rho", 0.004, 0.012),
-        "D_c": uniform(context, "keller.D_c", 0.035, 0.09),
-        "chi0": uniform(context, "keller.chi0", 0.06, 0.16),
-        "alpha": uniform(context, "keller.alpha", 0.18, 0.38),
-        "beta": uniform(context, "keller.beta", 0.18, 0.42),
-        "r": uniform(context, "keller.r", 0.03, 0.12),
-    }
+    parameters = _sample_pde_parameters(context, "keller_segel")
     return SimulationConfig(
         pde="keller_segel",
         parameters=parameters,
@@ -958,13 +900,7 @@ def _build_klausmeier_topography(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "a": uniform(context, "klausmeier.a", 0.85, 1.2),
-        "m": uniform(context, "klausmeier.m", 0.35, 0.55),
-        "D": uniform(context, "klausmeier.D", 0.04, 0.1),
-        "Dn": uniform(context, "klausmeier.Dn", 0.002, 0.008),
-        "V": uniform(context, "klausmeier.V", 0.08, 0.18),
-    }
+    parameters = _sample_pde_parameters(context, "klausmeier_topography")
     return SimulationConfig(
         pde="klausmeier_topography",
         parameters=parameters,
@@ -1024,17 +960,7 @@ def _build_superlattice(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "D_u1": uniform(context, "superlattice.D_u1", 0.006, 0.014),
-        "D_v1": uniform(context, "superlattice.D_v1", 0.05, 0.12),
-        "D_u2": uniform(context, "superlattice.D_u2", 0.006, 0.014),
-        "D_v2": uniform(context, "superlattice.D_v2", 0.045, 0.1),
-        "a": uniform(context, "superlattice.a", 0.9, 1.1),
-        "b": uniform(context, "superlattice.b", 2.2, 2.9),
-        "c": uniform(context, "superlattice.c", 4.0, 5.4),
-        "d": uniform(context, "superlattice.d", 7.0, 10.0),
-        "alpha": uniform(context, "superlattice.alpha", 0.02, 0.08),
-    }
+    parameters = _sample_pde_parameters(context, "superlattice")
     return SimulationConfig(
         pde="superlattice",
         parameters=parameters,
@@ -1071,12 +997,7 @@ def _build_cahn_hilliard(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "lmbda": uniform(context, "cahn.lmbda", 0.008, 0.02),
-        "barrier_height": uniform(context, "cahn.barrier_height", 0.8, 1.6),
-        "mobility": uniform(context, "cahn.mobility", 0.006, 0.018),
-        "theta": 0.5,
-    }
+    parameters = _sample_pde_parameters(context, "cahn_hilliard")
     return SimulationConfig(
         pde="cahn_hilliard",
         parameters=parameters,
@@ -1108,15 +1029,7 @@ def _build_cgl(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "D_r": uniform(context, "cgl.D_r", 0.05, 0.12),
-        "D_i": uniform(context, "cgl.D_i", 0.12, 0.35),
-        "a_r": uniform(context, "cgl.a_r", 0.12, 0.35),
-        "a_i": uniform(context, "cgl.a_i", -0.08, 0.08),
-        "b_r": uniform(context, "cgl.b_r", -0.8, -0.35),
-        "b_i": uniform(context, "cgl.b_i", -0.45, 0.1),
-        "theta": 0.5,
-    }
+    parameters = _sample_pde_parameters(context, "cgl")
     return SimulationConfig(
         pde="cgl",
         parameters=parameters,
@@ -1148,16 +1061,7 @@ def _build_kuramoto_sivashinsky(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "theta": 0.5,
-        "hyperdiffusion": uniform(context, "ks.hyperdiffusion", 0.035, 0.08),
-        "anti_diffusion": uniform(context, "ks.anti_diffusion", 0.08, 0.18),
-        "nonlinear_strength": uniform(context, "ks.nonlinear_strength", 0.35, 0.8),
-        "damping": uniform(context, "ks.damping", 0.015, 0.05),
-        "advection_x": 0.0,
-        "advection_y": 0.0,
-        "advection_z": 0.0,
-    }
+    parameters = _sample_pde_parameters(context, "kuramoto_sivashinsky")
     return SimulationConfig(
         pde="kuramoto_sivashinsky",
         parameters=parameters,
@@ -1189,14 +1093,7 @@ def _build_swift_hohenberg(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "r": uniform(context, "swift.r", 0.08, 0.22),
-        "q0": uniform(context, "swift.q0", 0.85, 1.15),
-        "alpha": uniform(context, "swift.alpha", -0.05, 0.05),
-        "beta": uniform(context, "swift.beta", -1.0, -0.55),
-        "gamma": uniform(context, "swift.gamma", -0.04, 0.0),
-        "theta": 0.5,
-    }
+    parameters = _sample_pde_parameters(context, "swift_hohenberg")
     return SimulationConfig(
         pde="swift_hohenberg",
         parameters=parameters,
@@ -1229,10 +1126,7 @@ def _build_zakharov_kuznetsov(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "alpha": uniform(context, "zk.alpha", 1.5, 3.5),
-        "theta": 0.5,
-    }
+    parameters = _sample_pde_parameters(context, "zakharov_kuznetsov")
     return SimulationConfig(
         pde="zakharov_kuznetsov",
         parameters=parameters,
@@ -1264,12 +1158,7 @@ def _build_fisher_kpp(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    carrying_capacity = uniform(context, "fisher.K", 0.9, 1.2)
-    parameters = {
-        "D": uniform(context, "fisher.D", 0.03, 0.08),
-        "r": uniform(context, "fisher.r", 0.45, 0.9),
-        "K": carrying_capacity,
-    }
+    parameters = _sample_pde_parameters(context, "fisher_kpp")
     return SimulationConfig(
         pde="fisher_kpp",
         parameters=parameters,
@@ -1302,18 +1191,7 @@ def _build_elasticity(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "young_modulus": uniform(context, "elasticity.young_modulus", 4.5, 6.5),
-        "poisson_ratio": uniform(context, "elasticity.poisson_ratio", 0.22, 0.34),
-        "density": uniform(context, "elasticity.density", 1.2, 1.8),
-        "eta_mass": uniform(context, "elasticity.eta_mass", 0.006, 0.014),
-        "eta_stiffness": uniform(
-            context,
-            "elasticity.eta_stiffness",
-            0.0003,
-            0.0008,
-        ),
-    }
+    parameters = _sample_pde_parameters(context, "elasticity")
     return SimulationConfig(
         pde="elasticity",
         parameters=parameters,
@@ -1349,15 +1227,8 @@ def _build_darcy(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    inlet_pressure = uniform(context, "darcy.inlet_pressure", 0.9, 1.2)
-    outlet_pressure = uniform(context, "darcy.outlet_pressure", -0.04, 0.08)
     height = domain.params["size"][1]
-    parameters = {
-        "storage": uniform(context, "darcy.storage", 0.07, 0.11),
-        "porosity": uniform(context, "darcy.porosity", 0.28, 0.4),
-        "inlet_pressure": inlet_pressure,
-        "outlet_pressure": outlet_pressure,
-    }
+    parameters = _sample_pde_parameters(context, "darcy")
     return SimulationConfig(
         pde="darcy",
         parameters=parameters,
@@ -1406,10 +1277,7 @@ def _build_navier_stokes(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "Re": uniform(context, "navier.Re", 18.0, 45.0),
-        "k": 1,
-    }
+    parameters = _sample_pde_parameters(context, "navier_stokes")
     return SimulationConfig(
         pde="navier_stokes",
         parameters=parameters,
@@ -1441,13 +1309,7 @@ def _build_shallow_water(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "gravity": uniform(context, "shallow.gravity", 0.7, 1.2),
-        "mean_depth": uniform(context, "shallow.mean_depth", 0.8, 1.2),
-        "drag": uniform(context, "shallow.drag", 0.015, 0.05),
-        "viscosity": uniform(context, "shallow.viscosity", 0.002, 0.006),
-        "coriolis": uniform(context, "shallow.coriolis", -0.08, 0.08),
-    }
+    parameters = _sample_pde_parameters(context, "shallow_water")
     return SimulationConfig(
         pde="shallow_water",
         parameters=parameters,
@@ -1480,11 +1342,7 @@ def _build_thermal_convection(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "Ra": uniform(context, "thermal.Ra", 120.0, 320.0),
-        "Pr": uniform(context, "thermal.Pr", 0.8, 1.4),
-        "k": 1,
-    }
+    parameters = _sample_pde_parameters(context, "thermal_convection")
     return SimulationConfig(
         pde="thermal_convection",
         parameters=parameters,
@@ -1520,15 +1378,7 @@ def _build_maxwell_pulse(
     boundary_scenario_name: str,
     initial_condition_scenario_name: str,
 ) -> SimulationConfig:
-    parameters = {
-        "epsilon_r": uniform(context, "maxwell.epsilon_r", 0.9, 1.3),
-        "mu_r": uniform(context, "maxwell.mu_r", 0.9, 1.2),
-        "sigma": uniform(context, "maxwell.sigma", 0.01, 0.04),
-        "pulse_amplitude": uniform(context, "maxwell.pulse_amplitude", 0.5, 1.0),
-        "pulse_frequency": uniform(context, "maxwell.pulse_frequency", 1.5, 3.0),
-        "pulse_width": uniform(context, "maxwell.pulse_width", 0.015, 0.03),
-        "pulse_delay": uniform(context, "maxwell.pulse_delay", 0.01, 0.02),
-    }
+    parameters = _sample_pde_parameters(context, "maxwell_pulse")
     return SimulationConfig(
         pde="maxwell_pulse",
         parameters=parameters,
@@ -1897,6 +1747,7 @@ def validate_runtime_config(config: SimulationConfig) -> None:
         )
     if config.time is None:
         raise ValueError(f"Random PDE '{config.pde}' must be time-dependent.")
+    spec.validate_parameters(config.parameters)
     if set(config.inputs) != set(spec.inputs):
         raise ValueError(
             f"Runtime config inputs for PDE '{config.pde}' must be "

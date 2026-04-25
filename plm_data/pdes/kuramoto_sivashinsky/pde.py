@@ -12,81 +12,9 @@ from plm_data.fields import is_exact_zero_field_expression
 from plm_data.pdes.base import PDE, ProblemInstance, TransientNonlinearProblem
 from plm_data.pdes.boundary_validation import validate_boundary_field_structure
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
 )
-
-_KS_BOUNDARY_OPERATORS = {
-    name: SCALAR_STANDARD_BOUNDARY_OPERATORS[name]
-    for name in ("dirichlet", "neumann", "periodic")
-}
-
-_KS_SPEC = PDESpec(
-    name="kuramoto_sivashinsky",
-    category="physics",
-    description=(
-        "Kuramoto-Sivashinsky equation for spatiotemporal chaos using a mixed "
-        "u/v formulation where v = -laplacian(u)."
-    ),
-    equations={
-        "u": (
-            "du/dt + velocity.grad(u) = hyperdiffusion*laplacian(v) "
-            "+ anti_diffusion*v - (nonlinear_strength/2)|grad(u)|^2 - damping*u"
-        ),
-        "v": "v + laplacian(u) = 0",
-    },
-    parameters=[
-        PDEParameter("theta", "Time-stepping parameter"),
-        PDEParameter("hyperdiffusion", "Stabilizing fourth-order coefficient"),
-        PDEParameter("anti_diffusion", "Destabilizing negative-diffusion coefficient"),
-        PDEParameter("nonlinear_strength", "Nonlinear gradient-saturation strength"),
-        PDEParameter("damping", "Linear damping coefficient"),
-        PDEParameter("advection_x", "Constant x-advection velocity"),
-        PDEParameter("advection_y", "Constant y-advection velocity"),
-        PDEParameter("advection_z", "Constant z-advection velocity"),
-    ],
-    inputs={
-        "u": InputSpec(
-            name="u",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        )
-    },
-    boundary_fields={
-        "u": BoundaryFieldSpec(
-            name="u",
-            shape="scalar",
-            operators=_KS_BOUNDARY_OPERATORS,
-            description="Boundary conditions for the primary field u.",
-        )
-    },
-    states={
-        "u": StateSpec(name="u", shape="scalar"),
-        "v": StateSpec(name="v", shape="scalar"),
-    },
-    outputs={
-        "u": OutputSpec(
-            name="u",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="u",
-        ),
-        "v": OutputSpec(
-            name="v",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="v",
-        ),
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-)
+from plm_data.pdes.kuramoto_sivashinsky.spec import PDE_SPEC
 
 
 def _velocity_vector(msh, parameters: dict[str, float]):
@@ -155,7 +83,7 @@ class _KuramotoSivashinskyProblem(TransientNonlinearProblem):
             field_name="u",
             boundary_field=boundary_field,
             domain_geom=domain_geom,
-            allowed_operators=set(_KS_BOUNDARY_OPERATORS),
+            allowed_operators=set(self.spec.boundary_fields["u"].operators),
         )
         _validate_homogeneous_wall_values(
             boundary_field=boundary_field,
@@ -286,7 +214,7 @@ class _KuramotoSivashinskyProblem(TransientNonlinearProblem):
 class KuramotoSivashinskyPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _KS_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _KuramotoSivashinskyProblem(self.spec, config)

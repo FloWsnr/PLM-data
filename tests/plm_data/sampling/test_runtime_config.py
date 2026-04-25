@@ -21,6 +21,8 @@ from plm_data.sampling import (
     sample_random_runtime_config,
     validate_runtime_config,
 )
+from plm_data.sampling.context import SamplingContext
+from plm_data.sampling.samplers import attempt_rng
 
 
 def _contains_sampler(value: Any) -> bool:
@@ -70,6 +72,51 @@ def test_pdes_registry_exposes_migrated_random_slice():
     assert get_pde("maxwell_pulse").spec.name == "maxwell_pulse"
     with pytest.raises(ValueError, match="Unknown migrated PDE"):
         get_pde("not_migrated")
+
+
+def test_random_pde_parameters_are_spec_sampled():
+    for attempt, profile in enumerate(list_random_pde_cases()):
+        context = SamplingContext(
+            seed=8675309,
+            attempt=attempt,
+            rng=attempt_rng(8675309, attempt, "root"),
+            pde_name=profile.pde_name,
+        )
+        domain_name = next(iter(profile.domain_samplers))
+        context.domain_name = domain_name
+        domain = profile.domain_samplers[domain_name](context)
+        boundary_scenario_name = next(
+            iter(
+                sorted(
+                    compatible_boundary_scenarios(
+                        pde_name=profile.pde_name,
+                        domain_name=domain_name,
+                    )
+                )
+            )
+        )
+        initial_condition_scenario_name = next(
+            iter(
+                sorted(
+                    compatible_initial_condition_scenarios(
+                        pde_name=profile.pde_name,
+                        domain_name=domain_name,
+                    )
+                )
+            )
+        )
+
+        config = profile.build(
+            context,
+            domain,
+            boundary_scenario_name,
+            initial_condition_scenario_name,
+        )
+        spec = get_pde(profile.pde_name).spec
+
+        assert all(parameter.has_sampling_rule for parameter in spec.parameters)
+        assert set(config.parameters) == spec.parameter_names()
+        spec.validate_parameters(config.parameters)
 
 
 def test_domain_registry_module_exposes_migrated_layout():

@@ -14,62 +14,9 @@ from plm_data.stochastic import build_vector_state_stochastic_term
 from plm_data.pdes.base import PDE, ProblemInstance, TransientNonlinearProblem
 from plm_data.pdes.boundary_validation import validate_vector_standard_boundary_field
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    GENERIC_STOCHASTIC_COUPLINGS,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    StateSpec,
-    VECTOR_STANDARD_BOUNDARY_OPERATORS,
 )
-
-_BURGERS_SPEC = PDESpec(
-    name="burgers",
-    category="fluids",
-    description=(
-        "Vector viscous Burgers equation with nonlinear self-advection and diffusion."
-    ),
-    equations={
-        "velocity": "du/dt + (u dot grad)u = nu * laplacian(u) + f",
-    },
-    parameters=[
-        PDEParameter("nu", "Kinematic viscosity / diffusion coefficient"),
-    ],
-    inputs={
-        "velocity": InputSpec(
-            name="velocity",
-            shape="vector",
-            allow_source=True,
-            allow_initial_condition=True,
-        ),
-    },
-    boundary_fields={
-        "velocity": BoundaryFieldSpec(
-            name="velocity",
-            shape="vector",
-            operators=VECTOR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for the Burgers velocity field.",
-        ),
-    },
-    states={
-        "velocity": StateSpec(
-            name="velocity",
-            shape="vector",
-            stochastic_couplings=GENERIC_STOCHASTIC_COUPLINGS,
-        ),
-    },
-    outputs={
-        "velocity": OutputSpec(
-            name="velocity",
-            shape="vector",
-            output_mode="components",
-            source_name="velocity",
-        ),
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-)
+from plm_data.pdes.burgers.spec import PDE_SPEC
 
 
 class _BurgersProblem(TransientNonlinearProblem):
@@ -197,7 +144,7 @@ class _BurgersProblem(TransientNonlinearProblem):
 class BurgersPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _BURGERS_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _BurgersProblem(self.spec, config)

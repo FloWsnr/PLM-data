@@ -4,7 +4,6 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem
 
-from plm_data.boundary_conditions import get_boundary_operator_spec
 from plm_data.initial_conditions.runtime import apply_ic
 from plm_data.core.runtime_config import BoundaryFieldConfig
 from plm_data.core.solver_strategies import NONLINEAR_MIXED_DIRECT
@@ -12,81 +11,9 @@ from plm_data.fields import build_vector_ufl_field
 from plm_data.pdes.base import PDE, ProblemInstance, TransientNonlinearProblem
 from plm_data.pdes.boundary_validation import validate_boundary_field_structure
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    CoefficientSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
 )
-
-_SWIFT_HOHENBERG_BOUNDARY_OPERATORS = {
-    "periodic": SCALAR_STANDARD_BOUNDARY_OPERATORS["periodic"],
-    "simply_supported": get_boundary_operator_spec("simply_supported"),
-}
-
-_SWIFT_HOHENBERG_SPEC = PDESpec(
-    name="swift_hohenberg",
-    category="physics",
-    description=(
-        "Swift-Hohenberg equation for pattern formation using a mixed u/w "
-        "formulation where w = (q0^2 + laplacian)(u)."
-    ),
-    equations={
-        "u": (
-            "du/dt + velocity.grad(u) = r*u - q0^2*w - laplacian(w) "
-            "+ alpha*u^2 + beta*u^3 + gamma*u^5"
-        ),
-        "w": "w = q0^2*u + laplacian(u)",
-    },
-    parameters=[
-        PDEParameter("r", "Bifurcation parameter"),
-        PDEParameter("q0", "Critical wavenumber"),
-        PDEParameter("alpha", "Quadratic nonlinearity coefficient"),
-        PDEParameter("beta", "Cubic nonlinearity coefficient"),
-        PDEParameter("gamma", "Quintic nonlinearity coefficient"),
-        PDEParameter("theta", "Time-stepping parameter"),
-    ],
-    inputs={
-        "u": InputSpec(
-            name="u",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        )
-    },
-    boundary_fields={
-        "u": BoundaryFieldSpec(
-            name="u",
-            shape="scalar",
-            operators=_SWIFT_HOHENBERG_BOUNDARY_OPERATORS,
-            description="Boundary conditions for the primary field u.",
-        )
-    },
-    states={
-        "u": StateSpec(name="u", shape="scalar"),
-        "w": StateSpec(name="w", shape="scalar"),
-    },
-    outputs={
-        "u": OutputSpec(
-            name="u",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="u",
-        ),
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-    coefficients={
-        "velocity": CoefficientSpec(
-            name="velocity",
-            shape="vector",
-            description="Prescribed advection velocity for the primary field u.",
-        )
-    },
-)
+from plm_data.pdes.swift_hohenberg.spec import PDE_SPEC
 
 
 def _boundary_mode(boundary_field: BoundaryFieldConfig) -> str:
@@ -258,7 +185,7 @@ class _SwiftHohenbergProblem(TransientNonlinearProblem):
 class SwiftHohenbergPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _SWIFT_HOHENBERG_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _SwiftHohenbergProblem(self.spec, config)

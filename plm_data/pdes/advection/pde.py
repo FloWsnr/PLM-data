@@ -21,74 +21,9 @@ from plm_data.fields import (
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import validate_scalar_standard_boundary_field
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    CoefficientSpec,
-    GENERIC_STOCHASTIC_COUPLINGS,
-    InputSpec,
-    OutputSpec,
     PDESpec,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
 )
-
-_ADVECTION_SPEC = PDESpec(
-    name="advection",
-    category="basic",
-    description=(
-        "Scalar advection-diffusion equation with a prescribed velocity field "
-        "and SUPG stabilization."
-    ),
-    equations={
-        "u": "du/dt + velocity dot grad(u) = div(diffusivity grad(u)) + f",
-    },
-    parameters=[],
-    inputs={
-        "u": InputSpec(
-            name="u",
-            shape="scalar",
-            allow_source=True,
-            allow_initial_condition=True,
-        )
-    },
-    boundary_fields={
-        "u": BoundaryFieldSpec(
-            name="u",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for the transported scalar field.",
-        )
-    },
-    states={
-        "u": StateSpec(
-            name="u",
-            shape="scalar",
-            stochastic_couplings=GENERIC_STOCHASTIC_COUPLINGS,
-        )
-    },
-    outputs={
-        "u": OutputSpec(
-            name="u",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="u",
-        )
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-    coefficients={
-        "velocity": CoefficientSpec(
-            name="velocity",
-            shape="vector",
-            description="Prescribed advection velocity field.",
-        ),
-        "diffusivity": CoefficientSpec(
-            name="diffusivity",
-            shape="scalar",
-            description="Scalar diffusion coefficient field.",
-            allow_randomization=True,
-        ),
-    },
-)
+from plm_data.pdes.advection.spec import PDE_SPEC
 
 
 class _AdvectionProblem(TransientLinearProblem):
@@ -240,7 +175,7 @@ class _AdvectionProblem(TransientLinearProblem):
 class AdvectionPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _ADVECTION_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _AdvectionProblem(self.spec, config)

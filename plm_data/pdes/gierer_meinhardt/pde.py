@@ -13,92 +13,9 @@ from plm_data.stochastic import build_scalar_state_stochastic_term
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import validate_scalar_standard_boundary_field
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    SATURATING_STOCHASTIC_COUPLINGS,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
 )
-
-_GIERER_MEINHARDT_SPEC = PDESpec(
-    name="gierer_meinhardt",
-    category="biology",
-    description="Gierer-Meinhardt activator-inhibitor reaction-diffusion system.",
-    equations={
-        "a": "da/dt = Da * laplacian(a) + rho_a * a^2 / h - mu_a * a + sigma_a",
-        "h": "tau * dh/dt = Dh * laplacian(h) + rho_h * a^2 - mu_h * h + sigma_h",
-    },
-    parameters=[
-        PDEParameter("Da", "Diffusion coefficient of activator a"),
-        PDEParameter("Dh", "Diffusion coefficient of inhibitor h"),
-        PDEParameter("rho_a", "Activator self-enhancement rate"),
-        PDEParameter("rho_h", "Cross-activation rate for inhibitor"),
-        PDEParameter("mu_a", "Activator decay rate"),
-        PDEParameter("mu_h", "Inhibitor decay rate"),
-        PDEParameter("sigma_a", "Activator basal production"),
-        PDEParameter("sigma_h", "Inhibitor basal production"),
-        PDEParameter("tau", "Inhibitor time-scale ratio"),
-    ],
-    inputs={
-        "a": InputSpec(
-            name="a",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-        "h": InputSpec(
-            name="h",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-    },
-    boundary_fields={
-        "a": BoundaryFieldSpec(
-            name="a",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for activator a.",
-        ),
-        "h": BoundaryFieldSpec(
-            name="h",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for inhibitor h.",
-        ),
-    },
-    states={
-        "a": StateSpec(
-            name="a",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-        "h": StateSpec(
-            name="h",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-    },
-    outputs={
-        "a": OutputSpec(
-            name="a",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="a",
-        ),
-        "h": OutputSpec(
-            name="h",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="h",
-        ),
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-)
+from plm_data.pdes.gierer_meinhardt.spec import PDE_SPEC
 
 
 def _space_num_dofs(V: fem.FunctionSpace) -> int:
@@ -319,7 +236,7 @@ class _GiererMeinhardtProblem(TransientLinearProblem):
 class GiererMeinhardtPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _GIERER_MEINHARDT_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _GiererMeinhardtProblem(self.spec, config)

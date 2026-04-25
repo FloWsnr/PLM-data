@@ -20,95 +20,9 @@ from plm_data.stochastic import build_scalar_state_stochastic_term
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import validate_scalar_standard_boundary_field
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    CoefficientSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    SATURATING_STOCHASTIC_COUPLINGS,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
 )
-
-_GRAY_SCOTT_SPEC = PDESpec(
-    name="gray_scott",
-    category="physics",
-    description="Gray-Scott reaction-diffusion system for substrate/autocatalyst patterns.",
-    equations={
-        "u": "du/dt + velocity dot grad(u) = Du * laplacian(u) - u * v^2 + F * (1 - u)",
-        "v": "dv/dt = Dv * laplacian(v) + u * v^2 - (F + k) * v",
-    },
-    parameters=[
-        PDEParameter("Du", "Diffusion coefficient of substrate u"),
-        PDEParameter("Dv", "Diffusion coefficient of autocatalyst v"),
-        PDEParameter("F", "Feed rate"),
-        PDEParameter("k", "Kill rate"),
-    ],
-    inputs={
-        "u": InputSpec(
-            name="u",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-        "v": InputSpec(
-            name="v",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-    },
-    boundary_fields={
-        "u": BoundaryFieldSpec(
-            name="u",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for substrate u.",
-        ),
-        "v": BoundaryFieldSpec(
-            name="v",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for autocatalyst v.",
-        ),
-    },
-    states={
-        "u": StateSpec(
-            name="u",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-        "v": StateSpec(
-            name="v",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-    },
-    outputs={
-        "u": OutputSpec(
-            name="u",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="u",
-        ),
-        "v": OutputSpec(
-            name="v",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="v",
-        ),
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-    coefficients={
-        "velocity": CoefficientSpec(
-            name="velocity",
-            shape="vector",
-            description="Prescribed advection velocity applied to substrate u.",
-        )
-    },
-)
+from plm_data.pdes.gray_scott.spec import PDE_SPEC
 
 
 def _space_num_dofs(V: fem.FunctionSpace) -> int:
@@ -376,7 +290,7 @@ class _GrayScottProblem(TransientLinearProblem):
 class GrayScottPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _GRAY_SCOTT_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _GrayScottProblem(self.spec, config)

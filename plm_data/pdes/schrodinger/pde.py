@@ -12,106 +12,9 @@ from plm_data.stochastic import build_scalar_coefficient
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import validate_boundary_field_structure
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    CoefficientSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
 )
-
-_SCHRODINGER_BOUNDARY_OPERATORS = {
-    name: SCALAR_STANDARD_BOUNDARY_OPERATORS[name] for name in ("dirichlet", "periodic")
-}
-
-_SCHRODINGER_SPEC = PDESpec(
-    name="schrodinger",
-    category="basic",
-    description=(
-        "Linear time-dependent Schrodinger equation solved via a real/imaginary "
-        "split with a configurable external potential."
-    ),
-    equations={
-        "u": "du/dt = D * lap(v) + potential * v",
-        "v": "dv/dt = -D * lap(u) - potential * u",
-    },
-    parameters=[
-        PDEParameter("D", "Dispersion coefficient"),
-        PDEParameter("theta", "Time-stepping parameter in [0.5, 1.0]"),
-    ],
-    inputs={
-        "u": InputSpec(
-            name="u",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-        "v": InputSpec(
-            name="v",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-    },
-    boundary_fields={
-        "u": BoundaryFieldSpec(
-            name="u",
-            shape="scalar",
-            operators=_SCHRODINGER_BOUNDARY_OPERATORS,
-            description="Boundary conditions for the real component.",
-        ),
-        "v": BoundaryFieldSpec(
-            name="v",
-            shape="scalar",
-            operators=_SCHRODINGER_BOUNDARY_OPERATORS,
-            description="Boundary conditions for the imaginary component.",
-        ),
-    },
-    states={
-        "u": StateSpec(name="u", shape="scalar"),
-        "v": StateSpec(name="v", shape="scalar"),
-    },
-    outputs={
-        "u": OutputSpec(
-            name="u",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="u",
-        ),
-        "v": OutputSpec(
-            name="v",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="v",
-        ),
-        "density": OutputSpec(
-            name="density",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="density",
-            source_kind="derived",
-        ),
-        "potential": OutputSpec(
-            name="potential",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="potential",
-            source_kind="derived",
-        ),
-    },
-    static_fields=["potential"],
-    supported_dimensions=[2],
-    coefficients={
-        "potential": CoefficientSpec(
-            name="potential",
-            shape="scalar",
-            description="External potential field.",
-            allow_randomization=True,
-        )
-    },
-)
+from plm_data.pdes.schrodinger.spec import PDE_SPEC
 
 
 def _append_scalar_subspace_dirichlet_bcs(
@@ -373,7 +276,7 @@ class _SchrodingerProblem(TransientLinearProblem):
 class SchrodingerPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _SCHRODINGER_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _SchrodingerProblem(self.spec, config)

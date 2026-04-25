@@ -20,64 +20,9 @@ from plm_data.fields import (
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import validate_vector_standard_boundary_field
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    InputSpec,
-    MAXWELL_BOUNDARY_OPERATORS,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    StateSpec,
 )
-
-_MAXWELL_PULSE_SPEC = PDESpec(
-    name="maxwell_pulse",
-    category="physics",
-    description=(
-        "Transient electric-field pulse propagation using a curl-curl wave "
-        "equation with absorbing and PEC boundaries."
-    ),
-    equations={
-        "electric_field": (
-            "epsilon_r * d2E/dt2 + sigma * dE/dt + curl(mu_r^-1 curl(E)) = J(t, x)"
-        ),
-    },
-    parameters=[
-        PDEParameter("epsilon_r", "Relative permittivity"),
-        PDEParameter("mu_r", "Relative permeability"),
-        PDEParameter("sigma", "Ohmic damping coefficient"),
-        PDEParameter("pulse_amplitude", "Pulse amplitude"),
-        PDEParameter("pulse_frequency", "Pulse carrier frequency"),
-        PDEParameter("pulse_width", "Gaussian pulse width"),
-        PDEParameter("pulse_delay", "Pulse center time"),
-    ],
-    inputs={
-        "electric_field": InputSpec(
-            name="electric_field",
-            shape="vector",
-            allow_source=True,
-            allow_initial_condition=True,
-        ),
-    },
-    boundary_fields={
-        "electric_field": BoundaryFieldSpec(
-            name="electric_field",
-            shape="vector",
-            operators=MAXWELL_BOUNDARY_OPERATORS,
-            description="Boundary conditions for the electric field.",
-        )
-    },
-    states={"electric_field": StateSpec(name="electric_field", shape="vector")},
-    outputs={
-        "electric_field": OutputSpec(
-            name="electric_field",
-            shape="vector",
-            output_mode="components",
-            source_name="electric_field",
-        )
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-)
+from plm_data.pdes.maxwell_pulse.spec import PDE_SPEC
 
 
 def _as_3d_vector(value, gdim: int):
@@ -300,7 +245,7 @@ class _MaxwellPulseProblem(TransientLinearProblem):
 class MaxwellPulsePDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _MAXWELL_PULSE_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _MaxwellPulseProblem(self.spec, config)

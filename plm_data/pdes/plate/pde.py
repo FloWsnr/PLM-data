@@ -4,7 +4,6 @@ import numpy as np
 import ufl
 from dolfinx import default_real_type, fem
 
-from plm_data.boundary_conditions import get_boundary_operator_spec
 from plm_data.initial_conditions.runtime import apply_ic
 from plm_data.domains import DomainGeometry
 from plm_data.core.runtime_config import BoundaryFieldConfig
@@ -14,101 +13,9 @@ from plm_data.stochastic import build_scalar_coefficient
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import validate_boundary_field_structure
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    CoefficientSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    StateSpec,
 )
-
-_PLATE_BOUNDARY_OPERATORS = {
-    "simply_supported": get_boundary_operator_spec("simply_supported"),
-}
-
-_PLATE_SPEC = PDESpec(
-    name="plate",
-    category="basic",
-    description=(
-        "Kirchhoff plate equation using a mixed deflection/velocity/moment "
-        "formulation with simply supported boundaries."
-    ),
-    equations={
-        "deflection": "dw/dt = v",
-        "velocity": "rho_h * dv/dt + damping * v - div(rigidity grad(m)) = q",
-        "moment": "m = -laplacian(w)",
-    },
-    parameters=[
-        PDEParameter("theta", "Implicit time-stepping parameter in [0.5, 1.0]"),
-    ],
-    inputs={
-        "deflection": InputSpec(
-            name="deflection",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-        "velocity": InputSpec(
-            name="velocity",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-        "load": InputSpec(
-            name="load",
-            shape="scalar",
-            allow_source=True,
-            allow_initial_condition=False,
-        ),
-    },
-    boundary_fields={
-        "deflection": BoundaryFieldSpec(
-            name="deflection",
-            shape="scalar",
-            operators=_PLATE_BOUNDARY_OPERATORS,
-            description="Plate edge conditions for the deflection field.",
-        )
-    },
-    states={
-        "deflection": StateSpec(name="deflection", shape="scalar"),
-        "velocity": StateSpec(name="velocity", shape="scalar"),
-        "moment": StateSpec(name="moment", shape="scalar"),
-    },
-    outputs={
-        "deflection": OutputSpec(
-            name="deflection",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="deflection",
-        ),
-        "velocity": OutputSpec(
-            name="velocity",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="velocity",
-        ),
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-    coefficients={
-        "rho_h": CoefficientSpec(
-            name="rho_h",
-            shape="scalar",
-            description="Mass per unit area.",
-        ),
-        "damping": CoefficientSpec(
-            name="damping",
-            shape="scalar",
-            description="Viscous damping coefficient.",
-        ),
-        "rigidity": CoefficientSpec(
-            name="rigidity",
-            shape="scalar",
-            description="Flexural rigidity coefficient.",
-        ),
-    },
-)
+from plm_data.pdes.plate.spec import PDE_SPEC
 
 
 def _locate_boundary_dofs(
@@ -345,7 +252,7 @@ class _PlateProblem(TransientLinearProblem):
 class PlatePDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _PLATE_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _PlateProblem(self.spec, config)

@@ -23,14 +23,7 @@ from plm_data.pdes.boundary_validation import (
     validate_vector_standard_boundary_field,
 )
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
-    VECTOR_STANDARD_BOUNDARY_OPERATORS,
 )
 from plm_data.pdes.navier_stokes.pde import (
     _domain_average,
@@ -38,86 +31,13 @@ from plm_data.pdes.navier_stokes.pde import (
     _positive_parameter,
     _space_num_dofs,
 )
+from plm_data.pdes.thermal_convection.spec import PDE_SPEC
 
 
 def _vertical_unit_vector(gdim: int):
     components = [ufl.as_ufl(0.0)] * gdim
     components[1] = ufl.as_ufl(1.0)
     return ufl.as_vector(components)
-
-
-_THERMAL_CONVECTION_SPEC = PDESpec(
-    name="thermal_convection",
-    category="fluids",
-    description="Thermal convection using the Boussinesq Rayleigh-Benard equations.",
-    equations={
-        "velocity": (
-            "du/dt + (u_prev.grad)u = -grad(p) + sqrt(Pr/Ra)*laplacian(u) + T*e_y"
-        ),
-        "pressure": "div(u) = 0",
-        "temperature": "dT/dt + u_prev.grad(T) = (1/sqrt(Ra*Pr))*laplacian(T) + f_T",
-    },
-    parameters=[
-        PDEParameter("Ra", "Rayleigh number"),
-        PDEParameter("Pr", "Prandtl number"),
-        PDEParameter("k", "Polynomial degree parameter"),
-    ],
-    inputs={
-        "velocity": InputSpec(
-            name="velocity",
-            shape="vector",
-            allow_source=True,
-            allow_initial_condition=True,
-        ),
-        "temperature": InputSpec(
-            name="temperature",
-            shape="scalar",
-            allow_source=True,
-            allow_initial_condition=True,
-        ),
-    },
-    boundary_fields={
-        "velocity": BoundaryFieldSpec(
-            name="velocity",
-            shape="vector",
-            operators=VECTOR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for the velocity field.",
-        ),
-        "temperature": BoundaryFieldSpec(
-            name="temperature",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for the temperature field.",
-        ),
-    },
-    states={
-        "velocity": StateSpec(name="velocity", shape="vector"),
-        "pressure": StateSpec(name="pressure", shape="scalar"),
-        "temperature": StateSpec(name="temperature", shape="scalar"),
-    },
-    outputs={
-        "velocity": OutputSpec(
-            name="velocity",
-            shape="vector",
-            output_mode="components",
-            source_name="velocity",
-        ),
-        "pressure": OutputSpec(
-            name="pressure",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="pressure",
-        ),
-        "temperature": OutputSpec(
-            name="temperature",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="temperature",
-        ),
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-)
 
 
 class _ThermalConvectionProblem(TransientLinearProblem):
@@ -408,7 +328,7 @@ class _ThermalConvectionProblem(TransientLinearProblem):
 class ThermalConvectionPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _THERMAL_CONVECTION_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _ThermalConvectionProblem(self.spec, config)

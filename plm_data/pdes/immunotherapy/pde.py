@@ -13,130 +13,9 @@ from plm_data.stochastic import build_scalar_state_stochastic_term
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import validate_scalar_standard_boundary_field
 from plm_data.pdes.metadata import (
-    BoundaryFieldSpec,
-    InputSpec,
-    OutputSpec,
-    PDEParameter,
     PDESpec,
-    SATURATING_STOCHASTIC_COUPLINGS,
-    SCALAR_STANDARD_BOUNDARY_OPERATORS,
-    StateSpec,
 )
-
-_IMMUNOTHERAPY_SPEC = PDESpec(
-    name="immunotherapy",
-    category="biology",
-    description=(
-        "Three-species cancer immunotherapy model coupling effector cells, "
-        "cancer cells, and IL-2 cytokine."
-    ),
-    equations={
-        "u": (
-            "du/dt = Du * laplacian(u) + alpha * v - mu_u * u "
-            "+ rho_u * u * w / (1 + w) + sigma_u + Ku * t"
-        ),
-        "v": "dv/dt = Dv * laplacian(v) + v * (1 - v) - u * v / (gamma_v + v)",
-        "w": (
-            "dw/dt = Dw * laplacian(w) + rho_w * u * v / (gamma_w + v) "
-            "- mu_w * w + sigma_w + Kw * t"
-        ),
-    },
-    parameters=[
-        PDEParameter("Du", "Diffusion coefficient of effector cells"),
-        PDEParameter("Dv", "Diffusion coefficient of cancer cells"),
-        PDEParameter("Dw", "Diffusion coefficient of IL-2 cytokine"),
-        PDEParameter("alpha", "Effector recruitment rate per cancer density"),
-        PDEParameter("mu_u", "Natural death rate of effector cells"),
-        PDEParameter("rho_u", "IL-2-stimulated proliferation rate of effectors"),
-        PDEParameter("gamma_v", "Cancer-density half-saturation for immune killing"),
-        PDEParameter("rho_w", "IL-2 production rate from effector-cancer interaction"),
-        PDEParameter("gamma_w", "Cancer-density half-saturation for IL-2 production"),
-        PDEParameter("mu_w", "Natural degradation rate of IL-2"),
-        PDEParameter("sigma_u", "Basal effector cell infusion rate"),
-        PDEParameter("Ku", "Linear-in-time effector cell treatment rate"),
-        PDEParameter("sigma_w", "Basal IL-2 infusion rate"),
-        PDEParameter("Kw", "Linear-in-time IL-2 treatment rate"),
-    ],
-    inputs={
-        "u": InputSpec(
-            name="u",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-        "v": InputSpec(
-            name="v",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-        "w": InputSpec(
-            name="w",
-            shape="scalar",
-            allow_source=False,
-            allow_initial_condition=True,
-        ),
-    },
-    boundary_fields={
-        "u": BoundaryFieldSpec(
-            name="u",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for effector cells u.",
-        ),
-        "v": BoundaryFieldSpec(
-            name="v",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for cancer cells v.",
-        ),
-        "w": BoundaryFieldSpec(
-            name="w",
-            shape="scalar",
-            operators=SCALAR_STANDARD_BOUNDARY_OPERATORS,
-            description="Boundary conditions for IL-2 cytokine w.",
-        ),
-    },
-    states={
-        "u": StateSpec(
-            name="u",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-        "v": StateSpec(
-            name="v",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-        "w": StateSpec(
-            name="w",
-            shape="scalar",
-            stochastic_couplings=SATURATING_STOCHASTIC_COUPLINGS,
-        ),
-    },
-    outputs={
-        "u": OutputSpec(
-            name="u",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="u",
-        ),
-        "v": OutputSpec(
-            name="v",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="v",
-        ),
-        "w": OutputSpec(
-            name="w",
-            shape="scalar",
-            output_mode="scalar",
-            source_name="w",
-        ),
-    },
-    static_fields=[],
-    supported_dimensions=[2],
-)
+from plm_data.pdes.immunotherapy.spec import PDE_SPEC
 
 
 def _space_num_dofs(V: fem.FunctionSpace) -> int:
@@ -410,7 +289,7 @@ class _ImmunotherapyProblem(TransientLinearProblem):
 class ImmunotherapyPDE(PDE):
     @property
     def spec(self) -> PDESpec:
-        return _IMMUNOTHERAPY_SPEC
+        return PDE_SPEC
 
     def build_problem(self, config) -> ProblemInstance:
         return _ImmunotherapyProblem(self.spec, config)
