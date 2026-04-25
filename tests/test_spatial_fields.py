@@ -1,4 +1,4 @@
-"""Tests for plm_data.core.spatial_fields."""
+"""Tests for plm_data.fields."""
 
 import numpy as np
 import pytest
@@ -7,7 +7,7 @@ from dolfinx import fem
 
 from plm_data.core.runtime_config import FieldExpressionConfig
 from plm_data.domains import create_domain
-from plm_data.core.spatial_fields import (
+from plm_data.fields import (
     build_interpolator,
     build_ufl_field,
     build_vector_ufl_field,

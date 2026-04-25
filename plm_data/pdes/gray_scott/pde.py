@@ -12,11 +12,11 @@ from plm_data.core.solver_strategies import (
     CONSTANT_LHS_SCALAR_NONSYMMETRIC,
     CONSTANT_LHS_SCALAR_SPD,
 )
-from plm_data.core.spatial_fields import (
+from plm_data.fields import (
     build_vector_ufl_field,
     is_exact_zero_field_expression,
 )
-from plm_data.core.stochastic import build_scalar_state_stochastic_term
+from plm_data.stochastic import build_scalar_state_stochastic_term
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import validate_scalar_standard_boundary_field
 from plm_data.pdes.metadata import (

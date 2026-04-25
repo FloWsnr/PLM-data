@@ -63,6 +63,11 @@ random-run default.
 - **Initial-condition operators and scenarios**
   (`plm_data/initial_conditions/`) separate field construction behavior from
   complete PDE-level initialization choices.
+- **Field expression runtime** (`plm_data/fields/`) contains shared
+  scalar/vector expression resolution, UFL rendering, interpolation, and source
+  term helpers.
+- **Stochastic runtime** (`plm_data/stochastic/`) contains deterministic
+  cell-noise, state forcing, and randomized coefficient helpers.
 - **Output** (`plm_data/core/output.py`) validates requested fields, expands
   vector outputs into grid components, writes numpy/GIF/VTK/video formats, and
   records post-run diagnostics in `frames_meta.json` and `run_meta.json`.

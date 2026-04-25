@@ -8,7 +8,7 @@ from plm_data.boundary_conditions import get_boundary_operator_spec
 from plm_data.initial_conditions.runtime import apply_ic
 from plm_data.core.runtime_config import BoundaryFieldConfig
 from plm_data.core.solver_strategies import NONLINEAR_MIXED_DIRECT
-from plm_data.core.spatial_fields import build_vector_ufl_field
+from plm_data.fields import build_vector_ufl_field
 from plm_data.pdes.base import PDE, ProblemInstance, TransientNonlinearProblem
 from plm_data.pdes.boundary_validation import validate_boundary_field_structure
 from plm_data.pdes.metadata import (

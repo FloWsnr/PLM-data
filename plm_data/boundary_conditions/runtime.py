@@ -5,7 +5,7 @@ from dolfinx import fem
 
 from plm_data.core.runtime_config import BoundaryConditionConfig, BoundaryFieldConfig
 from plm_data.domains import DomainGeometry
-from plm_data.core.spatial_fields import (
+from plm_data.fields import (
     build_interpolator,
     build_vector_interpolator,
     build_ufl_field,

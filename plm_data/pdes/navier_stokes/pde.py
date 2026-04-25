@@ -15,7 +15,7 @@ from plm_data.core.solver_strategies import (
     TRANSIENT_MIXED_DIRECT,
     TRANSIENT_SADDLE_POINT,
 )
-from plm_data.core.source_terms import build_vector_source_form
+from plm_data.fields.source_terms import build_vector_source_form
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import validate_vector_standard_boundary_field
 from plm_data.pdes.metadata import (

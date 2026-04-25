@@ -9,11 +9,11 @@ from plm_data.boundary_conditions.runtime import (
 )
 from plm_data.initial_conditions.runtime import apply_ic
 from plm_data.core.solver_strategies import CONSTANT_LHS_SCALAR_NONSYMMETRIC
-from plm_data.core.stochastic import (
+from plm_data.stochastic import (
     build_scalar_coefficient,
     build_scalar_state_stochastic_term,
 )
-from plm_data.core.spatial_fields import (
+from plm_data.fields import (
     build_ufl_field,
     build_vector_ufl_field,
     scalar_expression_to_config,

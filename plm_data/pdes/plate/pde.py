@@ -9,8 +9,8 @@ from plm_data.initial_conditions.runtime import apply_ic
 from plm_data.domains import DomainGeometry
 from plm_data.core.runtime_config import BoundaryFieldConfig
 from plm_data.core.solver_strategies import CONSTANT_LHS_BLOCK_DIRECT
-from plm_data.core.source_terms import build_source_form
-from plm_data.core.stochastic import build_scalar_coefficient
+from plm_data.fields.source_terms import build_source_form
+from plm_data.stochastic import build_scalar_coefficient
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import validate_boundary_field_structure
 from plm_data.pdes.metadata import (

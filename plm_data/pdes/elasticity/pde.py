@@ -10,7 +10,7 @@ from plm_data.boundary_conditions.runtime import (
 )
 from plm_data.initial_conditions.runtime import apply_vector_ic
 from plm_data.core.solver_strategies import CONSTANT_LHS_BLOCK_DIRECT
-from plm_data.core.source_terms import build_vector_source_form
+from plm_data.fields.source_terms import build_vector_source_form
 from plm_data.pdes.base import PDE, ProblemInstance, TransientLinearProblem
 from plm_data.pdes.boundary_validation import (
     validate_vector_standard_boundary_field,

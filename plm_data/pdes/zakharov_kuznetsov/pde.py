@@ -8,7 +8,7 @@ from plm_data.boundary_conditions.runtime import apply_dirichlet_bcs_to_subspace
 from plm_data.initial_conditions.runtime import apply_ic
 from plm_data.core.runtime_config import BoundaryFieldConfig
 from plm_data.core.solver_strategies import NONLINEAR_MIXED_DIRECT
-from plm_data.core.spatial_fields import is_exact_zero_field_expression
+from plm_data.fields import is_exact_zero_field_expression
 from plm_data.pdes.base import PDE, ProblemInstance, TransientNonlinearProblem
 from plm_data.pdes.boundary_validation import validate_boundary_field_structure
 from plm_data.pdes.metadata import (

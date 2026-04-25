@@ -1,4 +1,4 @@
-"""Tests for plm_data.core.source_terms."""
+"""Tests for plm_data.fields.source_terms."""
 
 import pytest
 import ufl
@@ -6,7 +6,7 @@ from dolfinx import fem
 
 from plm_data.core.runtime_config import DomainConfig, FieldExpressionConfig
 from plm_data.domains import create_domain
-from plm_data.core.source_terms import build_source_form
+from plm_data.fields.source_terms import build_source_form
 
 
 @pytest.fixture

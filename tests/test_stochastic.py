@@ -16,11 +16,11 @@ from plm_data.core.runtime_config import (
     TimeConfig,
 )
 from plm_data.domains import create_domain
-from plm_data.core.stochastic import (
+from plm_data.stochastic import build_scalar_coefficient
+from plm_data.stochastic.noise import (
     DynamicStateNoiseRuntime,
     _ScalarCellNoise,
     _cell_volumes,
-    build_scalar_coefficient,
 )
 from plm_data.pdes import get_pde
 from tests.runtime_helpers import (

@@ -9,8 +9,8 @@ from plm_data.boundary_conditions.runtime import (
 )
 from plm_data.initial_conditions.runtime import apply_vector_ic
 from plm_data.core.solver_strategies import NONLINEAR_MIXED_DIRECT
-from plm_data.core.source_terms import build_vector_source_form
-from plm_data.core.stochastic import build_vector_state_stochastic_term
+from plm_data.fields.source_terms import build_vector_source_form
+from plm_data.stochastic import build_vector_state_stochastic_term
 from plm_data.pdes.base import PDE, ProblemInstance, TransientNonlinearProblem
 from plm_data.pdes.boundary_validation import validate_vector_standard_boundary_field
 from plm_data.pdes.metadata import (

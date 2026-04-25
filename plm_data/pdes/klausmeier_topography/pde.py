@@ -12,8 +12,8 @@ from plm_data.core.solver_strategies import (
     CONSTANT_LHS_SCALAR_NONSYMMETRIC,
     CONSTANT_LHS_SCALAR_SPD,
 )
-from plm_data.core.spatial_fields import build_interpolator, scalar_expression_to_config
-from plm_data.core.stochastic import (
+from plm_data.fields import build_interpolator, scalar_expression_to_config
+from plm_data.stochastic import (
     build_scalar_coefficient,
     build_scalar_state_stochastic_term,
 )

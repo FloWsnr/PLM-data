@@ -10,8 +10,8 @@ from plm_data.initial_conditions.runtime import apply_vector_ic
 from plm_data.boundary_conditions.periodic import require_unverified_periodic_support
 from plm_data.core.runtime_config import BoundaryFieldConfig, FieldExpressionConfig
 from plm_data.core.solver_strategies import CONSTANT_LHS_CURL_DIRECT
-from plm_data.core.source_terms import build_vector_source_form
-from plm_data.core.spatial_fields import (
+from plm_data.fields.source_terms import build_vector_source_form
+from plm_data.fields import (
     component_expressions,
     component_labels_for_dim,
     resolve_param_ref,

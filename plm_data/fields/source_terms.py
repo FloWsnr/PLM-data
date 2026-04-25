@@ -4,13 +4,13 @@ import ufl
 from dolfinx import mesh as dmesh
 
 from plm_data.core.runtime_config import FieldExpressionConfig
-from plm_data.core.spatial_fields import (
-    build_ufl_field,
+from plm_data.fields.expressions import (
     component_expressions,
     component_labels_for_dim,
     resolve_param_ref,
     scalar_expression_to_config,
 )
+from plm_data.fields.ufl import build_ufl_field
 
 
 def _is_trivially_zero_scalar_field(

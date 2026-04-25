@@ -70,7 +70,12 @@ The active random-run architecture is built around first-class objects:
 6. **Initial-condition operators and scenarios**
    (`plm_data/initial_conditions/`) - low-level field operators remain
    available; complete PDE-level random choices live under `scenarios/`.
-7. **Output** (`plm_data/core/output.py`) - validates output fields, expands
+7. **Field expression runtime** (`plm_data/fields/`) - shared scalar/vector
+   field expression resolution, UFL rendering, interpolation, and source-term
+   helpers used by PDEs, BCs, ICs, and stochastic coefficients.
+8. **Stochastic runtime** (`plm_data/stochastic/`) - deterministic cell-noise,
+   dynamic state forcing, and randomized coefficient construction.
+9. **Output** (`plm_data/core/output.py`) - validates output fields, expands
    vector outputs, writes numpy/GIF/VTK/video outputs, and records diagnostics.
 
 Curated YAML configs and the old config loader have been removed. The runner

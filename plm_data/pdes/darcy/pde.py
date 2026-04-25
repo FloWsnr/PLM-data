@@ -12,11 +12,11 @@ from plm_data.core.solver_strategies import (
     CONSTANT_LHS_SCALAR_NONSYMMETRIC,
     TRANSIENT_MIXED_DIRECT,
 )
-from plm_data.core.stochastic import (
+from plm_data.stochastic import (
     build_scalar_coefficient,
     build_scalar_state_stochastic_term,
 )
-from plm_data.core.spatial_fields import (
+from plm_data.fields import (
     build_ufl_field,
     is_exact_zero_field_expression,
     scalar_expression_to_config,

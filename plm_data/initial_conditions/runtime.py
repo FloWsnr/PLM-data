@@ -12,7 +12,7 @@ from plm_data.sampling.values import (
     sample_integer,
     sample_number,
 )
-from plm_data.core.spatial_fields import (
+from plm_data.fields import (
     build_interpolator,
     build_vector_interpolator,
     component_expressions,
