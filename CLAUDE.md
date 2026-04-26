@@ -5,7 +5,7 @@ This file provides guidance to coding agents working in this repository.
 PLM-data generates random two-dimensional, time-dependent PDE simulation
 datasets using DOLFINx (FEniCSx), Gmsh, and grid/media output writers. The
 project optimizes for breadth of sampled dynamics and simple operation, not for
-being a general-purpose PDE solver framework.
+being a general-purpose PDE solver framework. More details on the mission and design are in the [Spec](SPEC.md).
 
 ## Commands
 
@@ -84,12 +84,10 @@ visually verify the PDE is working.
 
 ## Coding Rules
 
-- Prefer the new `pdes`, `scenarios`, `sampling`, and `runtime_config`
-  vocabulary.
-- Do not add YAML-config entrypoints or public subcommands.
-- Do not use parameter defaults for sampled runtime behavior; sampled values
-  should be explicit in Python specs/scenarios.
+- Do not use parameter defaults in function signatures. We prefer explicitness.
+- If asked to work in a new git worktree, create it in the `./.worktrees/` directory and name it after the PDE or feature being developed.
+- After merging worktrees, delete them and their branches to avoid confusion.
+
 - Use ruff for linting and formatting.
 - Check pyright after a logical batch of edits.
 - Do not use `from __future__ import annotations`.
-- Preserve unrelated user changes and avoid destructive git commands.
