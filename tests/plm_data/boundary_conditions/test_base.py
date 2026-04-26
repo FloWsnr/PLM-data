@@ -1,5 +1,7 @@
 """Tests for first-class boundary-condition specifications."""
 
+import pytest
+
 from plm_data.boundary_conditions import (
     MAXWELL_BOUNDARY_OPERATORS,
     SCALAR_STANDARD_BOUNDARY_OPERATORS,
@@ -9,6 +11,7 @@ from plm_data.boundary_conditions import (
 )
 import plm_data.boundary_conditions.base as boundary_base
 from plm_data.boundary_conditions.base import (
+    BoundaryOperatorParameterSpec,
     BoundaryOperatorSpec,
     register_boundary_operator_spec,
 )
@@ -24,6 +27,32 @@ def test_register_boundary_operator_spec_adds_spec(monkeypatch):
 
     assert registered is spec
     assert registry == {"unit_test": spec}
+
+
+def test_boundary_operator_parameter_spec_rejects_invalid_sampling_bounds():
+    with pytest.raises(ValueError, match="both sampling_min and sampling_max"):
+        BoundaryOperatorParameterSpec(
+            name="bad",
+            kind="float",
+            sampling_min=0.0,
+        )
+
+    with pytest.raises(ValueError, match="sampling_min greater than sampling_max"):
+        BoundaryOperatorParameterSpec(
+            name="bad",
+            kind="float",
+            sampling_min=2.0,
+            sampling_max=1.0,
+        )
+
+    with pytest.raises(ValueError, match="sampling_min must be >= hard_min"):
+        BoundaryOperatorParameterSpec(
+            name="bad",
+            kind="float",
+            hard_min=0.5,
+            sampling_min=0.2,
+            sampling_max=1.0,
+        )
 
 
 def test_boundary_operator_registry_covers_standard_operators():

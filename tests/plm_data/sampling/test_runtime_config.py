@@ -10,6 +10,10 @@ from plm_data.boundary_conditions.scenarios import (
     compatible_boundary_scenarios,
     list_boundary_scenarios,
 )
+from plm_data.domains.random_profiles import (
+    random_domain_extent,
+    validate_unit_random_domain,
+)
 from plm_data.domains.registry import list_domain_specs
 from plm_data.initial_conditions.scenarios import (
     compatible_initial_condition_scenarios,
@@ -163,6 +167,8 @@ def test_all_registered_domains_expose_executable_random_profiles():
             domain = random_profile.sample(context, {})
             assert domain.type == domain_name
             validate_domain_params(domain.type, domain.params)
+            validate_unit_random_domain(domain)
+            assert random_domain_extent(domain) == pytest.approx(1.0)
 
             sample = sample_coordinate_region(domain, "interior", context)
             assert len(sample.point) == 2
@@ -896,6 +902,7 @@ def test_sample_random_runtime_config_is_concrete_and_2d():
     )
     assert not _contains_sampler(sampled.config)
     validate_runtime_config(sampled.config)
+    assert random_domain_extent(sampled.config.domain) == pytest.approx(1.0)
 
 
 def test_random_sampling_is_attempt_deterministic():

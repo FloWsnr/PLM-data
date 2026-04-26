@@ -1,5 +1,7 @@
 """Tests for first-class initial-condition operator specifications."""
 
+import pytest
+
 from plm_data.initial_conditions import (
     COMMON_SCALAR_INITIAL_CONDITION_OPERATORS,
     get_initial_condition_operator_spec,
@@ -8,6 +10,7 @@ from plm_data.initial_conditions import (
 )
 import plm_data.initial_conditions.base as ic_base
 from plm_data.initial_conditions.base import (
+    InitialConditionOperatorParameterSpec,
     InitialConditionOperatorSpec,
     register_initial_condition_operator_spec,
 )
@@ -26,6 +29,32 @@ def test_register_initial_condition_operator_spec_adds_spec(monkeypatch):
 
     assert registered is spec
     assert registry == {"unit_test": spec}
+
+
+def test_initial_condition_parameter_spec_rejects_invalid_sampling_bounds():
+    with pytest.raises(ValueError, match="both sampling_min and sampling_max"):
+        InitialConditionOperatorParameterSpec(
+            name="bad",
+            kind="float",
+            sampling_min=0.0,
+        )
+
+    with pytest.raises(ValueError, match="sampling_min greater than sampling_max"):
+        InitialConditionOperatorParameterSpec(
+            name="bad",
+            kind="float",
+            sampling_min=2.0,
+            sampling_max=1.0,
+        )
+
+    with pytest.raises(ValueError, match="sampling_max must be <= hard_max"):
+        InitialConditionOperatorParameterSpec(
+            name="bad",
+            kind="float",
+            hard_max=1.0,
+            sampling_min=0.2,
+            sampling_max=1.2,
+        )
 
 
 def test_initial_condition_operator_registry_covers_runtime_operators():

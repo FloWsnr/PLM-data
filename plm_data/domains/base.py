@@ -9,6 +9,8 @@ import numpy as np
 import ufl
 from dolfinx import mesh
 
+from plm_data.core.parameter_bounds import validate_parameter_bounds
+
 if TYPE_CHECKING:
     from plm_data.sampling.specs import RandomDomainProfile
 
@@ -92,6 +94,20 @@ class DomainParameterSpec:
     hard_max: float | int | None = None
     sampling_min: float | int | None = None
     sampling_max: float | int | None = None
+
+    def __post_init__(self) -> None:
+        if self.length is not None and self.length <= 0:
+            raise ValueError(
+                f"Domain parameter '{self.name}' length must be positive. "
+                f"Got {self.length!r}."
+            )
+        validate_parameter_bounds(
+            f"Domain parameter '{self.name}'",
+            hard_min=self.hard_min,
+            hard_max=self.hard_max,
+            sampling_min=self.sampling_min,
+            sampling_max=self.sampling_max,
+        )
 
 
 @dataclass(frozen=True)

@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass, field
 
+from plm_data.core.parameter_bounds import validate_parameter_bounds
+
 _VALID_FIELD_SHAPES = {"scalar", "vector"}
 _VALID_VALUE_SHAPES = {"field", "scalar", "vector"}
 
@@ -17,6 +19,15 @@ class BoundaryOperatorParameterSpec:
     hard_max: float | int | None = None
     sampling_min: float | int | None = None
     sampling_max: float | int | None = None
+
+    def __post_init__(self) -> None:
+        validate_parameter_bounds(
+            f"Boundary operator parameter '{self.name}'",
+            hard_min=self.hard_min,
+            hard_max=self.hard_max,
+            sampling_min=self.sampling_min,
+            sampling_max=self.sampling_max,
+        )
 
 
 @dataclass(frozen=True)

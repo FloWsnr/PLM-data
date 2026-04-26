@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass
 
+from plm_data.core.parameter_bounds import validate_parameter_bounds
+
 _VALID_FIELD_SHAPES = {"scalar", "vector"}
 _VALID_DIMENSIONS = {1, 2, 3}
 
@@ -19,6 +21,20 @@ class InitialConditionOperatorParameterSpec:
     hard_max: float | int | None = None
     sampling_min: float | int | None = None
     sampling_max: float | int | None = None
+
+    def __post_init__(self) -> None:
+        if self.length is not None and self.length <= 0:
+            raise ValueError(
+                f"Initial-condition operator parameter '{self.name}' length must be "
+                f"positive. Got {self.length!r}."
+            )
+        validate_parameter_bounds(
+            f"Initial-condition operator parameter '{self.name}'",
+            hard_min=self.hard_min,
+            hard_max=self.hard_max,
+            sampling_min=self.sampling_min,
+            sampling_max=self.sampling_max,
+        )
 
 
 @dataclass(frozen=True)

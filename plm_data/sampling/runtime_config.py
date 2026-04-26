@@ -19,6 +19,7 @@ from plm_data.core.runtime_config import (
     SolverConfig,
     TimeConfig,
 )
+from plm_data.domains.random_profiles import validate_unit_random_domain
 from plm_data.domains.registry import list_domain_specs
 from plm_data.core.solver_strategies import (
     CONSTANT_LHS_CURL_DIRECT,
@@ -358,6 +359,7 @@ def validate_runtime_config(config: SimulationConfig) -> None:
         )
     if config.time is None:
         raise ValueError(f"Random PDE '{config.pde}' must be time-dependent.")
+    validate_unit_random_domain(config.domain)
     spec.validate_parameters(config.parameters)
     if set(config.inputs) != set(spec.inputs):
         raise ValueError(

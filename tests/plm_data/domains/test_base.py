@@ -2,6 +2,8 @@
 
 from types import SimpleNamespace
 
+import pytest
+
 from plm_data.core.runtime_config import DomainConfig
 import plm_data.domains.base as domain_base
 from plm_data.domains import create_domain
@@ -13,7 +15,7 @@ from plm_data.domains import (
     list_domain_specs,
     list_domains,
 )
-from plm_data.domains.base import DomainSpec, register_domain_spec
+from plm_data.domains.base import DomainParameterSpec, DomainSpec, register_domain_spec
 
 
 def test_register_domain_spec_adds_spec(monkeypatch):
@@ -31,6 +33,32 @@ def test_register_domain_spec_adds_spec(monkeypatch):
 
     assert registered is spec
     assert registry == {"unit_test": spec}
+
+
+def test_domain_parameter_spec_rejects_invalid_sampling_bounds():
+    with pytest.raises(ValueError, match="both sampling_min and sampling_max"):
+        DomainParameterSpec(
+            name="bad",
+            kind="float",
+            sampling_min=0.0,
+        )
+
+    with pytest.raises(ValueError, match="sampling_min greater than sampling_max"):
+        DomainParameterSpec(
+            name="bad",
+            kind="float",
+            sampling_min=2.0,
+            sampling_max=1.0,
+        )
+
+    with pytest.raises(ValueError, match="sampling_max must be <= hard_max"):
+        DomainParameterSpec(
+            name="bad",
+            kind="float",
+            hard_max=1.0,
+            sampling_min=0.2,
+            sampling_max=1.2,
+        )
 
 
 def test_all_current_domains_have_specs():
