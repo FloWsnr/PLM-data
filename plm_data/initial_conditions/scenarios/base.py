@@ -15,6 +15,10 @@ InitialConditionScenarioBuilder = Callable[
 ]
 
 
+def _supports(value: str, supported_values: tuple[str, ...]) -> bool:
+    return "*" in supported_values or value in supported_values
+
+
 @dataclass(frozen=True)
 class InitialConditionScenarioSpec:
     """Compatibility metadata for one PDE-level initial-condition scenario."""
@@ -31,9 +35,9 @@ class InitialConditionScenarioSpec:
 
     def is_compatible(self, *, pde_name: str, domain_name: str) -> bool:
         """Return whether this scenario supports one PDE/domain pair."""
-        if (
-            pde_name not in self.supported_pdes
-            or domain_name not in self.supported_domains
+        if not _supports(pde_name, self.supported_pdes) or not _supports(
+            domain_name,
+            self.supported_domains,
         ):
             return False
 
@@ -49,7 +53,24 @@ class InitialConditionScenarioSpec:
             and self.name not in domain_spec.supported_initial_condition_scenarios
         ):
             return False
-        return domain_spec.dimension in self.supported_dimensions
+        if domain_spec.dimension not in self.supported_dimensions:
+            return False
+        if set(self.coordinate_regions) - set(domain_spec.coordinate_regions):
+            return False
+
+        from plm_data.pdes import get_pde
+
+        try:
+            pde_spec = get_pde(pde_name).spec
+        except ValueError:
+            return False
+        if set(self.configured_inputs) != set(pde_spec.inputs):
+            return False
+        for input_name in self.configured_inputs:
+            input_spec = pde_spec.inputs[input_name]
+            if self.field_shapes and input_spec.shape not in self.field_shapes:
+                return False
+        return True
 
 
 @dataclass(frozen=True)

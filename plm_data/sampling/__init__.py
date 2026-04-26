@@ -14,6 +14,13 @@ _RUNTIME_CONFIG_EXPORTS = {
     "validate_runtime_config",
 }
 _SAMPLER_EXPORTS = {"attempt_rng", "choose", "randint", "uniform"}
+_SPEC_EXPORTS = {
+    "RandomDomainConstraint",
+    "RandomDomainProfile",
+    "RandomOutputSpec",
+    "RandomPDEOptions",
+    "RandomTimeSpec",
+}
 _VALUE_EXPORTS = {
     "contains_sampler_spec",
     "is_param_ref",
@@ -43,6 +50,13 @@ if TYPE_CHECKING:
         randint as randint,
         uniform as uniform,
     )
+    from plm_data.sampling.specs import (
+        RandomDomainConstraint as RandomDomainConstraint,
+        RandomDomainProfile as RandomDomainProfile,
+        RandomOutputSpec as RandomOutputSpec,
+        RandomPDEOptions as RandomPDEOptions,
+        RandomTimeSpec as RandomTimeSpec,
+    )
     from plm_data.sampling.values import (
         contains_sampler_spec as contains_sampler_spec,
         is_param_ref as is_param_ref,
@@ -58,6 +72,11 @@ __all__ = [
     "DEFAULT_RANDOM_OUTPUT_FORMATS",
     "MIGRATED_RANDOM_PDES",
     "RandomPDEProfile",
+    "RandomDomainConstraint",
+    "RandomDomainProfile",
+    "RandomOutputSpec",
+    "RandomPDEOptions",
+    "RandomTimeSpec",
     "SampledRuntimeConfig",
     "SamplingContext",
     "attempt_rng",
@@ -92,6 +111,10 @@ def __getattr__(name: str) -> Any:
         from plm_data.sampling import samplers
 
         value = getattr(samplers, name)
+    elif name in _SPEC_EXPORTS:
+        from plm_data.sampling import specs
+
+        value = getattr(specs, name)
     elif name in _VALUE_EXPORTS:
         from plm_data.sampling import values
 

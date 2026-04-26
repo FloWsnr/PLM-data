@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from plm_data.sampling.specs import RandomPDEOptions
     from plm_data.sampling.context import SamplingContext
 
 from plm_data.boundary_conditions import (
@@ -258,8 +259,22 @@ class PDESpec:
     static_fields: list[str]
     supported_dimensions: list[int]
     coefficients: dict[str, CoefficientSpec] = field(default_factory=dict)
+    random_options: "RandomPDEOptions | None" = field(
+        default=None,
+        compare=False,
+        repr=False,
+    )
 
     def __post_init__(self) -> None:
+        if self.random_options is None:
+            from plm_data.pdes.random_options import random_options_for_pde
+
+            object.__setattr__(
+                self,
+                "random_options",
+                random_options_for_pde(self.name),
+            )
+
         seen_parameters: set[str] = set()
         for parameter in self.parameters:
             if parameter.name in seen_parameters:

@@ -1,19 +1,21 @@
 """Tests for random runtime-config sampling."""
 
 from dataclasses import is_dataclass, fields
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
-from plm_data.pdes import get_pde, list_pdes
 from plm_data.boundary_conditions.scenarios import (
     compatible_boundary_scenarios,
     list_boundary_scenarios,
 )
+from plm_data.domains.registry import list_domain_specs
 from plm_data.initial_conditions.scenarios import (
     compatible_initial_condition_scenarios,
     list_initial_condition_scenarios,
 )
+from plm_data.pdes import get_pde, list_pdes
 from plm_data.sampling import (
     DEFAULT_RANDOM_OUTPUT_FORMATS,
     MIGRATED_RANDOM_PDES,
@@ -23,6 +25,14 @@ from plm_data.sampling import (
 )
 from plm_data.sampling.context import SamplingContext
 from plm_data.sampling.samplers import attempt_rng
+from plm_data.core.runtime_config import DomainConfig
+from plm_data.sampling.specs import (
+    RandomDomainConstraint,
+    RandomDomainProfile,
+    RandomOutputSpec,
+    RandomPDEOptions,
+    RandomTimeSpec,
+)
 
 
 def _contains_sampler(value: Any) -> bool:
@@ -113,10 +123,16 @@ def test_random_pde_parameters_are_spec_sampled():
             initial_condition_scenario_name,
         )
         spec = get_pde(profile.pde_name).spec
+        random_options = spec.random_options
+        assert isinstance(random_options, RandomPDEOptions)
 
         assert all(parameter.has_sampling_rule for parameter in spec.parameters)
         assert set(config.parameters) == spec.parameter_names()
         spec.validate_parameters(config.parameters)
+        validate_runtime_config(config)
+        assert config.time is not None
+        assert config.time.dt == random_options.time.dt
+        assert config.time.t_end == random_options.time.t_end
 
 
 def test_domain_registry_module_exposes_migrated_layout():
@@ -135,10 +151,98 @@ def test_domain_registry_module_exposes_migrated_layout():
     )
 
 
+def test_all_registered_domains_expose_executable_random_profiles():
+    from plm_data.domains import sample_coordinate_region
+    from plm_data.domains.validation import validate_domain_params
+
+    context = SamplingContext(seed=191, attempt=0, rng=attempt_rng(191, 0, "test"))
+
+    for domain_name, domain_spec in list_domain_specs().items():
+        assert domain_spec.random_profiles, domain_name
+        for random_profile in domain_spec.random_profiles:
+            domain = random_profile.sample(context, {})
+            assert domain.type == domain_name
+            validate_domain_params(domain.type, domain.params)
+
+            sample = sample_coordinate_region(domain, "interior", context)
+            assert len(sample.point) == 2
+            assert sample.scale > 0.0
+
+
+def test_domain_sampler_preserves_multiple_profiles(monkeypatch):
+    import plm_data.sampling.runtime_config as runtime_sampling
+
+    def _profile_sampler(name: str):
+        def _sample(context, constraints):
+            return DomainConfig(
+                type="rectangle",
+                params={
+                    "size": [constraints["marker"], 1.0],
+                    "mesh_resolution": [16, 8],
+                },
+            )
+
+        return _sample
+
+    random_profiles = (
+        RandomDomainProfile("narrow", _profile_sampler("narrow")),
+        RandomDomainProfile("wide", _profile_sampler("wide")),
+    )
+    monkeypatch.setattr(
+        runtime_sampling,
+        "list_domain_specs",
+        lambda: {
+            "rectangle": SimpleNamespace(
+                dimension=2,
+                random_profiles=random_profiles,
+            )
+        },
+    )
+    options = RandomPDEOptions(
+        case_name="mock",
+        solver_strategy="mock_solver",
+        time=RandomTimeSpec(dt=0.1, t_end=1.0),
+        output=RandomOutputSpec(
+            fields={"u": "scalar"},
+            base_resolution=(32, 32),
+            num_frames=2,
+            resolution_jitter=(0, 0),
+        ),
+        domain_constraints=(
+            RandomDomainConstraint(
+                domain="rectangle",
+                profile="narrow",
+                params={"marker": 1},
+            ),
+            RandomDomainConstraint(
+                domain="rectangle",
+                profile="wide",
+                params={"marker": 2},
+            ),
+        ),
+    )
+
+    sampler = runtime_sampling._domain_samplers_for_options(options)["rectangle"]
+    seen_profiles: set[str] = set()
+    seen_markers: set[float] = set()
+    for attempt in range(16):
+        context = SamplingContext(
+            seed=823,
+            attempt=attempt,
+            rng=attempt_rng(823, attempt, "test"),
+        )
+        domain = sampler(context)
+        profile_name = context.values["domain.rectangle.profile"]
+        seen_profiles.add(profile_name)
+        seen_markers.add(float(domain.params["size"][0]))
+
+    assert seen_profiles == {"narrow", "wide"}
+    assert seen_markers == {1.0, 2.0}
+
+
 def test_domain_coordinate_region_samplers_are_executable():
     import math
 
-    from plm_data.core.runtime_config import DomainConfig
     from plm_data.domains import sample_coordinate_region
     from plm_data.sampling import SamplingContext, attempt_rng
 
@@ -174,6 +278,19 @@ def test_domain_coordinate_region_samplers_are_executable():
     annulus_distance = math.hypot(annulus_sample.point[0], annulus_sample.point[1])
     assert 0.75 <= annulus_distance <= 1.25
     assert annulus_sample.scale == 1.0
+
+    dumbbell = DomainConfig(
+        type="dumbbell",
+        params={
+            "left_center": [-0.6, 0.0],
+            "right_center": [0.6, 0.0],
+            "lobe_radius": 0.4,
+            "neck_width": 0.2,
+            "mesh_size": 0.08,
+        },
+    )
+    with pytest.raises(ValueError, match="does not expose a sampler"):
+        sample_coordinate_region(dumbbell, "neck", context)
 
 
 def test_migrated_pde_packages_expose_specs_and_runtimes():
@@ -306,54 +423,38 @@ def test_migrated_pde_packages_expose_specs_and_runtimes():
     assert MaxwellPulsePDE().spec.name == maxwell_spec.name == "maxwell_pulse"
 
 
-def test_random_profiles_cover_required_representative_slice():
-    profiles = {profile.name: profile for profile in list_random_pde_cases()}
-    expected_names = (
-        "scalar_advection_rectangle",
-        "scalar_wave_rectangle",
-        "scalar_plate_rectangle",
-        "split_schrodinger_rectangle",
-        "vector_burgers_rectangle",
-        "scalar_heat_2d",
-        "nonlinear_bistable_travelling_waves_rectangle",
-        "reaction_brusselator_rectangle",
-        "reaction_fitzhugh_nagumo_rectangle",
-        "reaction_gray_scott_rectangle",
-        "reaction_gierer_meinhardt_rectangle",
-        "reaction_schnakenberg_rectangle",
-        "reaction_cyclic_competition_rectangle",
-        "reaction_immunotherapy_rectangle",
-        "oscillator_van_der_pol_rectangle",
-        "chaotic_lorenz_rectangle",
-        "chemotaxis_keller_segel_rectangle",
-        "vegetation_klausmeier_topography_rectangle",
-        "reaction_superlattice_rectangle",
-        "phase_cahn_hilliard_rectangle",
-        "oscillator_cgl_rectangle",
-        "chaos_kuramoto_sivashinsky_rectangle",
-        "pattern_swift_hohenberg_rectangle",
-        "wave_zakharov_kuznetsov_rectangle",
-        "vector_elasticity_rectangle",
-        "nonlinear_fisher_kpp_rectangle",
-        "fluid_darcy_rectangle",
-        "fluid_navier_stokes_rectangle",
-        "fluid_shallow_water_rectangle",
-        "fluid_thermal_convection_rectangle",
-        "electromagnetic_maxwell_pulse_rectangle",
-    )
-
-    assert tuple(profiles) == expected_names
-    assert tuple(profile.pde_name for profile in list_random_pde_cases()) == (
-        MIGRATED_RANDOM_PDES
-    )
-    assert set(profiles["scalar_heat_2d"].domain_samplers) == {
-        "rectangle",
-        "disk",
-        "annulus",
+def test_random_profiles_are_derived_from_pde_and_domain_specs():
+    profiles = list_random_pde_cases()
+    profiles_by_pde = {profile.pde_name: profile for profile in profiles}
+    domain_specs = list_domain_specs()
+    all_random_domains = {
+        name
+        for name, spec in domain_specs.items()
+        if spec.dimension == 2 and spec.random_profiles
     }
 
-    for name, profile in profiles.items():
-        if name != "scalar_heat_2d":
+    assert tuple(profile.pde_name for profile in profiles) == MIGRATED_RANDOM_PDES
+    assert set(profiles_by_pde) == set(MIGRATED_RANDOM_PDES)
+    assert all_random_domains
+
+    for pde_name, profile in profiles_by_pde.items():
+        random_options = get_pde(pde_name).spec.random_options
+        assert isinstance(random_options, RandomPDEOptions)
+        assert profile.name == random_options.case_name
+        assert profile.domain_samplers
+
+    assert set(profiles_by_pde["heat"].domain_samplers) == all_random_domains
+    assert all(
+        compatible_boundary_scenarios(pde_name="heat", domain_name=domain_name)
+        and compatible_initial_condition_scenarios(
+            pde_name="heat",
+            domain_name=domain_name,
+        )
+        for domain_name in all_random_domains
+    )
+
+    for pde_name, profile in profiles_by_pde.items():
+        if pde_name != "heat":
             assert set(profile.domain_samplers) == {"rectangle"}
         compatible_domains = [
             domain_name
@@ -771,7 +872,7 @@ def test_sample_random_runtime_config_is_concrete_and_2d():
     sampled = sample_random_runtime_config(seed=1234, attempt=0)
 
     assert sampled.pde_name in MIGRATED_RANDOM_PDES
-    assert sampled.domain_name in {"rectangle", "disk", "annulus"}
+    assert sampled.domain_name in list_domain_specs()
     assert sampled.config.seed == 1234
     assert sampled.config.domain.dimension == 2
     assert sampled.config.time is not None

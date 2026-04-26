@@ -43,13 +43,16 @@ python -m pyright plm_data
 The active random-run architecture is built around first-class objects:
 
 1. **PDEs** (`plm_data/pdes/`) - PDE specs and runtime factories for the
-   migrated random-run PDE set.
+   migrated random-run PDE set. Random-run PDE limits, including solver choice,
+   time settings, output settings, domain constraints, and randomized
+   coefficients, are attached to PDE specs via `random_options`.
 2. **Runtime config** (`plm_data/core/runtime_config.py`) - concrete in-memory
    dataclasses used by the sampler, runner, output writers, and PDE runtimes.
 3. **Sampling** (`plm_data/sampling/`) - seed-based random runtime-config
    generation, compatibility checks, bounded retry, and run identity metadata.
 4. **Domains** (`plm_data/domains/`) - Gmsh-backed 2D domain specs, mesh
-   builders, validation, and domain sampling used by random PDE profiles.
+   builders, validation, and spec-owned random domain profiles used by the
+   sampler.
 5. **Boundary-condition operators and scenarios**
    (`plm_data/boundary_conditions/`) - low-level operator specs remain under
    `operators/`; complete PDE-level random choices live under `scenarios/`.
@@ -66,6 +69,9 @@ The active random-run architecture is built around first-class objects:
 
 Curated YAML configs and the old config loader have been removed. The runner
 owns in-memory random simulation generation directly.
+Random sampling is spec-driven: the sampler intersects PDE random options,
+domain random profiles, and BC/IC scenario compatibility rather than carrying
+per-PDE runtime builders or hard-coded domain cases.
 
 ## Output
 

@@ -3,11 +3,14 @@
 import importlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import ufl
 from dolfinx import mesh
+
+if TYPE_CHECKING:
+    from plm_data.sampling.specs import RandomDomainProfile
 
 
 @dataclass
@@ -74,6 +77,7 @@ class CoordinateSample:
 
 DomainParameterValidator = Callable[[Any], None]
 CoordinateRegionSampler = Callable[[Any, Any], CoordinateSample]
+RandomDomainProfiles = tuple["RandomDomainProfile", ...]
 
 
 @dataclass(frozen=True)
@@ -109,6 +113,7 @@ class DomainSpec:
     coordinate_region_samplers: dict[str, CoordinateRegionSampler] = field(
         default_factory=dict
     )
+    random_profiles: RandomDomainProfiles = ()
 
     def __post_init__(self) -> None:
         boundary_names = set(self.boundary_names)
@@ -142,6 +147,14 @@ class DomainSpec:
             raise ValueError(
                 f"Domain spec '{self.name}' has samplers for undeclared coordinate "
                 f"regions {sorted(missing_samplers)}."
+            )
+        if not self.random_profiles:
+            from plm_data.domains.random_profiles import random_profiles_for_domain
+
+            object.__setattr__(
+                self,
+                "random_profiles",
+                random_profiles_for_domain(self.name),
             )
 
 
@@ -205,10 +218,14 @@ def sample_coordinate_region(
             f"Available: {sorted(spec.coordinate_regions)}."
         )
     if region not in spec.coordinate_region_samplers:
-        raise ValueError(
-            f"Domain '{domain.type}' does not expose a sampler for coordinate "
-            f"region '{region}'."
-        )
+        if region != "interior":
+            raise ValueError(
+                f"Domain '{domain.type}' declares coordinate region '{region}' "
+                "but does not expose a sampler for it."
+            )
+        from plm_data.domains.random_profiles import fallback_coordinate_sample
+
+        return fallback_coordinate_sample(context, domain, region)
     return spec.coordinate_region_samplers[region](context, domain)
 
 

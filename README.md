@@ -47,15 +47,18 @@ default random-run output set.
 ## Architecture
 
 - **PDEs** (`plm_data/pdes/`) expose PDE specs and runtime factories for the
-  migrated random-run PDE set.
+  migrated random-run PDE set. Random-run solver, time, output, coefficient,
+  and domain-constraint options are attached to PDE specs.
 - **Runtime config** (`plm_data/core/runtime_config.py`) contains the concrete
   in-memory dataclasses passed to PDE runtimes. YAML configs and shared
   fragments are not part of the refactored architecture.
 - **Sampling** (`plm_data/sampling/`) chooses a compatible random PDE/domain
   case, boundary scenario, initial-condition scenario, parameters, solver
-  profile, time settings, and output settings from a required seed.
+  profile, time settings, and output settings from a required seed by
+  intersecting PDE random options, domain random profiles, and scenario
+  compatibility metadata.
 - **Domains** (`plm_data/domains/`) provide Gmsh-backed domain specs, mesh
-  builders, validation, and domain sampling used by random PDE profiles.
+  builders, validation, and random domain profiles used by the sampler.
 - **Boundary-condition operators and scenarios**
   (`plm_data/boundary_conditions/`) separate low-level operator behavior from
   PDE-level scenario generation.

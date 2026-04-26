@@ -15,6 +15,24 @@ BoundaryScenarioBuilder = Callable[
 ]
 
 
+def _supports(value: str, supported_values: tuple[str, ...]) -> bool:
+    return "*" in supported_values or value in supported_values
+
+
+def _scenario_field_names(
+    configured_fields: tuple[str, ...],
+    pde_fields,
+) -> tuple[str, ...] | None:
+    if configured_fields == ("all_scalar_boundary_fields",):
+        if any(field.shape != "scalar" for field in pde_fields.values()):
+            return None
+        return tuple(pde_fields)
+    missing = set(configured_fields) - set(pde_fields)
+    if missing:
+        return None
+    return configured_fields
+
+
 @dataclass(frozen=True)
 class BoundaryScenarioSpec:
     """Compatibility metadata for one complete PDE-level boundary scenario."""
@@ -33,9 +51,9 @@ class BoundaryScenarioSpec:
 
     def is_compatible(self, *, pde_name: str, domain_name: str) -> bool:
         """Return whether this scenario supports one PDE/domain pair."""
-        if (
-            pde_name not in self.supported_pdes
-            or domain_name not in self.supported_domains
+        if not _supports(pde_name, self.supported_pdes) or not _supports(
+            domain_name,
+            self.supported_domains,
         ):
             return False
 
@@ -61,7 +79,35 @@ class BoundaryScenarioSpec:
         missing_boundaries = set(self.required_boundary_names) - set(
             domain_spec.boundary_names
         )
-        return not missing_boundaries
+        if missing_boundaries:
+            return False
+
+        if "periodic" in self.operators:
+            paired_boundaries = {
+                side for pair in domain_spec.periodic_pairs for side in pair
+            }
+            if set(domain_spec.boundary_names) - paired_boundaries:
+                return False
+
+        from plm_data.pdes import get_pde
+
+        try:
+            pde_spec = get_pde(pde_name).spec
+        except ValueError:
+            return False
+        field_names = _scenario_field_names(
+            self.configured_fields,
+            pde_spec.boundary_fields,
+        )
+        if field_names is None or set(field_names) != set(pde_spec.boundary_fields):
+            return False
+        for field_name in field_names:
+            field_spec = pde_spec.boundary_fields[field_name]
+            if self.field_shapes and field_spec.shape not in self.field_shapes:
+                return False
+            if set(self.operators) - set(field_spec.operators):
+                return False
+        return True
 
 
 @dataclass(frozen=True)
