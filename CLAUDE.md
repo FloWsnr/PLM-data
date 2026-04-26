@@ -9,6 +9,8 @@ being a general-purpose PDE solver framework.
 
 ## Commands
 
+Make sure the conda environment `fenicsx-env` is activated before running commands.
+
 ```bash
 # Run one random simulation. A seed is required.
 ./run.sh --seed 1234
